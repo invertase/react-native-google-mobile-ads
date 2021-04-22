@@ -1,0 +1,7 @@
+src/version.js
+**/node_modules/**
+node_modules
+scripts/
+coverage
+docs
+dist/

@@ -1,0 +1,9 @@
+*.xcodeproj binary
+*.xcworkspace binary
+*.pbxproj -text
+docs/typedoc.json merge=theirs linguist-vendored
+docs/typedoc.min.json merge=theirs linguist-vendored
+
+# Windows files should use crlf line endings
+# https://help.github.com/articles/dealing-with-line-endings/
+*.bat text eol=crlf
