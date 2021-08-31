@@ -6,9 +6,7 @@ module.exports = {
     '\\.(ts|tsx)$': 'ts-jest',
   },
   setupFiles: ['./jest.setup.ts'],
-  testMatch: [
-    '__tests__/**/*.test.(ts|js)',
-  ],
+  testMatch: ['__tests__/**/*.test.(ts|js)'],
   modulePaths: ['node_modules'],
   moduleDirectories: ['node_modules'],
   moduleFileExtensions: ['ts', 'tsx', 'js'],

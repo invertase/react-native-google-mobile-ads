@@ -10,8 +10,9 @@ module.exports = {
             },
           },
         ],
-        'module:./example/node_modules/metro-react-native-babel-preset',
+        'module:./tests/node_modules/metro-react-native-babel-preset',
       ],
     },
   },
+  plugins: [['@babel/plugin-proposal-private-property-in-object', { loose: true }]],
 };

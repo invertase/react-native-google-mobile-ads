@@ -1,9 +1,9 @@
 ---
-name: "⚠️ Bug/Issue report - React Native"
+name: "⚠️ Bug/Issue report - React Native Admob"
 about: Please provide as much detail as possible. Issues may be closed if they do
   not follow the template.
 title: "[\U0001F41B] Bug Report Title - CHANGE ME "
-labels: 'Help: Needs Triage, Impact: Bug'
+labels: 'help wanted'
 assignees: ''
 
 ---
@@ -68,9 +68,6 @@ Describe your issue here
 <p>
 
 #### `ios/Podfile`:
-
-- [ ] I'm not using Pods
-- [x] I'm using Pods and my Podfile looks like:
 
 ```ruby
 # N/A
