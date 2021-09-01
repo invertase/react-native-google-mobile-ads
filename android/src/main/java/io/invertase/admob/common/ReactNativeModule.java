@@ -21,22 +21,17 @@ import android.app.Activity;
 import android.content.Context;
 import com.facebook.react.bridge.*;
 import io.invertase.admob.interfaces.ContextProvider;
-import io.invertase.admob.common.TaskExecutorService;
-
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import javax.annotation.Nonnull;
 
 public class ReactNativeModule extends ReactContextBaseJavaModule implements ContextProvider {
   private final TaskExecutorService executorService;
 
   private String moduleName;
 
-  public ReactNativeModule(
-    ReactApplicationContext reactContext,
-    String moduleName
-  ) {
+  public ReactNativeModule(ReactApplicationContext reactContext, String moduleName) {
     super(reactContext);
     this.moduleName = moduleName;
     this.executorService = new TaskExecutorService(getName());
@@ -54,11 +49,7 @@ public class ReactNativeModule extends ReactContextBaseJavaModule implements Con
   }
 
   public static void rejectPromiseWithCodeAndMessage(
-    Promise promise,
-    String code,
-    String message,
-    String nativeErrorMessage
-  ) {
+      Promise promise, String code, String message, String nativeErrorMessage) {
     WritableMap userInfoMap = Arguments.createMap();
     userInfoMap.putString("code", code);
     userInfoMap.putString("message", message);

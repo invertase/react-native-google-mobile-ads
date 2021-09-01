@@ -17,7 +17,6 @@ package io.invertase.admob;
  *
  */
 
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import io.invertase.admob.interfaces.NativeEvent;
@@ -27,9 +26,9 @@ public class ReactNativeAdMobEvent implements NativeEvent {
   public static final String EVENT_REWARDED = "admob_rewarded_event";
 
   public static final String AD_LOADED = "loaded";
-  public static final String AD_ERROR= "error";
-  public static final String AD_OPENED= "opened";
-  public static final String AD_CLICKED= "clicked";
+  public static final String AD_ERROR = "error";
+  public static final String AD_OPENED = "opened";
+  public static final String AD_CLICKED = "clicked";
   public static final String AD_LEFT_APPLICATION = "left_application";
   public static final String AD_CLOSED = "closed";
 
@@ -47,11 +46,7 @@ public class ReactNativeAdMobEvent implements NativeEvent {
   private WritableMap eventBody;
 
   public ReactNativeAdMobEvent(
-    String eventName,
-    int requestId,
-    String adUnitId,
-    WritableMap eventBody
-  ) {
+      String eventName, int requestId, String adUnitId, WritableMap eventBody) {
     this.eventName = eventName;
     this.requestId = requestId;
     this.adUnitId = adUnitId;

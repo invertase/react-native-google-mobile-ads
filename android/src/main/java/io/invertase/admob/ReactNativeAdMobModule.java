@@ -23,10 +23,8 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.RequestConfiguration;
-
-import java.util.Objects;
-
 import io.invertase.admob.common.ReactNativeModule;
+import java.util.Objects;
 
 public class ReactNativeAdMobModule extends ReactNativeModule {
   private static final String SERVICE = "AdMob";
@@ -58,14 +56,18 @@ public class ReactNativeAdMobModule extends ReactNativeModule {
     }
 
     if (requestConfiguration.hasKey("tagForChildDirectedTreatment")) {
-      boolean tagForChildDirectedTreatment = requestConfiguration.getBoolean("tagForChildDirectedTreatment");
+      boolean tagForChildDirectedTreatment =
+          requestConfiguration.getBoolean("tagForChildDirectedTreatment");
       if (tagForChildDirectedTreatment) {
-        builder.setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE);
+        builder.setTagForChildDirectedTreatment(
+            RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE);
       } else {
-        builder.setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE);
+        builder.setTagForChildDirectedTreatment(
+            RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE);
       }
     } else {
-      builder.setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_UNSPECIFIED);
+      builder.setTagForChildDirectedTreatment(
+          RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_UNSPECIFIED);
     }
 
     if (requestConfiguration.hasKey("tagForUnderAgeOfConsent")) {
@@ -76,7 +78,8 @@ public class ReactNativeAdMobModule extends ReactNativeModule {
         builder.setTagForUnderAgeOfConsent(RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_FALSE);
       }
     } else {
-      builder.setTagForUnderAgeOfConsent(RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_UNSPECIFIED);
+      builder.setTagForUnderAgeOfConsent(
+          RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_UNSPECIFIED);
     }
 
     return builder.build();

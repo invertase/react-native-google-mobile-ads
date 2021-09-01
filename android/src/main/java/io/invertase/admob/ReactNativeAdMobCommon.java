@@ -17,12 +17,10 @@ package io.invertase.admob;
  *
  */
 
-
 import android.location.Location;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Display;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
@@ -33,27 +31,29 @@ import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import io.invertase.admob.common.ReactNativeEventEmitter;
-import io.invertase.admob.common.ReactNativeEvent;
-
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 
 public class ReactNativeAdMobCommon {
 
   static AdSize getAdSizeForAdaptiveBanner(ReactViewGroup reactViewGroup) {
 
     try {
-      Display display = Objects.requireNonNull(((ReactContext) reactViewGroup.getContext()).getCurrentActivity()).getWindowManager().getDefaultDisplay();
+      Display display =
+          Objects.requireNonNull(((ReactContext) reactViewGroup.getContext()).getCurrentActivity())
+              .getWindowManager()
+              .getDefaultDisplay();
 
       DisplayMetrics outMetrics = new DisplayMetrics();
       display.getMetrics(outMetrics);
       int adWidth = (int) (outMetrics.widthPixels / outMetrics.density);
 
-      return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(reactViewGroup.getContext(), adWidth);
+      return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+          reactViewGroup.getContext(), adWidth);
     } catch (Exception e) {
       return AdSize.BANNER;
     }
@@ -99,9 +99,7 @@ public class ReactNativeAdMobCommon {
     }
   }
 
-  /**
-   * Convert common AdMob errors into a standard format
-   */
+  /** Convert common AdMob errors into a standard format */
   static WritableMap errorCodeToMap(int errorCode) {
     WritableMap map = Arguments.createMap();
 
@@ -109,16 +107,14 @@ public class ReactNativeAdMobCommon {
       case AdRequest.ERROR_CODE_INTERNAL_ERROR:
         map.putString("code", "error-code-internal-error");
         map.putString(
-          "message",
-          "Something happened internally; for instance, an invalid response was received from the ad server."
-        );
+            "message",
+            "Something happened internally; for instance, an invalid response was received from the"
+                + " ad server.");
         break;
       case AdRequest.ERROR_CODE_INVALID_REQUEST:
         map.putString("code", "error-code-invalid-request");
         map.putString(
-          "message",
-          "The ad request was invalid; for instance, the ad unit ID was incorrect."
-        );
+            "message", "The ad request was invalid; for instance, the ad unit ID was incorrect.");
         break;
       case AdRequest.ERROR_CODE_NETWORK_ERROR:
         map.putString("code", "error-code-network-error");
@@ -127,20 +123,20 @@ public class ReactNativeAdMobCommon {
       case AdRequest.ERROR_CODE_NO_FILL:
         map.putString("code", "error-code-no-fill");
         map.putString(
-          "message",
-          "The ad request was successful, but no ad was returned due to lack of ad inventory."
-        );
+            "message",
+            "The ad request was successful, but no ad was returned due to lack of ad inventory.");
         break;
     }
 
     return map;
   }
 
-  static public AdRequest buildAdRequest(ReadableMap adRequestOptions) {
+  public static AdRequest buildAdRequest(ReadableMap adRequestOptions) {
     AdRequest.Builder builder = new AdRequest.Builder();
     Bundle extras = new Bundle();
 
-    if (adRequestOptions.hasKey("requestNonPersonalizedAdsOnly") && adRequestOptions.getBoolean("requestNonPersonalizedAdsOnly")) {
+    if (adRequestOptions.hasKey("requestNonPersonalizedAdsOnly")
+        && adRequestOptions.getBoolean("requestNonPersonalizedAdsOnly")) {
       extras.putString("npa", "1");
     }
 
@@ -157,8 +153,8 @@ public class ReactNativeAdMobCommon {
     builder.addNetworkExtrasBundle(AdMobAdapter.class, extras);
 
     if (adRequestOptions.hasKey("keywords")) {
-      ArrayList<Object> keywords = Objects.requireNonNull(adRequestOptions.getArray("keywords"))
-        .toArrayList();
+      ArrayList<Object> keywords =
+          Objects.requireNonNull(adRequestOptions.getArray("keywords")).toArrayList();
 
       for (Object keyword : keywords) {
         builder.addKeyword((String) keyword);
@@ -166,8 +162,8 @@ public class ReactNativeAdMobCommon {
     }
 
     if (adRequestOptions.hasKey("testDevices")) {
-      ArrayList<Object> devices = Objects.requireNonNull(adRequestOptions.getArray("testDevices"))
-        .toArrayList();
+      ArrayList<Object> devices =
+          Objects.requireNonNull(adRequestOptions.getArray("testDevices")).toArrayList();
 
       for (Object device : devices) {
         String id = (String) device;
@@ -200,7 +196,8 @@ public class ReactNativeAdMobCommon {
     return builder.build();
   }
 
-  static public void sendAdEvent(String event, int requestId, String type, String adUnitId, @Nullable WritableMap error) {
+  public static void sendAdEvent(
+      String event, int requestId, String type, String adUnitId, @Nullable WritableMap error) {
     ReactNativeEventEmitter emitter = ReactNativeEventEmitter.getSharedInstance();
 
     WritableMap eventBody = Arguments.createMap();
@@ -210,15 +207,16 @@ public class ReactNativeAdMobCommon {
       eventBody.putMap("error", error);
     }
 
-    emitter.sendEvent(new ReactNativeAdMobEvent(
-      event,
-      requestId,
-      adUnitId,
-      eventBody
-    ));
+    emitter.sendEvent(new ReactNativeAdMobEvent(event, requestId, adUnitId, eventBody));
   }
 
-  static public void sendAdEvent(String event, int requestId, String type, String adUnitId, @Nullable WritableMap error, @Nullable WritableMap data) {
+  public static void sendAdEvent(
+      String event,
+      int requestId,
+      String type,
+      String adUnitId,
+      @Nullable WritableMap error,
+      @Nullable WritableMap data) {
     ReactNativeEventEmitter emitter = ReactNativeEventEmitter.getSharedInstance();
 
     WritableMap eventBody = Arguments.createMap();
@@ -232,22 +230,19 @@ public class ReactNativeAdMobCommon {
       eventBody.putMap("data", data);
     }
 
-    emitter.sendEvent(new ReactNativeAdMobEvent(
-      event,
-      requestId,
-      adUnitId,
-      eventBody
-    ));
+    emitter.sendEvent(new ReactNativeAdMobEvent(event, requestId, adUnitId, eventBody));
   }
 
-  static public String[] getCodeAndMessageFromAdErrorCode(int errorCode) {
+  public static String[] getCodeAndMessageFromAdErrorCode(int errorCode) {
     String code = "unknown";
     String message = "An unknown error occurred.";
 
     switch (errorCode) {
       case AdRequest.ERROR_CODE_INTERNAL_ERROR:
         code = "internal-error";
-        message = "Something happened internally; for instance, an invalid response was received from the ad server.";
+        message =
+            "Something happened internally; for instance, an invalid response was received from the"
+                + " ad server.";
         break;
       case AdRequest.ERROR_CODE_INVALID_REQUEST:
         code = "invalid-request";
@@ -259,7 +254,8 @@ public class ReactNativeAdMobCommon {
         break;
       case AdRequest.ERROR_CODE_NO_FILL:
         code = "no-fill";
-        message = "The ad request was successful, but no ad was returned due to lack of ad inventory.";
+        message =
+            "The ad request was successful, but no ad was returned due to lack of ad inventory.";
         break;
     }
 
@@ -268,5 +264,4 @@ public class ReactNativeAdMobCommon {
     codeAndMessage[1] = message;
     return codeAndMessage;
   }
-
 }

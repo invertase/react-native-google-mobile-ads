@@ -18,8 +18,8 @@
 
 #import <React/RCTUtils.h>
 
-#import "common/RNSharedUtils.h"
 #import "RNAdMobConsentModule.h"
+#import "common/RNSharedUtils.h"
 
 @implementation RNAdMobConsentModule
 #pragma mark -
@@ -34,37 +34,38 @@ RCT_EXPORT_MODULE();
 #pragma mark -
 #pragma mark AdMob Methods
 
-RCT_EXPORT_METHOD(requestInfoUpdate:
-  (NSArray *) publisherIds
-    :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+RCT_EXPORT_METHOD(requestInfoUpdate
+                  : (NSArray *)publisherIds
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   PACConsentInformation *consentInformation = [PACConsentInformation sharedInstance];
 
   id completionHandler = ^(NSError *_Nullable error) {
     if (error != nil) {
-      [RNSharedUtils rejectPromiseWithUserInfo:reject userInfo:[@{
-          @"code": @"consent-update-failed",
-          @"message": error.localizedDescription,
-      } mutableCopy]];
+      [RNSharedUtils rejectPromiseWithUserInfo:reject
+                                      userInfo:[@{
+                                        @"code" : @"consent-update-failed",
+                                        @"message" : error.localizedDescription,
+                                      } mutableCopy]];
     } else {
       resolve(@{
-          @"status": @(consentInformation.consentStatus),
-          @"isRequestLocationInEeaOrUnknown": @(consentInformation.requestLocationInEEAOrUnknown),
+        @"status" : @(consentInformation.consentStatus),
+        @"isRequestLocationInEeaOrUnknown" : @(consentInformation.requestLocationInEEAOrUnknown),
       });
     }
   };
 
-  [consentInformation requestConsentInfoUpdateForPublisherIdentifiers:publisherIds completionHandler:completionHandler];
+  [consentInformation requestConsentInfoUpdateForPublisherIdentifiers:publisherIds
+                                                    completionHandler:completionHandler];
 }
 
-RCT_EXPORT_METHOD(showForm:
-  (NSDictionary *) options
-    :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+RCT_EXPORT_METHOD(showForm
+                  : (NSDictionary *)options
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   NSString *privacyPolicy = options[@"privacyPolicy"];
-  PACConsentForm *form = [[PACConsentForm alloc] initWithApplicationPrivacyPolicyURL:[NSURL URLWithString:privacyPolicy]];
+  PACConsentForm *form = [[PACConsentForm alloc]
+      initWithApplicationPrivacyPolicyURL:[NSURL URLWithString:privacyPolicy]];
 
   form.shouldOfferPersonalizedAds = [options[@"withPersonalizedAds"] boolValue];
   form.shouldOfferNonPersonalizedAds = [options[@"withNonPersonalizedAds"] boolValue];
@@ -72,43 +73,43 @@ RCT_EXPORT_METHOD(showForm:
 
   id dismissCompletionBlock = ^(NSError *error, BOOL userPrefersAdFree) {
     if (error != nil) {
-      [RNSharedUtils rejectPromiseWithUserInfo:reject userInfo:[@{
-          @"code": @"consent-form-error",
-          @"message": error.localizedDescription,
-      } mutableCopy]];
+      [RNSharedUtils rejectPromiseWithUserInfo:reject
+                                      userInfo:[@{
+                                        @"code" : @"consent-form-error",
+                                        @"message" : error.localizedDescription,
+                                      } mutableCopy]];
     } else {
       resolve(@{
-          @"status": @(PACConsentInformation.sharedInstance.consentStatus),
-          @"userPrefersAdFree": @(userPrefersAdFree),
+        @"status" : @(PACConsentInformation.sharedInstance.consentStatus),
+        @"userPrefersAdFree" : @(userPrefersAdFree),
       });
     }
   };
 
   [form loadWithCompletionHandler:^(NSError *error) {
     if (error != nil) {
-      [RNSharedUtils rejectPromiseWithUserInfo:reject userInfo:[@{
-          @"code": @"consent-form-error",
-          @"message": error.localizedDescription,
-      } mutableCopy]];
+      [RNSharedUtils rejectPromiseWithUserInfo:reject
+                                      userInfo:[@{
+                                        @"code" : @"consent-form-error",
+                                        @"message" : error.localizedDescription,
+                                      } mutableCopy]];
     } else {
-      [form presentFromViewController:[UIApplication sharedApplication].delegate.window.rootViewController dismissCompletion:dismissCompletionBlock];
+      [form presentFromViewController:[UIApplication sharedApplication]
+                                          .delegate.window.rootViewController
+                    dismissCompletion:dismissCompletionBlock];
     }
   }];
 }
 
-RCT_EXPORT_METHOD(getStatus
-    :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+RCT_EXPORT_METHOD(getStatus : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
   PACConsentInformation *consentInformation = [PACConsentInformation sharedInstance];
   resolve(@(consentInformation.consentStatus));
 }
 
 RCT_EXPORT_METHOD(setStatus
-  :(nonnull NSNumber *)status
-  :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+                  : (nonnull NSNumber *)status
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   PACConsentStatus consentStatus = PACConsentStatusUnknown;
 
   if ([status integerValue] == [@0 integerValue]) {
@@ -124,9 +125,8 @@ RCT_EXPORT_METHOD(setStatus
 }
 
 RCT_EXPORT_METHOD(getAdProviders
-  :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   NSArray *providers = PACConsentInformation.sharedInstance.adProviders;
   NSMutableArray *formattedProviders = [[NSMutableArray alloc] init];
 
@@ -142,20 +142,18 @@ RCT_EXPORT_METHOD(getAdProviders
 }
 
 RCT_EXPORT_METHOD(setTagForUnderAgeOfConsent
-  :(BOOL)tag
-    :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+                  : (BOOL)tag
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   PACConsentInformation *consentInformation = [PACConsentInformation sharedInstance];
   consentInformation.tagForUnderAgeOfConsent = tag;
   resolve([NSNull null]);
 }
 
 RCT_EXPORT_METHOD(setDebugGeography
-  :(nonnull NSNumber *)geography
-    :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+                  : (nonnull NSNumber *)geography
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   PACDebugGeography debugGeography = PACDebugGeographyDisabled;
 
   if ([geography integerValue] == [@0 integerValue]) {
@@ -171,10 +169,9 @@ RCT_EXPORT_METHOD(setDebugGeography
 }
 
 RCT_EXPORT_METHOD(addTestDevices
-  :(NSArray *)deviceIds
-    :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+                  : (NSArray *)deviceIds
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   PACConsentInformation.sharedInstance.debugIdentifiers = deviceIds;
   resolve([NSNull null]);
 }

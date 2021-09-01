@@ -15,12 +15,11 @@
  *
  */
 
-#import <React/RCTUtils.h>
 #import <GoogleMobileAds/GoogleMobileAds.h>
+#import <React/RCTUtils.h>
 
-#import "common/RNSharedUtils.h"
 #import "RNAdMobModule.h"
-
+#import "common/RNSharedUtils.h"
 
 @implementation RNAdMobModule
 #pragma mark -
@@ -35,12 +34,10 @@ RCT_EXPORT_MODULE();
 #pragma mark -
 #pragma mark Firebase Admob Methods
 
-
-RCT_EXPORT_METHOD(setRequestConfiguration:
-  (NSDictionary *) requestConfiguration
-    :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+RCT_EXPORT_METHOD(setRequestConfiguration
+                  : (NSDictionary *)requestConfiguration
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   [self setRequestConfiguration:requestConfiguration];
   resolve([NSNull null]);
 }
@@ -49,23 +46,27 @@ RCT_EXPORT_METHOD(setRequestConfiguration:
   if (requestConfiguration[@"maxAdContentRating"]) {
     NSString *rating = requestConfiguration[@"maxAdContentRating"];
     if ([rating isEqualToString:@"G"]) {
-      GADMobileAds.sharedInstance.requestConfiguration.maxAdContentRating = GADMaxAdContentRatingGeneral;
+      GADMobileAds.sharedInstance.requestConfiguration.maxAdContentRating =
+          GADMaxAdContentRatingGeneral;
     } else if ([rating isEqualToString:@"PG"]) {
-      GADMobileAds.sharedInstance.requestConfiguration.maxAdContentRating = GADMaxAdContentRatingParentalGuidance;
+      GADMobileAds.sharedInstance.requestConfiguration.maxAdContentRating =
+          GADMaxAdContentRatingParentalGuidance;
     } else if ([rating isEqualToString:@"T"]) {
-      GADMobileAds.sharedInstance.requestConfiguration.maxAdContentRating = GADMaxAdContentRatingTeen;
+      GADMobileAds.sharedInstance.requestConfiguration.maxAdContentRating =
+          GADMaxAdContentRatingTeen;
     } else if ([rating isEqualToString:@"MA"]) {
-      GADMobileAds.sharedInstance.requestConfiguration.maxAdContentRating = GADMaxAdContentRatingMatureAudience;
+      GADMobileAds.sharedInstance.requestConfiguration.maxAdContentRating =
+          GADMaxAdContentRatingMatureAudience;
     }
   }
 
   if (requestConfiguration[@"tagForChildDirectedTreatment"]) {
-    BOOL tag = (BOOL) requestConfiguration[@"tagForChildDirectedTreatment"];
+    BOOL tag = (BOOL)requestConfiguration[@"tagForChildDirectedTreatment"];
     [GADMobileAds.sharedInstance.requestConfiguration tagForChildDirectedTreatment:tag];
   }
 
   if (requestConfiguration[@"tagForUnderAgeOfConsent"]) {
-    BOOL tag = (BOOL) requestConfiguration[@"tagForUnderAgeOfConsent"];
+    BOOL tag = (BOOL)requestConfiguration[@"tagForUnderAgeOfConsent"];
     [GADMobileAds.sharedInstance.requestConfiguration tagForUnderAgeOfConsent:tag];
   }
 }

@@ -31,9 +31,8 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
-
-import javax.annotation.Nonnull;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 public class ReactNativeAdMobBannerAdViewManager extends SimpleViewManager<ReactViewGroup> {
   private static final String REACT_CLASS = "ReactNativeAdMobBannerView";
@@ -122,64 +121,65 @@ public class ReactNativeAdMobBannerAdViewManager extends SimpleViewManager<React
   private void setAdListener(ReactViewGroup reactViewGroup) {
     final AdView adView = getAdView(reactViewGroup);
 
-    adView.setAdListener(new AdListener() {
-      @Override
-      public void onAdLoaded() {
-        int top;
-        int left;
-        int width;
-        int height;
+    adView.setAdListener(
+        new AdListener() {
+          @Override
+          public void onAdLoaded() {
+            int top;
+            int left;
+            int width;
+            int height;
 
-        if (size == AdSize.FLUID) {
-          top = 0;
-          left = 0;
-          width = reactViewGroup.getWidth();
-          height = reactViewGroup.getHeight();
-        } else {
-          top = adView.getTop();
-          left = adView.getLeft();
-          width = adView.getAdSize().getWidthInPixels(reactViewGroup.getContext());
-          height = adView.getAdSize().getHeightInPixels(reactViewGroup.getContext());
-        }
+            if (size == AdSize.FLUID) {
+              top = 0;
+              left = 0;
+              width = reactViewGroup.getWidth();
+              height = reactViewGroup.getHeight();
+            } else {
+              top = adView.getTop();
+              left = adView.getLeft();
+              width = adView.getAdSize().getWidthInPixels(reactViewGroup.getContext());
+              height = adView.getAdSize().getHeightInPixels(reactViewGroup.getContext());
+            }
 
-        // TODO size=FLUID not loading ad, height of child FrameLayout incorrect?
-        adView.measure(width, height);
-        adView.layout(left, top, left + width, top + height);
+            // TODO size=FLUID not loading ad, height of child FrameLayout incorrect?
+            adView.measure(width, height);
+            adView.layout(left, top, left + width, top + height);
 
-        WritableMap payload = Arguments.createMap();
+            WritableMap payload = Arguments.createMap();
 
-        if (size != AdSize.FLUID) {
-          payload.putInt("width", (int) PixelUtil.toDIPFromPixel(width) + 1);
-          payload.putInt("height", (int) PixelUtil.toDIPFromPixel(height) + 1);
-        } else {
-          payload.putInt("width", (int) PixelUtil.toDIPFromPixel(width));
-          payload.putInt("height", (int) PixelUtil.toDIPFromPixel(height));
-        }
+            if (size != AdSize.FLUID) {
+              payload.putInt("width", (int) PixelUtil.toDIPFromPixel(width) + 1);
+              payload.putInt("height", (int) PixelUtil.toDIPFromPixel(height) + 1);
+            } else {
+              payload.putInt("width", (int) PixelUtil.toDIPFromPixel(width));
+              payload.putInt("height", (int) PixelUtil.toDIPFromPixel(height));
+            }
 
-        sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
-      }
+            sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
+          }
 
-      @Override
-      public void onAdFailedToLoad(int errorCode) {
-        WritableMap payload = ReactNativeAdMobCommon.errorCodeToMap(errorCode);
-        sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
-      }
+          @Override
+          public void onAdFailedToLoad(int errorCode) {
+            WritableMap payload = ReactNativeAdMobCommon.errorCodeToMap(errorCode);
+            sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
+          }
 
-      @Override
-      public void onAdOpened() {
-        sendEvent(reactViewGroup, EVENT_AD_OPENED, null);
-      }
+          @Override
+          public void onAdOpened() {
+            sendEvent(reactViewGroup, EVENT_AD_OPENED, null);
+          }
 
-      @Override
-      public void onAdClosed() {
-        sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
-      }
+          @Override
+          public void onAdClosed() {
+            sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
+          }
 
-      @Override
-      public void onAdLeftApplication() {
-        sendEvent(reactViewGroup, EVENT_AD_LEFT_APPLICATION, null);
-      }
-    });
+          @Override
+          public void onAdLeftApplication() {
+            sendEvent(reactViewGroup, EVENT_AD_LEFT_APPLICATION, null);
+          }
+        });
   }
 
   private void requestAd(ReactViewGroup reactViewGroup) {
@@ -208,7 +208,7 @@ public class ReactNativeAdMobBannerAdViewManager extends SimpleViewManager<React
     }
 
     ((ThemedReactContext) reactViewGroup.getContext())
-      .getJSModule(RCTEventEmitter.class)
-      .receiveEvent(reactViewGroup.getId(), "onNativeEvent", event);
+        .getJSModule(RCTEventEmitter.class)
+        .receiveEvent(reactViewGroup.getId(), "onNativeEvent", event);
   }
 }

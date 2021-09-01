@@ -18,10 +18,10 @@
 
 #import <React/RCTUtils.h>
 
-#import "common/RNSharedUtils.h"
-#import "RNAdMobRewardedModule.h"
-#import "RNAdMobRewardedDelegate.h"
 #import "RNAdMobCommon.h"
+#import "RNAdMobRewardedDelegate.h"
+#import "RNAdMobRewardedModule.h"
+#import "common/RNSharedUtils.h"
 
 static __strong NSMutableDictionary *rewardedMap;
 
@@ -54,7 +54,7 @@ RCT_EXPORT_MODULE();
 
 - (void)invalidate {
   for (NSNumber *id in [rewardedMap allKeys]) {
-    RNGADRewarded * ad = rewardedMap[id];
+    RNGADRewarded *ad = rewardedMap[id];
     [ad setRequestId:@-1];
     [rewardedMap removeObjectForKey:id];
   }
@@ -64,15 +64,13 @@ RCT_EXPORT_MODULE();
 #pragma mark Firebase AdMob Methods
 
 RCT_EXPORT_METHOD(rewardedLoad
-  :
-  (nonnull
-    NSNumber *)requestId
-    :(NSString *)adUnitId
-    :(NSDictionary *)adRequestOptions
-) {
+                  : (nonnull NSNumber *)requestId
+                  : (NSString *)adUnitId
+                  : (NSDictionary *)adRequestOptions) {
   RNGADRewarded *rewarded = [[RNGADRewarded alloc] initWithAdUnitID:adUnitId];
 
-  NSDictionary *serverSideVerificationOptions = [adRequestOptions objectForKey:@"serverSideVerificationOptions"];
+  NSDictionary *serverSideVerificationOptions =
+      [adRequestOptions objectForKey:@"serverSideVerificationOptions"];
 
   if (serverSideVerificationOptions != nil) {
     GADServerSideVerificationOptions *options = [[GADServerSideVerificationOptions alloc] init];
@@ -80,7 +78,7 @@ RCT_EXPORT_METHOD(rewardedLoad
     NSString *userId = [serverSideVerificationOptions valueForKey:@"userId"];
 
     if (userId != nil) {
-        options.userIdentifier = userId;
+      options.userIdentifier = userId;
     }
 
     NSString *customData = [serverSideVerificationOptions valueForKey:@"customData"];
@@ -95,41 +93,50 @@ RCT_EXPORT_METHOD(rewardedLoad
   [rewarded setRequestId:requestId];
   GADRequest *request = [RNAdMobCommon buildAdRequest:adRequestOptions];
   rewardedMap[requestId] = rewarded;
-  [rewarded loadRequest:request completionHandler:^(GADRequestError *error) {
-    if (error != nil) {
-      NSDictionary *codeAndMessage = [RNAdMobCommon getCodeAndMessageFromAdError:error];
-      [RNAdMobRewardedDelegate sendRewardedEvent:ADMOB_EVENT_ERROR requestId:requestId adUnitId:adUnitId error:codeAndMessage data:nil];
-    } else {
-      GADAdReward *reward = rewarded.reward;
-      NSDictionary *data = @{
-          @"type": reward.type,
-          @"amount": reward.amount,
-      };
-      [RNAdMobRewardedDelegate sendRewardedEvent:ADMOB_EVENT_REWARDED_LOADED requestId:requestId adUnitId:adUnitId error:nil data:data];
-    }
-  }];
+  [rewarded loadRequest:request
+      completionHandler:^(GADRequestError *error) {
+        if (error != nil) {
+          NSDictionary *codeAndMessage = [RNAdMobCommon getCodeAndMessageFromAdError:error];
+          [RNAdMobRewardedDelegate sendRewardedEvent:ADMOB_EVENT_ERROR
+                                           requestId:requestId
+                                            adUnitId:adUnitId
+                                               error:codeAndMessage
+                                                data:nil];
+        } else {
+          GADAdReward *reward = rewarded.reward;
+          NSDictionary *data = @{
+            @"type" : reward.type,
+            @"amount" : reward.amount,
+          };
+          [RNAdMobRewardedDelegate sendRewardedEvent:ADMOB_EVENT_REWARDED_LOADED
+                                           requestId:requestId
+                                            adUnitId:adUnitId
+                                               error:nil
+                                                data:data];
+        }
+      }];
 }
 
 RCT_EXPORT_METHOD(rewardedShow
-  :
-  (nonnull
-    NSNumber *)requestId
-    :(NSString *)adUnitId
-    :(NSDictionary *)showOptions
-    :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+                  : (nonnull NSNumber *)requestId
+                  : (NSString *)adUnitId
+                  : (NSDictionary *)showOptions
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   GADRewardedAd *rewarded = rewardedMap[requestId];
   if (rewarded.isReady) {
-    [rewarded presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController delegate:[RNAdMobRewardedDelegate sharedInstance]];
+    [rewarded
+        presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController
+                             delegate:[RNAdMobRewardedDelegate sharedInstance]];
     resolve([NSNull null]);
   } else {
-    [RNSharedUtils rejectPromiseWithUserInfo:reject userInfo:[@{
-        @"code": @"not-ready",
-        @"message": @"Rewarded ad attempted to show but was not ready.",
-    } mutableCopy]];
+    [RNSharedUtils
+        rejectPromiseWithUserInfo:reject
+                         userInfo:[@{
+                           @"code" : @"not-ready",
+                           @"message" : @"Rewarded ad attempted to show but was not ready.",
+                         } mutableCopy]];
   }
 }
 
 @end
-
