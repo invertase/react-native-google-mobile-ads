@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   publish_npm:
-    if: "(github.repository == 'invertase/react-native-firebase') && (github.event_name == 'workflow_dispatch')"
+    if: "(github.repository == 'invertase/react-native-admob') && (github.event_name == 'workflow_dispatch')"
     name: 'NPM'
     timeout-minutes: 5
     runs-on: ubuntu-latest
