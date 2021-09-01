@@ -38,8 +38,6 @@ COMING SOON (sorry)
 - [Quick Start](https://rnfirebase.io/)
 - [Reference API](https://rnfirebase.io/reference) -->
 
-Looking for the Version 5 documentation? [View legacy documentation](https://v5.rnfirebase.io).
-
 ## Contributing
 
 <!-- - [Overview](https://rnfirebase.io) -->

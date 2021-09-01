@@ -1,11 +1,29 @@
 {
-  "name": "react-native-admob",
-  "private": true,
+  "name": "@invertase/react-native-admob",
+  "version": "1.0.0",
+  "author": "Invertase <oss@invertase.io> (http://invertase.io)",
+  "description": "React Native AdMob is an easy way to monetize mobile apps with targeted, in-app advertising.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/invertase/react-native-admob/tree/master/"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "react",
+    "react-native",
+    "admob",
+    "gdpr",
+    "banner ad",
+    "rewarded ad",
+    "interstitial",
+    "ad consent"
+  ], 
   "scripts": {
-    "version": "node ./scripts/version.js",
-    "prepare": "cd example && yarn && cd ios && (pod install || true)",
+    "prepare": "cd example && yarn && cd ios && (pod install || true) && cd ../.. && yarn build",
+    "build": "genversion --semi lib/version.js",
     "build:clean": "rimraf android/build && rimraf ios/build",
-    "build": "genversion --semi lib/version.js && npm run build:version",
     "lint:code": "yarn lint:js && yarn lint:android && yarn lint:ios:check",
     "lint:js": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
     "lint:android": "google-java-format --set-exit-if-changed --replace --glob=\"packages/**/android/**/*.java\"",
@@ -62,6 +80,8 @@
     "jest": "^27.1.0",
     "lerna": "4.0.0",
     "prettier": "^2.3.2",
+    "react-native": "0.65.1",
+    "react": "^17.0.2",
     "rimraf": "^3.0.2",
     "shelljs": "^0.8.3",
     "ts-jest": "^27.0.5",
