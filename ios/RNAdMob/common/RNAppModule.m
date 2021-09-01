@@ -18,11 +18,11 @@
 #import <React/RCTUtils.h>
 
 #import "RNAppModule.h"
-#import "RNRCTEventEmitter.h"
-#import "RNSharedUtils.h"
-#import "RNPreferences.h"
 #import "RNJSON.h"
 #import "RNMeta.h"
+#import "RNPreferences.h"
+#import "RNRCTEventEmitter.h"
+#import "RNSharedUtils.h"
 
 @implementation RNAppModule
 
@@ -54,61 +54,51 @@ RCT_EXPORT_MODULE();
 #pragma mark -
 #pragma mark META Methods
 
-RCT_EXPORT_METHOD(metaGetAll:
-  (RCTPromiseResolveBlock) resolve
-      rejecter:
-      (RCTPromiseRejectBlock) reject) {
+RCT_EXPORT_METHOD(metaGetAll
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
   resolve([RNMeta getAll]);
 }
 
 #pragma mark -
 #pragma mark JSON Methods
 
-RCT_EXPORT_METHOD(jsonGetAll:
-  (RCTPromiseResolveBlock) resolve
-      rejecter:
-      (RCTPromiseRejectBlock) reject) {
+RCT_EXPORT_METHOD(jsonGetAll
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
   resolve([[RNJSON shared] getAll]);
 }
 
 #pragma mark -
 #pragma mark Preference Methods
 
-RCT_EXPORT_METHOD(preferencesSetBool:
-  (NSString *) key
-      boolValue:
-      (BOOL) boolValue
-      resolver:
-      (RCTPromiseResolveBlock) resolve
-      rejecter:
-      (RCTPromiseRejectBlock) reject) {
+RCT_EXPORT_METHOD(preferencesSetBool
+                  : (NSString *)key boolValue
+                  : (BOOL)boolValue resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
   [[RNPreferences shared] setBooleanValue:key boolValue:boolValue];
   resolve([NSNull null]);
 }
 
-RCT_EXPORT_METHOD(preferencesSetString:
-  (NSString *) key
-      stringValue:
-      (NSString *) stringValue
-      resolver:
-      (RCTPromiseResolveBlock) resolve
-      rejecter:
-      (RCTPromiseRejectBlock) reject) {
+RCT_EXPORT_METHOD(preferencesSetString
+                  : (NSString *)key stringValue
+                  : (NSString *)stringValue resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
   [[RNPreferences shared] setStringValue:key stringValue:stringValue];
   resolve([NSNull null]);
 }
 
-RCT_EXPORT_METHOD(preferencesGetAll:
-  (RCTPromiseResolveBlock) resolve
-      rejecter:
-      (RCTPromiseRejectBlock) reject) {
+RCT_EXPORT_METHOD(preferencesGetAll
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
   resolve([[RNPreferences shared] getAll]);
 }
 
-RCT_EXPORT_METHOD(preferencesClearAll:
-  (RCTPromiseResolveBlock) resolve
-      rejecter:
-      (RCTPromiseRejectBlock) reject) {
+RCT_EXPORT_METHOD(preferencesClearAll
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
   [[RNPreferences shared] clearAll];
   resolve([NSNull null]);
 }
@@ -116,52 +106,41 @@ RCT_EXPORT_METHOD(preferencesClearAll:
 #pragma mark -
 #pragma mark Event Methods
 
-RCT_EXPORT_METHOD(eventsNotifyReady:
-  (BOOL) ready) {
+RCT_EXPORT_METHOD(eventsNotifyReady : (BOOL)ready) {
   [[RNRCTEventEmitter shared] notifyJsReady:ready];
 }
 
-RCT_EXPORT_METHOD(eventsGetListeners:
-  (RCTPromiseResolveBlock) resolve
-      rejecter:
-      (RCTPromiseRejectBlock) reject) {
+RCT_EXPORT_METHOD(eventsGetListeners
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
   resolve([[RNRCTEventEmitter shared] getListenersDictionary]);
 }
 
-RCT_EXPORT_METHOD(eventsPing:
-  (NSString *) eventName
-      eventBody:
-      (NSDictionary *) eventBody
-      resolver:
-      (RCTPromiseResolveBlock) resolve
-      rejecter:
-      (RCTPromiseRejectBlock) reject) {
+RCT_EXPORT_METHOD(eventsPing
+                  : (NSString *)eventName eventBody
+                  : (NSDictionary *)eventBody resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
   [[RNRCTEventEmitter shared] sendEventWithName:eventName body:eventBody];
   resolve(eventBody);
 }
 
-RCT_EXPORT_METHOD(eventsAddListener:
-  (NSString *) eventName) {
+RCT_EXPORT_METHOD(eventsAddListener : (NSString *)eventName) {
   [[RNRCTEventEmitter shared] addListener:eventName];
 }
 
-RCT_EXPORT_METHOD(eventsRemoveListener:
-  (NSString *) eventName
-      all:
-      (BOOL) all) {
+RCT_EXPORT_METHOD(eventsRemoveListener : (NSString *)eventName all : (BOOL)all) {
   [[RNRCTEventEmitter shared] removeListeners:eventName all:all];
 }
 
 #pragma mark -
 #pragma mark Events Unused
 
-RCT_EXPORT_METHOD(addListener:
-  (NSString *) eventName) {
+RCT_EXPORT_METHOD(addListener : (NSString *)eventName) {
   // Keep: Required for RN built in Event Emitter Calls.
 }
 
-RCT_EXPORT_METHOD(removeListeners:
-  (NSInteger) count) {
+RCT_EXPORT_METHOD(removeListeners : (NSInteger)count) {
   // Keep: Required for RN built in Event Emitter Calls.
 }
 

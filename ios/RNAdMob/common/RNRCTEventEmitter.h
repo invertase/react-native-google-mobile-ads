@@ -18,7 +18,6 @@
 #import <Foundation/Foundation.h>
 #import <React/RCTEventEmitter.h>
 
-
 /**
  * Listena for events and emits them to the JS layer
  */

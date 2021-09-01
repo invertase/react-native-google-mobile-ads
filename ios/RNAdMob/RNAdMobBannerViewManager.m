@@ -17,9 +17,9 @@
  */
 
 #import "RNAdMobBannerViewManager.h"
-#import "RNAdMobCommon.h"
 #import <GoogleMobileAds/GADBannerView.h>
 #import <GoogleMobileAds/GADBannerViewDelegate.h>
+#import "RNAdMobCommon.h"
 
 @interface BannerComponent : UIView <GADBannerViewDelegate>
 
@@ -35,7 +35,6 @@
 - (void)requestAd;
 
 @end
-
 
 @implementation BannerComponent
 
@@ -65,7 +64,7 @@
 
 - (void)requestAd {
 #ifndef __LP64__
-  return; // prevent crash on 32bit
+  return;  // prevent crash on 32bit
 #endif
 
   if (_unitId == nil || _size == nil || _request == nil) {
@@ -78,10 +77,11 @@
   _banner.adUnitID = _unitId;
   [self setRequested:YES];
   [_banner loadRequest:[RNAdMobCommon buildAdRequest:_request]];
-  [self sendEvent:@"onSizeChange" payload:@{
-      @"width": @(_banner.bounds.size.width),
-      @"height": @(_banner.bounds.size.height),
-  }];
+  [self sendEvent:@"onSizeChange"
+          payload:@{
+            @"width" : @(_banner.bounds.size.width),
+            @"height" : @(_banner.bounds.size.height),
+          }];
 }
 
 - (void)sendEvent:(NSString *)type payload:(NSDictionary *_Nullable)payload {
@@ -90,7 +90,7 @@
   }
 
   NSMutableDictionary *event = [@{
-      @"type": type,
+    @"type" : type,
   } mutableCopy];
 
   if (payload != nil) {
@@ -101,10 +101,11 @@
 }
 
 - (void)adViewDidReceiveAd:(GADBannerView *)adView {
-  [self sendEvent:@"onAdLoaded" payload:@{
-      @"width": @(adView.bounds.size.width),
-      @"height": @(adView.bounds.size.height),
-  }];
+  [self sendEvent:@"onAdLoaded"
+          payload:@{
+            @"width" : @(adView.bounds.size.width),
+            @"height" : @(adView.bounds.size.height),
+          }];
 }
 
 - (void)adView:(GADBannerView *)adView didFailToReceiveAdWithError:(GADRequestError *)error {
@@ -154,4 +155,3 @@ RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
 }
 
 @end
-

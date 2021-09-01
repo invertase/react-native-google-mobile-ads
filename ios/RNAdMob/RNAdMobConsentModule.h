@@ -18,8 +18,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <React/RCTBridgeModule.h>
 #import <PersonalizedAdConsent/PersonalizedAdConsent.h>
+#import <React/RCTBridgeModule.h>
 
 @interface RNAdMobConsentModule : NSObject <RCTBridgeModule>
 

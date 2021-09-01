@@ -18,10 +18,10 @@
 
 #import <React/RCTUtils.h>
 
-#import "common/RNSharedUtils.h"
-#import "RNAdMobInterstitialModule.h"
 #import "RNAdMobCommon.h"
 #import "RNAdMobInterstitialDelegate.h"
+#import "RNAdMobInterstitialModule.h"
+#import "common/RNSharedUtils.h"
 
 static __strong NSMutableDictionary *interstitialMap;
 
@@ -54,7 +54,7 @@ RCT_EXPORT_MODULE();
 
 - (void)invalidate {
   for (NSNumber *id in [interstitialMap allKeys]) {
-    RNGADInterstitial * ad = interstitialMap[id];
+    RNGADInterstitial *ad = interstitialMap[id];
     [ad setRequestId:@-1];
     [interstitialMap removeObjectForKey:id];
   }
@@ -64,12 +64,9 @@ RCT_EXPORT_MODULE();
 #pragma mark Firebase AdMob Methods
 
 RCT_EXPORT_METHOD(interstitialLoad
-  :
-  (nonnull
-    NSNumber *)requestId
-    :(NSString *)adUnitId
-    :(NSDictionary *)adRequestOptions
-) {
+                  : (nonnull NSNumber *)requestId
+                  : (NSString *)adUnitId
+                  : (NSDictionary *)adRequestOptions) {
   RNGADInterstitial *interstitial = [[RNGADInterstitial alloc] initWithAdUnitID:adUnitId];
   [interstitial setRequestId:requestId];
   [interstitial loadRequest:[RNAdMobCommon buildAdRequest:adRequestOptions]];
@@ -78,25 +75,23 @@ RCT_EXPORT_METHOD(interstitialLoad
 }
 
 RCT_EXPORT_METHOD(interstitialShow
-  :
-  (nonnull
-    NSNumber *)requestId
-    :(NSDictionary *)showOptions
-    :(RCTPromiseResolveBlock) resolve
-    :(RCTPromiseRejectBlock) reject
-) {
+                  : (nonnull NSNumber *)requestId
+                  : (NSDictionary *)showOptions
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   GADInterstitial *interstitial = interstitialMap[requestId];
   if (interstitial.isReady) {
-    [interstitial presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
+    [interstitial
+        presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
     resolve([NSNull null]);
   } else {
-    [RNSharedUtils rejectPromiseWithUserInfo:reject userInfo:[@{
-        @"code": @"not-ready",
-        @"message": @"Interstitial ad attempted to show but was not ready.",
-    } mutableCopy]];
+    [RNSharedUtils
+        rejectPromiseWithUserInfo:reject
+                         userInfo:[@{
+                           @"code" : @"not-ready",
+                           @"message" : @"Interstitial ad attempted to show but was not ready.",
+                         } mutableCopy]];
   }
 }
-
-
 
 @end

@@ -18,7 +18,6 @@ package io.invertase.admob.common;
  */
 
 import com.facebook.react.bridge.WritableMap;
-
 import io.invertase.admob.interfaces.NativeEvent;
 
 public class ReactNativeEvent implements NativeEvent {

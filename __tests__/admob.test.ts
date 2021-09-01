@@ -13,7 +13,8 @@ describe('Admob', function () {
       it('throws if maxAdContentRating is invalid', function () {
         expect(() =>
           admob.setRequestConfiguration({
-            maxAdContentRating: 'Y' as AdMobTypes.MaxAdContentRating[keyof AdMobTypes.MaxAdContentRating],
+            maxAdContentRating:
+              'Y' as AdMobTypes.MaxAdContentRating[keyof AdMobTypes.MaxAdContentRating],
           }),
         ).toThrowError(
           "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected on of MaxAdContentRating.G, MaxAdContentRating.PG, MaxAdContentRating.T or MaxAdContentRating.MA",

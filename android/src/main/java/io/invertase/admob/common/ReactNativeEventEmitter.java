@@ -19,19 +19,16 @@ package io.invertase.admob.common;
 
 import android.os.Handler;
 import android.os.Looper;
-import androidx.annotation.MainThread;
 import android.util.Log;
-
+import androidx.annotation.MainThread;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-
+import io.invertase.admob.interfaces.NativeEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import io.invertase.admob.interfaces.NativeEvent;
 
 public class ReactNativeEventEmitter {
   private static ReactNativeEventEmitter sharedInstance = new ReactNativeEventEmitter();
@@ -47,27 +44,30 @@ public class ReactNativeEventEmitter {
   }
 
   public void attachReactContext(final ReactContext reactContext) {
-    handler.post(() -> {
-      ReactNativeEventEmitter.this.reactContext = reactContext;
-      sendQueuedEvents();
-    });
+    handler.post(
+        () -> {
+          ReactNativeEventEmitter.this.reactContext = reactContext;
+          sendQueuedEvents();
+        });
   }
 
   public void notifyJsReady(Boolean ready) {
-    handler.post(() -> {
-      jsReady = ready;
-      sendQueuedEvents();
-    });
+    handler.post(
+        () -> {
+          jsReady = ready;
+          sendQueuedEvents();
+        });
   }
 
   public void sendEvent(final NativeEvent event) {
-    handler.post(() -> {
-      synchronized (jsListeners) {
-        if (!jsListeners.containsKey(event.getEventName()) || !emit(event)) {
-          queuedEvents.add(event);
-        }
-      }
-    });
+    handler.post(
+        () -> {
+          synchronized (jsListeners) {
+            if (!jsListeners.containsKey(event.getEventName()) || !emit(event)) {
+              queuedEvents.add(event);
+            }
+          }
+        });
   }
 
   public void addListener(String eventName) {
@@ -137,9 +137,9 @@ public class ReactNativeEventEmitter {
     }
 
     try {
-      reactContext.getJSModule(
-        DeviceEventManagerModule.RCTDeviceEventEmitter.class
-      ).emit(event.getEventName(), event.getEventBody());
+      reactContext
+          .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+          .emit(event.getEventName(), event.getEventBody());
     } catch (Exception e) {
       Log.wtf("RN_EVENT_EMITTER", "Error sending Event " + event.getEventName(), e);
       return false;

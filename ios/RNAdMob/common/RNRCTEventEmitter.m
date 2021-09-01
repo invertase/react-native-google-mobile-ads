@@ -59,12 +59,12 @@ NSString *const RNRCTEventBodyKey = @"body";
 }
 
 - (void)notifyJsReady:(BOOL)jsReady {
-  @synchronized (self.jsListeners) {
+  @synchronized(self.jsListeners) {
     self.jsReady = jsReady;
     if (jsReady) {
       for (id event in [self.queuedEvents copy]) {
         [self sendEventWithName:event[RNRCTEventNameKey] body:event[RNRCTEventBodyKey]];
-        @synchronized (self.queuedEvents) {
+        @synchronized(self.queuedEvents) {
           [self.queuedEvents removeObject:event];
         }
       }
@@ -73,35 +73,36 @@ NSString *const RNRCTEventBodyKey = @"body";
 }
 
 - (void)sendEventWithName:(NSString *)eventName body:(id)body {
-  @synchronized (self.jsListeners) {
+  @synchronized(self.jsListeners) {
     if (self.bridge && self.isObserving && self.jsListeners[eventName] != nil) {
       NSString *prefixedEventName = [@"rnfb_" stringByAppendingString:eventName];
       [self.bridge enqueueJSCall:@"RCTDeviceEventEmitter"
                           method:@"emit"
-                            args:body ? @[prefixedEventName, body] : @[prefixedEventName]
+                            args:body ? @[ prefixedEventName, body ] : @[ prefixedEventName ]
                       completion:NULL];
     } else {
-      @synchronized (self.queuedEvents) {
-        [self.queuedEvents addObject:@{RNRCTEventNameKey: eventName, RNRCTEventBodyKey: body}];
+      @synchronized(self.queuedEvents) {
+        [self.queuedEvents addObject:@{RNRCTEventNameKey : eventName, RNRCTEventBodyKey : body}];
       }
     }
   }
 }
 
 - (void)addListener:(NSString *)eventName {
-  @synchronized (self.jsListeners) {
+  @synchronized(self.jsListeners) {
     self.jsListenerCount++;
 
     if (self.jsListeners[eventName] == nil) {
       self.jsListeners[eventName] = @([@1 integerValue]);
     } else {
-      self.jsListeners[eventName] = @([self.jsListeners[eventName] integerValue] + [@1 integerValue]);
+      self.jsListeners[eventName] =
+          @([self.jsListeners[eventName] integerValue] + [@1 integerValue]);
     }
 
     for (id event in [self.queuedEvents copy]) {
       if ([event[RNRCTEventNameKey] isEqualToString:eventName]) {
         [self sendEventWithName:event[RNRCTEventNameKey] body:event[RNRCTEventBodyKey]];
-        @synchronized (self.queuedEvents) {
+        @synchronized(self.queuedEvents) {
           [self.queuedEvents removeObject:event];
         }
       }
@@ -110,17 +111,18 @@ NSString *const RNRCTEventBodyKey = @"body";
 }
 
 - (void)removeListeners:(NSString *)eventName all:(BOOL)all {
-  @synchronized (self.jsListeners) {
+  @synchronized(self.jsListeners) {
     if (self.jsListeners[eventName] != nil) {
       NSInteger listenersForEvent = [self.jsListeners[eventName] integerValue];
 
       if (listenersForEvent <= 1 || all) {
-        @synchronized (self.jsListeners) {
+        @synchronized(self.jsListeners) {
           [self.jsListeners removeObjectForKey:eventName];
         }
       } else {
-        @synchronized (self.jsListeners) {
-          self.jsListeners[eventName] = @([self.jsListeners[eventName] integerValue] - [@1 integerValue]);
+        @synchronized(self.jsListeners) {
+          self.jsListeners[eventName] =
+              @([self.jsListeners[eventName] integerValue] - [@1 integerValue]);
         }
       }
 
@@ -140,7 +142,6 @@ NSString *const RNRCTEventBodyKey = @"body";
   listenersDictionary[@"events"] = [self.jsListeners copy];
   return listenersDictionary;
 }
-
 
 - (BOOL)isObserving {
   return self.jsReady && self.jsListenerCount > 0;

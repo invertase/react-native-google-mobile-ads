@@ -26,18 +26,21 @@ NSString *const RNMetaPrefix = @"rn_";
 @implementation RNMeta
 
 + (BOOL)contains:(NSString *)key {
-  id keyValue = [[NSBundle mainBundle].infoDictionary valueForKey:[RNMetaPrefix stringByAppendingString:key]];
+  id keyValue =
+      [[NSBundle mainBundle].infoDictionary valueForKey:[RNMetaPrefix stringByAppendingString:key]];
   return keyValue != nil;
 }
 
 + (BOOL)getBooleanValue:(NSString *)key defaultValue:(BOOL)defaultValue {
-  NSNumber *keyValue = [[NSBundle mainBundle].infoDictionary valueForKey:[RNMetaPrefix stringByAppendingString:key]];
+  NSNumber *keyValue =
+      [[NSBundle mainBundle].infoDictionary valueForKey:[RNMetaPrefix stringByAppendingString:key]];
   if (keyValue == nil) return defaultValue;
   return [keyValue boolValue];
 }
 
 + (NSString *)getStringValue:(NSString *)key defaultValue:(NSString *)defaultValue {
-  NSString *keyValue = [[NSBundle mainBundle].infoDictionary valueForKey:[RNMetaPrefix stringByAppendingString:key]];
+  NSString *keyValue =
+      [[NSBundle mainBundle].infoDictionary valueForKey:[RNMetaPrefix stringByAppendingString:key]];
   if (keyValue == nil) return defaultValue;
   return keyValue;
 }

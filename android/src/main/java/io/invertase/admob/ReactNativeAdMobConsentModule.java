@@ -17,7 +17,6 @@ package io.invertase.admob;
  *
  */
 
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -33,12 +32,10 @@ import com.google.ads.consent.ConsentInfoUpdateListener;
 import com.google.ads.consent.ConsentInformation;
 import com.google.ads.consent.ConsentStatus;
 import com.google.ads.consent.DebugGeography;
-
+import io.invertase.admob.common.ReactNativeModule;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-
-import io.invertase.admob.common.ReactNativeModule;
 
 public class ReactNativeAdMobConsentModule extends ReactNativeModule {
   private static final String TAG = "AdMobConsent";
@@ -65,82 +62,95 @@ public class ReactNativeAdMobConsentModule extends ReactNativeModule {
   @ReactMethod
   public void requestInfoUpdate(ReadableArray publisherIds, Promise promise) {
     @SuppressWarnings("SuspiciousToArrayCall")
-
     String[] publisherIdsArray = publisherIds.toArrayList().toArray(new String[0]);
 
-    consentInformation.requestConsentInfoUpdate(publisherIdsArray, new ConsentInfoUpdateListener() {
-      @Override
-      public void onConsentInfoUpdated(ConsentStatus consentStatus) {
-        WritableMap requestInfoMap = Arguments.createMap();
-        requestInfoMap.putInt("status", getConsentStatusInt(consentStatus));
-        requestInfoMap.putBoolean("isRequestLocationInEeaOrUnknown", consentInformation.isRequestLocationInEeaOrUnknown());
-        promise.resolve(requestInfoMap);
-      }
+    consentInformation.requestConsentInfoUpdate(
+        publisherIdsArray,
+        new ConsentInfoUpdateListener() {
+          @Override
+          public void onConsentInfoUpdated(ConsentStatus consentStatus) {
+            WritableMap requestInfoMap = Arguments.createMap();
+            requestInfoMap.putInt("status", getConsentStatusInt(consentStatus));
+            requestInfoMap.putBoolean(
+                "isRequestLocationInEeaOrUnknown",
+                consentInformation.isRequestLocationInEeaOrUnknown());
+            promise.resolve(requestInfoMap);
+          }
 
-      @Override
-      public void onFailedToUpdateConsentInfo(String reason) {
-        rejectPromiseWithCodeAndMessage(promise, "consent-update-failed", reason);
-      }
-    });
+          @Override
+          public void onFailedToUpdateConsentInfo(String reason) {
+            rejectPromiseWithCodeAndMessage(promise, "consent-update-failed", reason);
+          }
+        });
   }
 
   @ReactMethod
   public void showForm(ReadableMap options, Promise promise) {
     if (getCurrentActivity() == null) {
-      rejectPromiseWithCodeAndMessage(promise, "null-activity", "Consent form attempted to show but the current Activity was null.");
+      rejectPromiseWithCodeAndMessage(
+          promise,
+          "null-activity",
+          "Consent form attempted to show but the current Activity was null.");
       return;
     }
-    getCurrentActivity().runOnUiThread(() -> {
-      URL privacyUrl = null;
+    getCurrentActivity()
+        .runOnUiThread(
+            () -> {
+              URL privacyUrl = null;
 
-      try {
-        privacyUrl = new URL(options.getString("privacyPolicy"));
-      } catch (MalformedURLException e) {
-        // Validated in JS land
-      }
+              try {
+                privacyUrl = new URL(options.getString("privacyPolicy"));
+              } catch (MalformedURLException e) {
+                // Validated in JS land
+              }
 
-      ConsentFormListener listener = new ConsentFormListener() {
-        @Override
-        public void onConsentFormLoaded() {
-          try {
-            consentForm.show();
-          } catch (Exception e) {
-            rejectPromiseWithCodeAndMessage(promise, "consent-form-error", e.toString());
-          }
-        }
+              ConsentFormListener listener =
+                  new ConsentFormListener() {
+                    @Override
+                    public void onConsentFormLoaded() {
+                      try {
+                        consentForm.show();
+                      } catch (Exception e) {
+                        rejectPromiseWithCodeAndMessage(
+                            promise, "consent-form-error", e.toString());
+                      }
+                    }
 
-        @Override
-        public void onConsentFormClosed(ConsentStatus consentStatus, Boolean userPrefersAdFree) {
-          WritableMap consentFormMap = Arguments.createMap();
-          consentFormMap.putInt("status", getConsentStatusInt(consentStatus));
-          consentFormMap.putBoolean("userPrefersAdFree", userPrefersAdFree);
-          promise.resolve(consentFormMap);
-        }
+                    @Override
+                    public void onConsentFormClosed(
+                        ConsentStatus consentStatus, Boolean userPrefersAdFree) {
+                      WritableMap consentFormMap = Arguments.createMap();
+                      consentFormMap.putInt("status", getConsentStatusInt(consentStatus));
+                      consentFormMap.putBoolean("userPrefersAdFree", userPrefersAdFree);
+                      promise.resolve(consentFormMap);
+                    }
 
-        @Override
-        public void onConsentFormError(String reason) {
-          rejectPromiseWithCodeAndMessage(promise, "consent-form-error", reason);
-        }
-      };
+                    @Override
+                    public void onConsentFormError(String reason) {
+                      rejectPromiseWithCodeAndMessage(promise, "consent-form-error", reason);
+                    }
+                  };
 
-      ConsentForm.Builder builder = new ConsentForm.Builder(getCurrentActivity(), privacyUrl)
-        .withListener(listener);
+              ConsentForm.Builder builder =
+                  new ConsentForm.Builder(getCurrentActivity(), privacyUrl).withListener(listener);
 
-      if (options.hasKey("withPersonalizedAds") && options.getBoolean("withPersonalizedAds")) {
-        builder = builder.withPersonalizedAdsOption();
-      }
+              if (options.hasKey("withPersonalizedAds")
+                  && options.getBoolean("withPersonalizedAds")) {
+                builder = builder.withPersonalizedAdsOption();
+              }
 
-      if (options.hasKey("withNonPersonalizedAds") && options.getBoolean("withNonPersonalizedAds")) {
-        builder = builder.withNonPersonalizedAdsOption();
-      }
+              if (options.hasKey("withNonPersonalizedAds")
+                  && options.getBoolean("withNonPersonalizedAds")) {
+                builder = builder.withNonPersonalizedAdsOption();
+              }
 
-      if (options.hasKey("withAdFree") && options.getBoolean("withAdFree")) {
-        builder = builder.withAdFreeOption();
-      }
+              if (options.hasKey("withAdFree") && options.getBoolean("withAdFree")) {
+                builder = builder.withAdFreeOption();
+              }
 
-      consentForm = builder.build();
-      consentForm.load();
-    });
+              consentForm = builder.build();
+              consentForm.load();
+            });
   }
 
   @ReactMethod

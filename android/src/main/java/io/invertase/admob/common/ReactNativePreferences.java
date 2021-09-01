@@ -19,10 +19,8 @@ package io.invertase.admob.common;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
-
 import java.util.Map;
 
 public class ReactNativePreferences {
@@ -79,9 +77,9 @@ public class ReactNativePreferences {
 
   private SharedPreferences getPreferences() {
     if (preferences == null) {
-      preferences = ReactNativeApp
-        .getApplicationContext()
-        .getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
+      preferences =
+          ReactNativeApp.getApplicationContext()
+              .getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
     }
     return preferences;
   }

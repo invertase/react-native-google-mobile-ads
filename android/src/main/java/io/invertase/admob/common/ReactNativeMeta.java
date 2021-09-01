@@ -21,11 +21,8 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
-
-import io.invertase.admob.common.ReactNativeApp;
 
 public class ReactNativeMeta {
   private static final String TAG = "MetaProvider";
@@ -43,10 +40,8 @@ public class ReactNativeMeta {
 
       if (packageManager == null) return null;
 
-      ApplicationInfo applicationInfo = packageManager.getApplicationInfo(
-        context.getPackageName(),
-        PackageManager.GET_META_DATA
-      );
+      ApplicationInfo applicationInfo =
+          packageManager.getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
 
       if (applicationInfo != null) return applicationInfo.metaData;
     } catch (PackageManager.NameNotFoundException exception) {
