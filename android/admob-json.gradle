@@ -1,0 +1,68 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+String fileName = "admob.json"
+String jsonRoot = "react-native"
+
+File jsonFile = null
+File parentDir = rootProject.projectDir
+
+for (int i = 0; i <= 3; i++) {
+  if (parentDir == null) break
+  parentDir = parentDir.parentFile
+  if (parentDir != null) {
+    jsonFile = new File(parentDir, fileName)
+    if (jsonFile.exists()) break
+  }
+}
+
+if (jsonFile != null && jsonFile.exists()) {
+  rootProject.logger.info ":${project.name} admob.json found at ${jsonFile.toString()}"
+  Object json = null
+
+  try {
+    json = new JsonSlurper().parseText(jsonFile.text)
+  } catch (Exception ignored) {
+    rootProject.logger.warn ":${project.name} failed to parse admob.json found at ${jsonFile.toString()}."
+    rootProject.logger.warn ignored.toString()
+  }
+
+  if (json && json[jsonRoot]) {
+    String jsonStr = JsonOutput.toJson(JsonOutput.toJson(json[jsonRoot]))
+
+    rootProject.ext.admobJson = [
+      raw: json[jsonRoot],
+      isFlagEnabled: { key, defaultValue ->
+        if (json[jsonRoot] == null || json[jsonRoot][key] == null) return defaultValue
+        return json[jsonRoot][key] == true ? true : false
+      },
+      getStringValue: { key, defaultValue ->
+        if (json[jsonRoot] == null) return defaultValue
+        return json[jsonRoot][key] ? json[jsonRoot][key] : defaultValue
+      }
+    ]
+
+    rootProject.logger.info ":${project.name} found react-native json root in admob.json, creating admob build config"
+    android {
+      defaultConfig {
+        buildConfigField "String", "ADMOB_JSON_RAW", jsonStr
+      }
+    }
+  } else {
+    rootProject.ext.admobJson = false
+    rootProject.logger.info ":${project.name} admob.json found with no react-native config, skipping"
+    android {
+      defaultConfig {
+        buildConfigField "String", "ADMOB_JSON_RAW", '"{}"'
+      }
+    }
+  }
+} else {
+  rootProject.ext.admobJson = false
+  rootProject.logger.info ":${project.name} no admob.json found, skipping"
+  android {
+    defaultConfig {
+      buildConfigField "String", "ADMOB_JSON_RAW", '"{}"'
+    }
+  }
+}
