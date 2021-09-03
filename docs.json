@@ -4,7 +4,6 @@
     "theme": "#FFA03F",
     "googleAnalytics": "G-Q7ME6WLFEJ",
     "sidebar": [
-      ["Overview", "/"],
-      ["Getting Started", "/getting-started"]
+      ["Overview", "/"]
     ]
   }
