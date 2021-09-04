@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "You should run this from directory where you have cloned the react-native-admob repo"
+echo "You should run this from directory where you have cloned the react-native-google-ads repo"
 echo "You should only do this when your git working set is completely clean (e.g., git reset --hard)"
 echo "You must have already run \`yarn\` in the repository so \`npx react-native\` will work"
 echo "This scaffolding refresh has been tested on macOS, if you use it on linux, it might not work"
@@ -13,7 +13,7 @@ if [ -d TEMP ]; then
 else
   echo "Saving files to TEMP while refreshing scaffolding..."
   #cp example/App.js TEMP/
-  #cp example/admob.json TEMP/
+  #cp example/app.json TEMP/
 fi
 
 # Purge the old sample
@@ -22,7 +22,7 @@ fi
 # Make the new example
 npx react-native init example
 pushd example
-#yarn add github:@invertase/react-native-admob
+#yarn add github:@invertase/react-native-google-ads
 
 # run pod install after installing our module
 cd ios && pod install && cd ..
@@ -34,7 +34,7 @@ echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemo
 
 # Copy the important files back in
 popd
-echo "Copying admob example files into refreshed example..."
+echo "Copying Google Ads example files into refreshed example..."
 #cp -frv TEMP/* example/
 
 # Clean up after ourselves

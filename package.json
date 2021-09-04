@@ -1,13 +1,13 @@
 {
-  "name": "@invertase/react-native-admob",
+  "name": "@invertase/react-native-google-ads",
   "version": "1.0.0",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
-  "description": "React Native AdMob is an easy way to monetize mobile apps with targeted, in-app advertising.",
+  "description": "React Native Google Ads is an easy way to monetize mobile apps with targeted, in-app advertising.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/invertase/react-native-admob/tree/master/"
+    "url": "https://github.com/invertase/react-native-google-ads"
   },
   "license": "Apache-2.0",
   "keywords": [
@@ -15,6 +15,7 @@
     "react-native",
     "admob",
     "mobile ads",
+    "google ads",
     "gdpr",
     "banner ad",
     "rewarded ad",
@@ -23,14 +24,14 @@
   ],
   "sdkVersions": {
     "ios": {
-      "admob": "7.69.0"
+      "googleAds": "7.69.0"
     },
     "android": {
       "minSdk": 16,
       "targetSdk": 30,
       "compileSdk": 31,
       "buildTools": "31.0.0",
-      "admob": "19.8.0"
+      "googleAds": "19.8.0"
     }
   },
   "scripts": {

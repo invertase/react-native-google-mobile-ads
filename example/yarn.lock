@@ -774,7 +774,7 @@
   dependencies:
     "@hapi/hoek" "^9.0.0"
 
-"@invertase/react-native-admob@link:..":
+"@invertase/react-native-google-ads@link:..":
   version "0.0.0"
   uid ""
 

@@ -15,19 +15,11 @@
  *
  */
 
-describe('admob()', function () {
-  describe('namespace', function () {
-    it('accessible from firebase.app()', function () {
-      const app = firebase.app();
-      should.exist(app.admob);
-      app.admob().app.should.equal(app);
-    });
-  });
-
+describe('googleAds', function () {
   describe('setRequestConfiguration()', function () {
     it('throws if config is not an object', function () {
       try {
-        firebase.admob().setRequestConfiguration('123');
+        googleAds.setRequestConfiguration('123');
         return Promise.reject(new Error('Did not throw Error.'));
       } catch (e) {
         e.message.should.containEql("'requestConfiguration' expected an object value");
@@ -38,7 +30,7 @@ describe('admob()', function () {
     describe('maxAdContentRating', function () {
       it('throws if maxAdContentRating is invalid', function () {
         try {
-          firebase.admob().setRequestConfiguration({
+          googleAds.setRequestConfiguration({
             maxAdContentRating: 'Y',
           });
           return Promise.reject(new Error('Did not throw Error.'));
@@ -49,8 +41,8 @@ describe('admob()', function () {
       });
 
       it('accepts a age rating', async function () {
-        await firebase.admob().setRequestConfiguration({
-          maxAdContentRating: firebase.admob.MaxAdContentRating.G,
+        await googleAds.setRequestConfiguration({
+          maxAdContentRating: googleAds.MaxAdContentRating.G,
         });
       });
     });
@@ -58,7 +50,7 @@ describe('admob()', function () {
     describe('tagForChildDirectedTreatment', function () {
       it('throws if tagForChildDirectedTreatment not a boolean', function () {
         try {
-          firebase.admob().setRequestConfiguration({
+          googleAds.setRequestConfiguration({
             tagForChildDirectedTreatment: 'true',
           });
           return Promise.reject(new Error('Did not throw Error.'));
@@ -71,7 +63,7 @@ describe('admob()', function () {
       });
 
       it('sets the value', async function () {
-        await firebase.admob().setRequestConfiguration({
+        await googleAds.setRequestConfiguration({
           tagForChildDirectedTreatment: false,
         });
       });
@@ -80,7 +72,7 @@ describe('admob()', function () {
     describe('tagForUnderAgeOfConsent', function () {
       it('throws if tagForUnderAgeOfConsent not a boolean', function () {
         try {
-          firebase.admob().setRequestConfiguration({
+          googleAds.setRequestConfiguration({
             tagForUnderAgeOfConsent: 'false',
           });
           return Promise.reject(new Error('Did not throw Error.'));
@@ -93,7 +85,7 @@ describe('admob()', function () {
       });
 
       it('sets the value', async function () {
-        await firebase.admob().setRequestConfiguration({
+        await googleAds.setRequestConfiguration({
           tagForUnderAgeOfConsent: false,
         });
       });

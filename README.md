@@ -2,13 +2,13 @@
   <!-- <a href="https://rnfirebase.io">
     <img width="160px" src="https://i.imgur.com/JIyBtKW.png"><br/>
   </a> -->
-  <h2 align="center">React Native Admob</h2>
+  <h2 align="center">React Native Google Ads</h2>
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@invertase/react-native-admob"><img src="https://img.shields.io/npm/dm/@invertase/react-native-admob.svg?style=flat-square" alt="NPM downloads"></a>
-  <a href="https://www.npmjs.com/package/@invertase/react-native-admob"><img src="https://img.shields.io/npm/v/@invertase/react-native-admob.svg?style=flat-square" alt="NPM version"></a>
-  <a href="/LICENSE"><img src="https://img.shields.io/npm/l/@invertase/react-native-admob.svg?style=flat-square" alt="License"></a>
+  <a href="https://www.npmjs.com/package/@invertase/react-native-google-ads"><img src="https://img.shields.io/npm/dm/@invertase/react-native-google-ads.svg?style=flat-square" alt="NPM downloads"></a>
+  <a href="https://www.npmjs.com/package/@invertase/react-native-google-ads"><img src="https://img.shields.io/npm/v/@invertase/react-native-google-ads.svg?style=flat-square" alt="NPM version"></a>
+  <a href="/LICENSE"><img src="https://img.shields.io/npm/l/@invertase/react-native-google-ads.svg?style=flat-square" alt="License"></a>
 </p>
 
 <p align="center">
@@ -19,12 +19,12 @@
 
 ---
 
-**React Native Admob** is a module connecting you to Google AdMob services; a light-weight JavaScript layer connecting you to the native AdMob SDKs for both iOS and Android.
+**React Native Admob** is a module connecting you to Google Mobile Ads services; a light-weight JavaScript layer connecting you to the native Google-Mobile-Ads SDKs for both iOS and Android.
 
-React Native AdMob is built with three key principals in mind;
+React Native Google Ads is built with three key principals in mind;
 
 - 🧪 **Well tested**
-  - the module is extensively tested to >95% coverage
+  - the module is extensively tested to >95% coverage (getting there after moving from react-native-firebase!)
 - 👁 **Well typed**
   - first class support for Typescript included
 - 📄 **Well documented**
@@ -42,10 +42,10 @@ COMING SOON (sorry)
 
 <!-- - [Overview](https://rnfirebase.io) -->
 
-- [Issues](https://github.com/invertase/react-native-admob/issues)
-- [PRs](https://github.com/invertase/react-native-admob/pulls)
+- [Issues](https://github.com/invertase/react-native-google-ads/issues)
+- [PRs](https://github.com/invertase/react-native-google-ads/pulls)
 <!-- - [Documentation](https://rnfirebase.io) -->
-- [Community](https://github.com/invertase/react-native-admob/blob/master/CONTRIBUTING.md)
+- [Community](https://github.com/invertase/react-native-google-ads/blob/master/CONTRIBUTING.md)
 - [Code of Conduct](https://github.com/invertase/meta/blob/master/CODE_OF_CONDUCT.md)
 
 ## License
