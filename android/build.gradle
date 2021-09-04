@@ -56,8 +56,8 @@ def appJSONGoogleAdsAppIDString = ""
 def appJSONGoogleAdsDelayAppMeasurementInitBool = false
 
 if (rootProject.ext.googleAdsJson) {
-  appJSONGoogleAdsAppIDString = rootProject.ext.appJSON.getStringValue("android_app_id", "")
-  appJSONGoogleAdsDelayAppMeasurementInitBool = rootProject.ext.appJSON.isFlagEnabled("delay_app_measurement_init", false)
+  appJSONGoogleAdsAppIDString = rootProject.ext.googleAdsJson.getStringValue("android_app_id", "")
+  appJSONGoogleAdsDelayAppMeasurementInitBool = rootProject.ext.googleAdsJson.isFlagEnabled("delay_app_measurement_init", false)
 }
 
 if (!appJSONGoogleAdsAppIDString) {
