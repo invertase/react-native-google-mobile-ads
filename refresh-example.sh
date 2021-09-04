@@ -27,6 +27,11 @@ pushd example
 # run pod install after installing our module
 cd ios && pod install && cd ..
 
+
+# Java build tweak - or gradle runs out of memory during the build
+echo "Increasing memory available to gradle for android java build"
+echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> android/gradle.properties
+
 # Copy the important files back in
 popd
 echo "Copying admob example files into refreshed example..."
