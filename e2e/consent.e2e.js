@@ -17,9 +17,9 @@
 
 let AdsConsent;
 
-describe('admob() AdsConsent', function () {
+describe('googleAds AdsConsent', function () {
   before(function () {
-    AdsConsent = jet.require('packages/admob/lib/AdsConsent');
+    AdsConsent = jet.require('lib/AdsConsent');
   });
 
   describe('requestInfoUpdate', function () {

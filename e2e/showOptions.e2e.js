@@ -17,9 +17,9 @@
 
 let validator = null;
 
-describe('admob() showOptions', function () {
+describe('googleAds showOptions', function () {
   before(function () {
-    validator = jet.require('packages/admob/lib/validateAdShowOptions');
+    validator = jet.require('lib/validateAdShowOptions');
   });
 
   it('returns an empty object is not defined', function () {

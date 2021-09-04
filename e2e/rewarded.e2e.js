@@ -17,9 +17,9 @@
 
 let RewardedAd;
 
-describe('admob() RewardedAd', function () {
+describe('googleAds RewardedAd', function () {
   before(function () {
-    RewardedAd = jet.require('packages/admob/lib/ads/RewardedAd');
+    RewardedAd = jet.require('lib/ads/RewardedAd');
   });
 
   describe('createForAdRequest', function () {
@@ -77,7 +77,7 @@ describe('admob() RewardedAd', function () {
       }
       const spy = sinon.spy();
 
-      const i = RewardedAd.createForAdRequest(firebase.admob.TestIds.REWARDED, {
+      const i = RewardedAd.createForAdRequest(googleAds.TestIds.REWARDED, {
         requestNonPersonalizedAdsOnly: true,
         networkExtras: {
           foo: 'bar',
@@ -181,7 +181,7 @@ describe('admob() RewardedAd', function () {
       }
       const spy = sinon.spy();
 
-      const i = RewardedAd.createForAdRequest(firebase.admob.TestIds.REWARDED);
+      const i = RewardedAd.createForAdRequest(googleAds.TestIds.REWARDED);
 
       i.onAdEvent(spy);
       i.load();
@@ -213,7 +213,7 @@ describe('admob() RewardedAd', function () {
 
       spy.getCall(0).args[0].should.eql('error');
       const e = spy.getCall(0).args[1];
-      e.code.should.containEql('admob/'); // android/ios different errors
+      e.code.should.containEql('googleAds/'); // android/ios different errors
     });
   });
 });

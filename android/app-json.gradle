@@ -1,0 +1,69 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+String fileName = "app.json"
+String jsonRoot = "react-native-google-ads"
+String jsonRaw = "GOOGLE_ADS_JSON_RAW"
+
+File jsonFile = null
+File parentDir = rootProject.projectDir
+
+for (int i = 0; i <= 3; i++) {
+  if (parentDir == null) break
+  parentDir = parentDir.parentFile
+  if (parentDir != null) {
+    jsonFile = new File(parentDir, fileName)
+    if (jsonFile.exists()) break
+  }
+}
+
+if (jsonFile != null && jsonFile.exists()) {
+  rootProject.logger.info ":${project.name} ${fileName} found at ${jsonFile.toString()}"
+  Object json = null
+
+  try {
+    json = new JsonSlurper().parseText(jsonFile.text)
+  } catch (Exception ignored) {
+    rootProject.logger.warn ":${project.name} failed to parse ${fileName} found at ${jsonFile.toString()}."
+    rootProject.logger.warn ignored.toString()
+  }
+
+  if (json && json[jsonRoot]) {
+    String jsonStr = JsonOutput.toJson(JsonOutput.toJson(json[jsonRoot]))
+
+    rootProject.ext.googleAdsJson = [
+      raw: json[jsonRoot],
+      isFlagEnabled: { key, defaultValue ->
+        if (json[jsonRoot] == null || json[jsonRoot][key] == null) return defaultValue
+        return json[jsonRoot][key] == true ? true : false
+      },
+      getStringValue: { key, defaultValue ->
+        if (json[jsonRoot] == null) return defaultValue
+        return json[jsonRoot][key] ? json[jsonRoot][key] : defaultValue
+      }
+    ]
+
+    rootProject.logger.info ":${project.name} found ${jsonRoot} json root in ${fileName}, creating app build config"
+    android {
+      defaultConfig {
+        buildConfigField "String", jsonRaw, jsonStr
+      }
+    }
+  } else {
+    rootProject.ext.googleAdsJson = false
+    rootProject.logger.info ":${project.name} ${fileName} found with no ${jsonRoot} config, skipping"
+    android {
+      defaultConfig {
+        buildConfigField "String", jsonRaw, '"{}"'
+      }
+    }
+  }
+} else {
+  rootProject.ext.googleAdsJson = false
+  rootProject.logger.info ":${project.name} no ${fileName} found, skipping"
+  android {
+    defaultConfig {
+      buildConfigField "String", jsonRaw, '"{}"'
+    }
+  }
+}
