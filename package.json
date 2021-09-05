@@ -68,7 +68,7 @@
     "tests:ios:test-reuse": "cd example && yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
     "tests:ios:test-cover": "cd example && ./node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug",
     "tests:ios:test-cover-reuse": "cd example && node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
-    "tests:ios:pod:install": "cd example && cd ios && rm -rf ReactNativeFirebaseDemo.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd .."
+    "tests:ios:pod:install": "cd example && cd ios && rm -rf example.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd .."
   },
   "devDependencies": {
     "@babel/core": "^7.15.5",
