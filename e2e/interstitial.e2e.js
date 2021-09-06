@@ -17,9 +17,9 @@
 
 let InterstitialAd;
 
-describe('admob() InterstitialAd', function () {
+describe('googleAds InterstitialAd', function () {
   before(function () {
-    InterstitialAd = jet.require('packages/admob/lib/ads/InterstitialAd');
+    InterstitialAd = jet.require('lib/ads/InterstitialAd');
   });
 
   describe('createForAdRequest', function () {
@@ -31,7 +31,7 @@ describe('admob() InterstitialAd', function () {
 
       const spy = sinon.spy();
 
-      const i = InterstitialAd.createForAdRequest(firebase.admob.TestIds.INTERSTITIAL, {
+      const i = InterstitialAd.createForAdRequest(googleAds.TestIds.INTERSTITIAL, {
         requestNonPersonalizedAdsOnly: true,
         networkExtras: {
           foo: 'bar',
@@ -77,7 +77,7 @@ describe('admob() InterstitialAd', function () {
 
       const spy = sinon.spy();
 
-      const i = InterstitialAd.createForAdRequest(firebase.admob.TestIds.INTERSTITIAL);
+      const i = InterstitialAd.createForAdRequest(googleAds.TestIds.INTERSTITIAL);
 
       i.onAdEvent(spy);
       i.load();
@@ -103,7 +103,7 @@ describe('admob() InterstitialAd', function () {
 
       spy.getCall(0).args[0].should.eql('error');
       const e = spy.getCall(0).args[1];
-      e.code.should.containEql('admob/'); // android/ios different errors
+      e.code.should.containEql('googleAds/'); // android/ios different errors
     });
   });
 });

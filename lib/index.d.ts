@@ -17,19 +17,19 @@
 import * as React from 'react';
 
 /**
- * Admob package for React Native.
+ * Google Ads package for React Native.
  *
- * #### Example: Using the default export from the `admob` package:
+ * #### Example: Using the default export from the `google-ads` package:
  *
  * ```js
- * import admob from '@invertase/react-native-admob';
+ * import googleAds from '@invertase/react-native-google-ads';
  *
- * // admob.X
+ * // googleAds.X
  * ```
  */
-export namespace AdMobTypes {
+export namespace GoogleAdsTypes {
   /**
-   * admob.X
+   * googleAds.X
    */
   export interface Statics {
     /**
@@ -83,7 +83,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { AdEventType } from '@invertase/react-native-admob';
+     * import { AdEventType } from '@invertase/react-native-google-ads';
      *
      * advert.onAdEvent((type,error,data) => {
      *   if (type === AdEventType.LOADED) {
@@ -100,7 +100,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { AdEventType } from '@invertase/react-native-admob';
+     * import { AdEventType } from '@invertase/react-native-google-ads';
      *
      * advert.onAdEvent((type, error, data) => {
      *   if (type === AdEventType.ERROR) {
@@ -151,7 +151,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { RewardedAdEventType } from '@invertase/react-native-admob';
+     * import { RewardedAdEventType } from '@invertase/react-native-google-ads';
      *
      * rewardedAd.onAdEvent((type, error, data) => {
      *   if (type === RewardedAdEventType.LOADED) {
@@ -173,7 +173,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { RewardedAdEventType } from '@invertase/react-native-admob';
+     * import { RewardedAdEventType } from '@invertase/react-native-google-ads';
      *
      * rewardedAd.onAdEvent((type, error, data) => {
      *   if (type === RewardedAdEventType.EARNED_REWARD) {
@@ -260,12 +260,12 @@ export namespace AdMobTypes {
     /**
      * Requests user consent for a given list of publisher IDs.
      *
-     * The list of publisher IDs can be obtained from the settings panel on the Google AdMob console. If the list of
+     * The list of publisher IDs can be obtained from the settings panel on the Google Mobile Ads console. If the list of
      * publisher IDs has changed since the last time a user provided consent, their consent status will be reset to
      * 'UNKNOWN' and they must provide consent again.
      *
      * If the request fails with the error "Could not parse Event FE preflight response", this means the state of your
-     * Google AdMob account is not complete. Ensure you have validated your account and have setup valid payment
+     * Google Mobile Ads account is not complete. Ensure you have validated your account and have setup valid payment
      * information. This error is also thrown when a Publisher ID is invalid.
      *
      * The response from this method provides request location and consent status properties.
@@ -279,14 +279,14 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { AdsConsent } from '@invertase/react-native-admob';
+     * import { AdsConsent } from '@invertase/react-native-google-ads';
      *
      * const consent = await AdsConsent.requestInfoUpdate(['pub-6189033257628554']);
      * console.log('User location within EEA or Unknown:', consent.isRequestLocationInEeaOrUnknown);
      * console.log('User consent status:', consent.status);
      * ```
      *
-     * @param publisherIds A list of publisher IDs found on your Google AdMob dashboard.
+     * @param publisherIds A list of publisher IDs found on your Google Mobile Ads dashboard.
      */
     requestInfoUpdate(publisherIds: string[]): Promise<AdsConsentInfo>;
 
@@ -315,7 +315,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { AdsConsent, AdsConsentStatus } from '@invertase/react-native-admob';
+     * import { AdsConsent, AdsConsentStatus } from '@invertase/react-native-google-ads';
      *
      * async function requestConsent() {
      *   const consent = await AdsConsent.requestInfoUpdate(['pub-6189033257628554']);
@@ -343,7 +343,7 @@ export namespace AdMobTypes {
     showForm(options?: AdsConsentFormOptions): Promise<AdsConsentFormResult>;
 
     /**
-     * Returns a list of ad providers currently in use for the given AdMob App ID.
+     * Returns a list of ad providers currently in use for the given Google Mobile Ads App ID.
      *
      * If requesting consent from the user via your own method, this list of ad providers must be shown to the user
      * for them to accept consent.
@@ -351,7 +351,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { AdsConsent } from '@invertase/react-native-admob';
+     * import { AdsConsent } from '@invertase/react-native-google-ads';
      *
      * const providers = await AdsConsent.getAdProviders();
      * ```
@@ -370,7 +370,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { AdsConsent, AdsConsentDebugGeography } from '@invertase/react-native-admob';
+     * import { AdsConsent, AdsConsentDebugGeography } from '@invertase/react-native-google-ads';
      *
      * // Set disabled
      * await AdsConsentDebugGeography.setDebugGeography(AdsConsentDebugGeography.DISABLED);
@@ -402,7 +402,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { AdsConsent, AdsConsentStatus } from '@invertase/react-native-admob';
+     * import { AdsConsent, AdsConsentStatus } from '@invertase/react-native-google-ads';
      *
      * // User accepted personalized ads
      * await AdsConsent.setStatus(AdsConsentStatus.PERSONALIZED);
@@ -425,7 +425,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { AdsConsent } from '@invertase/react-native-admob';
+     * import { AdsConsent } from '@invertase/react-native-google-ads';
      *
      * const status = await AdsConsent.getStatus();
      * ```
@@ -449,7 +449,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { AdsConsent } from '@invertase/react-native-admob';
+     * import { AdsConsent } from '@invertase/react-native-google-ads';
      *
      * // User is under age of consent
      * await AdsConsent.setTagForUnderAgeOfConsent(true);
@@ -460,13 +460,13 @@ export namespace AdMobTypes {
     setTagForUnderAgeOfConsent(tag: boolean): Promise<void>;
 
     /**
-     * If using a real device to test, ensure the device ID is provided to the Google AdMob SDK so any mock debug locations
+     * If using a real device to test, ensure the device ID is provided to the Google Mobile Ads SDK so any mock debug locations
      * can take effect.
      *
      * Emulators are automatically whitelisted and should require no action.
      *
      * If you are seeing real ad activity from a test device, examine logcat / console
-     * during execution in association with admob test device documentation to
+     * during execution in association with google mobile ads test device documentation to
      * configure your device correctly.
      *
      * @param deviceIds An array of testing device ID.
@@ -731,7 +731,7 @@ export namespace AdMobTypes {
 
     /**
      * Server Side Verification(SSV) Options
-     * See [Google Mobile SDK Docs](https://developers.google.com/admob/android/rewarded-video-ssv) for more information.
+     * See [Google Mobile SDK Docs](https://developers.google.com/admob/android/ssv) for more information.
      */
     serverSideVerificationOptions?: ServerSideVerificationOptions;
   }
@@ -755,7 +755,7 @@ export namespace AdMobTypes {
    */
   export interface RequestConfiguration {
     /**
-     * The maximum ad content rating for all ads.  AdMob ads returns ads at or below the specified level.
+     * The maximum ad content rating for all ads.  Google Mobile Ads returns ads at or below the specified level.
      *
      * Ratings are based on the [digital content label classifications](https://support.google.com/admob/answer/7562142).
      */
@@ -852,7 +852,7 @@ export namespace AdMobTypes {
    */
   export class MobileAd {
     /**
-     * The Ad Unit ID for this AdMob ad.
+     * The Ad Unit ID for this Gogole Mobile Ads ad.
      */
     adUnitId: string;
 
@@ -923,25 +923,25 @@ export namespace AdMobTypes {
    *
    * #### Example
    *
-   * First create a new Interstitial instance, passing in your Ad Unit ID from the AdMob configuration console, and any additional
+   * First create a new Interstitial instance, passing in your Ad Unit ID from the Google Ads configuration console, and any additional
    * request options. The example below will present a test advert, and only request a non-personalized ad.
    *
    * ```js
-   * import { InterstitialAd, TestIds } from '@invertase/react-native-admob';
+   * import { InterstitialAd, TestIds } from '@invertase/react-native-google-ads';
    *
    * const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
    *     requestNonPersonalizedAdsOnly: true,
    * });
    *  ```
    *
-   * Each advert needs to be loaded from AdMob before being shown. It is recommended this is performed before the user
+   * Each advert needs to be loaded from Google Ads before being shown. It is recommended this is performed before the user
    * reaches the checkpoint to show the advert, so it's ready to go. Before loading the advert, we need to setup
-   * event listeners to listen for updates from AdMob, such as advert loaded or failed to load.
+   * event listeners to listen for updates from Google Mobile Ads, such as advert loaded or failed to load.
    *
    * Event types match the `AdEventType` interface. Once the advert has loaded, we can trigger it to show:
    *
    * ```js
-   * import { AdEventType } from '@invertase/react-native-admob';
+   * import { AdEventType } from '@invertase/react-native-google-ads';
    *
    * interstitial.onAdEvent((type) => {
    *   if (type === AdEventType.LOADED) {
@@ -962,7 +962,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { InterstitialAd, AdEventType, TestIds } from '@invertase/react-native-admob';
+     * import { InterstitialAd, AdEventType, TestIds } from '@invertase/react-native-google-ads';
      *
      * const interstitialAd = await InterstitialAd.request(TestIds.INTERSTITIAL, {
      *   requestAgent: 'CoolAds',
@@ -979,7 +979,7 @@ export namespace AdMobTypes {
      * interstitialAd.load();
      * ```
      *
-     * @param adUnitId The Ad Unit ID for the Interstitial. You can find this on your Google AdMob dashboard.
+     * @param adUnitId The Ad Unit ID for the Interstitial. You can find this on your Google Mobile Ads dashboard.
      * @param requestOptions Optional RequestOptions used to load the ad.
      */
     static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions): InterstitialAd;
@@ -989,33 +989,33 @@ export namespace AdMobTypes {
    * A class for interacting and showing Rewarded Ads.
    *
    * An Rewarded advert can be pre-loaded and shown at a suitable point in your apps flow, such as at the end of a level
-   * in a game. The content of a rewarded advert can be controlled via your AdMob dashboard. Typically users are rewarded
+   * in a game. The content of a rewarded advert can be controlled via your Google Mobile Ads dashboard. Typically users are rewarded
    * after completing a specific advert action (e.g. watching a video or submitting an option via an interactive form).
    * Events (such as the user earning a reward or closing a rewarded advert early) are sent back for you to handle accordingly
    * within your application.
    *
    * #### Example
    *
-   * First create a new Rewarded instance, passing in your Ad Unit ID from the Google AdMob configuration console, and any additional
+   * First create a new Rewarded instance, passing in your Ad Unit ID from the Google Mobile Ads configuration console, and any additional
    * request options. The example below will present a test advert, and only request a non-personalized ad.
    *
    * ```js
-   * import { RewardedAd, TestIds } from '@invertase/react-native-admob';
+   * import { RewardedAd, TestIds } from '@invertase/react-native-google-ads';
    *
    * const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
    *     requestNonPersonalizedAdsOnly: true,
    * });
    *  ```
    *
-   * Each advert needs to be loaded from AdMob before being shown. It is recommended this is performed before the user
+   * Each advert needs to be loaded from Google Ads before being shown. It is recommended this is performed before the user
    * reaches the checkpoint to show the advert, so it's ready to go. Before loading the advert, we need to setup
-   * event listeners to listen for updates from AdMob, such as advert loaded or failed to load.
+   * event listeners to listen for updates from Google Ads, such as advert loaded or failed to load.
    *
    * Event types match the `AdEventType` or `RewardedAdEventType` interface. The potential user reward for rewarded
    * adverts are passed back to the event handler on advert load and when the user earns the reward.
    *
    * ```js
-   * import { RewardedAdEventType } from '@invertase/react-native-admob';
+   * import { RewardedAdEventType } from '@invertase/react-native-google-ads';
    *
    * rewarded.onAdEvent((type, error, reward) => {
    *   if (type === RewardedAdEventType.LOADED) {
@@ -1039,7 +1039,7 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import { RewardedAd, RewardedAdEventType, TestIds } from '@invertase/react-native-admob';
+     * import { RewardedAd, RewardedAdEventType, TestIds } from '@invertase/react-native-google-ads';
      *
      * const rewardedAd = await RewardedAd.request(TestIds.REWARDED, {
      *   requestAgent: 'CoolAds',
@@ -1056,7 +1056,7 @@ export namespace AdMobTypes {
      * rewardedAd.load();
      * ```
      *
-     * @param adUnitId The Ad Unit ID for the Rewarded Ad. You can find this on your Google AdMob dashboard.
+     * @param adUnitId The Ad Unit ID for the Rewarded Ad. You can find this on your Google Mobile Ads dashboard.
      * @param requestOptions Optional RequestOptions used to load the ad.
      */
     static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions): RewardedAd;
@@ -1073,7 +1073,7 @@ export namespace AdMobTypes {
    * such as positioning.
    *
    * ```js
-   * import { BannerAd, BannerAdSize, TestIds } from '@invertase/react-native-admob';
+   * import { BannerAd, BannerAdSize, TestIds } from '@invertase/react-native-google-ads';
    *
    * function HomeScreen() {
    *   return (
@@ -1096,7 +1096,7 @@ export namespace AdMobTypes {
    */
   export interface BannerAd {
     /**
-     * The AdMob unit ID for the banner.
+     * The Google Mobile Ads unit ID for the banner.
      */
     unitId: string;
 
@@ -1139,7 +1139,7 @@ export namespace AdMobTypes {
   }
 
   /**
-   * The Admob service interface.
+   * The Google Ads service interface.
    */
   export class Module {
     /**
@@ -1148,20 +1148,20 @@ export namespace AdMobTypes {
      * #### Example
      *
      * ```js
-     * import admob, { MaxAdContentRating } from '@invertase/react-native-admob';
+     * import googleAds, { MaxAdContentRating } from '@invertase/react-native-google-ads';
      *
-     * await admob().setRequestConfiguration({
+     * await googleAds().setRequestConfiguration({
      *   // Update all future requests suitable for parental guidance
      *   maxAdContentRating: MaxAdContentRating.PG,
      * });
      * ```
      *
-     * @param requestConfiguration An RequestConfiguration interface used on all future AdMob ad requests.
+     * @param requestConfiguration An RequestConfiguration interface used on all future Google Ads ad requests.
      */
     setRequestConfiguration(requestConfiguration: RequestConfiguration): Promise<void>;
 
     /**
-     * The native module instance for the AdMob service.
+     * The native module instance for the Google Ads service.
      */
     private native: any;
 
@@ -1172,18 +1172,18 @@ export namespace AdMobTypes {
   }
 }
 
-export const AdsConsentDebugGeography: AdMobTypes.AdsConsentDebugGeography;
-export const AdsConsentStatus: AdMobTypes.AdsConsentStatus;
-export const MaxAdContentRating: AdMobTypes.MaxAdContentRating;
-export const TestIds: AdMobTypes.TestIds;
-export const AdEventType: AdMobTypes.AdEventType;
-export const BannerAdSize: AdMobTypes.BannerAdSize;
-export const RewardedAdEventType: AdMobTypes.RewardedAdEventType;
-export const AdsConsent: AdMobTypes.AdsConsent;
-export const InterstitialAd: typeof AdMobTypes.InterstitialAd;
-export const RewardedAd: typeof AdMobTypes.RewardedAd;
-export const BannerAd: React.SFC<AdMobTypes.BannerAd>;
+export const AdsConsentDebugGeography: GoogleAdsTypes.AdsConsentDebugGeography;
+export const AdsConsentStatus: GoogleAdsTypes.AdsConsentStatus;
+export const MaxAdContentRating: GoogleAdsTypes.MaxAdContentRating;
+export const TestIds: GoogleAdsTypes.TestIds;
+export const AdEventType: GoogleAdsTypes.AdEventType;
+export const BannerAdSize: GoogleAdsTypes.BannerAdSize;
+export const RewardedAdEventType: GoogleAdsTypes.RewardedAdEventType;
+export const AdsConsent: GoogleAdsTypes.AdsConsent;
+export const InterstitialAd: typeof GoogleAdsTypes.InterstitialAd;
+export const RewardedAd: typeof GoogleAdsTypes.RewardedAd;
+export const BannerAd: React.SFC<GoogleAdsTypes.BannerAd>;
 
-declare const defaultExport: AdMobTypes.Module & AdMobTypes.Statics;
+declare const defaultExport: GoogleAdsTypes.Module & GoogleAdsTypes.Statics;
 
 export default defaultExport;

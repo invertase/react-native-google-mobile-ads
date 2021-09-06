@@ -1,6 +1,6 @@
 import { InterstitialAd } from '../lib';
 
-describe('Admob Interstitial', function () {
+describe('Google Ads Interstitial', function () {
   describe('createForAdRequest', function () {
     it('throws if adUnitId is invalid', function () {
       // @ts-ignore

@@ -1,6 +1,6 @@
 import { AdsConsent } from '../lib';
 
-describe('Admob AdsConsent', function () {
+describe('Google Ads AdsConsent', function () {
   describe('requestInfoUpdate', function () {
     it('throws if publisherIds is not an array', function () {
       // @ts-ignore
