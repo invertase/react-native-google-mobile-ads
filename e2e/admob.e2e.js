@@ -15,9 +15,19 @@
  *
  */
 
+const googleAds = require('../lib/index');
+
 describe('googleAds', function () {
+  beforeAll(async () => {
+    await device.launchApp();
+  });
+
+  // beforeEach(async () => {
+  //   await device.reloadReactNative();
+  // });
+
   describe('setRequestConfiguration()', function () {
-    it.only('should match text in the basic app element', async function () {
+    it('should match text in the basic app element', async function () {
       await expect(element(by.text('Read the docs to discover what to do next:'))).toBeVisible();
     });
 

@@ -15,9 +15,18 @@
  *
  */
 
-let validator = null;
+const googleAds = require('@invertase/react-native-google-ads');
+let validator = googleAds.validateAdShowOptions;
 
 describe('googleAds showOptions', function () {
+  beforeAll(async () => {
+    await device.launchApp();
+  });
+
+  // beforeEach(async () => {
+  //   await device.reloadReactNative();
+  // });
+
   before(function () {
     validator = jet.require('lib/validateAdShowOptions');
   });
