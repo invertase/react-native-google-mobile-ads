@@ -12,14 +12,20 @@ if [ -d TEMP ]; then
   exit 1
 else
   echo "Saving files to TEMP while refreshing scaffolding..."
-  cp example/.mocharc.js TEMP/
-  cp example/.detoxrc.json TEMP/
+
+  # Copy all the config elements
+  cp example/metro.config.js TEMP/  # This is customized to handle symbolic links
+  cp example/.mocharc.js TEMP/      # Custom mocha settings
+  cp example/.detoxrc.json TEMP/    # Custom detox settings
+  cp example/app.json TEMP/         # Our custom configuration settings / mobile ads app id etc
+
+  # Our Android DetoxTest integration itself is obviously custom
   mkdir -p TEMP/android/app/src/androidTest/java/com/example
   cp android/app/src/androidTest/java/com/example/DetoxTest.java TEMP/android/app/src/androidTest/java/com/example/
+
+  # Our e2e tests themselves are obviously custom
   mkdir -p TEMP/e2e
   cp -r e2e/* TEMP/e2e/
-  cp example/app.json TEMP/
-  #cp example/App.js TEMP/
 fi
 
 # Purge the old sample
@@ -30,6 +36,7 @@ npx react-native init example --version=0.66.0-rc.1
 pushd example
 yarn add 'link:../'
 yarn add detox mocha --dev
+yarn add 'link:../../jet/'
 
 # Java build tweak - or gradle runs out of memory during the build
 echo "Increasing memory available to gradle for android java build"
