@@ -106,6 +106,8 @@ PODS:
   - "GoogleUtilities/NSData+zlib (7.5.1)"
   - GoogleUtilities/Reachability (7.5.1):
     - GoogleUtilities/Logger
+  - Jet (0.4.2):
+    - React-Core
   - libevent (2.1.12)
   - nanopb (2.30908.0):
     - nanopb/decode (= 2.30908.0)
@@ -413,6 +415,7 @@ DEPENDENCIES:
   - FlipperKit/FlipperKitUserDefaultsPlugin (= 0.99.0)
   - FlipperKit/SKIOSNetworkPlugin (= 0.99.0)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
+  - Jet (from `../../../jet`)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTRequired (from `../node_modules/react-native/Libraries/RCTRequired`)
   - RCTTypeSafety (from `../node_modules/react-native/Libraries/TypeSafety`)
@@ -477,6 +480,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/React/FBReactNativeSpec"
   glog:
     :podspec: "../node_modules/react-native/third-party-podspecs/glog.podspec"
+  Jet:
+    :path: "../../../jet"
   RCT-Folly:
     :podspec: "../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTRequired:
@@ -551,6 +556,7 @@ SPEC CHECKSUMS:
   GoogleAppMeasurement: fd19169c3034975cb934e865e5667bfdce59df7f
   GoogleUserMessagingPlatform: b168e8c46cd8f92aa3e34b584c4ca78a411ce367
   GoogleUtilities: 3df19e3c24f7bbc291d8b5809aa6b0d41e642437
+  Jet: 0e15dc7ea1a7da4909cc96642919c010de3d1484
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
   nanopb: a0ba3315591a9ae0a16a309ee504766e90db0c96
   OpenSSL-Universal: 1aa4f6a6ee7256b83db99ec1ccdaa80d10f9af9b
@@ -586,4 +592,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: b238204fde808b9d15816fe170aa2c48b884b8b0
 
-COCOAPODS: 1.11.0.rc.1
+COCOAPODS: 1.11.0
