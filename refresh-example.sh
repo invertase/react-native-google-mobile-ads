@@ -12,6 +12,7 @@ if [ -d TEMP ]; then
   exit 1
 else
   echo "Saving files to TEMP while refreshing scaffolding..."
+  mkdir TEMP
 
   # Copy all the config elements
   cp example/metro.config.js TEMP/  # This is customized to handle symbolic links
@@ -21,18 +22,18 @@ else
 
   # Our Android DetoxTest integration itself is obviously custom
   mkdir -p TEMP/android/app/src/androidTest/java/com/example
-  cp android/app/src/androidTest/java/com/example/DetoxTest.java TEMP/android/app/src/androidTest/java/com/example/
+  cp example/android/app/src/androidTest/java/com/example/DetoxTest.java TEMP/android/app/src/androidTest/java/com/example/
 
   # Our e2e tests themselves are obviously custom
   mkdir -p TEMP/e2e
-  cp -r e2e/* TEMP/e2e/
+  cp -r example/e2e/* TEMP/e2e/
 fi
 
 # Purge the old sample
 \rm -fr example
 
 # Make the new example
-npx react-native init example --version=0.66.0-rc.1
+npx react-native init example --version=0.66.0
 pushd example
 yarn add 'link:../'
 yarn add detox mocha --dev
@@ -59,7 +60,8 @@ cd ios && pod install && cd ..
 # Copy the important files back in
 popd
 echo "Copying Google Ads example files into refreshed example..."
-cp -frv TEMP/.* example/
+cp -frv TEMP/.detox* example/
+cp -frv TEMP/.mocha* example/
 cp -frv TEMP/* example/
 
 # Clean up after ourselves
