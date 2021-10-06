@@ -60,7 +60,7 @@ sed -i -e $'s/react_native_post_install(installer)/react_native_post_install(ins
 rm -f ios/Podfile??
 
 # run pod install after installing our module
-cd ios && pod install && cd ..
+npx pod-install
 
 # Copy the important files back in
 popd

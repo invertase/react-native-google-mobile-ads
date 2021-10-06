@@ -7,11 +7,12 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "postinstall": "cd node_modules/jet && yarn"
   },
   "dependencies": {
     "@invertase/react-native-google-ads": "link:../",
-    "jet": "link:../../jet/",
+    "jet": "https://github.com/invertase/jet.git#ff3f9bec4a53f7f1e1c05dcc97abede26c72e72f",
     "react": "17.0.2",
     "react-native": "0.66.0"
   },
