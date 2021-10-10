@@ -36,7 +36,7 @@ fi
 npx react-native init example --version=0.66.0
 pushd example
 yarn add 'link:../'
-yarn add detox mocha --dev
+yarn add detox mocha jest-circus jest-environment-node @babel/preset-env typescript --dev
 yarn add 'link:../../jet/'
 
 # Java build tweak - or gradle runs out of memory during the build
