@@ -25,15 +25,15 @@ Pod::Spec.new do |s|
   # Other dependencies
   s.dependency          'PersonalizedAdConsent', '~> 1.0.5'
 
-  if defined?(RNGoogleAdsSDKVersion)
-    Pod::UI.puts "#{s.name}: Using user specified Google Mobile-Ads SDK version '#{RNGoogleAdsSDKVersion}'"
+  if defined?($RNGoogleAdsSDKVersion)
+    Pod::UI.puts "#{s.name}: Using user specified Google Mobile-Ads SDK version '#{$RNGoogleAdsSDKVersion}'"
     google_ads_sdk_version = $RNGoogleAdsSDKVersion
   end
 
   # AdMob dependencies
   s.dependency          'Google-Mobile-Ads-SDK', google_ads_sdk_version
 
-  if defined?(RNGoogleAdsAsStaticFramework)
+  if defined?($RNGoogleAdsAsStaticFramework)
     Pod::UI.puts "#{s.name}: Using overridden static_framework value of '#{$RNGoogleAdsAsStaticFramework}'"
     s.static_framework = $RNGoogleAdsAsStaticFramework
   else
