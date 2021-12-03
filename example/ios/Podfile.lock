@@ -106,7 +106,7 @@ PODS:
   - "GoogleUtilities/NSData+zlib (7.5.2)"
   - GoogleUtilities/Reachability (7.5.2):
     - GoogleUtilities/Logger
-  - Jet (0.4.2):
+  - Jet (0.8.0):
     - React-Core
   - libevent (2.1.12)
   - nanopb (2.30908.0):
@@ -556,7 +556,7 @@ SPEC CHECKSUMS:
   GoogleAppMeasurement: fd19169c3034975cb934e865e5667bfdce59df7f
   GoogleUserMessagingPlatform: b168e8c46cd8f92aa3e34b584c4ca78a411ce367
   GoogleUtilities: 8de2a97a17e15b6b98e38e8770e2d129a57c0040
-  Jet: 0e15dc7ea1a7da4909cc96642919c010de3d1484
+  Jet: c17c29bfbbaff56f08a17678211f36b859173e99
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
   nanopb: a0ba3315591a9ae0a16a309ee504766e90db0c96
   OpenSSL-Universal: 1aa4f6a6ee7256b83db99ec1ccdaa80d10f9af9b
