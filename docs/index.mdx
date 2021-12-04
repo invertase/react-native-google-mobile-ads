@@ -8,22 +8,15 @@ previous: /contributing
 
 # Installation
 
-The AdMob service call be used with the `@react-native-firebase/admob` module. This module requires that the
-`@react-native-firebase/app` module is already setup and installed. To install the "app" module, view the
-[Getting Started](/) documentation.
-
 ```bash
-# Install & setup the app module
-yarn add @react-native-firebase/app
-
 # Install the admob module
-yarn add @react-native-firebase/admob
+yarn add @invertase/react-native-google-ads 
 ```
 
 > On Android, before releasing your app, you must select _Yes, my app contains ads_ in the Google Play Store, Policy, App content, Manage under Ads.
 
 If you're using an older version of React Native without autolinking support, or wish to integrate into an existing project,
-you can follow the manual installation steps for [iOS](/admob/usage/installation/ios) and [Android](/admob/usage/installation/android).
+you can follow the manual installation steps for [iOS](/usage/installation/ios) and [Android](/usage/installation/android).
 
 # What does it do
 
@@ -34,9 +27,9 @@ a [Google AdMob account](https://apps.admob.com) is required.
 
 The module supports three types of Ads:
 
-1. Full screen [Interstitial Ads](/admob/displaying-ads#interstitial-ads).
-2. Full screen [Rewarded Ads](/admob/displaying-ads#rewarded-ads).
-3. Component based [Banner Ads](/admob/displaying-ads#banner-ads).
+1. Full screen [Interstitial Ads](/displaying-ads#interstitial-ads).
+2. Full screen [Rewarded Ads](/displaying-ads#rewarded-ads).
+3. Component based [Banner Ads](/displaying-ads#banner-ads).
 
 # Getting Started
 
@@ -62,11 +55,11 @@ Under the "App settings" menu item, you can find the "App ID":
 
 ![Google AdMob App ID](https://prismic-io.s3.amazonaws.com/invertase%2F52dd6900-108c-47a6-accb-699fde963b99_new+project+%2813%29.jpg)
 
-Within the root of your React Native project, create a `firebase.json` file (if it doesn't already exist) and add the
+Within the root of your React Native project, open the `app.json` file and add the
 `admob_android_app_id` & `admob_ios_app_id` keys with the IDs from the Google AdMob console:
 
 ```json
-// <project-root>/firebase.json
+// <project-root>/app.json
 {
   "react-native": {
     "admob_android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
@@ -126,7 +119,7 @@ being served both personalized and non-personalized adverts before showing them.
 [Requesting Consent from European Users](https://developers.google.com/admob/android/eu-consent).
 
 The AdMob module provides a `AdConsent` helper to help developers quickly implement consent flows within their application.
-See the [European User Consent page](/admob/european-user-consent) for full examples of how to integrate the helper into your application.
+See the [European User Consent page](/european-user-consent) for full examples of how to integrate the helper into your application.
 
 ## Test ads
 
@@ -137,7 +130,7 @@ Although usage of different advert types is explained later, when creating your 
 testing can be set to a testing ID. The code snippet below shows how to initialize each advert type with a test ID:
 
 ```jsx
-import { InterstitialAd, RewardedAd, BannerAd, TestIds } from '@react-native-firebase/admob';
+import { InterstitialAd, RewardedAd, BannerAd, TestIds } from 'react-native-google-ads';
 
 # Interstitial
 InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
@@ -154,6 +147,6 @@ RewardedAd.createForAdRequest(TestIds.REWARDED);
 Now the basics of setting up and configuring AdMob have been explained, we can go ahead and start to display different
 adverts to our users. The AdMob module provides integration with three different types:
 
-- [Interstitial Ads](/admob/displaying-ads#interstitial-ads)
-- [Rewarded Ads](/admob/displaying-ads#rewarded-ads)
-- [Banner Ads](/admob/displaying-ads#banner-ads)
+- [Interstitial Ads](/displaying-ads#interstitial-ads)
+- [Rewarded Ads](/displaying-ads#rewarded-ads)
+- [Banner Ads](/displaying-ads#banner-ads)
