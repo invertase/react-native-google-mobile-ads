@@ -9,15 +9,15 @@ jest.doMock('react-native', () => {
       },
       NativeModules: {
         ...ReactNative.NativeModules,
-        GoogleAdsModule: {
+        RNGoogleAdsModule: {
           addListener: jest.fn(),
           removeListeners: jest.fn(),
           eventsAddListener: jest.fn(),
           eventsNotifyReady: jest.fn(),
         },
-        GoogleAdsInterstitialModule: {},
-        GoogleAdsRewardedModule: {},
-        GoogleAdsConsentModule: {},
+        RNGoogleAdsInterstitialModule: {},
+        RNGoogleAdsRewardedModule: {},
+        RNGoogleAdsConsentModule: {},
       },
     },
     ReactNative,
