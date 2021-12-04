@@ -19,7 +19,7 @@
 
 ---
 
-**React Native Admob** is a module connecting you to Google Mobile Ads services; a light-weight JavaScript layer connecting you to the native Google-Mobile-Ads SDKs for both iOS and Android.
+**React Native Google Ads** allows you to monetize your app with AdMob; a React Native wrapper around the native Google-Mobile-Ads SDKs for both iOS and Android.
 
 React Native Google Ads is built with three key principals in mind;
 
@@ -32,7 +32,8 @@ React Native Google Ads is built with three key principals in mind;
 
 ## Documentation
 
-COMING SOON (sorry)
+[Getting Started](https://docs.page/invertase/react-native-google-ads)
+[Displaying Ads](https://docs.page/invertase/react-native-google-ads/displaying-ads)
 
 <!--
 - [Quick Start](https://rnfirebase.io/)
