@@ -10,13 +10,14 @@ previous: /contributing
 
 ```bash
 # Install the admob module
-yarn add @invertase/react-native-google-ads 
+~~yarn add @invertase/react-native-google-ads~~
+
+# For the time being (as there is no NPM package available yet)
+# add the following entry to your package.json and run yarn to install
+"react-native-google-ads": "github:invertase/react-native-google-ads"
 ```
 
 > On Android, before releasing your app, you must select _Yes, my app contains ads_ in the Google Play Store, Policy, App content, Manage under Ads.
-
-If you're using an older version of React Native without autolinking support, or wish to integrate into an existing project,
-you can follow the manual installation steps for [iOS](/usage/installation/ios) and [Android](/usage/installation/android).
 
 # What does it do
 
@@ -90,7 +91,7 @@ receive content suitable for children before loading any adverts.
 To set the request configuration, call the `setRequestConfiguration` method:
 
 ```js
-import admob, { MaxAdContentRating } from '@react-native-firebase/admob';
+import admob, { MaxAdContentRating } from 'react-native-google-ads';
 
 admob()
   .setRequestConfiguration({
