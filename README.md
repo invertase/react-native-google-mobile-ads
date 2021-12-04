@@ -32,7 +32,8 @@ React Native Google Ads is built with three key principals in mind;
 
 ## Documentation
 
-COMING SOON (sorry)
+[Getting Started](https://docs.page/invertase/react-native-google-ads)
+[Displaying Ads](https://docs.page/invertase/react-native-google-ads/displaying-ads)
 
 <!--
 - [Quick Start](https://rnfirebase.io/)
