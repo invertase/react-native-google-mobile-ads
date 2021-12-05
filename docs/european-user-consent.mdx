@@ -30,14 +30,14 @@ The following steps show the various methods and ways of handling consent within
 By default, the Google Mobile Ads SDK initializes app measurement and begins sending user-level event data to Google immediately when the app starts.
 If your app will be used by users within the EEA, it is important you prevent app measurement until your first ad has been requested (after consent).
 
-Within your projects `app.json` file, set the `admob_delay_app_measurement_init` to `true` to delay app measurement:
+Within your projects `app.json` file, set the `delay_app_measurement_init` to `true` to delay app measurement:
 
 ```json
 {
-  "react-native": {
-    "admob_android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "admob_ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "admob_delay_app_measurement_init": true
+  "react-native-google-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "delay_app_measurement_init": true
   }
 }
 ```
@@ -245,7 +245,7 @@ non-personalized ad.
 
 This is a common error which occurs on both Android & iOS when making a request to display a Google-rendered consent form. Unfortunately the reasoning for this error is generic, making it hard to debug. There are a number of steps to check which are usually the cause for this error:
 
-- The AdMob App ID is incorrect: Ensure you have entered the correct ID into the `app.json` file under the `admob_android_app_id` or `admob_ios_app_id` key in the `react-native` config.
+- The AdMob App ID is incorrect: Ensure you have entered the correct ID into the `app.json` file under the `android_app_id` or `ios_app_id` key in the `react-native-google-ads` config.
 - A publisher ID is incorrect: Ensure your entered publisher IDs are correct.
   - The publisher ID needs to be available on the same account as your AdMob App ID.
 - The user is outside of the EEA: If a user does not need to provide consent, the form request will error. Ensure you have checked the users status via `requestInfoUpdate`. If using an emulator, ensure you set a debug location via `setDebugGeography`.
