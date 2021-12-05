@@ -49,14 +49,14 @@ Under the "App settings" menu item, you can find the "App ID":
 ![Google AdMob App ID](https://prismic-io.s3.amazonaws.com/invertase%2F52dd6900-108c-47a6-accb-699fde963b99_new+project+%2813%29.jpg)
 
 Within the root of your React Native project, open the `app.json` file and add the
-`admob_android_app_id` & `admob_ios_app_id` keys with the IDs from the Google AdMob console:
+`android_app_id` & `ios_app_id` keys with the IDs from the Google AdMob console:
 
 ```json
 // <project-root>/app.json
 {
-  "react-native": {
-    "admob_android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "admob_ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+  "react-native-google-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
   }
 }
 ```
