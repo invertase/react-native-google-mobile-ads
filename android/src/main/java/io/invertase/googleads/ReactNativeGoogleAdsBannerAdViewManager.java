@@ -35,7 +35,7 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<ReactViewGroup> {
-  private static final String REACT_CLASS = "ReactNativeGoogleAdsBannerView";
+  private static final String REACT_CLASS = "RNGoogleAdsBannerView";
   private String EVENT_AD_LOADED = "onAdLoaded";
   private String EVENT_AD_FAILED_TO_LOAD = "onAdFailedToLoad";
   private String EVENT_AD_OPENED = "onAdOpened";
