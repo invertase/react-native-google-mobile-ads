@@ -107,7 +107,7 @@ public class RCTConvert {
   }
 
   public static Map<String, Object> toHashMap(ReadableMap readableMap) {
-    // https://github.com/facebook/react-native/blob/master/ReactAndroid/src/main/java/com/facebook/react/bridge/ReadableNativeMap.java#L216
+    // https://github.com/facebook/react-native/blob/main/ReactAndroid/src/main/java/com/facebook/react/bridge/ReadableNativeMap.java#L263
     return readableMap.toHashMap();
   }
 
