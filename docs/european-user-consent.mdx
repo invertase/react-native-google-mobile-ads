@@ -1,3 +1,5 @@
+# European User Consent
+
 Under the Google [EU User Consent Policy](https://www.google.com/about/company/consentstaging.html), you must make
 certain disclosures to your users in the European Economic Area (EEA) and obtain their consent to use cookies or
 other local storage, where legally required, and to use personal data (such as `AdID`) to serve ads. This policy
@@ -68,7 +70,7 @@ Your own publisher ID can be found on the [Google AdMob dashboard](https://apps.
 To request consent, call the method as early as possible within your app before presenting any ads:
 
 ```js
-import { AdsConsent } from 'react-native-google-ads';
+import { AdsConsent } from '@invertase/react-native-google-ads';
 
 const consentInfo = await AdsConsent.requestInfoUpdate(['pub-6189033257628123']);
 ```
@@ -120,7 +122,7 @@ To show the consent form, the `AdsConsent` helper provides a `showForm` method, 
 You must provide a privacy policy URL.
 
 ```js
-import { AdsConsent, AdsConsentStatus } from 'react-native-google-ads';
+import { AdsConsent, AdsConsentStatus } from '@invertase/react-native-google-ads';
 
 const consentInfo = await AdsConsent.requestInfoUpdate(['pub-6189033257628123']);
 
@@ -168,7 +170,7 @@ Depending on your requirements, a list of the enabled network mediation provider
 to the user via the `getAdProviders` method:
 
 ```js
-import { AdsConsent } from 'react-native-google-ads';
+import { AdsConsent } from '@invertase/react-native-google-ads';
 
 const providers = await AdsConsent.getAdProviders();
 ```
@@ -180,7 +182,7 @@ Once consent has been returned, the Consent SDK needs to be aware of the custom 
 `setStatus` method, for example:
 
 ```js
-import { AdsConsent, AdsConsentStatus } from 'react-native-google-ads';
+import { AdsConsent, AdsConsentStatus } from '@invertase/react-native-google-ads';
 
 // After getting user consent...
 await AdsConsent.setStatus(AdsConsentStatus.PERSONALIZED);
@@ -210,7 +212,7 @@ To set a debug location, use the `setDebugGeography` method. It accepts 3 values
 For example:
 
 ```js
-import { AdsConsent, AdsConsentDebugGeography } from 'react-native-google-ads';
+import { AdsConsent, AdsConsentDebugGeography } from '@invertase/react-native-google-ads';
 
 await AdsConsent.setDebugGeography(AdsConsentDebugGeography.EEA);
 ```
@@ -227,7 +229,7 @@ make in our application.
 Taking a Rewarded Video as an example, we can apply the users consent when our ad is loaded via the `RequestOptions`. For example:
 
 ```js
-import { AdsConsent, RewardedAd } from 'react-native-google-ads';
+import { AdsConsent, RewardedAd } from '@invertase/react-native-google-ads';
 
 const status = await AdsConsent.getStatus();
 

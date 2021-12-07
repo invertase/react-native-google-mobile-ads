@@ -1,7 +1,7 @@
 <p align="center">
-  <!-- <a href="https://rnfirebase.io">
-    <img width="160px" src="https://i.imgur.com/JIyBtKW.png"><br/>
-  </a> -->
+  <a href="https://docs.page/invertase/react-native-google-ads">
+    <img width="160px" src="./docs/img/logo_admob_192px.svg"><br/>
+  </a>
   <h2 align="center">React Native Google Ads</h2>
 </p>
 
@@ -32,7 +32,7 @@ React Native Google Ads is built with three key principals in mind;
 
 ## Documentation
 
-- [Getting Started](https://docs.page/invertase/react-native-google-ads)
+- [Installation](https://docs.page/invertase/react-native-google-ads)
 - [Displaying Ads](https://docs.page/invertase/react-native-google-ads/displaying-ads)
 
 <!--
