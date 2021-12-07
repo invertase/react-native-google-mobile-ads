@@ -19,6 +19,6 @@
 
 #import <React/RCTBridgeModule.h>
 
-@interface RNAppModule : NSObject <RCTBridgeModule>
+@interface RNGAAppModule : NSObject <RCTBridgeModule>
 
 @end

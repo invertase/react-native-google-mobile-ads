@@ -75,7 +75,7 @@ NSString *const RNRCTEventBodyKey = @"body";
 - (void)sendEventWithName:(NSString *)eventName body:(id)body {
   @synchronized(self.jsListeners) {
     if (self.bridge && self.isObserving && self.jsListeners[eventName] != nil) {
-      NSString *prefixedEventName = [@"rnapp_" stringByAppendingString:eventName];
+      NSString *prefixedEventName = [@"rnga_" stringByAppendingString:eventName];
       [self.bridge enqueueJSCall:@"RCTDeviceEventEmitter"
                           method:@"emit"
                             args:body ? @[ prefixedEventName, body ] : @[ prefixedEventName ]

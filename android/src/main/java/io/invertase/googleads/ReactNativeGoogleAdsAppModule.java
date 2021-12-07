@@ -35,8 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ReactNativeAppModule extends ReactNativeModule {
-  private static final String TAG = "RNAppModule";
+public class ReactNativeGoogleAdsAppModule extends ReactNativeModule {
+  private static final String TAG = "RNGAAppModule";
 
   ReactNativeAppModule(ReactApplicationContext reactContext) {
     super(reactContext, TAG);

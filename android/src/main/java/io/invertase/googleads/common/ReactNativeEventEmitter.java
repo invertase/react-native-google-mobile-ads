@@ -139,7 +139,7 @@ public class ReactNativeEventEmitter {
     try {
       reactContext
           .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-          .emit("rnapp_" + event.getEventName(), event.getEventBody());
+          .emit("rnga_" + event.getEventName(), event.getEventBody());
     } catch (Exception e) {
       Log.wtf("RN_EVENT_EMITTER", "Error sending Event " + event.getEventName(), e);
       return false;

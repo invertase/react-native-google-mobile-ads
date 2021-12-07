@@ -24,7 +24,7 @@
 @interface RNRCTEventEmitter : NSObject
 
 /**
- * The RCTBridge. Assigned by `RNAppModule`
+ * The RCTBridge. Assigned by `RNGAAppModule`
  */
 @property(nonatomic, weak) RCTBridge *bridge;
 

@@ -17,14 +17,14 @@
 
 #import <React/RCTUtils.h>
 
-#import "RNAppModule.h"
+#import "RNGAAppModule.h"
 #import "RNJSON.h"
 #import "RNMeta.h"
 #import "RNPreferences.h"
 #import "RNRCTEventEmitter.h"
 #import "RNSharedUtils.h"
 
-@implementation RNAppModule
+@implementation RNGAAppModule
 
 #pragma mark -
 #pragma mark Module Setup
