@@ -23,7 +23,7 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import io.invertase.googleads.common.ReactNativeApp;
-import io.invertase.googleads.common.RCTConvertFirebase;
+import io.invertase.googleads.common.RCTConvert;
 import io.invertase.googleads.common.ReactNativeEvent;
 import io.invertase.googleads.common.ReactNativeEventEmitter;
 import io.invertase.googleads.common.ReactNativeJSON;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ReactNativeAppModule extends ReactNativeModule {
-  private static final String TAG = "RNApp";
+  private static final String TAG = "RNAppModule";
 
   ReactNativeAppModule(ReactApplicationContext reactContext) {
     super(reactContext, TAG);
@@ -92,8 +92,8 @@ public class ReactNativeAppModule extends ReactNativeModule {
     ReactNativeEventEmitter emitter = ReactNativeEventEmitter.getSharedInstance();
     emitter.sendEvent(
         new ReactNativeEvent(
-            eventName, RCTConvertFirebase.readableMapToWritableMap(eventBody)));
-    promise.resolve(RCTConvertFirebase.readableMapToWritableMap(eventBody));
+            eventName, RCTConvert.readableMapToWritableMap(eventBody)));
+    promise.resolve(RCTConvert.readableMapToWritableMap(eventBody));
   }
 
   @ReactMethod
