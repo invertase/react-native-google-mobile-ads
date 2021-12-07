@@ -1,12 +1,8 @@
 # Installation
 
 ```bash
-# Install the admob module (COMING SOON)
-# yarn add @invertase/react-native-google-ads
-
-# For the time being (as there is no NPM package available yet)
-# add the following entry to your package.json and run yarn
-"react-native-google-ads": "github:invertase/react-native-google-ads"
+# Install the admob module
+yarn add @invertase/react-native-google-ads
 ```
 
 > On Android, before releasing your app, you must select _Yes, my app contains ads_ in the Google Play Store, Policy, App content, Manage under Ads.
@@ -16,7 +12,7 @@
 The AdMob module allows you to display adverts to your users. All adverts are served over the Google AdMob network, meaning
 a [Google AdMob account](https://apps.admob.com) is required.
 
-<Youtube id="9qCxo0D-Sak" />
+<YouTube id="9qCxo0D-Sak" />
 
 The module supports three types of Ads:
 
@@ -83,7 +79,7 @@ receive content suitable for children before loading any adverts.
 To set the request configuration, call the `setRequestConfiguration` method:
 
 ```js
-import admob, { MaxAdContentRating } from 'react-native-google-ads';
+import admob, { MaxAdContentRating } from '@invertase/react-native-google-ads';
 
 admob()
   .setRequestConfiguration({
@@ -123,7 +119,7 @@ Although usage of different advert types is explained later, when creating your 
 testing can be set to a testing ID. The code snippet below shows how to initialize each advert type with a test ID:
 
 ```jsx
-import { InterstitialAd, RewardedAd, BannerAd, TestIds } from 'react-native-google-ads';
+import { InterstitialAd, RewardedAd, BannerAd, TestIds } from '@invertase/react-native-google-ads';
 
 # Interstitial
 InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);

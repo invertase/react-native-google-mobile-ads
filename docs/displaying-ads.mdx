@@ -1,3 +1,5 @@
+# Displaying Ads
+
 The AdMob package allows you to display three types of adverts; Interstitial, Rewarded & Banner.
 
 ## Interstitial Ads
@@ -11,7 +13,7 @@ of the method is the "Ad Unit ID". For testing, we can use a Test ID, however fo
 Google AdMob dashboard under "Ad units" should be used:
 
 ```js
-import { InterstitialAd, TestIds, AdEventType } from 'react-native-google-ads';
+import { InterstitialAd, TestIds, AdEventType } from '@invertase/react-native-google-ads';
 
 const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
@@ -34,7 +36,7 @@ To listen to events, such as when the advert from the network has loaded or when
 ```jsx
 import React, { useEffect, useState } from 'react';
 import { Button } from 'react-native';
-import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-ads';
+import { InterstitialAd, AdEventType, TestIds } from '@invertase/react-native-google-ads';
 
 const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
@@ -103,7 +105,7 @@ of the method is the "Ad Unit ID". For testing, we can use a Test ID, however fo
 Google AdMob dashboard under "Ad units" should be used:
 
 ```js
-import { RewardedAd, TestIds } from 'react-native-google-ads';
+import { RewardedAd, TestIds } from '@invertase/react-native-google-ads';
 
 const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
@@ -126,7 +128,7 @@ To listen to events, such as when the advert from the network has loaded or when
 ```js
 import React, { useEffect, useState } from 'react';
 import { Button } from 'react-native';
-import { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-ads';
+import { RewardedAd, RewardedAdEventType, TestIds } from '@invertase/react-native-google-ads';
 
 const adUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
@@ -220,7 +222,7 @@ a banner:
 
 ```js
 import React from 'react';
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-ads';
+import { BannerAd, BannerAdSize, TestIds } from '@invertase/react-native-google-ads';
 
 const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
