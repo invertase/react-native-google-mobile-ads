@@ -2,7 +2,7 @@
   "name": "React Native Google Ads",
   "twitter": "invertaseio",
   "sidebar": [
-    ["Getting Started", "/"],
+    ["Installation", "/"],
     ["Displaying Ads", "/displaying-ads"],
     ["European User Consent", "/european-user-consent"]
   ]
