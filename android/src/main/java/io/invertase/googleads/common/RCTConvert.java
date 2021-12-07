@@ -112,7 +112,7 @@ public class RCTConvert {
   }
 
   public static List<Object> toArrayList(ReadableArray readableArray) {
-    // https://github.com/facebook/react-native/blob/master/ReactAndroid/src/main/java/com/facebook/react/bridge/ReadableNativeArray.java#L175
+    // https://github.com/facebook/react-native/blob/main/ReactAndroid/src/main/java/com/facebook/react/bridge/ReadableNativeArray.java#L140
     return readableArray.toArrayList();
   }
 }
