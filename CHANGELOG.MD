@@ -12,5 +12,5 @@ Therefore keep in mind to test everything thoroughly as it's the first release.
 
 ### Features
 
-* **config:** Add your AdMob app id's (iOS/Android) to app.json and this package will take care of the required entries in your Info.plist & AndroidManifest.xml.
+* **config:** Add your AdMob app id's (iOS/Android) to app.json and this package will take care of injecting the required entries in your Info.plist (during `pod install` run) & AndroidManifest.xml (during gradle build time).
 * **docs:** Improved documentation using the new [docs.page](https://docs.page/)
