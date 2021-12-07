@@ -31,6 +31,7 @@ public class ReactNativeGoogleAdsPackage implements ReactPackage {
   @Override
   public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
     List<NativeModule> modules = new ArrayList<>();
+    modules.add(new ReactNativeAppModule(reactContext));
     modules.add(new ReactNativeGoogleAdsModule(reactContext));
     modules.add(new ReactNativeGoogleAdsConsentModule(reactContext));
     modules.add(new ReactNativeGoogleAdsInterstitialModule(reactContext));
