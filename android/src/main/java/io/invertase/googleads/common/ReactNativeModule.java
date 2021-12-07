@@ -99,7 +99,7 @@ public class ReactNativeModule extends ReactContextBaseJavaModule implements Con
   @Nonnull
   @Override
   public String getName() {
-    return "RNAdMob" + moduleName + "Module";
+    return moduleName;
   }
 
   @Override

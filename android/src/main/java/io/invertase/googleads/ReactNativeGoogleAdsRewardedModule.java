@@ -27,7 +27,7 @@ import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
 import io.invertase.googleads.common.ReactNativeModule;
 
 public class ReactNativeGoogleAdsRewardedModule extends ReactNativeModule {
-  private static final String SERVICE = "GoogleAdsRewarded";
+  private static final String SERVICE = "RNGoogleAdsRewardedModule";
   private static SparseArray<RewardedAd> rewardedAdArray = new SparseArray<>();
 
   public ReactNativeGoogleAdsRewardedModule(ReactApplicationContext reactContext) {

@@ -27,7 +27,7 @@ import io.invertase.googleads.common.ReactNativeModule;
 import java.util.Objects;
 
 public class ReactNativeGoogleAdsModule extends ReactNativeModule {
-  private static final String SERVICE = "GoogleAds";
+  private static final String SERVICE = "RNGoogleAdsModule";
 
   ReactNativeGoogleAdsModule(ReactApplicationContext reactContext) {
     super(reactContext, SERVICE);

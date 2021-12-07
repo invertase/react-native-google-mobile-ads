@@ -41,7 +41,7 @@ import io.invertase.googleads.common.ReactNativeModule;
 import javax.annotation.Nullable;
 
 public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
-  private static final String SERVICE = "GoogleAdsInterstitial";
+  private static final String SERVICE = "RNGoogleAdsInterstitialModule";
   private static SparseArray<InterstitialAd> interstitialAdArray = new SparseArray<>();
 
   public ReactNativeGoogleAdsInterstitialModule(ReactApplicationContext reactContext) {

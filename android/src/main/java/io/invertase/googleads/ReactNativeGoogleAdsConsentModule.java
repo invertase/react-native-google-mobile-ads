@@ -38,7 +38,7 @@ import java.net.URL;
 import java.util.List;
 
 public class ReactNativeGoogleAdsConsentModule extends ReactNativeModule {
-  private static final String TAG = "GoogleAdsConsent";
+  private static final String TAG = "RNGoogleAdsConsentModule";
   private ConsentInformation consentInformation;
   private ConsentForm consentForm;
 
