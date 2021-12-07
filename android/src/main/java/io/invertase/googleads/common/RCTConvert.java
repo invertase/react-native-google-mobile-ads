@@ -101,7 +101,7 @@ public class RCTConvert {
   // TODO Remove me - also in SharedUtils
   public static WritableMap readableMapToWritableMap(ReadableMap map) {
     WritableMap writableMap = Arguments.createMap();
-    // https://github.com/facebook/react-native/blob/master/ReactAndroid/src/main/java/com/facebook/react/bridge/WritableNativeMap.java#L54
+    // https://github.com/facebook/react-native/blob/main/ReactAndroid/src/main/java/com/facebook/react/bridge/WritableNativeMap.java#L58
     writableMap.merge(map);
     return writableMap;
   }
