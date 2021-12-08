@@ -22,6 +22,21 @@
     "interstitial",
     "ad consent"
   ],
+  "files": [
+    "/__tests__/",
+    "/android/",
+    "/docs/",
+    "/ios/",
+    "/lib/",
+    "/src/",
+    "/docs.json",
+    "/RNGoogleAds.podspec",
+    "/babel.config.js",
+    "/jest.config.js",
+    "/jest.setup.ts",
+    "/ios_config.sh",
+    "/react-native-config.js"
+  ],
   "sdkVersions": {
     "ios": {
       "googleAds": "7.69.0"
