@@ -165,6 +165,7 @@ jobs:
       #   run: yarn tests:ios:test
 
       - name: Compress Simulator Log
+        continue-on-error: true
         if: always()
         run: gzip -9 simulator.log
 
