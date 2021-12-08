@@ -27,7 +27,7 @@ jobs:
           max_attempts: 3
           command: yarn --no-audit --prefer-offline
       - name: Publish Packages
-        run: yarn semantic-release -d
+        run: yarn semantic-release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
