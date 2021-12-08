@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/invertase/react-native-google-ads/compare/v1.0.0...v1.0.1) (2021-12-08)
+
+
+### Bug Fixes
+
+* package is org-scoped, but public, allow npm publish ([cd8fbb1](https://github.com/invertase/react-native-google-ads/commit/cd8fbb1f054a4df21e7b8c5fa8e0b4210dd1241d))
+
 # 1.0.0 (2021-12-08)
 
 # Change Log
@@ -33,4 +40,3 @@ Therefore keep in mind to test everything thoroughly as it's the first release.
 
 * example test in new test harness works ([2041fa2](https://github.com/invertase/react-native-google-ads/commit/2041fa24119f29c6714c486439e2ab03eb995818))
 * **native:** native code extraction is complete and passes static type check ([02c2af6](https://github.com/invertase/react-native-google-ads/commit/02c2af65ddd947770cf77456c705e0b62e6c7124))
-
