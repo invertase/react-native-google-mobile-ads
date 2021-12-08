@@ -54,7 +54,7 @@
     "build": "genversion --semi lib/version.js",
     "build:clean": "rimraf android/build && rimraf ios/build",
     "lint:code": "yarn lint:js && yarn lint:android && yarn lint:ios:check",
-    "lint:js": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "lint:js": "eslint lib/ --ext .js,.jsx,.ts,.tsx --max-warnings=0",
     "lint:android": "google-java-format --set-exit-if-changed --replace --glob=\"android/**/*.java\"",
     "lint:ios:check": "clang-format --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google -n -Werror",
     "lint:ios:fix": "clang-format -i --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google",
