@@ -26,20 +26,8 @@ jobs:
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn --no-audit --prefer-offline
-      - name: GIT Setup
-        run: |
-          git config --global user.name '@Salakar'
-          git config --global user.email 'Salakar@users.noreply.github.com'
-          git remote set-url origin git@github.com:$GITHUB_REPOSITORY
       - name: Publish Packages
-        run: |
-          yarn logout
-          echo "@invertase:registry=http://registry.npmjs.org/" > ~/.npmrc
-          echo "registry=http://registry.npmjs.org/" >> ~/.npmrc
-          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-          npm whoami
-          git diff --exit-code
-          yarn semantic-release -d
+        run: yarn semantic-release -d
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
