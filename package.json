@@ -50,7 +50,7 @@
     }
   },
   "scripts": {
-    "prepare": "cd example && yarn && cd ios && (pod install || true) && cd ../.. && yarn build",
+    "prepare": "yarn build",
     "build": "genversion --semi lib/version.js",
     "build:clean": "rimraf android/build && rimraf ios/build",
     "lint:code": "yarn lint:js && yarn lint:android && yarn lint:ios:check",
