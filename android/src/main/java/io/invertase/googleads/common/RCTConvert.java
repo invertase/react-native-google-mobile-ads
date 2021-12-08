@@ -17,32 +17,25 @@ package io.invertase.googleads.common;
  *
  */
 
-import android.content.Context;
 import android.util.Log;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.annotation.Nullable;
 
-/**
- * Utilities to convert to and from React Native bridge formats.
- */
+/** Utilities to convert to and from React Native bridge formats. */
 public class RCTConvert {
   private static String TAG = "RCTConvert";
 
   /**
    * Takes a value and calls the appropriate setter for its type on the target map + key
    *
-   * @param key   String key to set on target map
+   * @param key String key to set on target map
    * @param value Object value to set on target map
-   * @param map   WritableMap target map to write the value to
+   * @param map WritableMap target map to write the value to
    */
   @SuppressWarnings("unchecked")
   public static WritableMap mapPutValue(String key, @Nullable Object value, WritableMap map) {

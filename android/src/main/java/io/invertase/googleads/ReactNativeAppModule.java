@@ -21,18 +21,14 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.WritableMap;
-import io.invertase.googleads.common.ReactNativeApp;
 import io.invertase.googleads.common.RCTConvert;
 import io.invertase.googleads.common.ReactNativeEvent;
 import io.invertase.googleads.common.ReactNativeEventEmitter;
 import io.invertase.googleads.common.ReactNativeJSON;
 import io.invertase.googleads.common.ReactNativeMeta;
-import io.invertase.googleads.common.ReactNativePreferences;
 import io.invertase.googleads.common.ReactNativeModule;
-import java.util.ArrayList;
+import io.invertase.googleads.common.ReactNativePreferences;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ReactNativeAppModule extends ReactNativeModule {
@@ -53,7 +49,8 @@ public class ReactNativeAppModule extends ReactNativeModule {
     // ReactNativeApp reactNativeApp =
     //     RCTConvertFirebase.readableMapToFirebaseApp(options, appConfig, getContext());
 
-    // WritableMap reactNativeAppMap = RCTConvertFirebase.reactNativeAppToWritableMap(reactNativeApp);
+    // WritableMap reactNativeAppMap =
+    // RCTConvertFirebase.reactNativeAppToWritableMap(reactNativeApp);
     // promise.resolve(reactNativeAppMap);
     promise.resolve(options);
   }
@@ -91,8 +88,7 @@ public class ReactNativeAppModule extends ReactNativeModule {
   public void eventsPing(String eventName, ReadableMap eventBody, Promise promise) {
     ReactNativeEventEmitter emitter = ReactNativeEventEmitter.getSharedInstance();
     emitter.sendEvent(
-        new ReactNativeEvent(
-            eventName, RCTConvert.readableMapToWritableMap(eventBody)));
+        new ReactNativeEvent(eventName, RCTConvert.readableMapToWritableMap(eventBody)));
     promise.resolve(RCTConvert.readableMapToWritableMap(eventBody));
   }
 
