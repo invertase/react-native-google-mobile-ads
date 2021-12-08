@@ -43,6 +43,7 @@ module.exports = {
     'no-underscore-dangle': 'off',
     'no-use-before-define': 0,
     'import/no-unresolved': 0,
+    'no-empty-description': 'off',
     '@typescript-eslint/ban-ts-comment': 'off', // keep it professional when you use them though please
     '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
