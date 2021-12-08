@@ -9,6 +9,10 @@ jest.doMock('react-native', () => {
       },
       NativeModules: {
         ...ReactNative.NativeModules,
+        RNAppModule: {
+          addListener: jest.fn(),
+          removeListeners: jest.fn(),
+        },
         RNGoogleAdsModule: {
           addListener: jest.fn(),
           removeListeners: jest.fn(),
