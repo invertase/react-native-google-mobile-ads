@@ -75,13 +75,10 @@ jobs:
           key: ${{ runner.os }}-v2 # makes a unique key w/related restore key internally
           max-size: 400M
 
-      - name: Yarn Install
-        uses: nick-invision/retry@v2
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          timeout_minutes: 10
-          retry_wait_seconds: 60
-          max_attempts: 3
-          command: yarn --no-audit --prefer-offline
+          ruby-version: 3
 
       - name: Update Ruby build tools
         uses: nick-invision/retry@v2
@@ -99,13 +96,13 @@ jobs:
           key: ${{ runner.os }}-pods-v2-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: ${{ runner.os }}-pods-v2
 
-      - name: Pod Install
+      - name: Yarn Install
         uses: nick-invision/retry@v2
         with:
           timeout_minutes: 10
-          retry_wait_seconds: 30
+          retry_wait_seconds: 60
           max_attempts: 3
-          command: yarn tests:ios:pod:install
+          command: yarn --no-audit --prefer-offline
 
       - name: Build iOS App
         run: |
@@ -139,7 +136,7 @@ jobs:
 
       - name: Pre-fetch Javascript bundle
         run: |
-          nohup yarn tests:packager:jet-ci &
+          nohup yarn tests:packager &
           printf 'Waiting for packager to come online'
           until curl --output /dev/null --silent --head --fail http://localhost:8081/status; do
             printf '.'
@@ -155,9 +152,9 @@ jobs:
         continue-on-error: true
         run: nohup sh -c "sleep 30 && xcrun simctl spawn booted log stream --level debug --style compact > simulator.log 2>&1 &"
 
-      - name: Detox Test
-        timeout-minutes: 10
-        run: yarn tests:ios:test
+      # - name: Detox Test
+      #   timeout-minutes: 10
+      #   run: yarn tests:ios:test
 
       - name: Compress Simulator Log
         if: always()
