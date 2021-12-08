@@ -43,7 +43,7 @@
     "lint:android": "google-java-format --set-exit-if-changed --replace --glob=\"android/**/*.java\"",
     "lint:ios:check": "clang-format --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google -n -Werror",
     "lint:ios:fix": "clang-format -i --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google",
-    "lint:markdown:check": "prettier --check \"docs/**/*.md\"",
+    "lint:markdown:check": "prettier --check \"docs/**/*.md[x]\"",
     "lint:markdown:fix": "prettier --write \"docs/**/*.md\"",
     "lint:report": "eslint --output-file=eslint-report.json --format=json . --ext .js,.jsx,.ts,.tsx",
     "lint:spellcheck": "spellchecker --quiet --files=\"docs/**/*.md\" --dictionaries=\"./.spellcheck.dict.txt\" --reports=\"spelling.json\" --plugins spell indefinite-article repeated-words syntax-mentions syntax-urls frontmatter",
