@@ -40,7 +40,13 @@ public class ReactNativeGoogleAdsRewardedModule extends ReactNativeModule {
       String adUnitId,
       @Nullable WritableMap error,
       @Nullable WritableMap data) {
-    sendAdEvent(ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_REWARDED, requestId, type, adUnitId, error, data);
+    sendAdEvent(
+        ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_REWARDED,
+        requestId,
+        type,
+        adUnitId,
+        error,
+        data);
   }
 
   @ReactMethod
@@ -66,7 +72,8 @@ public class ReactNativeGoogleAdsRewardedModule extends ReactNativeModule {
                   WritableMap data = Arguments.createMap();
                   data.putString("type", rewardItem.getType());
                   data.putInt("amount", rewardItem.getAmount());
-                  sendRewardedEvent(GOOGLE_ADS_EVENT_REWARDED_LOADED, requestId, adUnitId, null, data);
+                  sendRewardedEvent(
+                      GOOGLE_ADS_EVENT_REWARDED_LOADED, requestId, adUnitId, null, data);
                 }
 
                 @Override
@@ -141,7 +148,8 @@ public class ReactNativeGoogleAdsRewardedModule extends ReactNativeModule {
                       WritableMap data = Arguments.createMap();
                       data.putString("type", reward.getType());
                       data.putInt("amount", reward.getAmount());
-                      sendRewardedEvent(GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD, requestId, adUnitId, null, data);
+                      sendRewardedEvent(
+                          GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD, requestId, adUnitId, null, data);
                     }
 
                     @Override
