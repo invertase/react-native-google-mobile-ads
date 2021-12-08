@@ -50,7 +50,8 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
 
   private void sendInterstitialEvent(
       String type, int requestId, String adUnitId, @Nullable WritableMap error) {
-    sendAdEvent(ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_INTERSTITIAL, requestId, type, adUnitId, error);
+    sendAdEvent(
+        ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_INTERSTITIAL, requestId, type, adUnitId, error);
   }
 
   @ReactMethod
@@ -100,7 +101,8 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
 
                 @Override
                 public void onAdLeftApplication() {
-                  sendInterstitialEvent(GOOGLE_ADS_EVENT_LEFT_APPLICATION, requestId, adUnitId, null);
+                  sendInterstitialEvent(
+                      GOOGLE_ADS_EVENT_LEFT_APPLICATION, requestId, adUnitId, null);
                 }
 
                 @Override

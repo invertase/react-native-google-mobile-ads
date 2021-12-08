@@ -24,7 +24,6 @@ import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import androidx.annotation.Nullable;
-import io.invertase.googleads.common.ReactNativeApp;
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 
 public class ReactNativeInitProvider extends ContentProvider {
