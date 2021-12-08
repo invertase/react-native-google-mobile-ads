@@ -55,25 +55,27 @@ jobs:
 
       - name: Create Patches
         run: |
-          mkdir $HOME/admob
-          echo "Packing PR version of admob"
-          yarn pack;
-          mv *tgz $HOME/admob;
-          ls -la $HOME/admob/*admob*
+          export PACKAGE_NAME=`npx json name -f package.json`
+          export CLEAN_PACKAGE_NAME=`echo $PACKAGE_NAME | sed s/@// |sed s,/,-,`
+          mkdir $HOME/scratch
+          echo "Packing PR version of $CLEAN_PACKAGE_NAME"
+          yarn pack
+          mv *tgz $HOME/scratch
+          ls -la $HOME/scratch/*$CLEAN_PACKAGE_NAME*
           cd $HOME
           npx react-native init template
           cd template
           yarn add patch-package --save-dev
           mkdir patches || true
-          echo "Installing admob into fresh template app, then clobbering with PR version"
-          yarn add @invertase/react-native-admob
+          echo "Installing $CLEAN_PACKAGE_NAME into fresh template app, then clobbering with PR version"
+          yarn add $PACKAGE_NAME
           pushd node_modules/@invertase
-          tar -zxf $HOME/*admob*-v*
-          mv react-native-admob/package.json package/
-          \rm -fr react-native-admob
-          mv package react-native-admob
+          tar -zxf $HOME/*$CLEAN_PACKAGE_NAME*-v*
+          mv react-native-google-ads/package.json package/
+          \rm -fr react-native-google-ads
+          mv package react-native-google-ads
           popd
-          npx patch-package @invertase/react-native-admob || true
+          npx patch-package $PACKAGE_NAME || true
           done
           ls -la $HOME/template/patches
         shell: bash
