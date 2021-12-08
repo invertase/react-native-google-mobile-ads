@@ -187,6 +187,7 @@ jobs:
           command: ./node_modules/.bin/codecov
 
       - name: Compress Emulator Log
+        continue-on-error: true
         if: always()
         run: gzip -9 adb-log.txt
         shell: bash
