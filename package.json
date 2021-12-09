@@ -35,7 +35,7 @@
     "/jest.config.js",
     "/jest.setup.ts",
     "/ios_config.sh",
-    "/react-native-config.js"
+    "/react-native.config.js"
   ],
   "sdkVersions": {
     "ios": {
