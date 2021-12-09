@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/invertase/react-native-google-ads/compare/v1.0.1...v1.0.2) (2021-12-09)
+
+
+### Bug Fixes
+
+* incorrect rn config path ([41a8eca](https://github.com/invertase/react-native-google-ads/commit/41a8ecaa38f115a4259a484d9aecdcade0ff0a9f))
+
 ## [1.0.1](https://github.com/invertase/react-native-google-ads/compare/v1.0.0...v1.0.1) (2021-12-08)
 
 
