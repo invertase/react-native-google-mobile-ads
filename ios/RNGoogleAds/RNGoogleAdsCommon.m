@@ -68,18 +68,6 @@ NSString *const GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_rewa
     request.keywords = adRequestOptions[@"keywords"];
   }
 
-//  if (adRequestOptions[@"testDevices"]) {
-//    NSMutableArray *devices = [@[] mutableCopy];
-//    for (NSString *key in adRequestOptions[@"testDevices"]) {
-//      if ([key isEqualToString:@"EMULATOR"]) {
-//        [devices addObject:GADSimulatorID];
-//      } else {
-//        [devices addObject:key];
-//      }
-//    }
-//    request.testDevices = devices;
-//  }
-
   if (adRequestOptions[@"location"]) {
     NSArray<NSNumber *> *latLong = adRequestOptions[@"location"];
     [request setLocationWithLatitude:[latLong[0] doubleValue]

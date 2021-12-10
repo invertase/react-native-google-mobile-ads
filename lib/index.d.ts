@@ -670,19 +670,6 @@ export namespace GoogleAdsTypes {
     keywords?: string[];
 
     /**
-     * An array of test device IDs to whitelist.
-     *
-     * If using an emulator, set the device ID to `EMULATOR`.
-     *
-     * ```js
-     * await Interstitial.request('ca-app-pub-3940256099942544/1033173712', {
-     *   testDevices: ['EMULATOR'],
-     * });
-     * ```
-     */
-    testDevices?: string[];
-
-    /**
      * Sets a content URL for targeting purposes.
      *
      * Max length of 512.
@@ -784,6 +771,13 @@ export namespace GoogleAdsTypes {
      * See the [Google Mobile SDK docs](https://developers.google.com/admob/android/targeting#ad_content_filtering) for more information.
      */
     tagForUnderAgeOfConsent?: boolean;
+
+    /**
+     * An array of test device IDs to whitelist.
+     *
+     * If using an emulator, set the device ID to `EMULATOR`.
+     */
+    testDeviceIdentifiers?: string[];
   }
 
   /**
