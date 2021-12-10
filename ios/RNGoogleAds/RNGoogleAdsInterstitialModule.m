@@ -82,6 +82,7 @@ RCT_EXPORT_METHOD(interstitialLoad
     }
     GADInterstitialAd *interstitial = ad;
     RNGoogleAdsFullScreenContentDelegate *fullScreenContentDelegate = [[RNGoogleAdsFullScreenContentDelegate alloc] init];
+    fullScreenContentDelegate.sendAdEvent = GOOGLE_ADS_EVENT_INTERSTITIAL;
     fullScreenContentDelegate.requestId = requestId;
     fullScreenContentDelegate.adUnitId = ad.adUnitID;
     interstitial.fullScreenContentDelegate = fullScreenContentDelegate;
