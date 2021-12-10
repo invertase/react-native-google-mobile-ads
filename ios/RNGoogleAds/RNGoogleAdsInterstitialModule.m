@@ -69,32 +69,36 @@ RCT_EXPORT_METHOD(interstitialLoad
                   : (NSString *)adUnitId
                   : (NSDictionary *)adRequestOptions) {
   GADRequest *request = [GADRequest request];
-  [GADInterstitialAd loadWithAdUnitID:adUnitId request:request completionHandler:^(GADInterstitialAd *ad, NSError *error) {
-    if (error) {
-      NSDictionary *codeAndMessage = [RNGoogleAdsCommon getCodeAndMessageFromAdError:error];
-      [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_INTERSTITIAL
-                           requestId:requestId
-                                type:GOOGLE_ADS_EVENT_ERROR
-                            adUnitId:ad.adUnitID
-                               error:codeAndMessage
-                                data:nil];
-      return;
-    }
-    GADInterstitialAd *interstitial = ad;
-    RNGoogleAdsFullScreenContentDelegate *fullScreenContentDelegate = [[RNGoogleAdsFullScreenContentDelegate alloc] init];
-    fullScreenContentDelegate.sendAdEvent = GOOGLE_ADS_EVENT_INTERSTITIAL;
-    fullScreenContentDelegate.requestId = requestId;
-    fullScreenContentDelegate.adUnitId = ad.adUnitID;
-    interstitial.fullScreenContentDelegate = fullScreenContentDelegate;
-    interstitialMap[requestId] = interstitial;
-    interstitialDelegateMap[requestId] = fullScreenContentDelegate;
-    [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_INTERSTITIAL
-                        requestId:requestId
-                             type:GOOGLE_ADS_EVENT_LOADED
-                         adUnitId:ad.adUnitID
-                            error:nil
-                             data:nil];
-  }];
+  [GADInterstitialAd loadWithAdUnitID:adUnitId
+                              request:request
+                    completionHandler:^(GADInterstitialAd *ad, NSError *error) {
+                      if (error) {
+                        NSDictionary *codeAndMessage =
+                            [RNGoogleAdsCommon getCodeAndMessageFromAdError:error];
+                        [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_INTERSTITIAL
+                                             requestId:requestId
+                                                  type:GOOGLE_ADS_EVENT_ERROR
+                                              adUnitId:ad.adUnitID
+                                                 error:codeAndMessage
+                                                  data:nil];
+                        return;
+                      }
+                      GADInterstitialAd *interstitial = ad;
+                      RNGoogleAdsFullScreenContentDelegate *fullScreenContentDelegate =
+                          [[RNGoogleAdsFullScreenContentDelegate alloc] init];
+                      fullScreenContentDelegate.sendAdEvent = GOOGLE_ADS_EVENT_INTERSTITIAL;
+                      fullScreenContentDelegate.requestId = requestId;
+                      fullScreenContentDelegate.adUnitId = ad.adUnitID;
+                      interstitial.fullScreenContentDelegate = fullScreenContentDelegate;
+                      interstitialMap[requestId] = interstitial;
+                      interstitialDelegateMap[requestId] = fullScreenContentDelegate;
+                      [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_INTERSTITIAL
+                                           requestId:requestId
+                                                type:GOOGLE_ADS_EVENT_LOADED
+                                            adUnitId:ad.adUnitID
+                                               error:nil
+                                                data:nil];
+                    }];
 }
 
 RCT_EXPORT_METHOD(interstitialShow
@@ -104,7 +108,8 @@ RCT_EXPORT_METHOD(interstitialShow
                   : (RCTPromiseRejectBlock)reject) {
   GADInterstitialAd *interstitial = interstitialMap[requestId];
   if (interstitial) {
-    [interstitial presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
+    [interstitial
+        presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
     resolve([NSNull null]);
   } else {
     [RNSharedUtils

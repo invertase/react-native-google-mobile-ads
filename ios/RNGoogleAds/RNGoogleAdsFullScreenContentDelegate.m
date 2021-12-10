@@ -34,7 +34,7 @@
 
 /// Tells the delegate that the ad failed to present full screen content.
 - (void)ad:(nonnull id<GADFullScreenPresentingAd>)ad
-didFailToPresentFullScreenContentWithError:(nonnull NSError *)error {
+    didFailToPresentFullScreenContentWithError:(nonnull NSError *)error {
   NSDictionary *codeAndMessage = [RNGoogleAdsCommon getCodeAndMessageFromAdError:error];
   [RNGoogleAdsCommon sendAdEvent:_sendAdEvent
                        requestId:_requestId
