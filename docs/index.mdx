@@ -75,7 +75,7 @@ If needed, you can provide settings that will apply to all ad requests.
 For example, if the application targets children then you must configure the outbound requests to only
 receive content suitable for children before loading any adverts.
 
-To set the request configuration, call the `setRequestConfiguration` method before requesting ads:
+If you need to set a custom request configuration, you must call the `setRequestConfiguration` method before requesting ads:
 
 ```js
 import admob, { MaxAdContentRating } from '@invertase/react-native-google-ads';
