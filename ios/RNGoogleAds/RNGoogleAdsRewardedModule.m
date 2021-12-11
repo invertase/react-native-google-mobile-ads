@@ -116,10 +116,13 @@ RCT_EXPORT_METHOD(rewardedLoad
         rewardedMap[requestId] = rewardedAd;
         rewardedDelegateMap[requestId] = fullScreenContentDelegate;
         GADAdReward *reward = rewardedAd.adReward;
-        NSDictionary *data = @{
-          @"type" : reward.type,
-          @"amount" : reward.amount,
-        };
+        NSMutableDictionary *data = [NSMutableDictionary dictionary];
+        if (reward.type != nil) {
+          [data setValue:reward.type forKey:@"type"];
+        }
+        if (reward.amount != nil) {
+          [data setValue:reward.amount forKey:@"amount"];
+        }
         [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_REWARDED
                              requestId:requestId
                                   type:GOOGLE_ADS_EVENT_REWARDED_LOADED
@@ -142,10 +145,13 @@ RCT_EXPORT_METHOD(rewardedShow
         presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController
              userDidEarnRewardHandler:^{
                GADAdReward *reward = rewardedAd.adReward;
-               NSDictionary *data = @{
-                 @"type" : reward.type,
-                 @"amount" : reward.amount,
-               };
+               NSMutableDictionary *data = [NSMutableDictionary dictionary];
+               if (reward.type != nil) {
+                 [data setValue:reward.type forKey:@"type"];
+               }
+               if (reward.amount != nil) {
+                 [data setValue:reward.amount forKey:@"amount"];
+               }
                [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_REWARDED
                                     requestId:requestId
                                          type:GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD

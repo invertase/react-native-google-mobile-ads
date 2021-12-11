@@ -1178,6 +1178,6 @@ export const InterstitialAd: typeof GoogleAdsTypes.InterstitialAd;
 export const RewardedAd: typeof GoogleAdsTypes.RewardedAd;
 export const BannerAd: React.SFC<GoogleAdsTypes.BannerAd>;
 
-declare const defaultExport: GoogleAdsTypes.Module & GoogleAdsTypes.Statics;
+declare const defaultExport: () => GoogleAdsTypes.Module & GoogleAdsTypes.Statics;
 
 export default defaultExport;
