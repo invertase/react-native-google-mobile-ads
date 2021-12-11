@@ -23,6 +23,8 @@ import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLOSED;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_ERROR;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_LOADED;
+import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_OPENED;
+import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLICKED;
 
 import android.app.Activity;
 import android.util.SparseArray;
@@ -87,17 +89,18 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
             new FullScreenContentCallback() {
               @Override
               public void onAdDismissedFullScreenContent() {
-                // Called when fullscreen content is dismissed.
-                // Make sure to set your reference to null so you don't
-                // show it a second time.
                 sendInterstitialEvent(GOOGLE_ADS_EVENT_CLOSED, requestId, adUnitId, null);
                 interstitialAdArray.put(requestId, null);
               }
 
+              @Override
+              public void onAdClicked() {
+                sendInterstitialEvent(GOOGLE_ADS_EVENT_CLICKED, requestId, adUnitId, null);
+              }
 
               @Override
               public void onAdShowedFullScreenContent() {
-                // Called when fullscreen content is shown.
+                sendInterstitialEvent(GOOGLE_ADS_EVENT_OPENED, requestId, adUnitId, null);
               }
             });
 
