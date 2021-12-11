@@ -70,13 +70,12 @@ npx react-native run-android
 
 ## Configure outbound requests
 
-Before requesting ads, you must tell the AdMob network what type of content you'd wish to receive based on your target
-audience.
+If the default ad settings are not correct for your app, you can provide settings that will apply to all ad requests.
 
 For example, if the application targets children then you must configure the outbound requests to only
 receive content suitable for children before loading any adverts.
 
-To set the request configuration, call the `setRequestConfiguration` method:
+If you need to set a custom request configuration, you must call the `setRequestConfiguration` method before requesting ads:
 
 ```js
 import admob, { MaxAdContentRating } from '@invertase/react-native-google-ads';
