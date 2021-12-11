@@ -61,12 +61,12 @@ RCT_EXPORT_METHOD(setRequestConfiguration
   }
 
   if (requestConfiguration[@"tagForChildDirectedTreatment"]) {
-    BOOL tag = (BOOL)requestConfiguration[@"tagForChildDirectedTreatment"];
+    BOOL tag = [requestConfiguration[@"tagForChildDirectedTreatment"] boolValue];
     [GADMobileAds.sharedInstance.requestConfiguration tagForChildDirectedTreatment:tag];
   }
 
   if (requestConfiguration[@"tagForUnderAgeOfConsent"]) {
-    BOOL tag = (BOOL)requestConfiguration[@"tagForUnderAgeOfConsent"];
+    BOOL tag = [requestConfiguration[@"tagForUnderAgeOfConsent"] boolValue];
     [GADMobileAds.sharedInstance.requestConfiguration tagForUnderAgeOfConsent:tag];
   }
 
