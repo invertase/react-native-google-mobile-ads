@@ -23,7 +23,7 @@
 
 + (GADRequest *)buildAdRequest:(NSDictionary *)adRequestOptions;
 
-+ (NSDictionary *)getCodeAndMessageFromAdError:(GADRequestError *)error;
++ (NSDictionary *)getCodeAndMessageFromAdError:(NSError *)error;
 
 + (void)sendAdEvent:(NSString *)event
           requestId:(NSNumber *)requestId
@@ -36,7 +36,7 @@
 
 @end
 
-@interface RNGADInterstitial : GADInterstitial
+@interface RNGADInterstitial : GADInterstitialAd
 @property(nonatomic) NSNumber *requestId;
 - (void)setRequestId:(NSNumber *)requestId;
 @end

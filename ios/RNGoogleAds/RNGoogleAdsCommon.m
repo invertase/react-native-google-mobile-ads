@@ -30,7 +30,7 @@ NSString *const GOOGLE_ADS_EVENT_CLOSED = @"closed";
 NSString *const GOOGLE_ADS_EVENT_REWARDED_LOADED = @"rewarded_loaded";
 NSString *const GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_reward";
 
-@implementation RNGADInterstitial : GADInterstitial
+@implementation RNGADInterstitial : GADInterstitialAd
 - (void)setRequestId:(NSNumber *)requestId {
   _requestId = requestId;
 }
@@ -68,18 +68,6 @@ NSString *const GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_rewa
     request.keywords = adRequestOptions[@"keywords"];
   }
 
-  if (adRequestOptions[@"testDevices"]) {
-    NSMutableArray *devices = [@[] mutableCopy];
-    for (NSString *key in adRequestOptions[@"testDevices"]) {
-      if ([key isEqualToString:@"EMULATOR"]) {
-        [devices addObject:kGADSimulatorID];
-      } else {
-        [devices addObject:key];
-      }
-    }
-    request.testDevices = devices;
-  }
-
   if (adRequestOptions[@"location"]) {
     NSArray<NSNumber *> *latLong = adRequestOptions[@"location"];
     [request setLocationWithLatitude:[latLong[0] doubleValue]
@@ -98,20 +86,20 @@ NSString *const GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_rewa
   return request;
 }
 
-+ (NSDictionary *)getCodeAndMessageFromAdError:(GADRequestError *)error {
++ (NSDictionary *)getCodeAndMessageFromAdError:(NSError *)error {
   NSString *code = @"unknown";
   NSString *message = @"An unknown error occurred.";
 
-  if (error.code == kGADErrorInvalidRequest) {
+  if (error.code == GADErrorInvalidRequest) {
     code = @"invalid-request";
     message = @"The ad request was invalid; for instance, the ad unit ID was incorrect.";
-  } else if (error.code == kGADErrorNoFill) {
+  } else if (error.code == GADErrorNoFill) {
     code = @"no-fill";
     message = @"The ad request was successful, but no ad was returned due to lack of ad inventory.";
-  } else if (error.code == kGADErrorNetworkError) {
+  } else if (error.code == GADErrorNetworkError) {
     code = @"network-error";
     message = @"The ad request was unsuccessful due to network connectivity.";
-  } else if (error.code == kGADErrorInternalError) {
+  } else if (error.code == GADErrorInternalError) {
     code = @"internal-error";
     message = @"Something happened internally; for instance, an invalid response was received from "
               @"the ad server.";
@@ -172,26 +160,24 @@ NSString *const GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_rewa
   value = [value uppercaseString];
 
   if ([value isEqualToString:@"BANNER"]) {
-    return kGADAdSizeBanner;
+    return GADAdSizeBanner;
   } else if ([value isEqualToString:@"FLUID"]) {
-    return kGADAdSizeFluid;
+    return GADAdSizeFluid;
   } else if ([value isEqualToString:@"WIDE_SKYSCRAPER"]) {
-    return kGADAdSizeSkyscraper;
+    return GADAdSizeSkyscraper;
   } else if ([value isEqualToString:@"LARGE_BANNER"]) {
-    return kGADAdSizeLargeBanner;
+    return GADAdSizeLargeBanner;
   } else if ([value isEqualToString:@"MEDIUM_RECTANGLE"]) {
-    return kGADAdSizeMediumRectangle;
+    return GADAdSizeMediumRectangle;
   } else if ([value isEqualToString:@"FULL_BANNER"]) {
-    return kGADAdSizeFullBanner;
+    return GADAdSizeFullBanner;
   } else if ([value isEqualToString:@"LEADERBOARD"]) {
-    return kGADAdSizeLeaderboard;
-  } else if ([value isEqualToString:@"SMART_BANNER"]) {
-    return kGADAdSizeSmartBannerPortrait;
+    return GADAdSizeLeaderboard;
   } else if ([value isEqualToString:@"ADAPTIVE_BANNER"]) {
     CGFloat viewWidth = [[UIScreen mainScreen] bounds].size.width;
     return GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
   } else {
-    return kGADAdSizeBanner;
+    return GADAdSizeBanner;
   }
 }
 

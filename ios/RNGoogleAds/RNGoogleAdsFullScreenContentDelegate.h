@@ -23,13 +23,10 @@
 
 #import "RNGoogleAdsCommon.h"
 
-@interface RNGoogleAdsInterstitialDelegate : NSObject <GADInterstitialDelegate>
+@interface RNGoogleAdsFullScreenContentDelegate : NSObject <GADFullScreenContentDelegate>
 
-+ (_Nonnull instancetype)sharedInstance;
-
-+ (void)sendInterstitialEvent:(NSString *)type
-                    requestId:(NSNumber *)requestId
-                     adUnitId:(NSString *)adUnitId
-                        error:(nullable NSDictionary *)error;
+@property(nonatomic, copy) NSString *sendAdEvent;
+@property(nonatomic, copy) NSNumber *requestId;
+@property(nonatomic, copy) NSString *adUnitId;
 
 @end

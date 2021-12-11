@@ -39,7 +39,7 @@
   ],
   "sdkVersions": {
     "ios": {
-      "googleAds": "7.69.0"
+      "googleAds": "8.13.0"
     },
     "android": {
       "minSdk": 16,

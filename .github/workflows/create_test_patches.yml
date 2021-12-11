@@ -76,7 +76,6 @@ jobs:
           mv package react-native-google-ads
           popd
           npx patch-package $PACKAGE_NAME || true
-          done
           ls -la $HOME/template/patches
         shell: bash
 
