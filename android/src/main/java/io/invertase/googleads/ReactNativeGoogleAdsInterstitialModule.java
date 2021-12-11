@@ -17,18 +17,25 @@ package io.invertase.googleads;
  *
  */
 
-import static io.invertase.googleads.ReactNativeGoogleAdsCommon.buildAdRequest;
 import static io.invertase.googleads.ReactNativeGoogleAdsCommon.getCodeAndMessageFromAdErrorCode;
 import static io.invertase.googleads.ReactNativeGoogleAdsCommon.sendAdEvent;
-import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLICKED;
+import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_INTERSTITIAL;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLOSED;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_ERROR;
-import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_LEFT_APPLICATION;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_LOADED;
-import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_OPENED;
 
 import android.app.Activity;
 import android.util.SparseArray;
+import androidx.annotation.NonNull;
+import org.jetbrains.annotations.NotNull;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.RequestConfiguration;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -36,7 +43,6 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.InterstitialAd;
 import io.invertase.googleads.common.ReactNativeModule;
 import javax.annotation.Nullable;
 
@@ -48,10 +54,14 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
     super(reactContext, SERVICE);
   }
 
-  private void sendInterstitialEvent(
-      String type, int requestId, String adUnitId, @Nullable WritableMap error) {
+  private void sendInterstitialEvent(String type, int requestId, String adUnitId, @Nullable WritableMap error) {
     sendAdEvent(
-        ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_INTERSTITIAL, requestId, type, adUnitId, error);
+      GOOGLE_ADS_EVENT_INTERSTITIAL,
+      requestId,
+      type,
+      adUnitId,
+      error
+    );
   }
 
   @ReactMethod
@@ -60,95 +70,83 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
     if (currentActivity == null) {
       WritableMap error = Arguments.createMap();
       error.putString("code", "null-activity");
-      error.putString(
-          "message", "Interstitial ad attempted to load but the current Activity was null.");
+      error.putString("message", "Interstitial ad attempted to load but the current Activity was null.");
       sendInterstitialEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error);
       return;
     }
-    currentActivity.runOnUiThread(
-        () -> {
-          InterstitialAd interstitialAd = new InterstitialAd(currentActivity);
-          interstitialAd.setAdUnitId(adUnitId);
+    currentActivity.runOnUiThread(() -> {
+      AdRequest.Builder adRequestBuilder = new AdRequest.Builder();
+      AdRequest adRequest = adRequestBuilder.build();
 
-          // Apply AdRequest builder
-          interstitialAd.loadAd(buildAdRequest(adRequestOptions));
+      InterstitialAdLoadCallback interstitialAdLoadCallback = new InterstitialAdLoadCallback() {
 
-          interstitialAd.setAdListener(
-              new AdListener() {
-                @Override
-                public void onAdLoaded() {
-                  sendInterstitialEvent(GOOGLE_ADS_EVENT_LOADED, requestId, adUnitId, null);
-                }
+        @Override
+        public void onAdLoaded(@NonNull @NotNull InterstitialAd interstitialAd) {
 
-                @Override
-                public void onAdFailedToLoad(int errorCode) {
-                  WritableMap error = Arguments.createMap();
-                  String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(errorCode);
-                  error.putString("code", codeAndMessage[0]);
-                  error.putString("message", codeAndMessage[1]);
-                  sendInterstitialEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error);
-                }
+          interstitialAd.setFullScreenContentCallback(
+            new FullScreenContentCallback() {
+              @Override
+              public void onAdDismissedFullScreenContent() {
+                // Called when fullscreen content is dismissed.
+                // Make sure to set your reference to null so you don't
+                // show it a second time.
+                sendInterstitialEvent(GOOGLE_ADS_EVENT_CLOSED, requestId, adUnitId, null);
+                interstitialAdArray.put(requestId, null);
+              }
 
-                @Override
-                public void onAdOpened() {
-                  sendInterstitialEvent(GOOGLE_ADS_EVENT_OPENED, requestId, adUnitId, null);
-                }
 
-                @Override
-                public void onAdClicked() {
-                  sendInterstitialEvent(GOOGLE_ADS_EVENT_CLICKED, requestId, adUnitId, null);
-                }
-
-                @Override
-                public void onAdLeftApplication() {
-                  sendInterstitialEvent(
-                      GOOGLE_ADS_EVENT_LEFT_APPLICATION, requestId, adUnitId, null);
-                }
-
-                @Override
-                public void onAdClosed() {
-                  sendInterstitialEvent(GOOGLE_ADS_EVENT_CLOSED, requestId, adUnitId, null);
-                }
-              });
+              @Override
+              public void onAdShowedFullScreenContent() {
+                // Called when fullscreen content is shown.
+              }
+            });
 
           interstitialAdArray.put(requestId, interstitialAd);
-        });
+          sendInterstitialEvent(GOOGLE_ADS_EVENT_LOADED, requestId, adUnitId, null);
+        }
+
+        @Override
+        public void onAdFailedToLoad(@NonNull @NotNull LoadAdError loadAdError) {
+          WritableMap error = Arguments.createMap();
+          int errorCode = loadAdError.getCode();
+          String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(errorCode);
+          error.putString("code", codeAndMessage[0]);
+          error.putString("message", codeAndMessage[1]);
+          sendInterstitialEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error);
+        }
+      };
+
+      InterstitialAd.load(currentActivity, adUnitId, adRequest, interstitialAdLoadCallback);
+    });
   }
 
   @ReactMethod
   public void interstitialShow(int requestId, ReadableMap showOptions, Promise promise) {
     if (getCurrentActivity() == null) {
-      rejectPromiseWithCodeAndMessage(
-          promise,
-          "null-activity",
-          "Interstitial ad attempted to show but the current Activity was null.");
+      rejectPromiseWithCodeAndMessage(promise, "null-activity", "Interstitial ad attempted to show but the current Activity was null.");
       return;
     }
-    getCurrentActivity()
-        .runOnUiThread(
-            () -> {
-              InterstitialAd interstitialAd = interstitialAdArray.get(requestId);
-              if (interstitialAd == null) {
-                rejectPromiseWithCodeAndMessage(
-                    promise,
-                    "null-interstitialAd",
-                    "Interstitial ad attempted to show but its object was null.");
-                return;
-              }
+    getCurrentActivity().runOnUiThread(() -> {
+      InterstitialAd interstitialAd = interstitialAdArray.get(requestId);
+      if (interstitialAd == null) {
+        rejectPromiseWithCodeAndMessage(promise, "null-interstitialAd", "Interstitial ad attempted to show but its object was null.");
+        return;
+      }
 
-              if (showOptions.hasKey("immersiveModeEnabled")) {
-                interstitialAd.setImmersiveMode(showOptions.getBoolean("immersiveModeEnabled"));
-              } else {
-                interstitialAd.setImmersiveMode(false);
-              }
+      if (showOptions.hasKey("immersiveModeEnabled")) {
+        interstitialAd.setImmersiveMode(showOptions.getBoolean("immersiveModeEnabled"));
+      } else {
+        interstitialAd.setImmersiveMode(false);
+      }
 
-              if (interstitialAd.isLoaded()) {
-                interstitialAd.show();
-                promise.resolve(null);
-              } else {
-                rejectPromiseWithCodeAndMessage(
-                    promise, "not-ready", "Interstitial ad attempted to show but was not ready.");
-              }
-            });
+      String a = String.valueOf(requestId);
+
+      if (interstitialAd != null) {
+        interstitialAd.show(getCurrentActivity());
+        promise.resolve(null);
+      } else {
+        rejectPromiseWithCodeAndMessage(promise, "not-ready", "Interstitial ad attempted to show but was not ready.");
+      }
+    });
   }
 }
