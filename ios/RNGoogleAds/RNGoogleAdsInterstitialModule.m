@@ -19,11 +19,12 @@
 #import <React/RCTUtils.h>
 
 #import "RNGoogleAdsCommon.h"
-#import "RNGoogleAdsInterstitialDelegate.h"
+#import "RNGoogleAdsFullScreenContentDelegate.h"
 #import "RNGoogleAdsInterstitialModule.h"
 #import "common/RNSharedUtils.h"
 
 static __strong NSMutableDictionary *interstitialMap;
+static __strong NSMutableDictionary *interstitialDelegateMap;
 
 @implementation RNGoogleAdsInterstitialModule
 #pragma mark -
@@ -40,6 +41,7 @@ RCT_EXPORT_MODULE();
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     interstitialMap = [[NSMutableDictionary alloc] init];
+    interstitialDelegateMap = [[NSMutableDictionary alloc] init];
   });
   return self;
 }
@@ -54,9 +56,8 @@ RCT_EXPORT_MODULE();
 
 - (void)invalidate {
   for (NSNumber *id in [interstitialMap allKeys]) {
-    RNGADInterstitial *ad = interstitialMap[id];
-    [ad setRequestId:@-1];
     [interstitialMap removeObjectForKey:id];
+    [interstitialDelegateMap removeObjectForKey:id];
   }
 }
 
@@ -67,11 +68,37 @@ RCT_EXPORT_METHOD(interstitialLoad
                   : (nonnull NSNumber *)requestId
                   : (NSString *)adUnitId
                   : (NSDictionary *)adRequestOptions) {
-  RNGADInterstitial *interstitial = [[RNGADInterstitial alloc] initWithAdUnitID:adUnitId];
-  [interstitial setRequestId:requestId];
-  [interstitial loadRequest:[RNGoogleAdsCommon buildAdRequest:adRequestOptions]];
-  interstitial.delegate = [RNGoogleAdsInterstitialDelegate sharedInstance];
-  interstitialMap[requestId] = interstitial;
+  GADRequest *request = [GADRequest request];
+  [GADInterstitialAd loadWithAdUnitID:adUnitId
+                              request:request
+                    completionHandler:^(GADInterstitialAd *ad, NSError *error) {
+                      if (error) {
+                        NSDictionary *codeAndMessage =
+                            [RNGoogleAdsCommon getCodeAndMessageFromAdError:error];
+                        [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_INTERSTITIAL
+                                             requestId:requestId
+                                                  type:GOOGLE_ADS_EVENT_ERROR
+                                              adUnitId:ad.adUnitID
+                                                 error:codeAndMessage
+                                                  data:nil];
+                        return;
+                      }
+                      GADInterstitialAd *interstitial = ad;
+                      RNGoogleAdsFullScreenContentDelegate *fullScreenContentDelegate =
+                          [[RNGoogleAdsFullScreenContentDelegate alloc] init];
+                      fullScreenContentDelegate.sendAdEvent = GOOGLE_ADS_EVENT_INTERSTITIAL;
+                      fullScreenContentDelegate.requestId = requestId;
+                      fullScreenContentDelegate.adUnitId = ad.adUnitID;
+                      interstitial.fullScreenContentDelegate = fullScreenContentDelegate;
+                      interstitialMap[requestId] = interstitial;
+                      interstitialDelegateMap[requestId] = fullScreenContentDelegate;
+                      [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_INTERSTITIAL
+                                           requestId:requestId
+                                                type:GOOGLE_ADS_EVENT_LOADED
+                                            adUnitId:ad.adUnitID
+                                               error:nil
+                                                data:nil];
+                    }];
 }
 
 RCT_EXPORT_METHOD(interstitialShow
@@ -79,8 +106,8 @@ RCT_EXPORT_METHOD(interstitialShow
                   : (NSDictionary *)showOptions
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {
-  GADInterstitial *interstitial = interstitialMap[requestId];
-  if (interstitial.isReady) {
+  GADInterstitialAd *interstitial = interstitialMap[requestId];
+  if (interstitial) {
     [interstitial
         presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
     resolve([NSNull null]);

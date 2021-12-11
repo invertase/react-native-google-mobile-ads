@@ -19,11 +19,12 @@
 #import <React/RCTUtils.h>
 
 #import "RNGoogleAdsCommon.h"
-#import "RNGoogleAdsRewardedDelegate.h"
+#import "RNGoogleAdsFullScreenContentDelegate.h"
 #import "RNGoogleAdsRewardedModule.h"
 #import "common/RNSharedUtils.h"
 
 static __strong NSMutableDictionary *rewardedMap;
+static __strong NSMutableDictionary *rewardedDelegateMap;
 
 @implementation RNGoogleAdsRewardedModule
 #pragma mark -
@@ -40,6 +41,7 @@ RCT_EXPORT_MODULE();
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     rewardedMap = [[NSMutableDictionary alloc] init];
+    rewardedDelegateMap = [[NSMutableDictionary alloc] init];
   });
   return self;
 }
@@ -54,9 +56,8 @@ RCT_EXPORT_MODULE();
 
 - (void)invalidate {
   for (NSNumber *id in [rewardedMap allKeys]) {
-    RNGADRewarded *ad = rewardedMap[id];
-    [ad setRequestId:@-1];
     [rewardedMap removeObjectForKey:id];
+    [rewardedDelegateMap removeObjectForKey:id];
   }
 }
 
@@ -67,53 +68,64 @@ RCT_EXPORT_METHOD(rewardedLoad
                   : (nonnull NSNumber *)requestId
                   : (NSString *)adUnitId
                   : (NSDictionary *)adRequestOptions) {
-  RNGADRewarded *rewarded = [[RNGADRewarded alloc] initWithAdUnitID:adUnitId];
-
-  NSDictionary *serverSideVerificationOptions =
-      [adRequestOptions objectForKey:@"serverSideVerificationOptions"];
-
-  if (serverSideVerificationOptions != nil) {
-    GADServerSideVerificationOptions *options = [[GADServerSideVerificationOptions alloc] init];
-
-    NSString *userId = [serverSideVerificationOptions valueForKey:@"userId"];
-
-    if (userId != nil) {
-      options.userIdentifier = userId;
-    }
-
-    NSString *customData = [serverSideVerificationOptions valueForKey:@"customData"];
-
-    if (customData != nil) {
-      options.customRewardString = customData;
-    }
-
-    [rewarded setServerSideVerificationOptions:options];
-  }
-
-  [rewarded setRequestId:requestId];
-  GADRequest *request = [RNGoogleAdsCommon buildAdRequest:adRequestOptions];
-  rewardedMap[requestId] = rewarded;
-  [rewarded loadRequest:request
-      completionHandler:^(GADRequestError *error) {
-        if (error != nil) {
+  GADRequest *request = [GADRequest request];
+  [GADRewardedAd
+       loadWithAdUnitID:adUnitId
+                request:request
+      completionHandler:^(GADRewardedAd *ad, NSError *error) {
+        if (error) {
           NSDictionary *codeAndMessage = [RNGoogleAdsCommon getCodeAndMessageFromAdError:error];
-          [RNGoogleAdsRewardedDelegate sendRewardedEvent:GOOGLE_ADS_EVENT_ERROR
-                                               requestId:requestId
-                                                adUnitId:adUnitId
-                                                   error:codeAndMessage
-                                                    data:nil];
-        } else {
-          GADAdReward *reward = rewarded.reward;
-          NSDictionary *data = @{
-            @"type" : reward.type,
-            @"amount" : reward.amount,
-          };
-          [RNGoogleAdsRewardedDelegate sendRewardedEvent:GOOGLE_ADS_EVENT_REWARDED_LOADED
-                                               requestId:requestId
-                                                adUnitId:adUnitId
-                                                   error:nil
-                                                    data:data];
+          [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_REWARDED
+                               requestId:requestId
+                                    type:GOOGLE_ADS_EVENT_ERROR
+                                adUnitId:adUnitId
+                                   error:codeAndMessage
+                                    data:nil];
+          return;
         }
+        GADRewardedAd *rewardedAd = ad;
+
+        NSDictionary *serverSideVerificationOptions =
+            [adRequestOptions objectForKey:@"serverSideVerificationOptions"];
+
+        if (serverSideVerificationOptions != nil) {
+          GADServerSideVerificationOptions *options =
+              [[GADServerSideVerificationOptions alloc] init];
+
+          NSString *userId = [serverSideVerificationOptions valueForKey:@"userId"];
+
+          if (userId != nil) {
+            options.userIdentifier = userId;
+          }
+
+          NSString *customData = [serverSideVerificationOptions valueForKey:@"customData"];
+
+          if (customData != nil) {
+            options.customRewardString = customData;
+          }
+
+          [rewardedAd setServerSideVerificationOptions:options];
+        }
+
+        RNGoogleAdsFullScreenContentDelegate *fullScreenContentDelegate =
+            [[RNGoogleAdsFullScreenContentDelegate alloc] init];
+        fullScreenContentDelegate.sendAdEvent = GOOGLE_ADS_EVENT_REWARDED;
+        fullScreenContentDelegate.requestId = requestId;
+        fullScreenContentDelegate.adUnitId = ad.adUnitID;
+        rewardedAd.fullScreenContentDelegate = fullScreenContentDelegate;
+        rewardedMap[requestId] = rewardedAd;
+        rewardedDelegateMap[requestId] = fullScreenContentDelegate;
+        GADAdReward *reward = rewardedAd.adReward;
+        NSDictionary *data = @{
+          @"type" : reward.type,
+          @"amount" : reward.amount,
+        };
+        [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_REWARDED
+                             requestId:requestId
+                                  type:GOOGLE_ADS_EVENT_REWARDED_LOADED
+                              adUnitId:ad.adUnitID
+                                 error:nil
+                                  data:data];
       }];
 }
 
@@ -123,12 +135,24 @@ RCT_EXPORT_METHOD(rewardedShow
                   : (NSDictionary *)showOptions
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {
-  GADRewardedAd *rewarded = rewardedMap[requestId];
-  if (rewarded.isReady) {
-    [rewarded
+  GADRewardedAd *rewardedAd = rewardedMap[requestId];
+
+  if (rewardedAd) {
+    [rewardedAd
         presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController
-                             delegate:[RNGoogleAdsRewardedDelegate sharedInstance]];
-    resolve([NSNull null]);
+             userDidEarnRewardHandler:^{
+               GADAdReward *reward = rewardedAd.adReward;
+               NSDictionary *data = @{
+                 @"type" : reward.type,
+                 @"amount" : reward.amount,
+               };
+               [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_REWARDED
+                                    requestId:requestId
+                                         type:GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD
+                                     adUnitId:rewardedAd.adUnitID
+                                        error:nil
+                                         data:data];
+             }];
   } else {
     [RNSharedUtils
         rejectPromiseWithUserInfo:reject
