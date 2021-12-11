@@ -17,10 +17,13 @@ package io.invertase.googleads;
  *
  */
 
+
 import android.location.Location;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Display;
+import android.util.Log;
+import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
@@ -30,12 +33,25 @@ import com.facebook.react.views.view.ReactViewGroup;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.RequestConfiguration;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.RequestConfiguration;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import org.jetbrains.annotations.NotNull;
+
 import io.invertase.googleads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.List;
 import javax.annotation.Nullable;
 
 public class ReactNativeGoogleAdsCommon {
@@ -165,15 +181,19 @@ public class ReactNativeGoogleAdsCommon {
       ArrayList<Object> devices =
           Objects.requireNonNull(adRequestOptions.getArray("testDevices")).toArrayList();
 
+      List<String> testDeviceIds = new ArrayList<>();
+
       for (Object device : devices) {
         String id = (String) device;
 
         if (id.equals("EMULATOR")) {
-          builder.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
+          testDeviceIds.add(AdRequest.DEVICE_ID_EMULATOR);
         } else {
-          builder.addTestDevice(id);
+          testDeviceIds.add(id);
         }
       }
+      RequestConfiguration configuration = new RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build();
+      MobileAds.setRequestConfiguration(configuration);
     }
 
     if (adRequestOptions.hasKey("contentUrl")) {
