@@ -22,8 +22,6 @@ import android.location.Location;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Display;
-import android.util.Log;
-import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
@@ -33,17 +31,8 @@ import com.facebook.react.views.view.ReactViewGroup;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.RequestConfiguration;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.FullScreenContentCallback;
-import com.google.android.gms.ads.LoadAdError;
-import com.google.android.gms.ads.MobileAds;
-import com.google.android.gms.ads.RequestConfiguration;
-import com.google.android.gms.ads.interstitial.InterstitialAd;
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
-import org.jetbrains.annotations.NotNull;
 
 import io.invertase.googleads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
@@ -107,8 +96,6 @@ public class ReactNativeGoogleAdsCommon {
         return AdSize.FULL_BANNER;
       case "LEADERBOARD":
         return AdSize.LEADERBOARD;
-      case "SMART_BANNER":
-        return AdSize.SMART_BANNER;
       default:
       case "BANNER":
         return AdSize.BANNER;
