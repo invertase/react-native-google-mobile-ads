@@ -1,11 +1,8 @@
 package io.invertase.googleads;
 
-import static io.invertase.googleads.ReactNativeGoogleAdsCommon.buildAdRequest;
 import static io.invertase.googleads.ReactNativeGoogleAdsCommon.getCodeAndMessageFromAdErrorCode;
 import static io.invertase.googleads.ReactNativeGoogleAdsCommon.sendAdEvent;
-import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLOSED;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_ERROR;
-import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_OPENED;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_REWARDED_LOADED;
 
@@ -19,11 +16,13 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.OnUserEarnedRewardListener;
 import com.google.android.gms.ads.rewarded.RewardItem;
 import com.google.android.gms.ads.rewarded.RewardedAd;
-import com.google.android.gms.ads.rewarded.RewardedAdCallback;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
+import com.google.android.gms.ads.LoadAdError;
 import io.invertase.googleads.common.ReactNativeModule;
 
 public class ReactNativeGoogleAdsRewardedModule extends ReactNativeModule {
@@ -62,53 +61,54 @@ public class ReactNativeGoogleAdsRewardedModule extends ReactNativeModule {
     }
     activity.runOnUiThread(
         () -> {
-          RewardedAd rewardedAd = new RewardedAd(activity, adUnitId);
+          AdRequest adRequest = new AdRequest.Builder().build();
 
-          RewardedAdLoadCallback adLoadCallback =
-              new RewardedAdLoadCallback() {
-                @Override
-                public void onRewardedAdLoaded() {
-                  RewardItem rewardItem = rewardedAd.getRewardItem();
-                  WritableMap data = Arguments.createMap();
-                  data.putString("type", rewardItem.getType());
-                  data.putInt("amount", rewardItem.getAmount());
-                  sendRewardedEvent(
-                      GOOGLE_ADS_EVENT_REWARDED_LOADED, requestId, adUnitId, null, data);
-                }
-
-                @Override
-                public void onRewardedAdFailedToLoad(int errorCode) {
-                  WritableMap error = Arguments.createMap();
-                  String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(errorCode);
-                  error.putString("code", codeAndMessage[0]);
-                  error.putString("message", codeAndMessage[1]);
-                  sendRewardedEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error, null);
-                }
-              };
-
-          if (adRequestOptions.hasKey("serverSideVerificationOptions")) {
-            ReadableMap serverSideVerificationOptions =
-                adRequestOptions.getMap("serverSideVerificationOptions");
-
-            if (serverSideVerificationOptions != null) {
-              ServerSideVerificationOptions.Builder options =
-                  new ServerSideVerificationOptions.Builder();
-
-              if (serverSideVerificationOptions.hasKey("userId")) {
-                options.setUserId(serverSideVerificationOptions.getString("userId"));
-              }
-
-              if (serverSideVerificationOptions.hasKey("customData")) {
-                options.setCustomData(serverSideVerificationOptions.getString("customData"));
-              }
-
-              rewardedAd.setServerSideVerificationOptions(options.build());
+          RewardedAdLoadCallback rewardedAdLoadCallback = new RewardedAdLoadCallback() {
+            @Override
+            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+              WritableMap error = Arguments.createMap();
+              int errorCode = loadAdError.getCode();
+              String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(errorCode);
+              error.putString("code", codeAndMessage[0]);
+              error.putString("message", codeAndMessage[1]);
+              sendRewardedEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error, null);
             }
-          }
 
-          rewardedAd.loadAd(buildAdRequest(adRequestOptions), adLoadCallback);
-          rewardedAdArray.put(requestId, rewardedAd);
-        });
+            @Override
+            public void onAdLoaded(@NonNull RewardedAd rewardedAd) {
+              RewardItem rewardItem = rewardedAd.getRewardItem();
+              WritableMap data = Arguments.createMap();
+              data.putString("type", rewardItem.getType());
+              data.putInt("amount", rewardItem.getAmount());
+
+              if (adRequestOptions.hasKey("serverSideVerificationOptions")) {
+                ReadableMap serverSideVerificationOptions =
+                  adRequestOptions.getMap("serverSideVerificationOptions");
+
+                if (serverSideVerificationOptions != null) {
+                  ServerSideVerificationOptions.Builder options =
+                    new ServerSideVerificationOptions.Builder();
+
+                  if (serverSideVerificationOptions.hasKey("userId")) {
+                    options.setUserId(serverSideVerificationOptions.getString("userId"));
+                  }
+
+                  if (serverSideVerificationOptions.hasKey("customData")) {
+                    options.setCustomData(serverSideVerificationOptions.getString("customData"));
+                  }
+
+                  rewardedAd.setServerSideVerificationOptions(options.build());
+                }
+              }
+
+              rewardedAdArray.put(requestId, rewardedAd);
+              sendRewardedEvent(
+                GOOGLE_ADS_EVENT_REWARDED_LOADED, requestId, adUnitId, null, data);
+            }
+          };
+
+          RewardedAd.load(activity, adUnitId, adRequest, rewardedAdLoadCallback);
+    });
   }
 
   @ReactMethod
@@ -130,39 +130,20 @@ public class ReactNativeGoogleAdsRewardedModule extends ReactNativeModule {
               if (showOptions.hasKey("immersiveModeEnabled")) {
                 immersiveModeEnabled = showOptions.getBoolean("immersiveModeEnabled");
               }
+              rewardedAd.setImmersiveMode(immersiveModeEnabled);
 
-              RewardedAdCallback adCallback =
-                  new RewardedAdCallback() {
-                    @Override
-                    public void onRewardedAdOpened() {
-                      sendRewardedEvent(GOOGLE_ADS_EVENT_OPENED, requestId, adUnitId, null, null);
-                    }
+              OnUserEarnedRewardListener onUserEarnedRewardListener = new OnUserEarnedRewardListener() {
+                @Override
+                public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
+                  WritableMap data = Arguments.createMap();
+                  data.putString("type", rewardItem.getType());
+                  data.putInt("amount", rewardItem.getAmount());
+                  sendRewardedEvent(
+                    GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD, requestId, adUnitId, null, data);
+                }
+              };
 
-                    @Override
-                    public void onRewardedAdClosed() {
-                      sendRewardedEvent(GOOGLE_ADS_EVENT_CLOSED, requestId, adUnitId, null, null);
-                    }
-
-                    @Override
-                    public void onUserEarnedReward(@NonNull RewardItem reward) {
-                      WritableMap data = Arguments.createMap();
-                      data.putString("type", reward.getType());
-                      data.putInt("amount", reward.getAmount());
-                      sendRewardedEvent(
-                          GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD, requestId, adUnitId, null, data);
-                    }
-
-                    @Override
-                    public void onRewardedAdFailedToShow(int errorCode) {
-                      WritableMap error = Arguments.createMap();
-                      String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(errorCode);
-                      error.putString("code", codeAndMessage[0]);
-                      error.putString("message", codeAndMessage[1]);
-                      sendRewardedEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error, null);
-                    }
-                  };
-
-              rewardedAd.show(getCurrentActivity(), adCallback, immersiveModeEnabled);
+              rewardedAd.show(getCurrentActivity(), onUserEarnedRewardListener);
               promise.resolve(null);
             });
   }
