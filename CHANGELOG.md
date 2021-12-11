@@ -1,3 +1,13 @@
+# [2.0.0](https://github.com/invertase/react-native-google-ads/compare/v1.0.2...v2.0.0) (2021-12-11)
+
+
+* feat(ios)!: Google Mobile Ads SDK 8 w/new testDeviceIdentifiers vs testDevices (#30) ([bac264d](https://github.com/invertase/react-native-google-ads/commit/bac264d99f1324961ffcd5ee676baf9d6f49c271)), closes [#30](https://github.com/invertase/react-native-google-ads/issues/30)
+
+
+### BREAKING CHANGES
+
+* "testDevices" property no longer exists. You must use "testDeviceIdentifiers". The testDeviceIdentifiers property applies to all ad requests, while the old testDevices property was set per-request.
+
 ## [1.0.2](https://github.com/invertase/react-native-google-ads/compare/v1.0.1...v1.0.2) (2021-12-09)
 
 
