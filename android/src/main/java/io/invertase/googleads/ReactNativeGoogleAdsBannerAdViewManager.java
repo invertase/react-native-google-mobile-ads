@@ -17,6 +17,7 @@ package io.invertase.googleads;
  *
  */
 
+import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
@@ -28,15 +29,13 @@ import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.facebook.react.views.view.ReactViewGroup;
 import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.LoadAdError;
 import java.util.Map;
 import javax.annotation.Nonnull;
-import androidx.annotation.NonNull;
 import org.jetbrains.annotations.NotNull;
-
 
 public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<ReactViewGroup> {
   private static final String REACT_CLASS = "RNGoogleAdsBannerView";
@@ -100,7 +99,7 @@ public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<R
   public void setSize(ReactViewGroup reactViewGroup, String value) {
     size = ReactNativeGoogleAdsCommon.getAdSize(value, reactViewGroup);
 
-   WritableMap payload = Arguments.createMap();
+    WritableMap payload = Arguments.createMap();
 
     int width = size.getWidth();
     int height = size.getHeight();

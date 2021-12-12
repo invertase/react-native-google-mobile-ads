@@ -17,7 +17,6 @@ package io.invertase.googleads;
  *
  */
 
-
 import android.location.Location;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -33,14 +32,13 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.RequestConfiguration;
-
 import io.invertase.googleads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.List;
 import javax.annotation.Nullable;
 
 public class ReactNativeGoogleAdsCommon {
@@ -179,7 +177,8 @@ public class ReactNativeGoogleAdsCommon {
           testDeviceIds.add(id);
         }
       }
-      RequestConfiguration configuration = new RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build();
+      RequestConfiguration configuration =
+          new RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build();
       MobileAds.setRequestConfiguration(configuration);
     }
 
