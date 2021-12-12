@@ -1,3 +1,16 @@
+## [3.0.0](https://github.com/invertase/react-native-google-ads/compare/v2.0.1...v3.0.0) (2021-12-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* android SDK updated to underlying SDK 20
+* **android, sdks:** update to the latest v20 android admob sdk (#32)
+
+### Features
+
+* android SDK updated to underlying SDK 20 ([56c6058](https://github.com/invertase/react-native-google-ads/commit/56c6058d82908bbf195e8dae720a27310809dc6d))
+* **android, sdks:** update to the latest v20 android admob sdk ([#32](https://github.com/invertase/react-native-google-ads/issues/32)) ([291e504](https://github.com/invertase/react-native-google-ads/commit/291e50479ad12ade313ebfa86d47cb9af4d8cc57))
+
 ## [2.0.1](https://github.com/invertase/react-native-google-ads/compare/v2.0.0...v2.0.1) (2021-12-12)
 
 
