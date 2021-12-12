@@ -27,13 +27,11 @@ console.log(googleAds.MaxAdContentRating.T);
 console.log(googleAds.AdEventType.CLICKED);
 console.log(googleAds.AdEventType.CLOSED);
 console.log(googleAds.AdEventType.ERROR);
-console.log(googleAds.AdEventType.LEFT_APPLICATION);
 console.log(googleAds.AdEventType.LOADED);
 console.log(googleAds.AdEventType.OPENED);
 console.log(googleAds.AdEventType.CLICKED);
 console.log(googleAds.AdEventType.CLOSED);
 console.log(googleAds.AdEventType.ERROR);
-console.log(googleAds.AdEventType.LEFT_APPLICATION);
 console.log(googleAds.AdEventType.LOADED);
 console.log(googleAds.AdEventType.OPENED);
 

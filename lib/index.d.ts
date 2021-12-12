@@ -120,14 +120,7 @@ export namespace GoogleAdsTypes {
     /**
      * The user clicked the advert.
      */
-    CLICKED: 'clicked';
-
-    /**
-     * The user has left your application (e.g. following the ad).
-     *
-     * Be sure to pause any tasks on this event (such as music or memory intensive tasks).
-     */
-    LEFT_APPLICATION: 'left_application';
+    CLICKED: 'clicked';    
 
     /**
      * The user closed the ad and has returned back to your application.
