@@ -25,7 +25,6 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.RequestConfiguration;
 import io.invertase.googleads.common.ReactNativeModule;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -42,7 +41,8 @@ public class ReactNativeGoogleAdsModule extends ReactNativeModule {
 
     if (requestConfiguration.hasKey("testDeviceIdentifiers")) {
       ArrayList<Object> devices =
-        Objects.requireNonNull(requestConfiguration.getArray("testDeviceIdentifiers")).toArrayList();
+          Objects.requireNonNull(requestConfiguration.getArray("testDeviceIdentifiers"))
+              .toArrayList();
 
       List<String> testDeviceIds = new ArrayList<>();
 
