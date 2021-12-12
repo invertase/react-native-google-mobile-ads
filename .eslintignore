@@ -1,4 +1,4 @@
-src/version.js
+lib/version.js
 **/node_modules/**
 node_modules
 scripts/
