@@ -120,7 +120,7 @@ export namespace GoogleAdsTypes {
     /**
      * The user clicked the advert.
      */
-    CLICKED: 'clicked';    
+    CLICKED: 'clicked';
 
     /**
      * The user closed the ad and has returned back to your application.
