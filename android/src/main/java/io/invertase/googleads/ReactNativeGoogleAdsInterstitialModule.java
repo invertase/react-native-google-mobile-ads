@@ -17,26 +17,29 @@ package io.invertase.googleads;
  *
  */
 
-import static io.invertase.googleads.ReactNativeGoogleAdsCommon.buildAdRequest;
 import static io.invertase.googleads.ReactNativeGoogleAdsCommon.getCodeAndMessageFromAdErrorCode;
 import static io.invertase.googleads.ReactNativeGoogleAdsCommon.sendAdEvent;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLICKED;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLOSED;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_ERROR;
-import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_LEFT_APPLICATION;
+import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_INTERSTITIAL;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_LOADED;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_OPENED;
 
 import android.app.Activity;
 import android.util.SparseArray;
+import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import io.invertase.googleads.common.ReactNativeModule;
 import javax.annotation.Nullable;
 
@@ -50,8 +53,7 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
 
   private void sendInterstitialEvent(
       String type, int requestId, String adUnitId, @Nullable WritableMap error) {
-    sendAdEvent(
-        ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_INTERSTITIAL, requestId, type, adUnitId, error);
+    sendAdEvent(GOOGLE_ADS_EVENT_INTERSTITIAL, requestId, type, adUnitId, error);
   }
 
   @ReactMethod
@@ -67,51 +69,51 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
     }
     currentActivity.runOnUiThread(
         () -> {
-          InterstitialAd interstitialAd = new InterstitialAd(currentActivity);
-          interstitialAd.setAdUnitId(adUnitId);
+          AdRequest.Builder adRequestBuilder = new AdRequest.Builder();
+          AdRequest adRequest = adRequestBuilder.build();
 
-          // Apply AdRequest builder
-          interstitialAd.loadAd(buildAdRequest(adRequestOptions));
+          InterstitialAdLoadCallback interstitialAdLoadCallback =
+              new InterstitialAdLoadCallback() {
 
-          interstitialAd.setAdListener(
-              new AdListener() {
                 @Override
-                public void onAdLoaded() {
+                public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+
+                  interstitialAd.setFullScreenContentCallback(
+                      new FullScreenContentCallback() {
+                        @Override
+                        public void onAdDismissedFullScreenContent() {
+                          sendInterstitialEvent(GOOGLE_ADS_EVENT_CLOSED, requestId, adUnitId, null);
+                          interstitialAdArray.put(requestId, null);
+                        }
+
+                        @Override
+                        public void onAdClicked() {
+                          sendInterstitialEvent(
+                              GOOGLE_ADS_EVENT_CLICKED, requestId, adUnitId, null);
+                        }
+
+                        @Override
+                        public void onAdShowedFullScreenContent() {
+                          sendInterstitialEvent(GOOGLE_ADS_EVENT_OPENED, requestId, adUnitId, null);
+                        }
+                      });
+
+                  interstitialAdArray.put(requestId, interstitialAd);
                   sendInterstitialEvent(GOOGLE_ADS_EVENT_LOADED, requestId, adUnitId, null);
                 }
 
                 @Override
-                public void onAdFailedToLoad(int errorCode) {
+                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                   WritableMap error = Arguments.createMap();
+                  int errorCode = loadAdError.getCode();
                   String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(errorCode);
                   error.putString("code", codeAndMessage[0]);
                   error.putString("message", codeAndMessage[1]);
                   sendInterstitialEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error);
                 }
+              };
 
-                @Override
-                public void onAdOpened() {
-                  sendInterstitialEvent(GOOGLE_ADS_EVENT_OPENED, requestId, adUnitId, null);
-                }
-
-                @Override
-                public void onAdClicked() {
-                  sendInterstitialEvent(GOOGLE_ADS_EVENT_CLICKED, requestId, adUnitId, null);
-                }
-
-                @Override
-                public void onAdLeftApplication() {
-                  sendInterstitialEvent(
-                      GOOGLE_ADS_EVENT_LEFT_APPLICATION, requestId, adUnitId, null);
-                }
-
-                @Override
-                public void onAdClosed() {
-                  sendInterstitialEvent(GOOGLE_ADS_EVENT_CLOSED, requestId, adUnitId, null);
-                }
-              });
-
-          interstitialAdArray.put(requestId, interstitialAd);
+          InterstitialAd.load(currentActivity, adUnitId, adRequest, interstitialAdLoadCallback);
         });
   }
 
@@ -142,8 +144,10 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
                 interstitialAd.setImmersiveMode(false);
               }
 
-              if (interstitialAd.isLoaded()) {
-                interstitialAd.show();
+              String a = String.valueOf(requestId);
+
+              if (interstitialAd != null) {
+                interstitialAd.show(getCurrentActivity());
                 promise.resolve(null);
               } else {
                 rejectPromiseWithCodeAndMessage(

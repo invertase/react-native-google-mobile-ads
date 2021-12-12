@@ -21,9 +21,12 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
+import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.RequestConfiguration;
 import io.invertase.googleads.common.ReactNativeModule;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class ReactNativeGoogleAdsModule extends ReactNativeModule {
@@ -35,6 +38,25 @@ public class ReactNativeGoogleAdsModule extends ReactNativeModule {
 
   private RequestConfiguration buildRequestConfiguration(ReadableMap requestConfiguration) {
     RequestConfiguration.Builder builder = new RequestConfiguration.Builder();
+
+    if (requestConfiguration.hasKey("testDeviceIdentifiers")) {
+      ArrayList<Object> devices =
+          Objects.requireNonNull(requestConfiguration.getArray("testDeviceIdentifiers"))
+              .toArrayList();
+
+      List<String> testDeviceIds = new ArrayList<>();
+
+      for (Object device : devices) {
+        String id = (String) device;
+
+        if (id.equals("EMULATOR")) {
+          testDeviceIds.add(AdRequest.DEVICE_ID_EMULATOR);
+        } else {
+          testDeviceIds.add(id);
+        }
+      }
+      builder.setTestDeviceIds(testDeviceIds);
+    }
 
     if (requestConfiguration.hasKey("maxAdContentRating")) {
       String rating = requestConfiguration.getString("maxAdContentRating");

@@ -29,7 +29,6 @@ public class ReactNativeGoogleAdsEvent implements NativeEvent {
   public static final String GOOGLE_ADS_EVENT_ERROR = "error";
   public static final String GOOGLE_ADS_EVENT_OPENED = "opened";
   public static final String GOOGLE_ADS_EVENT_CLICKED = "clicked";
-  public static final String GOOGLE_ADS_EVENT_LEFT_APPLICATION = "left_application";
   public static final String GOOGLE_ADS_EVENT_CLOSED = "closed";
 
   public static final String GOOGLE_ADS_EVENT_REWARDED_LOADED = "rewarded_loaded";

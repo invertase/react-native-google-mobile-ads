@@ -53,7 +53,6 @@ extern NSString *const GOOGLE_ADS_EVENT_LOADED;
 extern NSString *const GOOGLE_ADS_EVENT_ERROR;
 extern NSString *const GOOGLE_ADS_EVENT_OPENED;
 extern NSString *const GOOGLE_ADS_EVENT_CLICKED;
-extern NSString *const GOOGLE_ADS_EVENT_LEFT_APPLICATION;
 extern NSString *const GOOGLE_ADS_EVENT_CLOSED;
 
 extern NSString *const GOOGLE_ADS_EVENT_REWARDED_LOADED;

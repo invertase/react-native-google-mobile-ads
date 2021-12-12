@@ -91,8 +91,6 @@ public class ReactNativeGoogleAdsCommon {
         return AdSize.FULL_BANNER;
       case "LEADERBOARD":
         return AdSize.LEADERBOARD;
-      case "SMART_BANNER":
-        return AdSize.SMART_BANNER;
       default:
       case "BANNER":
         return AdSize.BANNER;
@@ -158,21 +156,6 @@ public class ReactNativeGoogleAdsCommon {
 
       for (Object keyword : keywords) {
         builder.addKeyword((String) keyword);
-      }
-    }
-
-    if (adRequestOptions.hasKey("testDevices")) {
-      ArrayList<Object> devices =
-          Objects.requireNonNull(adRequestOptions.getArray("testDevices")).toArrayList();
-
-      for (Object device : devices) {
-        String id = (String) device;
-
-        if (id.equals("EMULATOR")) {
-          builder.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
-        } else {
-          builder.addTestDevice(id);
-        }
       }
     }
 
