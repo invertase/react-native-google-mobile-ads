@@ -5,6 +5,8 @@ import static io.invertase.googleads.ReactNativeGoogleAdsCommon.sendAdEvent;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_ERROR;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_REWARDED_LOADED;
+import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLOSED;
+import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_OPENED;
 
 import android.app.Activity;
 import android.util.SparseArray;
@@ -17,6 +19,7 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.OnUserEarnedRewardListener;
 import com.google.android.gms.ads.rewarded.RewardItem;
 import com.google.android.gms.ads.rewarded.RewardedAd;
@@ -100,6 +103,20 @@ public class ReactNativeGoogleAdsRewardedModule extends ReactNativeModule {
                   rewardedAd.setServerSideVerificationOptions(options.build());
                 }
               }
+
+              FullScreenContentCallback fullScreenContentCallback = new FullScreenContentCallback() {
+                @Override
+                public void onAdShowedFullScreenContent() {
+                  sendRewardedEvent(GOOGLE_ADS_EVENT_OPENED, requestId, adUnitId, null, null);
+                }
+
+                @Override
+                public void onAdDismissedFullScreenContent() {
+                  sendRewardedEvent(GOOGLE_ADS_EVENT_CLOSED, requestId, adUnitId, null, null);
+                }
+              };
+
+              rewardedAd.setFullScreenContentCallback(fullScreenContentCallback);
 
               rewardedAdArray.put(requestId, rewardedAd);
               sendRewardedEvent(
