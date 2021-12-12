@@ -125,4 +125,3 @@ console.log(googleAds.BannerAdSize.FULL_BANNER);
 console.log(googleAds.BannerAdSize.LARGE_BANNER);
 console.log(googleAds.BannerAdSize.LEADERBOARD);
 console.log(googleAds.BannerAdSize.MEDIUM_RECTANGLE);
-console.log(googleAds.BannerAdSize.SMART_BANNER);

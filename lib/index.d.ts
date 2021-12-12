@@ -216,11 +216,6 @@ export namespace GoogleAdsTypes {
     MEDIUM_RECTANGLE: 'MEDIUM_RECTANGLE';
 
     /**
-     * A dynamically sized banner that is full-width and auto-height.
-     */
-    SMART_BANNER: 'SMART_BANNER';
-
-    /**
      * A (next generation) dynamically sized banner that is full-width and auto-height.
      */
     ADAPTIVE_BANNER: 'ADAPTIVE_BANNER';
