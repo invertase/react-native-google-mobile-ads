@@ -30,11 +30,8 @@ import com.facebook.react.views.view.ReactViewGroup;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.MobileAds;
-import com.google.android.gms.ads.RequestConfiguration;
 import io.invertase.googleads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -160,26 +157,6 @@ public class ReactNativeGoogleAdsCommon {
       for (Object keyword : keywords) {
         builder.addKeyword((String) keyword);
       }
-    }
-
-    if (adRequestOptions.hasKey("testDevices")) {
-      ArrayList<Object> devices =
-          Objects.requireNonNull(adRequestOptions.getArray("testDevices")).toArrayList();
-
-      List<String> testDeviceIds = new ArrayList<>();
-
-      for (Object device : devices) {
-        String id = (String) device;
-
-        if (id.equals("EMULATOR")) {
-          testDeviceIds.add(AdRequest.DEVICE_ID_EMULATOR);
-        } else {
-          testDeviceIds.add(id);
-        }
-      }
-      RequestConfiguration configuration =
-          new RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build();
-      MobileAds.setRequestConfiguration(configuration);
     }
 
     if (adRequestOptions.hasKey("contentUrl")) {
