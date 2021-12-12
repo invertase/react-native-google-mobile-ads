@@ -42,7 +42,6 @@ import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import io.invertase.googleads.common.ReactNativeModule;
 import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
   private static final String SERVICE = "RNGoogleAdsInterstitialModule";
@@ -77,7 +76,7 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
               new InterstitialAdLoadCallback() {
 
                 @Override
-                public void onAdLoaded(@NonNull @NotNull InterstitialAd interstitialAd) {
+                public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
 
                   interstitialAd.setFullScreenContentCallback(
                       new FullScreenContentCallback() {
@@ -104,7 +103,7 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
                 }
 
                 @Override
-                public void onAdFailedToLoad(@NonNull @NotNull LoadAdError loadAdError) {
+                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                   WritableMap error = Arguments.createMap();
                   int errorCode = loadAdError.getCode();
                   String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(errorCode);

@@ -35,7 +35,6 @@ import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.LoadAdError;
 import java.util.Map;
 import javax.annotation.Nonnull;
-import org.jetbrains.annotations.NotNull;
 
 public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<ReactViewGroup> {
   private static final String REACT_CLASS = "RNGoogleAdsBannerView";
@@ -155,7 +154,7 @@ public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<R
           }
 
           @Override
-          public void onAdFailedToLoad(@NonNull @NotNull LoadAdError loadAdError) {
+          public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
             int errorCode = loadAdError.getCode();
             WritableMap payload = ReactNativeGoogleAdsCommon.errorCodeToMap(errorCode);
             sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
