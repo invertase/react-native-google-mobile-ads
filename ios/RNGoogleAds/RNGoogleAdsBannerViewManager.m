@@ -100,33 +100,29 @@
   self.onNativeEvent(event);
 }
 
-- (void)adViewDidReceiveAd:(GADBannerView *)adView {
+- (void)bannerViewDidReceiveAd:(GADBannerView *)bannerView {
   [self sendEvent:@"onAdLoaded"
           payload:@{
-            @"width" : @(adView.bounds.size.width),
-            @"height" : @(adView.bounds.size.height),
+            @"width" : @(bannerView.bounds.size.width),
+            @"height" : @(bannerView.bounds.size.height),
           }];
 }
 
-- (void)adView:(GADBannerView *)adView didFailToReceiveAdWithError:(NSError *)error {
+- (void)bannerView:(GADBannerView *)bannerView didFailToReceiveAdWithError:(NSError *)error {
   NSDictionary *errorAndMessage = [RNGoogleAdsCommon getCodeAndMessageFromAdError:error];
   [self sendEvent:@"onAdFailedToLoad" payload:errorAndMessage];
 }
 
-- (void)adViewWillPresentScreen:(GADBannerView *)adView {
+- (void)bannerViewWillPresentScreen:(GADBannerView *)bannerView {
   [self sendEvent:@"onAdOpened" payload:nil];
 }
 
-- (void)adViewWillDismissScreen:(GADBannerView *)adView {
+- (void)bannerViewWillDismissScreen:(GADBannerView *)bannerView {
   // not in use
 }
 
-- (void)adViewDidDismissScreen:(GADBannerView *)adView {
+- (void)bannerViewDidDismissScreen:(GADBannerView *)bannerView {
   [self sendEvent:@"onAdClosed" payload:nil];
-}
-
-- (void)adViewWillLeaveApplication:(GADBannerView *)adView {
-  [self sendEvent:@"onAdLeftApplication" payload:nil];
 }
 
 @end
