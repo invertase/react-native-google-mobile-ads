@@ -3,8 +3,11 @@
 
 ### ⚠ BREAKING CHANGES
 
+Please refer to upstream guides for suggestions on new usage. https://developers.google.com/admob/ios/migration and https://developers.google.com/admob/android/migration
+- compileSdkVersion now 31, change your app android build.gradle to 31 if you have not already. Note that JDK11 is required for stable compilation on compileSdkVersion 31, JDK8 has internal compiler errors with SDK31
+- onAdLeftApplication removed from the underlying SDK, use react-native built in AppState to determine app went to background
+- Smart banner ads removed; use adaptive banner ads. Set height/width explicitly taking into account device size
 * android SDK updated to underlying SDK 20
-* **android, sdks:** update to the latest v20 android admob sdk (#32)
 
 ### Features
 
