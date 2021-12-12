@@ -1,6 +1,6 @@
 {
   "name": "@invertase/react-native-google-ads",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "description": "React Native Google Ads is an easy way to monetize mobile apps with targeted, in-app advertising.",
   "main": "lib/index.js",
