@@ -821,7 +821,6 @@ export namespace GoogleAdsTypes {
       | AdEventType['ERROR']
       | AdEventType['OPENED']
       | AdEventType['CLICKED']
-      | AdEventType['LEFT_APPLICATION']
       | AdEventType['CLOSED']
       | RewardedAdEventType['LOADED']
       | RewardedAdEventType['EARNED_REWARD'],
