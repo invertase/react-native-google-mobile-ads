@@ -17,6 +17,7 @@ package io.invertase.googleads;
  *
  */
 
+import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
@@ -31,6 +32,7 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.LoadAdError;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -40,7 +42,6 @@ public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<R
   private String EVENT_AD_FAILED_TO_LOAD = "onAdFailedToLoad";
   private String EVENT_AD_OPENED = "onAdOpened";
   private String EVENT_AD_CLOSED = "onAdClosed";
-  private String EVENT_AD_LEFT_APPLICATION = "onAdLeftApplication";
 
   private Boolean requested = false;
   private AdRequest request;
@@ -97,17 +98,10 @@ public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<R
   public void setSize(ReactViewGroup reactViewGroup, String value) {
     size = ReactNativeGoogleAdsCommon.getAdSize(value, reactViewGroup);
 
-    int width;
-    int height;
     WritableMap payload = Arguments.createMap();
 
-    if (size == AdSize.SMART_BANNER) {
-      width = (int) PixelUtil.toDIPFromPixel(size.getWidthInPixels(reactViewGroup.getContext()));
-      height = (int) PixelUtil.toDIPFromPixel(size.getHeightInPixels(reactViewGroup.getContext()));
-    } else {
-      width = size.getWidth();
-      height = size.getHeight();
-    }
+    int width = size.getWidth();
+    int height = size.getHeight();
 
     payload.putDouble("width", width);
     payload.putDouble("height", height);
@@ -160,7 +154,8 @@ public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<R
           }
 
           @Override
-          public void onAdFailedToLoad(int errorCode) {
+          public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+            int errorCode = loadAdError.getCode();
             WritableMap payload = ReactNativeGoogleAdsCommon.errorCodeToMap(errorCode);
             sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
           }
@@ -173,11 +168,6 @@ public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<R
           @Override
           public void onAdClosed() {
             sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
-          }
-
-          @Override
-          public void onAdLeftApplication() {
-            sendEvent(reactViewGroup, EVENT_AD_LEFT_APPLICATION, null);
           }
         });
   }

@@ -123,13 +123,6 @@ export namespace GoogleAdsTypes {
     CLICKED: 'clicked';
 
     /**
-     * The user has left your application (e.g. following the ad).
-     *
-     * Be sure to pause any tasks on this event (such as music or memory intensive tasks).
-     */
-    LEFT_APPLICATION: 'left_application';
-
-    /**
      * The user closed the ad and has returned back to your application.
      */
     CLOSED: 'closed';
@@ -214,11 +207,6 @@ export namespace GoogleAdsTypes {
      * Interactive Advertising Bureau (IAB) medium rectangle ad size (300x250 density-independent pixels).
      */
     MEDIUM_RECTANGLE: 'MEDIUM_RECTANGLE';
-
-    /**
-     * A dynamically sized banner that is full-width and auto-height.
-     */
-    SMART_BANNER: 'SMART_BANNER';
 
     /**
      * A (next generation) dynamically sized banner that is full-width and auto-height.
@@ -833,7 +821,6 @@ export namespace GoogleAdsTypes {
       | AdEventType['ERROR']
       | AdEventType['OPENED']
       | AdEventType['CLICKED']
-      | AdEventType['LEFT_APPLICATION']
       | AdEventType['CLOSED']
       | RewardedAdEventType['LOADED']
       | RewardedAdEventType['EARNED_REWARD'],
