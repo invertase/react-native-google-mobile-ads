@@ -83,7 +83,6 @@ describe('googleAds RewardedAd', function () {
           foo: 'bar',
         },
         keywords: ['foo', 'bar'],
-        testDevices: ['abc', 'EMULATOR'],
         contentUrl: 'https://invertase.io',
         location: [0, 0],
         locationAccuracy: 10,

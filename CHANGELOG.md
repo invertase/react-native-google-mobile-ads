@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/invertase/react-native-google-ads/compare/v2.0.0...v2.0.1) (2021-12-12)
+
+
+### Bug Fixes
+
+* rewarded ads crash & request configuration ([#31](https://github.com/invertase/react-native-google-ads/issues/31)) ([382f146](https://github.com/invertase/react-native-google-ads/commit/382f1468efb5bbe7f45c1aeefa7228400e79eb4f))
+
 # [2.0.0](https://github.com/invertase/react-native-google-ads/compare/v1.0.2...v2.0.0) (2021-12-11)
 
 
