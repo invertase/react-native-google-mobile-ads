@@ -38,12 +38,17 @@ RCT_EXPORT_METHOD(initialize
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {
   [[GADMobileAds sharedInstance] startWithCompletionHandler:^(GADInitializationStatus * _Nonnull status) {
-    NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
-    [status.adapterStatusesByClassName enumerateKeysAndObjectsUsingBlock:^(id key, id object, BOOL *stop) {
-      NSMutableDictionary *adapterStatus = [[NSMutableDictionary alloc] init];
-      adapterStatus[@"description"] = [object description];
-      result[key] = adapterStatus;
-    }];
+    NSDictionary *adapterStatuses = [status adapterStatusesByClassName];
+    NSMutableArray *result = [[NSMutableArray alloc] init];
+    for (NSString *adapter in adapterStatuses) {
+      GADAdapterStatus *adapterStatus = adapterStatuses[adapter];
+      NSDictionary *dict = @{
+        @"name": adapter,
+        @"state": @(adapterStatus.state),
+        @"description": adapterStatus.description
+      };
+      [result addObject:dict];
+    }
     resolve(result);
   }];
 }
