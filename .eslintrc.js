@@ -37,7 +37,7 @@ module.exports = {
     'class-methods-use-this': 0,
     'no-console': 1,
     'no-plusplus': 0,
-    'no-undef': 0,
+    'no-undef': 'error',
     'no-shadow': 0,
     'no-catch-shadow': 0,
     'no-underscore-dangle': 'off',

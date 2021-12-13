@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 const detox = require('detox');
 const adapter = require('detox/runners/mocha/adapter');
 
