@@ -34,6 +34,20 @@ RCT_EXPORT_MODULE();
 #pragma mark -
 #pragma mark Google Mobile Ads Methods
 
+RCT_EXPORT_METHOD(initialize
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [[GADMobileAds sharedInstance] startWithCompletionHandler:^(GADInitializationStatus * _Nonnull status) {
+    NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
+    [status.adapterStatusesByClassName enumerateKeysAndObjectsUsingBlock:^(id key, id object, BOOL *stop) {
+      NSMutableDictionary *adapterStatus = [[NSMutableDictionary alloc] init];
+      adapterStatus[@"description"] = [object description];
+      result[key] = adapterStatus;
+    }];
+    resolve(result);
+  }];
+}
+
 RCT_EXPORT_METHOD(setRequestConfiguration
                   : (NSDictionary *)requestConfiguration
                   : (RCTPromiseResolveBlock)resolve
