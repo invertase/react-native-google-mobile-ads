@@ -75,7 +75,7 @@ If the default ad settings are not correct for your app, you can provide setting
 For example, if the application targets children then you must configure the outbound requests to only
 receive content suitable for children before loading any adverts.
 
-If you need to set a custom request configuration, you must call the `setRequestConfiguration` method before requesting ads:
+If you need to set a custom request configuration, you must call the `setRequestConfiguration` method before initializing the Google Mobile Ads SDK:
 
 ```js
 import admob, { MaxAdContentRating } from '@invertase/react-native-google-ads';
@@ -101,6 +101,26 @@ admob()
 ```
 
 To learn more about the request configuration settings, view the [`RequestConfiguration`](/reference/admob/requestconfiguration) documentation.
+
+## Initialize the Google Mobile Ads SDK
+
+Before loading ads, have your app initialize the Google Mobile Ads SDK by calling `initialize` which initializes the SDK and returns a promise once initialization is complete (or after a 30-second timeout).
+This needs to be done only once, ideally at app launch.
+
+> ⚠️ **Warning:** Ads may be preloaded by the Mobile Ads SDK or mediation partner SDKs upon calling `initialize`.
+If you need to obtain consent from users in the European Economic Area (EEA), set any request-specific flags (such as tagForChildDirectedTreatment), or otherwise take action before loading ads, ensure you do so before initializing the Mobile Ads SDK.
+
+```js
+import admob from '@invertase/react-native-google-ads';
+
+admob()
+  .initialize()
+  .then((adapterStatuses) => {
+    // Initialization complete!
+  });
+```
+
+If you are using mediation, you may wish to wait until the promise is settled before loading ads, as this will ensure that all mediation adapters are initialized.
 
 ## European User Consent
 

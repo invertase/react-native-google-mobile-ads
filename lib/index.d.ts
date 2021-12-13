@@ -726,6 +726,15 @@ export namespace GoogleAdsTypes {
   }
 
   /**
+   * An immutable snapshot of a mediation adapter's initialization status.
+   */
+  export type AdapterStatus = {
+    name: string;
+    description: string;
+    status: 0 | 1;
+  };
+
+  /**
    * The `RequestConfiguration` used when setting global ad settings via `setRequestConfiguration`.
    */
   export interface RequestConfiguration {
@@ -1123,6 +1132,11 @@ export namespace GoogleAdsTypes {
    * The Google Ads service interface.
    */
   export class Module {
+    /**
+     * Initialize the SDK.
+     */
+    initialize(): Promise<AdapterStatus[]>;
+
     /**
      * Sets request options for all future ad requests.
      *
