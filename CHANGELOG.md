@@ -1,3 +1,10 @@
+## [3.1.0](https://github.com/invertase/react-native-google-ads/compare/v3.0.0...v3.1.0) (2021-12-13)
+
+
+### Features
+
+* **ios, banner:** replace v7 methods with v8 methods ([#37](https://github.com/invertase/react-native-google-ads/issues/37)) ([c53c657](https://github.com/invertase/react-native-google-ads/commit/c53c6571ec7284c380df026f42dacdb3fa6ffafb))
+
 ## [3.0.0](https://github.com/invertase/react-native-google-ads/compare/v2.0.1...v3.0.0) (2021-12-12)
 
 
