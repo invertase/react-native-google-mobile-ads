@@ -726,15 +726,13 @@ export namespace GoogleAdsTypes {
   }
 
   /**
-   * Initialization status of each ad network available to the Google Mobile Ads SDK, keyed by its
-   * GADMAdapter's class name. The list of available ad networks may be incomplete during early
-   * phases of SDK initialization.
+   * An immutable snapshot of a mediation adapter's initialization status.
    */
-  export type InitializationStatus = {
+  export type AdapterStatus = {
     name: string;
     description: string;
     status: 0 | 1;
-  }[];
+  };
 
   /**
    * The `RequestConfiguration` used when setting global ad settings via `setRequestConfiguration`.
@@ -1137,7 +1135,7 @@ export namespace GoogleAdsTypes {
     /**
      * Initialize the SDK.
      */
-    initialize(): Promise<InitializationStatus>;
+    initialize(): Promise<AdapterStatus[]>;
 
     /**
      * Sets request options for all future ad requests.
