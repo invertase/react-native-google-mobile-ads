@@ -1,3 +1,10 @@
+## [3.2.0](https://github.com/invertase/react-native-google-ads/compare/v3.1.0...v3.2.0) (2021-12-13)
+
+
+### Features
+
+* expose native SDK initialize methods as new `initialize` API ([#40](https://github.com/invertase/react-native-google-ads/issues/40)) ([3689b1f](https://github.com/invertase/react-native-google-ads/commit/3689b1f91f7e979792dce9021619154e5961fa02))
+
 ## [3.1.0](https://github.com/invertase/react-native-google-ads/compare/v3.0.0...v3.1.0) (2021-12-13)
 
 
