@@ -730,11 +730,11 @@ export namespace GoogleAdsTypes {
    * GADMAdapter's class name. The list of available ad networks may be incomplete during early
    * phases of SDK initialization.
    */
-  export interface InitializationStatus {
-    [adapterClassName: string]: {
-      description: string;
-    };
-  }
+  export type InitializationStatus = {
+    name: string;
+    description: string;
+    status: 0 | 1;
+  }[];
 
   /**
    * The `RequestConfiguration` used when setting global ad settings via `setRequestConfiguration`.
