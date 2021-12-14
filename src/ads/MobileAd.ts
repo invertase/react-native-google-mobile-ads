@@ -18,8 +18,20 @@
 import NativeError from '../internal/NativeError';
 import AdEventType from '../AdEventType';
 import RewardedAdEventType from '../RewardedAdEventType';
+import { RequestOptions } from '../types/RequestOptions';
+import { MobileAdsModule } from '../types/MobileAdsModule';
 
 export default class MobileAd {
+  _type: string;
+  _googleAds: MobileAdsModule;
+  _requestId: number;
+  _adUnitId: string;
+  _requestOptions: RequestOptions;
+  _loaded: boolean;
+  _isLoadCalled: boolean;
+  _onAdEventHandler: (type: string, nativeError: NativeError, data: any) => void;
+  _nativeListener: () => void;
+
   constructor(type, googleAds, requestId, adUnitId, requestOptions) {
     this._type = type;
     this._googleAds = googleAds;
@@ -44,7 +56,7 @@ export default class MobileAd {
       this._loaded = true;
     }
 
-    if (type === AdEventType.CLOSED || type === RewardedAdEventType.CLOSED) {
+    if (type === AdEventType.CLOSED) {
       this._loaded = false;
       this._isLoadCalled = false;
     }

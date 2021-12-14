@@ -14,6 +14,7 @@
  * limitations under the License.
  *
  */
+
 import { Platform } from 'react-native';
 import Base64 from './Base64';
 import { isString } from './validate';
