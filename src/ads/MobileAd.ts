@@ -16,23 +16,31 @@
  */
 
 import NativeError from '../internal/NativeError';
-import AdEventType from '../AdEventType';
 import RewardedAdEventType from '../RewardedAdEventType';
+import AdEventType from '../AdEventType';
+import { AdEventTypes } from '../types/AdEventTypes';
+import { AdEventListener } from '../types/AdEventListener';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdsModule } from '../types/MobileAdsModule';
 
 export default class MobileAd {
-  _type: string;
+  _type: 'interstitial' | 'rewarded';
   _googleAds: MobileAdsModule;
   _requestId: number;
   _adUnitId: string;
   _requestOptions: RequestOptions;
   _loaded: boolean;
   _isLoadCalled: boolean;
-  _onAdEventHandler: (type: string, nativeError: NativeError, data: any) => void;
+  _onAdEventHandler: AdEventListener | null;
   _nativeListener: () => void;
 
-  constructor(type, googleAds, requestId, adUnitId, requestOptions) {
+  constructor(
+    type: 'interstitial' | 'rewarded',
+    googleAds: MobileAdsModule,
+    requestId: number,
+    adUnitId: string,
+    requestOptions: RequestOptions,
+  ) {
     this._type = type;
     this._googleAds = googleAds;
     this._requestId = requestId;
@@ -49,7 +57,7 @@ export default class MobileAd {
     );
   }
 
-  _handleAdEvent(event) {
+  _handleAdEvent(event: { body: { type: AdEventTypes; error: Error; data: any } }) {
     const { type, error, data } = event.body;
 
     if (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) {
@@ -71,7 +79,7 @@ export default class MobileAd {
     }
   }
 
-  _setAdEventHandler(handler) {
+  _setAdEventHandler(handler: AdEventListener) {
     this._onAdEventHandler = handler;
     return () => (this._onAdEventHandler = null);
   }

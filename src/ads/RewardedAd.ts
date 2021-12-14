@@ -20,6 +20,8 @@ import googleAds from '../googleMobileAds';
 import validateAdRequestOptions from '../validateAdRequestOptions';
 import validateAdShowOptions from '../validateAdShowOptions';
 import MobileAd from './MobileAd';
+import { AdEventListener } from '../types/AdEventListener';
+import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
 
@@ -108,7 +110,9 @@ export default class RewardedAd extends MobileAd implements MobileAdInterface {
     try {
       options = validateAdRequestOptions(requestOptions);
     } catch (e) {
-      throw new Error(`RewardedAd.createForAdRequest(_, *) ${e.message}.`);
+      if (e instanceof Error) {
+        throw new Error(`RewardedAd.createForAdRequest(_, *) ${e.message}.`);
+      }
     }
 
     const requestId = _rewardedRequest++;
@@ -125,7 +129,7 @@ export default class RewardedAd extends MobileAd implements MobileAdInterface {
     this._googleAds.native.rewardedLoad(this._requestId, this._adUnitId, this._requestOptions);
   }
 
-  onAdEvent(handler) {
+  onAdEvent(handler: AdEventListener) {
     if (!isFunction(handler)) {
       throw new Error("RewardedAd.onAdEvent(*) 'handler' expected a function.");
     }
@@ -133,7 +137,7 @@ export default class RewardedAd extends MobileAd implements MobileAdInterface {
     return this._setAdEventHandler(handler);
   }
 
-  show(showOptions) {
+  show(showOptions: AdShowOptions) {
     if (!this._loaded) {
       throw new Error(
         'RewardedAd.show() The requested RewardedAd has not loaded and could not be shown.',
@@ -144,7 +148,9 @@ export default class RewardedAd extends MobileAd implements MobileAdInterface {
     try {
       options = validateAdShowOptions(showOptions);
     } catch (e) {
-      throw new Error(`RewardedAd.show(*) ${e.message}.`);
+      if (e instanceof Error) {
+        throw new Error(`RewardedAd.show(*) ${e.message}.`);
+      }
     }
     return this._googleAds.native.rewardedShow(this._requestId, this._adUnitId, options);
   }

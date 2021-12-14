@@ -20,6 +20,8 @@ import googleAds from '../googleMobileAds';
 import validateAdRequestOptions from '../validateAdRequestOptions';
 import validateAdShowOptions from '../validateAdShowOptions';
 import MobileAd from './MobileAd';
+import { AdEventListener } from '../types/AdEventListener';
+import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
 
@@ -102,7 +104,9 @@ export default class InterstitialAd extends MobileAd implements MobileAdInterfac
     try {
       options = validateAdRequestOptions(requestOptions);
     } catch (e) {
-      throw new Error(`InterstitialAd.createForAdRequest(_, *) ${e.message}.`);
+      if (e instanceof Error) {
+        throw new Error(`InterstitialAd.createForAdRequest(_, *) ${e.message}.`);
+      }
     }
 
     const requestId = _interstitialRequest++;
@@ -119,7 +123,7 @@ export default class InterstitialAd extends MobileAd implements MobileAdInterfac
     this._googleAds.native.interstitialLoad(this._requestId, this._adUnitId, this._requestOptions);
   }
 
-  onAdEvent(handler) {
+  onAdEvent(handler: AdEventListener) {
     if (!isFunction(handler)) {
       throw new Error("InterstitialAd.onAdEvent(*) 'handler' expected a function.");
     }
@@ -127,7 +131,7 @@ export default class InterstitialAd extends MobileAd implements MobileAdInterfac
     return this._setAdEventHandler(handler);
   }
 
-  show(showOptions) {
+  show(showOptions: AdShowOptions) {
     if (!this._loaded) {
       throw new Error(
         'InterstitialAd.show() The requested InterstitialAd has not loaded and could not be shown.',
@@ -138,7 +142,9 @@ export default class InterstitialAd extends MobileAd implements MobileAdInterfac
     try {
       options = validateAdShowOptions(showOptions);
     } catch (e) {
-      throw new Error(`InterstitialAd.show(*) ${e.message}.`);
+      if (e instanceof Error) {
+        throw new Error(`InterstitialAd.show(*) ${e.message}.`);
+      }
     }
 
     return this._googleAds.native.interstitialShow(this._requestId, options);

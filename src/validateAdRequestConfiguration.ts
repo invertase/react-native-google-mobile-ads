@@ -15,11 +15,12 @@
  *
  */
 
-import { hasOwnProperty, isArray, isBoolean, isObject } from '../lib/common';
+import { hasOwnProperty, isArray, isBoolean, isObject } from './common';
 import MaxAdContentRating from './MaxAdContentRating';
+import { RequestConfiguration } from './types/RequestConfiguration';
 
-export default function validateAdRequestConfiguration(requestConfiguration) {
-  const out = {};
+export default function validateAdRequestConfiguration(requestConfiguration: RequestConfiguration) {
+  const out: RequestConfiguration = {};
 
   if (!isObject(requestConfiguration)) {
     throw new Error("'requestConfiguration' expected an object value");

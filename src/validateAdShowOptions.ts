@@ -16,9 +16,10 @@
  */
 
 import { hasOwnProperty, isBoolean, isObject, isUndefined } from './common';
+import { AdShowOptions } from './types/AdShowOptions';
 
-export default function validateAdShowOptions(options) {
-  const out = {};
+export default function validateAdShowOptions(options: AdShowOptions) {
+  const out: AdShowOptions = {};
 
   if (isUndefined(options)) {
     return out;

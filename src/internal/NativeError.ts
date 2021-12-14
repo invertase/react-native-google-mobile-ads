@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
@@ -17,7 +18,7 @@
  */
 
 export default class NativeError extends Error {
-  static fromEvent(errorEvent, namespace, stack) {
+  static fromEvent(errorEvent: any, namespace: string, stack?: any) {
     return new NativeError({ userInfo: errorEvent }, stack || new Error().stack, namespace);
   }
 

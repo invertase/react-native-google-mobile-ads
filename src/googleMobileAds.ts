@@ -2,6 +2,7 @@ import { Module } from './internal';
 import validateAdRequestConfiguration from './validateAdRequestConfiguration';
 import { version } from './version';
 import { MobileAdsModule } from './types/MobileAdsModule';
+import { RequestConfiguration } from './types/RequestConfiguration';
 
 const namespace = 'google_ads';
 
@@ -11,18 +12,30 @@ const nativeModuleName = [
   'RNGoogleAdsRewardedModule',
 ];
 
-class GoogleAdsModule extends Module implements MobileAdsModule {
-  constructor(...args) {
-    super(...args);
+type Config = {
+  version: string;
+  namespace: string;
+  nativeModuleName: string[];
+  nativeEvents: string[];
+};
 
-    this.emitter.addListener('google_ads_interstitial_event', event => {
+type Event = {
+  adUnitId: string;
+  requestId: number;
+};
+
+class GoogleAdsModule extends Module implements MobileAdsModule {
+  constructor(app: string, config: Config) {
+    super(app, config);
+
+    this.emitter.addListener('google_ads_interstitial_event', (event: Event) => {
       this.emitter.emit(
         `google_ads_interstitial_event:${event.adUnitId}:${event.requestId}`,
         event,
       );
     });
 
-    this.emitter.addListener('google_ads_rewarded_event', event => {
+    this.emitter.addListener('google_ads_rewarded_event', (event: Event) => {
       this.emitter.emit(`google_ads_rewarded_event:${event.adUnitId}:${event.requestId}`, event);
     });
   }
@@ -31,12 +44,14 @@ class GoogleAdsModule extends Module implements MobileAdsModule {
     return this.native.initialize();
   }
 
-  setRequestConfiguration(requestConfiguration) {
+  setRequestConfiguration(requestConfiguration: RequestConfiguration) {
     let config;
     try {
       config = validateAdRequestConfiguration(requestConfiguration);
     } catch (e) {
-      throw new Error(`googleAds.setRequestConfiguration(*) ${e.message}`);
+      if (e instanceof Error) {
+        throw new Error(`googleAds.setRequestConfiguration(*) ${e.message}`);
+      }
     }
 
     return this.native.setRequestConfiguration(config);

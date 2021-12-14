@@ -22,15 +22,14 @@ import {
   isNumber,
   isObject,
   isString,
-  isUndefined,
   isValidUrl,
 } from './common';
 import { RequestOptions } from './types/RequestOptions';
 
-export default function validateAdRequestOptions(options: RequestOptions) {
+export default function validateAdRequestOptions(options?: RequestOptions) {
   const out: RequestOptions = {};
 
-  if (isUndefined(options)) {
+  if (typeof options === 'undefined') {
     return out;
   }
 

@@ -55,7 +55,9 @@ function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
       try {
         validateAdRequestOptions(requestOptions);
       } catch (e) {
-        throw new Error(`BannerAd: ${e.message}`);
+        if (e instanceof Error) {
+          throw new Error(`BannerAd: ${e.message}`);
+        }
       }
     }
   }, [parsedRequestOptions]);

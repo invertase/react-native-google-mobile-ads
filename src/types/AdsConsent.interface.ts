@@ -156,7 +156,7 @@ export interface AdsConsentInterface {
    *
    * @param options An AdsConsentFormOptions interface to control the Google-rendered form.
    */
-  showForm(options?: AdsConsentFormOptions): Promise<AdsConsentFormResult>;
+  showForm(options: AdsConsentFormOptions): Promise<AdsConsentFormResult>;
 
   /**
    * Returns a list of ad providers currently in use for the given Google Mobile Ads App ID.

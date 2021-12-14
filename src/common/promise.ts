@@ -21,11 +21,11 @@ import { isFunction } from './validate';
  *
  */
 export function promiseDefer() {
-  const deferred = {
-    promise: null,
-    resolve: null,
-    reject: null,
-  };
+  const deferred: {
+    promise: Promise<unknown> | null;
+    resolve: ((value: unknown) => void) | null;
+    reject: ((value: unknown) => void) | null;
+  } = { promise: null, resolve: null, reject: null };
 
   deferred.promise = new Promise((resolve, reject) => {
     deferred.resolve = resolve;
@@ -39,7 +39,10 @@ export function promiseDefer() {
  * @param promise
  * @param callback
  */
-export function promiseWithOptionalCallback(promise, callback) {
+export function promiseWithOptionalCallback(
+  promise: Promise<unknown>,
+  callback: (a: any, b?: any) => void,
+) {
   if (!isFunction(callback)) {
     return promise;
   }

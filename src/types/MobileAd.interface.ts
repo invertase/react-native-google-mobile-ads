@@ -1,27 +1,5 @@
-import { AdEventType } from './AdEventType';
+import { AdEventListener } from './AdEventListener';
 import { AdShowOptions } from './AdShowOptions';
-import { RewardedAdReward } from './RewardedAdReward';
-import { RewardedAdEventType } from './RewardedAdEventType';
-
-/**
- * A callback interface for all ad events.
- *
- * @param type The event type, e.g. `AdEventType.LOADED`.
- * @param error An optional JavaScript Error containing the error code and message.
- * @param data Optional data for the event, e.g. reward type and amount
- */
-export type AdEventListener = (
-  type:
-    | AdEventType['LOADED']
-    | AdEventType['ERROR']
-    | AdEventType['OPENED']
-    | AdEventType['CLICKED']
-    | AdEventType['CLOSED']
-    | RewardedAdEventType['LOADED']
-    | RewardedAdEventType['EARNED_REWARD'],
-  error?: Error,
-  data?: any | RewardedAdReward,
-) => void;
 
 /**
  * Base class for InterstitialAd, RewardedAd, NativeAd and BannerAd.

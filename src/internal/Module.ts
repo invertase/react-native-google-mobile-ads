@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 /*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
@@ -16,10 +17,10 @@
  *
  */
 
-import { getNativeModule } from './registry/nativeModule';
+import { getAppModule, getNativeModule } from './registry/nativeModule';
 import SharedEventEmitter from './SharedEventEmitter';
 
-// let appJson = null;
+let appJson = null;
 
 export default class AppModule {
   constructor(app, config) {
@@ -32,21 +33,21 @@ export default class AppModule {
     return this._app;
   }
 
-  // get appJson() {
-  //   if (appJson) {
-  //     return appJson;
-  //   }
-  //   appJson = JSON.parse(getAppModule().APP_RAW_JSON);
-  //   return appJson;
-  // }
+  get appJson() {
+    if (appJson) {
+      return appJson;
+    }
+    appJson = JSON.parse(getAppModule().APP_RAW_JSON);
+    return appJson;
+  }
 
   get emitter() {
     return SharedEventEmitter;
   }
 
-  // eventNameForApp(...args: string[]) {
-  //   return `${this.app.name}-${args.join('-')}`;
-  // }
+  eventNameForApp(...args: string[]) {
+    return `${this.app.name}-${args.join('-')}`;
+  }
 
   get native() {
     if (this._nativeModule) {
@@ -56,3 +57,6 @@ export default class AppModule {
     return this._nativeModule;
   }
 }
+
+// Instance of checks don't work once compiled
+AppModule.__extended__ = {};
