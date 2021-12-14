@@ -1,3 +1,4 @@
+// @ts-nocheck
 /*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
@@ -21,15 +22,6 @@ import SharedEventEmitter from './SharedEventEmitter';
 // let appJson = null;
 
 export default class AppModule {
-  _app: string;
-  _nativeModule: any;
-  _config: {
-    version: string;
-    namespace: string;
-    nativeModuleName: string;
-    nativeEvents: string[];
-  };
-
   constructor(app, config) {
     this._app = app;
     this._nativeModule = null;
