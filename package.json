@@ -3,8 +3,8 @@
   "version": "3.2.0",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "description": "React Native Google Ads is an easy way to monetize mobile apps with targeted, in-app advertising.",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/invertase/react-native-google-ads"
@@ -27,7 +27,6 @@
     "/android/",
     "/docs/",
     "/ios/",
-    "/lib/",
     "/src/",
     "/docs.json",
     "/RNGoogleAds.podspec",
@@ -51,10 +50,10 @@
   },
   "scripts": {
     "prepare": "yarn build",
-    "build": "genversion --semi lib/version.js",
-    "build:clean": "rimraf android/build && rimraf ios/build",
+    "build": "genversion --es6 --semi src/version.ts && tsc",
+    "build:clean": "rimraf android/build && rimraf ios/build && rimraf dist",
     "lint:code": "yarn lint:js && yarn lint:android && yarn lint:ios:check",
-    "lint:js": "eslint lib/ --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "lint:js": "eslint src/ --ext .js,.jsx,.ts,.tsx --max-warnings=0",
     "lint:android": "google-java-format --set-exit-if-changed --replace --glob=\"android/**/*.java\"",
     "lint:ios:check": "clang-format --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google -n -Werror",
     "lint:ios:fix": "clang-format -i --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google",

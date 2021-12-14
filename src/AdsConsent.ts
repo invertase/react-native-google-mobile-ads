@@ -27,10 +27,11 @@ import {
 import { NativeModules } from 'react-native';
 import AdsConsentDebugGeography from './AdsConsentDebugGeography';
 import AdsConsentStatus from './AdsConsentStatus';
+import { AdsConsentInterface } from './types/AdsConsent.interface';
 
 const native = NativeModules.RNGoogleAdsConsentModule;
 
-export default {
+const AdsConsent: AdsConsentInterface = {
   /**
    *
    * @param publisherIds
@@ -188,3 +189,5 @@ export default {
     return native.addTestDevices(deviceIds);
   },
 };
+
+export default AdsConsent;

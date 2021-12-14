@@ -15,7 +15,7 @@
  *
  */
 
-import version from './version';
+import { version } from './version';
 
 // import { SDK_VERSION } from '@invertase/react-native-google-ads';
 export const SDK_VERSION = version;

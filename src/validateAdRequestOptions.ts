@@ -25,9 +25,10 @@ import {
   isUndefined,
   isValidUrl,
 } from './common';
+import { RequestOptions } from './types/RequestOptions';
 
-export default function validateAdRequestOptions(options) {
-  const out = {};
+export default function validateAdRequestOptions(options: RequestOptions) {
+  const out: RequestOptions = {};
 
   if (isUndefined(options)) {
     return out;
@@ -73,22 +74,6 @@ export default function validateAdRequestOptions(options) {
     }
 
     out.keywords = options.keywords;
-  }
-
-  if (options.testDevices) {
-    if (!isArray(options.testDevices)) {
-      throw new Error("'options.testDevices' expected an array containing string values");
-    }
-
-    for (let i = 0; i < options.testDevices.length; i++) {
-      const device = options.testDevices[i];
-
-      if (!isString(device)) {
-        throw new Error("'options.testDevices' expected an array containing string values");
-      }
-    }
-
-    out.testDevices = options.testDevices;
   }
 
   if (options.contentUrl) {

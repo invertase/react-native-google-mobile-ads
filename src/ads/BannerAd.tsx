@@ -16,17 +16,18 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { requireNativeComponent } from 'react-native';
+import { HostComponent, requireNativeComponent } from 'react-native';
 import { isFunction } from '../common';
 import NativeError from '../internal/NativeError';
 import BannerAdSize from '../BannerAdSize';
 import validateAdRequestOptions from '../validateAdRequestOptions';
+import { BannerAdProps } from '../types/BannerAdProps';
+import { RequestOptions } from '../types/RequestOptions';
 
 const initialState = [0, 0];
 const sizeRegex = /([0-9]+)x([0-9]+)/;
 
-function BannerAd({ unitId, size, requestOptions, ...props }) {
+function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
   const [dimensions, setDimensions] = useState(initialState);
 
   useEffect(() => {
@@ -77,7 +78,7 @@ function BannerAd({ unitId, size, requestOptions, ...props }) {
 
   let style;
   if (size === 'FLUID') {
-    // eslint-disable-next-line react/prop-types
+    // @ts-ignore: Property 'style' does not exist on type error
     style = props.style;
   } else {
     style = {
@@ -97,17 +98,17 @@ function BannerAd({ unitId, size, requestOptions, ...props }) {
   );
 }
 
-const GoogleAdsBannerView = requireNativeComponent('RNGoogleAdsBannerView', BannerAd);
-
-BannerAd.propTypes = {
-  unitId: PropTypes.string.isRequired,
-  size: PropTypes.string.isRequired,
-  requestOptions: PropTypes.object,
-  onAdLoaded: PropTypes.func,
-  onAdFailedToLoad: PropTypes.func,
-  onAdOpened: PropTypes.func,
-  onAdClosed: PropTypes.func,
-  onAdLeftApplication: PropTypes.func,
-};
+const GoogleAdsBannerView: HostComponent<{
+  size: string;
+  style: {
+    width: number;
+    height: number;
+  };
+  unitId: string;
+  request: RequestOptions;
+  onNativeEvent: (event: {
+    nativeEvent: { type: 'string'; width: number; height: number };
+  }) => void;
+}> = requireNativeComponent('RNGoogleAdsBannerView');
 
 export default BannerAd;

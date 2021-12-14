@@ -1,6 +1,7 @@
 import { Module } from './internal';
 import validateAdRequestConfiguration from './validateAdRequestConfiguration';
-import version from './version';
+import { version } from './version';
+import { MobileAdsModule } from './types/MobileAdsModule';
 
 const namespace = 'google_ads';
 
@@ -10,7 +11,7 @@ const nativeModuleName = [
   'RNGoogleAdsRewardedModule',
 ];
 
-class GoogleAdsModule extends Module {
+class GoogleAdsModule extends Module implements MobileAdsModule {
   constructor(...args) {
     super(...args);
 
