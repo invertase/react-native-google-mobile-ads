@@ -15,11 +15,9 @@
  *
  */
 
-import { Platform } from 'react-native';
-
 const AlphaNumericUnderscore = /^[a-zA-Z0-9_]+$/;
 
-export function objectKeyValuesAreStrings(object) {
+export function objectKeyValuesAreStrings(object: any) {
   if (!isObject(object)) {
     return false;
   }
@@ -42,7 +40,7 @@ export function objectKeyValuesAreStrings(object) {
  * @param value
  * @returns {boolean}
  */
-export function isNull(value) {
+export function isNull(value: any) {
   return value === null;
 }
 
@@ -52,7 +50,7 @@ export function isNull(value) {
  * @param value
  * @returns {boolean}
  */
-export function isObject(value) {
+export function isObject(value: any) {
   return value ? typeof value === 'object' && !Array.isArray(value) && !isNull(value) : false;
 }
 
@@ -62,7 +60,7 @@ export function isObject(value) {
  * @param value
  * @returns {boolean}
  */
-export function isDate(value) {
+export function isDate(value: any) {
   // use the global isNaN() and not Number.isNaN() since it will validate an Invalid Date
   return value && Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value);
 }
@@ -73,7 +71,7 @@ export function isDate(value) {
  * @param value
  * @returns {*|boolean}
  */
-export function isFunction(value) {
+export function isFunction(value: any) {
   return value ? typeof value === 'function' : false;
 }
 
@@ -82,7 +80,7 @@ export function isFunction(value) {
  * @param value
  * @return {boolean}
  */
-export function isString(value) {
+export function isString(value: any) {
   return typeof value === 'string';
 }
 
@@ -91,7 +89,7 @@ export function isString(value) {
  * @param value
  * @return {boolean}
  */
-export function isNumber(value) {
+export function isNumber(value: any) {
   return typeof value === 'number';
 }
 
@@ -100,7 +98,7 @@ export function isNumber(value) {
  * @param value
  * @returns {boolean}
  */
-export function isFinite(value) {
+export function isFinite(value: any) {
   return Number.isFinite(value);
 }
 
@@ -109,7 +107,7 @@ export function isFinite(value) {
  * @param value
  * @returns {boolean}
  */
-export function isInteger(value) {
+export function isInteger(value: any) {
   return Number.isInteger(value);
 }
 
@@ -119,7 +117,7 @@ export function isInteger(value) {
  * @param value
  * @return {boolean}
  */
-export function isBoolean(value) {
+export function isBoolean(value: any) {
   return typeof value === 'boolean';
 }
 
@@ -128,7 +126,7 @@ export function isBoolean(value) {
  * @param value
  * @returns {arg is Array<any>}
  */
-export function isArray(value) {
+export function isArray(value: any) {
   return Array.isArray(value);
 }
 
@@ -137,7 +135,7 @@ export function isArray(value) {
  * @param value
  * @returns {boolean}
  */
-export function isUndefined(value) {
+export function isUndefined(value: any) {
   return typeof value === 'undefined';
 }
 
@@ -147,7 +145,7 @@ export function isUndefined(value) {
  * @param value
  * @returns {boolean}
  */
-export function isAlphaNumericUnderscore(value) {
+export function isAlphaNumericUnderscore(value: any) {
   return AlphaNumericUnderscore.test(value);
 }
 
@@ -157,7 +155,7 @@ export function isAlphaNumericUnderscore(value) {
  * @returns {boolean}
  */
 const IS_VALID_URL_REGEX = /^(http|https):\/\/[^ "]+$/;
-export function isValidUrl(url) {
+export function isValidUrl(url: string) {
   return IS_VALID_URL_REGEX.test(url);
 }
 
@@ -168,7 +166,7 @@ export function isValidUrl(url) {
  * @param oneOf
  * @returns {boolean}
  */
-export function isOneOf(value, oneOf = []) {
+export function isOneOf(value: any, oneOf: any[] = []) {
   if (!isArray(oneOf)) {
     return false;
   }
@@ -177,25 +175,4 @@ export function isOneOf(value, oneOf = []) {
 
 export function noop() {
   // noop-🐈
-}
-
-export function validateOptionalNativeDependencyExists(firebaseJsonKey, apiName, nativeFnExists) {
-  if (nativeFnExists) {
-    return;
-  }
-  let errorMessage =
-    "You attempted to use an optional API that's not enabled natively. \n\n To enable ";
-
-  errorMessage += apiName;
-  errorMessage += ` please set the 'react-native' -> '${firebaseJsonKey}' key to true in your firebase.json file`;
-
-  if (Platform.OS === 'android') {
-    errorMessage += ' and rebuild your Android app.';
-  } else {
-    errorMessage +=
-      ', re-run pod install and rebuild your iOS app. ' +
-      "If you're not using Pods then make sure you've have downloaded the necessary Firebase iOS SDK dependencies for this API.";
-  }
-
-  throw new Error(errorMessage);
 }

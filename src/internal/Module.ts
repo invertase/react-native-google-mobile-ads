@@ -15,12 +15,21 @@
  *
  */
 
-import { getAppModule, getNativeModule } from './registry/nativeModule';
+import { getNativeModule } from './registry/nativeModule';
 import SharedEventEmitter from './SharedEventEmitter';
 
-let appJson = null;
+// let appJson = null;
 
 export default class AppModule {
+  _app: string;
+  _nativeModule: any;
+  _config: {
+    version: string;
+    namespace: string;
+    nativeModuleName: string;
+    nativeEvents: string[];
+  };
+
   constructor(app, config) {
     this._app = app;
     this._nativeModule = null;
@@ -31,21 +40,21 @@ export default class AppModule {
     return this._app;
   }
 
-  get appJson() {
-    if (appJson) {
-      return appJson;
-    }
-    appJson = JSON.parse(getAppModule().APP_RAW_JSON);
-    return appJson;
-  }
+  // get appJson() {
+  //   if (appJson) {
+  //     return appJson;
+  //   }
+  //   appJson = JSON.parse(getAppModule().APP_RAW_JSON);
+  //   return appJson;
+  // }
 
   get emitter() {
     return SharedEventEmitter;
   }
 
-  eventNameForApp(...args) {
-    return `${this.app.name}-${args.join('-')}`;
-  }
+  // eventNameForApp(...args: string[]) {
+  //   return `${this.app.name}-${args.join('-')}`;
+  // }
 
   get native() {
     if (this._nativeModule) {
@@ -55,6 +64,3 @@ export default class AppModule {
     return this._nativeModule;
   }
 }
-
-// Instance of checks don't work once compiled
-AppModule.__extended__ = {};

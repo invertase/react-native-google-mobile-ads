@@ -127,7 +127,7 @@ export default function validateAdRequestOptions(options: RequestOptions) {
       throw new Error("'options.locationAccuracy' expected a number value.");
     }
 
-    if (options.locationAccuracy < 0) {
+    if (typeof options.locationAccuracy === 'number' && options.locationAccuracy < 0) {
       throw new Error("'options.locationAccuracy' expected a number greater than 0.");
     }
 

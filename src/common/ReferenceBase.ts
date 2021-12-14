@@ -16,6 +16,8 @@
  */
 
 export default class ReferenceBase {
+  path: string;
+
   constructor(_path) {
     let path = _path;
 

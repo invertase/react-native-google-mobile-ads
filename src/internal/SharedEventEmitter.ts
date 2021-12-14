@@ -15,6 +15,7 @@
  *
  */
 
+// @ts-ignore: Could not find a declaration file
 import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
 
 export default new EventEmitter();

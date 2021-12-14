@@ -32,7 +32,7 @@ class GoogleAdsNativeEventEmitter extends NativeEventEmitter {
     }
     RNAppModule.eventsAddListener(eventType);
 
-    let subscription = super.addListener(`rnapp_${eventType}`, listener, context);
+    const subscription = super.addListener(`rnapp_${eventType}`, listener, context);
 
     // React Native 0.65+ altered EventEmitter:
     // - removeSubscription is gone
@@ -43,8 +43,8 @@ class GoogleAdsNativeEventEmitter extends NativeEventEmitter {
 
     // New style is to return a remove function on the object, just in csae people call that,
     // we will modify it to do our native unsubscription then call the original
-    let originalRemove = subscription.remove;
-    let newRemove = () => {
+    const originalRemove = subscription.remove;
+    const newRemove = () => {
       RNAppModule.eventsRemoveListener(eventType, false);
       if (super.removeSubscription != null) {
         // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription

@@ -20,8 +20,8 @@ import NativeError from '../NativeError';
 import GoogleAdsNativeEventEmitter from '../GoogleAdsNativeEventEmitter';
 import SharedEventEmitter from '../SharedEventEmitter';
 
-const NATIVE_MODULE_REGISTRY = {};
-const NATIVE_MODULE_EVENT_SUBSCRIPTIONS = {};
+const NATIVE_MODULE_REGISTRY: any = {};
+const NATIVE_MODULE_EVENT_SUBSCRIPTIONS: any = {};
 
 function nativeModuleKey(module) {
   return `${module._customUrlOrRegion || ''}:${module.app.name}:${module._config.namespace}`;

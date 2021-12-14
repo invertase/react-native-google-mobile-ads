@@ -18,6 +18,9 @@
 import { deepGet, deepSet } from './deeps';
 
 export default class MutatableParams {
+  _mutatableParams = null;
+  _parentInstance = null;
+
   constructor(parentInstance) {
     if (parentInstance) {
       this._mutatableParams = parentInstance._mutatableParams;

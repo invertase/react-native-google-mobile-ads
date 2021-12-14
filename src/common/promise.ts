@@ -22,6 +22,7 @@ import { isFunction } from './validate';
  */
 export function promiseDefer() {
   const deferred = {
+    promise: null,
     resolve: null,
     reject: null,
   };
