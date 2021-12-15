@@ -8,6 +8,7 @@ module.exports = {
   setupFiles: ['./jest.setup.ts'],
   testRegex: '(/^__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
   modulePaths: ['node_modules'],
+  modulePathIgnorePatterns: ['<rootDir>/lib/'],
   moduleDirectories: ['node_modules'],
   moduleFileExtensions: ['ts', 'tsx', 'js'],
 };
