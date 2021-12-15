@@ -1,15 +1,12 @@
 {
   "include": ["src"],
   "compilerOptions": {
-    "noEmit": true,
     "target": "esnext",
     "module": "commonjs",
     "declaration": true,
     "importHelpers": true,
     "jsx": "react",
     "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

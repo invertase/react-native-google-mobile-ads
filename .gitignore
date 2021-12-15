@@ -565,3 +565,6 @@ spelling.json
 # Gatsby / Website
 website/.cache
 website/public
+
+# generated files by bob
+lib/

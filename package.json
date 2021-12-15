@@ -3,8 +3,10 @@
   "version": "3.2.0",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "description": "React Native Google Ads is an easy way to monetize mobile apps with targeted, in-app advertising.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "react-native": "src/index.ts",
+  "types": "lib/typescript/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/invertase/react-native-google-ads"
@@ -27,6 +29,7 @@
     "/android/",
     "/docs/",
     "/ios/",
+    "/lib/",
     "/src/",
     "/docs.json",
     "/RNGoogleAds.podspec",
@@ -48,8 +51,17 @@
       "googleAds": "19.8.0"
     }
   },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      "typescript"
+    ]
+  },
   "scripts": {
-    "prepare": "yarn build",
+    "prepare": "bob build",
     "build": "genversion --es6 --semi src/version.ts && tsc",
     "build:clean": "rimraf android/build && rimraf ios/build && rimraf dist",
     "lint:code": "yarn lint:js && yarn lint:android && yarn lint:ios:check",
@@ -117,6 +129,7 @@
     "prettier": "^2.5.1",
     "react": "^17.0.2",
     "react-native": "0.66.3",
+    "react-native-builder-bob": "^0.18.2",
     "rimraf": "^3.0.2",
     "semantic-release": "^18.0.1",
     "shelljs": "^0.8.3",
