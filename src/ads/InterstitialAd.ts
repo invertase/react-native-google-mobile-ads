@@ -131,7 +131,7 @@ export default class InterstitialAd extends MobileAd implements MobileAdInterfac
     return this._setAdEventHandler(handler);
   }
 
-  show(showOptions: AdShowOptions) {
+  show(showOptions?: AdShowOptions) {
     if (!this._loaded) {
       throw new Error(
         'InterstitialAd.show() The requested InterstitialAd has not loaded and could not be shown.',

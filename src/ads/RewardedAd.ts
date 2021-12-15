@@ -137,7 +137,7 @@ export default class RewardedAd extends MobileAd implements MobileAdInterface {
     return this._setAdEventHandler(handler);
   }
 
-  show(showOptions: AdShowOptions) {
+  show(showOptions?: AdShowOptions) {
     if (!this._loaded) {
       throw new Error(
         'RewardedAd.show() The requested RewardedAd has not loaded and could not be shown.',
