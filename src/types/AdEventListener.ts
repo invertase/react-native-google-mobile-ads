@@ -10,7 +10,7 @@ import RewardedAdEventType from '../RewardedAdEventType';
  * @param data Optional data for the event, e.g. reward type and amount
  */
 export type AdEventListener = (
-  type: keyof typeof AdEventType | keyof typeof RewardedAdEventType,
+  type: AdEventType | RewardedAdEventType,
   error?: Error,
   data?: any | RewardedAdReward,
 ) => void;

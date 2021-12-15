@@ -9,7 +9,7 @@ export interface RequestConfiguration {
    *
    * Ratings are based on the [digital content label classifications](https://support.google.com/admob/answer/7562142).
    */
-  maxAdContentRating?: keyof typeof MaxAdContentRating;
+  maxAdContentRating?: MaxAdContentRating;
 
   /**
    * If `true`, indicates that you want your content treated as child-directed for purposes of COPPA.

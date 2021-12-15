@@ -15,8 +15,10 @@
  *
  */
 
-export default {
-  DISABLED: 0,
-  EEA: 1,
-  NOT_EEA: 2,
-};
+enum AdsConsentDebugGeography {
+  DISABLED = 0,
+  EEA = 1,
+  NOT_EEA = 2,
+}
+
+export default AdsConsentDebugGeography;

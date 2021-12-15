@@ -58,7 +58,7 @@ export default class MobileAd {
 
   _handleAdEvent(event: {
     body: {
-      type: keyof typeof AdEventType | keyof typeof RewardedAdEventType;
+      type: AdEventType | RewardedAdEventType;
       error: Error;
       data: any;
     };

@@ -15,7 +15,7 @@
  *
  */
 
-export default {
+enum RewardedAdEventType {
   /**
    * An event fired when a rewarded ad has loaded.
    *
@@ -39,7 +39,7 @@ export default {
    * });
    * ```
    */
-  LOADED: 'rewarded_loaded',
+  LOADED = 'rewarded_loaded',
 
   /**
    * An event fired when the user earned the reward for the video. If the user does not earn a reward,
@@ -60,5 +60,5 @@ export default {
    * });
    * ```
    */
-  EARNED_REWARD: 'rewarded_earned_reward',
-};
+  EARNED_REWARD = 'rewarded_earned_reward',
+}

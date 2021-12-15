@@ -15,7 +15,7 @@
  *
  */
 
-export default {
+enum AdEventType {
   /**
    * When an ad has loaded. At this point, the ad is ready to be shown to the user.
    *
@@ -31,7 +31,7 @@ export default {
    * });
    * ```
    */
-  LOADED: 'loaded',
+  LOADED = 'loaded',
 
   /**
    * The ad has thrown an error. See the error parameter the listener callback for more information.
@@ -48,21 +48,23 @@ export default {
    * });
    * ```
    */
-  ERROR: 'error',
+  ERROR = 'error',
 
   /**
    * The ad opened and is currently visible to the user. This event is fired after the `show()`
    * method has been called.
    */
-  OPENED: 'opened',
+  OPENED = 'opened',
 
   /**
    * The user clicked the advert.
    */
-  CLICKED: 'clicked',
+  CLICKED = 'clicked',
 
   /**
    * The user closed the ad and has returned back to your application.
    */
-  CLOSED: 'closed',
-};
+  CLOSED = 'closed',
+}
+
+export default AdEventType;

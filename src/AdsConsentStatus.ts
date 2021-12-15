@@ -15,8 +15,10 @@
  *
  */
 
-export default {
-  UNKNOWN: 0,
-  NON_PERSONALIZED: 1,
-  PERSONALIZED: 2,
-};
+enum AdsConsentStatus {
+  UNKNOWN = 0,
+  NON_PERSONALIZED = 1,
+  PERSONALIZED = 2,
+}
+
+export default AdsConsentStatus;
