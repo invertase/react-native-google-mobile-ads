@@ -62,3 +62,5 @@ enum RewardedAdEventType {
    */
   EARNED_REWARD = 'rewarded_earned_reward',
 }
+
+export default RewardedAdEventType;

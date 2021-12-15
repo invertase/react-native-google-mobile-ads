@@ -36,3 +36,5 @@ enum MaxAdContentRating {
    */
   MA = 'MA',
 }
+
+export default MaxAdContentRating;
