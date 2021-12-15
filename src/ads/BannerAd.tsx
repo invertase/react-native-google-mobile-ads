@@ -24,6 +24,18 @@ import validateAdRequestOptions from '../validateAdRequestOptions';
 import { BannerAdProps } from '../types/BannerAdProps';
 import { RequestOptions } from '../types/RequestOptions';
 
+type NativeEvent = {
+  type:
+    | 'onAdLoaded'
+    | 'onAdFailedToLoad'
+    | 'onAdOpened'
+    | 'onAdClosed'
+    | 'onAdLeftApplication'
+    | 'onSizeChanged';
+  width: number;
+  height: number;
+};
+
 const initialState = [0, 0];
 const sizeRegex = /([0-9]+)x([0-9]+)/;
 
@@ -37,13 +49,13 @@ function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
   }, [unitId]);
 
   useEffect(() => {
-    if (!BannerAdSize[size] && !sizeRegex.test(size)) {
+    if (!(size in BannerAdSize) && !sizeRegex.test(size)) {
       throw new Error("BannerAd: 'size' expected a valid BannerAdSize or custom size string.");
     }
   }, [size]);
 
   useEffect(() => {
-    if (!BannerAdSize[size] && !sizeRegex.test(size)) {
+    if (!(size in BannerAdSize) && !sizeRegex.test(size)) {
       throw new Error("BannerAd: 'size' expected a valid BannerAdSize or custom size string.");
     }
   }, [size]);
@@ -62,15 +74,16 @@ function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
     }
   }, [parsedRequestOptions]);
 
-  function onNativeEvent({ nativeEvent }) {
+  function onNativeEvent({ nativeEvent }: { nativeEvent: NativeEvent }) {
     const { width, height, type } = nativeEvent;
 
     if (type !== 'onSizeChanged' && isFunction(props[type])) {
+      let eventHandler;
       let eventPayload;
       if (type === 'onAdFailedToLoad') {
         eventPayload = NativeError.fromEvent(nativeEvent, 'googleAds');
-      }
-      props[type](eventPayload);
+        if ((eventHandler = props[type])) eventHandler(eventPayload);
+      } else if ((eventHandler = props[type])) eventHandler();
     }
 
     if (width && height && size !== 'FLUID') {
@@ -101,16 +114,14 @@ function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
 }
 
 const GoogleAdsBannerView: HostComponent<{
-  size: string;
+  size: BannerAdProps['size'];
   style: {
     width: number;
     height: number;
   };
   unitId: string;
   request: RequestOptions;
-  onNativeEvent: (event: {
-    nativeEvent: { type: 'string'; width: number; height: number };
-  }) => void;
+  onNativeEvent: (event: { nativeEvent: NativeEvent }) => void;
 }> = requireNativeComponent('RNGoogleAdsBannerView');
 
 export default BannerAd;

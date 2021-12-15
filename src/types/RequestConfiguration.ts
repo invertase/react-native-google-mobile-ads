@@ -1,4 +1,4 @@
-import { MaxAdContentRating } from './MaxAdContentRating';
+import MaxAdContentRating from '../MaxAdContentRating';
 
 /**
  * The `RequestConfiguration` used when setting global ad settings via `setRequestConfiguration`.
@@ -9,11 +9,7 @@ export interface RequestConfiguration {
    *
    * Ratings are based on the [digital content label classifications](https://support.google.com/admob/answer/7562142).
    */
-  maxAdContentRating?:
-    | MaxAdContentRating['G']
-    | MaxAdContentRating['PG']
-    | MaxAdContentRating['T']
-    | MaxAdContentRating['MA'];
+  maxAdContentRating?: keyof typeof MaxAdContentRating;
 
   /**
    * If `true`, indicates that you want your content treated as child-directed for purposes of COPPA.

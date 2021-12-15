@@ -1,4 +1,4 @@
-import { BannerAdSize } from './BannerAdSize';
+import BannerAdSize from '../BannerAdSize';
 import { RequestOptions } from './RequestOptions';
 
 /**
@@ -33,7 +33,7 @@ import { RequestOptions } from './RequestOptions';
  * }
  * ```
  */
-export interface BannerAdProps {
+export type BannerAdProps = {
   /**
    * The Google Mobile Ads unit ID for the banner.
    */
@@ -44,7 +44,7 @@ export interface BannerAdProps {
    *
    * Inventory must be available for the banner size specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  size: keyof BannerAdSize | string;
+  size: keyof typeof BannerAdSize;
 
   /**
    * The request options for this banner.
@@ -75,4 +75,4 @@ export interface BannerAdProps {
    * Called when the user has left the application (e.g. clicking an advert).
    */
   onAdLeftApplication?: () => void;
-}
+};

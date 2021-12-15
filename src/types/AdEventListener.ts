@@ -1,5 +1,6 @@
-import { AdEventTypes } from './AdEventTypes';
+import AdEventType from '../AdEventType';
 import { RewardedAdReward } from './RewardedAdReward';
+import RewardedAdEventType from '../RewardedAdEventType';
 
 /**
  * A callback interface for all ad events.
@@ -9,7 +10,7 @@ import { RewardedAdReward } from './RewardedAdReward';
  * @param data Optional data for the event, e.g. reward type and amount
  */
 export type AdEventListener = (
-  type: AdEventTypes,
+  type: keyof typeof AdEventType | keyof typeof RewardedAdEventType,
   error?: Error,
   data?: any | RewardedAdReward,
 ) => void;

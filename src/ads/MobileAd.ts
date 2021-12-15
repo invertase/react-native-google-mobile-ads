@@ -18,7 +18,6 @@
 import NativeError from '../internal/NativeError';
 import RewardedAdEventType from '../RewardedAdEventType';
 import AdEventType from '../AdEventType';
-import { AdEventTypes } from '../types/AdEventTypes';
 import { AdEventListener } from '../types/AdEventListener';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdsModule } from '../types/MobileAdsModule';
@@ -57,7 +56,13 @@ export default class MobileAd {
     );
   }
 
-  _handleAdEvent(event: { body: { type: AdEventTypes; error: Error; data: any } }) {
+  _handleAdEvent(event: {
+    body: {
+      type: keyof typeof AdEventType | keyof typeof RewardedAdEventType;
+      error: Error;
+      data: any;
+    };
+  }) {
     const { type, error, data } = event.body;
 
     if (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) {
