@@ -18,6 +18,9 @@
 import { Platform } from 'react-native';
 
 export default {
+  BANNER: '',
+  INTERSTITIAL: '',
+  REWARDED: '',
   ...Platform.select({
     android: {
       BANNER: 'ca-app-pub-3940256099942544/6300978111',
