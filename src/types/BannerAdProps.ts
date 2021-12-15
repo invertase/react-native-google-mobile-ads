@@ -44,7 +44,7 @@ export type BannerAdProps = {
    *
    * Inventory must be available for the banner size specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  size: keyof typeof BannerAdSize;
+  size: BannerAdSize;
 
   /**
    * The request options for this banner.
