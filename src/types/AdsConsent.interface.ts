@@ -279,7 +279,7 @@ export interface AdsConsentInterface {
    * If using a real device to test, ensure the device ID is provided to the Google Mobile Ads SDK so any mock debug locations
    * can take effect.
    *
-   * Emulators are automatically whitelisted and should require no action.
+   * Emulators are automatically on the allowlist and should require no action.
    *
    * If you are seeing real ad activity from a test device, examine logcat / console
    * during execution in association with google mobile ads test device documentation to
