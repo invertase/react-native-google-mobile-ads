@@ -32,7 +32,7 @@ export interface RequestConfiguration {
   tagForUnderAgeOfConsent?: boolean;
 
   /**
-   * An array of test device IDs to whitelist.
+   * An array of test device IDs to add to the allowlist.
    *
    * If using an emulator, set the device ID to `EMULATOR`.
    */
