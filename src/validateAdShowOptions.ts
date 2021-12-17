@@ -21,7 +21,7 @@ import { AdShowOptions } from './types/AdShowOptions';
 export default function validateAdShowOptions(options?: AdShowOptions) {
   const out: AdShowOptions = {};
 
-  if (typeof options === 'undefined') {
+  if (options === undefined) {
     return out;
   }
 

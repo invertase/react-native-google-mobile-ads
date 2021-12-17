@@ -29,7 +29,7 @@ import { RequestOptions } from './types/RequestOptions';
 export default function validateAdRequestOptions(options?: RequestOptions) {
   const out: RequestOptions = {};
 
-  if (typeof options === 'undefined') {
+  if (options === undefined) {
     return out;
   }
 
