@@ -61,9 +61,9 @@
     ]
   },
   "scripts": {
-    "prepare": "genversion --es6 --semi src/version.ts && bob build",
-    "build": "genversion --es6 --semi src/version.ts && tsc",
-    "build:clean": "rimraf android/build && rimraf ios/build && rimraf dist",
+    "prepare": "yarn build",
+    "build": "genversion --es6 --semi src/version.ts && bob build",
+    "build:clean": "rimraf android/build && rimraf ios/build && rimraf lib",
     "lint:code": "yarn lint:js && yarn lint:android && yarn lint:ios:check",
     "lint:js": "eslint src/ --ext .js,.jsx,.ts,.tsx --max-warnings=0",
     "lint:android": "google-java-format --set-exit-if-changed --replace --glob=\"android/**/*.java\"",
