@@ -41,7 +41,7 @@ export function promiseDefer() {
  */
 export function promiseWithOptionalCallback(
   promise: Promise<unknown>,
-  callback: (a: any, b?: any) => void,
+  callback: (a: unknown, b?: unknown) => void,
 ) {
   if (!isFunction(callback)) {
     return promise;

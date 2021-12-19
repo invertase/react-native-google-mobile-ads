@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
@@ -22,8 +20,8 @@ import NativeError from '../NativeError';
 import GoogleAdsNativeEventEmitter from '../GoogleAdsNativeEventEmitter';
 import SharedEventEmitter from '../SharedEventEmitter';
 
-const NATIVE_MODULE_REGISTRY: any = {};
-const NATIVE_MODULE_EVENT_SUBSCRIPTIONS: any = {};
+const NATIVE_MODULE_REGISTRY = {};
+const NATIVE_MODULE_EVENT_SUBSCRIPTIONS = {};
 
 function nativeModuleKey(module) {
   return `${module._customUrlOrRegion || ''}:${module.app.name}:${module._config.namespace}`;

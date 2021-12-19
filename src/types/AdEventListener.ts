@@ -12,5 +12,5 @@ import RewardedAdEventType from '../RewardedAdEventType';
 export type AdEventListener = (
   type: AdEventType | RewardedAdEventType,
   error?: Error,
-  data?: any | RewardedAdReward,
+  data?: RewardedAdReward,
 ) => void;

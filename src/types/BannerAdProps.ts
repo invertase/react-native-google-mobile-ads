@@ -70,9 +70,4 @@ export type BannerAdProps = {
    * Called when the user is about to return to the app after tapping on an ad.
    */
   onAdClosed?: () => void;
-
-  /**
-   * Called when the user has left the application (e.g. clicking an advert).
-   */
-  onAdLeftApplication?: () => void;
 };

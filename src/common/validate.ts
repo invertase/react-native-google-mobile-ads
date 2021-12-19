@@ -9,7 +9,7 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF unknown KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
@@ -17,7 +17,7 @@
 
 const AlphaNumericUnderscore = /^[a-zA-Z0-9_]+$/;
 
-export function objectKeyValuesAreStrings(object: any) {
+export function objectKeyValuesAreStrings(object: Record<string, unknown>) {
   if (!isObject(object)) {
     return false;
   }
@@ -40,7 +40,7 @@ export function objectKeyValuesAreStrings(object: any) {
  * @param value
  * @returns {boolean}
  */
-export function isNull(value: any) {
+export function isNull(value: unknown) {
   return value === null;
 }
 
@@ -50,7 +50,7 @@ export function isNull(value: any) {
  * @param value
  * @returns {boolean}
  */
-export function isObject(value: any) {
+export function isObject(value: unknown) {
   return value ? typeof value === 'object' && !Array.isArray(value) && !isNull(value) : false;
 }
 
@@ -60,7 +60,7 @@ export function isObject(value: any) {
  * @param value
  * @returns {boolean}
  */
-export function isDate(value: any) {
+export function isDate(value: number) {
   // use the global isNaN() and not Number.isNaN() since it will validate an Invalid Date
   return value && Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value);
 }
@@ -71,7 +71,7 @@ export function isDate(value: any) {
  * @param value
  * @returns {*|boolean}
  */
-export function isFunction(value: any) {
+export function isFunction(value: unknown) {
   return value ? typeof value === 'function' : false;
 }
 
@@ -80,7 +80,7 @@ export function isFunction(value: any) {
  * @param value
  * @return {boolean}
  */
-export function isString(value: any) {
+export function isString(value: unknown) {
   return typeof value === 'string';
 }
 
@@ -89,7 +89,7 @@ export function isString(value: any) {
  * @param value
  * @return {boolean}
  */
-export function isNumber(value: any) {
+export function isNumber(value: unknown) {
   return typeof value === 'number';
 }
 
@@ -98,7 +98,7 @@ export function isNumber(value: any) {
  * @param value
  * @returns {boolean}
  */
-export function isFinite(value: any) {
+export function isFinite(value: unknown) {
   return Number.isFinite(value);
 }
 
@@ -107,7 +107,7 @@ export function isFinite(value: any) {
  * @param value
  * @returns {boolean}
  */
-export function isInteger(value: any) {
+export function isInteger(value: unknown) {
   return Number.isInteger(value);
 }
 
@@ -117,16 +117,16 @@ export function isInteger(value: any) {
  * @param value
  * @return {boolean}
  */
-export function isBoolean(value: any) {
+export function isBoolean(value: unknown) {
   return typeof value === 'boolean';
 }
 
 /**
  *
  * @param value
- * @returns {arg is Array<any>}
+ * @returns {arg is Array<unknown>}
  */
-export function isArray(value: any) {
+export function isArray(value: unknown) {
   return Array.isArray(value);
 }
 
@@ -135,7 +135,7 @@ export function isArray(value: any) {
  * @param value
  * @returns {boolean}
  */
-export function isUndefined(value: any) {
+export function isUndefined(value: unknown) {
   return typeof value === 'undefined';
 }
 
@@ -145,7 +145,7 @@ export function isUndefined(value: any) {
  * @param value
  * @returns {boolean}
  */
-export function isAlphaNumericUnderscore(value: any) {
+export function isAlphaNumericUnderscore(value: string) {
   return AlphaNumericUnderscore.test(value);
 }
 
@@ -166,7 +166,7 @@ export function isValidUrl(url: string) {
  * @param oneOf
  * @returns {boolean}
  */
-export function isOneOf(value: any, oneOf: any[] = []) {
+export function isOneOf(value: unknown, oneOf: unknown[] = []) {
   if (!isArray(oneOf)) {
     return false;
   }

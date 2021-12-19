@@ -1,4 +1,7 @@
+import { EventEmitter } from 'react-native';
+
 import { RequestConfiguration } from './RequestConfiguration';
+import { getNativeModule } from '../internal/registry/nativeModule';
 
 export enum InitializationState {
   /**
@@ -51,10 +54,10 @@ export interface MobileAdsModule {
   /**
    * The native module instance for the Google Ads service.
    */
-  native: any;
+  native: typeof getNativeModule;
 
   /**
    * Returns the shared event emitter instance used for all JS event routing.
    */
-  emitter: any;
+  emitter: EventEmitter;
 }

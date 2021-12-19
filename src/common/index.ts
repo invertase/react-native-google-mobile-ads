@@ -24,7 +24,7 @@ export * from './validate';
 
 export { default as ReferenceBase } from './ReferenceBase';
 
-export function isError(value: any) {
+export function isError(value: unknown) {
   if (Object.prototype.toString.call(value) === '[object Error]') {
     return true;
   }
@@ -32,7 +32,7 @@ export function isError(value: any) {
   return value instanceof Error;
 }
 
-export function hasOwnProperty(target: any, property: PropertyKey) {
+export function hasOwnProperty(target: unknown, property: PropertyKey) {
   return Object.hasOwnProperty.call(target, property);
 }
 
@@ -61,7 +61,7 @@ export function tryJSONParse(string: string) {
   }
 }
 
-export function tryJSONStringify(data: any) {
+export function tryJSONStringify(data: unknown) {
   try {
     return JSON.stringify(data);
   } catch (jsonError) {

@@ -24,17 +24,18 @@ import validateAdRequestOptions from '../validateAdRequestOptions';
 import { BannerAdProps } from '../types/BannerAdProps';
 import { RequestOptions } from '../types/RequestOptions';
 
-type NativeEvent = {
-  type:
-    | 'onAdLoaded'
-    | 'onAdFailedToLoad'
-    | 'onAdOpened'
-    | 'onAdClosed'
-    | 'onAdLeftApplication'
-    | 'onSizeChanged';
-  width: number;
-  height: number;
-};
+type NativeEvent =
+  | {
+      type: 'onAdLoaded' | 'onSizeChanged';
+      width: number;
+      height: number;
+    }
+  | { type: 'onAdOpened' | 'onAdClosed' }
+  | {
+      type: 'onAdFailedToLoad';
+      code: string;
+      message: string;
+    };
 
 const initialState = [0, 0];
 const sizeRegex = /([0-9]+)x([0-9]+)/;
@@ -75,19 +76,19 @@ function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
   }, [parsedRequestOptions]);
 
   function onNativeEvent({ nativeEvent }: { nativeEvent: NativeEvent }) {
-    const { width, height, type } = nativeEvent;
+    const { type } = nativeEvent;
 
     if (type !== 'onSizeChanged' && isFunction(props[type])) {
       let eventHandler;
-      let eventPayload;
       if (type === 'onAdFailedToLoad') {
-        eventPayload = NativeError.fromEvent(nativeEvent, 'googleAds');
+        const eventPayload = NativeError.fromEvent(nativeEvent, 'googleAds');
         if ((eventHandler = props[type])) eventHandler(eventPayload);
       } else if ((eventHandler = props[type])) eventHandler();
     }
 
-    if (width && height && size !== 'FLUID') {
-      setDimensions([width, height]);
+    if ((type === 'onAdLoaded' || type === 'onSizeChanged') && size !== 'FLUID') {
+      const { width, height } = nativeEvent;
+      if (width && height) setDimensions([width, height]);
     }
   }
 

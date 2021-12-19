@@ -96,7 +96,7 @@ export const INVALID_PATH_REGEX = /[[\].#$\u0000-\u001F\u007F]/;
  * @param path
  * @returns {boolean}
  */
-export function isValidPath(path: any) {
+export function isValidPath(path: unknown) {
   return typeof path === 'string' && path.length !== 0 && !INVALID_PATH_REGEX.test(path);
 }
 

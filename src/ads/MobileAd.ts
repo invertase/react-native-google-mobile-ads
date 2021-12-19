@@ -21,6 +21,7 @@ import AdEventType from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdsModule } from '../types/MobileAdsModule';
+import { RewardedAdReward } from '../types/RewardedAdReward';
 
 export default class MobileAd {
   _type: 'interstitial' | 'rewarded';
@@ -59,8 +60,8 @@ export default class MobileAd {
   _handleAdEvent(event: {
     body: {
       type: AdEventType | RewardedAdEventType;
-      error: Error;
-      data: any;
+      error?: Error;
+      data?: RewardedAdReward;
     };
   }) {
     const { type, error, data } = event.body;
