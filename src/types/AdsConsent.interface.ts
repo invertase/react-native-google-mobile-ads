@@ -1,3 +1,6 @@
+import AdsConsentDebugGeography from '../AdsConsentDebugGeography';
+import AdsConsentStatus from '../AdsConsentStatus';
+
 /**
  * Under the Google [EU User Consent Policy](https://www.google.com/about/company/consentstaging.html), you must make certain disclosures to your users in the European Economic Area (EEA)
  * and obtain their consent to use cookies or other local storage, where legally required, and to use personal data
@@ -28,48 +31,6 @@ export interface AdProvider {
    * A fully formed URL for the privacy policy of the provider.
    */
   privacyPolicyUrl: string;
-}
-
-/**
- * AdsConsentStatus interface.
- */
-export interface AdsConsentStatus {
-  /**
-   * The consent status is unknown and the user must provide consent to show ads if they are within the EEA or location is also unknown.
-   */
-  UNKNOWN: 0;
-
-  /**
-   * The user has accepted non-personalized ads.
-   */
-  NON_PERSONALIZED: 1;
-
-  /**
-   * The user has accepted personalized ads.
-   */
-  PERSONALIZED: 2;
-}
-
-/**
- * AdsConsentDebugGeography interface.
- *
- * Used to set a mock location when testing the `AdsConsent` helper.
- */
-export interface AdsConsentDebugGeography {
-  /**
-   * Disable any debug geography.
-   */
-  DISABLED: 0;
-
-  /**
-   * Sets the location to within the EEA.
-   */
-  EEA: 1;
-
-  /**
-   * Sets the location to outside of the EEA.
-   */
-  NOT_EEA: 2;
 }
 
 export interface AdsConsentInterface {
@@ -200,12 +161,7 @@ export interface AdsConsentInterface {
    *
    * @param geography The debug geography location.
    */
-  setDebugGeography(
-    geography:
-      | AdsConsentDebugGeography['DISABLED']
-      | AdsConsentDebugGeography['EEA']
-      | AdsConsentDebugGeography['NOT_EEA'],
-  ): Promise<void>;
+  setDebugGeography(geography: AdsConsentDebugGeography): Promise<void>;
 
   /**
    * Manually update the consent status of the user.
@@ -226,12 +182,7 @@ export interface AdsConsentInterface {
    *
    * @param status The user consent status.
    */
-  setStatus(
-    status:
-      | AdsConsentStatus['UNKNOWN']
-      | AdsConsentStatus['NON_PERSONALIZED']
-      | AdsConsentStatus['PERSONALIZED'],
-  ): Promise<void>;
+  setStatus(status: AdsConsentStatus): Promise<void>;
 
   /**
    * Returns the current consent status of the user.
@@ -246,11 +197,7 @@ export interface AdsConsentInterface {
    * const status = await AdsConsent.getStatus();
    * ```
    */
-  getStatus(): Promise<
-    | AdsConsentStatus['UNKNOWN']
-    | AdsConsentStatus['NON_PERSONALIZED']
-    | AdsConsentStatus['PERSONALIZED']
-  >;
+  getStatus(): Promise<AdsConsentStatus>;
 
   /**
    * If a publisher is aware that the user is under the age of consent, all ad requests must set TFUA (Tag For Users
@@ -331,10 +278,7 @@ export interface AdsConsentFormResult {
    * - NON_PERSONALIZED: The user has accepted non-personalized ads.
    * - PERSONALIZED: The user has accepted personalized ads.
    */
-  status:
-    | AdsConsentStatus['UNKNOWN']
-    | AdsConsentStatus['NON_PERSONALIZED']
-    | AdsConsentStatus['PERSONALIZED'];
+  status: AdsConsentStatus;
 
   /**
    * If `true`, the user requested an ad-free version of your application.
@@ -353,10 +297,7 @@ export interface AdsConsentInfo {
    * - NON_PERSONALIZED: The user has accepted non-personalized ads.
    * - PERSONALIZED: The user has accepted personalized ads.
    */
-  status:
-    | AdsConsentStatus['UNKNOWN']
-    | AdsConsentStatus['NON_PERSONALIZED']
-    | AdsConsentStatus['PERSONALIZED'];
+  status: AdsConsentStatus;
 
   /**
    * If `true` the user is within the EEA or their location could not be determined.

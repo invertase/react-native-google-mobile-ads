@@ -15,9 +15,23 @@
  *
  */
 
+/**
+ * AdsConsentStatus enum.
+ */
 enum AdsConsentStatus {
+  /**
+   * The consent status is unknown and the user must provide consent to show ads if they are within the EEA or location is also unknown.
+   */
   UNKNOWN = 0,
+
+  /**
+   * The user has accepted non-personalized ads.
+   */
   NON_PERSONALIZED = 1,
+
+  /**
+   * The user has accepted personalized ads.
+   */
   PERSONALIZED = 2,
 }
 
