@@ -8,3 +8,9 @@ export interface Config {
   nativeModuleName: string[];
   nativeEvents: string[];
 }
+
+export interface ModuleInterface {
+  app: App;
+  _config: Config;
+  _customUrlOrRegion?: string;
+}

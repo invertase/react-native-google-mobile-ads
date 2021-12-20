@@ -15,11 +15,10 @@
  *
  */
 
-import { getAppModule, getNativeModule } from './registry/nativeModule';
+import { getNativeModule } from './registry/nativeModule';
 import { SharedEventEmitter } from './SharedEventEmitter';
-import { App, Config } from '../types/Module';
-
-let appJson: string | null = null;
+import { App, Config } from '../types/Module.interface';
+import { GoogleAdsNativeModule } from '../types/GoogleAdsNativeModule';
 
 export class AppModule {
   _app: App;
@@ -38,14 +37,6 @@ export class AppModule {
     return this._app;
   }
 
-  get appJson() {
-    if (appJson) {
-      return appJson;
-    }
-    appJson = JSON.parse(getAppModule().APP_RAW_JSON);
-    return appJson;
-  }
-
   get emitter() {
     return SharedEventEmitter;
   }
@@ -56,10 +47,10 @@ export class AppModule {
 
   get native() {
     if (this._nativeModule) {
-      return this._nativeModule;
+      return this._nativeModule as GoogleAdsNativeModule;
     }
     this._nativeModule = getNativeModule(this);
-    return this._nativeModule;
+    return this._nativeModule as GoogleAdsNativeModule;
   }
 }
 

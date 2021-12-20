@@ -1,28 +1,8 @@
 import { EventEmitter } from 'react-native';
 
+import { AdapterStatus } from './AdapterStatus';
+import { GoogleAdsNativeModule } from './GoogleAdsNativeModule';
 import { RequestConfiguration } from './RequestConfiguration';
-import { getNativeModule } from '../internal/registry/nativeModule';
-
-export enum InitializationState {
-  /**
-   * The mediation adapter is less likely to fill ad requests.
-   */
-  AdapterInitializationStateNotReady = 0,
-
-  /**
-   * The mediation adapter is ready to service ad requests.
-   */
-  AdapterInitializationStateReady = 1,
-}
-
-/**
- * An immutable snapshot of a mediation adapter's initialization status.
- */
-export type AdapterStatus = {
-  name: string;
-  description: string;
-  status: InitializationState;
-};
 
 /**
  * The Google Ads service interface.
@@ -54,7 +34,7 @@ export interface MobileAdsModule {
   /**
    * The native module instance for the Google Ads service.
    */
-  native: typeof getNativeModule;
+  native: GoogleAdsNativeModule;
 
   /**
    * Returns the shared event emitter instance used for all JS event routing.

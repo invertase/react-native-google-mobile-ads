@@ -15,17 +15,23 @@
  *
  */
 
-import { NativeEventEmitter, NativeModules } from 'react-native';
+import { NativeEventEmitter, NativeModules, EmitterSubscription } from 'react-native';
 
 const { RNAppModule } = NativeModules;
 
 class GANativeEventEmitter extends NativeEventEmitter {
+  ready: boolean;
+
   constructor() {
     super(RNAppModule);
     this.ready = false;
   }
 
-  addListener(eventType, listener, context) {
+  addListener(
+    eventType: string,
+    listener: (event: { appName?: string }) => void,
+    context?: Record<string, unknown>,
+  ) {
     if (!this.ready) {
       RNAppModule.eventsNotifyReady(true);
       this.ready = true;
@@ -58,15 +64,15 @@ class GANativeEventEmitter extends NativeEventEmitter {
     return subscription;
   }
 
-  removeAllListeners(eventType) {
+  removeAllListeners(eventType: string) {
     RNAppModule.eventsRemoveListener(eventType, true);
     super.removeAllListeners(`rnapp_${eventType}`);
   }
 
   // This is likely no longer ever called, but it is here for backwards compatibility with RN <= 0.64
-  removeSubscription(subscription) {
-    RNAppModule.eventsRemoveListener(subscription.eventType.replace('rnapp_'), false);
-    if (super.removeSubscription) {
+  removeSubscription(subscription: EmitterSubscription) {
+    RNAppModule.eventsRemoveListener(subscription.eventType.replace('rnapp_', ''), false);
+    if (super.removeSubscription != null) {
       super.removeSubscription(subscription);
     }
   }

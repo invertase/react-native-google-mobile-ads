@@ -3,7 +3,7 @@ import { validateAdRequestConfiguration } from './validateAdRequestConfiguration
 import { version } from './version';
 import { MobileAdsModule } from './types/MobileAdsModule';
 import { RequestConfiguration } from './types/RequestConfiguration';
-import { App, Config } from './types/Module';
+import { App, Config } from './types/Module.interface';
 
 const namespace = 'google_ads';
 
@@ -53,7 +53,7 @@ class GoogleAdsModule extends Module implements MobileAdsModule {
 }
 
 const googleMobileAds = new GoogleAdsModule(
-  { name: 'RNGoogleMobileAds' },
+  { name: 'AppName' },
   {
     version,
     namespace,

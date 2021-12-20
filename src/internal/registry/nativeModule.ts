@@ -20,11 +20,12 @@ import { APP_NATIVE_MODULE } from '../constants';
 import { NativeError } from '../NativeError';
 import { GoogleAdsNativeEventEmitter } from '../GoogleAdsNativeEventEmitter';
 import { SharedEventEmitter } from '../SharedEventEmitter';
+import { ModuleInterface } from '../../types/Module.interface';
 
 const NATIVE_MODULE_REGISTRY: Record<string, unknown> = {};
 const NATIVE_MODULE_EVENT_SUBSCRIPTIONS: Record<string, unknown> = {};
 
-function nativeModuleKey(module) {
+function nativeModuleKey(module: ModuleInterface) {
   return `${module._customUrlOrRegion || ''}:${module.app.name}:${module._config.namespace}`;
 }
 
@@ -37,12 +38,16 @@ function nativeModuleKey(module) {
  * @param argToPrepend
  * @returns {Function}
  */
-function nativeModuleMethodWrapped(namespace, method, argToPrepend) {
-  return (...args) => {
+function nativeModuleMethodWrapped(
+  namespace: string,
+  method: (...args: unknown[]) => Promise<unknown> | void,
+  argToPrepend: [],
+) {
+  return (...args: []) => {
     const possiblePromise = method(...[...argToPrepend, ...args]);
 
     if (possiblePromise && possiblePromise.then) {
-      const jsStack = new Error().stack;
+      const jsStack = new Error().stack || '';
       return possiblePromise.catch(nativeError =>
         Promise.reject(new NativeError(nativeError, jsStack, namespace)),
       );
@@ -59,8 +64,12 @@ function nativeModuleMethodWrapped(namespace, method, argToPrepend) {
  * @param NativeModule
  * @param argToPrepend
  */
-function nativeModuleWrapped(namespace, NativeModule, argToPrepend) {
-  const native = {};
+function nativeModuleWrapped(
+  namespace: string,
+  NativeModule: Record<string, (...args: unknown[]) => Promise<unknown> | void>,
+  argToPrepend: [],
+) {
+  const native: Record<string, unknown> = {};
   if (!NativeModule) {
     return NativeModule;
   }
@@ -85,11 +94,11 @@ function nativeModuleWrapped(namespace, NativeModule, argToPrepend) {
  * @param module
  * @returns {*}
  */
-function initialiseNativeModule(module) {
+function initialiseNativeModule(module: ModuleInterface) {
   const config = module._config;
   const key = nativeModuleKey(module);
   const { namespace, nativeEvents, nativeModuleName } = config;
-  const multiModuleRoot = {};
+  const multiModuleRoot: Record<string, unknown> = {};
   const multiModule = Array.isArray(nativeModuleName);
   const nativeModuleNames = multiModule ? nativeModuleName : [nativeModuleName];
 
@@ -106,9 +115,7 @@ function initialiseNativeModule(module) {
       multiModuleRoot[nativeModuleNames[i]] = !!nativeModule;
     }
 
-    const argToPrepend = [];
-
-    Object.assign(multiModuleRoot, nativeModuleWrapped(namespace, nativeModule, argToPrepend));
+    Object.assign(multiModuleRoot, nativeModuleWrapped(namespace, nativeModule, []));
   }
 
   if (nativeEvents && nativeEvents.length) {
@@ -133,7 +140,7 @@ function initialiseNativeModule(module) {
  * @param eventName
  * @private
  */
-function subscribeToNativeModuleEvent(eventName) {
+function subscribeToNativeModuleEvent(eventName: string) {
   if (!NATIVE_MODULE_EVENT_SUBSCRIPTIONS[eventName]) {
     GoogleAdsNativeEventEmitter.addListener(eventName, event => {
       if (event.appName) {
@@ -185,7 +192,7 @@ function getMissingModuleHelpText(namespace: string) {
  * @param module
  * @returns {*}
  */
-export function getNativeModule(module) {
+export function getNativeModule(module: ModuleInterface) {
   const key = nativeModuleKey(module);
 
   if (NATIVE_MODULE_REGISTRY[key]) {

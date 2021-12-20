@@ -15,6 +15,7 @@
  *
  */
 
+import { EmitterSubscription } from 'react-native';
 import { NativeError } from '../internal/NativeError';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventType } from '../AdEventType';
@@ -32,7 +33,7 @@ export class MobileAd {
   _loaded: boolean;
   _isLoadCalled: boolean;
   _onAdEventHandler: AdEventListener | null;
-  _nativeListener: () => void;
+  _nativeListener: EmitterSubscription;
 
   constructor(
     type: 'interstitial' | 'rewarded',
