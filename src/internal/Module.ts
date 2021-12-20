@@ -17,11 +17,18 @@
 
 import { getAppModule, getNativeModule } from './registry/nativeModule';
 import { SharedEventEmitter } from './SharedEventEmitter';
+import { App, Config } from '../types/Module';
 
-let appJson = null;
+let appJson: string | null = null;
 
 export class AppModule {
-  constructor(app, config) {
+  _app: App;
+  _nativeModule: unknown;
+  _config: Config;
+
+  static __extended__ = {};
+
+  constructor(app: App, config: Config) {
     this._app = app;
     this._nativeModule = null;
     this._config = Object.assign({}, config);

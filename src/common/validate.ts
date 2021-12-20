@@ -9,11 +9,13 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF unknown KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
  */
+
+import { Platform } from 'react-native';
 
 const AlphaNumericUnderscore = /^[a-zA-Z0-9_]+$/;
 
@@ -175,4 +177,25 @@ export function isOneOf(value: unknown, oneOf: unknown[] = []) {
 
 export function noop() {
   // noop-🐈
+}
+
+export function validateOptionalNativeDependencyExists(firebaseJsonKey, apiName, nativeFnExists) {
+  if (nativeFnExists) {
+    return;
+  }
+  let errorMessage =
+    "You attempted to use an optional API that's not enabled natively. \n\n To enable ";
+
+  errorMessage += apiName;
+  errorMessage += ` please set the 'react-native' -> '${firebaseJsonKey}' key to true in your firebase.json file`;
+
+  if (Platform.OS === 'android') {
+    errorMessage += ' and rebuild your Android app.';
+  } else {
+    errorMessage +=
+      ', re-run pod install and rebuild your iOS app. ' +
+      "If you're not using Pods then make sure you've have downloaded the necessary Firebase iOS SDK dependencies for this API.";
+  }
+
+  throw new Error(errorMessage);
 }
