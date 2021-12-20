@@ -1,7 +1,7 @@
 import { Module } from './internal';
 import { validateAdRequestConfiguration } from './validateAdRequestConfiguration';
 import { version } from './version';
-import { MobileAdsModule } from './types/MobileAdsModule';
+import { GoogleAdsModuleInterface } from './types/GoogleAdsModule.interface';
 import { RequestConfiguration } from './types/RequestConfiguration';
 import { App, Config } from './types/Module.interface';
 
@@ -18,7 +18,7 @@ type Event = {
   requestId: number;
 };
 
-class GoogleAdsModule extends Module implements MobileAdsModule {
+class GoogleAdsModule extends Module implements GoogleAdsModuleInterface {
   constructor(app: App, config: Config) {
     super(app, config);
 

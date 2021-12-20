@@ -21,12 +21,12 @@ import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventType } from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { RequestOptions } from '../types/RequestOptions';
-import { MobileAdsModule } from '../types/MobileAdsModule';
+import { GoogleAdsModuleInterface } from '../types/GoogleAdsModule.interface';
 import { RewardedAdReward } from '../types/RewardedAdReward';
 
 export class MobileAd {
   _type: 'interstitial' | 'rewarded';
-  _googleAds: MobileAdsModule;
+  _googleAds: GoogleAdsModuleInterface;
   _requestId: number;
   _adUnitId: string;
   _requestOptions: RequestOptions;
@@ -37,7 +37,7 @@ export class MobileAd {
 
   constructor(
     type: 'interstitial' | 'rewarded',
-    googleAds: MobileAdsModule,
+    googleAds: GoogleAdsModuleInterface,
     requestId: number,
     adUnitId: string,
     requestOptions: RequestOptions,

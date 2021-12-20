@@ -7,7 +7,7 @@ import { RequestConfiguration } from './RequestConfiguration';
 /**
  * The Google Ads service interface.
  */
-export interface MobileAdsModule {
+export interface GoogleAdsModuleInterface {
   /**
    * Initialize the SDK.
    */
