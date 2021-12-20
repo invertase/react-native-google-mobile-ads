@@ -16,10 +16,10 @@
  */
 
 import { isFunction, isString } from '../common';
-import googleAds from '../googleMobileAds';
-import validateAdRequestOptions from '../validateAdRequestOptions';
-import validateAdShowOptions from '../validateAdShowOptions';
-import MobileAd from './MobileAd';
+import { googleAds } from '../googleMobileAds';
+import { validateAdRequestOptions } from '../validateAdRequestOptions';
+import { validateAdShowOptions } from '../validateAdShowOptions';
+import { MobileAd } from './MobileAd';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
@@ -74,7 +74,7 @@ let _rewardedRequest = 0;
  * The rewarded advert will be presented to the user, and several more events can be triggered such as the user clicking the
  * advert, closing it or completing the action.
  */
-export default class RewardedAd extends MobileAd implements MobileAdInterface {
+export class RewardedAd extends MobileAd implements MobileAdInterface {
   /**
    * Creates a new RewardedAd instance.
    *

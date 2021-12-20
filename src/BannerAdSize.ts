@@ -16,7 +16,7 @@
  *
  */
 
-enum BannerAdSize {
+export enum BannerAdSize {
   /**
    * Mobile Marketing Association (MMA) banner ad size (320x50 density-independent pixels).
    */
@@ -57,5 +57,3 @@ enum BannerAdSize {
    */
   WIDE_SKYSCRAPER = 'WIDE_SKYSCRAPER',
 }
-
-export default BannerAdSize;

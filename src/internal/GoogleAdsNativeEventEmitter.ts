@@ -19,7 +19,7 @@ import { NativeEventEmitter, NativeModules } from 'react-native';
 
 const { RNAppModule } = NativeModules;
 
-class GoogleAdsNativeEventEmitter extends NativeEventEmitter {
+class GANativeEventEmitter extends NativeEventEmitter {
   constructor() {
     super(RNAppModule);
     this.ready = false;
@@ -72,4 +72,4 @@ class GoogleAdsNativeEventEmitter extends NativeEventEmitter {
   }
 }
 
-export default new GoogleAdsNativeEventEmitter();
+export const GoogleAdsNativeEventEmitter = new GANativeEventEmitter();

@@ -1,5 +1,5 @@
 import { Module } from './internal';
-import validateAdRequestConfiguration from './validateAdRequestConfiguration';
+import { validateAdRequestConfiguration } from './validateAdRequestConfiguration';
 import { version } from './version';
 import { MobileAdsModule } from './types/MobileAdsModule';
 import { RequestConfiguration } from './types/RequestConfiguration';
@@ -65,6 +65,8 @@ const googleMobileAds = new GoogleAdsModule('AppName', {
   nativeEvents: ['google_ads_interstitial_event', 'google_ads_rewarded_event'],
 });
 
-export default () => {
+export const googleAds = () => {
   return googleMobileAds;
 };
+
+export default googleAds;

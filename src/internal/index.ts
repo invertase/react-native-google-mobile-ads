@@ -15,7 +15,7 @@
  *
  */
 
-export { default as Module } from './Module';
-export { default as NativeError } from './NativeError';
+export { AppModule as Module } from './Module';
+export { NativeError } from './NativeError';
 export * from './registry/nativeModule';
-export { default as SharedEventEmitter } from './SharedEventEmitter';
+export { SharedEventEmitter } from './SharedEventEmitter';

@@ -15,7 +15,7 @@
  *
  */
 
-export default class NativeError extends Error {
+export class NativeError extends Error {
   static fromEvent(
     errorEvent: { code: string; message: string },
     namespace: string,

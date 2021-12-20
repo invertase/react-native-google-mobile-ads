@@ -15,7 +15,7 @@
  *
  */
 
-enum RewardedAdEventType {
+export enum RewardedAdEventType {
   /**
    * An event fired when a rewarded ad has loaded.
    *
@@ -62,5 +62,3 @@ enum RewardedAdEventType {
    */
   EARNED_REWARD = 'rewarded_earned_reward',
 }
-
-export default RewardedAdEventType;

@@ -18,9 +18,9 @@
 import React, { useState, useEffect } from 'react';
 import { HostComponent, requireNativeComponent } from 'react-native';
 import { isFunction } from '../common';
-import NativeError from '../internal/NativeError';
-import BannerAdSize from '../BannerAdSize';
-import validateAdRequestOptions from '../validateAdRequestOptions';
+import { NativeError } from '../internal/NativeError';
+import { BannerAdSize } from '../BannerAdSize';
+import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { BannerAdProps } from '../types/BannerAdProps';
 import { RequestOptions } from '../types/RequestOptions';
 
@@ -40,7 +40,7 @@ type NativeEvent =
 const initialState = [0, 0];
 const sizeRegex = /([0-9]+)x([0-9]+)/;
 
-function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
+export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
   const [dimensions, setDimensions] = useState(initialState);
 
   useEffect(() => {
@@ -124,5 +124,3 @@ const GoogleAdsBannerView: HostComponent<{
   request: RequestOptions;
   onNativeEvent: (event: { nativeEvent: NativeEvent }) => void;
 }> = requireNativeComponent('RNGoogleAdsBannerView');
-
-export default BannerAd;

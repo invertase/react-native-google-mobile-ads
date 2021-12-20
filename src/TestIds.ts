@@ -17,7 +17,7 @@
 
 import { Platform } from 'react-native';
 
-export default {
+export const TestIds = {
   BANNER: '',
   INTERSTITIAL: '',
   REWARDED: '',

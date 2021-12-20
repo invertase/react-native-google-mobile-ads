@@ -16,10 +16,10 @@
  */
 
 import { hasOwnProperty, isArray, isBoolean, isObject } from './common';
-import MaxAdContentRating from './MaxAdContentRating';
+import { MaxAdContentRating } from './MaxAdContentRating';
 import { RequestConfiguration } from './types/RequestConfiguration';
 
-export default function validateAdRequestConfiguration(requestConfiguration: RequestConfiguration) {
+export function validateAdRequestConfiguration(requestConfiguration: RequestConfiguration) {
   const out: RequestConfiguration = {};
 
   if (!isObject(requestConfiguration)) {

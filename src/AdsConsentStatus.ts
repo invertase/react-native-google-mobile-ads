@@ -18,7 +18,7 @@
 /**
  * AdsConsentStatus enum.
  */
-enum AdsConsentStatus {
+export enum AdsConsentStatus {
   /**
    * The consent status is unknown and the user must provide consent to show ads if they are within the EEA or location is also unknown.
    */
@@ -34,5 +34,3 @@ enum AdsConsentStatus {
    */
   PERSONALIZED = 2,
 }
-
-export default AdsConsentStatus;

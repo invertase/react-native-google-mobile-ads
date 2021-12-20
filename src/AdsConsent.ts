@@ -25,13 +25,13 @@ import {
   isValidUrl,
 } from './common';
 import { NativeModules } from 'react-native';
-import AdsConsentDebugGeography from './AdsConsentDebugGeography';
-import AdsConsentStatus from './AdsConsentStatus';
+import { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
+import { AdsConsentStatus } from './AdsConsentStatus';
 import { AdsConsentInterface } from './types/AdsConsent.interface';
 
 const native = NativeModules.RNGoogleAdsConsentModule;
 
-const AdsConsent: AdsConsentInterface = {
+export const AdsConsent: AdsConsentInterface = {
   /**
    *
    * @param publisherIds
@@ -189,5 +189,3 @@ const AdsConsent: AdsConsentInterface = {
     return native.addTestDevices(deviceIds);
   },
 };
-
-export default AdsConsent;

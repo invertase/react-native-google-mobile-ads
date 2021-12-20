@@ -15,7 +15,7 @@
  *
  */
 
-export default class ReferenceBase {
+export class ReferenceBase {
   path: string;
 
   constructor(_path: string) {

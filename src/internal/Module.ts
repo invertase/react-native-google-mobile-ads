@@ -16,11 +16,11 @@
  */
 
 import { getAppModule, getNativeModule } from './registry/nativeModule';
-import SharedEventEmitter from './SharedEventEmitter';
+import { SharedEventEmitter } from './SharedEventEmitter';
 
 let appJson = null;
 
-export default class AppModule {
+export class AppModule {
   constructor(app, config) {
     this._app = app;
     this._nativeModule = null;

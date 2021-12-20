@@ -19,6 +19,4 @@
 import Emitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
 import { EventEmitter } from 'react-native';
 
-const SharedEventEmitter: EventEmitter = new Emitter();
-
-export default SharedEventEmitter;
+export const SharedEventEmitter: EventEmitter = new Emitter();

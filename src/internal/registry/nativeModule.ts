@@ -16,12 +16,12 @@
  */
 
 import { NativeModules, Platform } from 'react-native';
-import NativeError from '../NativeError';
-import GoogleAdsNativeEventEmitter from '../GoogleAdsNativeEventEmitter';
-import SharedEventEmitter from '../SharedEventEmitter';
+import { NativeError } from '../NativeError';
+import { GoogleAdsNativeEventEmitter } from '../GoogleAdsNativeEventEmitter';
+import { SharedEventEmitter } from '../SharedEventEmitter';
 
-const NATIVE_MODULE_REGISTRY = {};
-const NATIVE_MODULE_EVENT_SUBSCRIPTIONS = {};
+const NATIVE_MODULE_REGISTRY: Record<string, unknown> = {};
+const NATIVE_MODULE_EVENT_SUBSCRIPTIONS: Record<string, unknown> = {};
 
 function nativeModuleKey(module) {
   return `${module._customUrlOrRegion || ''}:${module.app.name}:${module._config.namespace}`;
@@ -154,7 +154,7 @@ function subscribeToNativeModuleEvent(eventName) {
  * @param namespace
  * @returns {string}
  */
-function getMissingModuleHelpText(namespace) {
+function getMissingModuleHelpText(namespace: string) {
   const snippet = `${namespace}()`;
   const nativeModule = namespace.charAt(0).toUpperCase() + namespace.slice(1);
 

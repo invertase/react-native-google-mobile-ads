@@ -15,7 +15,7 @@
  *
  */
 
-enum MaxAdContentRating {
+export enum MaxAdContentRating {
   /**
    * "General audiences." Content suitable for all audiences, including families and children.
    */
@@ -36,5 +36,3 @@ enum MaxAdContentRating {
    */
   MA = 'MA',
 }
-
-export default MaxAdContentRating;

@@ -1,5 +1,5 @@
-import AdsConsentDebugGeography from '../AdsConsentDebugGeography';
-import AdsConsentStatus from '../AdsConsentStatus';
+import { AdsConsentDebugGeography } from '../AdsConsentDebugGeography';
+import { AdsConsentStatus } from '../AdsConsentStatus';
 
 /**
  * Under the Google [EU User Consent Policy](https://www.google.com/about/company/consentstaging.html), you must make certain disclosures to your users in the European Economic Area (EEA)

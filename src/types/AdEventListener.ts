@@ -1,6 +1,6 @@
-import AdEventType from '../AdEventType';
+import { AdEventType } from '../AdEventType';
 import { RewardedAdReward } from './RewardedAdReward';
-import RewardedAdEventType from '../RewardedAdEventType';
+import { RewardedAdEventType } from '../RewardedAdEventType';
 
 /**
  * A callback interface for all ad events.

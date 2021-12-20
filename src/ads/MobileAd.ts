@@ -15,15 +15,15 @@
  *
  */
 
-import NativeError from '../internal/NativeError';
-import RewardedAdEventType from '../RewardedAdEventType';
-import AdEventType from '../AdEventType';
+import { NativeError } from '../internal/NativeError';
+import { RewardedAdEventType } from '../RewardedAdEventType';
+import { AdEventType } from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdsModule } from '../types/MobileAdsModule';
 import { RewardedAdReward } from '../types/RewardedAdReward';
 
-export default class MobileAd {
+export class MobileAd {
   _type: 'interstitial' | 'rewarded';
   _googleAds: MobileAdsModule;
   _requestId: number;

@@ -1,4 +1,4 @@
-import MaxAdContentRating from '../MaxAdContentRating';
+import { MaxAdContentRating } from '../MaxAdContentRating';
 
 /**
  * The `RequestConfiguration` used when setting global ad settings via `setRequestConfiguration`.

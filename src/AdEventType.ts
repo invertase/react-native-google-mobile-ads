@@ -15,7 +15,7 @@
  *
  */
 
-enum AdEventType {
+export enum AdEventType {
   /**
    * When an ad has loaded. At this point, the ad is ready to be shown to the user.
    *
@@ -66,5 +66,3 @@ enum AdEventType {
    */
   CLOSED = 'closed',
 }
-
-export default AdEventType;

@@ -26,7 +26,7 @@ import {
 } from './common';
 import { RequestOptions } from './types/RequestOptions';
 
-export default function validateAdRequestOptions(options?: RequestOptions) {
+export function validateAdRequestOptions(options?: RequestOptions) {
   const out: RequestOptions = {};
 
   if (options === undefined) {

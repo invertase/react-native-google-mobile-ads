@@ -16,10 +16,10 @@
  */
 
 import { isFunction, isString } from '../common';
-import googleAds from '../googleMobileAds';
-import validateAdRequestOptions from '../validateAdRequestOptions';
-import validateAdShowOptions from '../validateAdShowOptions';
-import MobileAd from './MobileAd';
+import { googleAds } from '../googleMobileAds';
+import { validateAdRequestOptions } from '../validateAdRequestOptions';
+import { validateAdShowOptions } from '../validateAdShowOptions';
+import { MobileAd } from './MobileAd';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
@@ -68,7 +68,7 @@ let _interstitialRequest = 0;
  * The advert will be presented to the user, and several more events can be triggered such as the user clicking the
  * advert or closing it.
  */
-export default class InterstitialAd extends MobileAd implements MobileAdInterface {
+export class InterstitialAd extends MobileAd implements MobileAdInterface {
   /**
    * Creates a new InterstitialAd instance.
    *

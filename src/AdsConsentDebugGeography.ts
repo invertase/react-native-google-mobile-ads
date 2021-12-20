@@ -20,7 +20,7 @@
  *
  * Used to set a mock location when testing the `AdsConsent` helper.
  */
-enum AdsConsentDebugGeography {
+export enum AdsConsentDebugGeography {
   /**
    * Disable any debug geography.
    */
@@ -36,5 +36,3 @@ enum AdsConsentDebugGeography {
    */
   NOT_EEA = 2,
 }
-
-export default AdsConsentDebugGeography;

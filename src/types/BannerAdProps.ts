@@ -1,4 +1,4 @@
-import BannerAdSize from '../BannerAdSize';
+import { BannerAdSize } from '../BannerAdSize';
 import { RequestOptions } from './RequestOptions';
 
 /**

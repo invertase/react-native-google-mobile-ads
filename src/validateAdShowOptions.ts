@@ -18,7 +18,7 @@
 import { hasOwnProperty, isBoolean, isObject } from './common';
 import { AdShowOptions } from './types/AdShowOptions';
 
-export default function validateAdShowOptions(options?: AdShowOptions) {
+export function validateAdShowOptions(options?: AdShowOptions) {
   const out: AdShowOptions = {};
 
   if (options === undefined) {

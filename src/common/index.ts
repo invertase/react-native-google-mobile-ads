@@ -22,7 +22,7 @@ export * from './path';
 export * from './promise';
 export * from './validate';
 
-export { default as ReferenceBase } from './ReferenceBase';
+export { ReferenceBase } from './ReferenceBase';
 
 export function isError(value: unknown) {
   if (Object.prototype.toString.call(value) === '[object Error]') {
