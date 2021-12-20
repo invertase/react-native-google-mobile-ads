@@ -38,11 +38,6 @@
 
 + (void)sendJSEvent:name:(NSString *)name body:(NSDictionary *)body;
 
-+ (void)rejectPromiseWithExceptionDict:(RCTPromiseRejectBlock)reject
-                             exception:(NSException *)exception;
-
-+ (void)rejectPromiseWithNSError:(RCTPromiseRejectBlock)reject error:(NSError *)error;
-
 + (void)rejectPromiseWithUserInfo:(RCTPromiseRejectBlock)reject
                          userInfo:(NSMutableDictionary *)userInfo;
 

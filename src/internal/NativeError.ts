@@ -16,53 +16,32 @@
  */
 
 export class NativeError extends Error {
+  namespace: string;
+  code: string;
+  message: string;
+  jsStack: string;
+  userInfo: { code: string; message: string };
+
   static fromEvent(
     errorEvent: { code: string; message: string },
     namespace: string,
     stack?: string,
   ) {
-    return new NativeError({ userInfo: errorEvent }, stack || new Error().stack, namespace);
+    return new NativeError({ userInfo: errorEvent }, stack || new Error().stack || '', namespace);
   }
 
-  constructor(nativeError, jsStack, namespace) {
+  constructor(
+    nativeError: { userInfo: { code: string; message: string } },
+    jsStack: string,
+    namespace: string,
+  ) {
     super();
     const { userInfo } = nativeError;
-
-    Object.defineProperty(this, 'namespace', {
-      enumerable: false,
-      value: namespace,
-    });
-
-    Object.defineProperty(this, 'code', {
-      enumerable: false,
-      value: `${this.namespace}/${userInfo.code || 'unknown'}`,
-    });
-
-    Object.defineProperty(this, 'message', {
-      enumerable: false,
-      value: `[${this.code}] ${userInfo.message || nativeError.message}`,
-    });
-
-    Object.defineProperty(this, 'jsStack', {
-      enumerable: false,
-      value: jsStack,
-    });
-
-    Object.defineProperty(this, 'userInfo', {
-      enumerable: false,
-      value: userInfo,
-    });
-
-    Object.defineProperty(this, 'nativeErrorCode', {
-      enumerable: false,
-      value: userInfo.nativeErrorCode || null,
-    });
-
-    Object.defineProperty(this, 'nativeErrorMessage', {
-      enumerable: false,
-      value: userInfo.nativeErrorMessage || null,
-    });
-
+    this.namespace = namespace;
+    this.code = `${this.namespace}/${userInfo.code || 'unknown'}`;
+    this.message = `[${this.code}] ${userInfo.message}`;
+    this.jsStack = jsStack;
+    this.userInfo = userInfo;
     this.stack = NativeError.getStackWithMessage(`NativeError: ${this.message}`, this.jsStack);
   }
 
@@ -71,7 +50,7 @@ export class NativeError extends Error {
    *
    * @returns {string}
    */
-  static getStackWithMessage(message, jsStack) {
+  static getStackWithMessage(message: string, jsStack: string) {
     return [message, ...jsStack.split('\n').slice(2, 13)].join('\n');
   }
 }

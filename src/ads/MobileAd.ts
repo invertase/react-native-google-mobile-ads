@@ -60,7 +60,7 @@ export class MobileAd {
   _handleAdEvent(event: {
     body: {
       type: AdEventType | RewardedAdEventType;
-      error?: Error;
+      error?: { code: string; message: string };
       data?: RewardedAdReward;
     };
   }) {

@@ -27,36 +27,6 @@ static NSString *const RNErrorDomain = @"RNErrorDomain";
 #pragma mark -
 #pragma mark Methods
 
-+ (void)rejectPromiseWithExceptionDict:(RCTPromiseRejectBlock)reject
-                             exception:(NSException *)exception {
-  NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
-
-  [userInfo setValue:@(YES) forKey:@"fatal"];
-  [userInfo setValue:@"unknown" forKey:@"code"];
-  [userInfo setValue:exception.reason forKey:@"message"];
-  [userInfo setValue:exception.name forKey:@"nativeErrorCode"];
-  [userInfo setValue:exception.reason forKey:@"nativeErrorMessage"];
-
-  NSError *error = [NSError errorWithDomain:RNErrorDomain code:666 userInfo:userInfo];
-
-  reject(exception.name, exception.reason, error);
-}
-
-+ (void)rejectPromiseWithNSError:(RCTPromiseRejectBlock)reject error:(NSError *)error {
-  NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
-
-  [userInfo setValue:@(NO) forKey:@"fatal"];
-  [userInfo setValue:@"unknown" forKey:@"code"];
-  [userInfo setValue:error.localizedDescription forKey:@"message"];
-  [userInfo setValue:@(error.code) forKey:@"nativeErrorCode"];
-  [userInfo setValue:error.localizedDescription forKey:@"nativeErrorMessage"];
-
-  NSError *newErrorWithUserInfo = [NSError errorWithDomain:RNErrorDomain
-                                                      code:666
-                                                  userInfo:userInfo];
-  reject(@"unknown", error.localizedDescription, newErrorWithUserInfo);
-}
-
 + (void)rejectPromiseWithUserInfo:(RCTPromiseRejectBlock)reject
                          userInfo:(NSMutableDictionary *)userInfo {
   NSError *error = [NSError errorWithDomain:RNErrorDomain code:666 userInfo:userInfo];
