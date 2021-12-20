@@ -16,7 +16,7 @@
  */
 
 import { isFunction, isString } from '../common';
-import { googleAds } from '../googleMobileAds';
+import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
@@ -116,7 +116,7 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
     }
 
     const requestId = _rewardedRequest++;
-    return new RewardedAd('rewarded', googleAds(), requestId, adUnitId, options);
+    return new RewardedAd('rewarded', MobileAds(), requestId, adUnitId, options);
   }
 
   load() {

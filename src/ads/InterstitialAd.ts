@@ -16,7 +16,7 @@
  */
 
 import { isFunction, isString } from '../common';
-import { googleAds } from '../googleMobileAds';
+import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
@@ -110,7 +110,7 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
     }
 
     const requestId = _interstitialRequest++;
-    return new InterstitialAd('interstitial', googleAds(), requestId, adUnitId, options);
+    return new InterstitialAd('interstitial', MobileAds(), requestId, adUnitId, options);
   }
 
   load() {

@@ -1,7 +1,7 @@
 import { Module } from './internal';
 import { validateAdRequestConfiguration } from './validateAdRequestConfiguration';
 import { version } from './version';
-import { GoogleAdsModuleInterface } from './types/GoogleAdsModule.interface';
+import { MobileAdsModuleInterface } from './types/MobileAdsModule.interface';
 import { RequestConfiguration } from './types/RequestConfiguration';
 import { App, Config } from './types/Module.interface';
 
@@ -18,7 +18,7 @@ type Event = {
   requestId: number;
 };
 
-class GoogleAdsModule extends Module implements GoogleAdsModuleInterface {
+class MobileAdsModule extends Module implements MobileAdsModuleInterface {
   constructor(app: App, config: Config) {
     super(app, config);
 
@@ -52,7 +52,7 @@ class GoogleAdsModule extends Module implements GoogleAdsModuleInterface {
   }
 }
 
-const googleMobileAds = new GoogleAdsModule(
+const MobileAdsInstance = new MobileAdsModule(
   { name: 'AppName' },
   {
     version,
@@ -62,8 +62,8 @@ const googleMobileAds = new GoogleAdsModule(
   },
 );
 
-export const googleAds = () => {
-  return googleMobileAds;
+export const MobileAds = () => {
+  return MobileAdsInstance;
 };
 
-export default googleAds;
+export default MobileAds;

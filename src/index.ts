@@ -20,7 +20,7 @@ import { version } from './version';
 // import { SDK_VERSION } from '@invertase/react-native-google-ads';
 export const SDK_VERSION = version;
 
-export { default } from './googleMobileAds';
+export { default, MobileAds } from './MobileAds';
 export { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
 export { AdsConsentStatus } from './AdsConsentStatus';
 export { MaxAdContentRating } from './MaxAdContentRating';

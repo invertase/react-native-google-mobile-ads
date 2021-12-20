@@ -7,7 +7,7 @@ import { RequestConfiguration } from './RequestConfiguration';
 /**
  * The Google Ads service interface.
  */
-export interface GoogleAdsModuleInterface {
+export interface MobileAdsModuleInterface {
   /**
    * Initialize the SDK.
    */
@@ -19,9 +19,9 @@ export interface GoogleAdsModuleInterface {
    * #### Example
    *
    * ```js
-   * import googleAds, { MaxAdContentRating } from '@invertase/react-native-google-ads';
+   * import mobileAds, { MaxAdContentRating } from '@invertase/react-native-google-ads';
    *
-   * await googleAds().setRequestConfiguration({
+   * await mobileAds().setRequestConfiguration({
    *   // Update all future requests suitable for parental guidance
    *   maxAdContentRating: MaxAdContentRating.PG,
    * });
