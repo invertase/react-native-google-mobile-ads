@@ -17,8 +17,11 @@
 
 import { deepGet, deepSet } from './deeps';
 
-export default class MutatableParams {
-  constructor(parentInstance) {
+export class MutatableParams {
+  _mutatableParams: Record<string, unknown>;
+  _parentInstance: MutatableParams;
+
+  constructor(parentInstance: MutatableParams) {
     if (parentInstance) {
       this._mutatableParams = parentInstance._mutatableParams;
       this._parentInstance = parentInstance;
@@ -28,12 +31,12 @@ export default class MutatableParams {
     }
   }
 
-  set(param, value) {
+  set(param: string, value: unknown) {
     deepSet(this._mutatableParams, param, value);
     return this._parentInstance;
   }
 
-  get(param) {
+  get(param: string) {
     return deepGet(this._mutatableParams, param, '.');
   }
 

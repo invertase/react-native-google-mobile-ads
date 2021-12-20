@@ -25,25 +25,25 @@ import { isArray, isObject } from './validate';
  * @param joiner
  * @returns {*}
  */
-export function deepGet(object, path, joiner = '/') {
+export function deepGet(object: Record<string, unknown>, path: string, joiner = '/') {
   if (!isObject(object) && !Array.isArray(object)) {
     return undefined;
   }
   const keys = path.split(joiner);
 
   let i = 0;
-  let tmp = object;
+  let value;
   const len = keys.length;
 
   while (i < len) {
     const key = keys[i++];
-    if (!tmp || !Object.hasOwnProperty.call(tmp, key)) {
+    if (!object || !Object.hasOwnProperty.call(object, key)) {
       return undefined;
     }
-    tmp = tmp[key];
+    value = object[key];
   }
 
-  return tmp;
+  return value;
 }
 
 /**
@@ -54,7 +54,13 @@ export function deepGet(object, path, joiner = '/') {
  * @param initPaths
  * @param joiner
  */
-export function deepSet(object, path, value, initPaths = true, joiner = '.') {
+export function deepSet(
+  object: Record<string, unknown>,
+  path: string,
+  value: unknown,
+  initPaths = true,
+  joiner = '.',
+) {
   if (!isObject(object)) {
     return false;
   }
@@ -69,7 +75,7 @@ export function deepSet(object, path, value, initPaths = true, joiner = '.') {
     if (initPaths && !Object.hasOwnProperty.call(object, key)) {
       _object[key] = {};
     }
-    _object = _object[key];
+    _object = _object[key] as Record<string, unknown>;
   }
 
   if (isObject(_object) || (isArray(_object) && !Number.isNaN(keys[i]))) {

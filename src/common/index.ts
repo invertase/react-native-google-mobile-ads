@@ -16,7 +16,7 @@
  */
 
 import { Platform } from 'react-native';
-import { Base64 } from './Base64';
+import * as Base64 from './Base64';
 import { isString } from './validate';
 
 export * from './id';
@@ -24,10 +24,10 @@ export * from './path';
 export * from './promise';
 export * from './validate';
 
-export { Base64 } from './Base64';
+export { Base64 };
 export { ReferenceBase } from './ReferenceBase';
 
-export function getDataUrlParts(dataUrlString) {
+export function getDataUrlParts(dataUrlString: string) {
   const isBase64 = dataUrlString.includes(';base64');
   let [mediaType, base64String] = dataUrlString.split(',');
   if (!mediaType || !base64String) {
@@ -43,11 +43,11 @@ export function getDataUrlParts(dataUrlString) {
   return { base64String, mediaType };
 }
 
-export function once(fn, context) {
-  let onceResult;
+export function once<T>(fn: () => void, context: unknown): (this: T, ...args: []) => void {
+  let onceResult: unknown;
   let ranOnce = false;
 
-  return function onceInner(...args) {
+  return function onceInner(...args: []) {
     if (!ranOnce) {
       ranOnce = true;
       onceResult = fn.apply(context || this, args);

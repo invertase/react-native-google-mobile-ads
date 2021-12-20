@@ -25,7 +25,7 @@ const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=
 /**
  * window.btoa
  */
-function btoa(input) {
+export function btoa(input: string) {
   let map;
   let i = 0;
   let block = 0;
@@ -53,7 +53,7 @@ function btoa(input) {
 /**
  * window.atob
  */
-function atob(input) {
+export function atob(input: string) {
   let i = 0;
   let bc = 0;
   let bs = 0;
@@ -84,7 +84,7 @@ function atob(input) {
 /**
  * Converts a Blob, ArrayBuffer or Uint8Array to a base64 string.
  */
-function fromData(data) {
+export function fromData(data: Blob | ArrayBuffer | Uint8Array) {
   if (data instanceof Blob) {
     const fileReader = new FileReader();
     const { resolve, reject, promise } = promiseDefer();
@@ -112,9 +112,3 @@ function fromData(data) {
 
   throw new Error("'RNFirebase.Base64.fromData' failed: Unknown data type.");
 }
-
-export default {
-  btoa,
-  atob,
-  fromData,
-};

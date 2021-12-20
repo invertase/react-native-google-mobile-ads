@@ -179,7 +179,11 @@ export function noop() {
   // noop-🐈
 }
 
-export function validateOptionalNativeDependencyExists(firebaseJsonKey, apiName, nativeFnExists) {
+export function validateOptionalNativeDependencyExists(
+  firebaseJsonKey: string,
+  apiName: string,
+  nativeFnExists: boolean,
+) {
   if (nativeFnExists) {
     return;
   }

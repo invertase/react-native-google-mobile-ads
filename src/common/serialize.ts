@@ -18,8 +18,8 @@
 import { tryJSONParse, tryJSONStringify } from './index';
 import { isObject } from './validate';
 
-export function serializeType(value) {
-  if (isObject(value)) {
+export function serializeType(value: unknown) {
+  if (typeof value === 'object' && !Array.isArray(value) && !(value === null)) {
     return {
       type: 'object',
       value: serializeObject(value),
@@ -32,12 +32,12 @@ export function serializeType(value) {
   };
 }
 
-export function serializeObject(object) {
+export function serializeObject(object: unknown) {
   if (!isObject(object)) {
     return object;
   }
 
   // json stringify then parse it calls toString on Objects / Classes
   // that support it i.e new Date() becomes a ISO string.
-  return tryJSONParse(tryJSONStringify(object));
+  return tryJSONParse(tryJSONStringify(object) || '');
 }

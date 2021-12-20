@@ -23,9 +23,9 @@ import { isFunction } from './validate';
 export function promiseDefer() {
   const deferred: {
     promise: Promise<unknown> | null;
-    resolve: ((value: unknown) => void) | null;
-    reject: ((value: unknown) => void) | null;
-  } = { promise: null, resolve: null, reject: null };
+    resolve: (value: unknown) => void;
+    reject: (value: unknown) => void;
+  } = { promise: null, resolve: () => {}, reject: () => {} };
 
   deferred.promise = new Promise((resolve, reject) => {
     deferred.resolve = resolve;
