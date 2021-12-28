@@ -78,7 +78,7 @@ RCT_EXPORT_METHOD(interstitialLoad
                         [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_INTERSTITIAL
                                              requestId:requestId
                                                   type:GOOGLE_ADS_EVENT_ERROR
-                                              adUnitId:ad.adUnitID
+                                              adUnitId:adUnitId
                                                  error:codeAndMessage
                                                   data:nil];
                         return;
