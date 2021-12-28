@@ -1,3 +1,10 @@
+### [3.2.1](https://github.com/invertase/react-native-google-ads/compare/v3.2.0...v3.2.1) (2021-12-28)
+
+
+### Bug Fixes
+
+* adUnitId in sendAdevent is nil on error ([d633340](https://github.com/invertase/react-native-google-ads/commit/d633340d25671dbd15f1ef8020ca93b3f833e6c6))
+
 ## [3.2.0](https://github.com/invertase/react-native-google-ads/compare/v3.1.0...v3.2.0) (2021-12-13)
 
 
