@@ -253,7 +253,7 @@ public class ReactNativeGoogleAdsCommon {
             "The ad request was successful, but no ad was returned due to lack of ad inventory.";
         break;
       case AdRequest.ERROR_CODE_REQUEST_ID_MISMATCH:
-        code = "no-fill";
+        code = "request-id-mismatch";
         message =
             "The AdInfo object inside the ad request has mismatching request IDs or the request ID"
                 + " in the ad string is not found.";
