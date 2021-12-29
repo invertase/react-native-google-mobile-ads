@@ -87,10 +87,7 @@ NSString *const GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_rewa
 
 + (NSDictionary *)getCodeAndMessageFromAdError:(NSError *)error {
   NSString *code = @"unknown";
-  NSString *message = @"An unknown error occurred.";
-  if ([error localizedDescription] != nil) {
-    message = [error localizedDescription];
-  }
+  NSString *message = [error localizedDescription];
 
   if (error.code == GADErrorInvalidRequest) {
     code = @"invalid-request";
