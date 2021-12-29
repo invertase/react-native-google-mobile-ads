@@ -216,7 +216,7 @@ public class ReactNativeGoogleAdsCommon {
     emitter.sendEvent(new ReactNativeGoogleAdsEvent(event, requestId, adUnitId, eventBody));
   }
 
-  public static String[] getCodeFromAdErrorCode(int errorCode) {
+  public static String getCodeFromAdErrorCode(int errorCode) {
     String code = "unknown";
 
     switch (errorCode) {
