@@ -221,15 +221,27 @@ public class ReactNativeGoogleAdsCommon {
     String message = "An unknown error occurred.";
 
     switch (errorCode) {
+      case AdRequest.ERROR_CODE_APP_ID_MISSING:
+        code = "app-id-missing";
+        message = "The ad request was not made due to a missing app ID.";
+        break;
       case AdRequest.ERROR_CODE_INTERNAL_ERROR:
         code = "internal-error";
         message =
             "Something happened internally; for instance, an invalid response was received from the"
                 + " ad server.";
         break;
+      case AdRequest.ERROR_CODE_INVALID_AD_STRING:
+        code = "invalid-ad-string";
+        message = "The ad string is invalid.";
+        break;
       case AdRequest.ERROR_CODE_INVALID_REQUEST:
         code = "invalid-request";
         message = "The ad request was invalid; for instance, the ad unit ID was incorrect.";
+        break;
+      case AdRequest.ERROR_CODE_MEDIATION_NO_FILL:
+        code = "mediation-no-fill";
+        message = "The mediation adapter did not fill the ad request.";
         break;
       case AdRequest.ERROR_CODE_NETWORK_ERROR:
         code = "network-error";
@@ -239,6 +251,12 @@ public class ReactNativeGoogleAdsCommon {
         code = "no-fill";
         message =
             "The ad request was successful, but no ad was returned due to lack of ad inventory.";
+        break;
+      case AdRequest.ERROR_CODE_REQUEST_ID_MISMATCH:
+        code = "request-id-mismatch";
+        message =
+            "The AdInfo object inside the ad request has mismatching request IDs or the request ID"
+                + " in the ad string is not found.";
         break;
     }
 
