@@ -1,6 +1,6 @@
 package io.invertase.googleads;
 
-import static io.invertase.googleads.ReactNativeGoogleAdsCommon.getCodeAndMessageFromAdErrorCode;
+import static io.invertase.googleads.ReactNativeGoogleAdsCommon.getCodeAndMessageFromAdError;
 import static io.invertase.googleads.ReactNativeGoogleAdsCommon.sendAdEvent;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLOSED;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_ERROR;
@@ -71,7 +71,7 @@ public class ReactNativeGoogleAdsRewardedModule extends ReactNativeModule {
                 @Override
                 public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                   WritableMap error = Arguments.createMap();
-                  String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(loadAdError);
+                  String[] codeAndMessage = getCodeAndMessageFromAdError(loadAdError);
                   error.putString("code", codeAndMessage[0]);
                   error.putString("message", codeAndMessage[1]);
                   sendRewardedEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error, null);

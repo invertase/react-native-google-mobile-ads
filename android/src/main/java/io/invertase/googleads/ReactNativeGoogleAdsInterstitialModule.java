@@ -105,7 +105,7 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
                 @Override
                 public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                   WritableMap error = Arguments.createMap();
-                  String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(loadAdError);
+                  String[] codeAndMessage = getCodeAndMessageFromAdError(loadAdError);
                   error.putString("code", codeAndMessage[0]);
                   error.putString("message", codeAndMessage[1]);
                   sendInterstitialEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error);
