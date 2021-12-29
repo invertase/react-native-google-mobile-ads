@@ -17,7 +17,7 @@ package io.invertase.googleads;
  *
  */
 
-import static io.invertase.googleads.ReactNativeGoogleAdsCommon.getCodeAndMessageFromAdErrorCode;
+import static io.invertase.googleads.ReactNativeGoogleAdsCommon.getCodeFromAdErrorCode;
 import static io.invertase.googleads.ReactNativeGoogleAdsCommon.sendAdEvent;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLICKED;
 import static io.invertase.googleads.ReactNativeGoogleAdsEvent.GOOGLE_ADS_EVENT_CLOSED;
@@ -106,9 +106,9 @@ public class ReactNativeGoogleAdsInterstitialModule extends ReactNativeModule {
                 public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                   WritableMap error = Arguments.createMap();
                   int errorCode = loadAdError.getCode();
-                  String[] codeAndMessage = getCodeAndMessageFromAdErrorCode(errorCode);
-                  error.putString("code", codeAndMessage[0]);
-                  error.putString("message", codeAndMessage[1]);
+                  String code = getCodeFromAdErrorCode(errorCode);
+                  error.putString("code", code);
+                  error.putString("message", loadAdError.getMessage());
                   sendInterstitialEvent(GOOGLE_ADS_EVENT_ERROR, requestId, adUnitId, error);
                 }
               };
