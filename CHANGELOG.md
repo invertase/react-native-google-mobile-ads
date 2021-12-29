@@ -1,3 +1,10 @@
+## [3.4.0](https://github.com/invertase/react-native-google-ads/compare/v3.3.0...v3.4.0) (2021-12-29)
+
+
+### Features
+
+* smarter error logging ([#50](https://github.com/invertase/react-native-google-ads/issues/50)) ([c9c4d3b](https://github.com/invertase/react-native-google-ads/commit/c9c4d3b618ac33653df468753d174c11eb0656bc))
+
 ## [3.3.0](https://github.com/invertase/react-native-google-ads/compare/v3.2.1...v3.3.0) (2021-12-29)
 
 
