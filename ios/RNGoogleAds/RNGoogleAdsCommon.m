@@ -98,10 +98,44 @@ NSString *const GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_rewa
   } else if (error.code == GADErrorNetworkError) {
     code = @"network-error";
     message = @"The ad request was unsuccessful due to network connectivity.";
+  } else if (error.code == GADErrorServerError) {
+    code = @"server-error";
+    message = @"The ad server experienced a failure processing the request.";
+  } else if (error.code == GADErrorOSVersionTooLow) {
+    code = @"os-version-too-low";
+    message = @"The current device’s OS is below the minimum required version.";
+  } else if (error.code == GADErrorTimeout) {
+    code = @"timeout";
+    message = @"The request was unable to be loaded before being timed out.";
+  } else if (error.code == GADErrorMediationDataError) {
+    code = @"mediation-data-error";
+    message = @"The mediation response was invalid.";
+  } else if (error.code == GADErrorMediationAdapterError) {
+    code = @"mediation-adapter-error";
+    message = @"Error finding or creating a mediation ad network adapter.";
+  } else if (error.code == GADErrorMediationInvalidAdSize) {
+    code = @"mediation-invalid-ad-size";
+    message = @"Attempting to pass an invalid ad size to an adapter.";
   } else if (error.code == GADErrorInternalError) {
     code = @"internal-error";
     message = @"Something happened internally; for instance, an invalid response was received from "
               @"the ad server.";
+  } else if (error.code == GADErrorInvalidArgument) {
+    code = @"invalid-argument";
+    message = @"Invalid argument error.";
+  } else if (error.code == GADErrorReceivedInvalidResponse) {
+    code = @"received-invalid-response";
+    message = @"Received invalid response.";
+  } else if (error.code == GADErrorMediationNoFill) {
+    code = @"mediation-no-fill";
+    message = @"A mediation ad network adapter received an ad request, but did not fill. The "
+              @"adapter’s error is included as an underlyingError.";
+  } else if (error.code == GADErrorAdAlreadyUsed) {
+    code = @"ad-already-used";
+    message = @"Will not send request because the ad object has already been used.";
+  } else if (error.code == GADErrorApplicationIdentifierMissing) {
+    code = @"application-identifier-missing";
+    message = @"Will not send request because the application identifier is missing.";
   }
 
   return @{
