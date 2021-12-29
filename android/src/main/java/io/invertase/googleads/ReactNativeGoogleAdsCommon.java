@@ -30,6 +30,7 @@ import com.facebook.react.views.view.ReactViewGroup;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdError;
 import io.invertase.googleads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
 import java.util.Map;
@@ -216,10 +217,11 @@ public class ReactNativeGoogleAdsCommon {
     emitter.sendEvent(new ReactNativeGoogleAdsEvent(event, requestId, adUnitId, eventBody));
   }
 
-  public static String getCodeFromAdErrorCode(int errorCode) {
+  public static String[] getCodeAndMessageFromAdError(AdError adError) {
     String code = "unknown";
+    String message = adError.getMessage();
 
-    switch (errorCode) {
+    switch (adError.getCode()) {
       case AdRequest.ERROR_CODE_APP_ID_MISSING:
         code = "app-id-missing";
         break;
@@ -246,6 +248,9 @@ public class ReactNativeGoogleAdsCommon {
         break;
     }
 
-    return code;
+    String[] codeAndMessage = new String[2];
+    codeAndMessage[0] = code;
+    codeAndMessage[1] = message;
+    return codeAndMessage;
   }
 }
