@@ -98,10 +98,6 @@ NSString *const GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_rewa
   } else if (error.code == GADErrorNetworkError) {
     code = @"network-error";
     message = @"The ad request was unsuccessful due to network connectivity.";
-  } else if (error.code == GADErrorInternalError) {
-    code = @"internal-error";
-    message = @"Something happened internally; for instance, an invalid response was received from "
-              @"the ad server.";
   } else if (error.code == GADErrorServerError) {
     code = @"server-error";
     message = @"The ad server experienced a failure processing the request.";
@@ -120,6 +116,10 @@ NSString *const GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_rewa
   } else if (error.code == GADErrorMediationInvalidAdSize) {
     code = @"mediation-invalid-ad-size";
     message = @"Attempting to pass an invalid ad size to an adapter.";
+  } else if (error.code == GADErrorInternalError) {
+    code = @"internal-error";
+    message = @"Something happened internally; for instance, an invalid response was received from "
+              @"the ad server.";
   } else if (error.code == GADErrorInvalidArgument) {
     code = @"invalid-argument";
     message = @"Invalid argument error.";
