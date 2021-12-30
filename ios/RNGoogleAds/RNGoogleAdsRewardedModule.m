@@ -141,24 +141,23 @@ RCT_EXPORT_METHOD(rewardedShow
   GADRewardedAd *rewardedAd = rewardedMap[requestId];
 
   if (rewardedAd) {
-    [rewardedAd
-        presentFromRootViewController:RCTSharedApplication().keyWindow.rootViewController
-             userDidEarnRewardHandler:^{
-               GADAdReward *reward = rewardedAd.adReward;
-               NSMutableDictionary *data = [NSMutableDictionary dictionary];
-               if (reward.type != nil) {
-                 [data setValue:reward.type forKey:@"type"];
-               }
-               if (reward.amount != nil) {
-                 [data setValue:reward.amount forKey:@"amount"];
-               }
-               [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_REWARDED
-                                    requestId:requestId
-                                         type:GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD
-                                     adUnitId:rewardedAd.adUnitID
-                                        error:nil
-                                         data:data];
-             }];
+    [rewardedAd presentFromRootViewController:RCTSharedApplication().keyWindow.rootViewController
+                     userDidEarnRewardHandler:^{
+                       GADAdReward *reward = rewardedAd.adReward;
+                       NSMutableDictionary *data = [NSMutableDictionary dictionary];
+                       if (reward.type != nil) {
+                         [data setValue:reward.type forKey:@"type"];
+                       }
+                       if (reward.amount != nil) {
+                         [data setValue:reward.amount forKey:@"amount"];
+                       }
+                       [RNGoogleAdsCommon sendAdEvent:GOOGLE_ADS_EVENT_REWARDED
+                                            requestId:requestId
+                                                 type:GOOGLE_ADS_EVENT_REWARDED_EARNED_REWARD
+                                             adUnitId:rewardedAd.adUnitID
+                                                error:nil
+                                                 data:data];
+                     }];
   } else {
     [RNSharedUtils
         rejectPromiseWithUserInfo:reject
