@@ -142,7 +142,7 @@ RCT_EXPORT_METHOD(rewardedShow
 
   if (rewardedAd) {
     [rewardedAd
-        presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController
+        presentFromRootViewController:RCTSharedApplication().keyWindow.rootViewController
              userDidEarnRewardHandler:^{
                GADAdReward *reward = rewardedAd.adReward;
                NSMutableDictionary *data = [NSMutableDictionary dictionary];
