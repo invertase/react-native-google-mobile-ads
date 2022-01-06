@@ -1,4 +1,4 @@
-import { AdsConsent } from '../lib';
+import { AdsConsent } from '../src';
 
 describe('Google Ads AdsConsent', function () {
   describe('requestInfoUpdate', function () {

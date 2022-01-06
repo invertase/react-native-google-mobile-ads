@@ -1,8 +1,7 @@
 {
-  "include": ["lib/*.d.ts"],
+  "include": ["src"],
   "compilerOptions": {
-    "noEmit": true,
-    "target": "es5",
+    "target": "esnext",
     "module": "commonjs",
     "declaration": true,
     "importHelpers": true,
@@ -15,9 +14,10 @@
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
+    "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "lib": ["es2015", "es2016", "esnext"]
+    "lib": ["esnext"]
   },
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

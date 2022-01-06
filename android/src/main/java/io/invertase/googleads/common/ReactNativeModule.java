@@ -37,23 +37,10 @@ public class ReactNativeModule extends ReactContextBaseJavaModule implements Con
     this.executorService = new TaskExecutorService(getName());
   }
 
-  public static void rejectPromiseWithExceptionMap(Promise promise, Exception exception) {
-    promise.reject(exception, SharedUtils.getExceptionMap(exception));
-  }
-
   public static void rejectPromiseWithCodeAndMessage(Promise promise, String code, String message) {
     WritableMap userInfoMap = Arguments.createMap();
     userInfoMap.putString("code", code);
     userInfoMap.putString("message", message);
-    promise.reject(code, message, userInfoMap);
-  }
-
-  public static void rejectPromiseWithCodeAndMessage(
-      Promise promise, String code, String message, String nativeErrorMessage) {
-    WritableMap userInfoMap = Arguments.createMap();
-    userInfoMap.putString("code", code);
-    userInfoMap.putString("message", message);
-    userInfoMap.putString("nativeErrorMessage", nativeErrorMessage);
     promise.reject(code, message, userInfoMap);
   }
 

@@ -1,4 +1,4 @@
-import { InterstitialAd } from '../lib';
+import { InterstitialAd } from '../src';
 
 describe('Google Ads Interstitial', function () {
   describe('createForAdRequest', function () {

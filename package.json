@@ -3,8 +3,10 @@
   "version": "3.4.0",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "description": "React Native Google Ads is an easy way to monetize mobile apps with targeted, in-app advertising.",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "react-native": "src/index.ts",
+  "types": "lib/typescript/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/invertase/react-native-google-ads"
@@ -49,12 +51,21 @@
       "googleAds": "19.8.0"
     }
   },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      "typescript"
+    ]
+  },
   "scripts": {
     "prepare": "yarn build",
-    "build": "genversion --semi lib/version.js",
-    "build:clean": "rimraf android/build && rimraf ios/build",
+    "build": "genversion --es6 --semi src/version.ts && bob build",
+    "build:clean": "rimraf android/build && rimraf ios/build && rimraf lib",
     "lint:code": "yarn lint:js && yarn lint:android && yarn lint:ios:check",
-    "lint:js": "eslint lib/ --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "lint:js": "eslint src/ --ext .js,.jsx,.ts,.tsx --max-warnings=0",
     "lint:android": "google-java-format --set-exit-if-changed --replace --glob=\"android/**/*.java\"",
     "lint:ios:check": "clang-format --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google -n -Werror",
     "lint:ios:fix": "clang-format -i --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google",
@@ -62,7 +73,7 @@
     "lint:markdown:fix": "prettier --write \"docs/**/*.md\"",
     "lint:report": "eslint --output-file=eslint-report.json --format=json . --ext .js,.jsx,.ts,.tsx",
     "lint:spellcheck": "spellchecker --quiet --files=\"docs/**/*.md\" --dictionaries=\"./.spellcheck.dict.txt\" --reports=\"spelling.json\" --plugins spell indefinite-article repeated-words syntax-mentions syntax-urls frontmatter",
-    "tsc:compile": "tsc --project .",
+    "tsc:compile": "tsc --project . --noEmit",
     "lint": "yarn lint:code && yarn tsc:compile",
     "tests:jest": "jest",
     "tests:jest-watch": "jest --watch",
@@ -118,6 +129,7 @@
     "prettier": "^2.5.1",
     "react": "^17.0.2",
     "react-native": "0.66.3",
+    "react-native-builder-bob": "^0.18.2",
     "rimraf": "^3.0.2",
     "semantic-release": "^18.0.1",
     "shelljs": "^0.8.3",

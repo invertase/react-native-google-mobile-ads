@@ -82,17 +82,6 @@ public class SharedUtils {
     return parsed;
   }
 
-  public static WritableMap getExceptionMap(Exception exception) {
-    WritableMap exceptionMap = Arguments.createMap();
-    String code = "unknown";
-    String message = exception.getMessage();
-    exceptionMap.putString("code", code);
-    exceptionMap.putString("nativeErrorCode", code);
-    exceptionMap.putString("message", message);
-    exceptionMap.putString("nativeErrorMessage", message);
-    return exceptionMap;
-  }
-
   public static String timestampToUTC(long timestamp) {
     long millisTimestamp = timestamp * 1000;
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
