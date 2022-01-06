@@ -1,4 +1,4 @@
-import admob, { GoogleAdsTypes } from '../lib';
+import admob, { MaxAdContentRating } from '../src';
 
 describe('Admob', function () {
   describe('setRequestConfiguration()', function () {
@@ -13,8 +13,7 @@ describe('Admob', function () {
       it('throws if maxAdContentRating is invalid', function () {
         expect(() =>
           admob().setRequestConfiguration({
-            maxAdContentRating:
-              'Y' as GoogleAdsTypes.MaxAdContentRating[keyof GoogleAdsTypes.MaxAdContentRating],
+            maxAdContentRating: 'Y' as MaxAdContentRating,
           }),
         ).toThrowError(
           "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected on of MaxAdContentRating.G, MaxAdContentRating.PG, MaxAdContentRating.T or MaxAdContentRating.MA",

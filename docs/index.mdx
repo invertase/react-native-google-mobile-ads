@@ -78,9 +78,9 @@ receive content suitable for children before loading any adverts.
 If you need to set a custom request configuration, you must call the `setRequestConfiguration` method before initializing the Google Mobile Ads SDK:
 
 ```js
-import admob, { MaxAdContentRating } from '@invertase/react-native-google-ads';
+import mobileAds, { MaxAdContentRating } from '@invertase/react-native-google-ads';
 
-admob()
+mobileAds()
   .setRequestConfiguration({
     // Update all future requests suitable for parental guidance
     maxAdContentRating: MaxAdContentRating.PG,
@@ -111,9 +111,9 @@ This needs to be done only once, ideally at app launch.
 If you need to obtain consent from users in the European Economic Area (EEA), set any request-specific flags (such as tagForChildDirectedTreatment), or otherwise take action before loading ads, ensure you do so before initializing the Mobile Ads SDK.
 
 ```js
-import admob from '@invertase/react-native-google-ads';
+import mobileAds from '@invertase/react-native-google-ads';
 
-admob()
+mobileAds()
   .initialize()
   .then((adapterStatuses) => {
     // Initialization complete!
