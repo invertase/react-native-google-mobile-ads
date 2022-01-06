@@ -1,3 +1,19 @@
+## [4.0.0](https://github.com/invertase/react-native-google-ads/compare/v3.4.0...v4.0.0) (2022-01-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* typescript rewrite (#41)
+
+### Features
+
+* typescript rewrite ([#41](https://github.com/invertase/react-native-google-ads/issues/41)) ([3a8f742](https://github.com/invertase/react-native-google-ads/commit/3a8f7426e0615063141324a319d0b76c7e8ef937))
+
+
+### Bug Fixes
+
+* **release:** allow semantic-release on beta branch ([b2d1381](https://github.com/invertase/react-native-google-ads/commit/b2d138198445780334d499d3005dc94c6cc57f82))
+
 ## [3.4.0](https://github.com/invertase/react-native-google-ads/compare/v3.3.0...v3.4.0) (2021-12-29)
 
 
