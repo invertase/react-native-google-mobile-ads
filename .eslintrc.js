@@ -46,7 +46,6 @@ module.exports = {
     'no-empty-description': 'off',
     '@typescript-eslint/ban-ts-comment': 'off', // keep it professional when you use them though please
     '@typescript-eslint/no-use-before-define': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',

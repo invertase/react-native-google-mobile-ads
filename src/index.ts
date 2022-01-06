@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2016-present Invertase Limited & Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this library except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+import { version } from './version';
+
+// import { SDK_VERSION } from '@invertase/react-native-google-ads';
+export const SDK_VERSION = version;
+
+export { default, MobileAds } from './MobileAds';
+export { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
+export { AdsConsentStatus } from './AdsConsentStatus';
+export { MaxAdContentRating } from './MaxAdContentRating';
+export { TestIds } from './TestIds';
+export { AdEventType } from './AdEventType';
+export { BannerAdSize } from './BannerAdSize';
+export { RewardedAdEventType } from './RewardedAdEventType';
+export { AdsConsent } from './AdsConsent';
+export { InterstitialAd } from './ads/InterstitialAd';
+export { RewardedAd } from './ads/RewardedAd';
+export { BannerAd } from './ads/BannerAd';
