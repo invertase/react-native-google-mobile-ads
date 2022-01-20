@@ -77,7 +77,7 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
    * ```js
    * import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
    *
-   * const interstitialAd = await InterstitialAd.request(TestIds.INTERSTITIAL, {
+   * const interstitialAd = await InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
    *   requestAgent: 'CoolAds',
    * });
    *

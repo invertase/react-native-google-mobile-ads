@@ -2,6 +2,65 @@
 
 The AdMob package allows you to display three types of adverts; Interstitial, Rewarded & Banner.
 
+## App Open Ads
+
+App open ads are a special ad format intended for publishers wishing to monetize their app load screens.
+App open ads can be closed by your users at any time. App open ads can be shown when users bring your app to the foreground.
+
+App open ads are shown when your application launches or when users bring your application to the foreground.
+To make sure you have an ad ready to display when a user opens your app, you'll want to have a reference to an ad ready to use.
+
+That means you must preload a app open ad before you need to show the ad. That way, your app open ad is ready to show the next time the app is opened.
+
+To create a new app open ad, call the `createForAdRequest` method from the `AppOpenAd` class. The first argument
+of the method is the "Ad Unit ID". For testing, we can use a Test ID, however for production the ID from the
+Google AdMob dashboard under "Ad units" should be used:
+
+```js
+import { AppOpenAd, TestIds, AdEventType } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.APP_OPEN : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+
+const appOpenAd = AppOpenAd.createForAdRequest(adUnitId, {
+  requestNonPersonalizedAdsOnly: true,
+  keywords: ['fashion', 'clothing'],
+});
+
+// Preload an app open ad
+appOpenAd.load()
+
+// Show the app open ad when user brings the app to the foreground.
+appOpenAd.show()
+
+```
+
+### Consider ad expiration
+
+Key Point: Ad references in the app open beta will time out after four hours.
+Ads rendered more than four hours after request time will no longer be valid and may not earn revenue.
+This time limit is being carefully considered and may change in future beta versions of the app open format.
+
+### Cold starts and loading screens
+
+The above documentation assumes that you only show app open ads when users foreground your app when it is suspended in memory.
+"Cold starts" occur when your app is launched but was not previously suspended in memory.
+
+An example of a cold start is when a user opens your app for the first time.
+With cold starts, you won't have a previously loaded app open ad that's ready to be shown right away.
+The delay between when you request an ad and receive an ad back can create a situation where users are able to briefly use your app before being surprised by an out of context ad.
+This should be avoided because it is a bad user experience.
+
+The preferred way to use app open ads on cold starts is to use a loading screen to load your game or app assets, and to only show the ad from the loading screen.
+If your app has completed loading and has sent the user to the main content of your app, do not show the ad.
+
+### Best practices
+
+Google built app open ads to help you monetize your app's loading screen, but it's important to keep best practices in mind so that your users enjoy using your app. Make sure to:
+
+- Wait to show your first app open ad until after your users have used your app a few times.
+- Show app open ads during times when your users would otherwise be waiting for your app to load.
+- If you have a loading screen under the app open ad, and your loading screen completes loading before the ad is dismissed, you may want to dismiss your loading screen after receiving the `onAdClosed` event.
+
 ## Interstitial Ads
 
 Interstitials are full-screen ads that cover the interface of an app until closed by the user. These type of ads are

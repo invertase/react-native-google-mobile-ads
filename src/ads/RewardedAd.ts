@@ -83,7 +83,7 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
    * ```js
    * import { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
    *
-   * const rewardedAd = await RewardedAd.request(TestIds.REWARDED, {
+   * const rewardedAd = await RewardedAd.createForAdRequest(TestIds.REWARDED, {
    *   requestAgent: 'CoolAds',
    * });
    *
