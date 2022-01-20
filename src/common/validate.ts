@@ -91,7 +91,7 @@ export function isString(value: unknown) {
  * @param value
  * @return {boolean}
  */
-export function isNumber(value: unknown) {
+export function isNumber(value: unknown): value is number {
   return typeof value === 'number';
 }
 
@@ -137,7 +137,7 @@ export function isArray(value: unknown) {
  * @param value
  * @returns {boolean}
  */
-export function isUndefined(value: unknown) {
+export function isUndefined(value: unknown): value is undefined {
   return typeof value === 'undefined';
 }
 
