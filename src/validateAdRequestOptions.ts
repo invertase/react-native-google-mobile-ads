@@ -22,6 +22,7 @@ import {
   isNumber,
   isObject,
   isString,
+  isUndefined,
   isValidUrl,
 } from './common';
 import { RequestOptions } from './types/RequestOptions';
@@ -29,7 +30,7 @@ import { RequestOptions } from './types/RequestOptions';
 export function validateAdRequestOptions(options?: RequestOptions) {
   const out: RequestOptions = {};
 
-  if (options === undefined) {
+  if (isUndefined(options)) {
     return out;
   }
 
@@ -126,7 +127,7 @@ export function validateAdRequestOptions(options?: RequestOptions) {
       throw new Error("'options.locationAccuracy' expected a number value.");
     }
 
-    if (typeof options.locationAccuracy === 'number' && options.locationAccuracy < 0) {
+    if (isNumber(options.locationAccuracy) && options.locationAccuracy < 0) {
       throw new Error("'options.locationAccuracy' expected a number greater than 0.");
     }
 
