@@ -19,7 +19,7 @@ import { tryJSONParse, tryJSONStringify } from './index';
 import { isObject } from './validate';
 
 export function serializeType(value: unknown) {
-  if (typeof value === 'object' && !Array.isArray(value) && !(value === null)) {
+  if (isObject(value)) {
     return {
       type: 'object',
       value: serializeObject(value),

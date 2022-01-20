@@ -20,6 +20,7 @@ import { APP_NATIVE_MODULE } from '../constants';
 import { NativeError } from '../NativeError';
 import { GoogleAdsNativeEventEmitter } from '../GoogleAdsNativeEventEmitter';
 import { SharedEventEmitter } from '../SharedEventEmitter';
+import { isFunction } from '../../common';
 import { ModuleInterface } from '../../types/Module.interface';
 
 const NATIVE_MODULE_REGISTRY: Record<string, unknown> = {};
@@ -78,7 +79,7 @@ function nativeModuleWrapped(
 
   for (let i = 0, len = properties.length; i < len; i++) {
     const property = properties[i];
-    if (typeof NativeModule[property] === 'function') {
+    if (isFunction(NativeModule[property])) {
       native[property] = nativeModuleMethodWrapped(namespace, NativeModule[property], argToPrepend);
     } else {
       native[property] = NativeModule[property];

@@ -15,13 +15,13 @@
  *
  */
 
-import { hasOwnProperty, isBoolean, isObject } from './common';
+import { hasOwnProperty, isBoolean, isObject, isUndefined } from './common';
 import { AdShowOptions } from './types/AdShowOptions';
 
 export function validateAdShowOptions(options?: AdShowOptions) {
   const out: AdShowOptions = {};
 
-  if (options === undefined) {
+  if (isUndefined(options)) {
     return out;
   }
 
