@@ -25,7 +25,7 @@ import { MobileAdsModuleInterface } from '../types/MobileAdsModule.interface';
 import { RewardedAdReward } from '../types/RewardedAdReward';
 
 export class MobileAd {
-  _type: 'interstitial' | 'rewarded';
+  _type: 'app_open' | 'interstitial' | 'rewarded';
   _googleMobileAds: MobileAdsModuleInterface;
   _requestId: number;
   _adUnitId: string;
@@ -36,7 +36,7 @@ export class MobileAd {
   _nativeListener: EmitterSubscription;
 
   constructor(
-    type: 'interstitial' | 'rewarded',
+    type: 'app_open' | 'interstitial' | 'rewarded',
     googleMobileAds: MobileAdsModuleInterface,
     requestId: number,
     adUnitId: string,
