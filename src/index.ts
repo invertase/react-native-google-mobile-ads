@@ -29,6 +29,7 @@ export { AdEventType } from './AdEventType';
 export { BannerAdSize } from './BannerAdSize';
 export { RewardedAdEventType } from './RewardedAdEventType';
 export { AdsConsent } from './AdsConsent';
+export { AppOpenAd } from './ads/AppOpenAd';
 export { InterstitialAd } from './ads/InterstitialAd';
 export { RewardedAd } from './ads/RewardedAd';
 export { BannerAd } from './ads/BannerAd';
