@@ -16,9 +16,10 @@ a [Google AdMob account](https://apps.admob.com) is required.
 
 The module supports three types of Ads:
 
-1. Full screen [Interstitial Ads](/displaying-ads#interstitial-ads).
-2. Full screen [Rewarded Ads](/displaying-ads#rewarded-ads).
-3. Component based [Banner Ads](/displaying-ads#banner-ads).
+1. Full screen [App Open Ads](/displaying-ads#app-open-ads).
+2. Full screen [Interstitial Ads](/displaying-ads#interstitial-ads).
+3. Full screen [Rewarded Ads](/displaying-ads#rewarded-ads).
+4. Component based [Banner Ads](/displaying-ads#banner-ads).
 
 # Getting Started
 
@@ -141,7 +142,10 @@ Although usage of different advert types is explained later, when creating your 
 testing can be set to a testing ID. The code snippet below shows how to initialize each advert type with a test ID:
 
 ```jsx
-import { InterstitialAd, RewardedAd, BannerAd, TestIds } from 'react-native-google-mobile-ads';
+import { AppOpenAd, InterstitialAd, RewardedAd, BannerAd, TestIds } from 'react-native-google-mobile-ads';
+
+# App Open
+AppOpenAd.createForAdRequest(TestIds.APP_OPEN);
 
 # Interstitial
 InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
@@ -158,6 +162,7 @@ RewardedAd.createForAdRequest(TestIds.REWARDED);
 Now the basics of setting up and configuring AdMob have been explained, we can go ahead and start to display different
 adverts to our users. The AdMob module provides integration with three different types:
 
+- [App Open Ads](/displaying-ads#app-open-ads)
 - [Interstitial Ads](/displaying-ads#interstitial-ads)
 - [Rewarded Ads](/displaying-ads#rewarded-ads)
 - [Banner Ads](/displaying-ads#banner-ads)

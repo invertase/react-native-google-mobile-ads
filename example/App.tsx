@@ -3,12 +3,57 @@ import {Button, SafeAreaView, ScrollView, StyleSheet, View} from 'react-native';
 import {Test, TestRegistry, TestResult, TestRunner, TestType} from 'jet';
 
 import {
+  AppOpenAd,
   InterstitialAd,
   TestIds,
   BannerAd,
   BannerAdSize,
   RewardedAd,
 } from 'react-native-google-mobile-ads';
+
+const appOpenAdUnitId = TestIds.APP_OPEN;
+
+const appOpen = AppOpenAd.createForAdRequest(appOpenAdUnitId, {
+  requestNonPersonalizedAdsOnly: true,
+});
+
+class AppOpenTest implements Test {
+  constructor() {
+    appOpen.load();
+  }
+
+  getPath(): string {
+    return 'App open';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return (
+      <View style={styles.testSpacing} ref={onMount}>
+        <Button
+          title="Show App Open Ad"
+          onPress={() => {
+            appOpen.show();
+          }}
+        />
+      </View>
+    );
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
+    }
+  }
+}
 
 const interstitialAdUnitId = TestIds.INTERSTITIAL;
 
@@ -69,10 +114,10 @@ class BannerTest implements Test {
 
   render(onMount: (component: any) => void): React.ReactNode {
     return (
-      <View style={styles.testSpacing} ref={onMount}>
+      <View ref={onMount}>
         <BannerAd
           unitId={bannerAdUnitId}
-          size={BannerAdSize.FULL_BANNER}
+          size={BannerAdSize.ADAPTIVE_BANNER}
           requestOptions={{
             requestNonPersonalizedAdsOnly: true,
           }}
@@ -139,6 +184,7 @@ class RewaredTest implements Test {
 
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
 TestRegistry.registerTest(new BannerTest());
+TestRegistry.registerTest(new AppOpenTest());
 TestRegistry.registerTest(new InterstitialTest());
 TestRegistry.registerTest(new RewaredTest());
 
