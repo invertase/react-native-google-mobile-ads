@@ -18,6 +18,7 @@ package io.invertase.googleads;
  */
 
 import androidx.annotation.NonNull;
+import android.view.ViewGroup;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
