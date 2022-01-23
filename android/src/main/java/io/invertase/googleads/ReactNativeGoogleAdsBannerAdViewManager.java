@@ -87,11 +87,13 @@ public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<R
   @ReactProp(name = "unitId")
   public void setUnitId(ReactViewGroup reactViewGroup, String value) {
     unitId = value;
+    requestAd(reactViewGroup);
   }
 
   @ReactProp(name = "request")
   public void setRequest(ReactViewGroup reactViewGroup, ReadableMap value) {
     request = ReactNativeGoogleAdsCommon.buildAdRequest(value);
+    requestAd(reactViewGroup);
   }
 
   @ReactProp(name = "size")
