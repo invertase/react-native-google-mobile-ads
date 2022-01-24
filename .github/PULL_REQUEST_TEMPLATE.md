@@ -33,7 +33,7 @@
 
 ---
 
-Think `react-native-admob` is great? Please consider supporting the project with any of the below:
+Think `react-native-google-ads` is great? Please consider supporting the project with any of the below:
 
 - 👉 Star this repo on GitHub ⭐️
 - 👉 Follow [`Invertase`](https://twitter.com/invertaseio) on Twitter
