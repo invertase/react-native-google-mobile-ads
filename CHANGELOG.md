@@ -1,3 +1,11 @@
+### [4.0.2](https://github.com/invertase/react-native-google-ads/compare/v4.0.1...v4.0.2) (2022-01-24)
+
+
+### Bug Fixes
+
+* Block descendant focus requests ([e39a5fd](https://github.com/invertase/react-native-google-ads/commit/e39a5fd9532dd23186848b7367d6ef11c53757b8)), closes [/github.com/facebook/react-native/issues/32649#issuecomment-990968256](https://github.com/invertase//github.com/facebook/react-native/issues/32649/issues/issuecomment-990968256)
+* typo in native event type ([3cfc1ff](https://github.com/invertase/react-native-google-ads/commit/3cfc1ffc00e3850b88fb3589db801a613a3f0b81))
+
 ### [4.0.1](https://github.com/invertase/react-native-google-ads/compare/v4.0.0...v4.0.1) (2022-01-24)
 
 
