@@ -26,7 +26,7 @@ import { RequestOptions } from '../types/RequestOptions';
 
 type NativeEvent =
   | {
-      type: 'onAdLoaded' | 'onSizeChanged';
+      type: 'onAdLoaded' | 'onSizeChange';
       width: number;
       height: number;
     }
@@ -78,7 +78,7 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
   function onNativeEvent({ nativeEvent }: { nativeEvent: NativeEvent }) {
     const { type } = nativeEvent;
 
-    if (type !== 'onSizeChanged' && isFunction(props[type])) {
+    if (type !== 'onSizeChange' && isFunction(props[type])) {
       let eventHandler;
       if (type === 'onAdFailedToLoad') {
         const eventPayload = NativeError.fromEvent(nativeEvent, 'googleAds');
@@ -86,7 +86,7 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
       } else if ((eventHandler = props[type])) eventHandler();
     }
 
-    if ((type === 'onAdLoaded' || type === 'onSizeChanged') && size !== 'FLUID') {
+    if ((type === 'onAdLoaded' || type === 'onSizeChange') && size !== 'FLUID') {
       const { width, height } = nativeEvent;
       if (width && height) setDimensions([width, height]);
     }
