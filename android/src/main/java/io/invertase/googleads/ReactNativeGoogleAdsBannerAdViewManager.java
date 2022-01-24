@@ -17,6 +17,7 @@ package io.invertase.googleads;
  *
  */
 
+import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableMap;
@@ -117,6 +118,7 @@ public class ReactNativeGoogleAdsBannerAdViewManager extends SimpleViewManager<R
   private void setAdListener(ReactViewGroup reactViewGroup) {
     final AdView adView = getAdView(reactViewGroup);
 
+    adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
     adView.setAdListener(
         new AdListener() {
           @Override
