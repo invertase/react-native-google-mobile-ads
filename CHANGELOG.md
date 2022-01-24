@@ -1,3 +1,10 @@
+### [4.0.1](https://github.com/invertase/react-native-google-ads/compare/v4.0.0...v4.0.1) (2022-01-24)
+
+
+### Bug Fixes
+
+* **android:** no banner ads loaded in the first render ([3dc74cf](https://github.com/invertase/react-native-google-ads/commit/3dc74cfba4a6bbdacc0ca9c84a2819ab34378419))
+
 ## [4.0.0](https://github.com/invertase/react-native-google-ads/compare/v3.4.0...v4.0.0) (2022-01-06)
 
 
