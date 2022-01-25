@@ -19,6 +19,7 @@ else
   cp example/.mocharc.js TEMP/      # Custom mocha settings
   cp example/.detoxrc.json TEMP/    # Custom detox settings
   cp example/app.json TEMP/         # Our custom configuration settings / mobile ads app id etc
+  cp example/App.tsx TEMP/          # Our sample app
 
   # Our Android DetoxTest integration itself is obviously custom
   mkdir -p TEMP/android/app/src/androidTest/java/com/example
@@ -67,6 +68,7 @@ popd
 echo "Copying Google Ads example files into refreshed example..."
 cp -frv TEMP/.detox* example/
 cp -frv TEMP/.mocha* example/
+rm -f example/App.js
 cp -frv TEMP/* example/
 
 # Clean up after ourselves
