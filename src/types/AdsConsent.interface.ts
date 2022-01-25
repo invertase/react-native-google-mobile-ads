@@ -56,7 +56,7 @@ export interface AdsConsentInterface {
    * #### Example
    *
    * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   * import { AdsConsent } from 'react-native-google-mobile-ads';
    *
    * const consent = await AdsConsent.requestInfoUpdate(['pub-6189033257628554']);
    * console.log('User location within EEA or Unknown:', consent.isRequestLocationInEeaOrUnknown);
@@ -92,7 +92,7 @@ export interface AdsConsentInterface {
    * #### Example
    *
    * ```js
-   * import { AdsConsent, AdsConsentStatus } from '@invertase/react-native-google-ads';
+   * import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
    *
    * async function requestConsent() {
    *   const consent = await AdsConsent.requestInfoUpdate(['pub-6189033257628554']);
@@ -128,7 +128,7 @@ export interface AdsConsentInterface {
    * #### Example
    *
    * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   * import { AdsConsent } from 'react-native-google-mobile-ads';
    *
    * const providers = await AdsConsent.getAdProviders();
    * ```
@@ -147,7 +147,7 @@ export interface AdsConsentInterface {
    * #### Example
    *
    * ```js
-   * import { AdsConsent, AdsConsentDebugGeography } from '@invertase/react-native-google-ads';
+   * import { AdsConsent, AdsConsentDebugGeography } from 'react-native-google-mobile-ads';
    *
    * // Set disabled
    * await AdsConsentDebugGeography.setDebugGeography(AdsConsentDebugGeography.DISABLED);
@@ -174,7 +174,7 @@ export interface AdsConsentInterface {
    * #### Example
    *
    * ```js
-   * import { AdsConsent, AdsConsentStatus } from '@invertase/react-native-google-ads';
+   * import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
    *
    * // User accepted personalized ads
    * await AdsConsent.setStatus(AdsConsentStatus.PERSONALIZED);
@@ -192,7 +192,7 @@ export interface AdsConsentInterface {
    * #### Example
    *
    * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   * import { AdsConsent } from 'react-native-google-mobile-ads';
    *
    * const status = await AdsConsent.getStatus();
    * ```
@@ -212,7 +212,7 @@ export interface AdsConsentInterface {
    * #### Example
    *
    * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   * import { AdsConsent } from 'react-native-google-mobile-ads';
    *
    * // User is under age of consent
    * await AdsConsent.setTagForUnderAgeOfConsent(true);

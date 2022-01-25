@@ -2,8 +2,8 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
 String fileName = "app.json"
-String jsonRoot = "react-native-google-ads"
-String jsonRaw = "GOOGLE_ADS_JSON_RAW"
+String jsonRoot = "react-native-google-mobile-ads"
+String jsonRaw = "GOOGLE_MOBILE_ADS_JSON_RAW"
 
 File jsonFile = null
 File parentDir = rootProject.projectDir
@@ -31,7 +31,7 @@ if (jsonFile != null && jsonFile.exists()) {
   if (json && json[jsonRoot]) {
     String jsonStr = JsonOutput.toJson(JsonOutput.toJson(json[jsonRoot]))
 
-    rootProject.ext.googleAdsJson = [
+    rootProject.ext.googleMobileAdsJson = [
       raw: json[jsonRoot],
       isFlagEnabled: { key, defaultValue ->
         if (json[jsonRoot] == null || json[jsonRoot][key] == null) return defaultValue
@@ -59,7 +59,7 @@ if (jsonFile != null && jsonFile.exists()) {
     }
   }
 } else {
-  rootProject.ext.googleAdsJson = false
+  rootProject.ext.googleMobileAdsJson = false
   rootProject.logger.info ":${project.name} no ${fileName} found, skipping"
   android {
     defaultConfig {

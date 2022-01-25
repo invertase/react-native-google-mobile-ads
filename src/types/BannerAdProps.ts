@@ -12,7 +12,7 @@ import { RequestOptions } from './RequestOptions';
  * such as positioning.
  *
  * ```js
- * import { BannerAd, BannerAdSize, TestIds } from '@invertase/react-native-google-ads';
+ * import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
  *
  * function HomeScreen() {
  *   return (

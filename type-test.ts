@@ -1,62 +1,62 @@
 /* eslint-disable no-console */
-import * as googleAds from '@invertase/react-native-google-ads';
+import * as googleMobileAds from 'react-native-google-mobile-ads';
 
-console.log(googleAds.AdsConsentDebugGeography.DISABLED);
-console.log(googleAds.AdsConsentDebugGeography.EEA);
-console.log(googleAds.AdsConsentDebugGeography.NOT_EEA);
-console.log(googleAds.AdsConsentDebugGeography.DISABLED);
-console.log(googleAds.AdsConsentDebugGeography.EEA);
-console.log(googleAds.AdsConsentDebugGeography.NOT_EEA);
+console.log(googleMobileAds.AdsConsentDebugGeography.DISABLED);
+console.log(googleMobileAds.AdsConsentDebugGeography.EEA);
+console.log(googleMobileAds.AdsConsentDebugGeography.NOT_EEA);
+console.log(googleMobileAds.AdsConsentDebugGeography.DISABLED);
+console.log(googleMobileAds.AdsConsentDebugGeography.EEA);
+console.log(googleMobileAds.AdsConsentDebugGeography.NOT_EEA);
 
-console.log(googleAds.AdsConsentStatus.NON_PERSONALIZED);
-console.log(googleAds.AdsConsentStatus.PERSONALIZED);
-console.log(googleAds.AdsConsentStatus.UNKNOWN);
-console.log(googleAds.AdsConsentStatus.NON_PERSONALIZED);
-console.log(googleAds.AdsConsentStatus.PERSONALIZED);
-console.log(googleAds.AdsConsentStatus.UNKNOWN);
+console.log(googleMobileAds.AdsConsentStatus.NON_PERSONALIZED);
+console.log(googleMobileAds.AdsConsentStatus.PERSONALIZED);
+console.log(googleMobileAds.AdsConsentStatus.UNKNOWN);
+console.log(googleMobileAds.AdsConsentStatus.NON_PERSONALIZED);
+console.log(googleMobileAds.AdsConsentStatus.PERSONALIZED);
+console.log(googleMobileAds.AdsConsentStatus.UNKNOWN);
 
-console.log(googleAds.MaxAdContentRating.G);
-console.log(googleAds.MaxAdContentRating.MA);
-console.log(googleAds.MaxAdContentRating.PG);
-console.log(googleAds.MaxAdContentRating.T);
-console.log(googleAds.MaxAdContentRating.G);
-console.log(googleAds.MaxAdContentRating.MA);
-console.log(googleAds.MaxAdContentRating.PG);
-console.log(googleAds.MaxAdContentRating.T);
+console.log(googleMobileAds.MaxAdContentRating.G);
+console.log(googleMobileAds.MaxAdContentRating.MA);
+console.log(googleMobileAds.MaxAdContentRating.PG);
+console.log(googleMobileAds.MaxAdContentRating.T);
+console.log(googleMobileAds.MaxAdContentRating.G);
+console.log(googleMobileAds.MaxAdContentRating.MA);
+console.log(googleMobileAds.MaxAdContentRating.PG);
+console.log(googleMobileAds.MaxAdContentRating.T);
 
-console.log(googleAds.AdEventType.CLICKED);
-console.log(googleAds.AdEventType.CLOSED);
-console.log(googleAds.AdEventType.ERROR);
-console.log(googleAds.AdEventType.LOADED);
-console.log(googleAds.AdEventType.OPENED);
-console.log(googleAds.AdEventType.CLICKED);
-console.log(googleAds.AdEventType.CLOSED);
-console.log(googleAds.AdEventType.ERROR);
-console.log(googleAds.AdEventType.LOADED);
-console.log(googleAds.AdEventType.OPENED);
+console.log(googleMobileAds.AdEventType.CLICKED);
+console.log(googleMobileAds.AdEventType.CLOSED);
+console.log(googleMobileAds.AdEventType.ERROR);
+console.log(googleMobileAds.AdEventType.LOADED);
+console.log(googleMobileAds.AdEventType.OPENED);
+console.log(googleMobileAds.AdEventType.CLICKED);
+console.log(googleMobileAds.AdEventType.CLOSED);
+console.log(googleMobileAds.AdEventType.ERROR);
+console.log(googleMobileAds.AdEventType.LOADED);
+console.log(googleMobileAds.AdEventType.OPENED);
 
-console.log(googleAds.RewardedAdEventType.LOADED);
-console.log(googleAds.RewardedAdEventType.EARNED_REWARD);
-console.log(googleAds.RewardedAdEventType.LOADED);
-console.log(googleAds.RewardedAdEventType.EARNED_REWARD);
+console.log(googleMobileAds.RewardedAdEventType.LOADED);
+console.log(googleMobileAds.RewardedAdEventType.EARNED_REWARD);
+console.log(googleMobileAds.RewardedAdEventType.LOADED);
+console.log(googleMobileAds.RewardedAdEventType.EARNED_REWARD);
 
-console.log(googleAds.BannerAdSize.BANNER);
-console.log(googleAds.BannerAdSize.FLUID);
-console.log(googleAds.BannerAdSize.FULL_BANNER);
-console.log(googleAds.BannerAd);
-console.log(googleAds.BannerAdSize.BANNER);
-console.log(googleAds.BannerAdSize.FLUID);
-console.log(googleAds.BannerAdSize.FULL_BANNER);
+console.log(googleMobileAds.BannerAdSize.BANNER);
+console.log(googleMobileAds.BannerAdSize.FLUID);
+console.log(googleMobileAds.BannerAdSize.FULL_BANNER);
+console.log(googleMobileAds.BannerAd);
+console.log(googleMobileAds.BannerAdSize.BANNER);
+console.log(googleMobileAds.BannerAdSize.FLUID);
+console.log(googleMobileAds.BannerAdSize.FULL_BANNER);
 
-console.log(googleAds.TestIds.BANNER);
-console.log(googleAds.TestIds.INTERSTITIAL);
-console.log(googleAds.TestIds.REWARDED);
-console.log(googleAds.TestIds.BANNER);
-console.log(googleAds.TestIds.INTERSTITIAL);
-console.log(googleAds.TestIds.REWARDED);
+console.log(googleMobileAds.TestIds.BANNER);
+console.log(googleMobileAds.TestIds.INTERSTITIAL);
+console.log(googleMobileAds.TestIds.REWARDED);
+console.log(googleMobileAds.TestIds.BANNER);
+console.log(googleMobileAds.TestIds.INTERSTITIAL);
+console.log(googleMobileAds.TestIds.REWARDED);
 
 // InterstitialAd
-const interstitial = googleAds.InterstitialAd.createForAdRequest('foo', {
+const interstitial = googleMobileAds.InterstitialAd.createForAdRequest('foo', {
   keywords: ['test'],
 });
 
@@ -71,18 +71,18 @@ interstitial.onAdEvent((type, error, data) => {
   console.log(data && data.type);
 });
 
-googleAds.AdsConsent.addTestDevices(['1234']).then();
-googleAds.AdsConsent.getAdProviders().then(providers => {
+googleMobileAds.AdsConsent.addTestDevices(['1234']).then();
+googleMobileAds.AdsConsent.getAdProviders().then(providers => {
   providers[0].companyId;
   providers[0].companyName;
   providers[0].privacyPolicyUrl;
 });
-googleAds.AdsConsent.getStatus().then(status => console.log(status));
-googleAds.AdsConsent.requestInfoUpdate(['123']).then(info =>
+googleMobileAds.AdsConsent.getStatus().then(status => console.log(status));
+googleMobileAds.AdsConsent.requestInfoUpdate(['123']).then(info =>
   console.log(info.isRequestLocationInEeaOrUnknown),
 );
-googleAds.AdsConsent.setTagForUnderAgeOfConsent(true).then();
-googleAds.AdsConsent.showForm({
+googleMobileAds.AdsConsent.setTagForUnderAgeOfConsent(true).then();
+googleMobileAds.AdsConsent.showForm({
   privacyPolicy: '123',
   withAdFree: true,
   withPersonalizedAds: true,
@@ -90,7 +90,7 @@ googleAds.AdsConsent.showForm({
 }).then();
 
 // RewardedAd
-const rewardedAd = googleAds.RewardedAd.createForAdRequest('foo', {
+const rewardedAd = googleMobileAds.RewardedAd.createForAdRequest('foo', {
   keywords: ['test'],
 });
 
@@ -109,17 +109,17 @@ rewardedAd.onAdEvent((type, error, data) => {
 console.log(googleAds().app.name);
 
 // checks statics exist
-console.log(googleAds.SDK_VERSION);
+console.log(googleMobileAds.SDK_VERSION);
 
 // checks statics exist on defaultExport
-console.log(googleAds.default.SDK_VERSION);
+console.log(googleMobileAds.default.SDK_VERSION);
 
 // checks firebase named export exists on module
-console.log(googleAds.firebase.SDK_VERSION);
+console.log(googleMobileAds.firebase.SDK_VERSION);
 
 // test banner sizes
-console.log(googleAds.BannerAdSize.BANNER);
-console.log(googleAds.BannerAdSize.FULL_BANNER);
-console.log(googleAds.BannerAdSize.LARGE_BANNER);
-console.log(googleAds.BannerAdSize.LEADERBOARD);
-console.log(googleAds.BannerAdSize.MEDIUM_RECTANGLE);
+console.log(googleMobileAds.BannerAdSize.BANNER);
+console.log(googleMobileAds.BannerAdSize.FULL_BANNER);
+console.log(googleMobileAds.BannerAdSize.LARGE_BANNER);
+console.log(googleMobileAds.BannerAdSize.LEADERBOARD);
+console.log(googleMobileAds.BannerAdSize.MEDIUM_RECTANGLE);

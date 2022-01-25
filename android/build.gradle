@@ -11,7 +11,7 @@ buildscript {
     }
 
     dependencies {
-      classpath("com.android.tools.build:gradle:7.0.2")
+      classpath("com.android.tools.build:gradle:7.0.4")
     }
   }
 }
@@ -21,7 +21,7 @@ plugins {
 }
 
 def packageJson = PackageJson.getForProject(project)
-def googleAdsVersion = packageJson['sdkVersions']['android']['googleAds']
+def googleMobileAdsVersion = packageJson['sdkVersions']['android']['googleMobileAds']
 def jsonMinSdk = packageJson['sdkVersions']['android']['minSdk']
 def jsonTargetSdk = packageJson['sdkVersions']['android']['targetSdk']
 def jsonCompileSdk = packageJson['sdkVersions']['android']['compileSdk']
@@ -39,8 +39,8 @@ project.ext {
         buildTools: jsonBuildTools
       ],
 
-      googleAds: [
-        sdk: googleAdsVersion,
+      googleMobileAds: [
+        sdk: googleMobileAdsVersion,
       ],
 
       ads     : [
@@ -52,15 +52,15 @@ project.ext {
 
 apply from: file("./app-json.gradle")
 
-def appJSONGoogleAdsAppIDString = ""
-def appJSONGoogleAdsDelayAppMeasurementInitBool = false
+def appJSONGoogleMobileAdsAppIDString = ""
+def appJSONGoogleMobileAdsDelayAppMeasurementInitBool = false
 
-if (rootProject.ext.googleAdsJson) {
-  appJSONGoogleAdsAppIDString = rootProject.ext.googleAdsJson.getStringValue("android_app_id", "")
-  appJSONGoogleAdsDelayAppMeasurementInitBool = rootProject.ext.googleAdsJson.isFlagEnabled("delay_app_measurement_init", false)
+if (rootProject.ext.googleMobileAdsJson) {
+  appJSONGoogleMobileAdsAppIDString = rootProject.ext.googleMobileAdsJson.getStringValue("android_app_id", "")
+  appJSONGoogleMobileAdsDelayAppMeasurementInitBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("delay_app_measurement_init", false)
 }
 
-if (!appJSONGoogleAdsAppIDString) {
+if (!appJSONGoogleMobileAdsAppIDString) {
   // todo throw a build error?
 }
 
@@ -68,8 +68,8 @@ android {
   defaultConfig {
     multiDexEnabled true
     manifestPlaceholders = [
-      appJSONGoogleAdsAppID                  : appJSONGoogleAdsAppIDString,
-      appJSONGoogleAdsDelayAppMeasurementInit: appJSONGoogleAdsDelayAppMeasurementInitBool
+      appJSONGoogleMobileAdsAppID                  : appJSONGoogleMobileAdsAppIDString,
+      appJSONGoogleMobileAdsDelayAppMeasurementInit: appJSONGoogleMobileAdsDelayAppMeasurementInitBool
     ]
   }
   lintOptions {

@@ -5,12 +5,12 @@ import { MobileAdsModuleInterface } from './types/MobileAdsModule.interface';
 import { RequestConfiguration } from './types/RequestConfiguration';
 import { App, Config } from './types/Module.interface';
 
-const namespace = 'google_ads';
+const namespace = 'google_mobile_ads';
 
 const nativeModuleName = [
-  'RNGoogleAdsModule',
-  'RNGoogleAdsInterstitialModule',
-  'RNGoogleAdsRewardedModule',
+  'RNGoogleMobileAdsModule',
+  'RNGoogleMobileAdsInterstitialModule',
+  'RNGoogleMobileAdsRewardedModule',
 ];
 
 type Event = {
@@ -22,15 +22,18 @@ class MobileAdsModule extends Module implements MobileAdsModuleInterface {
   constructor(app: App, config: Config) {
     super(app, config);
 
-    this.emitter.addListener('google_ads_interstitial_event', (event: Event) => {
+    this.emitter.addListener('google_mobile_ads_interstitial_event', (event: Event) => {
       this.emitter.emit(
-        `google_ads_interstitial_event:${event.adUnitId}:${event.requestId}`,
+        `google_mobile_ads_interstitial_event:${event.adUnitId}:${event.requestId}`,
         event,
       );
     });
 
-    this.emitter.addListener('google_ads_rewarded_event', (event: Event) => {
-      this.emitter.emit(`google_ads_rewarded_event:${event.adUnitId}:${event.requestId}`, event);
+    this.emitter.addListener('google_mobile_ads_rewarded_event', (event: Event) => {
+      this.emitter.emit(
+        `google_mobile_ads_rewarded_event:${event.adUnitId}:${event.requestId}`,
+        event,
+      );
     });
   }
 
@@ -44,7 +47,7 @@ class MobileAdsModule extends Module implements MobileAdsModuleInterface {
       config = validateAdRequestConfiguration(requestConfiguration);
     } catch (e) {
       if (e instanceof Error) {
-        throw new Error(`googleAds.setRequestConfiguration(*) ${e.message}`);
+        throw new Error(`googleMobileAds.setRequestConfiguration(*) ${e.message}`);
       }
     }
 
@@ -58,7 +61,7 @@ const MobileAdsInstance = new MobileAdsModule(
     version,
     namespace,
     nativeModuleName,
-    nativeEvents: ['google_ads_interstitial_event', 'google_ads_rewarded_event'],
+    nativeEvents: ['google_mobile_ads_interstitial_event', 'google_mobile_ads_rewarded_event'],
   },
 );
 
