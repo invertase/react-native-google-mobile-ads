@@ -56,6 +56,16 @@ sed -i -e $'s/dependencies {/dependencies {\\\n    androidTestImplementation("co
 sed -i -e $'s/defaultConfig {/defaultConfig {\\\n        testBuildType System.getProperty("testBuildType", "debug")\\\n        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"/' android/app/build.gradle
 rm -f android/app/build.gradle??
 
+# We want to test Android12 compatibility, so let's bump up our compile and target versions on android:
+sed -i -e $'s/compileSdkVersion = 30/compileSdkVersion = 31/' android/build.gradle
+sed -i -e $'s/targetSdkVersion = 30/targetSdkVersion = 31/' android/build.gradle
+rm -f android/build.gradle??
+# Android 12 does require a tweak to the stock template AndroidManifests, add exported to all activities for compliance
+sed -i -e $'s/android:launchMode/android:exported="true"\\\n        android:launchMode/' android/app/src/main/AndroidManifest.xml
+rm -f android/app/src/main/AndroidManifest.xml??
+sed -i -e $'s/DevSettingsActivity"/DevSettingsActivity" android:exported="true"/' android/app/src/debug/AndroidManifest.xml
+rm -f android/app/src/debug/AndroidManifest.xml??
+
 # React-native builds on iOS are very noisy with warnings in other packages that drown our warnings out. Reduce warnings to just our packages.
 sed -i -e $'s/react_native_post_install(installer)/react_native_post_install(installer)\\\n\\\n    # quiet non-module warnings - only interested in google-mobile-ads warnings\\\n    installer.pods_project.targets.each do |target|\\\n      if !target.name.include? "react-native-google-mobile-ads"\\\n        target.build_configurations.each do |config|\\\n          config.build_settings["GCC_WARN_INHIBIT_ALL_WARNINGS"] = "YES"\\\n        end\\\n      end\\\n    end/' ios/Podfile
 rm -f ios/Podfile??
