@@ -13,7 +13,7 @@
 
 ### Checklist
 
-- I read the [Contributor Guide](https://github.com/invertase/react-native-google-ads/blob/main/CONTRIBUTING.md)
+- I read the [Contributor Guide](https://github.com/invertase/react-native-google-mobile-ads/blob/main/CONTRIBUTING.md)
   and followed the process outlined there for submitting PRs.
   - [ ] Yes
 - My change supports the following platforms;
@@ -33,7 +33,7 @@
 
 ---
 
-Think `react-native-google-ads` is great? Please consider supporting the project with any of the below:
+Think `react-native-google-mobile-ads` is great? Please consider supporting the project with any of the below:
 
 - 👉 Star this repo on GitHub ⭐️
 - 👉 Follow [`Invertase`](https://twitter.com/invertaseio) on Twitter

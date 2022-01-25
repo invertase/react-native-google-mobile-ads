@@ -28,7 +28,7 @@ export enum RewardedAdEventType {
    * #### Example
    *
    * ```js
-   * import { RewardedAdEventType } from '@invertase/react-native-google-ads';
+   * import { RewardedAdEventType } from 'react-native-google-mobile-ads';
    *
    * rewardedAd.onAdEvent((type, error, data) => {
    *   if (type === RewardedAdEventType.LOADED) {
@@ -50,7 +50,7 @@ export enum RewardedAdEventType {
    * #### Example
    *
    * ```js
-   * import { RewardedAdEventType } from '@invertase/react-native-google-ads';
+   * import { RewardedAdEventType } from 'react-native-google-mobile-ads';
    *
    * rewardedAd.onAdEvent((type, error, data) => {
    *   if (type === RewardedAdEventType.EARNED_REWARD) {

@@ -18,7 +18,7 @@
 import { NativeModules, Platform } from 'react-native';
 import { APP_NATIVE_MODULE } from '../constants';
 import { NativeError } from '../NativeError';
-import { GoogleAdsNativeEventEmitter } from '../GoogleAdsNativeEventEmitter';
+import { GoogleMobileAdsNativeEventEmitter } from '../GoogleMobileAdsNativeEventEmitter';
 import { SharedEventEmitter } from '../SharedEventEmitter';
 import { isFunction } from '../../common';
 import { ModuleInterface } from '../../types/Module.interface';
@@ -143,7 +143,7 @@ function initialiseNativeModule(module: ModuleInterface) {
  */
 function subscribeToNativeModuleEvent(eventName: string) {
   if (!NATIVE_MODULE_EVENT_SUBSCRIPTIONS[eventName]) {
-    GoogleAdsNativeEventEmitter.addListener(eventName, event => {
+    GoogleMobileAdsNativeEventEmitter.addListener(eventName, event => {
       if (event.appName) {
         // native event has an appName property - auto prefix and internally emit
         SharedEventEmitter.emit(`${event.appName}-${eventName}`, event);
