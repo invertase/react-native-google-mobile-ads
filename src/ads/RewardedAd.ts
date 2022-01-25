@@ -42,22 +42,22 @@ let _rewardedRequest = 0;
  * request options. The example below will present a test advert, and only request a non-personalized ad.
  *
  * ```js
- * import { RewardedAd, TestIds } from '@invertase/react-native-google-ads';
+ * import { RewardedAd, TestIds } from 'react-native-google-mobile-ads';
  *
  * const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
  *     requestNonPersonalizedAdsOnly: true,
  * });
  *  ```
  *
- * Each advert needs to be loaded from Google Ads before being shown. It is recommended this is performed before the user
+ * Each advert needs to be loaded from Google Mobile Ads before being shown. It is recommended this is performed before the user
  * reaches the checkpoint to show the advert, so it's ready to go. Before loading the advert, we need to setup
- * event listeners to listen for updates from Google Ads, such as advert loaded or failed to load.
+ * event listeners to listen for updates from Google Mobile Ads, such as advert loaded or failed to load.
  *
  * Event types match the `AdEventType` or `RewardedAdEventType` interface. The potential user reward for rewarded
  * adverts are passed back to the event handler on advert load and when the user earns the reward.
  *
  * ```js
- * import { RewardedAdEventType } from '@invertase/react-native-google-ads';
+ * import { RewardedAdEventType } from 'react-native-google-mobile-ads';
  *
  * rewarded.onAdEvent((type, error, reward) => {
  *   if (type === RewardedAdEventType.LOADED) {
@@ -81,7 +81,7 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
    * #### Example
    *
    * ```js
-   * import { RewardedAd, RewardedAdEventType, TestIds } from '@invertase/react-native-google-ads';
+   * import { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
    *
    * const rewardedAd = await RewardedAd.request(TestIds.REWARDED, {
    *   requestAgent: 'CoolAds',
@@ -126,7 +126,11 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
     }
 
     this._isLoadCalled = true;
-    this._googleAds.native.rewardedLoad(this._requestId, this._adUnitId, this._requestOptions);
+    this._googleMobileAds.native.rewardedLoad(
+      this._requestId,
+      this._adUnitId,
+      this._requestOptions,
+    );
   }
 
   onAdEvent(handler: AdEventListener) {
@@ -152,6 +156,6 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
         throw new Error(`RewardedAd.show(*) ${e.message}.`);
       }
     }
-    return this._googleAds.native.rewardedShow(this._requestId, this._adUnitId, options);
+    return this._googleMobileAds.native.rewardedShow(this._requestId, this._adUnitId, options);
   }
 }

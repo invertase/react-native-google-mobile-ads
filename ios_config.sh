@@ -20,8 +20,8 @@ _MAX_LOOKUPS=2;
 _SEARCH_RESULT=''
 _RN_ROOT_EXISTS=''
 _CURRENT_LOOKUPS=1
-_PROJECT_ABBREVIATION="RNGoogleAds"
-_JSON_ROOT="'react-native-google-ads'"
+_PROJECT_ABBREVIATION="RNGoogleMobileAds"
+_JSON_ROOT="'react-native-google-mobile-ads'"
 _JSON_FILE_NAME='app.json'
 _JSON_OUTPUT_BASE64='e30=' # { }
 _CURRENT_SEARCH_DIR=${PROJECT_DIR}
@@ -83,7 +83,7 @@ if [[ ${_SEARCH_RESULT} ]]; then
     _JSON_OUTPUT_BASE64=$(python -c 'import json,sys,base64;print(base64.b64encode(json.dumps(json.loads(open('"'${_SEARCH_RESULT}'"').read())['${_JSON_ROOT}'])))' || echo "e30=")
   fi
 
-  _PLIST_ENTRY_KEYS+=("google_ads_json_raw")
+  _PLIST_ENTRY_KEYS+=("google_mobile_ads_json_raw")
   _PLIST_ENTRY_TYPES+=("string")
   _PLIST_ENTRY_VALUES+=("$_JSON_OUTPUT_BASE64")
 
@@ -103,7 +103,7 @@ if [[ ${_SEARCH_RESULT} ]]; then
     _PLIST_ENTRY_VALUES+=("$_IOS_APP_ID")
   fi
 else
-  _PLIST_ENTRY_KEYS+=("google_ads_json_raw")
+  _PLIST_ENTRY_KEYS+=("google_mobile_ads_json_raw")
   _PLIST_ENTRY_TYPES+=("string")
   _PLIST_ENTRY_VALUES+=("$_JSON_OUTPUT_BASE64")
   echo "warning:   A ${_JSON_FILE_NAME} file was not found, whilst this file is optional it is recommended to include it to auto-configure services."

@@ -1,5 +1,5 @@
 ---
-name: "⚠️ Bug/Issue report - React Native Admob"
+name: "⚠️ Bug/Issue report - React Native Google Mobile Ads"
 about: Please provide as much detail as possible. Issues may be closed if they do
   not follow the template.
 title: "[\U0001F41B] Bug Report Title - CHANGE ME "

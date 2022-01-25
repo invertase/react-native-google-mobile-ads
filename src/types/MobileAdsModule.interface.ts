@@ -1,11 +1,11 @@
 import { EventEmitter } from 'react-native';
 
 import { AdapterStatus } from './AdapterStatus';
-import { GoogleAdsNativeModule } from './GoogleAdsNativeModule';
+import { GoogleMobileAdsNativeModule } from './GoogleMobileAdsNativeModule';
 import { RequestConfiguration } from './RequestConfiguration';
 
 /**
- * The Google Ads service interface.
+ * The Google Mobile Ads service interface.
  */
 export interface MobileAdsModuleInterface {
   /**
@@ -19,7 +19,7 @@ export interface MobileAdsModuleInterface {
    * #### Example
    *
    * ```js
-   * import mobileAds, { MaxAdContentRating } from '@invertase/react-native-google-ads';
+   * import mobileAds, { MaxAdContentRating } from 'react-native-google-mobile-ads';
    *
    * await mobileAds().setRequestConfiguration({
    *   // Update all future requests suitable for parental guidance
@@ -27,14 +27,14 @@ export interface MobileAdsModuleInterface {
    * });
    * ```
    *
-   * @param requestConfiguration An RequestConfiguration interface used on all future Google Ads ad requests.
+   * @param requestConfiguration An RequestConfiguration interface used on all future Google Mobile Ads ad requests.
    */
   setRequestConfiguration(requestConfiguration: RequestConfiguration): Promise<void>;
 
   /**
-   * The native module instance for the Google Ads service.
+   * The native module instance for the Google Mobile Ads service.
    */
-  native: GoogleAdsNativeModule;
+  native: GoogleMobileAdsNativeModule;
 
   /**
    * Returns the shared event emitter instance used for all JS event routing.

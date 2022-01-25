@@ -18,7 +18,7 @@
 import { getNativeModule } from './registry/nativeModule';
 import { SharedEventEmitter } from './SharedEventEmitter';
 import { App, Config } from '../types/Module.interface';
-import { GoogleAdsNativeModule } from '../types/GoogleAdsNativeModule';
+import { GoogleMobileAdsNativeModule } from '../types/GoogleMobileAdsNativeModule';
 
 export class AppModule {
   _app: App;
@@ -47,10 +47,10 @@ export class AppModule {
 
   get native() {
     if (this._nativeModule) {
-      return this._nativeModule as GoogleAdsNativeModule;
+      return this._nativeModule as GoogleMobileAdsNativeModule;
     }
     this._nativeModule = getNativeModule(this);
-    return this._nativeModule as GoogleAdsNativeModule;
+    return this._nativeModule as GoogleMobileAdsNativeModule;
   }
 }
 

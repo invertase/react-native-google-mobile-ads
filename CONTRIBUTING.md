@@ -1,12 +1,12 @@
 # Introduction
 
-First, thank you for considering contributing to React Native Google Ads! It's people like you that make the open source community such a great community! 😊
+First, thank you for considering contributing to React Native Google Mobile Ads! It's people like you that make the open source community such a great community! 😊
 
 We welcome any type of contribution, not just code. You can help with;
 
 - **QA**: file bug reports, the more details you can give the better (e.g. platform versions, screenshots SDK versions & logs)
 - **COMING SOON** **Docs**: improve reference coverage, add more examples, fix typos or anything else you can spot.
-  - At the top of every page on our docs site you can click the `Edit Page` button to go to that pages markdown file or TypeScript definition file, or view the [documents](https://github.com/invertase/react-native-google-ads/tree/main/docs) directly
+  - At the top of every page on our docs site you can click the `Edit Page` button to go to that pages markdown file or TypeScript definition file, or view the [documents](https://github.com/invertase/react-native-google-mobile-ads/tree/main/docs) directly
 - **Community**: presenting the project at meetups, organizing a dedicated meetup for the local community, ...
 - **Code**: take a look at the [open issues](issues). Even if you can't write code, commenting on them, showing that you care about a given issue matters.
 
@@ -92,8 +92,8 @@ To get started locally the following steps are required:
 ### Step 1: Clone the repository
 
 ```bash
-git clone https://github.com/invertase/react-native-google-ads.git
-cd react-native-google-ads
+git clone https://github.com/invertase/react-native-google-mobile-ads.git
+cd react-native-google-mobile-ads
 ```
 
 ### Step 2: Install test project dependencies
