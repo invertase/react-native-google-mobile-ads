@@ -34,7 +34,8 @@ fi
 \rm -fr example
 
 # Make the new example
-npx react-native init example --version=0.66.0
+npm_config_yes=true npx react-native init example --skip-install
+rm -f example/.ruby-version example/Gemfile example/Gemfile.lock
 pushd example
 yarn add 'link:../'
 yarn add detox mocha jest-circus jest-environment-node @babel/preset-env typescript --dev
@@ -46,7 +47,7 @@ echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemo
 
 # Detox + Android
 echo "Integrating Detox for Android (maven repo, dependency, build config items, kotlin...)"
-sed -i -e $'s/mavenLocal()/mavenLocal()\\\n        maven \{ url "$rootDir\/..\/node_modules\/detox\/Detox-android" \}/' android/build.gradle
+sed -i -e $'s/maven { url \'https\:\/\/www.jitpack.io\' }/maven { url \'https\:\/\/www.jitpack.io\' }\\\n        maven \{ url "$rootDir\/..\/node_modules\/detox\/Detox-android" \}/' android/build.gradle
 sed -i -e $'s/ext {/ext {\\\n        kotlinVersion = "1.5.30"/' android/build.gradle
 sed -i -e $'s/dependencies {/dependencies {\\\n        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"/' android/build.gradle
 rm -f android/build.gradle??
@@ -61,7 +62,7 @@ sed -i -e $'s/react_native_post_install(installer)/react_native_post_install(ins
 rm -f ios/Podfile??
 
 # run pod install after installing our module
-npx pod-install
+npm_config_yes=true npx pod-install
 
 # Copy the important files back in
 popd
