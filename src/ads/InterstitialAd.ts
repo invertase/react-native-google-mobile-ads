@@ -36,25 +36,25 @@ let _interstitialRequest = 0;
  *
  * #### Example
  *
- * First create a new Interstitial instance, passing in your Ad Unit ID from the Google Ads configuration console, and any additional
+ * First create a new Interstitial instance, passing in your Ad Unit ID from the Google Mobile Ads configuration console, and any additional
  * request options. The example below will present a test advert, and only request a non-personalized ad.
  *
  * ```js
- * import { InterstitialAd, TestIds } from '@invertase/react-native-google-ads';
+ * import { InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
  *
  * const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
  *     requestNonPersonalizedAdsOnly: true,
  * });
  *  ```
  *
- * Each advert needs to be loaded from Google Ads before being shown. It is recommended this is performed before the user
+ * Each advert needs to be loaded from Google Mobile Ads before being shown. It is recommended this is performed before the user
  * reaches the checkpoint to show the advert, so it's ready to go. Before loading the advert, we need to setup
  * event listeners to listen for updates from Google Mobile Ads, such as advert loaded or failed to load.
  *
  * Event types match the `AdEventType` interface. Once the advert has loaded, we can trigger it to show:
  *
  * ```js
- * import { AdEventType } from '@invertase/react-native-google-ads';
+ * import { AdEventType } from 'react-native-google-mobile-ads';
  *
  * interstitial.onAdEvent((type) => {
  *   if (type === AdEventType.LOADED) {
@@ -75,7 +75,7 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
    * #### Example
    *
    * ```js
-   * import { InterstitialAd, AdEventType, TestIds } from '@invertase/react-native-google-ads';
+   * import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
    *
    * const interstitialAd = await InterstitialAd.request(TestIds.INTERSTITIAL, {
    *   requestAgent: 'CoolAds',
@@ -120,7 +120,11 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
     }
 
     this._isLoadCalled = true;
-    this._googleAds.native.interstitialLoad(this._requestId, this._adUnitId, this._requestOptions);
+    this._googleMobileAds.native.interstitialLoad(
+      this._requestId,
+      this._adUnitId,
+      this._requestOptions,
+    );
   }
 
   onAdEvent(handler: AdEventListener) {
@@ -147,6 +151,6 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
       }
     }
 
-    return this._googleAds.native.interstitialShow(this._requestId, options);
+    return this._googleMobileAds.native.interstitialShow(this._requestId, options);
   }
 }

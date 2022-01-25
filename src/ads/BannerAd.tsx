@@ -81,7 +81,7 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
     if (type !== 'onSizeChange' && isFunction(props[type])) {
       let eventHandler;
       if (type === 'onAdFailedToLoad') {
-        const eventPayload = NativeError.fromEvent(nativeEvent, 'googleAds');
+        const eventPayload = NativeError.fromEvent(nativeEvent, 'googleMobileAds');
         if ((eventHandler = props[type])) eventHandler(eventPayload);
       } else if ((eventHandler = props[type])) eventHandler();
     }
@@ -104,7 +104,7 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
   }
 
   return (
-    <GoogleAdsBannerView
+    <GoogleMobileAdsBannerView
       size={size}
       style={style}
       unitId={unitId}
@@ -114,7 +114,7 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
   );
 }
 
-const GoogleAdsBannerView: HostComponent<{
+const GoogleMobileAdsBannerView: HostComponent<{
   size: BannerAdProps['size'];
   style: {
     width: number;
@@ -123,4 +123,4 @@ const GoogleAdsBannerView: HostComponent<{
   unitId: string;
   request: RequestOptions;
   onNativeEvent: (event: { nativeEvent: NativeEvent }) => void;
-}> = requireNativeComponent('RNGoogleAdsBannerView');
+}> = requireNativeComponent('RNGoogleMobileAdsBannerView');

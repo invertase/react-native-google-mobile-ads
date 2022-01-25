@@ -71,9 +71,9 @@ jobs:
           yarn add $PACKAGE_NAME
           pushd node_modules/@invertase
           tar -zxf $HOME/scratch/*$CLEAN_PACKAGE_NAME*-v*
-          mv react-native-google-ads/package.json package/
-          \rm -fr react-native-google-ads
-          mv package react-native-google-ads
+          mv react-native-google-mobile-ads/package.json package/
+          \rm -fr react-native-google-mobile-ads
+          mv package react-native-google-mobile-ads
           popd
           npx patch-package $PACKAGE_NAME || true
           ls -la $HOME/template/patches

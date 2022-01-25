@@ -1,14 +1,14 @@
 <p align="center">
-  <a href="https://docs.page/invertase/react-native-google-ads">
+  <a href="https://docs.page/invertase/react-native-google-mobile-ads">
     <img width="160px" src="./docs/img/logo_admob_192px.svg"><br/>
   </a>
-  <h2 align="center">React Native Google Ads</h2>
+  <h2 align="center">React Native Google Mobile Ads</h2>
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@invertase/react-native-google-ads"><img src="https://img.shields.io/npm/dm/@invertase/react-native-google-ads.svg?style=flat-square" alt="NPM downloads"></a>
-  <a href="https://www.npmjs.com/package/@invertase/react-native-google-ads"><img src="https://img.shields.io/npm/v/@invertase/react-native-google-ads.svg?style=flat-square" alt="NPM version"></a>
-  <a href="/LICENSE"><img src="https://img.shields.io/npm/l/@invertase/react-native-google-ads.svg?style=flat-square" alt="License"></a>
+  <a href="https://www.npmjs.com/package/react-native-google-mobile-ads"><img src="https://img.shields.io/npm/dm/react-native-google-mobile-ads.svg?style=flat-square" alt="NPM downloads"></a>
+  <a href="https://www.npmjs.com/package/react-native-google-mobile-ads"><img src="https://img.shields.io/npm/v/react-native-google-mobile-ads.svg?style=flat-square" alt="NPM version"></a>
+  <a href="/LICENSE"><img src="https://img.shields.io/npm/l/react-native-google-mobile-ads.svg?style=flat-square" alt="License"></a>
 </p>
 
 <p align="center">
@@ -19,9 +19,9 @@
 
 ---
 
-**React Native Google Ads** allows you to monetize your app with AdMob; a React Native wrapper around the native Google-Mobile-Ads SDKs for both iOS and Android.
+**React Native Google Mobile Ads** allows you to monetize your app with AdMob; a React Native wrapper around the native Google-Mobile-Ads SDKs for both iOS and Android.
 
-React Native Google Ads is built with three key principals in mind;
+React Native Google Mobile Ads is built with three key principals in mind;
 
 - 🧪 **Well tested**
   - the module is extensively tested to >95% coverage (getting there after moving from react-native-firebase!)
@@ -32,8 +32,8 @@ React Native Google Ads is built with three key principals in mind;
 
 ## Documentation
 
-- [Installation](https://docs.page/invertase/react-native-google-ads)
-- [Displaying Ads](https://docs.page/invertase/react-native-google-ads/displaying-ads)
+- [Installation](https://docs.page/invertase/react-native-google-mobile-ads)
+- [Displaying Ads](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads)
 
 <!--
 - [Quick Start](https://rnfirebase.io/)
@@ -43,10 +43,10 @@ React Native Google Ads is built with three key principals in mind;
 
 <!-- - [Overview](https://rnfirebase.io) -->
 
-- [Issues](https://github.com/invertase/react-native-google-ads/issues)
-- [PRs](https://github.com/invertase/react-native-google-ads/pulls)
+- [Issues](https://github.com/invertase/react-native-google-mobile-ads/issues)
+- [PRs](https://github.com/invertase/react-native-google-mobile-ads/pulls)
 <!-- - [Documentation](https://rnfirebase.io) -->
-- [Community](https://github.com/invertase/react-native-google-ads/blob/master/CONTRIBUTING.md)
+- [Community](https://github.com/invertase/react-native-google-mobile-ads/blob/master/CONTRIBUTING.md)
 - [Code of Conduct](https://github.com/invertase/meta/blob/master/CODE_OF_CONDUCT.md)
 
 ## License
@@ -56,10 +56,10 @@ React Native Google Ads is built with three key principals in mind;
 ---
 
 <p align="center">
-  <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=react-native-google-ads">
+  <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=react-native-google-mobile-ads">
     <img width="75px" src="https://static.invertase.io/assets/invertase/invertase-rounded-avatar.png">
   </a>
   <p align="center">
-    Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=react-native-google-ads">Invertase</a>.
+    Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=react-native-google-mobile-ads">Invertase</a>.
   </p>
 </p>

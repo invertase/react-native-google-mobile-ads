@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.invertase.googleads">
+    package="io.invertase.googlemobileads">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -9,9 +9,9 @@
     <application>
       <meta-data
         android:name="com.google.android.gms.ads.APPLICATION_ID"
-        android:value="${appJSONGoogleAdsAppID}"/>
+        android:value="${appJSONGoogleMobileAdsAppID}"/>
       <meta-data
         android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
-        android:value="${appJSONGoogleAdsDelayAppMeasurementInit}"/>
+        android:value="${appJSONGoogleMobileAdsDelayAppMeasurementInit}"/>
     </application>
 </manifest>

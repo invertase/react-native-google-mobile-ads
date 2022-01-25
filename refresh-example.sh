@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "You should run this from directory where you have cloned the react-native-google-ads repo"
+echo "You should run this from directory where you have cloned the react-native-google-mobile-ads repo"
 echo "You should only do this when your git working set is completely clean (e.g., git reset --hard)"
 echo "You must have already run \`yarn\` in the repository so \`npx react-native\` will work"
 echo "This scaffolding refresh has been tested on macOS, if you use it on linux, it might not work"
@@ -81,7 +81,7 @@ npm_config_yes=true npx pod-install
 
 # Copy the important files back in
 popd
-echo "Copying Google Ads example files into refreshed example..."
+echo "Copying Google Mobile Ads example files into refreshed example..."
 cp -frv TEMP/.detox* example/
 cp -frv TEMP/.mocha* example/
 rm -f example/App.js

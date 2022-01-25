@@ -22,7 +22,7 @@ export enum AdEventType {
    * #### Example
    *
    * ```js
-   * import { AdEventType } from '@invertase/react-native-google-ads';
+   * import { AdEventType } from 'react-native-google-mobile-ads';
    *
    * advert.onAdEvent((type,error,data) => {
    *   if (type === AdEventType.LOADED) {
@@ -39,7 +39,7 @@ export enum AdEventType {
    * #### Example
    *
    * ```js
-   * import { AdEventType } from '@invertase/react-native-google-ads';
+   * import { AdEventType } from 'react-native-google-mobile-ads';
    *
    * advert.onAdEvent((type, error, data) => {
    *   if (type === AdEventType.ERROR) {
