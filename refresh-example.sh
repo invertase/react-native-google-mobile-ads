@@ -39,7 +39,8 @@ rm -f example/.ruby-version example/Gemfile example/Gemfile.lock
 pushd example
 yarn add 'link:../'
 yarn add detox mocha jest-circus jest-environment-node @babel/preset-env typescript --dev
-yarn add 'link:../../jet/'
+#yarn add 'link:../../jet/'
+yarn add https://github.com/invertase/jet#@mikehardy/jet-next --dev
 
 # Java build tweak - or gradle runs out of memory during the build
 echo "Increasing memory available to gradle for android java build"
