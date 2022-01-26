@@ -5,6 +5,7 @@
 * Rename from `@invertase/react-native-google-ads` to `react-native-google-mobile-ads` to more accurately reflect underlying SDK names (#62)
   - Please change `package.json` to use the new package name
   - Please update all imports to new package name
+  - Please change `app.json` key with app ids from `react-native-google-ads` to `react-native-google-mobile-ads` (and run `pod install`)
 
 ### Features
 
