@@ -1,3 +1,10 @@
+## [4.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.0.2...v4.1.0) (2022-01-26)
+
+
+### Features
+
+* app open ads ([f145716](https://github.com/invertase/react-native-google-mobile-ads/commit/f145716baa9ce05d4172eff5e9df6349937353e6))
+
 ### [4.0.2](https://github.com/invertase/react-native-google-ads/compare/v4.0.1...v4.0.2) (2022-01-24)
 
 
