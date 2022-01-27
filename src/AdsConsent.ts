@@ -29,7 +29,7 @@ import { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
 import { AdsConsentStatus } from './AdsConsentStatus';
 import { AdsConsentInterface } from './types/AdsConsent.interface';
 
-const native = NativeModules.RNGoogleAdsConsentModule;
+const native = NativeModules.RNGoogleMobileAdsConsentModule;
 
 export const AdsConsent: AdsConsentInterface = {
   /**
