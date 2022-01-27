@@ -1,3 +1,10 @@
+### [4.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.1.0...v4.1.1) (2022-01-27)
+
+
+### Bug Fixes
+
+* point to the right native module ([e1d7715](https://github.com/invertase/react-native-google-mobile-ads/commit/e1d77153fadcd3e1c69f497e1768844408618d18))
+
 ## [4.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.0.2...v4.1.0) (2022-01-26)
 
 ### ⚠ BREAKING CHANGES
