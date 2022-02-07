@@ -1,3 +1,10 @@
+### [4.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.1.1...v4.1.2) (2022-02-07)
+
+
+### Bug Fixes
+
+* **CHANGELOG:** remove duplicate changelog chunk ([d5e59e3](https://github.com/invertase/react-native-google-mobile-ads/commit/d5e59e33491d30cfdf624e76a7555d5c75f60d01))
+
 ## [4.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v3.4.0...v4.0.0) (2022-02-07)
 
 
