@@ -1,3 +1,24 @@
+## [4.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v3.4.0...v4.0.0) (2022-02-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* typescript rewrite (#41)
+
+### Features
+
+* app open ads ([6be7d02](https://github.com/invertase/react-native-google-mobile-ads/commit/6be7d02eb221f5f8c3e6c7baac381fcd6f5a8d20))
+* typescript rewrite ([#41](https://github.com/invertase/react-native-google-mobile-ads/issues/41)) ([4114e4b](https://github.com/invertase/react-native-google-mobile-ads/commit/4114e4b0d17d70feca2e8220962eb7545261727d))
+
+
+### Bug Fixes
+
+* **android:** no banner ads loaded in the first render ([3154579](https://github.com/invertase/react-native-google-mobile-ads/commit/3154579cd51a7ca98e747a1d73caf0ecd9ad4e2f))
+* Block descendant focus requests ([835bdec](https://github.com/invertase/react-native-google-mobile-ads/commit/835bdec6aff843e2ef21250137927fb004750aeb)), closes [/github.com/facebook/react-native/issues/32649#issuecomment-990968256](https://github.com/invertase//github.com/facebook/react-native/issues/32649/issues/issuecomment-990968256)
+* point to the right native module ([df30e7b](https://github.com/invertase/react-native-google-mobile-ads/commit/df30e7be02d050b3d69ca152355ec79d6f2131fa))
+* **release:** allow semantic-release on beta branch ([106ce63](https://github.com/invertase/react-native-google-mobile-ads/commit/106ce63ce8a64f37a3d7983bfe7f040186b0a62b))
+* typo in native event type ([fcb911a](https://github.com/invertase/react-native-google-mobile-ads/commit/fcb911aad7d3739465054dee538954815595b888))
+
 ### [4.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.1.0...v4.1.1) (2022-01-27)
 
 
