@@ -1,0 +1,63 @@
+# Common reasons for ads not showing
+
+Use the following guide to understand common reasons why apps show few or no ads.
+
+## Did you recently create your AdMob account?
+
+Wait up to 24 hours after you create your account.
+When you first sign up for AdMob, your account is reviewed before it’s approved.
+This typically takes up to 24 hours, but in rare cases can take up to 2 weeks.
+You’ll be notified via email if your account is not approved by AdMob.  
+
+## Is your app or ad unit new?
+
+Wait up to one hour after you create an app or ad unit.
+In some cases, it can take a few days for ads to appear in new apps or ad units.
+Note: New iOS apps will not show Google ads until they’re listed in the Apple App Store.
+Newly registered apps and newly created ad units typically take up to an hour to activate.
+Because of this, you may not see live impressions immediately.
+
+## Test ads not showing up
+
+If you set up an app-ads.txt file for your app, you need to also include this line in your app-ads.txt file in order to load ads using the demo ad units:
+`google.com, pub-3940256099942544, DIRECT, f08c47fec0942fa0`
+
+Alternatively, you can enable test devices and use your own ad unit IDs instead.
+
+### Enable test devices
+
+If you want to do more rigorous testing with production-looking ads, you can now configure your device as a test device and use your own ad unit IDs that you've created in the AdMob UI.
+Test devices can either be added in the AdMob UI or programmatically using the Google Mobile Ads SDK.
+
+Follow the steps below to add your device as a test device.
+
+#### Add your test device in the AdMob UI
+For a simple, non-programmatic way to add a test device and test new or existing app builds, use the AdMob UI.
+[Learn how](https://support.google.com/admob/answer/9691433).
+
+#### Add your test device programmatically
+
+If you want to test ads in your app as you're developing, follow the steps below to programmatically register your test device.
+
+```js
+import mobileAds from 'react-native-google-mobile-ads';
+
+mobileAds()
+  .setRequestConfiguration({
+    // An array of test device IDs to whitelist.
+    testDeviceIdentifiers: ["EMULATOR"]
+  })
+  .then(() => {
+    // Request config successfully set!
+  });
+```
+
+## Emulator vs real device
+
+In some cases ads won't show up on an emulator but will show up while testing on a real device.
+
+## Extra links
+
+- [Mobile Ads SDK (iOS)](https://developers.google.com/admob/ios/quick-start)
+- [Mobile Ads SDK (Android)](https://developers.google.com/admob/android/quick-start)
+- [Common reasons for ads not showing](https://support.google.com/admob/answer/9469204)
