@@ -15,8 +15,8 @@
  *
  */
 
-import React, { useState, useEffect } from 'react';
-import { HostComponent, requireNativeComponent } from 'react-native';
+import React, { forwardRef, useState, useEffect, useImperativeHandle } from 'react';
+import { findNodeHandle, HostComponent, requireNativeComponent, UIManager } from 'react-native';
 import { isFunction } from '../common';
 import { NativeError } from '../internal/NativeError';
 import { BannerAdSize } from '../BannerAdSize';
@@ -40,8 +40,9 @@ type NativeEvent =
 const initialState = [0, 0];
 const sizeRegex = /([0-9]+)x([0-9]+)/;
 
-export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
+function BaseBannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps, ref: any) {
   const [dimensions, setDimensions] = useState(initialState);
+  const bannerRef = React.useRef();
 
   useEffect(() => {
     if (!unitId) {
@@ -60,6 +61,19 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
       throw new Error("BannerAd: 'size' expected a valid BannerAdSize or custom size string.");
     }
   }, [size]);
+
+  useImperativeHandle(ref, () => ({
+    requestAd: () => {
+      if (bannerRef.current) {
+        console.log("BANNERAD CALLING REQUESTAD!!", bannerRef);
+        UIManager.dispatchViewManagerCommand(
+          findNodeHandle(bannerRef.current),
+          "requestAd",
+          []
+        );
+      }
+    }
+  }));
 
   const parsedRequestOptions = JSON.stringify(requestOptions);
 
@@ -105,6 +119,7 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
 
   return (
     <GoogleMobileAdsBannerView
+      ref={bannerRef}
       size={size}
       style={style}
       unitId={unitId}
@@ -113,6 +128,8 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
     />
   );
 }
+
+export const BannerAd = forwardRef(BaseBannerAd);
 
 const GoogleMobileAdsBannerView: HostComponent<{
   size: BannerAdProps['size'];
