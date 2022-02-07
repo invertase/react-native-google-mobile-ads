@@ -3,6 +3,7 @@ export interface App {
 }
 
 export interface Config {
+  version: string;
   namespace: string;
   nativeModuleName: string[];
   nativeEvents: string[];

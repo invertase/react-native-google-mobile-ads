@@ -1,5 +1,6 @@
 import { Module } from './internal';
 import { validateAdRequestConfiguration } from './validateAdRequestConfiguration';
+import { version } from './version';
 import { MobileAdsModuleInterface } from './types/MobileAdsModule.interface';
 import { RequestConfiguration } from './types/RequestConfiguration';
 import { App, Config } from './types/Module.interface';
@@ -65,6 +66,7 @@ class MobileAdsModule extends Module implements MobileAdsModuleInterface {
 const MobileAdsInstance = new MobileAdsModule(
   { name: 'AppName' },
   {
+    version,
     namespace,
     nativeModuleName,
     nativeEvents: [
