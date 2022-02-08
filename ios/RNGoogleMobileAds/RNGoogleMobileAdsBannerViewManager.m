@@ -16,6 +16,9 @@
  *
  */
 
+#import <React/RCTViewManager.h>
+#import <React/RCTUIManager.h>
+#import <React/RCTLog.h>
 #import "RNGoogleMobileAdsBannerViewManager.h"
 #import <GoogleMobileAds/GADBannerView.h>
 #import <GoogleMobileAds/GADBannerViewDelegate.h>
@@ -138,6 +141,17 @@ RCT_EXPORT_VIEW_PROPERTY(unitId, NSString);
 RCT_EXPORT_VIEW_PROPERTY(request, NSDictionary);
 
 RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
+
+RCT_EXPORT_METHOD(requestAd:(nonnull NSNumber*) reactTag) {
+  [self.bridge.uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *,UIView *> *viewRegistry) {
+    UIView *view = viewRegistry[reactTag];
+    if (!view || ![view isKindOfClass:[BannerComponent class]]) {
+      RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
+      return;
+    }
+    [((BannerComponent *)view) requestAd];
+  }];
+}
 
 @synthesize bridge = _bridge;
 

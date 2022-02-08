@@ -20,11 +20,12 @@ package io.invertase.googlemobileads;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.PixelUtil;
-import com.facebook.react.uimanager.SimpleViewManager;
+import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
@@ -38,7 +39,7 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 public class ReactNativeGoogleMobileAdsBannerAdViewManager
-    extends SimpleViewManager<ReactViewGroup> {
+    extends ViewGroupManager<ReactViewGroup> {
   private static final String REACT_CLASS = "RNGoogleMobileAdsBannerView";
   private String EVENT_AD_LOADED = "onAdLoaded";
   private String EVENT_AD_FAILED_TO_LOAD = "onAdFailedToLoad";
@@ -54,6 +55,16 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @Override
   public String getName() {
     return REACT_CLASS;
+  }
+
+  @Override
+  public void receiveCommand(final ReactViewGroup root, String commandId, ReadableArray args) {
+    // This will be called whenever a command is sent from react-native.
+    switch (commandId) {
+      case "requestAd":
+        requestAd(root);
+        break;
+    }
   }
 
   @Nonnull

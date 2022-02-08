@@ -119,6 +119,7 @@ class BannerTest implements Test {
           unitId={bannerAdUnitId}
           size={BannerAdSize.ADAPTIVE_BANNER}
           requestOptions={{
+            customTargeting: TestIds.CUSTOM_TARGETING,
             requestNonPersonalizedAdsOnly: true,
           }}
         />
