@@ -69,7 +69,7 @@ jobs:
           mkdir patches || true
           echo "Installing $CLEAN_PACKAGE_NAME into fresh template app, then clobbering with PR version"
           yarn add $PACKAGE_NAME
-          pushd node_modules/@invertase
+          pushd node_modules/
           tar -zxf $HOME/scratch/*$CLEAN_PACKAGE_NAME*-v*
           mv react-native-google-mobile-ads/package.json package/
           \rm -fr react-native-google-mobile-ads
