@@ -20,7 +20,6 @@ import { Platform } from 'react-native';
 export const TestIds = {
   APP_OPEN: '',
   BANNER: '',
-  CUSTOM_TARGETING: {},
   INTERSTITIAL: '',
   REWARDED: '',
   ...Platform.select({

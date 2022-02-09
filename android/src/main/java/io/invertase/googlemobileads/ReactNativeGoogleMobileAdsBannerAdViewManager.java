@@ -18,6 +18,7 @@ package io.invertase.googlemobileads;
  */
 
 import android.view.ViewGroup;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableArray;
@@ -25,8 +26,8 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.PixelUtil;
-import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.facebook.react.views.view.ReactViewGroup;
@@ -37,6 +38,7 @@ import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.LoadAdError;
 import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class ReactNativeGoogleMobileAdsBannerAdViewManager
     extends ViewGroupManager<ReactViewGroup> {
@@ -58,11 +60,14 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   }
 
   @Override
-  public void receiveCommand(final ReactViewGroup root, String commandId, ReadableArray args) {
+  public void receiveCommand(@Nonnull final ReactViewGroup root, String commandId, @Nullable ReadableArray args) {
     // This will be called whenever a command is sent from react-native.
     switch (commandId) {
       case "requestAd":
         requestAd(root);
+        break;
+      default:
+        Log.d("REACT_CLASS", String.format("'%s' command not found in ViewManager", commandId));
         break;
     }
   }
