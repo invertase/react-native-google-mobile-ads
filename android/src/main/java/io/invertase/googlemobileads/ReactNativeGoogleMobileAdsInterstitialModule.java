@@ -17,6 +17,7 @@ package io.invertase.googlemobileads;
  *
  */
 
+import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsCommon.buildAdRequest;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsCommon.getCodeAndMessageFromAdError;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsCommon.sendAdEvent;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLICKED;
@@ -35,7 +36,6 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
@@ -69,9 +69,6 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
     }
     currentActivity.runOnUiThread(
         () -> {
-          AdRequest.Builder adRequestBuilder = new AdRequest.Builder();
-          AdRequest adRequest = adRequestBuilder.build();
-
           InterstitialAdLoadCallback interstitialAdLoadCallback =
               new InterstitialAdLoadCallback() {
 
@@ -114,7 +111,11 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
                 }
               };
 
-          InterstitialAd.load(currentActivity, adUnitId, adRequest, interstitialAdLoadCallback);
+          InterstitialAd.load(
+              currentActivity,
+              adUnitId,
+              buildAdRequest(adRequestOptions),
+              interstitialAdLoadCallback);
         });
   }
 
