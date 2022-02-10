@@ -68,9 +68,8 @@ RCT_EXPORT_METHOD(rewardedLoad
                   : (nonnull NSNumber *)requestId
                   : (NSString *)adUnitId
                   : (NSDictionary *)adRequestOptions) {
-  GADRequest *request = [GADRequest request];
   [GADRewardedAd loadWithAdUnitID:adUnitId
-                          request:request
+                          request:[RNGoogleMobileAdsCommon buildAdRequest:adRequestOptions]
                 completionHandler:^(GADRewardedAd *ad, NSError *error) {
                   if (error) {
                     NSDictionary *codeAndMessage =

@@ -43,9 +43,8 @@ RCT_EXPORT_METHOD(appOpenLoad
                   : (NSString *)adUnitId
                   : (NSDictionary *)adRequestOptions) {
   self.appOpenAd = nil;
-  GADRequest *request = [GADRequest request];
   [GADAppOpenAd loadWithAdUnitID:adUnitId
-                         request:request
+                         request:[RNGoogleMobileAdsCommon buildAdRequest:adRequestOptions]
                      orientation:UIInterfaceOrientationPortrait
                completionHandler:^(GADAppOpenAd *_Nullable appOpenAd, NSError *_Nullable error) {
                  if (error) {
