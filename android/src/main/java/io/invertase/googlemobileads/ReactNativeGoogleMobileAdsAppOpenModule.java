@@ -17,6 +17,7 @@ package io.invertase.googlemobileads;
  *
  */
 
+import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsCommon.buildAdRequest;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsCommon.getCodeAndMessageFromAdError;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsCommon.sendAdEvent;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_APP_OPEN;
@@ -34,7 +35,6 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.appopen.AppOpenAd;
@@ -67,9 +67,6 @@ public class ReactNativeGoogleMobileAdsAppOpenModule extends ReactNativeModule {
     }
     currentActivity.runOnUiThread(
         () -> {
-          AdRequest.Builder adRequestBuilder = new AdRequest.Builder();
-          AdRequest adRequest = adRequestBuilder.build();
-
           AppOpenAd.AppOpenAdLoadCallback appOpenAdLoadCallback =
               new AppOpenAd.AppOpenAdLoadCallback() {
 
@@ -115,7 +112,7 @@ public class ReactNativeGoogleMobileAdsAppOpenModule extends ReactNativeModule {
           AppOpenAd.load(
               currentActivity,
               adUnitId,
-              adRequest,
+              buildAdRequest(adRequestOptions),
               AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT,
               appOpenAdLoadCallback);
         });
