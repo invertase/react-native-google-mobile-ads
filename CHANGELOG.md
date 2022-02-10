@@ -1,3 +1,10 @@
+### [4.1.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.1.2...v4.1.3) (2022-02-10)
+
+
+### Bug Fixes
+
+* adRequestOptions ignored ([e15809a](https://github.com/invertase/react-native-google-mobile-ads/commit/e15809a59f538bb8f4585fb58779f59239ec1865))
+
 ### [4.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.1.1...v4.1.2) (2022-02-07)
 
 
