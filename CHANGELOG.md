@@ -1,3 +1,10 @@
+## [4.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.1.3...v4.2.0) (2022-02-14)
+
+
+### Features
+
+* custom targeting ([02b3ce4](https://github.com/invertase/react-native-google-mobile-ads/commit/02b3ce48138475cf38b44dc997bb69f6767433f3))
+
 ### [4.1.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.1.2...v4.1.3) (2022-02-10)
 
 
