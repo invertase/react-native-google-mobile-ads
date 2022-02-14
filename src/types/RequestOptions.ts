@@ -66,6 +66,13 @@ export interface RequestOptions {
   contentUrl?: string;
 
   /**
+   * key-value pairs used for custom targeting
+   *
+   * Takes an array of string key/value pairs.
+   */
+  customTargeting?: { [key: string]: string };
+
+  /**
    * The latitude and longitude location of the user.
    *
    * Ensure your app requests location permissions from the user.

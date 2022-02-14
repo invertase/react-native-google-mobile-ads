@@ -31,6 +31,7 @@ import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.admanager.AdManagerAdRequest;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
 import java.util.Map;
@@ -130,8 +131,8 @@ public class ReactNativeGoogleMobileAdsCommon {
     return map;
   }
 
-  public static AdRequest buildAdRequest(ReadableMap adRequestOptions) {
-    AdRequest.Builder builder = new AdRequest.Builder();
+  public static AdManagerAdRequest buildAdRequest(ReadableMap adRequestOptions) {
+    AdManagerAdRequest.Builder builder = new AdManagerAdRequest.Builder();
     Bundle extras = new Bundle();
 
     if (adRequestOptions.hasKey("requestNonPersonalizedAdsOnly")
@@ -175,6 +176,16 @@ public class ReactNativeGoogleMobileAdsCommon {
 
     if (adRequestOptions.hasKey("requestAgent")) {
       builder.setRequestAgent(Objects.requireNonNull(adRequestOptions.getString("requestAgent")));
+    }
+
+    if (adRequestOptions.hasKey("customTargeting")) {
+      Map<String, Object> customTargeting = adRequestOptions.getMap("customTargeting").toHashMap();
+
+      for (Map.Entry<String, Object> entry : customTargeting.entrySet()) {
+        String key = entry.getKey();
+        String value = (String) entry.getValue();
+        builder.addCustomTargeting(key, value);
+      }
     }
 
     return builder.build();

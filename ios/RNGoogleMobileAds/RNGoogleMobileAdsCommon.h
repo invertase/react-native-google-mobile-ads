@@ -21,7 +21,7 @@
 
 @interface RNGoogleMobileAdsCommon : NSObject
 
-+ (GADRequest *)buildAdRequest:(NSDictionary *)adRequestOptions;
++ (GAMRequest *)buildAdRequest:(NSDictionary *)adRequestOptions;
 
 + (NSDictionary *)getCodeAndMessageFromAdError:(NSError *)error;
 
