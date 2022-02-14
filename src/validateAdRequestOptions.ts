@@ -164,5 +164,12 @@ export function validateAdRequestOptions(options?: RequestOptions) {
     out.serverSideVerificationOptions = options.serverSideVerificationOptions;
   }
 
+  if (options.customTargeting) {
+    if (!isObject(options.customTargeting)) {
+      throw new Error("'options.customTargeting' expected an object of key/value pairs");
+    }
+    out.customTargeting = options.customTargeting;
+  }
+
   return out;
 }

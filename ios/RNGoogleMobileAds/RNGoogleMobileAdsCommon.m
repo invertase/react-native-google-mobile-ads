@@ -44,8 +44,8 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
 
 @implementation RNGoogleMobileAdsCommon
 
-+ (GADRequest *)buildAdRequest:(NSDictionary *)adRequestOptions {
-  GADRequest *request = [GADRequest request];
++ (GAMRequest *)buildAdRequest:(NSDictionary *)adRequestOptions {
+  GAMRequest *request = [GAMRequest request];
   NSMutableDictionary *extras = [@{} mutableCopy];
 
   if (adRequestOptions[@"requestNonPersonalizedAdsOnly"] &&
@@ -81,6 +81,10 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
 
   if (adRequestOptions[@"requestAgent"]) {
     request.requestAgent = adRequestOptions[@"requestAgent"];
+  }
+
+  if (adRequestOptions[@"customTargeting"]) {
+    request.customTargeting = adRequestOptions[@"customTargeting"];
   }
 
   return request;
