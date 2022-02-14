@@ -1,7 +1,7 @@
 require 'json'
 package = JSON.parse(File.read(File.join(__dir__, 'package.json')))
 
-google_ads_sdk_version = package['sdkVersions']['ios']['googleAds']
+google_mobile_ads_sdk_version = package['sdkVersions']['ios']['googleMobileAds']
 
 Pod::Spec.new do |s|
   s.name                = "RNGoogleMobileAds"
@@ -25,17 +25,17 @@ Pod::Spec.new do |s|
   # Other dependencies
   s.dependency          'PersonalizedAdConsent', '~> 1.0.5'
 
-  if defined?($RNGoogleAdsSDKVersion)
-    Pod::UI.puts "#{s.name}: Using user specified Google Mobile-Ads SDK version '#{$RNGoogleAdsSDKVersion}'"
-    google_ads_sdk_version = $RNGoogleAdsSDKVersion
+  if defined?($RNGoogleMobileAdsSDKVersion)
+    Pod::UI.puts "#{s.name}: Using user specified Google Mobile-Ads SDK version '#{$RNGoogleMobileAdsSDKVersion}'"
+    google_mobile_ads_sdk_version = $RNGoogleMobileAdsSDKVersion
   end
 
   # AdMob dependencies
-  s.dependency          'Google-Mobile-Ads-SDK', google_ads_sdk_version
+  s.dependency          'Google-Mobile-Ads-SDK', google_mobile_ads_sdk_version
 
-  if defined?($RNGoogleAdsAsStaticFramework)
-    Pod::UI.puts "#{s.name}: Using overridden static_framework value of '#{$RNGoogleAdsAsStaticFramework}'"
-    s.static_framework = $RNGoogleAdsAsStaticFramework
+  if defined?($RNGoogleMobileAdsAsStaticFramework)
+    Pod::UI.puts "#{s.name}: Using overridden static_framework value of '#{$RNGoogleMobileAdsAsStaticFramework}'"
+    s.static_framework = $RNGoogleMobileAdsAsStaticFramework
   else
     s.static_framework = false
   end
