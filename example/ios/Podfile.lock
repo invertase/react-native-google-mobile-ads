@@ -75,21 +75,21 @@ PODS:
   - Google-Mobile-Ads-SDK (8.13.0):
     - GoogleAppMeasurement (< 9.0, >= 7.0)
     - GoogleUserMessagingPlatform (>= 1.1)
-  - GoogleAppMeasurement (8.11.0):
-    - GoogleAppMeasurement/AdIdSupport (= 8.11.0)
+  - GoogleAppMeasurement (8.12.0):
+    - GoogleAppMeasurement/AdIdSupport (= 8.12.0)
     - GoogleUtilities/AppDelegateSwizzler (~> 7.7)
     - GoogleUtilities/MethodSwizzler (~> 7.7)
     - GoogleUtilities/Network (~> 7.7)
     - "GoogleUtilities/NSData+zlib (~> 7.7)"
     - nanopb (~> 2.30908.0)
-  - GoogleAppMeasurement/AdIdSupport (8.11.0):
-    - GoogleAppMeasurement/WithoutAdIdSupport (= 8.11.0)
+  - GoogleAppMeasurement/AdIdSupport (8.12.0):
+    - GoogleAppMeasurement/WithoutAdIdSupport (= 8.12.0)
     - GoogleUtilities/AppDelegateSwizzler (~> 7.7)
     - GoogleUtilities/MethodSwizzler (~> 7.7)
     - GoogleUtilities/Network (~> 7.7)
     - "GoogleUtilities/NSData+zlib (~> 7.7)"
     - nanopb (~> 2.30908.0)
-  - GoogleAppMeasurement/WithoutAdIdSupport (8.11.0):
+  - GoogleAppMeasurement/WithoutAdIdSupport (8.12.0):
     - GoogleUtilities/AppDelegateSwizzler (~> 7.7)
     - GoogleUtilities/MethodSwizzler (~> 7.7)
     - GoogleUtilities/Network (~> 7.7)
@@ -122,7 +122,6 @@ PODS:
   - nanopb/decode (2.30908.0)
   - nanopb/encode (2.30908.0)
   - OpenSSL-Universal (1.1.180)
-  - PersonalizedAdConsent (1.0.5)
   - PromisesObjC (2.0.0)
   - RCT-Folly (2021.06.28.00-v2):
     - boost
@@ -387,9 +386,9 @@ PODS:
     - React-jsi (= 0.67.1)
     - React-logger (= 0.67.1)
     - React-perflogger (= 0.67.1)
-  - RNGoogleMobileAds (4.0.2):
+  - RNGoogleMobileAds (4.2.0):
     - Google-Mobile-Ads-SDK (= 8.13.0)
-    - PersonalizedAdConsent (~> 1.0.5)
+    - GoogleUserMessagingPlatform (= 2.0.0)
     - React-Core
   - Yoga (1.14.0)
   - YogaKit (1.18.1):
@@ -473,7 +472,6 @@ SPEC REPOS:
     - libevent
     - nanopb
     - OpenSSL-Universal
-    - PersonalizedAdConsent
     - PromisesObjC
     - YogaKit
 
@@ -559,18 +557,17 @@ SPEC CHECKSUMS:
   Flipper-RSocket: d9d9ade67cbecf6ac10730304bf5607266dd2541
   FlipperKit: d8d346844eca5d9120c17d441a2f38596e8ed2b9
   fmt: ff9d55029c625d3757ed641535fd4a75fedc7ce9
-  glog: 85ecdd10ee8d8ec362ef519a6a45ff9aa27b2e85
+  glog: 5337263514dd6f09803962437687240c5dc39aa4
   Google-Mobile-Ads-SDK: 05e5d68bb42a61b2e5bef336a52789785605aa22
-  GoogleAppMeasurement: aa3cb422fab2b05d2efac543a5720d1a85b9dea5
+  GoogleAppMeasurement: ae033c3aad67e68294369373056b4d74cc8ae0d6
   GoogleUserMessagingPlatform: ab890ce5f6620f293a21b6bdd82e416a2c73aeca
   GoogleUtilities: e0913149f6b0625b553d70dae12b49fc62914fd1
   Jet: c17c29bfbbaff56f08a17678211f36b859173e99
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
   nanopb: a0ba3315591a9ae0a16a309ee504766e90db0c96
   OpenSSL-Universal: 1aa4f6a6ee7256b83db99ec1ccdaa80d10f9af9b
-  PersonalizedAdConsent: dbecabb3467df967c16d9cebc2ef4a8890e4bbd8
   PromisesObjC: 68159ce6952d93e17b2dfe273b8c40907db5ba58
-  RCT-Folly: 803a9cfd78114b2ec0f140cfa6fa2a6bafb2d685
+  RCT-Folly: a21c126816d8025b547704b777a2ba552f3d9fa9
   RCTRequired: e5dc0c44cb366fc93383a2bffbc190fe821e7293
   RCTTypeSafety: 6a4d0cfe070e7fd996e797f439b70878764a1ae0
   React: e194f6b2f0a4f8d24065f3ca0a6abe859694df65
@@ -594,7 +591,7 @@ SPEC CHECKSUMS:
   React-RCTVibration: 19c012d1202df46bafbe49268a346f6b3edadfdd
   React-runtimeexecutor: 2c92a8bddd1a3e72c7513d1e74235c2d9c84875c
   ReactCommon: 2e816fad39f65f2a94a5999d5be463a6b620dcf6
-  RNGoogleMobileAds: 192f51fb5fb7177a8d9754fa6c5a3f062e77eaf2
+  RNGoogleMobileAds: ae52d9f8048e7a5f5139b9440fec5a839175b9a5
   Yoga: 5cbf25add73edb290e1067017690f7ebf56c5468
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 

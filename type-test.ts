@@ -8,12 +8,14 @@ console.log(googleMobileAds.AdsConsentDebugGeography.DISABLED);
 console.log(googleMobileAds.AdsConsentDebugGeography.EEA);
 console.log(googleMobileAds.AdsConsentDebugGeography.NOT_EEA);
 
-console.log(googleMobileAds.AdsConsentStatus.NON_PERSONALIZED);
-console.log(googleMobileAds.AdsConsentStatus.PERSONALIZED);
 console.log(googleMobileAds.AdsConsentStatus.UNKNOWN);
-console.log(googleMobileAds.AdsConsentStatus.NON_PERSONALIZED);
-console.log(googleMobileAds.AdsConsentStatus.PERSONALIZED);
+console.log(googleMobileAds.AdsConsentStatus.REQUIRED);
+console.log(googleMobileAds.AdsConsentStatus.NOT_REQUIRED);
+console.log(googleMobileAds.AdsConsentStatus.OBTAINED);
 console.log(googleMobileAds.AdsConsentStatus.UNKNOWN);
+console.log(googleMobileAds.AdsConsentStatus.REQUIRED);
+console.log(googleMobileAds.AdsConsentStatus.NOT_REQUIRED);
+console.log(googleMobileAds.AdsConsentStatus.OBTAINED);
 
 console.log(googleMobileAds.MaxAdContentRating.G);
 console.log(googleMobileAds.MaxAdContentRating.MA);
@@ -71,23 +73,11 @@ interstitial.onAdEvent((type, error, data) => {
   console.log(data && data.type);
 });
 
-googleMobileAds.AdsConsent.addTestDevices(['1234']).then();
-googleMobileAds.AdsConsent.getAdProviders().then(providers => {
-  providers[0].companyId;
-  providers[0].companyName;
-  providers[0].privacyPolicyUrl;
-});
-googleMobileAds.AdsConsent.getStatus().then(status => console.log(status));
-googleMobileAds.AdsConsent.requestInfoUpdate(['123']).then(info =>
-  console.log(info.isRequestLocationInEeaOrUnknown),
+googleMobileAds.AdsConsent.requestInfoUpdate().then(info =>
+  console.log(info.isConsentFormAvailable),
 );
-googleMobileAds.AdsConsent.setTagForUnderAgeOfConsent(true).then();
-googleMobileAds.AdsConsent.showForm({
-  privacyPolicy: '123',
-  withAdFree: true,
-  withPersonalizedAds: true,
-  withNonPersonalizedAds: true,
-}).then();
+googleMobileAds.AdsConsent.showForm().then(info => console.log(info.status));
+googleMobileAds.AdsConsent.reset();
 
 // RewardedAd
 const rewardedAd = googleMobileAds.RewardedAd.createForAdRequest('foo', {
@@ -106,7 +96,7 @@ rewardedAd.onAdEvent((type, error, data) => {
 });
 
 // checks module exists at root
-console.log(googleAds().app.name);
+console.log(googleMobileAds().app.name);
 
 // checks statics exist
 console.log(googleMobileAds.SDK_VERSION);

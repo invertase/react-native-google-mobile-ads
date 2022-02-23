@@ -22,6 +22,7 @@ plugins {
 
 def packageJson = PackageJson.getForProject(project)
 def googleMobileAdsVersion = packageJson['sdkVersions']['android']['googleMobileAds']
+def googleUmpVersion = packageJson['sdkVersions']['android']['googleUmp']
 def jsonMinSdk = packageJson['sdkVersions']['android']['minSdk']
 def jsonTargetSdk = packageJson['sdkVersions']['android']['targetSdk']
 def jsonCompileSdk = packageJson['sdkVersions']['android']['compileSdk']
@@ -44,7 +45,7 @@ project.ext {
       ],
 
       ads     : [
-        consent: "1.0.6"
+        consent: googleUmpVersion,
       ],
     ],
   ])
@@ -89,7 +90,7 @@ repositories {
 
 dependencies {
   implementation("com.google.android.gms:play-services-ads:${googleMobileAdsVersion}") { force = true; }
-  implementation "com.google.android.ads.consent:consent-library:${ReactNative.ext.getVersion("ads", "consent")}"
+  api "com.google.android.ump:user-messaging-platform:${googleUmpVersion}"
 }
 
 ReactNative.shared.applyPackageVersion()
