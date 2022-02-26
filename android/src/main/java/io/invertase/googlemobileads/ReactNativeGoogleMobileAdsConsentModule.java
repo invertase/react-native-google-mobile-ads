@@ -29,6 +29,7 @@ import com.google.android.ump.ConsentRequestParameters;
 import com.google.android.ump.UserMessagingPlatform;
 import io.invertase.googlemobileads.common.ReactNativeModule;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
 
@@ -55,7 +56,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   }
 
   @ReactMethod
-  public void requestInfoUpdate(final ReadableMap options, final Promise promise) {
+  public void requestInfoUpdate(@Nonnull final ReadableMap options, final Promise promise) {
     try {
       ConsentRequestParameters.Builder paramsBuilder = new ConsentRequestParameters.Builder();
       ConsentDebugSettings.Builder debugSettingsBuilder =

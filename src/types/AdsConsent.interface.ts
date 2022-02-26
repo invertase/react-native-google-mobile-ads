@@ -88,7 +88,7 @@ export interface AdsConsentInfoOptions {
   tagForUnderAgeOfConsent?: boolean;
 
   /**
-   * An array of test device IDs to whitelist.
+   * An array of test device IDs to allow.
    */
   testDeviceIdentifiers?: string[];
 }

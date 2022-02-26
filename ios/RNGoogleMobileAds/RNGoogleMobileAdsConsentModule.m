@@ -21,13 +21,7 @@
 #import "RCTBridgeModule.h"
 #import "RNGoogleMobileAdsConsentModule.h"
 #import "common/RNSharedUtils.h"
-#if __has_include(<React/RCTConvert.h>)
 #import <React/RCTConvert.h>
-#elif __has_include("RCTConvert.h")
-#import "RCTConvert.h"
-#else
-#import "React/RCTConvert.h"
-#endif
 #include <UserMessagingPlatform/UserMessagingPlatform.h>
 
 @implementation RNGoogleMobileAdsConsentModule

@@ -66,7 +66,7 @@ Once set, rebuild your application.
 
 It is recommended you request consent information each time your application starts to determine if the consent modal should be shown, e.g. due to provider changes.
 
-The `AdsConsent` helper provides a promised based method to return the users consent status called `requestInfoUpdate`.
+The `AdsConsent` helper provides a promise based method to return the users consent status called `requestInfoUpdate`.
 
 ```js
 import { AdsConsent } from 'react-native-google-mobile-ads';
@@ -74,7 +74,7 @@ import { AdsConsent } from 'react-native-google-mobile-ads';
 const consentInfo = await AdsConsent.requestInfoUpdate();
 ```
 
-The result of the method returns an `AdsConsentInfo` interface, which provides information about consent form availability and the users consent status:
+The method returns an `AdsConsentInfo` interface, which provides information about consent form availability and the users consent status:
 
 - **status**: The status can be one of 4 outcomes:
   - `UNKNOWN`: Unknown consent status.
@@ -109,7 +109,7 @@ When developing the consent flow, the behavior of the `AdsConsent` responses may
 (e.g. using an emulator vs real device). It is possible to set a debug location to test the various responses from the
 UMP SDK.
 
-If using a real device, ensure you whitelist it by passing the device ID, which can be obtained from native logs or using a library
+If using a real device, ensure you add it to the list of allowed devices by passing the device ID, which can be obtained from native logs or using a library
 such as [react-native-device-info](https://github.com/react-native-community/react-native-device-info), to `testDeviceIdentifiers`.
 
 > Emulators are automatically whitelisted.
@@ -131,7 +131,7 @@ const consentInfo = await AdsConsent.requestInfoUpdate({
 });
 ```
 
-It is also possible to reset the UMP state for test devices. This does not reset the ATT state though.
+It is possible to reset the UMP state for test devices. To reset the ATT state you have to delete and reinstall your app though.
 
 ```js
 import { AdsConsent } from 'react-native-google-mobile-ads';
