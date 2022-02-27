@@ -18,11 +18,11 @@
 
 #import <React/RCTUtils.h>
 
+#import <React/RCTConvert.h>
+#include <UserMessagingPlatform/UserMessagingPlatform.h>
 #import "RCTBridgeModule.h"
 #import "RNGoogleMobileAdsConsentModule.h"
 #import "common/RNSharedUtils.h"
-#import <React/RCTConvert.h>
-#include <UserMessagingPlatform/UserMessagingPlatform.h>
 
 @implementation RNGoogleMobileAdsConsentModule
 #pragma mark -

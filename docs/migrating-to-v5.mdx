@@ -1,0 +1,54 @@
+# Migrating to v5
+
+## AdsConsent
+
+Google replaced their Consent SDK with the User Messaging Platform (UMP) SDK, which supports the latest IAB standards and Apple's App Tracking Transparency requirements.
+
+Please refer to the following links for more information:
+
+- [User Messaging Platform](https://developers.google.com/admob/ump/ios/quick-start)
+- [EU User Consent Policy](https://www.google.com/about/company/user-consent-policy/)
+- [IAB Europe Transparency](https://iabeurope.eu/iab-europe-transparency-consent-framework-policies/)
+- [App Tracking Transparency](https://developer.apple.com/documentation/apptrackingtransparency)
+
+Previously it was possible to request the ad providers and to update the consent status. This is no longer the case.
+Also, while the old Consent SDK provided information about user preferences, the new `AdsConsentStatus` only tells you if you should show the modal to a user or not.
+You can read the `IABTCF_TCString` key from standardUserDefaults / SharedPreferences and decode it with a library like [@iabtcf/core](https://github.com/InteractiveAdvertisingBureau/iabtcf-es/tree/master/modules/core#iabtcfcore) though.
+
+* `requestInfoUpdate` does now accept an optional `AdsConsentInfoOptions` object instead of expecting `publisherIds` and returns a changed `AdsConsentInfo` interface
+* `showForm` does not expect any parameters any longer and now only returns the changed `AdsConsentStatus` as part of it's `AdsConsentFormResult` interface
+* `getAdProviders`, `getStatus` and `setStatus` methods were removed without replacements
+* `addTestDevices`, `setDebugGeography` and `setTagForUnderAgeOfConsent` methods were removed, but their functionality is available via `AdsConsentInfoOptions`
+* the `user_tracking_usage_description` key is needed in your project's `app.json` if you want to handle Apple's App Tracking Transparency
+
+```diff
+ {
+   "react-native-google-mobile-ads": {
+     "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+     "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
++    "user_tracking_usage_description": "This identifier will be used to deliver personalized ads to you."
+   }
+ }
+```
+
+```diff
+ import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
+ 
+-const consentInfo = await AdsConsent.requestInfoUpdate(['pub-6189033257628123']);
++const consentInfo = await AdsConsent.requestInfoUpdate();
+ 
+ if (
+-  consentInfo.isRequestLocationInEeaOrUnknown &&
++  consentInfo.isConsentFormAvailable &&
+-  consentInfo.status === AdsConsentStatus.UNKNOWN
++  consentInfo.status === AdsConsentStatus.REQUIRED
+ ) {
+-  const formResult = await AdsConsent.showForm({
+-    privacyPolicy: 'https://invertase.io/privacy-policy',
+-    withPersonalizedAds: true,
+-    withNonPersonalizedAds: true,
+-    withAdFree: true,
+-  });
++  const formResult = await AdsConsent.showForm()
+ }
+```
