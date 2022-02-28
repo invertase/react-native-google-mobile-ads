@@ -41,14 +41,16 @@
   ],
   "sdkVersions": {
     "ios": {
-      "googleMobileAds": "8.13.0"
+      "googleMobileAds": "8.13.0",
+      "googleUmp": "2.0.0"
     },
     "android": {
       "minSdk": 16,
       "targetSdk": 30,
       "compileSdk": 31,
       "buildTools": "31.0.0",
-      "googleMobileAds": "20.5.0"
+      "googleMobileAds": "20.5.0",
+      "googleUmp": "2.0.0"
     }
   },
   "react-native-builder-bob": {

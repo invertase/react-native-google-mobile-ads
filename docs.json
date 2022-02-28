@@ -5,6 +5,7 @@
     ["Installation", "/"],
     ["Displaying Ads", "/displaying-ads"],
     ["European User Consent", "/european-user-consent"],
-    ["Common Reasons For Ads Not Showing", "/common-reasons-for-ads-not-showing"]
+    ["Common Reasons For Ads Not Showing", "/common-reasons-for-ads-not-showing"],
+    ["Migrating to v5", "/migrating-to-v5"]
   ]
 } 

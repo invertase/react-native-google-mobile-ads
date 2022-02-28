@@ -102,6 +102,14 @@ if [[ ${_SEARCH_RESULT} ]]; then
     _PLIST_ENTRY_TYPES+=("string")
     _PLIST_ENTRY_VALUES+=("$_IOS_APP_ID")
   fi
+
+    # config.user_tracking_usage_description
+  _USER_TRACKING_USAGE_DESCRIPTION=$(getJsonKeyValue "$_JSON_OUTPUT_RAW" "user_tracking_usage_description")
+  if [[ $_USER_TRACKING_USAGE_DESCRIPTION ]]; then
+    _PLIST_ENTRY_KEYS+=("NSUserTrackingUsageDescription")
+    _PLIST_ENTRY_TYPES+=("string")
+    _PLIST_ENTRY_VALUES+=("$_USER_TRACKING_USAGE_DESCRIPTION")
+  fi
 else
   _PLIST_ENTRY_KEYS+=("google_mobile_ads_json_raw")
   _PLIST_ENTRY_TYPES+=("string")
