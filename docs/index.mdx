@@ -93,7 +93,7 @@ mobileAds()
     // manner suitable for users under the age of consent.
     tagForUnderAgeOfConsent: true,
 
-    // An array of test device IDs to whitelist.
+    // An array of test device IDs to allow.
     testDeviceIdentifiers: ["EMULATOR"]
   })
   .then(() => {
@@ -128,9 +128,9 @@ If you are using mediation, you may wish to wait until the promise is settled be
 Out of the box, AdMob does not handle any related regulations which you may need to enforce on your application.
 It is up to the developer to implement and handle this on a user-by-user basis. You must consent to EEA users
 being served both personalized and non-personalized adverts before showing them. For more information, see
-[Requesting Consent from European Users](https://developers.google.com/admob/android/eu-consent).
+[Obtaining Consent with the User Messaging Platform](https://developers.google.com/admob/ump/android/quick-start).
 
-The AdMob module provides a `AdConsent` helper to help developers quickly implement consent flows within their application.
+The AdMob module provides a `AdsConsent` helper to help developers quickly implement consent flows within their application.
 See the [European User Consent page](/european-user-consent) for full examples of how to integrate the helper into your application.
 
 ## Test ads

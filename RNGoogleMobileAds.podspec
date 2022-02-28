@@ -2,6 +2,7 @@ require 'json'
 package = JSON.parse(File.read(File.join(__dir__, 'package.json')))
 
 google_mobile_ads_sdk_version = package['sdkVersions']['ios']['googleMobileAds']
+google_ump_sdk_version = package['sdkVersions']['ios']['googleUmp']
 
 Pod::Spec.new do |s|
   s.name                = "RNGoogleMobileAds"
@@ -18,12 +19,18 @@ Pod::Spec.new do |s|
   s.social_media_url    = 'http://twitter.com/invertaseio'
   s.ios.deployment_target = "10.0"
   s.source_files        = 'ios/**/*.{h,m}'
+  s.frameworks          = "AppTrackingTransparency"
 
   # React Native dependencies
   s.dependency          'React-Core'
 
   # Other dependencies
-  s.dependency          'PersonalizedAdConsent', '~> 1.0.5'
+  if defined?($RNGoogleUmpSDKVersion)
+    Pod::UI.puts "#{s.name}: Using user specified Google UMP SDK version '#{$RNGoogleUmpSDKVersion}'"
+    google_ump_sdk_version = $RNGoogleUmpSDKVersion
+  end
+
+  s.dependency          'GoogleUserMessagingPlatform', google_ump_sdk_version
 
   if defined?($RNGoogleMobileAdsSDKVersion)
     Pod::UI.puts "#{s.name}: Using user specified Google Mobile-Ads SDK version '#{$RNGoogleMobileAdsSDKVersion}'"

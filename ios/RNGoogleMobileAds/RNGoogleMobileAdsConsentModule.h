@@ -18,7 +18,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <PersonalizedAdConsent/PersonalizedAdConsent.h>
 #import <React/RCTBridgeModule.h>
 
 @interface RNGoogleMobileAdsConsentModule : NSObject <RCTBridgeModule>

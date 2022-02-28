@@ -15,18 +15,9 @@
  *
  */
 
-import {
-  hasOwnProperty,
-  isArray,
-  isBoolean,
-  isObject,
-  isString,
-  isUndefined,
-  isValidUrl,
-} from './common';
+import { hasOwnProperty, isArray, isBoolean, isObject, isString } from './common';
 import { NativeModules } from 'react-native';
 import { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
-import { AdsConsentStatus } from './AdsConsentStatus';
 import { AdsConsentInterface } from './types/AdsConsent.interface';
 
 const native = NativeModules.RNGoogleMobileAdsConsentModule;
@@ -34,158 +25,68 @@ const native = NativeModules.RNGoogleMobileAdsConsentModule;
 export const AdsConsent: AdsConsentInterface = {
   /**
    *
-   * @param publisherIds
-   * @returns {*}
+   * @param {Object} [options]
+   * @param {AdsConsentDebugGeography} [options.debugGeography]
+   * @param {Boolean} [options.tagForUnderAgeOfConsent]
+   * @param {Array<String>} [options.testDeviceIdentifiers]
+   * @returns {{ status: Number, isConsentFormAvailable: Boolean }}
    */
-  requestInfoUpdate(publisherIds) {
-    if (!isArray(publisherIds)) {
+  requestInfoUpdate(options = {}) {
+    if (!isObject(options)) {
+      throw new Error("AdsConsent.requestInfoUpdate(*) 'options' expected an object value.");
+    }
+
+    if (
+      hasOwnProperty(options, 'debugGeography') &&
+      options.debugGeography !== AdsConsentDebugGeography.DISABLED &&
+      options.debugGeography !== AdsConsentDebugGeography.EEA &&
+      options.debugGeography !== AdsConsentDebugGeography.NOT_EEA
+    ) {
       throw new Error(
-        "AdsConsent.requestInfoUpdate(*) 'publisherIds' expected an array of string values.",
+        "AdsConsent.requestInfoUpdate(*) 'options.debugGeography' expected one of AdsConsentDebugGeography.DISABLED, AdsConsentDebugGeography.EEA or AdsConsentDebugGeography.NOT_EEA.",
       );
     }
 
-    if (publisherIds.length === 0) {
+    if (
+      hasOwnProperty(options, 'tagForUnderAgeOfConsent') &&
+      !isBoolean(options.tagForUnderAgeOfConsent)
+    ) {
       throw new Error(
-        "AdsConsent.requestInfoUpdate(*) 'publisherIds' list of publisher IDs cannot be empty.",
+        "AdsConsent.requestInfoUpdate(*) 'options.tagForUnderAgeOfConsent' expected a boolean value.",
       );
     }
 
-    for (let i = 0; i < publisherIds.length; i++) {
-      if (!isString(publisherIds[i])) {
+    if (hasOwnProperty(options, 'testDeviceIdentifiers')) {
+      if (!isArray(options.testDeviceIdentifiers)) {
         throw new Error(
-          `AdsConsent.requestInfoUpdate(*) 'publisherIds[${i}]' expected a string value.`,
+          "AdsConsent.requestInfoUpdate(*) 'options.testDeviceIdentifiers' expected an array of string values.",
         );
+      }
+
+      for (const deviceId of options.testDeviceIdentifiers ?? []) {
+        if (!isString(deviceId)) {
+          throw new Error(
+            "AdsConsent.requestInfoUpdate(*) 'options.testDeviceIdentifiers' expected an array of string values.",
+          );
+        }
       }
     }
 
-    return native.requestInfoUpdate(publisherIds);
+    return native.requestInfoUpdate(options);
   },
 
   /**
    *
-   * @param options
-   * @returns {*}
+   * @returns {{ status: Number }}
    */
-  showForm(options) {
-    if (!isUndefined(options) && !isObject(options)) {
-      throw new Error("AdsConsent.showForm(*) 'options' expected an object value.");
-    }
-
-    if (!isValidUrl(options.privacyPolicy)) {
-      throw new Error(
-        "AdsConsent.showForm(*) 'options.privacyPolicy' expected a valid HTTP or HTTPS URL.",
-      );
-    }
-
-    if (hasOwnProperty(options, 'withPersonalizedAds') && !isBoolean(options.withPersonalizedAds)) {
-      throw new Error(
-        "AdsConsent.showForm(*) 'options.withPersonalizedAds' expected a boolean value.",
-      );
-    }
-
-    if (
-      hasOwnProperty(options, 'withNonPersonalizedAds') &&
-      !isBoolean(options.withNonPersonalizedAds)
-    ) {
-      throw new Error(
-        "AdsConsent.showForm(*) 'options.withNonPersonalizedAds' expected a boolean value.",
-      );
-    }
-
-    if (hasOwnProperty(options, 'withAdFree') && !isBoolean(options.withAdFree)) {
-      throw new Error("AdsConsent.showForm(*) 'options.withAdFree' expected a boolean value.");
-    }
-
-    if (!options.withPersonalizedAds && !options.withNonPersonalizedAds && !options.withAdFree) {
-      throw new Error(
-        "AdsConsent.showForm(*) 'options' form requires at least one option to be enabled.",
-      );
-    }
-
-    return native.showForm(options);
+  showForm() {
+    return native.showForm();
   },
 
   /**
    *
    */
-  getAdProviders() {
-    return native.getAdProviders();
-  },
-
-  /**
-   *
-   * @param geography
-   */
-  setDebugGeography(geography) {
-    if (
-      geography !== AdsConsentDebugGeography.DISABLED &&
-      geography !== AdsConsentDebugGeography.EEA &&
-      geography !== AdsConsentDebugGeography.NOT_EEA
-    ) {
-      throw new Error(
-        "AdsConsent.setDebugGeography(*) 'geography' expected one of AdsConsentDebugGeography.DISABLED, AdsConsentDebugGeography.EEA or AdsConsentDebugGeography.NOT_EEA.",
-      );
-    }
-
-    return native.setDebugGeography(geography);
-  },
-
-  /**
-   *
-   */
-  getStatus() {
-    return native.getStatus();
-  },
-
-  /**
-   *
-   * @param status
-   */
-  setStatus(status) {
-    if (
-      status !== AdsConsentStatus.UNKNOWN &&
-      status !== AdsConsentStatus.NON_PERSONALIZED &&
-      status !== AdsConsentStatus.PERSONALIZED
-    ) {
-      throw new Error(
-        "AdsConsent.setStatus(*) 'status' expected one of AdsConsentStatus.UNKNOWN, AdsConsentStatus.NON_PERSONALIZED or AdsConsentStatus.PERSONALIZED.",
-      );
-    }
-
-    return native.setStatus(status);
-  },
-
-  /**
-   *
-   * @param tag
-   */
-  setTagForUnderAgeOfConsent(tag) {
-    if (!isBoolean(tag)) {
-      throw new Error("AdsConsent.setTagForUnderAgeOfConsent(*) 'tag' expected a boolean value.");
-    }
-
-    return native.setTagForUnderAgeOfConsent(tag);
-  },
-
-  /**
-   *
-   * @param deviceIds
-   */
-  addTestDevices(deviceIds) {
-    if (!isArray(deviceIds)) {
-      throw new Error(
-        "AdsConsent.addTestDevices(*) 'deviceIds' expected an array of string values.",
-      );
-    }
-
-    for (let i = 0; i < deviceIds.length; i++) {
-      if (!isString(deviceIds[i])) {
-        throw new Error(
-          "AdsConsent.addTestDevices(*) 'deviceIds' expected an array of string values.",
-        );
-      }
-    }
-
-    return native.addTestDevices(deviceIds);
+  reset() {
+    return native.reset();
   },
 };

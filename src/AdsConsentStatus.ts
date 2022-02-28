@@ -20,17 +20,22 @@
  */
 export enum AdsConsentStatus {
   /**
-   * The consent status is unknown and the user must provide consent to show ads if they are within the EEA or location is also unknown.
+   * Unknown consent status, AdsConsent.requestInfoUpdate needs to be called to update it.
    */
-  UNKNOWN = 0,
+  UNKNOWN = 'UNKNOWN',
 
   /**
-   * The user has accepted non-personalized ads.
+   * User consent required but not yet obtained.
    */
-  NON_PERSONALIZED = 1,
+  REQUIRED = 'REQUIRED',
 
   /**
-   * The user has accepted personalized ads.
+   * User consent not required.
    */
-  PERSONALIZED = 2,
+  NOT_REQUIRED = 'NOT_REQUIRED',
+
+  /**
+   * User consent already obtained.
+   */
+  OBTAINED = 'OBTAINED',
 }

@@ -21,206 +21,135 @@ import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
-import com.google.ads.consent.AdProvider;
-import com.google.ads.consent.ConsentForm;
-import com.google.ads.consent.ConsentFormListener;
-import com.google.ads.consent.ConsentInfoUpdateListener;
-import com.google.ads.consent.ConsentInformation;
-import com.google.ads.consent.ConsentStatus;
-import com.google.ads.consent.DebugGeography;
+import com.google.android.ump.ConsentDebugSettings;
+import com.google.android.ump.ConsentInformation;
+import com.google.android.ump.ConsentRequestParameters;
+import com.google.android.ump.UserMessagingPlatform;
 import io.invertase.googlemobileads.common.ReactNativeModule;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
+
   private static final String TAG = "RNGoogleMobileAdsConsentModule";
   private ConsentInformation consentInformation;
-  private ConsentForm consentForm;
 
   public ReactNativeGoogleMobileAdsConsentModule(ReactApplicationContext reactContext) {
     super(reactContext, TAG);
-    consentInformation = ConsentInformation.getInstance(reactContext);
+    consentInformation = UserMessagingPlatform.getConsentInformation(reactContext);
   }
 
-  private int getConsentStatusInt(ConsentStatus consentStatus) {
+  private String getConsentStatusString(int consentStatus) {
     switch (consentStatus) {
-      case NON_PERSONALIZED:
-        return 1;
-      case PERSONALIZED:
-        return 2;
-      case UNKNOWN:
+      case ConsentInformation.ConsentStatus.REQUIRED:
+        return "REQUIRED";
+      case ConsentInformation.ConsentStatus.NOT_REQUIRED:
+        return "NOT_REQUIRED";
+      case ConsentInformation.ConsentStatus.OBTAINED:
+        return "OBTAINED";
+      case ConsentInformation.ConsentStatus.UNKNOWN:
       default:
-        return 0;
+        return "UNKNOWN";
     }
   }
 
   @ReactMethod
-  public void requestInfoUpdate(ReadableArray publisherIds, Promise promise) {
-    @SuppressWarnings("SuspiciousToArrayCall")
-    String[] publisherIdsArray = publisherIds.toArrayList().toArray(new String[0]);
+  public void requestInfoUpdate(@Nonnull final ReadableMap options, final Promise promise) {
+    try {
+      ConsentRequestParameters.Builder paramsBuilder = new ConsentRequestParameters.Builder();
+      ConsentDebugSettings.Builder debugSettingsBuilder =
+          new ConsentDebugSettings.Builder(getApplicationContext());
 
-    consentInformation.requestConsentInfoUpdate(
-        publisherIdsArray,
-        new ConsentInfoUpdateListener() {
-          @Override
-          public void onConsentInfoUpdated(ConsentStatus consentStatus) {
+      if (options.hasKey("testDeviceIdentifiers")) {
+        List<Object> devices = options.getArray("testDeviceIdentifiers").toArrayList();
+
+        for (Object device : devices) {
+          debugSettingsBuilder.addTestDeviceHashedId((String) device);
+        }
+      }
+
+      if (options.hasKey("debugGeography")) {
+        debugSettingsBuilder.setDebugGeography(options.getInt("debugGeography"));
+      }
+
+      paramsBuilder.setConsentDebugSettings(debugSettingsBuilder.build());
+
+      if (options.hasKey("tagForUnderAgeOfConsent")) {
+        paramsBuilder.setTagForUnderAgeOfConsent(options.getBoolean("tagForUnderAgeOfConsent"));
+      }
+
+      ConsentRequestParameters consentRequestParameters = paramsBuilder.build();
+
+      if (getCurrentActivity() == null) {
+        rejectPromiseWithCodeAndMessage(
+            promise,
+            "null-activity",
+            "Attempted to request a consent info update but the current Activity was null.");
+        return;
+      }
+
+      consentInformation.requestConsentInfoUpdate(
+          getCurrentActivity(),
+          consentRequestParameters,
+          () -> {
             WritableMap requestInfoMap = Arguments.createMap();
-            requestInfoMap.putInt("status", getConsentStatusInt(consentStatus));
+            requestInfoMap.putString(
+                "status", getConsentStatusString(consentInformation.getConsentStatus()));
             requestInfoMap.putBoolean(
-                "isRequestLocationInEeaOrUnknown",
-                consentInformation.isRequestLocationInEeaOrUnknown());
+                "isConsentFormAvailable", consentInformation.isConsentFormAvailable());
             promise.resolve(requestInfoMap);
-          }
-
-          @Override
-          public void onFailedToUpdateConsentInfo(String reason) {
-            rejectPromiseWithCodeAndMessage(promise, "consent-update-failed", reason);
-          }
-        });
-  }
-
-  @ReactMethod
-  public void showForm(ReadableMap options, Promise promise) {
-    if (getCurrentActivity() == null) {
-      rejectPromiseWithCodeAndMessage(
-          promise,
-          "null-activity",
-          "Consent form attempted to show but the current Activity was null.");
-      return;
+          },
+          formError ->
+              rejectPromiseWithCodeAndMessage(
+                  promise, "consent-update-failed", formError.getMessage()));
+    } catch (Exception e) {
+      rejectPromiseWithCodeAndMessage(promise, "consent-update-failed", e.toString());
     }
-    getCurrentActivity()
-        .runOnUiThread(
-            () -> {
-              URL privacyUrl = null;
-
-              try {
-                privacyUrl = new URL(options.getString("privacyPolicy"));
-              } catch (MalformedURLException e) {
-                // Validated in JS land
-              }
-
-              ConsentFormListener listener =
-                  new ConsentFormListener() {
-                    @Override
-                    public void onConsentFormLoaded() {
-                      try {
-                        consentForm.show();
-                      } catch (Exception e) {
-                        rejectPromiseWithCodeAndMessage(
-                            promise, "consent-form-error", e.toString());
-                      }
-                    }
-
-                    @Override
-                    public void onConsentFormClosed(
-                        ConsentStatus consentStatus, Boolean userPrefersAdFree) {
-                      WritableMap consentFormMap = Arguments.createMap();
-                      consentFormMap.putInt("status", getConsentStatusInt(consentStatus));
-                      consentFormMap.putBoolean("userPrefersAdFree", userPrefersAdFree);
-                      promise.resolve(consentFormMap);
-                    }
-
-                    @Override
-                    public void onConsentFormError(String reason) {
-                      rejectPromiseWithCodeAndMessage(promise, "consent-form-error", reason);
-                    }
-                  };
-
-              ConsentForm.Builder builder =
-                  new ConsentForm.Builder(getCurrentActivity(), privacyUrl).withListener(listener);
-
-              if (options.hasKey("withPersonalizedAds")
-                  && options.getBoolean("withPersonalizedAds")) {
-                builder = builder.withPersonalizedAdsOption();
-              }
-
-              if (options.hasKey("withNonPersonalizedAds")
-                  && options.getBoolean("withNonPersonalizedAds")) {
-                builder = builder.withNonPersonalizedAdsOption();
-              }
-
-              if (options.hasKey("withAdFree") && options.getBoolean("withAdFree")) {
-                builder = builder.withAdFreeOption();
-              }
-
-              consentForm = builder.build();
-              consentForm.load();
-            });
   }
 
   @ReactMethod
-  public void getStatus(Promise promise) {
-    ConsentStatus status = consentInformation.getConsentStatus();
-    promise.resolve(getConsentStatusInt(status));
-  }
-
-  @ReactMethod
-  public void setStatus(int status, Promise promise) {
-    ConsentStatus consentStatus = ConsentStatus.UNKNOWN;
-
-    switch (status) {
-      case 0:
-        consentStatus = ConsentStatus.UNKNOWN;
-        break;
-      case 1:
-        consentStatus = ConsentStatus.NON_PERSONALIZED;
-        break;
-      case 2:
-        consentStatus = ConsentStatus.PERSONALIZED;
-        break;
+  public void showForm(final Promise promise) {
+    try {
+      if (getCurrentActivity() == null) {
+        rejectPromiseWithCodeAndMessage(
+            promise,
+            "null-activity",
+            "Consent form attempted to show but the current Activity was null.");
+        return;
+      }
+      getCurrentActivity()
+          .runOnUiThread(
+              () ->
+                  UserMessagingPlatform.loadConsentForm(
+                      getReactApplicationContext(),
+                      consentForm ->
+                          consentForm.show(
+                              getCurrentActivity(),
+                              formError -> {
+                                if (formError != null) {
+                                  rejectPromiseWithCodeAndMessage(
+                                      promise, "consent-form-error", formError.getMessage());
+                                } else {
+                                  WritableMap consentFormMap = Arguments.createMap();
+                                  consentFormMap.putString(
+                                      "status",
+                                      getConsentStatusString(
+                                          consentInformation.getConsentStatus()));
+                                  promise.resolve(consentFormMap);
+                                }
+                              }),
+                      formError ->
+                          rejectPromiseWithCodeAndMessage(
+                              promise, "consent-form-error", formError.getMessage())));
+    } catch (Exception e) {
+      rejectPromiseWithCodeAndMessage(promise, "consent-form-error", e.toString());
     }
-
-    consentInformation.setConsentStatus(consentStatus);
-    promise.resolve(null);
   }
 
   @ReactMethod
-  public void getAdProviders(Promise promise) {
-    List<AdProvider> providers = consentInformation.getAdProviders();
-
-    WritableArray formattedAdProviders = Arguments.createArray();
-
-    for (AdProvider provider : providers) {
-      WritableMap formattedProvider = Arguments.createMap();
-      formattedProvider.putString("companyName", provider.getName());
-      formattedProvider.putString("companyId", provider.getId());
-      formattedProvider.putString("privacyPolicyUrl", provider.getPrivacyPolicyUrlString());
-      formattedAdProviders.pushMap(formattedProvider);
-    }
-
-    promise.resolve(formattedAdProviders);
-  }
-
-  @ReactMethod
-  public void setTagForUnderAgeOfConsent(boolean tag, Promise promise) {
-    consentInformation.setTagForUnderAgeOfConsent(tag);
-    promise.resolve(null);
-  }
-
-  @ReactMethod
-  public void setDebugGeography(int geography, Promise promise) {
-    if (geography == 0) {
-      consentInformation.setDebugGeography(DebugGeography.DEBUG_GEOGRAPHY_DISABLED);
-    } else if (geography == 1) {
-      consentInformation.setDebugGeography(DebugGeography.DEBUG_GEOGRAPHY_EEA);
-    } else if (geography == 2) {
-      consentInformation.setDebugGeography(DebugGeography.DEBUG_GEOGRAPHY_NOT_EEA);
-    }
-
-    promise.resolve(null);
-  }
-
-  @ReactMethod
-  public void addTestDevices(ReadableArray deviceIds, Promise promise) {
-    List<Object> devices = deviceIds.toArrayList();
-    for (Object device : devices) {
-      consentInformation.addTestDevice((String) device);
-    }
-    promise.resolve(null);
+  public void reset() {
+    consentInformation.reset();
   }
 }
