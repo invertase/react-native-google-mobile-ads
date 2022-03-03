@@ -1,3 +1,19 @@
+## [5.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.2.0...v5.0.0) (2022-03-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **consent:** migrate to UMP SDK (#82)
+
+### Features
+
+* **consent:** migrate to UMP SDK ([#82](https://github.com/invertase/react-native-google-mobile-ads/issues/82)) ([fa88240](https://github.com/invertase/react-native-google-mobile-ads/commit/fa88240d937499b4a570c40914f06054dfa31b89))
+
+
+### Bug Fixes
+
+* android version and app keys ([bab67ff](https://github.com/invertase/react-native-google-mobile-ads/commit/bab67ff9d4a2f7a02e4fd20b7cf311977ca9eec1))
+
 ## [4.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.1.3...v4.2.0) (2022-02-14)
 
 
