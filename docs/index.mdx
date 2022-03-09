@@ -7,7 +7,7 @@ yarn add react-native-google-mobile-ads
 
 > On Android, before releasing your app, you must select _Yes, my app contains ads_ in the Google Play Store, Policy, App content, Manage under Ads.
 
-# What does it do
+## What does it do
 
 The AdMob module allows you to display adverts to your users. All adverts are served over the Google AdMob network, meaning
 a [Google AdMob account](https://apps.admob.com) is required.
@@ -21,7 +21,7 @@ The module supports three types of Ads:
 3. Full screen [Rewarded Ads](/displaying-ads#rewarded-ads).
 4. Component based [Banner Ads](/displaying-ads#banner-ads).
 
-# Getting Started
+## Getting Started
 
 A number of steps must be taken and considered before you start serving adverts to your users:
 
@@ -33,7 +33,7 @@ A number of steps must be taken and considered before you start serving adverts 
   - [Test ads](#test-ads)
 - [Next Steps](#next-steps)
 
-## Setting up Google AdMob
+### Setting up Google AdMob
 
 Before you are able to display ads to your users, you must have a [Google AdMob account](https://apps.admob.com). Under the
 "Apps" menu item, create or choose an existing Android/iOS app. Each app platform exposes a unique account ID which needs to
@@ -69,7 +69,7 @@ npx react-native run-ios
 npx react-native run-android
 ```
 
-## Configure outbound requests
+### Configure outbound requests
 
 If the default ad settings are not correct for your app, you can provide settings that will apply to all ad requests.
 
@@ -103,7 +103,7 @@ mobileAds()
 
 To learn more about the request configuration settings, view the [`RequestConfiguration`](/reference/admob/requestconfiguration) documentation.
 
-## Initialize the Google Mobile Ads SDK
+### Initialize the Google Mobile Ads SDK
 
 Before loading ads, have your app initialize the Google Mobile Ads SDK by calling `initialize` which initializes the SDK and returns a promise once initialization is complete (or after a 30-second timeout).
 This needs to be done only once, ideally at app launch.
@@ -123,7 +123,7 @@ mobileAds()
 
 If you are using mediation, you may wish to wait until the promise is settled before loading ads, as this will ensure that all mediation adapters are initialized.
 
-## European User Consent
+### European User Consent
 
 Out of the box, AdMob does not handle any related regulations which you may need to enforce on your application.
 It is up to the developer to implement and handle this on a user-by-user basis. You must consent to EEA users
@@ -133,7 +133,7 @@ being served both personalized and non-personalized adverts before showing them.
 The AdMob module provides a `AdsConsent` helper to help developers quickly implement consent flows within their application.
 See the [European User Consent page](/european-user-consent) for full examples of how to integrate the helper into your application.
 
-## Test ads
+### Test ads
 
 Whilst developing your app with AdMob, you'll want to make sure you use test ads rather than production ads from your
 Google AdMob account - otherwise your account may be disabled!
@@ -157,7 +157,7 @@ RewardedAd.createForAdRequest(TestIds.REWARDED);
 <BannerAd unitId={TestIds.BANNER} />
 ```
 
-# Next Steps
+## Next Steps
 
 Now the basics of setting up and configuring AdMob have been explained, we can go ahead and start to display different
 adverts to our users. The AdMob module provides integration with three different types:
