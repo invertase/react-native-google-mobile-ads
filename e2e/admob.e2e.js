@@ -18,7 +18,7 @@
 describe('googleAds', function () {
   describe('setRequestConfiguration()', function () {
     it('should match text in the basic app element', async function () {
-      await expect(element(by.text('Read the docs to discover what to do next:'))).toBeVisible();
+      await expect(element(by.text('Select test to run'))).toBeVisible();
     });
 
     it('throws if config is not an object', function () {
