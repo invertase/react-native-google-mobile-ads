@@ -32,7 +32,7 @@ import { useFullScreenAd } from './useFullScreenAd';
  */
 export function useRewardedAd(
   adUnitId: string | null,
-  requestOptions?: RequestOptions,
+  requestOptions: RequestOptions = {},
 ): Omit<AdHookReturns, 'adReward'> {
   const [rewardedAd, setRewardedAd] = useState<RewardedAd | null>(null);
 
