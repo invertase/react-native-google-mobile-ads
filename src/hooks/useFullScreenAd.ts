@@ -16,8 +16,8 @@
  */
 
 import { Reducer, useCallback, useEffect, useReducer } from 'react';
-import { AdEventType } from '../AdEventType';
 
+import { AdEventType } from '../AdEventType';
 import { AppOpenAd } from '../ads/AppOpenAd';
 import { InterstitialAd } from '../ads/InterstitialAd';
 import { RewardedAd } from '../ads/RewardedAd';

@@ -40,10 +40,46 @@ export interface AdHookReturns extends AdStates {
   isShowing: boolean;
   /**
    * Start loading the advert with the provided RequestOptions.
+   * #### Example
+   *
+   * ```jsx
+   * export default function App() {
+   *   const interstitial = useInterstitialAd(TestIds.INTERSTITIAL, {
+   *     requestNonPersonalizedAdsOnly: true,
+   *   });
+   *   useEffect(() => {
+   *     interstitial.load();
+   *   }, [interstitial.load]);
+   * }
+   * ```
    */
   load: () => void;
   /**
    * Show the loaded advert to the user.
+   *
+   * #### Example
+   *
+   * ```jsx
+   * export default function App() {
+   *   const interstitial = useInterstitialAd(TestIds.INTERSTITIAL, {
+   *     requestNonPersonalizedAdsOnly: true,
+   *   });
+   *   return (
+   *     <View>
+   *       <Button
+   *         title="Navigate to next screen"
+   *         onPress={() => {
+   *           if (interstitial.isLoaded) {
+   *             interstitial.show();
+   *           } else {
+   *             navigation.navigate('NextScreen');
+   *           }
+   *         }}
+   *       />
+   *     </View>
+   *   )
+   * }
+   * ```
    *
    * @param showOptions An optional `AdShowOptions` interface.
    */

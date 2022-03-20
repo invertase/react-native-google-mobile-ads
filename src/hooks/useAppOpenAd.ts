@@ -17,8 +17,8 @@
 
 import { useState } from 'react';
 import useDeepCompareEffect from 'use-deep-compare-effect';
-import { AppOpenAd } from '../ads/AppOpenAd';
 
+import { AppOpenAd } from '../ads/AppOpenAd';
 import { AdHookReturns } from '../types/AdStates';
 import { RequestOptions } from '../types/RequestOptions';
 
@@ -27,7 +27,7 @@ import { useFullScreenAd } from './useFullScreenAd';
 /**
  * React Hook for App Open Ad.
  *
- * @param adUnitId The Ad Unit ID for the App Open Ad. You can find this on your Google Mobile Ads dashboard.
+ * @param adUnitId The Ad Unit ID for the App Open Ad. You can find this on your Google Mobile Ads dashboard. You can destroy ad instance by setting this value to null.
  * @param requestOptions Optional RequestOptions used to load the ad.
  */
 export function useAppOpenAd(
