@@ -34,6 +34,8 @@
 
 + (GADAdSize)stringToAdSize:(NSString *)value;
 
++ (BOOL)isAdManagerUnit:(NSString *)unitId;
+
 @end
 
 @interface RNGADInterstitial : GADInterstitialAd

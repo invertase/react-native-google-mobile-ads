@@ -38,6 +38,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.admanager.AdManagerInterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import io.invertase.googlemobileads.common.ReactNativeModule;
@@ -111,11 +112,19 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
                 }
               };
 
-          InterstitialAd.load(
+          if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(adUnitId)) {
+            AdManagerInterstitialAd.load(
               currentActivity,
               adUnitId,
               buildAdRequest(adRequestOptions),
               interstitialAdLoadCallback);
+          } else {
+            InterstitialAd.load(
+              currentActivity,
+              adUnitId,
+              buildAdRequest(adRequestOptions),
+              interstitialAdLoadCallback);
+          }
         });
   }
 

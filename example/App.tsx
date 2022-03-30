@@ -154,7 +154,7 @@ class BannerTest implements Test {
     return (
       <View ref={onMount}>
         <BannerAd
-          unitId={TestIds.BANNER}
+          unitId={TestIds.GAM_BANNER}
           size={BannerAdSize.ADAPTIVE_BANNER}
           requestOptions={{
             requestNonPersonalizedAdsOnly: true,

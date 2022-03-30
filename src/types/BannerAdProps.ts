@@ -44,7 +44,16 @@ export type BannerAdProps = {
    *
    * Inventory must be available for the banner size specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  size: BannerAdSize;
+  size?: BannerAdSize;
+
+  /**
+   * **This property is only available with Google Ad Manager ad unit. For AdMob, use `size` property.**
+   *
+   * The available sizes of the banner. Can be a array of predefined sizes via `BannerAdSize` or custom dimensions, e.g. `300x200`.
+   *
+   * Inventory must be available for the banner sizes specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
+   */
+  sizes?: BannerAdSize[];
 
   /**
    * The request options for this banner.
@@ -54,7 +63,7 @@ export type BannerAdProps = {
   /**
    * When an ad has finished loading.
    */
-  onAdLoaded?: () => void;
+  onAdLoaded?: (dimensions: { width: number; height: number }) => void;
 
   /**
    * When an ad has failed to load. Callback contains an Error.

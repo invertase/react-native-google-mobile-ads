@@ -22,6 +22,8 @@ export const TestIds = {
   BANNER: '',
   INTERSTITIAL: '',
   REWARDED: '',
+  GAM_BANNER: '/6499/example/banner',
+  GAM_INTERSTITIAL: '/6499/example/interstitial',
   ...Platform.select({
     android: {
       APP_OPEN: 'ca-app-pub-3940256099942544/3419835294',

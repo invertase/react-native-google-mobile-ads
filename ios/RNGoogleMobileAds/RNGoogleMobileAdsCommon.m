@@ -202,4 +202,11 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
   }
 }
 
++ (BOOL)isAdManagerUnit:(NSString *)unitId {
+    if (unitId == nil) {
+        return NO;
+    }
+    return [unitId hasPrefix:@"/"];
+}
+
 @end

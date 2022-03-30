@@ -20,6 +20,7 @@ package io.invertase.googlemobileads;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.common.MapBuilder;
@@ -33,7 +34,10 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.BaseAdView;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.admanager.AdManagerAdView;
+
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -48,6 +52,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private Boolean requested = false;
   private AdRequest request;
   private AdSize size;
+  private AdSize[] sizes;
   private String unitId;
 
   @Nonnull
@@ -59,22 +64,26 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @Nonnull
   @Override
   public ReactViewGroup createViewInstance(@Nonnull ThemedReactContext themedReactContext) {
-    ReactViewGroup viewGroup = new ReactViewGroup(themedReactContext);
-    AdView adView = new AdView(themedReactContext);
-    viewGroup.addView(adView);
-    setAdListener(viewGroup);
-    return viewGroup;
+    return new ReactViewGroup(themedReactContext);
   }
 
-  private AdView getAdView(ReactViewGroup viewGroup) {
-    return (AdView) viewGroup.getChildAt(0);
+  private BaseAdView getAdView(ReactViewGroup viewGroup) {
+    return (BaseAdView) viewGroup.getChildAt(0);
   }
 
-  private void resetAdView(ReactViewGroup reactViewGroup) {
-    AdView oldAdView = getAdView(reactViewGroup);
-    AdView newAdView = new AdView(reactViewGroup.getContext());
-    reactViewGroup.removeViewAt(0);
-    if (oldAdView != null) oldAdView.destroy();
+  private void initAdView(ReactViewGroup reactViewGroup) {
+    if (requested) {
+      BaseAdView oldAdView = getAdView(reactViewGroup);
+      if (reactViewGroup.getChildAt(0) != null)
+        reactViewGroup.removeViewAt(0);
+      if (oldAdView != null) oldAdView.destroy();
+    }
+    BaseAdView newAdView;
+    if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(unitId)) {
+      newAdView = new AdManagerAdView(reactViewGroup.getContext());
+    } else {
+      newAdView = new AdView(reactViewGroup.getContext());
+    }
     reactViewGroup.addView(newAdView);
     setAdListener(reactViewGroup);
   }
@@ -100,7 +109,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @ReactProp(name = "size")
   public void setSize(ReactViewGroup reactViewGroup, String value) {
+    if (value == null) {
+      size = null;
+      return;
+    }
     size = ReactNativeGoogleMobileAdsCommon.getAdSize(value, reactViewGroup);
+    sizes = null;
 
     WritableMap payload = Arguments.createMap();
 
@@ -116,8 +130,26 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     requestAd(reactViewGroup);
   }
 
+  @ReactProp(name = "sizes")
+  public void setSizes(ReactViewGroup reactViewGroup, ReadableArray value) {
+    if (value == null) {
+      sizes = null;
+      return;
+    }
+    AdSize[] adSizes = new AdSize[value.size()];
+
+    for (int i = 0; i < value.size(); i++) {
+      String adSizeString = value.getString(i);
+      adSizes[i] = ReactNativeGoogleMobileAdsCommon.getAdSize(adSizeString, reactViewGroup);
+    }
+    sizes = adSizes;
+    size = null;
+
+    requestAd(reactViewGroup);
+  }
+
   private void setAdListener(ReactViewGroup reactViewGroup) {
-    final AdView adView = getAdView(reactViewGroup);
+    final BaseAdView adView = getAdView(reactViewGroup);
 
     adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
     adView.setAdListener(
@@ -178,17 +210,29 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   }
 
   private void requestAd(ReactViewGroup reactViewGroup) {
-    if (size == null || unitId == null || request == null) {
+    if ((size == null && sizes == null) || unitId == null || request == null) {
       return;
     }
 
-    if (requested) {
-      resetAdView(reactViewGroup);
+    initAdView(reactViewGroup);
+
+    BaseAdView adView = getAdView(reactViewGroup);
+    adView.setAdUnitId(unitId);
+
+    if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(unitId)) {
+      if (sizes != null) {
+        ((AdManagerAdView) adView).setAdSizes(sizes);
+      } else {
+        return;
+      }
+    } else {
+      if (size != null) {
+        adView.setAdSize(size);
+      } else {
+        return;
+      }
     }
 
-    AdView adView = getAdView(reactViewGroup);
-    adView.setAdUnitId(unitId);
-    adView.setAdSize(size);
     adView.loadAd(request);
 
     requested = true;

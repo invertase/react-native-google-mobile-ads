@@ -40,7 +40,7 @@ type NativeEvent =
 const initialState = [0, 0];
 const sizeRegex = /([0-9]+)x([0-9]+)/;
 
-export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdProps) {
+export function BannerAd({ unitId, size, sizes, requestOptions, ...props }: BannerAdProps) {
   const [dimensions, setDimensions] = useState(initialState);
 
   useEffect(() => {
@@ -50,16 +50,24 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
   }, [unitId]);
 
   useEffect(() => {
-    if (!(size in BannerAdSize) && !sizeRegex.test(size)) {
+    if (!size && !sizes) {
+      throw new Error("BannerAd: Either 'size' or 'sizes' property is required.");
+    }
+    if (size && !(size in BannerAdSize) && !sizeRegex.test(size)) {
       throw new Error("BannerAd: 'size' expected a valid BannerAdSize or custom size string.");
     }
-  }, [size]);
-
-  useEffect(() => {
-    if (!(size in BannerAdSize) && !sizeRegex.test(size)) {
-      throw new Error("BannerAd: 'size' expected a valid BannerAdSize or custom size string.");
+    if (sizes && !sizes.every(size => size in BannerAdSize || sizeRegex.test(size))) {
+      throw new Error(
+        "BannerAd: 'sizes' expected an array of valid BannerAdSize or custom size strings.",
+      );
     }
-  }, [size]);
+    if (size && unitId.startsWith('/')) {
+      throw new Error("BannerAd: 'size' prop is only available with Google AdMob ad unit.");
+    }
+    if (sizes && !unitId.startsWith('/')) {
+      throw new Error("BannerAd: 'sizes' prop is only available with Google Ad Manager ad unit.");
+    }
+  }, [size, sizes]);
 
   const parsedRequestOptions = JSON.stringify(requestOptions);
 
@@ -82,6 +90,12 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
       let eventHandler;
       if (type === 'onAdFailedToLoad') {
         const eventPayload = NativeError.fromEvent(nativeEvent, 'googleMobileAds');
+        if ((eventHandler = props[type])) eventHandler(eventPayload);
+      } else if (type === 'onAdLoaded') {
+        const eventPayload = {
+          width: nativeEvent.width,
+          height: nativeEvent.height,
+        };
         if ((eventHandler = props[type])) eventHandler(eventPayload);
       } else if ((eventHandler = props[type])) eventHandler();
     }
@@ -106,6 +120,7 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
   return (
     <GoogleMobileAdsBannerView
       size={size}
+      sizes={sizes}
       style={style}
       unitId={unitId}
       request={validateAdRequestOptions(requestOptions)}
@@ -116,6 +131,7 @@ export function BannerAd({ unitId, size, requestOptions, ...props }: BannerAdPro
 
 const GoogleMobileAdsBannerView: HostComponent<{
   size: BannerAdProps['size'];
+  sizes: BannerAdProps['sizes'];
   style: {
     width: number;
     height: number;

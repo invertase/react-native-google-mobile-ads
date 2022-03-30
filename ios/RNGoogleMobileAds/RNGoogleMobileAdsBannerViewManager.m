@@ -27,6 +27,7 @@
 @property(nonatomic, assign) BOOL requested;
 
 @property(nonatomic, copy) NSString *size;
+@property(nonatomic, copy) NSArray *sizes;
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
 
@@ -42,7 +43,13 @@
   if (_requested) {
     [_banner removeFromSuperview];
   }
-  _banner = [[GADBannerView alloc] initWithAdSize:adSize];
+  if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
+    _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
+    
+    ((GAMBannerView *)_banner).validAdSizes = _sizes;
+  } else {
+    _banner = [[GADBannerView alloc] initWithAdSize:adSize];
+  }
   _banner.rootViewController = [UIApplication sharedApplication].delegate.window.rootViewController;
   _banner.delegate = self;
 }
@@ -57,6 +64,20 @@
   [self requestAd];
 }
 
+- (void)setSizes:(NSArray *)sizes {
+  __block NSMutableArray *adSizes = [[NSMutableArray alloc] initWithCapacity:sizes.count];
+  [sizes enumerateObjectsUsingBlock:^(id jsonValue, NSUInteger idx, __unused BOOL *stop) {
+    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue];
+    if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
+      RCTLogWarn(@"Invalid adSize %@", jsonValue);
+    } else {
+      [adSizes addObject:NSValueFromGADAdSize(adSize)];
+    }
+  }];
+  _sizes = adSizes;
+  [self requestAd];
+}
+
 - (void)setRequest:(NSDictionary *)request {
   _request = request;
   [self requestAd];
@@ -67,12 +88,12 @@
   return;  // prevent crash on 32bit
 #endif
 
-  if (_unitId == nil || _size == nil || _request == nil) {
+  if (_unitId == nil || (_size == nil && _sizes == nil) || _request == nil) {
     [self setRequested:NO];
     return;
   }
 
-  [self initBanner:[RNGoogleMobileAdsCommon stringToAdSize:_size]];
+  [self initBanner:_size ? [RNGoogleMobileAdsCommon stringToAdSize:_size] : GADAdSizeFromNSValue(_sizes[0])];
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];
@@ -132,6 +153,8 @@
 RCT_EXPORT_MODULE(RNGoogleMobileAdsBannerView);
 
 RCT_EXPORT_VIEW_PROPERTY(size, NSString);
+
+RCT_EXPORT_VIEW_PROPERTY(sizes, NSArray);
 
 RCT_EXPORT_VIEW_PROPERTY(unitId, NSString);
 
