@@ -44,7 +44,7 @@ export type BannerAdProps = {
    *
    * Inventory must be available for the banner size specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  size?: BannerAdSize;
+  size?: BannerAdSize | string;
 
   /**
    * **This property is only available with Google Ad Manager ad unit. For AdMob, use `size` property.**
@@ -53,7 +53,7 @@ export type BannerAdProps = {
    *
    * Inventory must be available for the banner sizes specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  sizes?: BannerAdSize[];
+  sizes?: BannerAdSize[] | string[];
 
   /**
    * The request options for this banner.
