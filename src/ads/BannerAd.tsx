@@ -56,16 +56,13 @@ export function BannerAd({ unitId, size, sizes, requestOptions, ...props }: Bann
     if (size && !(size in BannerAdSize) && !sizeRegex.test(size)) {
       throw new Error("BannerAd: 'size' expected a valid BannerAdSize or custom size string.");
     }
-    if (sizes && !sizes.every(size => size in BannerAdSize || sizeRegex.test(size))) {
+    if (
+      sizes &&
+      (sizes.length === 0 || !sizes.every(size => size in BannerAdSize || sizeRegex.test(size)))
+    ) {
       throw new Error(
         "BannerAd: 'sizes' expected an array of valid BannerAdSize or custom size strings.",
       );
-    }
-    if (size && unitId.startsWith('/')) {
-      throw new Error("BannerAd: 'size' prop is only available with Google AdMob ad unit.");
-    }
-    if (sizes && !unitId.startsWith('/')) {
-      throw new Error("BannerAd: 'sizes' prop is only available with Google Ad Manager ad unit.");
     }
   }, [size, sizes]);
 

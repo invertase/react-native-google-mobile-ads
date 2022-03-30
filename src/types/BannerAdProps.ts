@@ -1,6 +1,59 @@
 import { BannerAdSize } from '../BannerAdSize';
 import { RequestOptions } from './RequestOptions';
 
+export interface BaseBannerProps {
+  /**
+   * The Google Mobile Ads unit ID for the banner.
+   */
+  unitId: string;
+
+  /**
+   * The size of the banner. Can be a predefined size via `BannerAdSize` or custom dimensions, e.g. `300x200`.
+   *
+   * Inventory must be available for the banner size specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
+   */
+  size: BannerAdSize | string;
+
+  /**
+   * **This property is only available with Google Ad Manager ad unit. For AdMob, use `size` property.**
+   *
+   * The available sizes of the banner. Can be a array of predefined sizes via `BannerAdSize` or custom dimensions, e.g. `300x200`.
+   *
+   * Inventory must be available for the banner sizes specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
+   */
+  sizes: BannerAdSize[] | string[];
+
+  /**
+   * The request options for this banner.
+   */
+  requestOptions?: RequestOptions;
+
+  /**
+   * When an ad has finished loading.
+   */
+  onAdLoaded?: (dimensions: { width: number; height: number }) => void;
+
+  /**
+   * When an ad has failed to load. Callback contains an Error.
+   */
+  onAdFailedToLoad?: (error: Error) => void;
+
+  /**
+   * The ad is now visible to the user.
+   */
+  onAdOpened?: () => void;
+
+  /**
+   * Called when the user is about to return to the app after tapping on an ad.
+   */
+  onAdClosed?: () => void;
+}
+
+type RequireOnlyOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> &
+  {
+    [K in Keys]-?: Required<Pick<T, K>> & Partial<Record<Exclude<Keys, K>, undefined>>;
+  }[Keys];
+
 /**
  * An interface for a Banner advert component.
  *
@@ -33,50 +86,4 @@ import { RequestOptions } from './RequestOptions';
  * }
  * ```
  */
-export type BannerAdProps = {
-  /**
-   * The Google Mobile Ads unit ID for the banner.
-   */
-  unitId: string;
-
-  /**
-   * The size of the banner. Can be a predefined size via `BannerAdSize` or custom dimensions, e.g. `300x200`.
-   *
-   * Inventory must be available for the banner size specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
-   */
-  size?: BannerAdSize | string;
-
-  /**
-   * **This property is only available with Google Ad Manager ad unit. For AdMob, use `size` property.**
-   *
-   * The available sizes of the banner. Can be a array of predefined sizes via `BannerAdSize` or custom dimensions, e.g. `300x200`.
-   *
-   * Inventory must be available for the banner sizes specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
-   */
-  sizes?: BannerAdSize[] | string[];
-
-  /**
-   * The request options for this banner.
-   */
-  requestOptions?: RequestOptions;
-
-  /**
-   * When an ad has finished loading.
-   */
-  onAdLoaded?: (dimensions: { width: number; height: number }) => void;
-
-  /**
-   * When an ad has failed to load. Callback contains an Error.
-   */
-  onAdFailedToLoad?: (error: Error) => void;
-
-  /**
-   * The ad is now visible to the user.
-   */
-  onAdOpened?: () => void;
-
-  /**
-   * Called when the user is about to return to the app after tapping on an ad.
-   */
-  onAdClosed?: () => void;
-};
+export type BannerAdProps = RequireOnlyOne<BaseBannerProps, 'size' | 'sizes'>;
