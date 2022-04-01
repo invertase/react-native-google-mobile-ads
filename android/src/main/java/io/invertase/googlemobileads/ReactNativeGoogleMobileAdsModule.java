@@ -117,7 +117,7 @@ public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
   @ReactMethod
   public void initialize(Promise promise) {
     MobileAds.initialize(
-        getContext(),
+        getApplicationContext(),
         new OnInitializationCompleteListener() {
           @Override
           public void onInitializationComplete(InitializationStatus initializationStatus) {
