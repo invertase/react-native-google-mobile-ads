@@ -1,3 +1,10 @@
+### [5.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v5.0.0...v5.0.1) (2022-04-01)
+
+
+### Bug Fixes
+
+* **android:** use ApplicationContext so mediation adapter init works ([d340943](https://github.com/invertase/react-native-google-mobile-ads/commit/d340943dc8cc2d3875f46db193f706fe3705c1fd))
+
 ## [5.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v4.2.0...v5.0.0) (2022-03-03)
 
 
