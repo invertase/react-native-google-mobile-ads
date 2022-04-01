@@ -45,7 +45,7 @@
   }
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
-    
+
     ((GAMBannerView *)_banner).validAdSizes = _sizes;
   } else {
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
@@ -93,7 +93,8 @@
     return;
   }
 
-  [self initBanner:_size ? [RNGoogleMobileAdsCommon stringToAdSize:_size] : GADAdSizeFromNSValue(_sizes[0])];
+  [self initBanner:_size ? [RNGoogleMobileAdsCommon stringToAdSize:_size]
+                         : GADAdSizeFromNSValue(_sizes[0])];
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];

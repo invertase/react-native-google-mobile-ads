@@ -114,16 +114,16 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
 
           if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(adUnitId)) {
             AdManagerInterstitialAd.load(
-              currentActivity,
-              adUnitId,
-              buildAdRequest(adRequestOptions),
-              interstitialAdLoadCallback);
+                currentActivity,
+                adUnitId,
+                buildAdRequest(adRequestOptions),
+                interstitialAdLoadCallback);
           } else {
             InterstitialAd.load(
-              currentActivity,
-              adUnitId,
-              buildAdRequest(adRequestOptions),
-              interstitialAdLoadCallback);
+                currentActivity,
+                adUnitId,
+                buildAdRequest(adRequestOptions),
+                interstitialAdLoadCallback);
           }
         });
   }

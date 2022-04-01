@@ -69,11 +69,11 @@ RCT_EXPORT_METHOD(interstitialLoad
                   : (NSString *)adUnitId
                   : (NSDictionary *)adRequestOptions) {
   GAMRequest *request = [RNGoogleMobileAdsCommon buildAdRequest:adRequestOptions];
-  
-  void (^completionhandler)(GADInterstitialAd*, NSError*) = ^(GADInterstitialAd *ad, NSError *error) {
+
+  void (^completionhandler)(GADInterstitialAd *, NSError *) = ^(GADInterstitialAd *ad,
+                                                                NSError *error) {
     if (error) {
-      NSDictionary *codeAndMessage =
-      [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
+      NSDictionary *codeAndMessage = [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
       [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL
                                  requestId:requestId
                                       type:GOOGLE_MOBILE_ADS_EVENT_ERROR
@@ -84,7 +84,7 @@ RCT_EXPORT_METHOD(interstitialLoad
     }
     GADInterstitialAd *interstitial = ad;
     RNGoogleMobileAdsFullScreenContentDelegate *fullScreenContentDelegate =
-    [[RNGoogleMobileAdsFullScreenContentDelegate alloc] init];
+        [[RNGoogleMobileAdsFullScreenContentDelegate alloc] init];
     fullScreenContentDelegate.sendAdEvent = GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL;
     fullScreenContentDelegate.requestId = requestId;
     fullScreenContentDelegate.adUnitId = ad.adUnitID;
@@ -98,7 +98,7 @@ RCT_EXPORT_METHOD(interstitialLoad
                                    error:nil
                                     data:nil];
   };
-  
+
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:adUnitId]) {
     [GAMInterstitialAd loadWithAdManagerAdUnitID:adUnitId
                                          request:request
@@ -118,15 +118,15 @@ RCT_EXPORT_METHOD(interstitialShow
   GADInterstitialAd *interstitial = interstitialMap[requestId];
   if (interstitial) {
     [interstitial
-     presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
+        presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
     resolve([NSNull null]);
   } else {
     [RNSharedUtils
-     rejectPromiseWithUserInfo:reject
-     userInfo:[@{
-      @"code" : @"not-ready",
-      @"message" : @"Interstitial ad attempted to show but was not ready.",
-     } mutableCopy]];
+        rejectPromiseWithUserInfo:reject
+                         userInfo:[@{
+                           @"code" : @"not-ready",
+                           @"message" : @"Interstitial ad attempted to show but was not ready.",
+                         } mutableCopy]];
   }
 }
 

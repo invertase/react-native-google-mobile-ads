@@ -37,7 +37,6 @@ import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.BaseAdView;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.admanager.AdManagerAdView;
-
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -74,8 +73,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private void initAdView(ReactViewGroup reactViewGroup) {
     if (requested) {
       BaseAdView oldAdView = getAdView(reactViewGroup);
-      if (reactViewGroup.getChildAt(0) != null)
-        reactViewGroup.removeViewAt(0);
+      if (reactViewGroup.getChildAt(0) != null) reactViewGroup.removeViewAt(0);
       if (oldAdView != null) oldAdView.destroy();
     }
     BaseAdView newAdView;
