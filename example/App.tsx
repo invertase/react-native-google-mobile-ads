@@ -41,7 +41,7 @@ class AppOpenTest implements Test {
     this.adListener = appOpen.onAdEvent((type, error) => {
       console.log(`${Platform.OS} app open ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} rewarded error: ${error}`);
+        console.log(`${Platform.OS} app open error: ${error.message}`);
       }
       if (type === AdEventType.LOADED) {
         this.adLoaded = true;
@@ -99,7 +99,7 @@ class InterstitialTest implements Test {
     this.adListener = interstitial.onAdEvent((type, error) => {
       console.log(`${Platform.OS} interstitial ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} rewarded error: ${error}`);
+        console.log(`${Platform.OS} interstitial error: ${error.message}`);
       }
       if (type === AdEventType.LOADED) {
         this.adLoaded = true;
@@ -190,7 +190,7 @@ class RewardedTest implements Test {
     this.adListener = rewarded.onAdEvent((type, error, data) => {
       console.log(`${Platform.OS} rewarded ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} rewarded error: ${error}`);
+        console.log(`${Platform.OS} rewarded error: ${error.message}`);
       }
       if (type === RewardedAdEventType.LOADED) {
         console.log(`${Platform.OS} reward: ${JSON.stringify(data)})`);
@@ -286,13 +286,26 @@ class AdConsentTest implements Test {
 }
 
 const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
-  const {load, show, isLoaded} = useInterstitialAd(TestIds.INTERSTITIAL);
+  const {load, show, error, isLoaded, isClicked, isClosed, isOpened} =
+    useInterstitialAd(TestIds.INTERSTITIAL);
   useEffect(() => {
     load();
   }, [load]);
+  useEffect(() => {
+    if (error !== undefined) {
+      console.log(`${Platform.OS} interstitial hook error: ${error.message}`);
+    }
+  }, [error]);
+  useEffect(() => {
+    console.log(
+      `${Platform.OS} interstitial hook state - loaded/opened/clicked/closed: ${isLoaded}/${isOpened}/${isClicked}/${isClosed}`,
+    );
+  }, [isLoaded, isOpened, isClicked, isClosed]);
+
   return (
     <View style={styles.testSpacing} ref={ref}>
       <Text>Loaded? {isLoaded ? 'true' : 'false'}</Text>
+      <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Interstitial"
         disabled={!isLoaded}
@@ -330,13 +343,40 @@ class InterstitialHookTest implements Test {
 }
 
 const RewardedHookComponent = React.forwardRef<View>((_, ref) => {
-  const {load, show, isLoaded} = useRewardedAd(TestIds.REWARDED);
+  const {
+    load,
+    show,
+    isLoaded,
+    error,
+    reward,
+    isEarnedReward,
+    isOpened,
+    isClosed,
+    isClicked,
+  } = useRewardedAd(TestIds.REWARDED);
   useEffect(() => {
     load();
   }, [load]);
+  useEffect(() => {
+    if (error !== undefined) {
+      console.log(`${Platform.OS} rewarded hook error: ${error.message}`);
+    }
+  }, [error]);
+  useEffect(() => {
+    if (reward !== undefined) {
+      console.log(`${Platform.OS} hook reward: ${JSON.stringify(reward)}`);
+    }
+  }, [reward]);
+  useEffect(() => {
+    console.log(
+      `${Platform.OS} rewarded hook state - loaded/earned/opened/clicked/closed: ${isLoaded}/${isEarnedReward}/${isOpened}/${isClicked}/${isClosed}`,
+    );
+  }, [isLoaded, isEarnedReward, isOpened, isClicked, isClosed]);
+
   return (
     <View style={styles.testSpacing} ref={ref}>
       <Text>Loaded? {isLoaded ? 'true' : 'false'}</Text>
+      <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Rewarded"
         disabled={!isLoaded}
@@ -374,13 +414,26 @@ class RewardedHookTest implements Test {
 }
 
 const AppOpenHookComponent = React.forwardRef<View>((_, ref) => {
-  const {load, show, isLoaded} = useAppOpenAd(TestIds.APP_OPEN);
+  const {load, show, error, isLoaded, isClicked, isClosed, isOpened} =
+    useAppOpenAd(TestIds.APP_OPEN);
   useEffect(() => {
     load();
   }, [load]);
+  useEffect(() => {
+    if (error !== undefined) {
+      console.log(`${Platform.OS} app open hook error: ${error.message}`);
+    }
+  }, [error]);
+  useEffect(() => {
+    console.log(
+      `${Platform.OS} app open hook state - loaded/opened/clicked/closed: ${isLoaded}/${isOpened}/${isClicked}/${isClosed}`,
+    );
+  }, [isLoaded, isOpened, isClicked, isClosed]);
+
   return (
     <View style={styles.testSpacing} ref={ref}>
       <Text>Loaded? {isLoaded ? 'true' : 'false'}</Text>
+      <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show App Open"
         disabled={!isLoaded}
