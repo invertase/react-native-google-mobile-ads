@@ -1,6 +1,7 @@
 import React, {useEffect} from 'react';
 import {
   Button,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -20,17 +21,30 @@ import {
   BannerAdSize,
   RewardedAd,
   useInterstitialAd,
+  AdEventType,
+  RewardedAdEventType,
 } from 'react-native-google-mobile-ads';
 
-const appOpenAdUnitId = TestIds.APP_OPEN;
-
-const appOpen = AppOpenAd.createForAdRequest(appOpenAdUnitId, {
+const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
   requestNonPersonalizedAdsOnly: true,
 });
 
 class AppOpenTest implements Test {
+  adListener = undefined;
+  adLoaded = false;
+
   constructor() {
     appOpen.load();
+    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
+    this.adListener = appOpen.onAdEvent((type, error) => {
+      console.log(`${Platform.OS} app open ad event: ${type}`);
+      if (type === AdEventType.ERROR) {
+        console.log(`${Platform.OS} rewarded error: ${error}`);
+      }
+      if (type === AdEventType.LOADED) {
+        this.adLoaded = true;
+      }
+    });
   }
 
   getPath(): string {
@@ -62,21 +76,33 @@ class AppOpenTest implements Test {
       results.errors.push('Received unexpected error...');
     } finally {
       complete(results);
+      this.adListener();
     }
   }
 }
 
-const interstitialAdUnitId = TestIds.INTERSTITIAL;
-
-const interstitial = InterstitialAd.createForAdRequest(interstitialAdUnitId, {
+const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
   // requestNonPersonalizedAdsOnly: true,
   // keywords: ['fashion', 'clothing'],
 });
 
 // To implement a test you must make a new object implementing a specific interface.
 class InterstitialTest implements Test {
+  adListener = undefined;
+  adLoaded = false;
+
   constructor() {
     interstitial.load();
+    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
+    this.adListener = interstitial.onAdEvent((type, error) => {
+      console.log(`${Platform.OS} interstitial ad event: ${type}`);
+      if (type === AdEventType.ERROR) {
+        console.log(`${Platform.OS} rewarded error: ${error}`);
+      }
+      if (type === AdEventType.LOADED) {
+        this.adLoaded = true;
+      }
+    });
   }
 
   getPath(): string {
@@ -108,11 +134,10 @@ class InterstitialTest implements Test {
       results.errors.push('Received unexpected error...');
     } finally {
       complete(results);
+      this.adListener();
     }
   }
 }
-
-const bannerAdUnitId = TestIds.BANNER;
 
 class BannerTest implements Test {
   getPath(): string {
@@ -127,7 +152,7 @@ class BannerTest implements Test {
     return (
       <View ref={onMount}>
         <BannerAd
-          unitId={bannerAdUnitId}
+          unitId={TestIds.BANNER}
           size={BannerAdSize.ADAPTIVE_BANNER}
           requestOptions={{
             requestNonPersonalizedAdsOnly: true,
@@ -149,15 +174,27 @@ class BannerTest implements Test {
   }
 }
 
-const rewardedAdUnitId = TestIds.REWARDED;
-
-const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, {
+const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
   requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 class RewardedTest implements Test {
+  adListener = undefined;
+  adLoaded = false;
+
   constructor() {
     rewarded.load();
+    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
+    this.adListener = rewarded.onAdEvent((type, error, data) => {
+      console.log(`${Platform.OS} rewarded ad event: ${type}`);
+      if (type === AdEventType.ERROR) {
+        console.log(`${Platform.OS} rewarded error: ${error}`);
+      }
+      if (type === RewardedAdEventType.LOADED) {
+        console.log(`${Platform.OS} reward: ${JSON.stringify(data)})`);
+        this.adLoaded = true;
+      }
+    });
   }
 
   getPath(): string {
@@ -189,6 +226,7 @@ class RewardedTest implements Test {
       results.errors.push('Received unexpected error...');
     } finally {
       complete(results);
+      this.adListener();
     }
   }
 }
