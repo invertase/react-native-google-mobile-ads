@@ -38,7 +38,6 @@ export function useRewardedAd(
 
   useDeepCompareEffect(() => {
     setRewardedAd(() => {
-      //prevAd?.destroy();
       return adUnitId ? RewardedAd.createForAdRequest(adUnitId, requestOptions) : null;
     });
   }, [adUnitId, requestOptions]);
