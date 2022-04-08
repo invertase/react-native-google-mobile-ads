@@ -386,7 +386,7 @@ PODS:
     - React-jsi (= 0.67.3)
     - React-logger (= 0.67.3)
     - React-perflogger (= 0.67.3)
-  - RNGoogleMobileAds (5.0.0):
+  - RNGoogleMobileAds (4.2.0):
     - Google-Mobile-Ads-SDK (= 8.13.0)
     - GoogleUserMessagingPlatform (= 2.0.0)
     - React-Core
@@ -591,7 +591,7 @@ SPEC CHECKSUMS:
   React-RCTVibration: d0361f15ea978958fab7ffb6960f475b5063d83f
   React-runtimeexecutor: af1946623656f9c5fd64ca6f36f3863516193446
   ReactCommon: 650e33cde4fb7d36781cd3143f5276da0abb2f96
-  RNGoogleMobileAds: 3b35145daceeb09105dcafa4778d65678486a53a
+  RNGoogleMobileAds: ae52d9f8048e7a5f5139b9440fec5a839175b9a5
   Yoga: 90dcd029e45d8a7c1ff059e8b3c6612ff409061a
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 

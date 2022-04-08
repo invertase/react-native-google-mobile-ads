@@ -245,15 +245,17 @@ class AdConsentTest implements Test {
   }
 }
 
-const HookComponent = React.forwardRef<View>((_, ref) => {
-  const {load, show} = useInterstitialAd(TestIds.INTERSTITIAL);
+const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
+  const {load, show, isLoaded} = useInterstitialAd(TestIds.INTERSTITIAL);
   useEffect(() => {
     load();
   }, [load]);
   return (
     <View style={styles.testSpacing} ref={ref}>
+      <Text>Loaded? {isLoaded ? 'true' : 'false'}</Text>
       <Button
         title="Show Interstitial"
+        disabled={!isLoaded}
         onPress={() => {
           show();
         }}
@@ -262,9 +264,9 @@ const HookComponent = React.forwardRef<View>((_, ref) => {
   );
 });
 
-class HookTest implements Test {
+class InterstitialHookTest implements Test {
   getPath(): string {
-    return 'Hook';
+    return 'InterstitialHook';
   }
 
   getTestType(): TestType {
@@ -272,7 +274,7 @@ class HookTest implements Test {
   }
 
   render(onMount: (component: any) => void): React.ReactNode {
-    return <HookComponent ref={onMount} />;
+    return <InterstitialHookComponent ref={onMount} />;
   }
 
   execute(component: any, complete: (result: TestResult) => void): void {
@@ -293,7 +295,7 @@ TestRegistry.registerTest(new AppOpenTest());
 TestRegistry.registerTest(new InterstitialTest());
 TestRegistry.registerTest(new RewardedTest());
 TestRegistry.registerTest(new AdConsentTest());
-TestRegistry.registerTest(new HookTest());
+TestRegistry.registerTest(new InterstitialHookTest());
 
 const App = () => {
   return (
