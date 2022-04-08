@@ -1,0 +1,99 @@
+# Hooks
+
+The AdMob package provides hooks to help you to display ads in a functional component with tiny code. The supported ad formats are full-screen ads: App open, Interstitial & Rewarded.
+
+## Load an ad
+
+You can create a new ad by adding a corresponding ad type's hook to your component.
+
+The first argument of the hook is the "Ad Unit ID".
+For testing, we can use a Test ID, however for production the ID from the
+Google AdMob dashboard under "Ad units" should be used:
+
+```tsx {4-8}
+import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+
+export default function App() {
+  const interstitialAd = useInterstitialAd(TestIds.Interstitial, {
+    requestNonPersonalizedAdsOnly: true,
+  });
+
+  return <View>{/* ... */}</View>;
+}
+```
+
+> The `adUnitid` parameter can also be used to manage creation and destruction of an ad instance.
+> If `adUnitid` is set or changed, new ad instance will be created and previous ad instance will be destroyed if exists.
+> If `adUnitid` is set to `null`, no ad instance will be created and previous ad instance will be destroyed if exists.
+
+The second argument is an additional optional request options object to be sent whilst loading an advert, such as keywords & location.
+Setting additional request options helps AdMob choose better tailored ads from the network. View the [`RequestOptions`](/reference/admob/requestoptions)
+documentation to view the full range of options available.
+
+## Show the ad
+
+The hook returns several states and functions to control ad.
+
+```tsx
+import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+
+export default function App({ navigation }) {
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(TestIds.Interstitial, {
+    requestNonPersonalizedAdsOnly: true,
+  });
+
+  useEffect(() => {
+    // Start loading the interstitial straight away
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (isClosed) {
+      // Action after the ad is closed
+      navigation.navigate('NextScreen');
+    }
+  }, [isClosed, navigation]);
+
+  return (
+    <View>
+      <Button
+        title="Navigate to next screen"
+        onPress={() => {
+          if (isLoaded) {
+            show();
+          } else {
+            // No advert ready to show yet
+            navigation.navigate('NextScreen');
+          }
+        }}
+      />
+    </View>
+  );
+}
+```
+
+The code above immediately starts to load a new advert from the network (via `load()`).
+When user presses button, it checks if the ad is loaded via `isLoaded` value,
+then the `show` function is called and the advert is shown over-the-top of your application.
+Otherwise, if the ad is not loaded, the `navigation.navigate` method is called to navigate to the next screen without showing the ad.
+After the ad is closed, the `isClosed` value is set to `true` and the `navigation.navigate` method is called to navigate to the next screen.
+
+If needed, you can reuse the existing hook to load more adverts and show them when required. The states are initialized when the `load` function is called.
+
+Return values of the hook are:
+
+| Name           | Type                               | Description                                                                                                        |
+| :------------- | :--------------------------------- | :----------------------------------------------------------------------------------------------------------------- |
+| isLoaded       | boolean                            | Whether the ad is loaded and ready to to be shown to the user.                                                     |
+| isOpened       | boolean                            | Whether the ad is opened. The value is remained `true` even after the ad is closed unless **new ad is requested**. |
+| isClosed       | boolean                            | Whether your ad is dismissed.                                                                                      |
+| isShowing      | boolean                            | Whether your ad is showing. The value is equal with `isOpened && !isClosed`.                                       |
+| error          | Error \| undefined                 | `Error` object throwed during ad load.                                                                             |
+| reward         | [RewardedAdReward](#) \| undefined | Loaded reward item of the Rewarded Ad. Available only in RewardedAd.                                               |
+| isEarnedReward | boolean                            | Whether the user earned the reward by Rewarded Ad.                                                                 |
+| load           | Function                           | Start loading the advert with the provided RequestOptions.                                                         |
+| show           | Function                           | Show the loaded advert to the user.                                                                                |
+
+> Note that `isOpened` value remains `true` even after the ad is closed.
+> The value changes to `false` when ad is initialized via calling `load()`.
+> To determine whether the ad is currently showing, use `isShowing` value.
