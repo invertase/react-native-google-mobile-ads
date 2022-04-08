@@ -4,8 +4,9 @@
   "sidebar": [
     ["Installation", "/"],
     ["Displaying Ads", "/displaying-ads"],
+    ["Displaying Ads via Hook", "/displaying-ads-hook"],
     ["European User Consent", "/european-user-consent"],
     ["Common Reasons For Ads Not Showing", "/common-reasons-for-ads-not-showing"],
     ["Migrating to v5", "/migrating-to-v5"]
   ]
-} 
+}
