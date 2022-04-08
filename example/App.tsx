@@ -34,7 +34,7 @@ class AppOpenTest implements Test {
   }
 
   getPath(): string {
-    return 'App open';
+    return 'AppOpen';
   }
 
   getTestType(): TestType {
@@ -195,7 +195,7 @@ class RewardedTest implements Test {
 
 class AdConsentTest implements Test {
   getPath(): string {
-    return 'Consent Form';
+    return 'ConsentForm';
   }
 
   getTestType(): TestType {
