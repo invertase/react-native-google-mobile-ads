@@ -155,7 +155,7 @@ const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, {
   requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
-class RewaredTest implements Test {
+class RewardedTest implements Test {
   constructor() {
     rewarded.load();
   }
@@ -291,7 +291,7 @@ class HookTest implements Test {
 TestRegistry.registerTest(new BannerTest());
 TestRegistry.registerTest(new AppOpenTest());
 TestRegistry.registerTest(new InterstitialTest());
-TestRegistry.registerTest(new RewaredTest());
+TestRegistry.registerTest(new RewardedTest());
 TestRegistry.registerTest(new AdConsentTest());
 TestRegistry.registerTest(new HookTest());
 
