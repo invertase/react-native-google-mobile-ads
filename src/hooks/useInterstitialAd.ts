@@ -38,7 +38,6 @@ export function useInterstitialAd(
 
   useDeepCompareEffect(() => {
     setInterstitialAd(() => {
-      //prevAd?.destroy();
       return adUnitId ? InterstitialAd.createForAdRequest(adUnitId, requestOptions) : null;
     });
   }, [adUnitId, requestOptions]);
