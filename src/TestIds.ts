@@ -19,7 +19,6 @@ import { Platform } from 'react-native';
 
 export const TestIds = {
   APP_OPEN: '',
-  APP_OPEN: '',
   BANNER: '',
   INTERSTITIAL: '',
   REWARDED: '',
