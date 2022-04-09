@@ -19,11 +19,14 @@ import { Platform } from 'react-native';
 
 export const TestIds = {
   APP_OPEN: '',
+  APP_OPEN: '',
   BANNER: '',
   INTERSTITIAL: '',
   REWARDED: '',
+  GAM_APP_OPEN: '/6499/example/app-open',
   GAM_BANNER: '/6499/example/banner',
   GAM_INTERSTITIAL: '/6499/example/interstitial',
+  GAM_REWARDED: '/6499/example/rewarded',
   ...Platform.select({
     android: {
       APP_OPEN: 'ca-app-pub-3940256099942544/3419835294',
