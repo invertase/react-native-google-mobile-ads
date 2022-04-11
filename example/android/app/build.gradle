@@ -136,7 +136,7 @@ android {
     defaultConfig {
         testBuildType System.getProperty("testBuildType", "debug")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        applicationId "com.example"
+        applicationId "io.invertase.googlemobileads.example"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

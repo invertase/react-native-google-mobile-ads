@@ -1,4 +1,4 @@
-package com.example;
+package io.invertase.googlemobileads.example;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;

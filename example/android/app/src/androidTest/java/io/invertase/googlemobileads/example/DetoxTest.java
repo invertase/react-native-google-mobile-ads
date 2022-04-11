@@ -1,4 +1,4 @@
-package com.example;
+package io.invertase.googlemobileads.example;
 
 import java.io.File;
 import java.lang.reflect.Method;

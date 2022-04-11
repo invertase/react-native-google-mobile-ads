@@ -1,4 +1,4 @@
-package com.example.newarchitecture;
+package io.invertase.googlemobileads.example.newarchitecture;
 
 import android.app.Application;
 import androidx.annotation.NonNull;
@@ -19,9 +19,9 @@ import com.facebook.react.fabric.CoreComponentsRegistry;
 import com.facebook.react.fabric.EmptyReactNativeConfig;
 import com.facebook.react.fabric.FabricJSIModuleProvider;
 import com.facebook.react.uimanager.ViewManagerRegistry;
-import com.example.BuildConfig;
-import com.example.newarchitecture.components.MainComponentsRegistry;
-import com.example.newarchitecture.modules.MainApplicationTurboModuleManagerDelegate;
+import io.invertase.googlemobileads.example.BuildConfig;
+import io.invertase.googlemobileads.example.newarchitecture.components.MainComponentsRegistry;
+import io.invertase.googlemobileads.example.newarchitecture.modules.MainApplicationTurboModuleManagerDelegate;
 import java.util.ArrayList;
 import java.util.List;
 
