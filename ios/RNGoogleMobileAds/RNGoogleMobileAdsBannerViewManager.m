@@ -24,9 +24,9 @@
 @interface BannerComponent : UIView <GADBannerViewDelegate>
 
 @property GADBannerView *banner;
+@property(nonatomic, assign) CGFloat viewWidth;
 @property(nonatomic, assign) BOOL requested;
 
-@property(nonatomic, copy) NSString *size;
 @property(nonatomic, copy) NSArray *sizes;
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
@@ -39,12 +39,27 @@
 
 @implementation BannerComponent
 
+- (void)reactSetFrame:(CGRect)frame {
+  [super reactSetFrame:frame];
+  CGFloat newWidth = CGRectGetWidth(frame);
+  if (newWidth != _viewWidth) {
+    _viewWidth = newWidth;
+    [self requestAd];
+  }
+}
+
 - (void)initBanner:(GADAdSize)adSize {
   if (_requested) {
     [_banner removeFromSuperview];
   }
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
+
+    if ([_sizes containsObject:NSValueFromGADAdSize(GADAdSizeFluid)]) {
+      CGRect frameRect = _banner.frame;
+      frameRect.size.width = _viewWidth;
+      _banner.frame = frameRect;
+    }
 
     ((GAMBannerView *)_banner).validAdSizes = _sizes;
   } else {
@@ -56,11 +71,6 @@
 
 - (void)setUnitId:(NSString *)unitId {
   _unitId = unitId;
-  [self requestAd];
-}
-
-- (void)setSize:(NSString *)size {
-  _size = size;
   [self requestAd];
 }
 
@@ -88,13 +98,16 @@
   return;  // prevent crash on 32bit
 #endif
 
-  if (_unitId == nil || (_size == nil && _sizes == nil) || _request == nil) {
+  if (_unitId == nil || _sizes == nil || _request == nil) {
     [self setRequested:NO];
     return;
   }
 
-  [self initBanner:_size ? [RNGoogleMobileAdsCommon stringToAdSize:_size]
-                         : GADAdSizeFromNSValue(_sizes[0])];
+  if ([_sizes containsObject:NSValueFromGADAdSize(GADAdSizeFluid)] && _viewWidth == 0) {
+    return;
+  }
+
+  [self initBanner:GADAdSizeFromNSValue(_sizes[0])];
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];
@@ -152,8 +165,6 @@
 @implementation RNGoogleMobileAdsBannerViewManager
 
 RCT_EXPORT_MODULE(RNGoogleMobileAdsBannerView);
-
-RCT_EXPORT_VIEW_PROPERTY(size, NSString);
 
 RCT_EXPORT_VIEW_PROPERTY(sizes, NSArray);
 
