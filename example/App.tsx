@@ -11,10 +11,9 @@ import {
 import {Test, TestRegistry, TestResult, TestRunner, TestType} from 'jet';
 
 import {
+  AdEventType,
   AdsConsent,
   AdsConsentDebugGeography,
-  AdsConsentStatus,
-  AdEventType,
   AppOpenAd,
   InterstitialAd,
   TestIds,
@@ -253,11 +252,12 @@ class AdConsentTest implements Test {
               testDeviceIdentifiers: [],
             });
 
-            if (
-              consentInfo.isConsentFormAvailable &&
-              consentInfo.status === AdsConsentStatus.REQUIRED
-            ) {
+            if (consentInfo.isConsentFormAvailable) {
               await AdsConsent.showForm();
+
+              const choices = await AdsConsent.getUserChoices();
+
+              console.log(JSON.stringify(choices, null, 2));
             }
           }}
         />

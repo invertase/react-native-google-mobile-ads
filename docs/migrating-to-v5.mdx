@@ -13,13 +13,13 @@ Please refer to the following links for more information:
 
 Previously it was possible to request the ad providers and to update the consent status. This is no longer the case.
 Also, while the old Consent SDK provided information about user preferences, the new `AdsConsentStatus` only tells you if you should show the modal to a user or not.
-You can read the `IABTCF_TCString` key from standardUserDefaults / SharedPreferences and decode it with a library like [@iabtcf/core](https://github.com/InteractiveAdvertisingBureau/iabtcf-es/tree/master/modules/core#iabtcfcore) though.
 
 - `requestInfoUpdate` does now accept an optional `AdsConsentInfoOptions` object instead of expecting `publisherIds` and returns a changed `AdsConsentInfo` interface
 - `showForm` does not expect any parameters any longer and now only returns the changed `AdsConsentStatus` as part of it's `AdsConsentFormResult` interface
 - `getAdProviders`, `getStatus` and `setStatus` methods were removed without replacements
 - `addTestDevices`, `setDebugGeography` and `setTagForUnderAgeOfConsent` methods were removed, but their functionality is available via `AdsConsentInfoOptions`
 - the `user_tracking_usage_description` key is needed in your project's `app.json` if you want to handle Apple's App Tracking Transparency
+- newly added `getUserChoices` can be used to inspect some of the consent choices
 
 ```diff
  {
@@ -50,5 +50,14 @@ You can read the `IABTCF_TCString` key from standardUserDefaults / SharedPrefere
 -    withAdFree: true,
 -  });
 +  const formResult = await AdsConsent.showForm()
++
++  const { storeAndAccessInformationOnDevice } = await AdsConsent.getUserChoices();
++
++  if (storeAndAccessInformationOnDevice === false) {
++    /**
++     * The user declined consent for purpose 1,
++     * the Google Mobile Ads SDK won't serve ads.
++     */
++  }
  }
 ```

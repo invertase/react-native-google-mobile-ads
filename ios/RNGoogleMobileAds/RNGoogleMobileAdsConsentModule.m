@@ -121,4 +121,18 @@ RCT_EXPORT_METHOD(showForm : (RCTPromiseResolveBlock)resolve : (RCTPromiseReject
 
 RCT_EXPORT_METHOD(reset) { [UMPConsentInformation.sharedInstance reset]; }
 
+RCT_EXPORT_METHOD(getTCString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+  @try {
+    // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+    NSString *tcString = [[NSUserDefaults standardUserDefaults] objectForKey:@"IABTCF_TCString"];
+    resolve(tcString);
+  } @catch (NSError *error) {
+    [RNSharedUtils rejectPromiseWithUserInfo:reject
+                                    userInfo:[@{
+                                      @"code" : @"consent-string-error",
+                                      @"message" : error.localizedDescription,
+                                    } mutableCopy]];
+  }
+}
+
 @end
