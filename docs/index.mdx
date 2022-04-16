@@ -94,7 +94,7 @@ mobileAds()
     tagForUnderAgeOfConsent: true,
 
     // An array of test device IDs to allow.
-    testDeviceIdentifiers: ["EMULATOR"]
+    testDeviceIdentifiers: ['EMULATOR'],
   })
   .then(() => {
     // Request config successfully set!
@@ -109,14 +109,14 @@ Before loading ads, have your app initialize the Google Mobile Ads SDK by callin
 This needs to be done only once, ideally at app launch.
 
 > ⚠️ **Warning:** Ads may be preloaded by the Mobile Ads SDK or mediation partner SDKs upon calling `initialize`.
-If you need to obtain consent from users in the European Economic Area (EEA), set any request-specific flags (such as tagForChildDirectedTreatment), or otherwise take action before loading ads, ensure you do so before initializing the Mobile Ads SDK.
+> If you need to obtain consent from users in the European Economic Area (EEA), set any request-specific flags (such as tagForChildDirectedTreatment), or otherwise take action before loading ads, ensure you do so before initializing the Mobile Ads SDK.
 
 ```js
 import mobileAds from 'react-native-google-mobile-ads';
 
 mobileAds()
   .initialize()
-  .then((adapterStatuses) => {
+  .then(adapterStatuses => {
     // Initialization complete!
   });
 ```

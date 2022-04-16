@@ -13,6 +13,7 @@ You'll be notified of approval or rejection via email after review.
 
 New apps and ad units take some time to activate.
 Here are common reasons you may not see live impressions immediately:
+
 - It usually takes at least an hour after you create an app or ad unit
 - Sometimes it can take a few days for ads to appear in new apps or ad units
 - New iOS apps will not show Google ads until they’re listed in the Apple App Store
@@ -35,6 +36,7 @@ Test devices can either be added in the AdMob UI or programmatically using the G
 Follow the steps below to add your device as a test device.
 
 #### Add your test device in the AdMob UI
+
 For a simple, non-programmatic way to add a test device and test new or existing app builds, use the AdMob UI.
 [Learn how](https://support.google.com/admob/answer/9691433).
 
@@ -48,39 +50,39 @@ If you want to test ads in your app as you're developing, follow the steps below
 
 3. Check the console for a message that looks like this:
 
-    ```
-    GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = 
-      @[ @"2077ef9a63d2b398840261c8221a0c9b"  ]; // Sample device ID
-    ```
+   ```
+   GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers =
+     @[ @"2077ef9a63d2b398840261c8221a0c9b"  ]; // Sample device ID
+   ```
 
-    Copy your test device ID to your clipboard.
+   Copy your test device ID to your clipboard.
 
 4. Check the logcat output for a message that looks like the one below, which shows you your device ID and how to add it as a test device:
 
-    ```
-    I/Ads: Use RequestConfiguration.Builder.setTestDeviceIds(Arrays.asList("33BE2250B43518CCDA7DE426D04EE231"))
-    to get test ads on this device."
-    ```
+   ```
+   I/Ads: Use RequestConfiguration.Builder.setTestDeviceIds(Arrays.asList("33BE2250B43518CCDA7DE426D04EE231"))
+   to get test ads on this device."
+   ```
 
-    Copy your test device ID to your clipboard.
+   Copy your test device ID to your clipboard.
 
 5. Modify your code to set the test device ID through testDeviceIdentifiers
 
-    ```js
-    import mobileAds from 'react-native-google-mobile-ads';
+   ```js
+   import mobileAds from 'react-native-google-mobile-ads';
 
-    mobileAds()
-      .setRequestConfiguration({
-        // An array of test device IDs to add to the allow list.
-        testDeviceIdentifiers: ["2077ef9a63d2b398840261c8221a0c9b", "EMULATOR"]
-      })
-      .then(() => {
-        // Request config successfully set!
-      });
-    ```
+   mobileAds()
+     .setRequestConfiguration({
+       // An array of test device IDs to add to the allow list.
+       testDeviceIdentifiers: ['2077ef9a63d2b398840261c8221a0c9b', 'EMULATOR'],
+     })
+     .then(() => {
+       // Request config successfully set!
+     });
+   ```
 
-5. Re-run your app. If the ad is a Google ad, you'll see a Test Ad label centered at the top of the ad.
-Ads with this Test Ad label are safe to click. Requests, impressions, and clicks on test ads will not show up in your account's reports.
+6. Re-run your app. If the ad is a Google ad, you'll see a Test Ad label centered at the top of the ad.
+   Ads with this Test Ad label are safe to click. Requests, impressions, and clicks on test ads will not show up in your account's reports.
 
 ## Emulator vs real device
 
