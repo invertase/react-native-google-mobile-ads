@@ -1,3 +1,11 @@
+## [5.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v5.0.1...v5.1.0) (2022-04-16)
+
+
+### Features
+
+* **consent:** add method that returns consent choices ([be967bd](https://github.com/invertase/react-native-google-mobile-ads/commit/be967bda774662379c012a7f06f0b2c40cfb2291))
+* hooks for all full screen ad types ([#100](https://github.com/invertase/react-native-google-mobile-ads/issues/100)) ([0bd7ce8](https://github.com/invertase/react-native-google-mobile-ads/commit/0bd7ce89f4c7b6d22a04f658de991f89af83069f))
+
 ### [5.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v5.0.0...v5.0.1) (2022-04-01)
 
 
