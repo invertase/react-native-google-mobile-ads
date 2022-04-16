@@ -98,6 +98,10 @@
     "tests:ios:test-cover-reuse": "cd example && node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
     "tests:ios:pod:install": "cd example && cd ios && rm -rf example.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd .."
   },
+  "dependencies": {
+    "@iabtcf/core": "^1.4.0",
+    "use-deep-compare-effect": "^1.8.1"
+  },
   "devDependencies": {
     "@babel/core": "^7.16.0",
     "@babel/preset-env": "^7.16.4",

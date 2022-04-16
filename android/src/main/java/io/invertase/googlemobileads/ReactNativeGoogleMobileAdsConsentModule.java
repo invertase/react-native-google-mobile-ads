@@ -16,11 +16,13 @@ package io.invertase.googlemobileads;
  * limitations under the License.
  *
  */
-
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.ump.ConsentDebugSettings;
@@ -28,7 +30,6 @@ import com.google.android.ump.ConsentInformation;
 import com.google.android.ump.ConsentRequestParameters;
 import com.google.android.ump.UserMessagingPlatform;
 import io.invertase.googlemobileads.common.ReactNativeModule;
-import java.util.List;
 import javax.annotation.Nonnull;
 
 public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
@@ -63,10 +64,10 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
           new ConsentDebugSettings.Builder(getApplicationContext());
 
       if (options.hasKey("testDeviceIdentifiers")) {
-        List<Object> devices = options.getArray("testDeviceIdentifiers").toArrayList();
+        ReadableArray devices = options.getArray("testDeviceIdentifiers");
 
-        for (Object device : devices) {
-          debugSettingsBuilder.addTestDeviceHashedId((String) device);
+        for (int i = 0; i < devices.size(); i++) {
+          debugSettingsBuilder.addTestDeviceHashedId(devices.getString(i));
         }
       }
 
@@ -151,5 +152,18 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   @ReactMethod
   public void reset() {
     consentInformation.reset();
+  }
+
+  @ReactMethod
+  public void getTCString(Promise promise) {
+    try {
+      SharedPreferences prefs =
+          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+      // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+      String tcString = prefs.getString("IABTCF_TCString", null);
+      promise.resolve(tcString);
+    } catch (Exception e) {
+      rejectPromiseWithCodeAndMessage(promise, "consent-string-error", e.toString());
+    }
   }
 }
