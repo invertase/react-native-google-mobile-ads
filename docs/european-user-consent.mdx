@@ -93,10 +93,7 @@ import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
 
 const consentInfo = await AdsConsent.requestInfoUpdate();
 
-if (
-  consentInfo.isConsentFormAvailable &&
-  consentInfo.status === AdsConsentStatus.REQUIRED
-) {
+if (consentInfo.isConsentFormAvailable && consentInfo.status === AdsConsentStatus.REQUIRED) {
   const { status } = await AdsConsent.showForm();
 }
 ```
@@ -136,5 +133,5 @@ It is possible to reset the UMP state for test devices. To reset the ATT state y
 ```js
 import { AdsConsent } from 'react-native-google-mobile-ads';
 
-AdsConsent.reset()
+AdsConsent.reset();
 ```
