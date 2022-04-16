@@ -100,6 +100,38 @@ if (consentInfo.isConsentFormAvailable && consentInfo.status === AdsConsentStatu
 
 > Do not persist the status. You could however store this locally in application state (e.g. React Context) and update the status on every app launch as it may change.
 
+### Inspecting consent choices
+
+The AdsConsentStatus tells you if you should show the modal to a user or not. Often times you want to run logic based on the user's choices though.
+Especially since the Google Mobile Ads SDK won't show any ads if the user didn't give consent to store and/or access information on the device.
+This library exports a method that returns some of the most relevant consent flags to handle common use cases.
+
+```js
+import { AdsConsent } from 'react-native-google-mobile-ads';
+
+const {
+  activelyScanDeviceCharacteristicsForIdentification,
+  applyMarketResearchToGenerateAudienceInsights,
+  createAPersonalisedAdsProfile,
+  createAPersonalisedContentProfile,
+  developAndImproveProducts,
+  measureAdPerformance,
+  measureContentPerformance,
+  selectBasicAds,
+  selectPersonalisedAds,
+  selectPersonalisedContent,
+  storeAndAccessInformationOnDevice,
+  usePreciseGeolocationData,
+} = await AdsConsent.getUserChoices();
+
+if (storeAndAccessInformationOnDevice === false) {
+  /**
+   * The user declined consent for purpose 1,
+   * the Google Mobile Ads SDK won't serve ads.
+   */
+}
+```
+
 ### Testing
 
 When developing the consent flow, the behavior of the `AdsConsent` responses may not be reliable due to the environment

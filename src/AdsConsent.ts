@@ -15,23 +15,24 @@
  *
  */
 
-import { hasOwnProperty, isArray, isBoolean, isObject, isString } from './common';
+import { TCModel, TCString } from '@iabtcf/core';
 import { NativeModules } from 'react-native';
 import { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
-import { AdsConsentInterface } from './types/AdsConsent.interface';
+import { AdsConsentPurposes } from './AdsConsentPurposes';
+import { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
+import { hasOwnProperty, isArray, isBoolean, isObject, isString } from './common';
+import {
+  AdsConsentFormResult,
+  AdsConsentInfo,
+  AdsConsentInfoOptions,
+  AdsConsentInterface,
+  AdsConsentUserChoices,
+} from './types/AdsConsent.interface';
 
 const native = NativeModules.RNGoogleMobileAdsConsentModule;
 
 export const AdsConsent: AdsConsentInterface = {
-  /**
-   *
-   * @param {Object} [options]
-   * @param {AdsConsentDebugGeography} [options.debugGeography]
-   * @param {Boolean} [options.tagForUnderAgeOfConsent]
-   * @param {Array<String>} [options.testDeviceIdentifiers]
-   * @returns {{ status: Number, isConsentFormAvailable: Boolean }}
-   */
-  requestInfoUpdate(options = {}) {
+  requestInfoUpdate(options: AdsConsentInfoOptions = {}): Promise<AdsConsentInfo> {
     if (!isObject(options)) {
       throw new Error("AdsConsent.requestInfoUpdate(*) 'options' expected an object value.");
     }
@@ -75,18 +76,72 @@ export const AdsConsent: AdsConsentInterface = {
     return native.requestInfoUpdate(options);
   },
 
-  /**
-   *
-   * @returns {{ status: Number }}
-   */
-  showForm() {
+  showForm(): Promise<AdsConsentFormResult> {
     return native.showForm();
   },
 
-  /**
-   *
-   */
-  reset() {
+  reset(): void {
     return native.reset();
+  },
+
+  getTCString(): Promise<string> {
+    return native.getTCString();
+  },
+
+  async getTCModel(): Promise<TCModel> {
+    const tcString = await native.getTCString();
+    return TCString.decode(tcString);
+  },
+
+  async getUserChoices(): Promise<AdsConsentUserChoices> {
+    const tcString = await native.getTCString();
+
+    let tcModel: TCModel;
+
+    try {
+      tcModel = TCString.decode(tcString);
+    } catch (e) {
+      tcModel = new TCModel();
+
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn(`Failed to decode tcString ${tcString}:`, e);
+      }
+    }
+
+    return {
+      activelyScanDeviceCharacteristicsForIdentification: tcModel.specialFeatureOptins.has(
+        AdsConsentSpecialFeatures.ACTIVELY_SCAN_DEVICE_CHARACTERISTICS_FOR_IDENTIFICATION,
+      ),
+      applyMarketResearchToGenerateAudienceInsights: tcModel.purposeConsents.has(
+        AdsConsentPurposes.APPLY_MARKET_RESEARCH_TO_GENERATE_AUDIENCE_INSIGHTS,
+      ),
+      createAPersonalisedAdsProfile: tcModel.purposeConsents.has(
+        AdsConsentPurposes.CREATE_A_PERSONALISED_ADS_PROFILE,
+      ),
+      createAPersonalisedContentProfile: tcModel.purposeConsents.has(
+        AdsConsentPurposes.CREATE_A_PERSONALISED_ADS_PROFILE,
+      ),
+      developAndImproveProducts: tcModel.purposeConsents.has(
+        AdsConsentPurposes.DEVELOP_AND_IMPROVE_PRODUCTS,
+      ),
+      measureAdPerformance: tcModel.purposeConsents.has(AdsConsentPurposes.MEASURE_AD_PERFORMANCE),
+      measureContentPerformance: tcModel.purposeConsents.has(
+        AdsConsentPurposes.MEASURE_CONTENT_PERFORMANCE,
+      ),
+      selectBasicAds: tcModel.purposeConsents.has(AdsConsentPurposes.SELECT_BASIC_ADS),
+      selectPersonalisedAds: tcModel.purposeConsents.has(
+        AdsConsentPurposes.SELECT_PERSONALISED_ADS,
+      ),
+      selectPersonalisedContent: tcModel.purposeConsents.has(
+        AdsConsentPurposes.SELECT_PERSONALISED_CONTENT,
+      ),
+      storeAndAccessInformationOnDevice: tcModel.purposeConsents.has(
+        AdsConsentPurposes.STORE_AND_ACCESS_INFORMATION_ON_DEVICE,
+      ),
+      usePreciseGeolocationData: tcModel.specialFeatureOptins.has(
+        AdsConsentSpecialFeatures.USE_PRECISE_GEOLOCATION_DATA,
+      ),
+    };
   },
 };

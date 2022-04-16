@@ -61,6 +61,7 @@ module.exports = {
   },
   globals: {
     __DEV__: true,
+    console: true,
     should: true,
     Utils: true,
     window: true,
