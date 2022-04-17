@@ -1,6 +1,6 @@
 {
   "name": "react-native-google-mobile-ads",
-  "version": "5.0.1",
+  "version": "5.1.0",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "description": "React Native Google Mobile Ads is an easy way to monetize mobile apps with targeted, in-app advertising.",
   "main": "lib/commonjs/index.js",
@@ -72,7 +72,7 @@
     "lint:ios:check": "clang-format --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google -n -Werror",
     "lint:ios:fix": "clang-format -i --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google",
     "lint:markdown:check": "prettier --check \"docs/**/*.md[x]\"",
-    "lint:markdown:fix": "prettier --write \"docs/**/*.md\"",
+    "lint:markdown:fix": "prettier --write \"docs/**/*.md[x]\"",
     "lint:report": "eslint --output-file=eslint-report.json --format=json . --ext .js,.jsx,.ts,.tsx",
     "lint:spellcheck": "spellchecker --quiet --files=\"docs/**/*.md\" --dictionaries=\"./.spellcheck.dict.txt\" --reports=\"spelling.json\" --plugins spell indefinite-article repeated-words syntax-mentions syntax-urls frontmatter",
     "tsc:compile": "tsc --project . --noEmit",
@@ -97,6 +97,10 @@
     "tests:ios:test-cover": "cd example && ./node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug",
     "tests:ios:test-cover-reuse": "cd example && node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
     "tests:ios:pod:install": "cd example && cd ios && rm -rf example.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd .."
+  },
+  "dependencies": {
+    "@iabtcf/core": "^1.4.0",
+    "use-deep-compare-effect": "^1.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.16.0",
@@ -141,8 +145,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "use-deep-compare-effect": "^1.8.1"
   }
 }

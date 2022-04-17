@@ -94,6 +94,14 @@ describe('googleAds AdsConsent', function () {
     });
   });
 
+  describe('getUserChoices', function () {
+    it('returns consent choices', async function () {
+      const choices = await AdsConsent.getUserChoices();
+      choices.storeAndAccessInformationOnDevice.should.be.Boolean();
+      choices.usePreciseGeolocationData.should.be.Boolean();
+    });
+  });
+
   describe('reset', function () {
     it('resets', function () {
       AdsConsent.reset();

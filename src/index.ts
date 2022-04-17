@@ -22,6 +22,8 @@ export const SDK_VERSION = version;
 
 export { default, MobileAds } from './MobileAds';
 export { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
+export { AdsConsentPurposes } from './AdsConsentPurposes';
+export { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
 export { AdsConsentStatus } from './AdsConsentStatus';
 export { MaxAdContentRating } from './MaxAdContentRating';
 export { TestIds } from './TestIds';

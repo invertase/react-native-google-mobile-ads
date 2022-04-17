@@ -5,7 +5,6 @@ import {Test, TestResult, TestType} from 'jet';
 import {
   AdsConsent,
   AdsConsentDebugGeography,
-  AdsConsentStatus,
 } from 'react-native-google-mobile-ads';
 
 class AdConsentTest implements Test {
@@ -28,11 +27,12 @@ class AdConsentTest implements Test {
               testDeviceIdentifiers: [],
             });
 
-            if (
-              consentInfo.isConsentFormAvailable &&
-              consentInfo.status === AdsConsentStatus.REQUIRED
-            ) {
+            if (consentInfo.isConsentFormAvailable) {
               await AdsConsent.showForm();
+
+              const choices = await AdsConsent.getUserChoices();
+
+              console.log(JSON.stringify(choices, null, 2));
             }
           }}
         />
