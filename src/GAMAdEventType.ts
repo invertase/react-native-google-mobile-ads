@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +15,23 @@
  *
  */
 
-#import <Foundation/Foundation.h>
-
-#import <React/RCTBridgeModule.h>
-
-@import GoogleMobileAds;
-
-#import "RNGoogleMobileAdsCommon.h"
-
-@interface RNGoogleMobileAdsFullScreenContentDelegate : NSObject <GADFullScreenContentDelegate, GADAppEventDelegate>
-
-@property(nonatomic, copy) NSString *sendAdEvent;
-@property(nonatomic, copy) NSNumber *requestId;
-@property(nonatomic, copy) NSString *adUnitId;
-
-@end
+export enum GAMAdEventType {
+  /**
+   * An event fired when the ad received Ad Manager specific app event.
+   *
+   * The app event contains a `name` and `data`. `data` could be undefeined.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { GAMAdEventType } from 'react-native-google-mobile-ads';
+   *
+   * interstitialAd.onAdEvent((type, error, data) => {
+   *   if (type === GAMAdEventType.APP_EVENT) {
+   *    console.log(`Received app event: ${data.name} with data: ${data.data}`);
+   *   }
+   * });
+   * ```
+   */
+  APP_EVENT = 'app_event',
+}

@@ -36,6 +36,7 @@ export { InterstitialAd } from './ads/InterstitialAd';
 export { RewardedAd } from './ads/RewardedAd';
 export { BannerAd } from './ads/BannerAd';
 export { GAMBannerAd } from './ads/GAMBannerAd';
+export { GAMInterstitialAd } from './ads/GAMInterstitialAd';
 export { useAppOpenAd } from './hooks/useAppOpenAd';
 export { useInterstitialAd } from './hooks/useInterstitialAd';
 export { useRewardedAd } from './hooks/useRewardedAd';

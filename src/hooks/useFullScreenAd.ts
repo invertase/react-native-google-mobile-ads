@@ -24,6 +24,7 @@ import { RewardedAd } from '../ads/RewardedAd';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdStates, AdHookReturns } from '../types/AdStates';
 import { AdShowOptions } from '../types/AdShowOptions';
+import { RewardedAdReward } from '../types/RewardedAdReward';
 
 const initialState: AdStates = {
   isLoaded: false,
@@ -83,10 +84,10 @@ export function useFullScreenAd<T extends InterstitialAd | RewardedAd | AppOpenA
           setState({ error: error });
           break;
         case RewardedAdEventType.LOADED:
-          setState({ isLoaded: true, reward: data });
+          setState({ isLoaded: true, reward: data as RewardedAdReward });
           break;
         case RewardedAdEventType.EARNED_REWARD:
-          setState({ isEarnedReward: true, reward: data });
+          setState({ isEarnedReward: true, reward: data as RewardedAdReward });
           break;
       }
     });

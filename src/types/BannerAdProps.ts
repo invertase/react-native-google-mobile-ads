@@ -1,4 +1,5 @@
 import { BannerAdSize } from '../BannerAdSize';
+import { AppEvent } from './AppEvent';
 import { RequestOptions } from './RequestOptions';
 
 /**
@@ -111,4 +112,9 @@ export interface GAMBannerAdProps extends Omit<BannerAdProps, 'size'> {
    * Inventory must be available for the banner sizes specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
   sizes: BannerAdSize[] | string[];
+
+  /**
+   * When an ad received Ad Manager specific app events.
+   */
+  onAppEvent?: (appEvent: AppEvent) => void;
 }

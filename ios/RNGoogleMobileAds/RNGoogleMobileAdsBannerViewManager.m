@@ -19,9 +19,10 @@
 #import "RNGoogleMobileAdsBannerViewManager.h"
 #import <GoogleMobileAds/GADBannerView.h>
 #import <GoogleMobileAds/GADBannerViewDelegate.h>
+#import <GoogleMobileAds/GADAppEventDelegate.h>
 #import "RNGoogleMobileAdsCommon.h"
 
-@interface BannerComponent : UIView <GADBannerViewDelegate>
+@interface BannerComponent : UIView <GADBannerViewDelegate, GADAppEventDelegate>
 
 @property GADBannerView *banner;
 @property(nonatomic, assign) CGFloat viewWidth;
@@ -62,6 +63,7 @@
     }
 
     ((GAMBannerView *)_banner).validAdSizes = _sizes;
+    ((GAMBannerView *)_banner).appEventDelegate = self;
   } else {
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
   }
@@ -158,6 +160,14 @@
 
 - (void)bannerViewDidDismissScreen:(GADBannerView *)bannerView {
   [self sendEvent:@"onAdClosed" payload:nil];
+}
+
+- (void)bannerView:(GAMBannerView *)bannerView didReceiveAppEvent:(NSString *)name withInfo:(nullable NSString *)info {
+  [self sendEvent:@"onAppEvent"
+          payload:@{
+            @"name" : name,
+            @"data" : info,
+          }];
 }
 
 @end

@@ -23,6 +23,8 @@ import { AdEventListener } from '../types/AdEventListener';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdsModuleInterface } from '../types/MobileAdsModule.interface';
 import { RewardedAdReward } from '../types/RewardedAdReward';
+import { GAMAdEventType } from '../GAMAdEventType';
+import { AppEvent } from '../types/AppEvent';
 
 export class MobileAd {
   _type: 'app_open' | 'interstitial' | 'rewarded';
@@ -60,9 +62,9 @@ export class MobileAd {
 
   _handleAdEvent(event: {
     body: {
-      type: AdEventType | RewardedAdEventType;
+      type: AdEventType | RewardedAdEventType | GAMAdEventType;
       error?: { code: string; message: string };
-      data?: RewardedAdReward;
+      data?: RewardedAdReward | AppEvent;
     };
   }) {
     const { type, error, data } = event.body;

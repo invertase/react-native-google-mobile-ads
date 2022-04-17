@@ -35,6 +35,11 @@ type NativeEvent =
       type: 'onAdFailedToLoad';
       code: string;
       message: string;
+    }
+  | {
+      type: 'onAppEvent';
+      name: string;
+      data?: string;
     };
 
 const sizeRegex = /([0-9]+)x([0-9]+)/;
@@ -83,6 +88,13 @@ export function GAMBannerAd({ unitId, sizes, requestOptions, ...props }: GAMBann
           break;
         case 'onAdFailedToLoad':
           eventPayload = NativeError.fromEvent(nativeEvent, 'googleMobileAds');
+          if ((eventHandler = props[type])) eventHandler(eventPayload);
+          break;
+        case 'onAppEvent':
+          eventPayload = {
+            name: nativeEvent.name,
+            data: nativeEvent.data,
+          };
           if ((eventHandler = props[type])) eventHandler(eventPayload);
           break;
         default:

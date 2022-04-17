@@ -319,17 +319,17 @@ an advert for a currently mounted component, you'll need to force a re-render in
 
 ### Displaying Google Ad Manager Banner
 
-You can also display a Google Ad Manager banner ad unit. In this case, you have to use `sizes` prop instead of `size` prop:
+You can also display a Google Ad Manager banner ad unit. In this case, you have to import `GAMBannerAd` component and use `sizes` prop instead of `size` prop:
 
 ```js
 import React from 'react';
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.GAM_BANNER : '/xxx/yyyy';
 
 function App() {
   return (
-    <BannerAd
+    <GAMBannerAd
       unitId={adUnitId}
       sizes={[BannerAdSize.FULL_BANNER]}
       requestOptions={{
