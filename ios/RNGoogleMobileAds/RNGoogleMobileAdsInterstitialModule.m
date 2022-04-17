@@ -90,7 +90,7 @@ RCT_EXPORT_METHOD(interstitialLoad
     fullScreenContentDelegate.adUnitId = ad.adUnitID;
     interstitial.fullScreenContentDelegate = fullScreenContentDelegate;
     if ([interstitial class] == [GAMInterstitialAd class]) {
-      ((GAMInterstitialAd *) interstitial).appEventDelegate = fullScreenContentDelegate;
+      ((GAMInterstitialAd *)interstitial).appEventDelegate = fullScreenContentDelegate;
     }
     interstitialMap[requestId] = interstitial;
     interstitialDelegateMap[requestId] = fullScreenContentDelegate;

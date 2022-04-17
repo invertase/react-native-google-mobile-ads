@@ -38,7 +38,6 @@ import com.google.android.gms.ads.BaseAdView;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.admanager.AdManagerAdView;
 import com.google.android.gms.ads.admanager.AppEventListener;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -162,15 +161,17 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           }
         });
     if (adView instanceof AdManagerAdView) {
-      ((AdManagerAdView) adView).setAppEventListener(new AppEventListener() {
-        @Override
-        public void onAppEvent(@NonNull String name, @Nullable String data) {
-          WritableMap payload = Arguments.createMap();
-          payload.putString("name", name);
-          payload.putString("data", data);
-          sendEvent(reactViewGroup, EVENT_APP_EVENT, payload);
-        }
-      });
+      ((AdManagerAdView) adView)
+          .setAppEventListener(
+              new AppEventListener() {
+                @Override
+                public void onAppEvent(@NonNull String name, @Nullable String data) {
+                  WritableMap payload = Arguments.createMap();
+                  payload.putString("name", name);
+                  payload.putString("data", data);
+                  sendEvent(reactViewGroup, EVENT_APP_EVENT, payload);
+                }
+              });
     }
     reactViewGroup.addView(adView);
     return adView;

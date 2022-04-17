@@ -99,15 +99,21 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
                         }
                       });
                   if (interstitialAd instanceof AdManagerInterstitialAd) {
-                    ((AdManagerInterstitialAd) interstitialAd).setAppEventListener(new AppEventListener() {
-                      @Override
-                      public void onAppEvent(@NonNull String name, @Nullable String data) {
-                        WritableMap payload = Arguments.createMap();
-                        payload.putString("name", name);
-                        payload.putString("data", data);
-                        sendInterstitialEvent(GOOGLE_MOBILE_ADS_EVENT_APP_EVENT, requestId, adUnitId, payload);
-                      }
-                    });
+                    ((AdManagerInterstitialAd) interstitialAd)
+                        .setAppEventListener(
+                            new AppEventListener() {
+                              @Override
+                              public void onAppEvent(@NonNull String name, @Nullable String data) {
+                                WritableMap payload = Arguments.createMap();
+                                payload.putString("name", name);
+                                payload.putString("data", data);
+                                sendInterstitialEvent(
+                                    GOOGLE_MOBILE_ADS_EVENT_APP_EVENT,
+                                    requestId,
+                                    adUnitId,
+                                    payload);
+                              }
+                            });
                   }
                   interstitialAdArray.put(requestId, interstitialAd);
                   sendInterstitialEvent(GOOGLE_MOBILE_ADS_EVENT_LOADED, requestId, adUnitId, null);
@@ -154,7 +160,7 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
               InterstitialAd interstitialAd = interstitialAdArray.get(requestId);
               if (interstitialAd == null) {
                 rejectPromiseWithCodeAndMessage(
-                  promise, "not-ready", "Interstitial ad attempted to show but was not ready.");
+                    promise, "not-ready", "Interstitial ad attempted to show but was not ready.");
                 return;
               }
 

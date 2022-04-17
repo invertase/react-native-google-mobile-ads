@@ -56,17 +56,17 @@
 
 /// Called when the ad receives an app event.
 - (void)ad:(nonnull GADInterstitialAd *)ad
-        didReceiveAppEvent:(nonnull NSString *)name
-        withInfo:(nullable NSString *)info {
+    didReceiveAppEvent:(nonnull NSString *)name
+              withInfo:(nullable NSString *)info {
   [RNGoogleMobileAdsCommon sendAdEvent:_sendAdEvent
                              requestId:_requestId
                                   type:GOOGLE_MOBILE_ADS_EVENT_APP_EVENT
                               adUnitId:_adUnitId
                                  error:nil
                                   data:@{
-                                          @"name" : name,
-                                          @"data" : info,
-                                        }];
+                                    @"name" : name,
+                                    @"data" : info,
+                                  }];
 }
 
 @end

@@ -17,9 +17,9 @@
  */
 
 #import "RNGoogleMobileAdsBannerViewManager.h"
+#import <GoogleMobileAds/GADAppEventDelegate.h>
 #import <GoogleMobileAds/GADBannerView.h>
 #import <GoogleMobileAds/GADBannerViewDelegate.h>
-#import <GoogleMobileAds/GADAppEventDelegate.h>
 #import "RNGoogleMobileAdsCommon.h"
 
 @interface BannerComponent : UIView <GADBannerViewDelegate, GADAppEventDelegate>
@@ -162,7 +162,9 @@
   [self sendEvent:@"onAdClosed" payload:nil];
 }
 
-- (void)bannerView:(GAMBannerView *)bannerView didReceiveAppEvent:(NSString *)name withInfo:(nullable NSString *)info {
+- (void)bannerView:(GAMBannerView *)bannerView
+    didReceiveAppEvent:(NSString *)name
+              withInfo:(nullable NSString *)info {
   [self sendEvent:@"onAppEvent"
           payload:@{
             @"name" : name,
