@@ -4,10 +4,10 @@ import {Test, TestResult, TestType} from 'jet';
 
 import {
   AdEventType,
+  GAMAdEventType,
   GAMInterstitialAd,
   TestIds,
 } from 'react-native-google-mobile-ads';
-import {GAMAdEventType} from '../../lib/typescript/GAMAdEventType';
 
 const interstitial = GAMInterstitialAd.createForAdRequest(
   TestIds.GAM_INTERSTITIAL,

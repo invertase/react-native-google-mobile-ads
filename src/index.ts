@@ -29,6 +29,7 @@ export { MaxAdContentRating } from './MaxAdContentRating';
 export { TestIds } from './TestIds';
 export { AdEventType } from './AdEventType';
 export { BannerAdSize } from './BannerAdSize';
+export { GAMAdEventType } from './GAMAdEventType';
 export { RewardedAdEventType } from './RewardedAdEventType';
 export { AdsConsent } from './AdsConsent';
 export { AppOpenAd } from './ads/AppOpenAd';
