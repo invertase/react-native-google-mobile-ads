@@ -23,10 +23,10 @@ import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventHandler } from '../types/AdEventHandler';
+import { AdEventListener } from '../types/AdEventListener';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
-import { AdEventListener } from '../types/AdEventListener';
 
 let _rewardedRequest = 0;
 
@@ -171,11 +171,11 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
   ) {
     if (!(type in AdEventType) && !(type in RewardedAdEventType)) {
       throw new Error(
-        "AppOpenAd.addAdEventListener(*) 'type' expected an AdEventType value or a RewardedAdEventType value.",
+        "RewardedAd.addAdEventListener(*) 'type' expected an AdEventType value or a RewardedAdEventType value.",
       );
     }
     if (!isFunction(listener)) {
-      throw new Error("AppOpenAd.addAdEventListener(_, *) 'listener' expected a function.");
+      throw new Error("RewardedAd.addAdEventListener(_, *) 'listener' expected a function.");
     }
 
     return this._addAdEventListener(type, listener);

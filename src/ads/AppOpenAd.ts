@@ -22,10 +22,10 @@ import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
 import { AdEventHandler } from '../types/AdEventHandler';
+import { AdEventListener } from '../types/AdEventListener';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
-import { AdEventListener } from '../types/AdEventListener';
 
 let _appOpenRequest = 0;
 

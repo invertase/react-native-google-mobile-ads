@@ -20,10 +20,10 @@ import { NativeError } from '../internal/NativeError';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventType } from '../AdEventType';
 import { AdEventHandler } from '../types/AdEventHandler';
+import { AdEventListener, AdEventPayload } from '../types/AdEventListener';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdsModuleInterface } from '../types/MobileAdsModule.interface';
 import { RewardedAdReward } from '../types/RewardedAdReward';
-import { AdEventListener, AdEventPayload } from '../types/AdEventListener';
 
 type EventType = AdEventType | RewardedAdEventType;
 
