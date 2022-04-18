@@ -91,7 +91,7 @@ export class AppOpenAd extends MobileAd implements MobileAdInterface {
 
   addAdEventsListener<T extends AdEventType>(listener: AdEventsListener<T>): () => void {
     if (!isFunction(listener)) {
-      throw new Error("AppOpenAd.addAdEventsListener(_, *) 'listener' expected a function.");
+      throw new Error("AppOpenAd.addAdEventsListener(*) 'listener' expected a function.");
     }
 
     return this._addAdEventsListener(listener);

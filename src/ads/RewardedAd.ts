@@ -170,7 +170,7 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
     listener: AdEventsListener<T>,
   ): () => void {
     if (!isFunction(listener)) {
-      throw new Error("RewardedAd.addAdEventsListener(_, *) 'listener' expected a function.");
+      throw new Error("RewardedAd.addAdEventsListener(*) 'listener' expected a function.");
     }
 
     return this._addAdEventsListener(listener);

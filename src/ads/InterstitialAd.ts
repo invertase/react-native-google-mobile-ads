@@ -162,7 +162,7 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
 
   addAdEventsListener<T extends AdEventType>(listener: AdEventsListener<T>) {
     if (!isFunction(listener)) {
-      throw new Error("InterstitialAd.addAdEventListener(_, *) 'listener' expected a function.");
+      throw new Error("InterstitialAd.addAdEventsListener(*) 'listener' expected a function.");
     }
 
     return this._addAdEventsListener(listener);
