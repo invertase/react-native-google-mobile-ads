@@ -1,3 +1,4 @@
+import { AdEventHandler } from './AdEventHandler';
 import { AdEventListener } from './AdEventListener';
 import { AdShowOptions } from './AdShowOptions';
 
@@ -23,6 +24,8 @@ export interface MobileAdInterface {
   load(): void;
 
   /**
+   * @deprecated Use addAdEventListener instead.
+   *
    * Listen to ad events. See AdEventTypes for more information.
    *
    * Returns an unsubscriber function to stop listening to further events.
@@ -43,7 +46,7 @@ export interface MobileAdInterface {
    *
    * @param listener A listener callback containing a event type, error and data.
    */
-  onAdEvent(listener: AdEventListener): () => void;
+  onAdEvent(listener: AdEventHandler): () => void;
 
   /**
    * Show the loaded advert to the user.
@@ -66,4 +69,28 @@ export interface MobileAdInterface {
    * @param showOptions An optional `AdShowOptions` interface.
    */
   show(showOptions?: AdShowOptions): Promise<void>;
+
+  /**
+   * Listen to ad events. See AdEventTypes for more information.
+   *
+   * Returns an unsubscriber function to stop listening to further events.
+   *
+   * #### Example
+   *
+   * ```js
+   * // Create InterstitialAd/RewardedAd
+   * const advert = InterstitialAd.createForAdRequest('...');
+   *
+   * const unsubscribe = advert.addAdEventListener(AdEventType.Loaded, () => {
+   *
+   * });
+   *
+   * // Sometime later...
+   * unsubscribe();
+   * ```
+   *
+   * @param type The event type, e.g. `AdEventType.LOADED`.
+   * @param listener A listener callback containing a event type, error and data.
+   */
+  addAdEventListener<T extends never>(type: T, listener: AdEventListener<T>): void;
 }

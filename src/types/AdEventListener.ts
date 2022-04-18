@@ -1,16 +1,14 @@
 import { AdEventType } from '../AdEventType';
-import { RewardedAdReward } from './RewardedAdReward';
 import { RewardedAdEventType } from '../RewardedAdEventType';
+import { RewardedAdReward } from './RewardedAdReward';
 
-/**
- * A callback interface for all ad events.
- *
- * @param type The event type, e.g. `AdEventType.LOADED`.
- * @param error An optional JavaScript Error containing the error code and message.
- * @param data Optional data for the event, e.g. reward type and amount
- */
-export type AdEventListener = (
-  type: AdEventType | RewardedAdEventType,
-  error?: Error,
-  data?: RewardedAdReward,
+export type AdEventPayload<T extends AdEventType | RewardedAdEventType = never> =
+  T extends AdEventType.ERROR
+    ? Error
+    : T extends RewardedAdEventType
+    ? RewardedAdReward
+    : undefined;
+
+export type AdEventListener<T extends AdEventType | RewardedAdEventType = never> = (
+  payload: AdEventPayload<T>,
 ) => void;

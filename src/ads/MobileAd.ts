@@ -19,10 +19,13 @@ import { EmitterSubscription } from 'react-native';
 import { NativeError } from '../internal/NativeError';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventType } from '../AdEventType';
-import { AdEventListener } from '../types/AdEventListener';
+import { AdEventHandler } from '../types/AdEventHandler';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdsModuleInterface } from '../types/MobileAdsModule.interface';
 import { RewardedAdReward } from '../types/RewardedAdReward';
+import { AdEventListener, AdEventPayload } from '../types/AdEventListener';
+
+type EventType = AdEventType | RewardedAdEventType;
 
 export class MobileAd {
   _type: 'app_open' | 'interstitial' | 'rewarded';
@@ -32,7 +35,8 @@ export class MobileAd {
   _requestOptions: RequestOptions;
   _loaded: boolean;
   _isLoadCalled: boolean;
-  _onAdEventHandler: AdEventListener | null;
+  _onAdEventHandler: AdEventHandler | null;
+  _adEventListenersMap: Map<EventType, AdEventListener[]>;
   _nativeListener: EmitterSubscription;
 
   constructor(
@@ -51,6 +55,14 @@ export class MobileAd {
     this._loaded = false;
     this._isLoadCalled = false;
     this._onAdEventHandler = null;
+    this._adEventListenersMap = new Map<EventType, AdEventListener[]>();
+    for (const type in Object.values({
+      ...AdEventType,
+      ...RewardedAdEventType,
+      _: AdEventType.LOADED, // since AdEventType.LOADED is overwritten by RewardedAdEventType.LOADED
+    })) {
+      this._adEventListenersMap.set(type as EventType, []);
+    }
 
     this._nativeListener = googleMobileAds.emitter.addListener(
       `google_mobile_ads_${type}_event:${adUnitId}:${requestId}`,
@@ -60,7 +72,7 @@ export class MobileAd {
 
   _handleAdEvent(event: {
     body: {
-      type: AdEventType | RewardedAdEventType;
+      type: EventType;
       error?: { code: string; message: string };
       data?: RewardedAdReward;
     };
@@ -84,11 +96,30 @@ export class MobileAd {
 
       this._onAdEventHandler(type, nativeError, data);
     }
+
+    let payload: AdEventPayload<typeof type> = data;
+    if (error) {
+      payload = NativeError.fromEvent(error, 'googleMobileAds');
+    }
+    this._getAdEventListeners(type).forEach(listener => {
+      listener(payload);
+    });
   }
 
-  _setAdEventHandler(handler: AdEventListener) {
+  _setAdEventHandler(handler: AdEventHandler) {
     this._onAdEventHandler = handler;
     return () => (this._onAdEventHandler = null);
+  }
+
+  _addAdEventListener(type: EventType, listener: AdEventListener) {
+    const index = this._getAdEventListeners(type).push(listener) - 1;
+    return () => {
+      this._getAdEventListeners(type).splice(index, 1);
+    };
+  }
+
+  _getAdEventListeners<T extends EventType>(type: T): AdEventListener<T>[] {
+    return this._adEventListenersMap.get(type) || [];
   }
 
   get adUnitId() {

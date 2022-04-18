@@ -20,10 +20,12 @@ import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
-import { AdEventListener } from '../types/AdEventListener';
+import { AdEventType } from '../AdEventType';
+import { AdEventHandler } from '../types/AdEventHandler';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
+import { AdEventListener } from '../types/AdEventListener';
 
 let _appOpenRequest = 0;
 
@@ -56,7 +58,10 @@ export class AppOpenAd extends MobileAd implements MobileAdInterface {
     this._googleMobileAds.native.appOpenLoad(this._requestId, this._adUnitId, this._requestOptions);
   }
 
-  onAdEvent(handler: AdEventListener) {
+  /**
+   * @deprecated Use addAdEventListener instead.
+   */
+  onAdEvent(handler: AdEventHandler) {
     if (!isFunction(handler)) {
       throw new Error("AppOpenAd.onAdEvent(*) 'handler' expected a function.");
     }
@@ -81,5 +86,16 @@ export class AppOpenAd extends MobileAd implements MobileAdInterface {
     }
 
     return this._googleMobileAds.native.appOpenShow(this._requestId, options);
+  }
+
+  addAdEventListener<T extends AdEventType>(type: T, listener: AdEventListener<T>) {
+    if (!(type in AdEventType)) {
+      throw new Error("AppOpenAd.addAdEventListener(*) 'type' expected an AdEventType value.");
+    }
+    if (!isFunction(listener)) {
+      throw new Error("AppOpenAd.addAdEventListener(_, *) 'listener' expected a function.");
+    }
+
+    return this._addAdEventListener(type, listener);
   }
 }
