@@ -21,6 +21,7 @@ import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventType } from '../AdEventType';
 import { AdEventHandler } from '../types/AdEventHandler';
 import { AdEventListener, AdEventPayload } from '../types/AdEventListener';
+import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdsModuleInterface } from '../types/MobileAdsModule.interface';
 import { RewardedAdReward } from '../types/RewardedAdReward';
@@ -36,7 +37,8 @@ export class MobileAd {
   _loaded: boolean;
   _isLoadCalled: boolean;
   _onAdEventHandler: AdEventHandler | null;
-  _adEventListenersMap: Map<EventType, AdEventListener[]>;
+  _adEventsListeners: AdEventsListener<EventType>[];
+  _adEventListenersMap: Map<EventType, AdEventListener<EventType>[]>;
   _nativeListener: EmitterSubscription;
 
   constructor(
@@ -55,7 +57,8 @@ export class MobileAd {
     this._loaded = false;
     this._isLoadCalled = false;
     this._onAdEventHandler = null;
-    this._adEventListenersMap = new Map<EventType, AdEventListener[]>();
+    this._adEventsListeners = [];
+    this._adEventListenersMap = new Map<EventType, AdEventListener<EventType>[]>();
     for (const type in Object.values({
       ...AdEventType,
       ...RewardedAdEventType,
@@ -97,10 +100,16 @@ export class MobileAd {
       this._onAdEventHandler(type, nativeError, data);
     }
 
-    let payload: AdEventPayload<typeof type> = data;
+    let payload: AdEventPayload<EventType> = data;
     if (error) {
       payload = NativeError.fromEvent(error, 'googleMobileAds');
     }
+    this._adEventsListeners.forEach(listener => {
+      listener({
+        type,
+        payload,
+      });
+    });
     this._getAdEventListeners(type).forEach(listener => {
       listener(payload);
     });
@@ -109,6 +118,13 @@ export class MobileAd {
   _setAdEventHandler(handler: AdEventHandler) {
     this._onAdEventHandler = handler;
     return () => (this._onAdEventHandler = null);
+  }
+
+  _addAdEventsListener(listener: AdEventsListener) {
+    const index = this._adEventsListeners.push(listener as AdEventsListener<EventType>) - 1;
+    return () => {
+      this._adEventsListeners.splice(index, 1);
+    };
   }
 
   _addAdEventListener(type: EventType, listener: AdEventListener) {

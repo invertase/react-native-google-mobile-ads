@@ -24,6 +24,7 @@ import { AdEventType } from '../AdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventHandler } from '../types/AdEventHandler';
 import { AdEventListener } from '../types/AdEventListener';
+import { AdEventsListener } from '../types/AdEventsListener';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
@@ -137,7 +138,7 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
   }
 
   /**
-   * @deprecated Use addAdEventListener instead.
+   * @deprecated Use addAdEventsListener or addAdEventListener instead.
    */
   onAdEvent(handler: AdEventHandler) {
     if (!isFunction(handler)) {
@@ -163,6 +164,16 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
       }
     }
     return this._googleMobileAds.native.rewardedShow(this._requestId, this._adUnitId, options);
+  }
+
+  addAdEventsListener<T extends AdEventType | RewardedAdEventType>(
+    listener: AdEventsListener<T>,
+  ): () => void {
+    if (!isFunction(listener)) {
+      throw new Error("RewardedAd.addAdEventsListener(_, *) 'listener' expected a function.");
+    }
+
+    return this._addAdEventsListener(listener);
   }
 
   addAdEventListener<T extends AdEventType | RewardedAdEventType>(

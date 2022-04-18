@@ -37,10 +37,10 @@ class AppOpenTest implements Test {
   constructor() {
     appOpen.load();
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = appOpen.onAdEvent((type, error) => {
+    this.adListener = appOpen.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} app open ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} app open error: ${error.message}`);
+        console.log(`${Platform.OS} app open error: ${payload.message}`);
       }
       if (type === AdEventType.LOADED) {
         this.adLoaded = true;
@@ -95,10 +95,10 @@ class InterstitialTest implements Test {
   constructor() {
     interstitial.load();
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = interstitial.onAdEvent((type, error) => {
+    this.adListener = interstitial.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} interstitial ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} interstitial error: ${error.message}`);
+        console.log(`${Platform.OS} interstitial error: ${payload.message}`);
       }
       if (type === AdEventType.LOADED) {
         this.adLoaded = true;
@@ -186,13 +186,15 @@ class RewardedTest implements Test {
   constructor() {
     rewarded.load();
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = rewarded.onAdEvent((type, error, data) => {
+    this.adListener = rewarded.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} rewarded ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} rewarded error: ${error.message}`);
+        console.log(
+          `${Platform.OS} rewarded error: ${(payload as Error).message}`,
+        );
       }
       if (type === RewardedAdEventType.LOADED) {
-        console.log(`${Platform.OS} reward: ${JSON.stringify(data)})`);
+        console.log(`${Platform.OS} reward: ${JSON.stringify(payload)})`);
         this.adLoaded = true;
       }
     });
