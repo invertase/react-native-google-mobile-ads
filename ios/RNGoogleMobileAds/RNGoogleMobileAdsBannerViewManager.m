@@ -25,7 +25,6 @@
 @interface BannerComponent : UIView <GADBannerViewDelegate, GADAppEventDelegate>
 
 @property GADBannerView *banner;
-@property(nonatomic, assign) CGFloat viewWidth;
 @property(nonatomic, assign) BOOL requested;
 
 @property(nonatomic, copy) NSArray *sizes;
@@ -40,27 +39,12 @@
 
 @implementation BannerComponent
 
-- (void)reactSetFrame:(CGRect)frame {
-  [super reactSetFrame:frame];
-  CGFloat newWidth = CGRectGetWidth(frame);
-  if (newWidth != _viewWidth) {
-    _viewWidth = newWidth;
-    [self requestAd];
-  }
-}
-
 - (void)initBanner:(GADAdSize)adSize {
   if (_requested) {
     [_banner removeFromSuperview];
   }
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
-
-    if ([_sizes containsObject:NSValueFromGADAdSize(GADAdSizeFluid)]) {
-      CGRect frameRect = _banner.frame;
-      frameRect.size.width = _viewWidth;
-      _banner.frame = frameRect;
-    }
 
     ((GAMBannerView *)_banner).validAdSizes = _sizes;
     ((GAMBannerView *)_banner).appEventDelegate = self;
@@ -102,10 +86,6 @@
 
   if (_unitId == nil || _sizes == nil || _request == nil) {
     [self setRequested:NO];
-    return;
-  }
-
-  if ([_sizes containsObject:NSValueFromGADAdSize(GADAdSizeFluid)] && _viewWidth == 0) {
     return;
   }
 
