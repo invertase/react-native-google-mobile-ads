@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
   s.social_media_url    = 'http://twitter.com/invertaseio'
   s.ios.deployment_target = "10.0"
   s.source_files        = 'ios/**/*.{h,m}'
-  s.frameworks          = "AppTrackingTransparency"
+  s.weak_frameworks     = "AppTrackingTransparency"
 
   # React Native dependencies
   s.dependency          'React-Core'
