@@ -22,8 +22,8 @@
 #pragma mark -
 #pragma mark GADFullScreenContentDelegate Methods
 
-/// Tells the delegate that the ad presented full screen content.
-- (void)adDidPresentFullScreenContent:(nonnull id<GADFullScreenPresentingAd>)ad {
+/// Tells the delegate that the ad is about to present full screen content.
+- (void)adWillPresentFullScreenContent:(nonnull id<GADFullScreenPresentingAd>)ad {
   [RNGoogleMobileAdsCommon sendAdEvent:_sendAdEvent
                              requestId:_requestId
                                   type:GOOGLE_MOBILE_ADS_EVENT_OPENED

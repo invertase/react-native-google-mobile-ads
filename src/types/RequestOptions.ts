@@ -73,30 +73,6 @@ export interface RequestOptions {
   customTargeting?: { [key: string]: string };
 
   /**
-   * The latitude and longitude location of the user.
-   *
-   * Ensure your app requests location permissions from the user.
-   *
-   * #### Example
-   *
-   * ```js
-   * await Interstitial.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
-   *   location: [53.481073, -2.237074],
-   * });
-   * ```
-   */
-  location?: [number, number];
-
-  /**
-   * Sets the location accuracy if the location is set, in meters.
-   *
-   * This option is only applied to iOS devices. On Android, this option has no effect.
-   *
-   * @ios
-   */
-  locationAccuracy?: number;
-
-  /**
    * Sets the request agent string to identify the ad request's origin. Third party libraries that reference the Mobile
    * Ads SDK should call this method to denote the platform from which the ad request originated. For example, if a
    * third party ad network called "CoolAds network" mediates requests to the Mobile Ads SDK, it should call this
