@@ -43,7 +43,7 @@ export interface MobileAdInterface {
    */
   show(showOptions?: AdShowOptions): Promise<void>;
 
-  /**   *
+  /**
    * Listen to ad events. See AdEventTypes for more information.
    *
    * Returns an unsubscriber function to stop listening to further events.
