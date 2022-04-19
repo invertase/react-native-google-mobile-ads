@@ -15,14 +15,13 @@
  *
  */
 
-import { isFunction, isString } from '../common';
+import { isFunction, isOneOf, isString } from '../common';
 import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
-import { AdEventHandler } from '../types/AdEventHandler';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { AdShowOptions } from '../types/AdShowOptions';
@@ -63,13 +62,11 @@ let _rewardedRequest = 0;
  * ```js
  * import { RewardedAdEventType } from 'react-native-google-mobile-ads';
  *
- * rewarded.onAdEvent((type, error, reward) => {
- *   if (type === RewardedAdEventType.LOADED) {
- *     rewarded.show();
- *   }
- *   if (type === RewardedAdEventType.EARNED_REWARD) {
- *     console.log('User earned reward of ', reward);
- *   }
+ * rewarded.addAdEventListener(RewardedAdEventType.LOADED. () => {
+ *   rewarded.show();
+ * });
+ * rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD. (reward) => {
+ *   console.log('User earned reward of ', reward);
  * });
  *
  * rewarded.load();
@@ -91,12 +88,11 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
    *   requestAgent: 'CoolAds',
    * });
    *
-   * rewardedAd.onAdEvent((type, error, data) => {
-   *   console.log('New event: ', type, error);
-   *
-   *   if (type === RewardedAdEventType.LOADED) {
-   *     rewardedAd.show();
-   *   }
+   * rewarded.addAdEventListener(RewardedAdEventType.LOADED. () => {
+   *   rewarded.show();
+   * });
+   * rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD. (reward) => {
+   *   console.log('User earned reward of ', reward);
    * });
    *
    * rewardedAd.load();
@@ -137,17 +133,6 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
     );
   }
 
-  /**
-   * @deprecated Use addAdEventsListener or addAdEventListener instead.
-   */
-  onAdEvent(handler: AdEventHandler) {
-    if (!isFunction(handler)) {
-      throw new Error("RewardedAd.onAdEvent(*) 'handler' expected a function.");
-    }
-
-    return this._setAdEventHandler(handler);
-  }
-
   show(showOptions?: AdShowOptions) {
     if (!this._loaded) {
       throw new Error(
@@ -180,7 +165,10 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
     type: T,
     listener: AdEventListener<T>,
   ) {
-    if (!(type in AdEventType) && !(type in RewardedAdEventType)) {
+    if (
+      !isOneOf(type, Object.values(AdEventType)) &&
+      !isOneOf(type, Object.values(RewardedAdEventType))
+    ) {
       throw new Error(
         "RewardedAd.addAdEventListener(*) 'type' expected an AdEventType value or a RewardedAdEventType value.",
       );

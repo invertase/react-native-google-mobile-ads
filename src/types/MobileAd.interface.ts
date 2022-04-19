@@ -1,4 +1,3 @@
-import { AdEventHandler } from './AdEventHandler';
 import { AdEventListener } from './AdEventListener';
 import { AdEventsListener } from './AdEventsListener';
 import { AdShowOptions } from './AdShowOptions';
@@ -25,31 +24,6 @@ export interface MobileAdInterface {
   load(): void;
 
   /**
-   * @deprecated Use addAdEventsListener or addAdEventListener instead.
-   *
-   * Listen to ad events. See AdEventTypes for more information.
-   *
-   * Returns an unsubscriber function to stop listening to further events.
-   *
-   * #### Example
-   *
-   * ```js
-   * // Create InterstitialAd/RewardedAd
-   * const advert = InterstitialAd.createForAdRequest('...');
-   *
-   * const unsubscribe = advert.onAdEvent((type) => {
-   *
-   * });
-   *
-   * // Sometime later...
-   * unsubscribe();
-   * ```
-   *
-   * @param listener A listener callback containing a event type, error and data.
-   */
-  onAdEvent(listener: AdEventHandler): () => void;
-
-  /**
    * Show the loaded advert to the user.
    *
    * #### Example
@@ -58,12 +32,10 @@ export interface MobileAdInterface {
    * // Create InterstitialAd/RewardedAd
    * const advert = InterstitialAd.createForAdRequest('...');
    *
-   * advert.onAdEvent((type) => {
-   *   if (type === AdEventType.LOADED) {
-   *     advert.show({
-   *       immersiveModeEnabled: true,
-   *     });
-   *   }
+   * advert.addAdEventListener(AdEventType.LOADED, () => {
+   *   advert.show({
+   *     immersiveModeEnabled: true,
+   *   });
    * });
    * ```
    *

@@ -19,7 +19,6 @@ import { EmitterSubscription } from 'react-native';
 import { NativeError } from '../internal/NativeError';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventType } from '../AdEventType';
-import { AdEventHandler } from '../types/AdEventHandler';
 import { AdEventListener, AdEventPayload } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
@@ -36,7 +35,6 @@ export class MobileAd {
   _requestOptions: RequestOptions;
   _loaded: boolean;
   _isLoadCalled: boolean;
-  _onAdEventHandler: AdEventHandler | null;
   _adEventsListeners: AdEventsListener<EventType>[];
   _adEventListenersMap: Map<EventType, AdEventListener<EventType>[]>;
   _nativeListener: EmitterSubscription;
@@ -56,7 +54,6 @@ export class MobileAd {
 
     this._loaded = false;
     this._isLoadCalled = false;
-    this._onAdEventHandler = null;
     this._adEventsListeners = [];
     this._adEventListenersMap = new Map<EventType, AdEventListener<EventType>[]>();
     for (const type in Object.values({
@@ -91,15 +88,6 @@ export class MobileAd {
       this._isLoadCalled = false;
     }
 
-    if (this._onAdEventHandler) {
-      let nativeError;
-      if (error) {
-        nativeError = NativeError.fromEvent(error, 'googleMobileAds');
-      }
-
-      this._onAdEventHandler(type, nativeError, data);
-    }
-
     let payload: AdEventPayload<EventType> = data;
     if (error) {
       payload = NativeError.fromEvent(error, 'googleMobileAds');
@@ -113,11 +101,6 @@ export class MobileAd {
     this._getAdEventListeners(type).forEach(listener => {
       listener(payload);
     });
-  }
-
-  _setAdEventHandler(handler: AdEventHandler) {
-    this._onAdEventHandler = handler;
-    return () => (this._onAdEventHandler = null);
   }
 
   _addAdEventsListener(listener: AdEventsListener) {
