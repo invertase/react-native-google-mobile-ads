@@ -66,7 +66,7 @@ console.log(interstitial.adUnitId);
 
 interstitial.load();
 interstitial.show().then();
-interstitial.onAdEvent(({ type, payload }) => {
+interstitial.addAdEventsListener(({ type, payload }) => {
   console.log(type);
   console.log(payload instanceof Error && payload.message);
   console.log('amount' in payload && payload.amount);
