@@ -95,4 +95,8 @@ export class AppOpenAd extends MobileAd implements MobileAdInterface {
 
     return this._addAdEventListener(type, listener);
   }
+
+  removeAllListeners(): void {
+    this._removeAllListeners();
+  }
 }

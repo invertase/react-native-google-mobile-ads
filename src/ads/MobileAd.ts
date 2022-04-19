@@ -28,18 +28,18 @@ import { RewardedAdReward } from '../types/RewardedAdReward';
 type EventType = AdEventType | RewardedAdEventType;
 
 export class MobileAd {
-  _type: 'app_open' | 'interstitial' | 'rewarded';
-  _googleMobileAds: MobileAdsModuleInterface;
-  _requestId: number;
-  _adUnitId: string;
-  _requestOptions: RequestOptions;
-  _loaded: boolean;
-  _isLoadCalled: boolean;
-  _adEventsListeners: AdEventsListener<EventType>[];
-  _adEventListenersMap: Map<EventType, AdEventListener<EventType>[]>;
-  _nativeListener: EmitterSubscription;
+  protected _type: 'app_open' | 'interstitial' | 'rewarded';
+  protected _googleMobileAds: MobileAdsModuleInterface;
+  protected _requestId: number;
+  protected _adUnitId: string;
+  protected _requestOptions: RequestOptions;
+  protected _loaded: boolean;
+  protected _isLoadCalled: boolean;
+  protected _adEventsListeners: AdEventsListener<EventType>[];
+  protected _adEventListenersMap: Map<EventType, AdEventListener<EventType>[]>;
+  protected _nativeListener: EmitterSubscription;
 
-  constructor(
+  protected constructor(
     type: 'app_open' | 'interstitial' | 'rewarded',
     googleMobileAds: MobileAdsModuleInterface,
     requestId: number,
@@ -70,7 +70,7 @@ export class MobileAd {
     );
   }
 
-  _handleAdEvent(event: {
+  protected _handleAdEvent(event: {
     body: {
       type: EventType;
       error?: { code: string; message: string };
@@ -103,21 +103,28 @@ export class MobileAd {
     });
   }
 
-  _addAdEventsListener(listener: AdEventsListener) {
+  protected _addAdEventsListener(listener: AdEventsListener) {
     const index = this._adEventsListeners.push(listener as AdEventsListener<EventType>) - 1;
     return () => {
       this._adEventsListeners.splice(index, 1);
     };
   }
 
-  _addAdEventListener(type: EventType, listener: AdEventListener) {
+  protected _addAdEventListener(type: EventType, listener: AdEventListener) {
     const index = this._getAdEventListeners(type).push(listener) - 1;
     return () => {
       this._getAdEventListeners(type).splice(index, 1);
     };
   }
 
-  _getAdEventListeners<T extends EventType>(type: T): AdEventListener<T>[] {
+  protected _removeAllListeners() {
+    this._adEventsListeners = [];
+    for (const type in this._adEventListenersMap.keys()) {
+      this._adEventListenersMap.set(type as EventType, []);
+    }
+  }
+
+  protected _getAdEventListeners<T extends EventType>(type: T): AdEventListener<T>[] {
     return this._adEventListenersMap.get(type) || [];
   }
 

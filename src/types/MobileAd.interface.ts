@@ -88,4 +88,9 @@ export interface MobileAdInterface {
    * @param listener A listener callback containing a event type, error and data.
    */
   addAdEventListener<T extends never>(type: T, listener: AdEventListener<T>): void;
+
+  /**
+   * Remove all registered event listeners.
+   */
+  removeAllListeners(): void;
 }
