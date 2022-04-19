@@ -19,7 +19,6 @@ import {
   hasOwnProperty,
   isArray,
   isBoolean,
-  isNumber,
   isObject,
   isString,
   isUndefined,
@@ -90,50 +89,6 @@ export function validateAdRequestOptions(options?: RequestOptions) {
     }
 
     out.contentUrl = options.contentUrl;
-  }
-
-  if (options.location) {
-    const error = new Error(
-      "'options.location' expected an array value containing a latitude & longitude number value.",
-    );
-
-    if (!isArray(options.location)) {
-      throw error;
-    }
-
-    const [latitude, longitude] = options.location;
-
-    if (!isNumber(latitude) || !isNumber(longitude)) {
-      throw error;
-    }
-
-    if (latitude < -90 || latitude > 90) {
-      throw new Error(
-        `'options.location' latitude value must be a number between -90 and 90, but was: ${latitude}`,
-      );
-    }
-
-    if (longitude < -180 || longitude > 180) {
-      throw new Error(
-        `'options.location' longitude value must be a number between -180 and 180, but was: ${latitude}`,
-      );
-    }
-
-    out.location = [latitude, longitude];
-  }
-
-  if (hasOwnProperty(options, 'locationAccuracy')) {
-    if (!isNumber(options.locationAccuracy)) {
-      throw new Error("'options.locationAccuracy' expected a number value.");
-    }
-
-    if (isNumber(options.locationAccuracy) && options.locationAccuracy < 0) {
-      throw new Error("'options.locationAccuracy' expected a number greater than 0.");
-    }
-
-    out.locationAccuracy = options.locationAccuracy;
-  } else {
-    out.locationAccuracy = 5;
   }
 
   if (options.requestAgent) {
