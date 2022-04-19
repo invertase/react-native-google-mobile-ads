@@ -35,7 +35,7 @@ fi
 
 # Make the new example
 npm_config_yes=true npx react-native init example --skip-install
-rm -f example/.ruby-version example/Gemfile example/Gemfile.lock
+rm -f example/.ruby-version example/Gemfile example/Gemfile.lock example/_ruby-version example/_bundle
 pushd example
 yarn add 'link:../'
 yarn add detox mocha jest-circus jest-environment-node @babel/preset-env typescript --dev
