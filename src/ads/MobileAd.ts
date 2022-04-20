@@ -16,9 +16,10 @@
  */
 
 import { EmitterSubscription } from 'react-native';
+import { isFunction, isOneOf } from '../common';
 import { NativeError } from '../internal/NativeError';
-import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventType } from '../AdEventType';
+import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventListener, AdEventPayload } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
@@ -107,7 +108,13 @@ export class MobileAd {
     });
   }
 
-  protected _addAdEventsListener(listener: AdEventsListener) {
+  protected _addAdEventsListener<T extends EventType>(listener: AdEventsListener<T>) {
+    if (!isFunction(listener)) {
+      throw new Error(
+        `${this.constructor.name}.addAdEventsListener(*) 'listener' expected a function.`,
+      );
+    }
+
     const id = this._adEventsListenerId++;
     this._adEventsListeners.set(id, listener as AdEventsListener<EventType>);
     return () => {
@@ -115,7 +122,18 @@ export class MobileAd {
     };
   }
 
-  protected _addAdEventListener(type: EventType, listener: AdEventListener) {
+  protected _addAdEventListener<T extends EventType>(type: T, listener: AdEventListener<T>) {
+    if (!isOneOf(type, Object.values(AdEventType))) {
+      throw new Error(
+        `${this.constructor.name}.addAdEventListener(*) 'type' expected an AdEventType value.`,
+      );
+    }
+    if (!isFunction(listener)) {
+      throw new Error(
+        `${this.constructor.name}.addAdEventListener(_, *) 'listener' expected a function.`,
+      );
+    }
+
     const id = this._adEventListenerId++;
     this._getAdEventListeners(type).set(id, listener);
     return () => {
@@ -123,15 +141,15 @@ export class MobileAd {
     };
   }
 
-  protected _removeAllListeners() {
+  protected _getAdEventListeners<T extends EventType>(type: T) {
+    return this._adEventListenersMap.get(type) as Map<number, AdEventListener<T>>;
+  }
+
+  removeAllListeners() {
     this._adEventsListeners.clear();
     this._adEventListenersMap.forEach((_, type, map) => {
       map.set(type, new Map());
     });
-  }
-
-  protected _getAdEventListeners<T extends EventType>(type: T) {
-    return this._adEventListenersMap.get(type) as Map<number, AdEventListener<T>>;
   }
 
   get adUnitId() {

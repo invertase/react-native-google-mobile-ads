@@ -15,7 +15,7 @@
  *
  */
 
-import { isFunction, isOneOf, isString } from '../common';
+import { isString } from '../common';
 import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { validateAdShowOptions } from '../validateAdShowOptions';
@@ -143,25 +143,10 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
   }
 
   addAdEventsListener<T extends AdEventType>(listener: AdEventsListener<T>) {
-    if (!isFunction(listener)) {
-      throw new Error("InterstitialAd.addAdEventsListener(*) 'listener' expected a function.");
-    }
-
     return this._addAdEventsListener(listener);
   }
 
   addAdEventListener<T extends AdEventType>(type: T, listener: AdEventListener<T>) {
-    if (!isOneOf(type, Object.values(AdEventType))) {
-      throw new Error("InterstitialAd.addAdEventListener(*) 'type' expected an AdEventType value.");
-    }
-    if (!isFunction(listener)) {
-      throw new Error("InterstitialAd.addAdEventListener(_, *) 'listener' expected a function.");
-    }
-
     return this._addAdEventListener(type, listener);
-  }
-
-  removeAllListeners(): void {
-    this._removeAllListeners();
   }
 }

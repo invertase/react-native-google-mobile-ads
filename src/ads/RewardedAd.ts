@@ -15,7 +15,7 @@
  *
  */
 
-import { isFunction, isOneOf, isString } from '../common';
+import { isOneOf, isString } from '../common';
 import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { validateAdShowOptions } from '../validateAdShowOptions';
@@ -154,10 +154,6 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
   addAdEventsListener<T extends AdEventType | RewardedAdEventType>(
     listener: AdEventsListener<T>,
   ): () => void {
-    if (!isFunction(listener)) {
-      throw new Error("RewardedAd.addAdEventsListener(*) 'listener' expected a function.");
-    }
-
     return this._addAdEventsListener(listener);
   }
 
@@ -173,14 +169,7 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
         "RewardedAd.addAdEventListener(*) 'type' expected an AdEventType value or a RewardedAdEventType value.",
       );
     }
-    if (!isFunction(listener)) {
-      throw new Error("RewardedAd.addAdEventListener(_, *) 'listener' expected a function.");
-    }
 
     return this._addAdEventListener(type, listener);
-  }
-
-  removeAllListeners(): void {
-    this._removeAllListeners();
   }
 }
