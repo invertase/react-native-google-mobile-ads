@@ -4,8 +4,8 @@
 
 `onAdEvent` had two problems:
 
-- Only one event handler could be registered to an ad instance. If new handler was registered by calling onAdEvent again, previously registered listener was removed.
-- There was type conflicts about payload of an event because typescript didn't know which event had triggered.
+- Only one listener could be registered to an ad instance. Attempting to register a second listener replaced previous listeners
+- There were type conflicts around the event payload because typescript didn't know which event was sent to the listener
 
 In order to resolve these problems, `onAdEvent` is replaced by `addAdEventListener` and `addAdEventsListener`.
 
