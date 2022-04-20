@@ -56,7 +56,7 @@ describe('Google Mobile Ads Interstitial', function () {
 
         // @ts-ignore
         expect(() => i.addAdEventListener('foo')).toThrowError(
-          "'type' expected an AdEventType value.",
+          "'type' expected a valid event type value.",
         );
       });
 

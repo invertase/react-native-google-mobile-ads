@@ -123,9 +123,14 @@ export class MobileAd {
   }
 
   protected _addAdEventListener<T extends EventType>(type: T, listener: AdEventListener<T>) {
-    if (!isOneOf(type, Object.values(AdEventType))) {
+    if (
+      !(
+        isOneOf(type, Object.values(AdEventType)) ||
+        (isOneOf(type, Object.values(RewardedAdEventType)) && this._type === 'rewarded')
+      )
+    ) {
       throw new Error(
-        `${this.constructor.name}.addAdEventListener(*) 'type' expected an AdEventType value.`,
+        `${this.constructor.name}.addAdEventListener(*) 'type' expected a valid event type value.`,
       );
     }
     if (!isFunction(listener)) {

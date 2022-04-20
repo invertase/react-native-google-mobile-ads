@@ -15,7 +15,7 @@
  *
  */
 
-import { isOneOf, isString } from '../common';
+import { isString } from '../common';
 import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { validateAdShowOptions } from '../validateAdShowOptions';
@@ -161,15 +161,11 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
     type: T,
     listener: AdEventListener<T>,
   ) {
-    if (
-      !isOneOf(type, Object.values(AdEventType)) &&
-      !isOneOf(type, Object.values(RewardedAdEventType))
-    ) {
+    if (type === AdEventType.LOADED) {
       throw new Error(
-        "RewardedAd.addAdEventListener(*) 'type' expected an AdEventType value or a RewardedAdEventType value.",
+        'RewardedAd.addAdEventListener(*) use RewardedAdEventType.LOADED instead of AdEventType.LOADED.',
       );
     }
-
     return this._addAdEventListener(type, listener);
   }
 }
