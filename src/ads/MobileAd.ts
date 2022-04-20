@@ -58,13 +58,13 @@ export class MobileAd {
     this._isLoadCalled = false;
     this._adEventsListeners = new Map();
     this._adEventListenersMap = new Map();
-    for (const type in Object.values({
+    Object.values({
       ...AdEventType,
       ...RewardedAdEventType,
       _: AdEventType.LOADED, // since AdEventType.LOADED is overwritten by RewardedAdEventType.LOADED
-    })) {
+    }).forEach(type => {
       this._adEventListenersMap.set(type as EventType, new Map());
-    }
+    });
     this._adEventListenerId = 0;
     this._adEventsListenerId = 0;
 
