@@ -25,6 +25,7 @@ import {
   useAppOpenAd,
   useRewardedAd,
 } from 'react-native-google-mobile-ads';
+import {AdInspectorTest} from './src/AdInspector';
 
 const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
   requestNonPersonalizedAdsOnly: true,
@@ -479,6 +480,7 @@ TestRegistry.registerTest(new AdConsentTest());
 TestRegistry.registerTest(new InterstitialHookTest());
 TestRegistry.registerTest(new RewardedHookTest());
 TestRegistry.registerTest(new AppOpenHookTest());
+TestRegistry.registerTest(new AdInspectorTest());
 
 const App = () => {
   return (
