@@ -38,4 +38,3 @@ export { BannerAd } from './ads/BannerAd';
 export { useAppOpenAd } from './hooks/useAppOpenAd';
 export { useInterstitialAd } from './hooks/useInterstitialAd';
 export { useRewardedAd } from './hooks/useRewardedAd';
-export { AdInspector } from './AdInspector';

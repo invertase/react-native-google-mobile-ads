@@ -1,7 +1,7 @@
 import {Test, TestType, TestResult} from 'jet';
 import React from 'react';
 import {View, Button, StyleSheet} from 'react-native';
-import {AdInspector} from 'react-native-google-mobile-ads';
+import MobileAds from 'react-native-google-mobile-ads';
 
 export class AdInspectorTest implements Test {
   getPath(): string {
@@ -18,7 +18,7 @@ export class AdInspectorTest implements Test {
         <Button
           title="Show Ad Inspector"
           onPress={() => {
-            AdInspector.openAdInspector();
+            MobileAds().openAdInspector();
           }}
         />
       </View>
