@@ -56,6 +56,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private AdRequest request;
   private List<AdSize> sizes;
   private String unitId;
+  boolean isFluid;
 
   @Nonnull
   @Override
@@ -120,7 +121,6 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           public void onAdLoaded() {
             AdSize adSize = adView.getAdSize();
             int left, top, width, height;
-            boolean isFluid = !sizes.contains(adSize);
             if (isFluid) {
               // TODO size=FLUID is still not working
               left = 0;
@@ -190,8 +190,14 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     BaseAdView adView = initAdView(reactViewGroup);
     adView.setAdUnitId(unitId);
 
+    isFluid = false;
     if (adView instanceof AdManagerAdView) {
-      ((AdManagerAdView) adView).setAdSizes(sizes.toArray(new AdSize[0]));
+      if (sizes.contains(AdSize.FLUID)) {
+        isFluid = true;
+        ((AdManagerAdView) adView).setAdSizes(AdSize.FLUID);
+      } else {
+        ((AdManagerAdView) adView).setAdSizes(sizes.toArray(new AdSize[0]));
+      }
     } else {
       adView.setAdSize(sizes.get(0));
     }
