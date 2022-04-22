@@ -1,0 +1,111 @@
+# Migrating to v6
+
+## `onAdEvent` Removed
+
+`onAdEvent` had two problems:
+
+- Only one listener could be registered to an ad instance. Attempting to register a second listener replaced previous listeners
+- There were type conflicts around the event payload because typescript didn't know which event was sent to the listener
+
+In order to resolve these problems, `onAdEvent` is replaced by `addAdEventListener` and `addAdEventsListener`.
+
+### `addAdEventListener`
+
+With each call to `addAdEventListener`, you add a listener for one specific event type. The event type to listen for is the first argument and your event handler is the second argument. The type event payload type for the handler is automatically inferred from the event type you passed.
+
+```diff
+ import {
+   AdEventType,
+   RewardedAd,
+   RewardedAdEventType
+ } from 'react-native-google-mobile-ads';
+
+ const rewardedAd = RewardedAd.createForAdRequest('...');
+-rewardedAd.onAdEvent((type, error, reward) => {
+-  if (type === RewardedAdEventType.LOADED) {
+-    console.log('Ad has loaded');
+-  }
+-  if (type === RewardedAdEventType.EARNED_REWARD) {
+-    console.log('User earned reward of ', reward);
+-  }
+-  if (type === AdEventType.ERROR) {
+-    console.log('Ad failed to load with error: ', error);
+-  }
+-}
++rewardedAd.addAdEventListener(RewardedAdEventType.Loaded, () => {
++  console.log('Ad has loaded');
++});
++rewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
++  console.log('User earned reward of ', reward);
++});
++rewardedAd.addAdEventListener(AdEventType.ERROR, (error) => {
++  console.log('Ad failed to load with error: ', error);
++});
+```
+
+To unsubscribe from an event, call the function returned from `addAdEventListener`.
+
+```js
+const unsubscribe = interstitialAd.addAdEventListener(AdEventType.Loaded, () => {
+  console.log('Ad has loaded');
+});
+
+// Sometime later...
+unsubscribe();
+```
+
+### `addAdEventsListener`
+
+With `addAdEventsListener`, you can listen for all of event types as legacy `onAdEvent` did. The handler now passes an object with event type and payload. You have to cast the payload to a corresponding type in order to use in typescript.
+
+```diff
+import {
+  AdEventType,
+  RewardedAd,
+  RewardedAdEventType,
+  RewardedAdReward
+} from 'react-native-google-mobile-ads';
+
+const rewardedAd = RewardedAd.createForAdRequest('...');
+-rewardedAd.onAdEvent((type, error, reward) => {
++rewardedAd.addAdEventsListener(({ type, payload }) => {
+   if (type === RewardedAdEventType.LOADED) {
+     console.log('Ad has loaded');
+   }
+   if (type === RewardedAdEventType.EARNED_REWARD) {
++    const reward = payload as RewardedAdReward;
+     console.log(`User earned reward, name: ${reward.name}, amount: ${reward.amount}`);
+   }
+   if (type === AdEventType.ERROR) {
++    const error = payload as Error;
+     console.log('Ad failed to load with error: ', error.message);
+   }
+ }
+```
+
+To unsubscribe from events, call the function returned from `addAdEventsListener`.
+
+```js
+const unsubscribe = interstitialAd.addAdEventsListener(({ type, payload }) => {
+  console.log('Ad event: ', type, payload);
+});
+
+// Sometime later...
+unsubscribe();
+```
+
+### `removeAllListeners`
+
+You can remove all listeners registered with `addAdEventListener` and `addAdEventsListener` by calling `removeAllListeners` method.
+
+```js
+interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
+  console.log('Ad has loaded');
+});
+interstitialAd.addAdEventsListener(({ type, payload }) => {
+  console.log('Ad event: ', type, payload);
+});
+
+// Sometime later...
+interstitialAd.removeAllListeners();
+```

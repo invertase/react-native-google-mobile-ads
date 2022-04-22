@@ -66,11 +66,11 @@ console.log(interstitial.adUnitId);
 
 interstitial.load();
 interstitial.show().then();
-interstitial.onAdEvent((type, error, data) => {
+interstitial.addAdEventsListener(({ type, payload }) => {
   console.log(type);
-  console.log(error && error.message);
-  console.log(data && data.amount);
-  console.log(data && data.type);
+  console.log(payload instanceof Error && payload.message);
+  console.log('amount' in payload && payload.amount);
+  console.log('data' in payload && payload.type);
 });
 
 googleMobileAds.AdsConsent.requestInfoUpdate().then(info =>
@@ -88,11 +88,11 @@ console.log(rewardedAd.adUnitId);
 
 rewardedAd.load();
 rewardedAd.show().then();
-rewardedAd.onAdEvent((type, error, data) => {
+rewardedAd.addAdEventsListener(({ type, payload }) => {
   console.log(type);
-  console.log(error && error.message);
-  console.log(data && data.amount);
-  console.log(data && data.type);
+  console.log(payload instanceof Error && payload.message);
+  console.log('amount' in payload && payload.amount);
+  console.log('data' in payload && payload.type);
 });
 
 // checks module exists at root
