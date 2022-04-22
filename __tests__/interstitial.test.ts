@@ -1,4 +1,4 @@
-import { InterstitialAd } from '../src';
+import { AdEventType, InterstitialAd } from '../src';
 
 describe('Google Mobile Ads Interstitial', function () {
   describe('createForAdRequest', function () {
@@ -34,17 +34,44 @@ describe('Google Mobile Ads Interstitial', function () {
       });
     });
 
-    describe('onAdEvent', function () {
-      it('throws if handler is not a function', function () {
+    describe('addAdEventsListener', function () {
+      it('throws if listener is not a function', function () {
         const i = InterstitialAd.createForAdRequest('abc');
 
         // @ts-ignore
-        expect(() => i.onAdEvent('foo')).toThrowError("'handler' expected a function");
+        expect(() => i.addAdEventsListener('foo')).toThrowError("'listener' expected a function");
       });
 
       it('returns an unsubscriber function', function () {
         const i = InterstitialAd.createForAdRequest('abc');
-        const unsub = i.onAdEvent(() => {});
+        const unsub = i.addAdEventsListener(() => {});
+        expect(unsub).toBeDefined();
+        unsub();
+      });
+    });
+
+    describe('addAdEventListener', function () {
+      it('throws if type is not a AdEventType', function () {
+        const i = InterstitialAd.createForAdRequest('abc');
+
+        // @ts-ignore
+        expect(() => i.addAdEventListener('foo')).toThrowError(
+          "'type' expected a valid event type value.",
+        );
+      });
+
+      it('throws if listener is not a function', function () {
+        const i = InterstitialAd.createForAdRequest('abc');
+
+        // @ts-ignore
+        expect(() => i.addAdEventListener(AdEventType.LOADED, 'foo')).toThrowError(
+          "'listener' expected a function",
+        );
+      });
+
+      it('returns an unsubscriber function', function () {
+        const i = InterstitialAd.createForAdRequest('abc');
+        const unsub = i.addAdEventListener(AdEventType.LOADED, () => {});
         expect(unsub).toBeDefined();
         unsub();
       });

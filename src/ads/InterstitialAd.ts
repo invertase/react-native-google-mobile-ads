@@ -15,12 +15,14 @@
  *
  */
 
-import { isFunction, isString } from '../common';
+import { isString } from '../common';
 import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
+import { AdEventType } from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
+import { AdEventsListener } from '../types/AdEventsListener';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
@@ -56,10 +58,8 @@ let _interstitialRequest = 0;
  * ```js
  * import { AdEventType } from 'react-native-google-mobile-ads';
  *
- * interstitial.onAdEvent((type) => {
- *   if (type === AdEventType.LOADED) {
- *     interstitial.show();
- *   }
+ * interstitialAd.addAdEventListener(AdEventType.Loaded, () => {
+ *   interstitialAd.show();
  * });
  *
  * interstitial.load();
@@ -81,12 +81,8 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
    *   requestAgent: 'CoolAds',
    * });
    *
-   * interstitialAd.onAdEvent((type, error) => {
-   *   console.log('New event: ', type, error);
-   *
-   *   if (type === AdEventType.LOADED) {
-   *     interstitialAd.show();
-   *   }
+   * interstitialAd.addAdEventListener(AdEventType.Loaded, () => {
+   *   interstitialAd.show();
    * });
    *
    * interstitialAd.load();
@@ -127,14 +123,6 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
     );
   }
 
-  onAdEvent(handler: AdEventListener) {
-    if (!isFunction(handler)) {
-      throw new Error("InterstitialAd.onAdEvent(*) 'handler' expected a function.");
-    }
-
-    return this._setAdEventHandler(handler);
-  }
-
   show(showOptions?: AdShowOptions) {
     if (!this._loaded) {
       throw new Error(
@@ -152,5 +140,13 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
     }
 
     return this._googleMobileAds.native.interstitialShow(this._requestId, options);
+  }
+
+  addAdEventsListener<T extends AdEventType>(listener: AdEventsListener<T>) {
+    return this._addAdEventsListener(listener);
+  }
+
+  addAdEventListener<T extends AdEventType>(type: T, listener: AdEventListener<T>) {
+    return this._addAdEventListener(type, listener);
   }
 }
