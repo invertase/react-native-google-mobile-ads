@@ -18,17 +18,7 @@
 import { AdEventType } from '../AdEventType';
 import { GAMAdEventType } from '../GAMAdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
-import { AppEvent } from './AppEvent';
-import { RewardedAdReward } from './RewardedAdReward';
+import { AdEventPayload } from './AdEventListener';
 
-export type AdEventPayload<T extends AdEventType | RewardedAdEventType | GAMAdEventType = never> =
-  T extends AdEventType.ERROR
-    ? Error
-    : T extends RewardedAdEventType
-    ? RewardedAdReward
-    : T extends GAMAdEventType
-    ? AppEvent
-    : undefined;
-
-export type AdEventListener<T extends AdEventType | RewardedAdEventType | GAMAdEventType = never> =
-  (payload: AdEventPayload<T>) => void;
+export type AdEventsListener<T extends AdEventType | RewardedAdEventType | GAMAdEventType = never> =
+  (eventInfo: { type: T; payload: AdEventPayload<T> }) => void;

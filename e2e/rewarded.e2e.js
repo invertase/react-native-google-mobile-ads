@@ -89,12 +89,10 @@ describe('googleAds RewardedAd', function () {
         requestAgent: 'CoolAds',
       });
 
-      i.onAdEvent(spy);
+      i.addAdEventListener(googleAds.RewardedAdEventType.LOADED, spy);
       i.load();
       await Utils.spyToBeCalledOnceAsync(spy, 30000);
       i.loaded.should.eql(true);
-
-      spy.getCall(0).args[0].should.eql('rewarded_loaded');
     });
   });
 
@@ -119,8 +117,8 @@ describe('googleAds RewardedAd', function () {
     });
   });
 
-  describe('onAdEvent', function () {
-    it('throws if handler is not a function', function () {
+  describe('addAdEventListener', function () {
+    it('throws if listener is not a function', function () {
       // Ads on Android in CI load a webview and a bunch of other things so slowly the app ANRs.
       if (device.getPlatform() === 'android' && global.isCI == true) {
         return;
@@ -129,10 +127,10 @@ describe('googleAds RewardedAd', function () {
       const i = RewardedAd.createForAdRequest('abc');
 
       try {
-        i.onAdEvent('foo');
+        i.addAdEventListener(googleAds.RewardedAdEventType.LOADED, 'foo');
         return Promise.reject(new Error('Did not throw Error.'));
       } catch (e) {
-        e.message.should.containEql("'handler' expected a function");
+        e.message.should.containEql("'listener' expected a function");
         return Promise.resolve();
       }
     });
@@ -144,7 +142,7 @@ describe('googleAds RewardedAd', function () {
       }
 
       const i = RewardedAd.createForAdRequest('abc');
-      const unsub = i.onAdEvent(() => {});
+      const unsub = i.addAdEventListener(googleAds.RewardedAdEventType.LOADED, spy);
       unsub.should.be.Function();
       unsub();
     });
@@ -161,7 +159,7 @@ describe('googleAds RewardedAd', function () {
       }
       const spy = sinon.spy();
       const i = RewardedAd.createForAdRequest('abc');
-      const unsub = i.onAdEvent(spy);
+      const unsub = i.addAdEventListener(googleAds.RewardedAdEventType.LOADED, spy);
       unsub();
       i.load();
       await Utils.sleep(2000);
@@ -182,16 +180,12 @@ describe('googleAds RewardedAd', function () {
 
       const i = RewardedAd.createForAdRequest(googleAds.TestIds.REWARDED);
 
-      i.onAdEvent(spy);
+      i.addAdEventListener(googleAds.RewardedAdEventType.LOADED, spy);
       i.load();
       await Utils.spyToBeCalledOnceAsync(spy, 20000);
       i.loaded.should.eql(true);
 
-      spy.getCall(0).args[0].should.eql('rewarded_loaded');
-      const e = spy.getCall(0).args[1];
-      should.equal(e, null);
-
-      const d = spy.getCall(0).args[2];
+      const d = spy.getCall(0).args[0];
       d.type.should.be.String();
       d.amount.should.be.Number();
     });
@@ -206,12 +200,11 @@ describe('googleAds RewardedAd', function () {
 
       const i = RewardedAd.createForAdRequest('123');
 
-      i.onAdEvent(spy);
+      i.addAdEventListener(googleAds.AdEventType.ERROR, spy);
       i.load();
       await Utils.spyToBeCalledOnceAsync(spy, 20000);
 
-      spy.getCall(0).args[0].should.eql('error');
-      const e = spy.getCall(0).args[1];
+      const e = spy.getCall(0).args[0];
       e.code.should.containEql('googleAds/'); // android/ios different errors
     });
   });

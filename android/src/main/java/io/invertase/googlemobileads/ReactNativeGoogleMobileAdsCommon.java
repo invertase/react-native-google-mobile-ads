@@ -17,13 +17,11 @@ package io.invertase.googlemobileads;
  *
  */
 
-import android.location.Location;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.views.view.ReactViewGroup;
@@ -163,15 +161,6 @@ public class ReactNativeGoogleMobileAdsCommon {
 
     if (adRequestOptions.hasKey("contentUrl")) {
       builder.setContentUrl(Objects.requireNonNull(adRequestOptions.getString("contentUrl")));
-    }
-
-    if (adRequestOptions.hasKey("location")) {
-      ReadableArray locationArray = adRequestOptions.getArray("location");
-      Location location = new Location("");
-      location.setLatitude(Objects.requireNonNull(locationArray).getDouble(0));
-      location.setLongitude(Objects.requireNonNull(locationArray).getDouble(1));
-
-      builder.setLocation(location);
     }
 
     if (adRequestOptions.hasKey("requestAgent")) {

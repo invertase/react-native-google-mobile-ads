@@ -89,7 +89,7 @@ The call to `createForAdRequest` returns an instance of the [`InterstitialAd`](/
 which provides a number of utilities for loading and displaying interstitials.
 
 To listen to events, such as when the advert from the network has loaded or when an error occurs, we can subscribe via the
-`onAdEvent` method:
+`addAdEventListener` method:
 
 ```jsx
 import React, { useEffect, useState } from 'react';
@@ -107,19 +107,15 @@ function App() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const eventListener = interstitial.onAdEvent(type => {
-      if (type === AdEventType.LOADED) {
-        setLoaded(true);
-      }
+    const unsubscribe = interstitial.addAdEventListener(AdEventType.LOADED => {
+      setLoaded(true);
     });
 
     // Start loading the interstitial straight away
     interstitial.load();
 
     // Unsubscribe from events on unmount
-    return () => {
-      eventListener();
-    };
+    return unsubscribe;
   }, []);
 
   // No advert ready to show yet
@@ -138,12 +134,12 @@ function App() {
 }
 ```
 
-The code above subscribes to the interstitial events (via `onAdEvent()`) and immediately starts to load a new advert from
+The code above subscribes to the interstitial events (via `addAdEventListener()`) and immediately starts to load a new advert from
 the network (via `load()`). Once an advert is available, local state is set, re-rendering the component showing a `Button`.
 When pressed, the `show` method on the interstitial instance is called and the advert is shown over-the-top of your
 application.
 
-The `onAdEvent` listener also triggers when events inside of the application occur, such as if the user clicks the advert,
+You can subscribe to other various events with `addAdEventListener` listener such as if the user clicks the advert,
 or closes the advert and returns back to your app. To view a full list of events which are available, view the
 [`AdEventType`](/reference/admob/adeventtype) documentation.
 
@@ -181,7 +177,7 @@ The call to `createForAdRequest` returns an instance of the [`RewardedAd`](/refe
 which provides a number of utilities for loading and displaying rewarded ads.
 
 To listen to events, such as when the advert from the network has loaded or when an error occurs, we can subscribe via the
-`onAdEvent` method:
+`addAdEventListener` method:
 
 ```js
 import React, { useEffect, useState } from 'react';
@@ -199,22 +195,23 @@ function App() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const eventListener = rewarded.onAdEvent((type, error, reward) => {
-      if (type === RewardedAdEventType.LOADED) {
-        setLoaded(true);
-      }
-
-      if (type === RewardedAdEventType.EARNED_REWARD) {
-        console.log('User earned reward of ', reward);
-      }
+    const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      setLoaded(true);
     });
+    const unsubscribeEarned = rewarded.addAdEventListener(
+      RewardedAdEventType.EARNED_REWARD,
+      reward => {
+        console.log('User earned reward of ', reward);
+      },
+    );
 
     // Start loading the rewarded ad straight away
     rewarded.load();
 
     // Unsubscribe from events on unmount
     return () => {
-      eventListener();
+      unsubscribeLoaded();
+      unsubscribeEarned();
     };
   }, []);
 
@@ -234,15 +231,14 @@ function App() {
 }
 ```
 
-The code above subscribes to the rewarded ad events (via `onAdEvent()`) and immediately starts to load a new advert from
+The code above subscribes to the rewarded ad events (via `addAdEventListener()`) and immediately starts to load a new advert from
 the network (via `load()`). Once an advert is available, local state is set, re-rendering the component showing a `Button`.
 When pressed, the `show` method on the rewarded ad instance is called and the advert is shown over-the-top of your
 application.
 
-Like Interstitial Ads, the events returns from the `onAdEvent` listener trigger when the user clicks the advert or closes
-the advert and returns back to your app. However, an extra `EARNED_REWARD` event can be triggered if the user completes the
-advert action. An additional `reward` property is sent with the event, containing the amount and type of rewarded (specified via the dashboard).
-An additional `reward` property is sent with the event, containing the amount and type of rewarded (specified via the dashboard).
+Like Interstitial Ads, you can listen to the events with the `addAdEventListener` such as when the user clicks the advert or closes
+the advert and returns back to your app. However, you can listen to an extra `EARNED_REWARD` event which is triggered when user completes the
+advert action. An additional `reward` payload is sent with the event, containing the amount and type of rewarded (specified via the dashboard).
 
 To learn more, view the [`RewardedAdEventType`](/reference/admob/rewardedadeventtype) documentation.
 

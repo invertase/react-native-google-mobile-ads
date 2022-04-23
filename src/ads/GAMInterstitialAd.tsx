@@ -1,3 +1,7 @@
+import { AdEventType } from '../AdEventType';
+import { GAMAdEventType } from '../GAMAdEventType';
+import { AdEventListener } from '../types/AdEventListener';
+import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
 import { InterstitialAd } from './InterstitialAd';
 
@@ -14,12 +18,8 @@ export class GAMInterstitialAd extends InterstitialAd {
    *   requestAgent: 'CoolAds',
    * });
    *
-   * interstitialAd.onAdEvent((type, error) => {
-   *   console.log('New event: ', type, error);
-   *
-   *   if (type === AdEventType.LOADED) {
-   *     interstitialAd.show();
-   *   }
+   * interstitialAd.addAdEventListener(AdEventType.Loaded, () => {
+   *   interstitialAd.show();
    * });
    *
    * interstitialAd.load();
@@ -32,6 +32,17 @@ export class GAMInterstitialAd extends InterstitialAd {
     adUnitId: string,
     requestOptions?: RequestOptions,
   ): GAMInterstitialAd {
-    return super.createForAdRequest(adUnitId, requestOptions);
+    return super.createForAdRequest(adUnitId, requestOptions) as GAMInterstitialAd;
+  }
+
+  addAdEventsListener<T extends AdEventType | GAMAdEventType>(listener: AdEventsListener<T>) {
+    return this._addAdEventsListener(listener);
+  }
+
+  addAdEventListener<T extends AdEventType | GAMAdEventType>(
+    type: T,
+    listener: AdEventListener<T>,
+  ) {
+    return this._addAdEventListener(type, listener);
   }
 }
