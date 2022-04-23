@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {
   Button,
   Platform,
@@ -474,6 +474,31 @@ class AppOpenHookTest implements Test {
   }
 }
 
+const GAMBannerComponent = React.forwardRef<View>((_, ref) => {
+  const bannerRef = useRef<GAMBannerAd>();
+  const recordManualImpression = () => {
+    bannerRef.current.recordManualImpression();
+  };
+  return (
+    <View ref={ref}>
+      {/* To test FLUID size ad, use `TestIds.GAM_NATIVE` */}
+      <GAMBannerAd
+        ref={bannerRef}
+        unitId={TestIds.GAM_BANNER}
+        sizes={[BannerAdSize.ADAPTIVE_BANNER]}
+        requestOptions={{
+          requestNonPersonalizedAdsOnly: true,
+        }}
+        manualImpressionsEnabled={true}
+        onAdFailedToLoad={(error: Error) => {
+          console.log(`${Platform.OS} GAM banner error: ${error.message}`);
+        }}
+      />
+      <Button title="recordManualImpression" onPress={recordManualImpression} />
+    </View>
+  );
+});
+
 class GAMBannerTest implements Test {
   getPath(): string {
     return 'GAMBanner';
@@ -484,21 +509,7 @@ class GAMBannerTest implements Test {
   }
 
   render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View ref={onMount}>
-        {/* To test FLUID size ad, use `TestIds.GAM_NATIVE` */}
-        <GAMBannerAd
-          unitId={TestIds.GAM_BANNER}
-          sizes={[BannerAdSize.ADAPTIVE_BANNER]}
-          requestOptions={{
-            requestNonPersonalizedAdsOnly: true,
-          }}
-          onAdFailedToLoad={(error: Error) => {
-            console.log(`${Platform.OS} GAM banner error: ${error.message}`);
-          }}
-        />
-      </View>
-    );
+    return <GAMBannerComponent ref={onMount} />;
   }
 
   execute(component: any, complete: (result: TestResult) => void): void {

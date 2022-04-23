@@ -20,6 +20,7 @@
 #import <GoogleMobileAds/GADAppEventDelegate.h>
 #import <GoogleMobileAds/GADBannerView.h>
 #import <GoogleMobileAds/GADBannerViewDelegate.h>
+#import <React/RCTUIManager.h>
 #import "RNGoogleMobileAdsCommon.h"
 
 @interface BannerComponent : UIView <GADBannerViewDelegate, GADAppEventDelegate>
@@ -30,6 +31,7 @@
 @property(nonatomic, copy) NSArray *sizes;
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
+@property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
 
 @property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
 
@@ -48,6 +50,7 @@
 
     ((GAMBannerView *)_banner).validAdSizes = _sizes;
     ((GAMBannerView *)_banner).appEventDelegate = self;
+    ((GAMBannerView *)_banner).enableManualImpressions = [_manualImpressionsEnabled boolValue];
   } else {
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
   }
@@ -79,12 +82,17 @@
   [self requestAd];
 }
 
+- (void)setManualImpressionsEnabled:(BOOL *)manualImpressionsEnabled {
+  _manualImpressionsEnabled = [NSNumber numberWithBool:manualImpressionsEnabled];
+  [self requestAd];
+}
+
 - (void)requestAd {
 #ifndef __LP64__
   return;  // prevent crash on 32bit
 #endif
 
-  if (_unitId == nil || _sizes == nil || _request == nil) {
+  if (_unitId == nil || _sizes == nil || _request == nil || _manualImpressionsEnabled == nil) {
     [self setRequested:NO];
     return;
   }
@@ -152,6 +160,12 @@
           }];
 }
 
+- (void)recordManualImpression {
+  if ([_banner class] == [GAMBannerView class]) {
+    [((GAMBannerView *)_banner) recordImpression];
+  }
+}
+
 @end
 
 @implementation RNGoogleMobileAdsBannerViewManager
@@ -164,7 +178,20 @@ RCT_EXPORT_VIEW_PROPERTY(unitId, NSString);
 
 RCT_EXPORT_VIEW_PROPERTY(request, NSDictionary);
 
+RCT_EXPORT_VIEW_PROPERTY(manualImpressionsEnabled, BOOL);
+
 RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
+
+RCT_EXPORT_METHOD(recordManualImpression:(nonnull NSNumber*) reactTag) {
+  [self.bridge.uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *,UIView *> *viewRegistry) {
+    BannerComponent *banner = viewRegistry[reactTag];
+    if (!banner || ![banner isKindOfClass:[BannerComponent class]]) {
+      RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
+      return;
+    }
+    [banner recordManualImpression];
+  }];
+}
 
 @synthesize bridge = _bridge;
 

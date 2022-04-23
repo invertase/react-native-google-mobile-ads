@@ -17,8 +17,8 @@
 
 import React from 'react';
 import { BannerAdProps } from '../types/BannerAdProps';
-import { GAMBannerAd } from './GAMBannerAd';
+import { BaseAd } from './BaseAd';
 
 export function BannerAd({ size, ...props }: BannerAdProps) {
-  return <GAMBannerAd sizes={[size]} {...props} />;
+  return <BaseAd sizes={[size]} {...props} />;
 }

@@ -15,127 +15,23 @@
  *
  */
 
-import React, { useState, useEffect } from 'react';
-import { HostComponent, requireNativeComponent } from 'react-native';
-import { isFunction } from '../common';
-import { NativeError } from '../internal/NativeError';
-import { BannerAdSize } from '../BannerAdSize';
-import { validateAdRequestOptions } from '../validateAdRequestOptions';
+import React, { createRef } from 'react';
+import { findNodeHandle, UIManager } from 'react-native';
 import { GAMBannerAdProps } from '../types/BannerAdProps';
-import { RequestOptions } from '../types/RequestOptions';
+import { BaseAd, GoogleMobileAdsBannerView } from './BaseAd';
 
-type NativeEvent =
-  | {
-      type: 'onAdLoaded' | 'onSizeChange';
-      width: number;
-      height: number;
-    }
-  | { type: 'onAdOpened' | 'onAdClosed' }
-  | {
-      type: 'onAdFailedToLoad';
-      code: string;
-      message: string;
-    }
-  | {
-      type: 'onAppEvent';
-      name: string;
-      data?: string;
-    };
+export class GAMBannerAd extends React.Component<GAMBannerAdProps> {
+  private ref = createRef<GoogleMobileAdsBannerView>();
 
-const sizeRegex = /([0-9]+)x([0-9]+)/;
-
-export function GAMBannerAd({ unitId, sizes, requestOptions, ...props }: GAMBannerAdProps) {
-  const [dimensions, setDimensions] = useState<(number | string)[]>([0, 0]);
-
-  useEffect(() => {
-    if (!unitId) {
-      throw new Error("BannerAd: 'unitId' expected a valid string unit ID.");
-    }
-  }, [unitId]);
-
-  useEffect(() => {
-    if (sizes.length === 0 || !sizes.every(size => size in BannerAdSize || sizeRegex.test(size))) {
-      throw new Error("BannerAd: 'size(s)' expected a valid BannerAdSize or custom size string.");
-    }
-  }, [sizes]);
-
-  const parsedRequestOptions = JSON.stringify(requestOptions);
-
-  useEffect(() => {
-    if (requestOptions) {
-      try {
-        validateAdRequestOptions(requestOptions);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new Error(`BannerAd: ${e.message}`);
-        }
-      }
-    }
-  }, [parsedRequestOptions]);
-
-  function onNativeEvent({ nativeEvent }: { nativeEvent: NativeEvent }) {
-    const { type } = nativeEvent;
-
-    if (type !== 'onSizeChange' && isFunction(props[type])) {
-      let eventHandler, eventPayload;
-      switch (type) {
-        case 'onAdLoaded':
-          eventPayload = {
-            width: nativeEvent.width,
-            height: nativeEvent.height,
-          };
-          if ((eventHandler = props[type])) eventHandler(eventPayload);
-          break;
-        case 'onAdFailedToLoad':
-          eventPayload = NativeError.fromEvent(nativeEvent, 'googleMobileAds');
-          if ((eventHandler = props[type])) eventHandler(eventPayload);
-          break;
-        case 'onAppEvent':
-          eventPayload = {
-            name: nativeEvent.name,
-            data: nativeEvent.data,
-          };
-          if ((eventHandler = props[type])) eventHandler(eventPayload);
-          break;
-        default:
-          if ((eventHandler = props[type])) eventHandler();
-      }
-    }
-
-    if (type === 'onAdLoaded' || type === 'onSizeChange') {
-      const { width, height } = nativeEvent;
-      if (width && height) setDimensions([width, height]);
-    }
+  recordManualImpression() {
+    UIManager.dispatchViewManagerCommand(
+      findNodeHandle(this.ref.current),
+      'recordManualImpression',
+      undefined,
+    );
   }
 
-  const style = sizes.includes(BannerAdSize.FLUID)
-    ? {
-        width: '100%',
-        height: dimensions[1],
-      }
-    : {
-        width: dimensions[0],
-        height: dimensions[1],
-      };
-
-  return (
-    <GoogleMobileAdsBannerView
-      sizes={sizes}
-      style={style}
-      unitId={unitId}
-      request={validateAdRequestOptions(requestOptions)}
-      onNativeEvent={onNativeEvent}
-    />
-  );
+  render() {
+    return <BaseAd ref={this.ref} {...this.props} />;
+  }
 }
-
-export const GoogleMobileAdsBannerView: HostComponent<{
-  sizes: GAMBannerAdProps['sizes'];
-  style: {
-    width?: number | string;
-    height?: number | string;
-  };
-  unitId: string;
-  request: RequestOptions;
-  onNativeEvent: (event: { nativeEvent: NativeEvent }) => void;
-}> = requireNativeComponent('RNGoogleMobileAdsBannerView');

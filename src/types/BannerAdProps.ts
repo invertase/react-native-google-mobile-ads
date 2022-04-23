@@ -114,6 +114,36 @@ export interface GAMBannerAdProps extends Omit<BannerAdProps, 'size'> {
   sizes: BannerAdSize[] | string[];
 
   /**
+   * Whether to enable the manual impression counting.
+   *
+   * #### Example
+   *
+   * After setting this value to `true`, call `recordManualImpression()` from the ref object.
+   *
+   * ```js
+   * import { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+   *
+   * function HomeScreen() {
+   *   const ref = useRef<GAMBannerAd>(null);
+   *
+   *   const recordManualImpression = () => {
+   *     ref.current?.recordManualImpression();
+   *   }
+   *
+   *   return (
+   *     <GAMBannerAd
+   *       ref={ref}
+   *       unitId={TestIds.GAM_BANNER}
+   *       sizes={[BannerAdSize.FULL_BANNER]}
+   *       manualImpressionsEnabled={true}
+   *     />
+   *   );
+   * }
+   * ```
+   */
+  manualImpressionsEnabled?: boolean;
+
+  /**
    * When an ad received Ad Manager specific app events.
    */
   onAppEvent?: (appEvent: AppEvent) => void;

@@ -52,11 +52,13 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private final String EVENT_AD_OPENED = "onAdOpened";
   private final String EVENT_AD_CLOSED = "onAdClosed";
   private final String EVENT_APP_EVENT = "onAppEvent";
+  private final int COMMAND_ID_RECORD_MANUAL_IMPRESSION = 1;
 
   private AdRequest request;
   private List<AdSize> sizes;
   private String unitId;
-  boolean isFluid;
+  private Boolean manualImpressionsEnabled;
+  private boolean isFluid;
 
   @Nonnull
   @Override
@@ -75,6 +77,29 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     MapBuilder.Builder<String, Object> builder = MapBuilder.builder();
     builder.put("onNativeEvent", MapBuilder.of("registrationName", "onNativeEvent"));
     return builder.build();
+  }
+
+  @Nullable
+  @Override
+  public Map<String, Integer> getCommandsMap() {
+    return MapBuilder.of("recordManualImpression", COMMAND_ID_RECORD_MANUAL_IMPRESSION);
+  }
+
+  @Override
+  public void receiveCommand(
+    @NonNull ReactViewGroup reactViewGroup,
+    String commandId,
+    @Nullable ReadableArray args
+  ) {
+    super.receiveCommand(reactViewGroup, commandId, args);
+    int commandIdInt = Integer.parseInt(commandId);
+
+    if (commandIdInt == COMMAND_ID_RECORD_MANUAL_IMPRESSION) {
+      BaseAdView adView = getAdView(reactViewGroup);
+      if (adView instanceof AdManagerAdView) {
+        ((AdManagerAdView) adView).recordManualImpression();
+      }
+    }
   }
 
   @ReactProp(name = "unitId")
@@ -99,6 +124,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       }
     }
     sizes = sizeList;
+    requestAd(reactViewGroup);
+  }
+
+  @ReactProp(name = "manualImpressionsEnabled")
+  public void setManualImpressionsEnabled(ReactViewGroup reactViewGroup, boolean value) {
+    this.manualImpressionsEnabled = value;
     requestAd(reactViewGroup);
   }
 
@@ -183,7 +214,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   }
 
   private void requestAd(ReactViewGroup reactViewGroup) {
-    if (sizes == null || unitId == null || request == null) {
+    if (sizes == null || unitId == null || request == null || manualImpressionsEnabled == null) {
       return;
     }
 
@@ -197,6 +228,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
         ((AdManagerAdView) adView).setAdSizes(AdSize.FLUID);
       } else {
         ((AdManagerAdView) adView).setAdSizes(sizes.toArray(new AdSize[0]));
+      }
+      if (manualImpressionsEnabled) {
+        ((AdManagerAdView) adView).setManualImpressionsEnabled(true);
       }
     } else {
       adView.setAdSize(sizes.get(0));
