@@ -182,15 +182,16 @@ RCT_EXPORT_VIEW_PROPERTY(manualImpressionsEnabled, BOOL);
 
 RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
 
-RCT_EXPORT_METHOD(recordManualImpression:(nonnull NSNumber*) reactTag) {
-  [self.bridge.uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *,UIView *> *viewRegistry) {
-    BannerComponent *banner = viewRegistry[reactTag];
-    if (!banner || ![banner isKindOfClass:[BannerComponent class]]) {
-      RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
-      return;
-    }
-    [banner recordManualImpression];
-  }];
+RCT_EXPORT_METHOD(recordManualImpression : (nonnull NSNumber *)reactTag) {
+  [self.bridge.uiManager
+      addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
+        BannerComponent *banner = viewRegistry[reactTag];
+        if (!banner || ![banner isKindOfClass:[BannerComponent class]]) {
+          RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
+          return;
+        }
+        [banner recordManualImpression];
+      }];
 }
 
 @synthesize bridge = _bridge;
