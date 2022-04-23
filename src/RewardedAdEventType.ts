@@ -30,12 +30,10 @@ export enum RewardedAdEventType {
    * ```js
    * import { RewardedAdEventType } from 'react-native-google-mobile-ads';
    *
-   * rewardedAd.onAdEvent((type, error, data) => {
-   *   if (type === RewardedAdEventType.LOADED) {
-   *     console.log(`Rewarded Ad loaded with ${data.amount} ${data.type} as reward`);
-   *     // E.g. "Rewarded Ad loaded with 50 coins as reward"
-   *     rewardedAd.show();
-   *   }
+   * rewardedAd.addEventListener(RewardedAdEventType.LOADED, (reward) => {
+   *   console.log(`Rewarded Ad loaded with ${data.amount} ${data.type} as reward`);
+   *   // E.g. "Rewarded Ad loaded with 50 coins as reward"
+   *   rewardedAd.show();
    * });
    * ```
    */
@@ -52,11 +50,9 @@ export enum RewardedAdEventType {
    * ```js
    * import { RewardedAdEventType } from 'react-native-google-mobile-ads';
    *
-   * rewardedAd.onAdEvent((type, error, data) => {
-   *   if (type === RewardedAdEventType.EARNED_REWARD) {
-   *     console.log(`User earned ${data.amount} ${data.type}`);
-   *     // E.g. "User earned 50 coins"
-   *   }
+   * rewardedAd.addEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
+   *   console.log(`User earned ${data.amount} ${data.type}`);
+   *   // E.g. "User earned 50 coins"
    * });
    * ```
    */

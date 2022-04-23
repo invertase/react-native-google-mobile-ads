@@ -15,12 +15,14 @@
  *
  */
 
-import { isFunction, isString } from '../common';
+import { isString } from '../common';
 import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
+import { AdEventType } from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
+import { AdEventsListener } from '../types/AdEventsListener';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
@@ -56,14 +58,6 @@ export class AppOpenAd extends MobileAd implements MobileAdInterface {
     this._googleMobileAds.native.appOpenLoad(this._requestId, this._adUnitId, this._requestOptions);
   }
 
-  onAdEvent(handler: AdEventListener) {
-    if (!isFunction(handler)) {
-      throw new Error("AppOpenAd.onAdEvent(*) 'handler' expected a function.");
-    }
-
-    return this._setAdEventHandler(handler);
-  }
-
   show(showOptions?: AdShowOptions) {
     if (!this._loaded) {
       throw new Error(
@@ -81,5 +75,13 @@ export class AppOpenAd extends MobileAd implements MobileAdInterface {
     }
 
     return this._googleMobileAds.native.appOpenShow(this._requestId, options);
+  }
+
+  addAdEventsListener<T extends AdEventType>(listener: AdEventsListener<T>): () => void {
+    return this._addAdEventsListener(listener);
+  }
+
+  addAdEventListener<T extends AdEventType>(type: T, listener: AdEventListener<T>) {
+    return this._addAdEventListener(type, listener);
   }
 }

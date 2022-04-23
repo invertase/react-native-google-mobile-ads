@@ -43,16 +43,14 @@ describe('googleAds InterstitialAd', function () {
         requestAgent: 'CoolAds',
       });
 
-      i.onAdEvent(spy);
+      i.addAdEventListener(googleAds.AdEventType.LOADED, spy);
       i.load();
       await Utils.spyToBeCalledOnceAsync(spy, 20000);
       i.loaded.should.eql(true);
-
-      spy.getCall(0).args[0].should.eql('loaded');
     });
   });
 
-  describe('onAdEvent', function () {
+  describe('addAdEventListener', function () {
     it('unsubscribe should prevent events', async function () {
       // Ads on Android in CI load a webview and a bunch of other things so slowly the app ANRs.
       if (device.getPlatform() === 'android' && global.isCI == true) {
@@ -61,7 +59,7 @@ describe('googleAds InterstitialAd', function () {
 
       const spy = sinon.spy();
       const i = InterstitialAd.createForAdRequest('abc');
-      const unsub = i.onAdEvent(spy);
+      const unsub = i.addAdEventListener(googleAds.AdEventType.LOADED, spy);
       unsub();
       i.load();
       await Utils.sleep(2000);
@@ -78,12 +76,10 @@ describe('googleAds InterstitialAd', function () {
 
       const i = InterstitialAd.createForAdRequest(googleAds.TestIds.INTERSTITIAL);
 
-      i.onAdEvent(spy);
+      i.addAdEventListener(googleAds.AdEventType.LOADED, spy);
       i.load();
       await Utils.spyToBeCalledOnceAsync(spy, 20000);
       i.loaded.should.eql(true);
-
-      spy.getCall(0).args[0].should.eql('loaded');
     });
 
     it('errors with an invalid ad unit id', async function () {
@@ -96,12 +92,11 @@ describe('googleAds InterstitialAd', function () {
 
       const i = InterstitialAd.createForAdRequest('123');
 
-      i.onAdEvent(spy);
+      i.addAdEventListener(googleAds.AdEventType.ERROR, spy);
       i.load();
       await Utils.spyToBeCalledOnceAsync(spy);
 
-      spy.getCall(0).args[0].should.eql('error');
-      const e = spy.getCall(0).args[1];
+      const e = spy.getCall(0).args[0];
       e.code.should.containEql('googleAds/'); // android/ios different errors
     });
   });
