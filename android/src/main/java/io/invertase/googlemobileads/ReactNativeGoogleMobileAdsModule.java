@@ -146,31 +146,42 @@ public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
 
   @ReactMethod
   public void openAdInspector(Promise promise) {
-    MobileAds.openAdInspector(
-        getApplicationContext(),
-        new OnAdInspectorClosedListener() {
-          @Override
-          public void onAdInspectorClosed(@Nullable AdInspectorError adInspectorError) {
-            if (adInspectorError != null) {
-              String code = "";
-              switch (adInspectorError.getCode()) {
-                case AdInspectorError.ERROR_CODE_INTERNAL_ERROR:
-                  code = "INTERNAL_ERROR";
-                  break;
-                case AdInspectorError.ERROR_CODE_FAILED_TO_LOAD:
-                  code = "FAILED_TO_LOAD";
-                  break;
-                case AdInspectorError.ERROR_CODE_NOT_IN_TEST_MODE:
-                  code = "NOT_IN_TEST_MODE";
-                  break;
-                case AdInspectorError.ERROR_CODE_ALREADY_OPEN:
-                  code = "ALREADY_OPEN";
-                  break;
+    if (getCurrentActivity() == null) {
+      rejectPromiseWithCodeAndMessage(
+        promise,
+        "null-activity",
+        "Ad Inspector attempted to open but the current Activity was null.");
+      return;
+    }
+    getCurrentActivity()
+      .runOnUiThread(
+        () -> {
+          MobileAds.openAdInspector(
+            getApplicationContext(),
+            new OnAdInspectorClosedListener() {
+              @Override
+              public void onAdInspectorClosed(@Nullable AdInspectorError adInspectorError) {
+                if (adInspectorError != null) {
+                  String code = "";
+                  switch (adInspectorError.getCode()) {
+                    case AdInspectorError.ERROR_CODE_INTERNAL_ERROR:
+                      code = "INTERNAL_ERROR";
+                      break;
+                    case AdInspectorError.ERROR_CODE_FAILED_TO_LOAD:
+                      code = "FAILED_TO_LOAD";
+                      break;
+                    case AdInspectorError.ERROR_CODE_NOT_IN_TEST_MODE:
+                      code = "NOT_IN_TEST_MODE";
+                      break;
+                    case AdInspectorError.ERROR_CODE_ALREADY_OPEN:
+                      code = "ALREADY_OPEN";
+                      break;
+                  }
+                  rejectPromiseWithCodeAndMessage(promise, code, adInspectorError.getMessage());
+                }
+                promise.resolve(null);
               }
-              rejectPromiseWithCodeAndMessage(promise, code, adInspectorError.getMessage());
-            }
-            promise.resolve(null);
-          }
+            });
         });
   }
 }
