@@ -101,4 +101,23 @@ RCT_EXPORT_METHOD(setRequestConfiguration
   }
 }
 
+RCT_EXPORT_METHOD(openAdInspector
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [GADMobileAds.sharedInstance
+      presentAdInspectorFromViewController:RCTSharedApplication().delegate.window.rootViewController
+                         completionHandler:^(NSError *_Nullable error) {
+                           if (error != nil) {
+                             [RNSharedUtils
+                                 rejectPromiseWithUserInfo:reject
+                                                  userInfo:[@{
+                                                    @"code" : [NSString
+                                                        stringWithFormat:@"CODE_%d", error.code],
+                                                    @"message" : error.description,
+                                                  } mutableCopy]];
+                           }
+                           resolve(nil);
+                         }];
+}
+
 @end

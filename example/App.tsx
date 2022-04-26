@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import {Test, TestRegistry, TestResult, TestRunner, TestType} from 'jet';
 
-import {
+import MobileAds, {
   AdEventType,
   AdsConsent,
   AdsConsentDebugGeography,
@@ -472,6 +472,40 @@ class AppOpenHookTest implements Test {
   }
 }
 
+class AdInspectorTest implements Test {
+  getPath(): string {
+    return 'AdInspectorTest';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return (
+      <View style={styles.testSpacing} ref={onMount}>
+        <Button
+          title="Show Ad Inspector"
+          onPress={() => {
+            MobileAds().openAdInspector();
+          }}
+        />
+      </View>
+    );
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
+    }
+  }
+}
+
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
 TestRegistry.registerTest(new BannerTest());
 TestRegistry.registerTest(new AppOpenTest());
@@ -481,6 +515,7 @@ TestRegistry.registerTest(new AdConsentTest());
 TestRegistry.registerTest(new InterstitialHookTest());
 TestRegistry.registerTest(new RewardedHookTest());
 TestRegistry.registerTest(new AppOpenHookTest());
+TestRegistry.registerTest(new AdInspectorTest());
 
 const App = () => {
   return (

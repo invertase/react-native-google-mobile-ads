@@ -17,6 +17,7 @@ package io.invertase.googlemobileads;
  *
  */
 
+import androidx.annotation.Nullable;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -24,8 +25,10 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
+import com.google.android.gms.ads.AdInspectorError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.OnAdInspectorClosedListener;
 import com.google.android.gms.ads.RequestConfiguration;
 import com.google.android.gms.ads.initialization.AdapterStatus;
 import com.google.android.gms.ads.initialization.InitializationStatus;
@@ -139,5 +142,47 @@ public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
   public void setRequestConfiguration(ReadableMap requestConfiguration, Promise promise) {
     MobileAds.setRequestConfiguration(buildRequestConfiguration(requestConfiguration));
     promise.resolve(null);
+  }
+
+  @ReactMethod
+  public void openAdInspector(Promise promise) {
+    if (getCurrentActivity() == null) {
+      rejectPromiseWithCodeAndMessage(
+          promise,
+          "null-activity",
+          "Ad Inspector attempted to open but the current Activity was null.");
+      return;
+    }
+    getCurrentActivity()
+        .runOnUiThread(
+            () -> {
+              MobileAds.openAdInspector(
+                  getApplicationContext(),
+                  new OnAdInspectorClosedListener() {
+                    @Override
+                    public void onAdInspectorClosed(@Nullable AdInspectorError adInspectorError) {
+                      if (adInspectorError != null) {
+                        String code = "";
+                        switch (adInspectorError.getCode()) {
+                          case AdInspectorError.ERROR_CODE_INTERNAL_ERROR:
+                            code = "INTERNAL_ERROR";
+                            break;
+                          case AdInspectorError.ERROR_CODE_FAILED_TO_LOAD:
+                            code = "FAILED_TO_LOAD";
+                            break;
+                          case AdInspectorError.ERROR_CODE_NOT_IN_TEST_MODE:
+                            code = "NOT_IN_TEST_MODE";
+                            break;
+                          case AdInspectorError.ERROR_CODE_ALREADY_OPEN:
+                            code = "ALREADY_OPEN";
+                            break;
+                        }
+                        rejectPromiseWithCodeAndMessage(
+                            promise, code, adInspectorError.getMessage());
+                      }
+                      promise.resolve(null);
+                    }
+                  });
+            });
   }
 }

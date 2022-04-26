@@ -6,6 +6,7 @@ import { AdShowOptions } from './AdShowOptions';
 export interface GoogleMobileAdsNativeModule {
   initialize(): Promise<AdapterStatus[]>;
   setRequestConfiguration(requestConfiguration?: RequestConfiguration): Promise<void>;
+  openAdInspector(): () => Promise<void>;
   appOpenLoad(requestId: number, adUnitId: string, requestOptions: RequestOptions): void;
   appOpenShow(requestId: number, showOptions?: AdShowOptions): Promise<void>;
   interstitialLoad(requestId: number, adUnitId: string, requestOptions: RequestOptions): void;
