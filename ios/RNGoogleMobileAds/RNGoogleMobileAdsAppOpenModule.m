@@ -77,6 +77,7 @@ RCT_EXPORT_METHOD(appOpenLoad
 
 RCT_EXPORT_METHOD(appOpenShow
                   : (nonnull NSNumber *)requestId
+                  : (NSString *)adUnitId
                   : (NSDictionary *)showOptions
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {

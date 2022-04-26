@@ -18,19 +18,16 @@
 import { isString } from '../common';
 import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
-import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
-import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
-import { MobileAdInterface } from '../types/MobileAd.interface';
 
-let _appOpenRequest = 0;
+export class AppOpenAd extends MobileAd {
+  protected static _appOpenRequest = 0;
 
-export class AppOpenAd extends MobileAd implements MobileAdInterface {
-  static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions): AppOpenAd {
+  static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions) {
     if (!isString(adUnitId)) {
       throw new Error("AppOpenAd.createForAdRequest(*) 'adUnitId' expected an string value.");
     }
@@ -44,37 +41,8 @@ export class AppOpenAd extends MobileAd implements MobileAdInterface {
       }
     }
 
-    const requestId = _appOpenRequest++;
+    const requestId = AppOpenAd._appOpenRequest++;
     return new AppOpenAd('app_open', MobileAds(), requestId, adUnitId, options);
-  }
-
-  load() {
-    // Prevent multiple load calls
-    if (this._loaded || this._isLoadCalled) {
-      return;
-    }
-
-    this._isLoadCalled = true;
-    this._googleMobileAds.native.appOpenLoad(this._requestId, this._adUnitId, this._requestOptions);
-  }
-
-  show(showOptions?: AdShowOptions) {
-    if (!this._loaded) {
-      throw new Error(
-        'AppOpenAd.show() The requested AppOpenAd has not loaded and could not be shown.',
-      );
-    }
-
-    let options;
-    try {
-      options = validateAdShowOptions(showOptions);
-    } catch (e) {
-      if (e instanceof Error) {
-        throw new Error(`AppOpenAd.show(*) ${e.message}.`);
-      }
-    }
-
-    return this._googleMobileAds.native.appOpenShow(this._requestId, options);
   }
 
   addAdEventsListener<T extends AdEventType>(listener: AdEventsListener<T>): () => void {

@@ -22,15 +22,18 @@ import { AdEventType } from '../AdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventListener, AdEventPayload } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
+import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
+import { MobileAdInterface } from '../types/MobileAd.interface';
 import { MobileAdsModuleInterface } from '../types/MobileAdsModule.interface';
 import { RewardedAdReward } from '../types/RewardedAdReward';
 import { GAMAdEventType } from '../GAMAdEventType';
 import { AppEvent } from '../types/AppEvent';
+import { validateAdShowOptions } from '../validateAdShowOptions';
 
 type EventType = AdEventType | RewardedAdEventType | GAMAdEventType;
 
-export class MobileAd {
+export abstract class MobileAd implements MobileAdInterface {
   protected _type: 'app_open' | 'interstitial' | 'rewarded';
   protected _googleMobileAds: MobileAdsModuleInterface;
   protected _requestId: number;
@@ -113,9 +116,7 @@ export class MobileAd {
 
   protected _addAdEventsListener<T extends EventType>(listener: AdEventsListener<T>) {
     if (!isFunction(listener)) {
-      throw new Error(
-        `${this.constructor.name}.addAdEventsListener(*) 'listener' expected a function.`,
-      );
+      throw new Error(`${this._className}.addAdEventsListener(*) 'listener' expected a function.`);
     }
 
     const id = this._adEventsListenerId++;
@@ -133,12 +134,12 @@ export class MobileAd {
       )
     ) {
       throw new Error(
-        `${this.constructor.name}.addAdEventListener(*) 'type' expected a valid event type value.`,
+        `${this._className}.addAdEventListener(*) 'type' expected a valid event type value.`,
       );
     }
     if (!isFunction(listener)) {
       throw new Error(
-        `${this.constructor.name}.addAdEventListener(_, *) 'listener' expected a function.`,
+        `${this._className}.addAdEventListener(_, *) 'listener' expected a function.`,
       );
     }
 
@@ -153,18 +154,61 @@ export class MobileAd {
     return this._adEventListenersMap.get(type) as Map<number, AdEventListener<T>>;
   }
 
-  removeAllListeners() {
+  protected get _className() {
+    return this.constructor.name;
+  }
+
+  public load() {
+    // Prevent multiple load calls
+    if (this._loaded || this._isLoadCalled) {
+      return;
+    }
+
+    this._isLoadCalled = true;
+    const type = this._type === 'app_open' ? 'appOpen' : this._type;
+    const load = this._googleMobileAds.native[`${type}Load`];
+    load(this._requestId, this._adUnitId, this._requestOptions);
+  }
+
+  public show(showOptions?: AdShowOptions) {
+    if (!this._loaded) {
+      throw new Error(
+        `${this._className}.show() The requested ${this._className} has not loaded and could not be shown.`,
+      );
+    }
+
+    let options;
+    try {
+      options = validateAdShowOptions(showOptions);
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new Error(`${this._className}.show(*) ${e.message}.`);
+      } else {
+        throw e;
+      }
+    }
+
+    const type = this._type === 'app_open' ? 'appOpen' : this._type;
+    const show = this._googleMobileAds.native[`${type}Show`];
+    return show(this._requestId, this._adUnitId, options);
+  }
+
+  public abstract addAdEventsListener<T extends never>(listener: AdEventsListener<T>): () => void;
+
+  public abstract addAdEventListener<T extends never>(type: T, listener: AdEventListener<T>): void;
+
+  public removeAllListeners() {
     this._adEventsListeners.clear();
     this._adEventListenersMap.forEach((_, type, map) => {
       map.set(type, new Map());
     });
   }
 
-  get adUnitId() {
+  public get adUnitId() {
     return this._adUnitId;
   }
 
-  get loaded() {
+  public get loaded() {
     return this._loaded;
   }
 }

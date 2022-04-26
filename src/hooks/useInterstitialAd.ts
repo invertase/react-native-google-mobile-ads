@@ -33,7 +33,7 @@ import { useFullScreenAd } from './useFullScreenAd';
 export function useInterstitialAd(
   adUnitId: string | null,
   requestOptions: RequestOptions = {},
-): Omit<AdHookReturns, 'adReward'> {
+): Omit<AdHookReturns, 'reward' | 'isEarnedReward'> {
   const [interstitialAd, setInterstitialAd] = useState<InterstitialAd | null>(null);
 
   useDeepCompareEffect(() => {
