@@ -33,7 +33,7 @@ import { useFullScreenAd } from './useFullScreenAd';
 export function useAppOpenAd(
   adUnitId: string | null,
   requestOptions: RequestOptions = {},
-): Omit<AdHookReturns, 'adReward'> {
+): Omit<AdHookReturns, 'reward' | 'isEarnedReward'> {
   const [appOpenAd, setAppOpenAd] = useState<AppOpenAd | null>(null);
 
   useDeepCompareEffect(() => {
