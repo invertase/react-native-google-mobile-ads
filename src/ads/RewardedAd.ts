@@ -18,17 +18,12 @@
 import { isString } from '../common';
 import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
-import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
-import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
-import { MobileAdInterface } from '../types/MobileAd.interface';
-
-let _rewardedRequest = 0;
 
 /**
  * A class for interacting and showing Rewarded Ads.
@@ -75,7 +70,8 @@ let _rewardedRequest = 0;
  * The rewarded advert will be presented to the user, and several more events can be triggered such as the user clicking the
  * advert, closing it or completing the action.
  */
-export class RewardedAd extends MobileAd implements MobileAdInterface {
+export class RewardedAd extends MobileAd {
+  protected static _rewardedRequest = 0;
   /**
    * Creates a new RewardedAd instance.
    *
@@ -101,7 +97,7 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
    * @param adUnitId The Ad Unit ID for the Rewarded Ad. You can find this on your Google Mobile Ads dashboard.
    * @param requestOptions Optional RequestOptions used to load the ad.
    */
-  static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions): RewardedAd {
+  static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions) {
     if (!isString(adUnitId)) {
       throw new Error("RewardedAd.createForAdRequest(*) 'adUnitId' expected an string value.");
     }
@@ -115,40 +111,8 @@ export class RewardedAd extends MobileAd implements MobileAdInterface {
       }
     }
 
-    const requestId = _rewardedRequest++;
+    const requestId = RewardedAd._rewardedRequest++;
     return new RewardedAd('rewarded', MobileAds(), requestId, adUnitId, options);
-  }
-
-  load() {
-    // Prevent multiple load calls
-    if (this._loaded || this._isLoadCalled) {
-      return;
-    }
-
-    this._isLoadCalled = true;
-    this._googleMobileAds.native.rewardedLoad(
-      this._requestId,
-      this._adUnitId,
-      this._requestOptions,
-    );
-  }
-
-  show(showOptions?: AdShowOptions) {
-    if (!this._loaded) {
-      throw new Error(
-        'RewardedAd.show() The requested RewardedAd has not loaded and could not be shown.',
-      );
-    }
-
-    let options;
-    try {
-      options = validateAdShowOptions(showOptions);
-    } catch (e) {
-      if (e instanceof Error) {
-        throw new Error(`RewardedAd.show(*) ${e.message}.`);
-      }
-    }
-    return this._googleMobileAds.native.rewardedShow(this._requestId, this._adUnitId, options);
   }
 
   addAdEventsListener<T extends AdEventType | RewardedAdEventType>(

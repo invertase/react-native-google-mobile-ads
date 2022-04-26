@@ -18,16 +18,11 @@
 import { isString } from '../common';
 import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
-import { validateAdShowOptions } from '../validateAdShowOptions';
 import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
-import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
-import { MobileAdInterface } from '../types/MobileAd.interface';
-
-let _interstitialRequest = 0;
 
 /**
  * A class for interacting and showing Interstitial Ads.
@@ -68,7 +63,8 @@ let _interstitialRequest = 0;
  * The advert will be presented to the user, and several more events can be triggered such as the user clicking the
  * advert or closing it.
  */
-export class InterstitialAd extends MobileAd implements MobileAdInterface {
+export class InterstitialAd extends MobileAd {
+  protected static _interstitialRequest = 0;
   /**
    * Creates a new InterstitialAd instance.
    *
@@ -91,7 +87,7 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
    * @param adUnitId The Ad Unit ID for the Interstitial. You can find this on your Google Mobile Ads dashboard.
    * @param requestOptions Optional RequestOptions used to load the ad.
    */
-  static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions): InterstitialAd {
+  static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions) {
     if (!isString(adUnitId)) {
       throw new Error("InterstitialAd.createForAdRequest(*) 'adUnitId' expected an string value.");
     }
@@ -105,41 +101,8 @@ export class InterstitialAd extends MobileAd implements MobileAdInterface {
       }
     }
 
-    const requestId = _interstitialRequest++;
+    const requestId = InterstitialAd._interstitialRequest++;
     return new InterstitialAd('interstitial', MobileAds(), requestId, adUnitId, options);
-  }
-
-  load() {
-    // Prevent multiple load calls
-    if (this._loaded || this._isLoadCalled) {
-      return;
-    }
-
-    this._isLoadCalled = true;
-    this._googleMobileAds.native.interstitialLoad(
-      this._requestId,
-      this._adUnitId,
-      this._requestOptions,
-    );
-  }
-
-  show(showOptions?: AdShowOptions) {
-    if (!this._loaded) {
-      throw new Error(
-        'InterstitialAd.show() The requested InterstitialAd has not loaded and could not be shown.',
-      );
-    }
-
-    let options;
-    try {
-      options = validateAdShowOptions(showOptions);
-    } catch (e) {
-      if (e instanceof Error) {
-        throw new Error(`InterstitialAd.show(*) ${e.message}.`);
-      }
-    }
-
-    return this._googleMobileAds.native.interstitialShow(this._requestId, options);
   }
 
   addAdEventsListener<T extends AdEventType>(listener: AdEventsListener<T>) {

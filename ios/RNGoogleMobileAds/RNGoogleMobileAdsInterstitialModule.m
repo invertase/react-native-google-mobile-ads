@@ -102,6 +102,7 @@ RCT_EXPORT_METHOD(interstitialLoad
 
 RCT_EXPORT_METHOD(interstitialShow
                   : (nonnull NSNumber *)requestId
+                  : (NSString *)adUnitId
                   : (NSDictionary *)showOptions
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {

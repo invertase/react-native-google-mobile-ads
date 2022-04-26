@@ -119,7 +119,8 @@ public class ReactNativeGoogleMobileAdsAppOpenModule extends ReactNativeModule {
   }
 
   @ReactMethod
-  public void appOpenShow(int requestId, ReadableMap showOptions, Promise promise) {
+  public void appOpenShow(
+      int requestId, String adUnitId, ReadableMap showOptions, Promise promise) {
     if (getCurrentActivity() == null) {
       rejectPromiseWithCodeAndMessage(
           promise,

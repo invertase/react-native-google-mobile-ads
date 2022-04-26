@@ -120,7 +120,8 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
   }
 
   @ReactMethod
-  public void interstitialShow(int requestId, ReadableMap showOptions, Promise promise) {
+  public void interstitialShow(
+      int requestId, String adUnitId, ReadableMap showOptions, Promise promise) {
     if (getCurrentActivity() == null) {
       rejectPromiseWithCodeAndMessage(
           promise,
