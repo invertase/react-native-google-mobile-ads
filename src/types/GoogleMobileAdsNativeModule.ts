@@ -8,9 +8,9 @@ export interface GoogleMobileAdsNativeModule {
   setRequestConfiguration(requestConfiguration?: RequestConfiguration): Promise<void>;
   openAdInspector(): () => Promise<void>;
   appOpenLoad(requestId: number, adUnitId: string, requestOptions: RequestOptions): void;
-  appOpenShow(requestId: number, showOptions?: AdShowOptions): Promise<void>;
+  appOpenShow(requestId: number, adUnitId: string, showOptions?: AdShowOptions): Promise<void>;
   interstitialLoad(requestId: number, adUnitId: string, requestOptions: RequestOptions): void;
-  interstitialShow(requestId: number, showOptions?: AdShowOptions): Promise<void>;
+  interstitialShow(requestId: number, adUnitId: string, showOptions?: AdShowOptions): Promise<void>;
   rewardedLoad(requestId: number, adUnitId: string, requestOptions: RequestOptions): void;
   rewardedShow(requestId: number, adUnitId: string, showOptions?: AdShowOptions): Promise<void>;
 }
