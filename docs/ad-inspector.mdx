@@ -1,0 +1,39 @@
+# Ad Inspector
+
+Ad inspector is an in-app overlay that enables authorized devices to perform real-time analysis of test ad requests directly within a mobile app.
+
+Using ad inspector, you can:
+
+- Inspect your ad units
+- Check whether your ads are filling as expected
+- Identify errors and view details about how to resolve them
+- View the details for each Open Bidding ad network per request
+- View the mediation details for each ad network per request
+- Test individual third-party Open Bidding or waterfall mediation ad sources
+- Verify that you've correctly configured each ad unit for Open Bidding and waterfall mediation
+
+To see more information about ad inspector, see the [official documentation](https://developers.google.com/admob/android/ad-inspector).
+
+## Launch ad inspector
+
+Ad inspector can be launched from anywhere in your app. There are three different ways to launch ad inspector.
+
+1. Use the launch button from the debug menu.
+2. Use the gesture that you selected in the ad inspector settings.
+3. Programmatically using the provided API.
+
+More information about laucnhing ad inspector is available in [official documentation](https://developers.google.com/admob/android/ad-inspector#launch_ad_inspector).
+
+### Launch programmatically
+
+Ad inspector can be launched programmatically with the `openAdInspector` method in the `MobileAds` instance.
+
+```js
+try {
+  await MobileAds().openAdInspector();
+  // The promise will resolve when the inspector is closed.
+} catch (error) {
+  // The promise will reject if ad inspector is closed due to an error.
+  console.log(error);
+}
+```

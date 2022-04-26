@@ -61,6 +61,10 @@ class MobileAdsModule extends Module implements MobileAdsModuleInterface {
 
     return this.native.setRequestConfiguration(config);
   }
+
+  openAdInspector() {
+    return this.native.openAdInspector();
+  }
 }
 
 const MobileAdsInstance = new MobileAdsModule(
