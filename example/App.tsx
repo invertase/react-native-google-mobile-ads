@@ -570,7 +570,7 @@ class GAMInterstitialTest implements Test {
   adLoaded = false;
 
   constructor() {
-    interstitial.load();
+    gamInterstitial.load();
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = gamInterstitial.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} GAM interstitial ad event: ${type}`);
@@ -609,7 +609,7 @@ class GAMInterstitialTest implements Test {
           title="Show Interstitial"
           disabled={!this.adLoaded}
           onPress={() => {
-            interstitial.show();
+            gamInterstitial.show();
           }}
         />
       </View>
