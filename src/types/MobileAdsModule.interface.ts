@@ -32,6 +32,16 @@ export interface MobileAdsModuleInterface {
   setRequestConfiguration(requestConfiguration: RequestConfiguration): Promise<void>;
 
   /**
+   * Opens the Ad Inspector. Ad inspector is an in-app overlay that enables authorized devices to perform real-time analysis of test ad requests directly within a mobile app.
+   *
+   * The promise will resolve when the inspector is closed.
+   * Also, the promise will reject if ad inspector is closed due to an error.
+   *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/ad-inspector
+   */
+  openAdInspector(): () => Promise<void>;
+
+  /**
    * The native module instance for the Google Mobile Ads service.
    */
   native: GoogleMobileAdsNativeModule;
