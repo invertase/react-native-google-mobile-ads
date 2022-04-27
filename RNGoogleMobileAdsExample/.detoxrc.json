@@ -34,13 +34,13 @@
     },
     "ios.debug": {
       "type": "ios.app",
-      "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/example.app",
-      "build": "xcodebuild VALID_ARCHS=\"`uname -m`\"  CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ -workspace ios/example.xcworkspace -scheme example -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -UseModernBuildSystem=YES"
+      "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/RNGoogleMobileAdsExample.app",
+      "build": "xcodebuild VALID_ARCHS=\"`uname -m`\"  CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ -workspace ios/RNGoogleMobileAdsExample.xcworkspace -scheme RNGoogleMobileAdsExample -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -UseModernBuildSystem=YES"
     },
     "ios.release": {
       "type": "ios.app",
-      "binaryPath": "ios/build/Build/Products/Release-iphonesimulator/exxample.app",
-      "build": "export RCT_NO_LAUNCH_PACKAGER=true && xcodebuild  CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ -workspace ios/example.xcworkspace -scheme example -configuration Release -sdk iphonesimulator -derivedDataPath ios/build -UseModernBuildSystem=YES"
+      "binaryPath": "ios/build/Build/Products/Release-iphonesimulator/RNGoogleMobileAdsExample.app",
+      "build": "export RCT_NO_LAUNCH_PACKAGER=true && xcodebuild  CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ -workspace ios/RNGoogleMobileAdsExample.xcworkspace -scheme RNGoogleMobileAdsExample -configuration Release -sdk iphonesimulator -derivedDataPath ios/build -UseModernBuildSystem=YES"
     }
   },
   "configurations": {

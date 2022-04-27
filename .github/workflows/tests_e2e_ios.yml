@@ -102,7 +102,7 @@ jobs:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
-          command: yarn --no-audit --prefer-offline && cd example && DETOX_DISABLE_POSTINSTALL=1 yarn --no-audit --prefer-offline
+          command: yarn --no-audit --prefer-offline && cd RNGoogleMobileAdsExample && DETOX_DISABLE_POSTINSTALL=1 yarn --no-audit --prefer-offline
 
       - name: Pod Install
         uses: nick-invision/retry@v2
