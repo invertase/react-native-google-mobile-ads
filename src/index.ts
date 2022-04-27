@@ -41,3 +41,4 @@ export { GAMInterstitialAd } from './ads/GAMInterstitialAd';
 export { useAppOpenAd } from './hooks/useAppOpenAd';
 export { useInterstitialAd } from './hooks/useInterstitialAd';
 export { useRewardedAd } from './hooks/useRewardedAd';
+export * from './types';
