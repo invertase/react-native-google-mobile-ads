@@ -1,3 +1,23 @@
+## [6.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v5.1.1...v6.0.0) (2022-04-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* add addAdEventListener method (#110)
+
+### Features
+
+* add Ad Inspector ([#116](https://github.com/invertase/react-native-google-mobile-ads/issues/116)) ([dd36436](https://github.com/invertase/react-native-google-mobile-ads/commit/dd364367aa60006c1a8f7a1ea153ff408ec1b03b))
+* add addAdEventListener method ([#110](https://github.com/invertase/react-native-google-mobile-ads/issues/110)) ([e842477](https://github.com/invertase/react-native-google-mobile-ads/commit/e8424778159cc15d907519729d75343a4f6df5b4))
+* Add Google Ad Manager support ([#105](https://github.com/invertase/react-native-google-mobile-ads/issues/105)) ([48f77da](https://github.com/invertase/react-native-google-mobile-ads/commit/48f77da3f26e12bf75247f94195755e0b52f9d2a))
+* **android, sdk:** update to google mobile ads sdk 20.6.0 ([26ef269](https://github.com/invertase/react-native-google-mobile-ads/commit/26ef2694197fa8d7c56da12d742ff899a670ac41)), closes [#114](https://github.com/invertase/react-native-google-mobile-ads/issues/114)
+* **ios, sdk:** migrate to mobile ads sdk v9 ([36a440a](https://github.com/invertase/react-native-google-mobile-ads/commit/36a440afd29bf92fd550767e77c51090fd72a63d)), closes [#113](https://github.com/invertase/react-native-google-mobile-ads/issues/113)
+
+
+### Bug Fixes
+
+* fix wrong hook return type omit ([8bbc0ad](https://github.com/invertase/react-native-google-mobile-ads/commit/8bbc0ad742bb0a23b6fecdd718e701985d21086b))
+
 ### [5.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v5.1.0...v5.1.1) (2022-04-19)
 
 
