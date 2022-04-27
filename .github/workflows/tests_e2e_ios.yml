@@ -19,6 +19,10 @@ on:
       - '.spellcheck.dict.txt'
       - '**/*.md'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ios:
     name: iOS
@@ -28,10 +32,6 @@ jobs:
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
-      - uses: styfle/cancel-workflow-action@0.9.1
-        with:
-          all_but_latest: true
-
       # Set up tool versions
       - uses: actions/setup-node@v2
         with:
