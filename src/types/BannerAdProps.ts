@@ -1,4 +1,5 @@
 import { BannerAdSize } from '../BannerAdSize';
+import { AppEvent } from './AppEvent';
 import { RequestOptions } from './RequestOptions';
 
 /**
@@ -33,7 +34,7 @@ import { RequestOptions } from './RequestOptions';
  * }
  * ```
  */
-export type BannerAdProps = {
+export interface BannerAdProps {
   /**
    * The Google Mobile Ads unit ID for the banner.
    */
@@ -44,7 +45,7 @@ export type BannerAdProps = {
    *
    * Inventory must be available for the banner size specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  size: BannerAdSize;
+  size: BannerAdSize | string;
 
   /**
    * The request options for this banner.
@@ -54,7 +55,7 @@ export type BannerAdProps = {
   /**
    * When an ad has finished loading.
    */
-  onAdLoaded?: () => void;
+  onAdLoaded?: (dimensions: { width: number; height: number }) => void;
 
   /**
    * When an ad has failed to load. Callback contains an Error.
@@ -70,4 +71,80 @@ export type BannerAdProps = {
    * Called when the user is about to return to the app after tapping on an ad.
    */
   onAdClosed?: () => void;
-};
+}
+
+/**
+ * An interface for a GAM Banner advert component.
+ *
+ * #### Example
+ *
+ * The `GAMBannerAd` interface is exposed as a React component, allowing you to integrate ads within your existing React
+ * Native code base. The component itself is isolated, meaning any standard `View` props (e.g. `style`) are not
+ * forwarded on. It is recommended you wrap the `GAMBannerAd` within your own `View` if you wish to apply custom props for use-cases
+ * such as positioning.
+ *
+ * ```js
+ * import { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+ *
+ * function HomeScreen() {
+ *   return (
+ *     <GAMBannerAd
+ *       unitId={TestIds.GAM_BANNER}
+ *       sizes={[BannerAdSize.FULL_BANNER]}
+ *       requestOptions={{
+ *         requestNonPersonalizedAdsOnly: true,
+ *       }}
+ *       onAdLoaded={() => {
+ *         console.log('Advert loaded');
+ *       }}
+ *       onAdFailedToLoad={(error) => {
+ *         console.error('Advert failed to load: ', error);
+ *       }}
+ *     />
+ *   );
+ * }
+ * ```
+ */
+export interface GAMBannerAdProps extends Omit<BannerAdProps, 'size'> {
+  /**
+   * The available sizes of the banner. Can be a array of predefined sizes via `BannerAdSize` or custom dimensions, e.g. `300x200`.
+   *
+   * Inventory must be available for the banner sizes specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
+   */
+  sizes: BannerAdSize[] | string[];
+
+  /**
+   * Whether to enable the manual impression counting.
+   *
+   * #### Example
+   *
+   * After setting this value to `true`, call `recordManualImpression()` from the ref object.
+   *
+   * ```js
+   * import { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+   *
+   * function HomeScreen() {
+   *   const ref = useRef<GAMBannerAd>(null);
+   *
+   *   const recordManualImpression = () => {
+   *     ref.current?.recordManualImpression();
+   *   }
+   *
+   *   return (
+   *     <GAMBannerAd
+   *       ref={ref}
+   *       unitId={TestIds.GAM_BANNER}
+   *       sizes={[BannerAdSize.FULL_BANNER]}
+   *       manualImpressionsEnabled={true}
+   *     />
+   *   );
+   * }
+   * ```
+   */
+  manualImpressionsEnabled?: boolean;
+
+  /**
+   * When an ad received Ad Manager specific app events.
+   */
+  onAppEvent?: (appEvent: AppEvent) => void;
+}

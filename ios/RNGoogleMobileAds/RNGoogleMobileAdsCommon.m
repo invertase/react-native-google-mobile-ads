@@ -27,6 +27,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_ERROR = @"error";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_OPENED = @"opened";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_CLICKED = @"clicked";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_CLOSED = @"closed";
+NSString *const GOOGLE_MOBILE_ADS_EVENT_APP_EVENT = @"app_event";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED = @"rewarded_loaded";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_reward";
 
@@ -193,6 +194,13 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
   } else {
     return GADAdSizeBanner;
   }
+}
+
++ (BOOL)isAdManagerUnit:(NSString *)unitId {
+  if (unitId == nil) {
+    return NO;
+  }
+  return [unitId hasPrefix:@"/"];
 }
 
 @end

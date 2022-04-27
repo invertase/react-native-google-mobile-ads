@@ -27,9 +27,11 @@ import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
 import { MobileAdsModuleInterface } from '../types/MobileAdsModule.interface';
 import { RewardedAdReward } from '../types/RewardedAdReward';
+import { GAMAdEventType } from '../GAMAdEventType';
+import { AppEvent } from '../types/AppEvent';
 import { validateAdShowOptions } from '../validateAdShowOptions';
 
-type EventType = AdEventType | RewardedAdEventType;
+type EventType = AdEventType | RewardedAdEventType | GAMAdEventType;
 
 export abstract class MobileAd implements MobileAdInterface {
   protected _type: 'app_open' | 'interstitial' | 'rewarded';
@@ -65,6 +67,7 @@ export abstract class MobileAd implements MobileAdInterface {
     Object.values({
       ...AdEventType,
       ...RewardedAdEventType,
+      ...GAMAdEventType,
       _: AdEventType.LOADED, // since AdEventType.LOADED is overwritten by RewardedAdEventType.LOADED
     }).forEach(type => {
       this._adEventListenersMap.set(type as EventType, new Map());
@@ -82,7 +85,7 @@ export abstract class MobileAd implements MobileAdInterface {
     body: {
       type: EventType;
       error?: { code: string; message: string };
-      data?: RewardedAdReward;
+      data?: RewardedAdReward | AppEvent;
     };
   }) {
     const { type, error, data } = event.body;

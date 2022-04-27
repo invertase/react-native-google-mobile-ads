@@ -312,3 +312,28 @@ or network triggers an event:
 
 Each render of the component loads a single advert, allowing you to display multiple adverts at once. If you need to reload/change
 an advert for a currently mounted component, you'll need to force a re-render inside of your own code.
+
+### Displaying Google Ad Manager Banner
+
+You can also display a Google Ad Manager banner ad unit. In this case, you have to import `GAMBannerAd` component and use `sizes` prop instead of `size` prop:
+
+```js
+import React from 'react';
+import { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.GAM_BANNER : '/xxx/yyyy';
+
+function App() {
+  return (
+    <GAMBannerAd
+      unitId={adUnitId}
+      sizes={[BannerAdSize.FULL_BANNER]}
+      requestOptions={{
+        requestNonPersonalizedAdsOnly: true,
+      }}
+    />
+  );
+}
+```
+
+The `sizes` prop takes an array of [`BannerAdSize`](/reference/admob/banneradsize) types.

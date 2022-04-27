@@ -23,7 +23,8 @@
 
 #import "RNGoogleMobileAdsCommon.h"
 
-@interface RNGoogleMobileAdsFullScreenContentDelegate : NSObject <GADFullScreenContentDelegate>
+@interface RNGoogleMobileAdsFullScreenContentDelegate
+    : NSObject <GADFullScreenContentDelegate, GADAppEventDelegate>
 
 @property(nonatomic, copy) NSString *sendAdEvent;
 @property(nonatomic, copy) NSNumber *requestId;

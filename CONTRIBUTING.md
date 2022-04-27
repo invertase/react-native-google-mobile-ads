@@ -5,7 +5,7 @@ First, thank you for considering contributing to React Native Google Mobile Ads!
 We welcome any type of contribution, not just code. You can help with;
 
 - **QA**: file bug reports, the more details you can give the better (e.g. platform versions, screenshots SDK versions & logs)
-- **COMING SOON** **Docs**: improve reference coverage, add more examples, fix typos or anything else you can spot.
+- **Docs**: improve reference coverage, add more examples, fix typos or anything else you can spot.
   - At the top of every page on our docs site you can click the `Edit Page` button to go to that pages markdown file or TypeScript definition file, or view the [documents](https://github.com/invertase/react-native-google-mobile-ads/tree/main/docs) directly
 - **Community**: presenting the project at meetups, organizing a dedicated meetup for the local community, ...
 - **Code**: take a look at the [open issues](issues). Even if you can't write code, commenting on them, showing that you care about a given issue matters.

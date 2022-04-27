@@ -68,36 +68,49 @@ RCT_EXPORT_METHOD(interstitialLoad
                   : (nonnull NSNumber *)requestId
                   : (NSString *)adUnitId
                   : (NSDictionary *)adRequestOptions) {
-  [GADInterstitialAd loadWithAdUnitID:adUnitId
-                              request:[RNGoogleMobileAdsCommon buildAdRequest:adRequestOptions]
-                    completionHandler:^(GADInterstitialAd *ad, NSError *error) {
-                      if (error) {
-                        NSDictionary *codeAndMessage =
-                            [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
-                        [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL
-                                                   requestId:requestId
-                                                        type:GOOGLE_MOBILE_ADS_EVENT_ERROR
-                                                    adUnitId:adUnitId
-                                                       error:codeAndMessage
-                                                        data:nil];
-                        return;
-                      }
-                      GADInterstitialAd *interstitial = ad;
-                      RNGoogleMobileAdsFullScreenContentDelegate *fullScreenContentDelegate =
-                          [[RNGoogleMobileAdsFullScreenContentDelegate alloc] init];
-                      fullScreenContentDelegate.sendAdEvent = GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL;
-                      fullScreenContentDelegate.requestId = requestId;
-                      fullScreenContentDelegate.adUnitId = ad.adUnitID;
-                      interstitial.fullScreenContentDelegate = fullScreenContentDelegate;
-                      interstitialMap[requestId] = interstitial;
-                      interstitialDelegateMap[requestId] = fullScreenContentDelegate;
-                      [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL
-                                                 requestId:requestId
-                                                      type:GOOGLE_MOBILE_ADS_EVENT_LOADED
-                                                  adUnitId:ad.adUnitID
-                                                     error:nil
-                                                      data:nil];
-                    }];
+  GAMRequest *request = [RNGoogleMobileAdsCommon buildAdRequest:adRequestOptions];
+
+  void (^completionhandler)(GADInterstitialAd *, NSError *) = ^(GADInterstitialAd *ad,
+                                                                NSError *error) {
+    if (error) {
+      NSDictionary *codeAndMessage = [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
+      [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL
+                                 requestId:requestId
+                                      type:GOOGLE_MOBILE_ADS_EVENT_ERROR
+                                  adUnitId:adUnitId
+                                     error:codeAndMessage
+                                      data:nil];
+      return;
+    }
+    GADInterstitialAd *interstitial = ad;
+    RNGoogleMobileAdsFullScreenContentDelegate *fullScreenContentDelegate =
+        [[RNGoogleMobileAdsFullScreenContentDelegate alloc] init];
+    fullScreenContentDelegate.sendAdEvent = GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL;
+    fullScreenContentDelegate.requestId = requestId;
+    fullScreenContentDelegate.adUnitId = ad.adUnitID;
+    interstitial.fullScreenContentDelegate = fullScreenContentDelegate;
+    if ([interstitial class] == [GAMInterstitialAd class]) {
+      ((GAMInterstitialAd *)interstitial).appEventDelegate = fullScreenContentDelegate;
+    }
+    interstitialMap[requestId] = interstitial;
+    interstitialDelegateMap[requestId] = fullScreenContentDelegate;
+    [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL
+                               requestId:requestId
+                                    type:GOOGLE_MOBILE_ADS_EVENT_LOADED
+                                adUnitId:ad.adUnitID
+                                   error:nil
+                                    data:nil];
+  };
+
+  if ([RNGoogleMobileAdsCommon isAdManagerUnit:adUnitId]) {
+    [GAMInterstitialAd loadWithAdManagerAdUnitID:adUnitId
+                                         request:request
+                               completionHandler:completionhandler];
+  } else {
+    [GADInterstitialAd loadWithAdUnitID:adUnitId
+                                request:request
+                      completionHandler:completionhandler];
+  }
 }
 
 RCT_EXPORT_METHOD(interstitialShow

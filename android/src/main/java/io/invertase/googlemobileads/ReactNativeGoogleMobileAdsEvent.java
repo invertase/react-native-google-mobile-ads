@@ -32,6 +32,7 @@ public class ReactNativeGoogleMobileAdsEvent implements NativeEvent {
   public static final String GOOGLE_MOBILE_ADS_EVENT_OPENED = "opened";
   public static final String GOOGLE_MOBILE_ADS_EVENT_CLICKED = "clicked";
   public static final String GOOGLE_MOBILE_ADS_EVENT_CLOSED = "closed";
+  public static final String GOOGLE_MOBILE_ADS_EVENT_APP_EVENT = "app_event";
 
   public static final String GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED = "rewarded_loaded";
   public static final String GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD =
