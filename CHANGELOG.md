@@ -3,7 +3,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* Event Listeners work differently now (#110)
+* Event Listeners work differently now ([#110](https://github.com/invertase/react-native-google-mobile-ads/issues/110))
 
 There is a migration doc! 
 The migration doc has code samples with the changes necessary, we hope it is easy - it is supposed to be easy
