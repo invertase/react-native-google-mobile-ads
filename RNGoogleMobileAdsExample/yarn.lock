@@ -1424,11 +1424,11 @@
     chalk "^4.0.0"
 
 "@jridgewell/gen-mapping@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@jridgewell/gen-mapping/-/gen-mapping-0.1.0.tgz#b30fd66b5426bb7f44bb6043ab127b20ee404063"
-  integrity sha512-YH+BnkvuCiPR+MUOY6JIArdTIGrRtsxnLaIxPRy4CpGJ/V6OO6Gq/1J+FJEc4j5e5h6Bcy3/K7prlMrm93BJoA==
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@jridgewell/gen-mapping/-/gen-mapping-0.1.1.tgz#e5d2e450306a9491e3bd77e323e38d7aff315996"
+  integrity sha512-sQXCasFk+U8lWYEe66WxRDOE9PjVz4vSM51fTu3Hw+ClTpUSQb718772vH3pyS5pShp6lvQM7SxgIDXXXmOX7w==
   dependencies:
-    "@jridgewell/set-array" "1.0.0"
+    "@jridgewell/set-array" "^1.0.0"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
 "@jridgewell/resolve-uri@^3.0.3":
@@ -1436,10 +1436,10 @@
   resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.0.6.tgz#4ac237f4dabc8dd93330386907b97591801f7352"
   integrity sha512-R7xHtBSNm+9SyvpJkdQl+qrM3Hm2fea3Ef197M3mUug+v+yR+Rhfbs7PBtcBUVnIWJ4JcAdjvij+c8hXS9p5aw==
 
-"@jridgewell/set-array@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@jridgewell/set-array/-/set-array-1.0.0.tgz#6a8e62049ab198c5f7daf8047e71947ef46c11c8"
-  integrity sha512-LcqVnHCjOAj8BTCtjpwYZCMTn4yArusbdObCVRUYvBHhrR5fVLVyENG+UVWM4T4H/ufv7NiBLdprllxWs/5PaQ==
+"@jridgewell/set-array@^1.0.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@jridgewell/set-array/-/set-array-1.1.0.tgz#1179863356ac8fbea64a5a4bcde93a4871012c01"
+  integrity sha512-SfJxIxNVYLTsKwzB3MoOQ1yxf4w/E6MdkvTgrgAt1bfxjSrLUoHMKrDOykwN14q65waezZIdqDneUIPh4/sKxg==
 
 "@jridgewell/sourcemap-codec@^1.4.10":
   version "1.4.11"
@@ -3033,10 +3033,10 @@ detect-newline@^3.0.0:
   resolved "https://registry.yarnpkg.com/detect-newline/-/detect-newline-3.1.0.tgz#576f5dfc63ae1a192ff192d8ad3af6308991b651"
   integrity sha512-TLz+x/vEXm/Y7P7wn1EJFNLxYpUD4TgMosxY6fAVJUnJMbupHBOncxyWUG9OpTaH9EBD7uFI5LfEgmMOc54DsA==
 
-detox@^19.6.6:
-  version "19.6.6"
-  resolved "https://registry.yarnpkg.com/detox/-/detox-19.6.6.tgz#b42af6ba2e07b8489441ed961b769b0d9b305b78"
-  integrity sha512-klqgpsLiQ7NCfzRth0ERQr0lr74hoSjRhsOKFqBj5yDTy7NrFINa0sKhkkMvKOdxubzGkvS+4kTy85rZ3kjpDA==
+detox@^19.6.7:
+  version "19.6.7"
+  resolved "https://registry.yarnpkg.com/detox/-/detox-19.6.7.tgz#4b826603c923ced20b6983d2d2c416e453cf405f"
+  integrity sha512-/ff7I1JQegjVYN569RfITrJkkmAFm/zkj33UFAOL/JD/5GE29lSLetgSzhxli6aSiLkbASBxYng7kqAYoCD4DA==
   dependencies:
     ajv "^8.6.3"
     bunyan "^1.8.12"

@@ -48,13 +48,14 @@ echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemo
 
 # Detox + Android
 echo "Integrating Detox for Android (maven repo, dependency, build config items, kotlin...)"
-sed -i -e $'s/maven { url \'https\:\/\/www.jitpack.io\' }/maven { url \'https\:\/\/www.jitpack.io\' }\\\n        maven \{ url "$rootDir\/..\/node_modules\/detox\/Detox-android" \}/' android/build.gradle
 sed -i -e $'s/ext {/ext {\\\n        kotlinVersion = "1.5.30"/' android/build.gradle
 sed -i -e $'s/dependencies {/dependencies {\\\n        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"/' android/build.gradle
 rm -f android/build.gradle??
-sed -i -e $'s/dependencies {/dependencies {\\\n    androidTestImplementation("com.wix:detox:+")/' android/app/build.gradle
-sed -i -e $'s/defaultConfig {/defaultConfig {\\\n        testBuildType System.getProperty("testBuildType", "debug")\\\n        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"/' android/app/build.gradle
+sed -i -e $'s/dependencies {/dependencies {\\\n    androidTestImplementation(project(path: ":detox"))/' android/app/build.gradle
+sed -i -e $'s/defaultConfig {/defaultConfig {\\\n        testBuildType System.getProperty("testBuildType", "debug")\\\n        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"\\\n        missingDimensionStrategy "detox", "full"/' android/app/build.gradle
 rm -f android/app/build.gradle??
+sed -i -e $'s/rootProject.name = \'RNGoogleMobileAdsExample\'/rootProject.name = \'RNGoogleMobileAdsExample\'\\\ninclude \':detox\'\\\nproject(\':detox\').projectDir = new File(rootProject.projectDir, \'..\/node_modules\/detox\/android\/detox\')/' android/settings.gradle
+rm -f android/settings.gradle??
 
 # React-native builds on iOS are very noisy with warnings in other packages that drown our warnings out. Reduce warnings to just our packages.
 sed -i -e $'s/react_native_post_install(installer)/react_native_post_install(installer)\\\n\\\n    # quiet non-module warnings - only interested in google-mobile-ads warnings\\\n    installer.pods_project.targets.each do |target|\\\n      if !target.name.include? "react-native-google-mobile-ads"\\\n        target.build_configurations.each do |config|\\\n          config.build_settings["GCC_WARN_INHIBIT_ALL_WARNINGS"] = "YES"\\\n        end\\\n      end\\\n    end/' ios/Podfile
