@@ -25,3 +25,4 @@ export * from './BannerAdProps';
 export * from './RequestConfiguration';
 export * from './RequestOptions';
 export * from './RewardedAdReward';
+export * from './AppEvent';
