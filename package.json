@@ -96,7 +96,8 @@
     "tests:ios:test-reuse": "cd RNGoogleMobileAdsExample && yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
     "tests:ios:test-cover": "cd RNGoogleMobileAdsExample && ./node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug",
     "tests:ios:test-cover-reuse": "cd RNGoogleMobileAdsExample && node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
-    "tests:ios:pod:install": "cd RNGoogleMobileAdsExample && cd ios && rm -rf RNGoogleMobileAdsExample.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd .."
+    "tests:ios:pod:install": "cd RNGoogleMobileAdsExample && cd ios && rm -rf RNGoogleMobileAdsExample.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd ..",
+    "package:update": "yarn upgrade --latest && yarn add clang-format@v1.6.0"
   },
   "dependencies": {
     "@iabtcf/core": "^1.4.0",
