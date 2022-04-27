@@ -15,28 +15,28 @@ else
   mkdir TEMP
 
   # Copy all the config elements
-  cp example/metro.config.js TEMP/  # This is customized to handle symbolic links
-  cp example/.mocharc.js TEMP/      # Custom mocha settings
-  cp example/.detoxrc.json TEMP/    # Custom detox settings
-  cp example/app.json TEMP/         # Our custom configuration settings / mobile ads app id etc
-  cp example/App.tsx TEMP/          # Our sample app
+  cp RNGoogleMobileAdsExample/metro.config.js TEMP/  # This is customized to handle symbolic links
+  cp RNGoogleMobileAdsExample/.mocharc.js TEMP/      # Custom mocha settings
+  cp RNGoogleMobileAdsExample/.detoxrc.json TEMP/    # Custom detox settings
+  cp RNGoogleMobileAdsExample/app.json TEMP/         # Our custom configuration settings / mobile ads app id etc
+  cp RNGoogleMobileAdsExample/App.tsx TEMP/          # Our sample app
 
   # Our Android DetoxTest integration itself is obviously custom
-  mkdir -p TEMP/android/app/src/androidTest/java/com/example
-  cp example/android/app/src/androidTest/java/com/example/DetoxTest.java TEMP/android/app/src/androidTest/java/com/example/
+  mkdir -p TEMP/android/app/src/androidTest/java/com/rngooglemobileadsexample
+  cp RNGoogleMobileAdsExample/android/app/src/androidTest/java/com/rngooglemobileadsexample/DetoxTest.java TEMP/android/app/src/androidTest/java/com/rngooglemobileadsexample/
 
   # Our e2e tests themselves are obviously custom
   mkdir -p TEMP/e2e
-  cp -r example/e2e/* TEMP/e2e/
+  cp -r RNGoogleMobileAdsExample/e2e/* TEMP/e2e/
 fi
 
 # Purge the old sample
-\rm -fr example
+\rm -fr RNGoogleMobileAdsExample
 
-# Make the new example
-npm_config_yes=true npx react-native init example --skip-install
-rm -f example/.ruby-version example/Gemfile example/Gemfile.lock example/_ruby-version example/_bundle
-pushd example
+# Make the new RNGoogleMobileAdsExample
+npm_config_yes=true npx react-native init RNGoogleMobileAdsExample --skip-install
+pushd RNGoogleMobileAdsExample
+rm -rf .ruby-version Gemfile Gemfile.lock _ruby-version _bundle .bundle
 yarn add 'link:../'
 yarn add detox mocha jest-circus jest-environment-node @babel/preset-env typescript --dev
 #yarn add 'link:../../jet/'
@@ -71,11 +71,11 @@ npm_config_yes=true npx pod-install
 
 # Copy the important files back in
 popd
-echo "Copying Google Mobile Ads example files into refreshed example..."
-cp -frv TEMP/.detox* example/
-cp -frv TEMP/.mocha* example/
-rm -f example/App.js
-cp -frv TEMP/* example/
+echo "Copying Google Mobile Ads customized example files into refreshed RNGoogleMobileAdsExample..."
+cp -frv TEMP/.detox* RNGoogleMobileAdsExample/
+cp -frv TEMP/.mocha* RNGoogleMobileAdsExample/
+rm -f RNGoogleMobileAdsExample/App.js
+cp -frv TEMP/* RNGoogleMobileAdsExample/
 
 # Clean up after ourselves
 \rm -fr TEMP

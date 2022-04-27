@@ -17,18 +17,21 @@
  */
 
 #import "RNGoogleMobileAdsBannerViewManager.h"
+#import <GoogleMobileAds/GADAppEventDelegate.h>
 #import <GoogleMobileAds/GADBannerView.h>
 #import <GoogleMobileAds/GADBannerViewDelegate.h>
+#import <React/RCTUIManager.h>
 #import "RNGoogleMobileAdsCommon.h"
 
-@interface BannerComponent : UIView <GADBannerViewDelegate>
+@interface BannerComponent : UIView <GADBannerViewDelegate, GADAppEventDelegate>
 
 @property GADBannerView *banner;
 @property(nonatomic, assign) BOOL requested;
 
-@property(nonatomic, copy) NSString *size;
+@property(nonatomic, copy) NSArray *sizes;
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
+@property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
 
 @property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
 
@@ -42,7 +45,15 @@
   if (_requested) {
     [_banner removeFromSuperview];
   }
-  _banner = [[GADBannerView alloc] initWithAdSize:adSize];
+  if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
+    _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
+
+    ((GAMBannerView *)_banner).validAdSizes = _sizes;
+    ((GAMBannerView *)_banner).appEventDelegate = self;
+    ((GAMBannerView *)_banner).enableManualImpressions = [_manualImpressionsEnabled boolValue];
+  } else {
+    _banner = [[GADBannerView alloc] initWithAdSize:adSize];
+  }
   _banner.rootViewController = [UIApplication sharedApplication].delegate.window.rootViewController;
   _banner.delegate = self;
 }
@@ -52,8 +63,17 @@
   [self requestAd];
 }
 
-- (void)setSize:(NSString *)size {
-  _size = size;
+- (void)setSizes:(NSArray *)sizes {
+  __block NSMutableArray *adSizes = [[NSMutableArray alloc] initWithCapacity:sizes.count];
+  [sizes enumerateObjectsUsingBlock:^(id jsonValue, NSUInteger idx, __unused BOOL *stop) {
+    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue];
+    if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
+      RCTLogWarn(@"Invalid adSize %@", jsonValue);
+    } else {
+      [adSizes addObject:NSValueFromGADAdSize(adSize)];
+    }
+  }];
+  _sizes = adSizes;
   [self requestAd];
 }
 
@@ -62,17 +82,22 @@
   [self requestAd];
 }
 
+- (void)setManualImpressionsEnabled:(BOOL *)manualImpressionsEnabled {
+  _manualImpressionsEnabled = [NSNumber numberWithBool:manualImpressionsEnabled];
+  [self requestAd];
+}
+
 - (void)requestAd {
 #ifndef __LP64__
   return;  // prevent crash on 32bit
 #endif
 
-  if (_unitId == nil || _size == nil || _request == nil) {
+  if (_unitId == nil || _sizes == nil || _request == nil || _manualImpressionsEnabled == nil) {
     [self setRequested:NO];
     return;
   }
 
-  [self initBanner:[RNGoogleMobileAdsCommon stringToAdSize:_size]];
+  [self initBanner:GADAdSizeFromNSValue(_sizes[0])];
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];
@@ -125,19 +150,49 @@
   [self sendEvent:@"onAdClosed" payload:nil];
 }
 
+- (void)bannerView:(GAMBannerView *)bannerView
+    didReceiveAppEvent:(NSString *)name
+              withInfo:(nullable NSString *)info {
+  [self sendEvent:@"onAppEvent"
+          payload:@{
+            @"name" : name,
+            @"data" : info,
+          }];
+}
+
+- (void)recordManualImpression {
+  if ([_banner class] == [GAMBannerView class]) {
+    [((GAMBannerView *)_banner) recordImpression];
+  }
+}
+
 @end
 
 @implementation RNGoogleMobileAdsBannerViewManager
 
 RCT_EXPORT_MODULE(RNGoogleMobileAdsBannerView);
 
-RCT_EXPORT_VIEW_PROPERTY(size, NSString);
+RCT_EXPORT_VIEW_PROPERTY(sizes, NSArray);
 
 RCT_EXPORT_VIEW_PROPERTY(unitId, NSString);
 
 RCT_EXPORT_VIEW_PROPERTY(request, NSDictionary);
 
+RCT_EXPORT_VIEW_PROPERTY(manualImpressionsEnabled, BOOL);
+
 RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
+
+RCT_EXPORT_METHOD(recordManualImpression : (nonnull NSNumber *)reactTag) {
+  [self.bridge.uiManager
+      addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
+        BannerComponent *banner = viewRegistry[reactTag];
+        if (!banner || ![banner isKindOfClass:[BannerComponent class]]) {
+          RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
+          return;
+        }
+        [banner recordManualImpression];
+      }];
+}
 
 @synthesize bridge = _bridge;
 

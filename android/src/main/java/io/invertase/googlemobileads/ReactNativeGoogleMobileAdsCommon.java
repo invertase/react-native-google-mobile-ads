@@ -253,4 +253,9 @@ public class ReactNativeGoogleMobileAdsCommon {
     codeAndMessage[1] = message;
     return codeAndMessage;
   }
+
+  public static boolean isAdManagerUnit(String unitId) {
+    if (unitId == null) return false;
+    return unitId.startsWith("/");
+  }
 }

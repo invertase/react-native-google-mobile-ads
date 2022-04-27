@@ -20,6 +20,7 @@ package io.invertase.googlemobileads;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsCommon.buildAdRequest;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsCommon.getCodeAndMessageFromAdError;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsCommon.sendAdEvent;
+import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_APP_EVENT;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLICKED;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLOSED;
 import static io.invertase.googlemobileads.ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR;
@@ -38,6 +39,8 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.admanager.AdManagerInterstitialAd;
+import com.google.android.gms.ads.admanager.AppEventListener;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import io.invertase.googlemobileads.common.ReactNativeModule;
@@ -74,7 +77,6 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
 
                 @Override
                 public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
-
                   interstitialAd.setFullScreenContentCallback(
                       new FullScreenContentCallback() {
                         @Override
@@ -96,7 +98,23 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
                               GOOGLE_MOBILE_ADS_EVENT_OPENED, requestId, adUnitId, null);
                         }
                       });
-
+                  if (interstitialAd instanceof AdManagerInterstitialAd) {
+                    ((AdManagerInterstitialAd) interstitialAd)
+                        .setAppEventListener(
+                            new AppEventListener() {
+                              @Override
+                              public void onAppEvent(@NonNull String name, @Nullable String data) {
+                                WritableMap payload = Arguments.createMap();
+                                payload.putString("name", name);
+                                payload.putString("data", data);
+                                sendInterstitialEvent(
+                                    GOOGLE_MOBILE_ADS_EVENT_APP_EVENT,
+                                    requestId,
+                                    adUnitId,
+                                    payload);
+                              }
+                            });
+                  }
                   interstitialAdArray.put(requestId, interstitialAd);
                   sendInterstitialEvent(GOOGLE_MOBILE_ADS_EVENT_LOADED, requestId, adUnitId, null);
                 }
@@ -111,11 +129,19 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
                 }
               };
 
-          InterstitialAd.load(
-              currentActivity,
-              adUnitId,
-              buildAdRequest(adRequestOptions),
-              interstitialAdLoadCallback);
+          if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(adUnitId)) {
+            AdManagerInterstitialAd.load(
+                currentActivity,
+                adUnitId,
+                buildAdRequest(adRequestOptions),
+                interstitialAdLoadCallback);
+          } else {
+            InterstitialAd.load(
+                currentActivity,
+                adUnitId,
+                buildAdRequest(adRequestOptions),
+                interstitialAdLoadCallback);
+          }
         });
   }
 
@@ -135,9 +161,7 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
               InterstitialAd interstitialAd = interstitialAdArray.get(requestId);
               if (interstitialAd == null) {
                 rejectPromiseWithCodeAndMessage(
-                    promise,
-                    "null-interstitialAd",
-                    "Interstitial ad attempted to show but its object was null.");
+                    promise, "not-ready", "Interstitial ad attempted to show but was not ready.");
                 return;
               }
 
@@ -147,15 +171,8 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
                 interstitialAd.setImmersiveMode(false);
               }
 
-              String a = String.valueOf(requestId);
-
-              if (interstitialAd != null) {
-                interstitialAd.show(getCurrentActivity());
-                promise.resolve(null);
-              } else {
-                rejectPromiseWithCodeAndMessage(
-                    promise, "not-ready", "Interstitial ad attempted to show but was not ready.");
-              }
+              interstitialAd.show(getCurrentActivity());
+              promise.resolve(null);
             });
   }
 }

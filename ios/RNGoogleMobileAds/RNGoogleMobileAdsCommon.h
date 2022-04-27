@@ -34,6 +34,8 @@
 
 + (GADAdSize)stringToAdSize:(NSString *)value;
 
++ (BOOL)isAdManagerUnit:(NSString *)unitId;
+
 @end
 
 @interface RNGADInterstitial : GADInterstitialAd
@@ -55,6 +57,7 @@ extern NSString *const GOOGLE_MOBILE_ADS_EVENT_ERROR;
 extern NSString *const GOOGLE_MOBILE_ADS_EVENT_OPENED;
 extern NSString *const GOOGLE_MOBILE_ADS_EVENT_CLICKED;
 extern NSString *const GOOGLE_MOBILE_ADS_EVENT_CLOSED;
+extern NSString *const GOOGLE_MOBILE_ADS_EVENT_APP_EVENT;
 
 extern NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED;
 extern NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD;
