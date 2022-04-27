@@ -66,7 +66,7 @@ jobs:
         id: detox-cache
         with:
           path: ~/Library/Detox/ios
-          key: ${{ runner.os }}-detox-framework-cache-${{ steps.workflow-variables.outputs.xcode-version }}
+          key: ${{ runner.os }}-detox-framework-cache-${{ steps.workflow-variables.outputs.xcode-version }}-v1
 
       # Detox is compiled during yarn install, using Xcode, set up cache first
       - uses: hendrikmuhs/ccache-action@v1
@@ -111,6 +111,14 @@ jobs:
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn tests:ios:pod:install
+
+      - name: Build Detox Framework Cache
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 10
+          retry_wait_seconds: 60
+          max_attempts: 3
+          command: cd RNGoogleMobileAdsExample && yarn detox build-framework-cache
 
       - name: Build iOS App
         run: |
@@ -160,9 +168,10 @@ jobs:
         continue-on-error: true
         run: nohup sh -c "sleep 30 && xcrun simctl spawn booted log stream --level debug --style compact > simulator.log 2>&1 &"
 
-      # - name: Detox Test
-      #   timeout-minutes: 10
-      #   run: yarn tests:ios:test
+      - name: Detox Test
+        timeout-minutes: 10
+        continue-on-error: true
+        run: yarn tests:ios:test
 
       - name: Compress Simulator Log
         continue-on-error: true
