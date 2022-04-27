@@ -3,7 +3,11 @@
 
 ### ⚠ BREAKING CHANGES
 
-* add addAdEventListener method (#110)
+* Event Listeners work differently now (#110)
+
+There is a migration doc! 
+The migration doc has code samples with the changes necessary, we hope it is easy - it is supposed to be easy
+https://github.com/invertase/react-native-google-mobile-ads/blob/main/docs/migrating-to-v6.mdx
 
 ### Features
 
