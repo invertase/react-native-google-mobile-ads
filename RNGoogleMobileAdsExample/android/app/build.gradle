@@ -137,6 +137,7 @@ android {
     defaultConfig {
         testBuildType System.getProperty("testBuildType", "debug")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        missingDimensionStrategy "detox", "full"
         applicationId "com.rngooglemobileadsexample"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
@@ -264,7 +265,7 @@ android {
 }
 
 dependencies {
-    androidTestImplementation("com.wix:detox:+")
+    androidTestImplementation(project(path: ":detox"))
     implementation fileTree(dir: "libs", include: ["*.jar"])
 
     //noinspection GradleDynamicVersion
