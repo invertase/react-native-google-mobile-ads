@@ -12,6 +12,7 @@ const nativeModuleName = [
   'RNGoogleMobileAdsAppOpenModule',
   'RNGoogleMobileAdsInterstitialModule',
   'RNGoogleMobileAdsRewardedModule',
+  'RNGoogleMobileAdsRewardedInterstitialModule',
 ];
 
 type Event = {
@@ -40,6 +41,13 @@ class MobileAdsModule extends Module implements MobileAdsModuleInterface {
     this.emitter.addListener('google_mobile_ads_rewarded_event', (event: Event) => {
       this.emitter.emit(
         `google_mobile_ads_rewarded_event:${event.adUnitId}:${event.requestId}`,
+        event,
+      );
+    });
+
+    this.emitter.addListener('google_mobile_ads_rewarded_interstitial_event', (event: Event) => {
+      this.emitter.emit(
+        `google_mobile_ads_rewarded_interstitial_event:${event.adUnitId}:${event.requestId}`,
         event,
       );
     });
@@ -77,6 +85,7 @@ const MobileAdsInstance = new MobileAdsModule(
       'google_mobile_ads_app_open_event',
       'google_mobile_ads_interstitial_event',
       'google_mobile_ads_rewarded_event',
+      'google_mobile_ads_rewarded_interstitial_event',
     ],
   },
 );
