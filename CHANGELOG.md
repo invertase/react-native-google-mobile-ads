@@ -1,3 +1,10 @@
+### [6.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.0.0...v6.0.1) (2022-04-28)
+
+
+### Bug Fixes
+
+* **types:** openAdInspector returns Promise, not function ([#123](https://github.com/invertase/react-native-google-mobile-ads/issues/123)) ([ccbf881](https://github.com/invertase/react-native-google-mobile-ads/commit/ccbf881f25aa0ddfc3a95114b407f2f19cf06e37))
+
 ## [6.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v5.1.1...v6.0.0) (2022-04-27)
 
 
