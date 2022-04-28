@@ -27,6 +27,8 @@ import MobileAds, {
   GAMInterstitialAd,
   GAMAdEventType,
   GAMBannerAd,
+  RewardedInterstitialAd,
+  useRewardedInterstitialAd,
 } from 'react-native-google-mobile-ads';
 
 const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
@@ -237,6 +239,72 @@ class RewardedTest implements Test {
   }
 }
 
+const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
+  TestIds.REWARDED_INTERSTITIAL,
+  {
+    requestNonPersonalizedAdsOnly: true,
+    keywords: ['fashion', 'clothing'],
+  },
+);
+class RewardedInterstitialTest implements Test {
+  adListener = undefined;
+  adLoaded = false;
+
+  constructor() {
+    rewardedInterstitial.load();
+    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
+    this.adListener = rewardedInterstitial.addAdEventsListener(
+      ({type, payload}) => {
+        console.log(`${Platform.OS} rewarded interstitial ad event: ${type}`);
+        if (type === AdEventType.ERROR) {
+          console.log(
+            `${Platform.OS} rewarded interstitial error: ${
+              (payload as Error).message
+            }`,
+          );
+        }
+        if (type === RewardedAdEventType.LOADED) {
+          console.log(`${Platform.OS} reward: ${JSON.stringify(payload)})`);
+          this.adLoaded = true;
+        }
+      },
+    );
+  }
+
+  getPath(): string {
+    return 'RewardedInterstitial';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return (
+      <View style={styles.testSpacing} ref={onMount}>
+        <Button
+          title="Show Rewarded Interstitial"
+          onPress={() => {
+            rewardedInterstitial.show();
+          }}
+        />
+      </View>
+    );
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
+      this.adListener();
+    }
+  }
+}
+
 class AdConsentTest implements Test {
   getPath(): string {
     return 'ConsentForm';
@@ -369,7 +437,9 @@ const RewardedHookComponent = React.forwardRef<View>((_, ref) => {
   }, [error]);
   useEffect(() => {
     if (reward !== undefined) {
-      console.log(`${Platform.OS} hook reward: ${JSON.stringify(reward)}`);
+      console.log(
+        `${Platform.OS} rewarded hook reward: ${JSON.stringify(reward)}`,
+      );
     }
   }, [reward]);
   useEffect(() => {
@@ -404,6 +474,83 @@ class RewardedHookTest implements Test {
 
   render(onMount: (component: any) => void): React.ReactNode {
     return <RewardedHookComponent ref={onMount} />;
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
+    }
+  }
+}
+
+const RewardedInterstitialHookComponent = React.forwardRef<View>((_, ref) => {
+  const {
+    load,
+    show,
+    isLoaded,
+    error,
+    reward,
+    isEarnedReward,
+    isOpened,
+    isClosed,
+    isClicked,
+  } = useRewardedInterstitialAd(TestIds.REWARDED_INTERSTITIAL);
+  useEffect(() => {
+    load();
+  }, [load]);
+  useEffect(() => {
+    if (error !== undefined) {
+      console.log(
+        `${Platform.OS} rewarded interstitial hook error: ${error.message}`,
+      );
+    }
+  }, [error]);
+  useEffect(() => {
+    if (reward !== undefined) {
+      console.log(
+        `${Platform.OS} rewarded interstitial hook reward: ${JSON.stringify(
+          reward,
+        )}`,
+      );
+    }
+  }, [reward]);
+  useEffect(() => {
+    console.log(
+      `${Platform.OS} rewarded interstitial hook state - loaded/earned/opened/clicked/closed: ${isLoaded}/${isEarnedReward}/${isOpened}/${isClicked}/${isClosed}`,
+    );
+  }, [isLoaded, isEarnedReward, isOpened, isClicked, isClosed]);
+
+  return (
+    <View style={styles.testSpacing} ref={ref}>
+      <Text>Loaded? {isLoaded ? 'true' : 'false'}</Text>
+      <Text>Error? {error ? error.message : 'false'}</Text>
+      <Button
+        title="Show Rewarded Interstitial"
+        disabled={!isLoaded}
+        onPress={() => {
+          show();
+        }}
+      />
+    </View>
+  );
+});
+
+class RewardedInterstitialHookTest implements Test {
+  getPath(): string {
+    return 'RewardedInterstitialHook';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return <RewardedInterstitialHookComponent ref={onMount} />;
   }
 
   execute(component: any, complete: (result: TestResult) => void): void {
@@ -634,10 +781,12 @@ TestRegistry.registerTest(new BannerTest());
 TestRegistry.registerTest(new AppOpenTest());
 TestRegistry.registerTest(new InterstitialTest());
 TestRegistry.registerTest(new RewardedTest());
+TestRegistry.registerTest(new RewardedInterstitialTest());
 TestRegistry.registerTest(new AdConsentTest());
 TestRegistry.registerTest(new InterstitialHookTest());
 TestRegistry.registerTest(new RewardedHookTest());
 TestRegistry.registerTest(new AppOpenHookTest());
+TestRegistry.registerTest(new RewardedInterstitialHookTest());
 TestRegistry.registerTest(new AdInspectorTest());
 TestRegistry.registerTest(new GAMBannerTest());
 TestRegistry.registerTest(new GAMInterstitialTest());

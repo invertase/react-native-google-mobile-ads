@@ -26,6 +26,8 @@ public class ReactNativeGoogleMobileAdsEvent implements NativeEvent {
   public static final String GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL =
       "google_mobile_ads_interstitial_event";
   public static final String GOOGLE_MOBILE_ADS_EVENT_REWARDED = "google_mobile_ads_rewarded_event";
+  public static final String GOOGLE_MOBILE_ADS_EVENT_REWARDED_INTERSTITIAL =
+      "google_mobile_ads_rewarded_interstitial_event";
 
   public static final String GOOGLE_MOBILE_ADS_EVENT_LOADED = "loaded";
   public static final String GOOGLE_MOBILE_ADS_EVENT_ERROR = "error";

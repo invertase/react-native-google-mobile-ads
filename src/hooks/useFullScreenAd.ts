@@ -21,6 +21,7 @@ import { AdEventType } from '../AdEventType';
 import { AppOpenAd } from '../ads/AppOpenAd';
 import { InterstitialAd } from '../ads/InterstitialAd';
 import { RewardedAd } from '../ads/RewardedAd';
+import { RewardedInterstitialAd } from '../ads/RewardedInterstitialAd';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdStates, AdHookReturns } from '../types/AdStates';
 import { AdShowOptions } from '../types/AdShowOptions';
@@ -36,9 +37,9 @@ const initialState: AdStates = {
   isEarnedReward: false,
 };
 
-export function useFullScreenAd<T extends InterstitialAd | RewardedAd | AppOpenAd | null>(
-  ad: T,
-): AdHookReturns {
+export function useFullScreenAd<
+  T extends AppOpenAd | InterstitialAd | RewardedAd | RewardedInterstitialAd | null,
+>(ad: T): AdHookReturns {
   const [state, setState] = useReducer<Reducer<AdStates, Partial<AdStates>>>(
     (prevState, newState) => ({ ...prevState, ...newState }),
     initialState,

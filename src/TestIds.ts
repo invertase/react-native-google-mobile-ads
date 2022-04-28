@@ -22,10 +22,12 @@ export const TestIds = {
   BANNER: '',
   INTERSTITIAL: '',
   REWARDED: '',
+  REWARDED_INTERSTITIAL: '',
   GAM_APP_OPEN: '/6499/example/app-open',
   GAM_BANNER: '/6499/example/banner',
   GAM_INTERSTITIAL: '/6499/example/interstitial',
   GAM_REWARDED: '/6499/example/rewarded',
+  GAM_REWARDED_INTERSTITIAL: '/21775744923/example/rewarded_interstitial',
   GAM_NATIVE: '/6499/example/native',
   ...Platform.select({
     android: {
@@ -33,12 +35,14 @@ export const TestIds = {
       BANNER: 'ca-app-pub-3940256099942544/6300978111',
       INTERSTITIAL: 'ca-app-pub-3940256099942544/1033173712',
       REWARDED: 'ca-app-pub-3940256099942544/5224354917',
+      REWARDED_INTERSTITIAL: 'ca-app-pub-3940256099942544/5354046379',
     },
     ios: {
       APP_OPEN: 'ca-app-pub-3940256099942544/5662855259',
       BANNER: 'ca-app-pub-3940256099942544/2934735716',
       INTERSTITIAL: 'ca-app-pub-3940256099942544/4411468910',
       REWARDED: 'ca-app-pub-3940256099942544/1712485313',
+      REWARDED_INTERSTITIAL: 'ca-app-pub-3940256099942544/6978759866',
     },
   }),
 };
