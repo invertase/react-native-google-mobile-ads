@@ -39,7 +39,7 @@ export interface MobileAdsModuleInterface {
    *
    * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/ad-inspector
    */
-  openAdInspector(): () => Promise<void>;
+  openAdInspector(): Promise<void>;
 
   /**
    * The native module instance for the Google Mobile Ads service.
