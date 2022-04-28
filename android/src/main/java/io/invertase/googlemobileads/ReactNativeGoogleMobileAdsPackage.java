@@ -37,6 +37,7 @@ public class ReactNativeGoogleMobileAdsPackage implements ReactPackage {
     modules.add(new ReactNativeGoogleMobileAdsAppOpenModule(reactContext));
     modules.add(new ReactNativeGoogleMobileAdsInterstitialModule(reactContext));
     modules.add(new ReactNativeGoogleMobileAdsRewardedModule(reactContext));
+    modules.add(new ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext));
     return modules;
   }
 

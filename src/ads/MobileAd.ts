@@ -34,7 +34,7 @@ import { validateAdShowOptions } from '../validateAdShowOptions';
 type EventType = AdEventType | RewardedAdEventType | GAMAdEventType;
 
 export abstract class MobileAd implements MobileAdInterface {
-  protected _type: 'app_open' | 'interstitial' | 'rewarded';
+  protected _type: 'app_open' | 'interstitial' | 'rewarded' | 'rewarded_interstitial';
   protected _googleMobileAds: MobileAdsModuleInterface;
   protected _requestId: number;
   protected _adUnitId: string;
@@ -48,7 +48,7 @@ export abstract class MobileAd implements MobileAdInterface {
   protected _nativeListener: EmitterSubscription;
 
   protected constructor(
-    type: 'app_open' | 'interstitial' | 'rewarded',
+    type: 'app_open' | 'interstitial' | 'rewarded' | 'rewarded_interstitial',
     googleMobileAds: MobileAdsModuleInterface,
     requestId: number,
     adUnitId: string,
@@ -158,6 +158,18 @@ export abstract class MobileAd implements MobileAdInterface {
     return this.constructor.name;
   }
 
+  protected get _camelCaseType() {
+    let type: 'appOpen' | 'interstitial' | 'rewarded' | 'rewardedInterstitial';
+    if (this._type === 'app_open') {
+      type = 'appOpen';
+    } else if (this._type === 'rewarded_interstitial') {
+      type = 'rewardedInterstitial';
+    } else {
+      type = this._type;
+    }
+    return type;
+  }
+
   public load() {
     // Prevent multiple load calls
     if (this._loaded || this._isLoadCalled) {
@@ -165,8 +177,7 @@ export abstract class MobileAd implements MobileAdInterface {
     }
 
     this._isLoadCalled = true;
-    const type = this._type === 'app_open' ? 'appOpen' : this._type;
-    const load = this._googleMobileAds.native[`${type}Load`];
+    const load = this._googleMobileAds.native[`${this._camelCaseType}Load`];
     load(this._requestId, this._adUnitId, this._requestOptions);
   }
 
@@ -188,8 +199,7 @@ export abstract class MobileAd implements MobileAdInterface {
       }
     }
 
-    const type = this._type === 'app_open' ? 'appOpen' : this._type;
-    const show = this._googleMobileAds.native[`${type}Show`];
+    const show = this._googleMobileAds.native[`${this._camelCaseType}Show`];
     return show(this._requestId, this._adUnitId, options);
   }
 
