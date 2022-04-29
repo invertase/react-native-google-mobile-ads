@@ -1,3 +1,10 @@
+## [6.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.0.1...v6.1.0) (2022-04-29)
+
+
+### Features
+
+* add rewarded interstitial ad ([10c6770](https://github.com/invertase/react-native-google-mobile-ads/commit/10c6770845f4b5cb3812d4f22587062cce8398dd))
+
 ### [6.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.0.0...v6.0.1) (2022-04-28)
 
 
