@@ -97,7 +97,7 @@
     "tests:ios:test-cover": "cd RNGoogleMobileAdsExample && ./node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug",
     "tests:ios:test-cover-reuse": "cd RNGoogleMobileAdsExample && node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
     "tests:ios:pod:install": "cd RNGoogleMobileAdsExample && cd ios && rm -rf RNGoogleMobileAdsExample.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd ..",
-    "package:update": "yarn upgrade --latest && yarn add clang-format@v1.6.0"
+    "package:update": "yarn upgrade --latest"
   },
   "dependencies": {
     "@iabtcf/core": "^1.4.0",
@@ -113,13 +113,13 @@
     "@semantic-release/npm": "^9.0.1",
     "@semantic-release/release-notes-generator": "^10.0.3",
     "@types/jest": "^27.4.1",
-    "@types/node": "^17.0.29",
+    "@types/node": "^17.0.30",
     "@types/react": "^18.0.8",
     "@types/react-native": "^0.67.6",
     "@typescript-eslint/eslint-plugin": "^5.21.0",
     "@typescript-eslint/parser": "^5.21.0",
-    "babel-jest": "^28.0.2",
-    "clang-format": "1.6.0",
+    "babel-jest": "^28.0.3",
+    "clang-format": "1.8.0",
     "codecov": "^3.8.3",
     "conventional-changelog-cli": "^2.2.2",
     "eslint": "^8.14.0",
@@ -130,8 +130,8 @@
     "eslint-plugin-react": "^7.29.4",
     "genversion": "^3.1.1",
     "google-java-format": "^1.0.1",
-    "inquirer": "^8.2.3",
-    "jest": "^28.0.2",
+    "inquirer": "^8.2.4",
+    "jest": "^28.0.3",
     "lerna": "4.0.0",
     "prettier": "^2.6.2",
     "react": "^18.1.0",
@@ -142,7 +142,7 @@
     "shelljs": "^0.8.5",
     "ts-jest": "^27.1.4",
     "ts-node": "^10.7.0",
-    "typescript": "^4.6.3"
+    "typescript": "^4.6.4"
   },
   "publishConfig": {
     "access": "public"
