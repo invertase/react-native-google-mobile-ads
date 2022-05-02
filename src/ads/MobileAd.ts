@@ -233,6 +233,7 @@ export abstract class MobileAd implements MobileAdInterface {
     destroy(this._requestId);
     this.removeAllListeners();
     this._nativeListener.remove();
+    this._destroyed = true;
   }
 
   public get adUnitId() {
