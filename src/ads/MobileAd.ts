@@ -41,6 +41,7 @@ export abstract class MobileAd implements MobileAdInterface {
   protected _requestOptions: RequestOptions;
   protected _loaded: boolean;
   protected _isLoadCalled: boolean;
+  protected _destroyed: boolean;
   protected _adEventsListeners: Map<number, AdEventsListener<EventType>>;
   protected _adEventListenersMap: Map<EventType, Map<number, AdEventListener<EventType>>>;
   protected _adEventsListenerId: number;
@@ -62,6 +63,7 @@ export abstract class MobileAd implements MobileAdInterface {
 
     this._loaded = false;
     this._isLoadCalled = false;
+    this._destroyed = false;
     this._adEventsListeners = new Map();
     this._adEventListenersMap = new Map();
     Object.values({
@@ -115,6 +117,7 @@ export abstract class MobileAd implements MobileAdInterface {
   }
 
   protected _addAdEventsListener<T extends EventType>(listener: AdEventsListener<T>) {
+    this._checkDestroyed();
     if (!isFunction(listener)) {
       throw new Error(`${this._className}.addAdEventsListener(*) 'listener' expected a function.`);
     }
@@ -127,6 +130,7 @@ export abstract class MobileAd implements MobileAdInterface {
   }
 
   protected _addAdEventListener<T extends EventType>(type: T, listener: AdEventListener<T>) {
+    this._checkDestroyed();
     if (
       !(
         isOneOf(type, Object.values(AdEventType)) ||
@@ -170,7 +174,14 @@ export abstract class MobileAd implements MobileAdInterface {
     return type;
   }
 
+  protected _checkDestroyed() {
+    if (this._destroyed) {
+      throw new Error(`This ${this._className} instance has been destroyed.`);
+    }
+  }
+
   public load() {
+    this._checkDestroyed();
     // Prevent multiple load calls
     if (this._loaded || this._isLoadCalled) {
       return;
@@ -182,6 +193,7 @@ export abstract class MobileAd implements MobileAdInterface {
   }
 
   public show(showOptions?: AdShowOptions) {
+    this._checkDestroyed();
     if (!this._loaded) {
       throw new Error(
         `${this._className}.show() The requested ${this._className} has not loaded and could not be shown.`,
@@ -208,10 +220,19 @@ export abstract class MobileAd implements MobileAdInterface {
   public abstract addAdEventListener<T extends never>(type: T, listener: AdEventListener<T>): void;
 
   public removeAllListeners() {
+    this._checkDestroyed();
     this._adEventsListeners.clear();
     this._adEventListenersMap.forEach((_, type, map) => {
       map.set(type, new Map());
     });
+  }
+
+  public destroy() {
+    this._checkDestroyed();
+    const destroy = this._googleMobileAds.native[`${this._camelCaseType}Destroy`];
+    destroy(this._requestId);
+    this.removeAllListeners();
+    this._nativeListener.remove();
   }
 
   public get adUnitId() {

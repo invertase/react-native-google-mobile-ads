@@ -56,8 +56,7 @@ RCT_EXPORT_MODULE();
 
 - (void)invalidate {
   for (NSNumber *id in [interstitialMap allKeys]) {
-    [interstitialMap removeObjectForKey:id];
-    [interstitialDelegateMap removeObjectForKey:id];
+    [RNGoogleMobileAdsInterstitialModule removeInterstitial:id];
   }
 }
 
@@ -132,6 +131,17 @@ RCT_EXPORT_METHOD(interstitialShow
                            @"message" : @"Interstitial ad attempted to show but was not ready.",
                          } mutableCopy]];
   }
+}
+
+RCT_EXPORT_METHOD(interstitialDestroy : (nonnull NSNumber *)requestId) {
+  [RNGoogleMobileAdsInterstitialModule removeInterstitial:requestId];
+}
+
+#pragma mark -
+
++ (void)removeInterstitial:(nonnull NSNumber *)requestId {
+  [interstitialMap removeObjectForKey:requestId];
+  [interstitialDelegateMap removeObjectForKey:requestId];
 }
 
 @end

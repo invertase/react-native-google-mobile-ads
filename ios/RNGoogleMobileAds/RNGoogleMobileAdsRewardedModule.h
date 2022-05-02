@@ -22,4 +22,6 @@
 
 @interface RNGoogleMobileAdsRewardedModule : NSObject <RCTBridgeModule>
 
++ (void)removeRewarded:(nonnull NSNumber *)requestId;
+
 @end

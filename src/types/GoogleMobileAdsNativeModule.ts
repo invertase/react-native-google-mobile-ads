@@ -9,6 +9,7 @@ type AdShowFunction = (
   adUnitId: string,
   showOptions?: AdShowOptions,
 ) => Promise<void>;
+type AdDestroyFunction = (requestId: number) => void;
 
 export interface GoogleMobileAdsNativeModule {
   initialize(): Promise<AdapterStatus[]>;
@@ -16,10 +17,14 @@ export interface GoogleMobileAdsNativeModule {
   openAdInspector(): Promise<void>;
   appOpenLoad: AdLoadFunction;
   appOpenShow: AdShowFunction;
+  appOpenDestroy: AdDestroyFunction;
   interstitialLoad: AdLoadFunction;
   interstitialShow: AdShowFunction;
+  interstitialDestroy: AdDestroyFunction;
   rewardedLoad: AdLoadFunction;
   rewardedShow: AdShowFunction;
+  rewardedDestroy: AdDestroyFunction;
   rewardedInterstitialLoad: AdLoadFunction;
   rewardedInterstitialShow: AdShowFunction;
+  rewardedInterstitialDestroy: AdDestroyFunction;
 }

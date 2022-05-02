@@ -156,4 +156,9 @@ public class ReactNativeGoogleMobileAdsAppOpenModule extends ReactNativeModule {
               }
             });
   }
+
+  @ReactMethod
+  public void appOpenDestroy(int requestId) {
+    appOpenAd = null;
+  }
 }

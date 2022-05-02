@@ -23,7 +23,6 @@
 
 @interface RNGoogleMobileAdsAppOpenModule : NSObject <RCTBridgeModule>
 
-@property(strong, nonatomic) GADAppOpenAd* appOpenAd;
-@property(strong, nonatomic) RNGoogleMobileAdsFullScreenContentDelegate* appOpenDelegate;
++ (void)removeAppOpen;
 
 @end
