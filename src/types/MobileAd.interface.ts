@@ -114,7 +114,7 @@ export interface MobileAdInterface {
   /**
    * Destroy the advert. All event listeners will be removed and the advert will be unloaded.
    *
-   * **After destroying the advert, the methods of this interface should not be called.**
+   * **After destroying the advert, the methods of this instance should not be called.**
    */
   destroy(): void;
 }
