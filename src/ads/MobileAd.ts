@@ -229,8 +229,8 @@ export abstract class MobileAd implements MobileAdInterface {
 
   public destroy() {
     this._checkDestroyed();
-    const destroy = this._googleMobileAds.native[`${this._camelCaseType}Destroy`];
-    destroy(this._requestId);
+    const nativeDestroy = this._googleMobileAds.native[`${this._camelCaseType}Destroy`];
+    nativeDestroy(this._requestId);
     this.removeAllListeners();
     this._nativeListener.remove();
     this._destroyed = true;
