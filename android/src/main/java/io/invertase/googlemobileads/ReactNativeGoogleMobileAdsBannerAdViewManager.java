@@ -153,8 +153,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
               // TODO size=FLUID is still not working
               left = 0;
               top = 0;
-              width = reactViewGroup.getWidth();
-              height = reactViewGroup.getHeight();
+              width = Math.max(
+                reactViewGroup.getWidth(),
+                adSize.getWidthInPixels(reactViewGroup.getContext()));
+              height = Math.max(
+                reactViewGroup.getHeight(),
+                adSize.getHeightInPixels(reactViewGroup.getContext()));
             } else {
               left = adView.getLeft();
               top = adView.getTop();
@@ -230,6 +234,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
         ((AdManagerAdView) adView).setManualImpressionsEnabled(true);
       }
     } else {
+      if (sizes.contains(AdSize.FLUID) && sizes.size() == 1) {
+        isFluid = true;
+      }
       adView.setAdSize(sizes.get(0));
     }
 

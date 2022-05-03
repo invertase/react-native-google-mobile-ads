@@ -180,6 +180,41 @@ class BannerTest implements Test {
   }
 }
 
+class FluidTest implements Test {
+  getPath(): string {
+    return 'Fluid';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return (
+      <View ref={onMount}>
+        <BannerAd
+          unitId={TestIds.FLUID}
+          size={BannerAdSize.FLUID}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+          }}
+        />
+      </View>
+    );
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
+    }
+  }
+}
+
 const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
   requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
@@ -778,6 +813,7 @@ class GAMInterstitialTest implements Test {
 
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
 TestRegistry.registerTest(new BannerTest());
+TestRegistry.registerTest(new FluidTest());
 TestRegistry.registerTest(new AppOpenTest());
 TestRegistry.registerTest(new InterstitialTest());
 TestRegistry.registerTest(new RewardedTest());

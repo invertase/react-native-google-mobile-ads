@@ -51,6 +51,7 @@ console.log(googleMobileAds.BannerAdSize.FLUID);
 console.log(googleMobileAds.BannerAdSize.FULL_BANNER);
 
 console.log(googleMobileAds.TestIds.BANNER);
+console.log(googleMobileAds.TestIds.FLUID);
 console.log(googleMobileAds.TestIds.INTERSTITIAL);
 console.log(googleMobileAds.TestIds.REWARDED);
 console.log(googleMobileAds.TestIds.BANNER);
