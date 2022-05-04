@@ -1,3 +1,10 @@
+## [6.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.1.0...v6.2.0) (2022-05-04)
+
+
+### Features
+
+* add inline adaptive banners support ([b0f084e](https://github.com/invertase/react-native-google-mobile-ads/commit/b0f084e8a25b3faa7e671022140d4b75bb61a6ac))
+
 ## [6.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.0.1...v6.1.0) (2022-04-29)
 
 
