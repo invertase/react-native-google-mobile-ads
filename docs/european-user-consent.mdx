@@ -93,8 +93,8 @@ The method returns an `AdsConsentInfo` interface, which provides information abo
   - `OBTAINED`: User consent already obtained.
 - **isConsentFormAvailable**: A boolean value. If `true` a consent form is available.
 
-**Note:** The status returned by this call tells whether the user has already
-seen and replied to the consent form, rather than the actual status of his consent
+**Note:** The return status of this call is the status of *form presentation and response collection*, **not
+the the actual user consent**. It simply indicates if you now have a consent response to decode.
 (_i.e._ if user consent is **required**, the form has been presented, and user has
 **denied** the consent, the status returned by this method will be `OBTAINED`,
 and not `REQUIRED` as some may expect). To check the actual consent status
