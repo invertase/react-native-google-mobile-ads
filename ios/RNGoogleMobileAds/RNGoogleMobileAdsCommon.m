@@ -190,9 +190,13 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     return GADAdSizeFullBanner;
   } else if ([value isEqualToString:@"LEADERBOARD"]) {
     return GADAdSizeLeaderboard;
-  } else if ([value isEqualToString:@"ADAPTIVE_BANNER"]) {
+  } else if ([value isEqualToString:@"ADAPTIVE_BANNER"] ||
+             [value isEqualToString:@"ANCHORED_ADAPTIVE_BANNER"]) {
     CGFloat viewWidth = [[UIScreen mainScreen] bounds].size.width;
     return GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
+  } else if ([value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
+    CGFloat viewWidth = [[UIScreen mainScreen] bounds].size.width;
+    return GADCurrentOrientationInlineAdaptiveBannerAdSizeWithWidth(viewWidth);
   } else {
     return GADAdSizeBanner;
   }

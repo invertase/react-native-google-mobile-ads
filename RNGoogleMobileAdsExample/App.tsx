@@ -146,8 +146,14 @@ class InterstitialTest implements Test {
 }
 
 class BannerTest implements Test {
+  bannerAdSize: BannerAdSize | string;
+
+  constructor(bannerAdSize) {
+    this.bannerAdSize = bannerAdSize;
+  }
+
   getPath(): string {
-    return 'Banner';
+    return this.bannerAdSize;
   }
 
   getTestType(): TestType {
@@ -159,7 +165,7 @@ class BannerTest implements Test {
       <View ref={onMount}>
         <BannerAd
           unitId={TestIds.BANNER}
-          size={BannerAdSize.ADAPTIVE_BANNER}
+          size={this.bannerAdSize}
           requestOptions={{
             requestNonPersonalizedAdsOnly: true,
           }}
@@ -777,7 +783,9 @@ class GAMInterstitialTest implements Test {
 }
 
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
-TestRegistry.registerTest(new BannerTest());
+Object.keys(BannerAdSize).forEach(bannerAdSize => {
+  TestRegistry.registerTest(new BannerTest(bannerAdSize));
+});
 TestRegistry.registerTest(new AppOpenTest());
 TestRegistry.registerTest(new InterstitialTest());
 TestRegistry.registerTest(new RewardedTest());
