@@ -40,7 +40,7 @@ import javax.annotation.Nullable;
 
 public class ReactNativeGoogleMobileAdsCommon {
 
-  static AdSize getAdSizeForAdaptiveBanner(ReactViewGroup reactViewGroup) {
+  static AdSize getAdSizeForAdaptiveBanner(String preDefinedAdSize, ReactViewGroup reactViewGroup) {
 
     try {
       Display display =
@@ -52,6 +52,10 @@ public class ReactNativeGoogleMobileAdsCommon {
       display.getMetrics(outMetrics);
       int adWidth = (int) (outMetrics.widthPixels / outMetrics.density);
 
+      if ("INLINE_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
+        return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
+            reactViewGroup.getContext(), adWidth);
+      }
       return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
           reactViewGroup.getContext(), adWidth);
     } catch (Exception e) {
@@ -60,8 +64,10 @@ public class ReactNativeGoogleMobileAdsCommon {
   }
 
   static AdSize getAdSize(String preDefinedAdSize, ReactViewGroup reactViewGroup) {
-    if ("ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
-      return ReactNativeGoogleMobileAdsCommon.getAdSizeForAdaptiveBanner(reactViewGroup);
+    if (preDefinedAdSize.matches(
+        "ADAPTIVE_BANNER|ANCHORED_ADAPTIVE_BANNER|INLINE_ADAPTIVE_BANNER")) {
+      return ReactNativeGoogleMobileAdsCommon.getAdSizeForAdaptiveBanner(
+          preDefinedAdSize, reactViewGroup);
     } else {
       return ReactNativeGoogleMobileAdsCommon.stringToAdSize(preDefinedAdSize);
     }
