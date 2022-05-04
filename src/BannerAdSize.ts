@@ -43,9 +43,20 @@ export enum BannerAdSize {
   MEDIUM_RECTANGLE = 'MEDIUM_RECTANGLE',
 
   /**
-   * A (next generation) dynamically sized banner that is full-width and auto-height.
+   * @deprecated Use `ANCHORED_ADAPTIVE_BANNER` instead.
    */
   ADAPTIVE_BANNER = 'ADAPTIVE_BANNER',
+
+  /**
+   * A (next generation) dynamically sized banner that is full-width and auto-height.
+   */
+  ANCHORED_ADAPTIVE_BANNER = 'ANCHORED_ADAPTIVE_BANNER',
+
+  /**
+   * Inline adaptive banners are larger, taller banners compared to anchored adaptive banners. They are of variable height, and can be as tall as the device screen.
+   * They are intended to be placed in scrolling content.
+   */
+  INLINE_ADAPTIVE_BANNER = 'INLINE_ADAPTIVE_BANNER',
 
   /**
    * A dynamically sized banner that matches its parent's width and expands/contracts its height to match the ad's content after loading completes.
