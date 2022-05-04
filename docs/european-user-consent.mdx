@@ -18,6 +18,16 @@ ad requests to Google serve personalized ads, with ad selection based on the use
 
 ## Handling consent
 
+To setup and configure ads consent collection, first of all:
+
+- Enable and configure GDPR and IDFA messaging in the [Privacy & messaging section of AdMob's Web Console](https://apps.admob.com/v2/privacymessaging).
+
+- For Android, add the following rule into
+  `android/app/proguard-rules.pro`:
+  ```
+  -keep class com.google.android.gms.internal.consent_sdk.** { *; }
+  ```
+
 ### Delaying app measurement
 
 By default, the Google Mobile Ads SDK initializes app measurement and begins sending user-level event data to Google immediately when the app starts.
@@ -83,6 +93,13 @@ The method returns an `AdsConsentInfo` interface, which provides information abo
   - `OBTAINED`: User consent already obtained.
 - **isConsentFormAvailable**: A boolean value. If `true` a consent form is available.
 
+**Note:** The return status of this call is the status of *form presentation and response collection*, **not
+the the actual user consent**. It simply indicates if you now have a consent response to decode.
+(_i.e._ if user consent is **required**, the form has been presented, and user has
+**denied** the consent, the status returned by this method will be `OBTAINED`,
+and not `REQUIRED` as some may expect). To check the actual consent status
+see [Inspecting consent choices] below.
+
 ### Gathering user consent
 
 To request consent, call these methods as early as possible within your app before presenting any ads.
@@ -132,6 +149,11 @@ if (storeAndAccessInformationOnDevice === false) {
 }
 ```
 
+**Note:** Don't try to use this functionality to enforce user consent on iOS,
+this will likely result in failed app review upon submission to Apple Store, based on [review guideline 3.2.2.vi](https://developer.apple.com/app-store/review/guidelines/#3.2.2):
+
+> ...Apps should not require users to rate the app, review the app, watch videos, download other apps, tap on advertisements, enable tracking...
+
 ### Testing
 
 When developing the consent flow, the behavior of the `AdsConsent` responses may not be reliable due to the environment
@@ -167,3 +189,12 @@ import { AdsConsent } from 'react-native-google-mobile-ads';
 
 AdsConsent.reset();
 ```
+
+### Troubleshooting
+
+In case of troubles, double-check the original documentation for underlying
+UMP SDK for [Android](https://developers.google.com/admob/ump/android/quick-start) /
+[iOS](https://developers.google.com/admob/ump/ios/quick-start).
+
+<!-- links -->
+[Inspecting consent choices]: #inspecting-consent-choices
