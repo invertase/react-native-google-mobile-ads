@@ -37,7 +37,8 @@ export function useRewardedAd(
   const [rewardedAd, setRewardedAd] = useState<RewardedAd | null>(null);
 
   useDeepCompareEffect(() => {
-    setRewardedAd(() => {
+    setRewardedAd(prevAd => {
+      prevAd?.destroy();
       return adUnitId ? RewardedAd.createForAdRequest(adUnitId, requestOptions) : null;
     });
   }, [adUnitId, requestOptions]);

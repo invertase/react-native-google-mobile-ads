@@ -37,7 +37,8 @@ export function useAppOpenAd(
   const [appOpenAd, setAppOpenAd] = useState<AppOpenAd | null>(null);
 
   useDeepCompareEffect(() => {
-    setAppOpenAd(() => {
+    setAppOpenAd(prevAd => {
+      prevAd?.destroy();
       return adUnitId ? AppOpenAd.createForAdRequest(adUnitId, requestOptions) : null;
     });
   }, [adUnitId, requestOptions]);

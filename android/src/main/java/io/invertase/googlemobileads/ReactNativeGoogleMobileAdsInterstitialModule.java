@@ -48,7 +48,7 @@ import javax.annotation.Nullable;
 
 public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeModule {
   private static final String SERVICE = "RNGoogleMobileAdsInterstitialModule";
-  private static SparseArray<InterstitialAd> interstitialAdArray = new SparseArray<>();
+  private static final SparseArray<InterstitialAd> interstitialAdArray = new SparseArray<>();
 
   public ReactNativeGoogleMobileAdsInterstitialModule(ReactApplicationContext reactContext) {
     super(reactContext, SERVICE);
@@ -83,7 +83,7 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
                         public void onAdDismissedFullScreenContent() {
                           sendInterstitialEvent(
                               GOOGLE_MOBILE_ADS_EVENT_CLOSED, requestId, adUnitId, null);
-                          interstitialAdArray.put(requestId, null);
+                          interstitialAdArray.remove(requestId);
                         }
 
                         @Override
@@ -174,5 +174,10 @@ public class ReactNativeGoogleMobileAdsInterstitialModule extends ReactNativeMod
               interstitialAd.show(getCurrentActivity());
               promise.resolve(null);
             });
+  }
+
+  @ReactMethod
+  public void interstitialDestroy(int requestId) {
+    interstitialAdArray.remove(requestId);
   }
 }

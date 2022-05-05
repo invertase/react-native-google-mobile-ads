@@ -30,7 +30,7 @@ import io.invertase.googlemobileads.common.ReactNativeModule;
 
 public class ReactNativeGoogleMobileAdsRewardedModule extends ReactNativeModule {
   private static final String SERVICE = "RNGoogleMobileAdsRewardedModule";
-  private static SparseArray<RewardedAd> rewardedAdArray = new SparseArray<>();
+  private static final SparseArray<RewardedAd> rewardedAdArray = new SparseArray<>();
 
   public ReactNativeGoogleMobileAdsRewardedModule(ReactApplicationContext reactContext) {
     super(reactContext, SERVICE);
@@ -116,6 +116,7 @@ public class ReactNativeGoogleMobileAdsRewardedModule extends ReactNativeModule 
                         public void onAdDismissedFullScreenContent() {
                           sendRewardedEvent(
                               GOOGLE_MOBILE_ADS_EVENT_CLOSED, requestId, adUnitId, null, null);
+                          rewardedAdArray.remove(requestId);
                         }
                       };
 
@@ -172,5 +173,10 @@ public class ReactNativeGoogleMobileAdsRewardedModule extends ReactNativeModule 
               rewardedAd.show(getCurrentActivity(), onUserEarnedRewardListener);
               promise.resolve(null);
             });
+  }
+
+  @ReactMethod
+  public void rewardedDestroy(int requestId) {
+    rewardedAdArray.remove(requestId);
   }
 }

@@ -21,6 +21,9 @@
 #import "RNGoogleMobileAdsCommon.h"
 #import "common/RNSharedUtils.h"
 
+static __strong GADAppOpenAd *appOpen;
+static __strong RNGoogleMobileAdsFullScreenContentDelegate *appOpenDelegate;
+
 @implementation RNGoogleMobileAdsAppOpenModule
 #pragma mark -
 #pragma mark Module Setup
@@ -42,7 +45,6 @@ RCT_EXPORT_METHOD(appOpenLoad
                   : (nonnull NSNumber *)requestId
                   : (NSString *)adUnitId
                   : (NSDictionary *)adRequestOptions) {
-  self.appOpenAd = nil;
   [GADAppOpenAd loadWithAdUnitID:adUnitId
                          request:[RNGoogleMobileAdsCommon buildAdRequest:adRequestOptions]
                      orientation:UIInterfaceOrientationPortrait
@@ -58,14 +60,14 @@ RCT_EXPORT_METHOD(appOpenLoad
                                                    data:nil];
                    return;
                  }
-                 self.appOpenAd = appOpenAd;
+                 appOpen = appOpenAd;
                  RNGoogleMobileAdsFullScreenContentDelegate *fullScreenContentDelegate =
                      [[RNGoogleMobileAdsFullScreenContentDelegate alloc] init];
                  fullScreenContentDelegate.sendAdEvent = GOOGLE_MOBILE_ADS_EVENT_APP_OPEN;
                  fullScreenContentDelegate.requestId = requestId;
                  fullScreenContentDelegate.adUnitId = adUnitId;
-                 self.appOpenAd.fullScreenContentDelegate = fullScreenContentDelegate;
-                 self.appOpenDelegate = fullScreenContentDelegate;
+                 appOpen.fullScreenContentDelegate = fullScreenContentDelegate;
+                 appOpenDelegate = fullScreenContentDelegate;
                  [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_APP_OPEN
                                             requestId:requestId
                                                  type:GOOGLE_MOBILE_ADS_EVENT_LOADED
@@ -81,8 +83,8 @@ RCT_EXPORT_METHOD(appOpenShow
                   : (NSDictionary *)showOptions
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {
-  if (self.appOpenAd) {
-    [self.appOpenAd
+  if (appOpen) {
+    [appOpen
         presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
     resolve([NSNull null]);
   } else {
@@ -93,6 +95,16 @@ RCT_EXPORT_METHOD(appOpenShow
                            @"message" : @"App Open ad attempted to show but was not ready.",
                          } mutableCopy]];
   }
+}
+
+RCT_EXPORT_METHOD(appOpenDestroy : (nonnull NSNumber *)requestId) {
+  [RNGoogleMobileAdsAppOpenModule removeAppOpen];
+}
+
+#pragma mark -
+
++ (void)removeAppOpen {
+  appOpen = nil;
 }
 
 @end

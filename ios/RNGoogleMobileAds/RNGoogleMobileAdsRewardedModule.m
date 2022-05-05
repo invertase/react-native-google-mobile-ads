@@ -56,8 +56,7 @@ RCT_EXPORT_MODULE();
 
 - (void)invalidate {
   for (NSNumber *id in [rewardedMap allKeys]) {
-    [rewardedMap removeObjectForKey:id];
-    [rewardedDelegateMap removeObjectForKey:id];
+    [RNGoogleMobileAdsRewardedModule removeRewarded:id];
   }
 }
 
@@ -167,6 +166,17 @@ RCT_EXPORT_METHOD(rewardedShow
                            @"message" : @"Rewarded ad attempted to show but was not ready.",
                          } mutableCopy]];
   }
+}
+
+RCT_EXPORT_METHOD(rewardedDestroy : (nonnull NSNumber *)requestId) {
+  [RNGoogleMobileAdsRewardedModule removeRewarded:requestId];
+}
+
+#pragma mark -
+
++ (void)removeRewarded:(nonnull NSNumber *)requestId {
+  [rewardedMap removeObjectForKey:requestId];
+  [rewardedDelegateMap removeObjectForKey:requestId];
 }
 
 @end

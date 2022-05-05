@@ -16,6 +16,10 @@
  */
 
 #import "RNGoogleMobileAdsFullScreenContentDelegate.h"
+#import "RNGoogleMobileAdsAppOpenModule.h"
+#import "RNGoogleMobileAdsInterstitialModule.h"
+#import "RNGoogleMobileAdsRewardedInterstitialModule.h"
+#import "RNGoogleMobileAdsRewardedModule.h"
 
 @implementation RNGoogleMobileAdsFullScreenContentDelegate
 
@@ -52,6 +56,15 @@
                               adUnitId:_adUnitId
                                  error:nil
                                   data:nil];
+  if ([_sendAdEvent isEqualToString:GOOGLE_MOBILE_ADS_EVENT_APP_OPEN]) {
+    [RNGoogleMobileAdsAppOpenModule removeAppOpen];
+  } else if ([_sendAdEvent isEqualToString:GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL]) {
+    [RNGoogleMobileAdsInterstitialModule removeInterstitial:_requestId];
+  } else if ([_sendAdEvent isEqualToString:GOOGLE_MOBILE_ADS_EVENT_REWARDED]) {
+    [RNGoogleMobileAdsRewardedModule removeRewarded:_requestId];
+  } else if ([_sendAdEvent isEqualToString:GOOGLE_MOBILE_ADS_EVENT_REWARDED_INTERSTITIAL]) {
+    [RNGoogleMobileAdsRewardedInterstitialModule removeRewardedInterstitial:_requestId];
+  }
 }
 
 /// Called when the ad receives an app event.

@@ -56,8 +56,7 @@ RCT_EXPORT_MODULE();
 
 - (void)invalidate {
   for (NSNumber *id in [rewardedInterstitialMap allKeys]) {
-    [rewardedInterstitialMap removeObjectForKey:id];
-    [rewardedInterstitialDelegateMap removeObjectForKey:id];
+    [RNGoogleMobileAdsRewardedInterstitialModule removeRewardedInterstitial:id];
   }
 }
 
@@ -168,6 +167,17 @@ RCT_EXPORT_METHOD(rewardedInterstitialShow
                                @"Rewarded Interstitial ad attempted to show but was not ready.",
                          } mutableCopy]];
   }
+}
+
+RCT_EXPORT_METHOD(rewardedInterstitialDestroy : (nonnull NSNumber *)requestId) {
+  [RNGoogleMobileAdsRewardedInterstitialModule removeRewardedInterstitial:requestId];
+}
+
+#pragma mark -
+
++ (void)removeRewardedInterstitial:(nonnull NSNumber *)requestId {
+  [rewardedInterstitialMap removeObjectForKey:requestId];
+  [rewardedInterstitialDelegateMap removeObjectForKey:requestId];
 }
 
 @end

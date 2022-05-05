@@ -22,4 +22,6 @@
 
 @interface RNGoogleMobileAdsInterstitialModule : NSObject <RCTBridgeModule>
 
++ (void)removeInterstitial:(nonnull NSNumber *)requestId;
+
 @end

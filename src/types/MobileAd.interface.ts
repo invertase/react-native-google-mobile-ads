@@ -110,4 +110,11 @@ export interface MobileAdInterface {
    * Remove all registered event listeners.
    */
   removeAllListeners(): void;
+
+  /**
+   * Destroy the advert. All event listeners will be removed and the advert will be unloaded.
+   *
+   * **After destroying the advert, the methods of this instance should not be called.**
+   */
+  destroy(): void;
 }

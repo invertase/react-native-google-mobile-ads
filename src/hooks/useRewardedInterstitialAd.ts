@@ -38,7 +38,8 @@ export function useRewardedInterstitialAd(
     useState<RewardedInterstitialAd | null>(null);
 
   useDeepCompareEffect(() => {
-    setRewardedInterstitialAd(() => {
+    setRewardedInterstitialAd(prevAd => {
+      prevAd?.destroy();
       return adUnitId ? RewardedInterstitialAd.createForAdRequest(adUnitId, requestOptions) : null;
     });
   }, [adUnitId, requestOptions]);
