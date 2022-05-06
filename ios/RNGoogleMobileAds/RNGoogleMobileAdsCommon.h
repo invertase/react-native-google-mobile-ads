@@ -36,6 +36,8 @@
 
 + (BOOL)isAdManagerUnit:(NSString *)unitId;
 
++ (nullable UIViewController *)currentViewController;
+
 @end
 
 @interface RNGADInterstitial : GADInterstitialAd
