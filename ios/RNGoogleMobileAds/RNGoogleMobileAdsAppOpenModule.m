@@ -82,8 +82,7 @@ RCT_EXPORT_METHOD(appOpenShow
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {
   if (self.appOpenAd) {
-    [self.appOpenAd
-        presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
+    [self.appOpenAd presentFromRootViewController:RNGoogleMobileAdsCommon.currentViewController];
     resolve([NSNull null]);
   } else {
     [RNSharedUtils

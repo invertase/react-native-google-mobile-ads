@@ -121,8 +121,7 @@ RCT_EXPORT_METHOD(interstitialShow
                   : (RCTPromiseRejectBlock)reject) {
   GADInterstitialAd *interstitial = interstitialMap[requestId];
   if (interstitial) {
-    [interstitial
-        presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController];
+    [interstitial presentFromRootViewController:RNGoogleMobileAdsCommon.currentViewController];
     resolve([NSNull null]);
   } else {
     [RNSharedUtils

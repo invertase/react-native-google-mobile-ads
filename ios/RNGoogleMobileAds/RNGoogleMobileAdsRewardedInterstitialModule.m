@@ -142,7 +142,7 @@ RCT_EXPORT_METHOD(rewardedInterstitialShow
 
   if (rewardedInterstitialAd) {
     [rewardedInterstitialAd
-        presentFromRootViewController:RCTSharedApplication().delegate.window.rootViewController
+        presentFromRootViewController:RNGoogleMobileAdsCommon.currentViewController
              userDidEarnRewardHandler:^{
                GADAdReward *reward = rewardedInterstitialAd.adReward;
                NSMutableDictionary *data = [NSMutableDictionary dictionary];

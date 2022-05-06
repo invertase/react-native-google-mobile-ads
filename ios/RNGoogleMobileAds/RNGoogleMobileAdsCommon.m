@@ -209,4 +209,15 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
   return [unitId hasPrefix:@"/"];
 }
 
++ (UIViewController *)currentViewController {
+  UIViewController *controller = [[[UIApplication sharedApplication] keyWindow] rootViewController];
+  UIViewController *presentedController = controller.presentedViewController;
+
+  while (presentedController && ![presentedController isBeingDismissed]) {
+    controller = presentedController;
+    presentedController = controller.presentedViewController;
+  }
+  return controller;
+}
+
 @end
