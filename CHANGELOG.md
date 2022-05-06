@@ -1,3 +1,10 @@
+### [6.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.0...v6.2.1) (2022-05-06)
+
+
+### Bug Fixes
+
+* **ios:** already presenting another view controller ([138df47](https://github.com/invertase/react-native-google-mobile-ads/commit/138df47b06b89cb650425dfca6ded5a7c24dc128))
+
 ## [6.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.1.0...v6.2.0) (2022-05-04)
 
 
