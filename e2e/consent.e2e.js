@@ -47,9 +47,9 @@ describe('googleAds AdsConsent', function () {
       });
 
       AdsConsent.requestInfoUpdate({
-        debugGeography: undefined,
-        tagForUnderAgeOfConsent: undefined,
-        testDeviceIdentifiers: undefined,
+        debugGeography: null,
+        tagForUnderAgeOfConsent: null,
+        testDeviceIdentifiers: null,
       });
 
       return Promise.resolve();
