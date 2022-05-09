@@ -47,7 +47,7 @@ describe('googleAds showOptions', function () {
 
   it('accepts null properties', function () {
     const v = validator({
-      immersiveModeEnabled: undefined,
+      immersiveModeEnabled: null,
     });
 
     v.should.eql(jet.contextify({}));
