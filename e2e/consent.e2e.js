@@ -39,6 +39,22 @@ describe('googleAds AdsConsent', function () {
       }
     });
 
+    it('accepts undefined or null properties', function () {
+      AdsConsent.requestInfoUpdate({
+        debugGeography: undefined,
+        tagForUnderAgeOfConsent: undefined,
+        testDeviceIdentifiers: undefined,
+      });
+
+      AdsConsent.requestInfoUpdate({
+        debugGeography: undefined,
+        tagForUnderAgeOfConsent: undefined,
+        testDeviceIdentifiers: undefined,
+      });
+
+      return Promise.resolve();
+    });
+
     it('throws if debugGeography is not a AdsConsentDebugGeography value', function () {
       try {
         AdsConsent.requestInfoUpdate({

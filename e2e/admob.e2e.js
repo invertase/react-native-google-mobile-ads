@@ -49,6 +49,11 @@ describe('googleAds', function () {
           maxAdContentRating: googleAds.MaxAdContentRating.G,
         });
       });
+
+      it('accepts undefined or null', async function () {
+        await googleAds.setRequestConfiguration({ maxAdContentRating: undefined });
+        await googleAds.setRequestConfiguration({ maxAdContentRating: null });
+      });
     });
 
     describe('tagForChildDirectedTreatment', function () {
@@ -71,6 +76,11 @@ describe('googleAds', function () {
           tagForChildDirectedTreatment: false,
         });
       });
+
+      it('accepts undefined or null', async function () {
+        await googleAds.setRequestConfiguration({ tagForChildDirectedTreatment: undefined });
+        await googleAds.setRequestConfiguration({ tagForChildDirectedTreatment: null });
+      });
     });
 
     describe('tagForUnderAgeOfConsent', function () {
@@ -92,6 +102,11 @@ describe('googleAds', function () {
         await googleAds.setRequestConfiguration({
           tagForUnderAgeOfConsent: false,
         });
+      });
+
+      it('accepts undefined or null', async function () {
+        await googleAds.setRequestConfiguration({ tagForUnderAgeOfConsent: undefined });
+        await googleAds.setRequestConfiguration({ tagForUnderAgeOfConsent: null });
       });
     });
   });
