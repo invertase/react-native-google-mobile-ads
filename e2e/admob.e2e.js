@@ -50,7 +50,7 @@ describe('googleAds', function () {
         });
       });
 
-      it('accepts undefined properties', async function () {
+      it('accepts undefined', async function () {
         await googleAds.setRequestConfiguration({ maxAdContentRating: undefined });
       });
     });
