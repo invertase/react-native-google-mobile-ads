@@ -16,7 +16,7 @@
  */
 
 import {
-  hasOwnProperty,
+  isPropertySet,
   isArray,
   isBoolean,
   isObject,
@@ -37,7 +37,7 @@ export function validateAdRequestOptions(options?: RequestOptions) {
     throw new Error("'options' expected an object value");
   }
 
-  if (hasOwnProperty(options, 'requestNonPersonalizedAdsOnly')) {
+  if (isPropertySet(options, 'requestNonPersonalizedAdsOnly')) {
     if (!isBoolean(options.requestNonPersonalizedAdsOnly)) {
       throw new Error("'options.requestNonPersonalizedAdsOnly' expected a boolean value");
     }

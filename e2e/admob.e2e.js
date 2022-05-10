@@ -49,6 +49,10 @@ describe('googleAds', function () {
           maxAdContentRating: googleAds.MaxAdContentRating.G,
         });
       });
+
+      it('accepts undefined', async function () {
+        await googleAds.setRequestConfiguration({ maxAdContentRating: undefined });
+      });
     });
 
     describe('tagForChildDirectedTreatment', function () {
@@ -71,6 +75,10 @@ describe('googleAds', function () {
           tagForChildDirectedTreatment: false,
         });
       });
+
+      it('accepts undefined', async function () {
+        await googleAds.setRequestConfiguration({ tagForChildDirectedTreatment: undefined });
+      });
     });
 
     describe('tagForUnderAgeOfConsent', function () {
@@ -92,6 +100,10 @@ describe('googleAds', function () {
         await googleAds.setRequestConfiguration({
           tagForUnderAgeOfConsent: false,
         });
+      });
+
+      it('accepts undefined', async function () {
+        await googleAds.setRequestConfiguration({ tagForUnderAgeOfConsent: undefined });
       });
     });
   });
