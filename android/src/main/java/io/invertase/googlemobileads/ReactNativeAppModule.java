@@ -17,10 +17,12 @@ package io.invertase.googlemobileads;
  *
  */
 
+import android.util.DisplayMetrics;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
+import com.google.android.gms.ads.AdSize;
 import io.invertase.googlemobileads.common.RCTConvert;
 import io.invertase.googlemobileads.common.ReactNativeEvent;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
@@ -53,6 +55,17 @@ public class ReactNativeAppModule extends ReactNativeModule {
     // RCTConvertFirebase.reactNativeAppToWritableMap(reactNativeApp);
     // promise.resolve(reactNativeAppMap);
     promise.resolve(options);
+  }
+
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  public int getCurrentOrientationAnchoredAdaptiveBannerHeight() {
+    DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
+
+    int dpWidth = (int) (displayMetrics.widthPixels / displayMetrics.density);
+
+    AdSize adaptiveBannerSize =
+      AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(getContext(), dpWidth);
+    return adaptiveBannerSize.getHeight();
   }
 
   @ReactMethod

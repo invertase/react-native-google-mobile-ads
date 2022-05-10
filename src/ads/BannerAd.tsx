@@ -16,9 +16,15 @@
  */
 
 import React from 'react';
+import { NativeModules } from 'react-native';
 import { BannerAdProps } from '../types/BannerAdProps';
 import { BaseAd } from './BaseAd';
 
 export function BannerAd({ size, ...props }: BannerAdProps) {
   return <BaseAd sizes={[size]} {...props} />;
+}
+
+export function getCurrentOrientationAnchoredAdaptiveBannerHeight() {
+  const { RNAppModule } = NativeModules;
+  return RNAppModule.getCurrentOrientationAnchoredAdaptiveBannerHeight();
 }

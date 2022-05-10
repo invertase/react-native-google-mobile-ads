@@ -18,6 +18,7 @@ import MobileAds, {
   InterstitialAd,
   TestIds,
   BannerAd,
+  getCurrentOrientationAnchoredAdaptiveBannerHeight,
   BannerAdSize,
   RewardedAd,
   RewardedAdEventType,
@@ -170,6 +171,8 @@ class BannerTest implements Test {
             requestNonPersonalizedAdsOnly: true,
           }}
         />
+        <Text>Current orientation anchored banner height</Text>
+        <Text>{getCurrentOrientationAnchoredAdaptiveBannerHeight()}</Text>
       </View>
     );
   }

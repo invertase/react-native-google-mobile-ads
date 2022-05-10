@@ -36,7 +36,7 @@ export { AppOpenAd } from './ads/AppOpenAd';
 export { InterstitialAd } from './ads/InterstitialAd';
 export { RewardedAd } from './ads/RewardedAd';
 export { RewardedInterstitialAd } from './ads/RewardedInterstitialAd';
-export { BannerAd } from './ads/BannerAd';
+export { BannerAd, getCurrentOrientationAnchoredAdaptiveBannerHeight } from './ads/BannerAd';
 export { GAMBannerAd } from './ads/GAMBannerAd';
 export { GAMInterstitialAd } from './ads/GAMInterstitialAd';
 export { useAppOpenAd } from './hooks/useAppOpenAd';
