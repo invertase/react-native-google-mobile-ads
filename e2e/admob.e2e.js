@@ -50,9 +50,8 @@ describe('googleAds', function () {
         });
       });
 
-      it('accepts undefined or null', async function () {
+      it('accepts undefined properties', async function () {
         await googleAds.setRequestConfiguration({ maxAdContentRating: undefined });
-        await googleAds.setRequestConfiguration({ maxAdContentRating: null });
       });
     });
 
@@ -77,9 +76,8 @@ describe('googleAds', function () {
         });
       });
 
-      it('accepts undefined or null', async function () {
+      it('accepts undefined', async function () {
         await googleAds.setRequestConfiguration({ tagForChildDirectedTreatment: undefined });
-        await googleAds.setRequestConfiguration({ tagForChildDirectedTreatment: null });
       });
     });
 
@@ -104,9 +102,8 @@ describe('googleAds', function () {
         });
       });
 
-      it('accepts undefined or null', async function () {
+      it('accepts undefined', async function () {
         await googleAds.setRequestConfiguration({ tagForUnderAgeOfConsent: undefined });
-        await googleAds.setRequestConfiguration({ tagForUnderAgeOfConsent: null });
       });
     });
   });

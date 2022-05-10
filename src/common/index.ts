@@ -72,8 +72,7 @@ export function hasOwnProperty(target: unknown, property: PropertyKey) {
 export function isPropertySet(target: unknown, property: PropertyKey) {
   return (
     hasOwnProperty(target, property) &&
-    !isUndefined((target as Record<PropertyKey, unknown>)[property]) &&
-    !isNull((target as Record<PropertyKey, unknown>)[property])
+    !isUndefined((target as Record<PropertyKey, unknown>)[property])
   );
 }
 

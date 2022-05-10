@@ -39,17 +39,11 @@ describe('googleAds AdsConsent', function () {
       }
     });
 
-    it('accepts undefined or null properties', function () {
+    it('accepts undefined properties', function () {
       AdsConsent.requestInfoUpdate({
         debugGeography: undefined,
         tagForUnderAgeOfConsent: undefined,
         testDeviceIdentifiers: undefined,
-      });
-
-      AdsConsent.requestInfoUpdate({
-        debugGeography: null,
-        tagForUnderAgeOfConsent: null,
-        testDeviceIdentifiers: null,
       });
 
       return Promise.resolve();

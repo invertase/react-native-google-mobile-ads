@@ -63,32 +63,6 @@ describe('googleAds requestOptions', function () {
     return Promise.resolve();
   });
 
-  it('accepts bull properties', function () {
-    const v = validator({
-      requestNonPersonalizedAdsOnly: null,
-      networkExtras: null,
-      keywords: null,
-      testDevices: null,
-      contentUrl: null,
-      location: null,
-      locationAccuracy: null,
-      requestAgent: null,
-      serverSideVerificationOptions: null,
-    });
-
-    v.requestNonPersonalizedAdsOnly.should.eql(null);
-    v.networkExtras.should.eql(null);
-    v.keywords.should.eql(null);
-    v.testDevices.should.eql(null);
-    v.contentUrl.should.eql(null);
-    v.location.should.eql(null);
-    v.locationAccuracy.should.eql(null);
-    v.requestAgent.should.eql(null);
-    v.serverSideVerificationOptions.should.eql(null);
-
-    return Promise.resolve();
-  });
-
   describe('requestNonPersonalizedAdsOnly', function () {
     it('throws if requestNonPersonalizedAdsOnly is not a boolean', function () {
       try {
