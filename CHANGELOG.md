@@ -1,3 +1,11 @@
+### [6.2.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.1...v6.2.2) (2022-05-10)
+
+
+### Bug Fixes
+
+* allow undefined configuration properties ([#138](https://github.com/invertase/react-native-google-mobile-ads/issues/138)) ([6a083fd](https://github.com/invertase/react-native-google-mobile-ads/commit/6a083fdb4687726784c1d497d3cce502c1d4f60a))
+* batch banner ad prop update ([c6aea8b](https://github.com/invertase/react-native-google-mobile-ads/commit/c6aea8bf71bfd3a1275a1ffbc9d6011e8d5c9ae6))
+
 ### [6.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.0...v6.2.1) (2022-05-06)
 
 
