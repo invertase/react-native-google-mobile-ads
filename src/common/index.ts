@@ -17,7 +17,7 @@
 
 import { Platform } from 'react-native';
 import * as Base64 from './Base64';
-import { isString, isNull, isUndefined } from './validate';
+import { isString, isUndefined } from './validate';
 
 export * from './id';
 export * from './path';
