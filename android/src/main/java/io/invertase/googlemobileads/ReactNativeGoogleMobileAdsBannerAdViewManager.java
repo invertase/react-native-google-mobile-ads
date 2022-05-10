@@ -58,6 +58,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private List<AdSize> sizes;
   private String unitId;
   private Boolean manualImpressionsEnabled;
+  private boolean propsChanged;
   private boolean isFluid;
 
   @Nonnull
@@ -102,13 +103,13 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @ReactProp(name = "unitId")
   public void setUnitId(ReactViewGroup reactViewGroup, String value) {
     unitId = value;
-    requestAd(reactViewGroup);
+    propsChanged = true;
   }
 
   @ReactProp(name = "request")
   public void setRequest(ReactViewGroup reactViewGroup, ReadableMap value) {
     request = ReactNativeGoogleMobileAdsCommon.buildAdRequest(value);
-    requestAd(reactViewGroup);
+    propsChanged = true;
   }
 
   @ReactProp(name = "sizes")
@@ -121,13 +122,22 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       }
     }
     sizes = sizeList;
-    requestAd(reactViewGroup);
+    propsChanged = true;
   }
 
   @ReactProp(name = "manualImpressionsEnabled")
   public void setManualImpressionsEnabled(ReactViewGroup reactViewGroup, boolean value) {
     this.manualImpressionsEnabled = value;
-    requestAd(reactViewGroup);
+    propsChanged = true;
+  }
+
+  @Override
+  public void onAfterUpdateTransaction(@NonNull ReactViewGroup reactViewGroup) {
+    super.onAfterUpdateTransaction(reactViewGroup);
+    if (propsChanged) {
+      requestAd(reactViewGroup);
+    }
+    propsChanged = false;
   }
 
   private BaseAdView initAdView(ReactViewGroup reactViewGroup) {
