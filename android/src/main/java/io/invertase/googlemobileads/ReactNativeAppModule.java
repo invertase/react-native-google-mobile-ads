@@ -64,7 +64,7 @@ public class ReactNativeAppModule extends ReactNativeModule {
     int dpWidth = (int) (displayMetrics.widthPixels / displayMetrics.density);
 
     AdSize adaptiveBannerSize =
-      AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(getContext(), dpWidth);
+        AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(getContext(), dpWidth);
     return adaptiveBannerSize.getHeight();
   }
 
