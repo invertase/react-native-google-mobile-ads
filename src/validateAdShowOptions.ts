@@ -15,7 +15,7 @@
  *
  */
 
-import { hasOwnProperty, isBoolean, isObject, isUndefined } from './common';
+import { isPropertySet, isBoolean, isObject, isUndefined } from './common';
 import { AdShowOptions } from './types/AdShowOptions';
 
 export function validateAdShowOptions(options?: AdShowOptions) {
@@ -29,7 +29,7 @@ export function validateAdShowOptions(options?: AdShowOptions) {
     throw new Error("'options' expected an object value");
   }
 
-  if (hasOwnProperty(options, 'immersiveModeEnabled')) {
+  if (isPropertySet(options, 'immersiveModeEnabled')) {
     if (!isBoolean(options.immersiveModeEnabled)) {
       throw new Error("'options.immersiveModeEnabled' expected a boolean value");
     }

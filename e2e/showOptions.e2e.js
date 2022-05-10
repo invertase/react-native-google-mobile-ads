@@ -37,6 +37,14 @@ describe('googleAds showOptions', function () {
     }
   });
 
+  it('accepts undefined properties', function () {
+    const v = validator({
+      immersiveModeEnabled: undefined,
+    });
+
+    v.should.eql(jet.contextify({}));
+  });
+
   it('throws if immersiveModeEnabled is not a boolean', function () {
     try {
       validator({

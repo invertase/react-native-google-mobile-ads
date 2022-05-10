@@ -15,7 +15,7 @@
  *
  */
 
-import { hasOwnProperty, isArray, isBoolean, isObject } from './common';
+import { isPropertySet, isArray, isBoolean, isObject } from './common';
 import { MaxAdContentRating } from './MaxAdContentRating';
 import { RequestConfiguration } from './types/RequestConfiguration';
 
@@ -41,7 +41,7 @@ export function validateAdRequestConfiguration(requestConfiguration: RequestConf
     out.maxAdContentRating = requestConfiguration.maxAdContentRating;
   }
 
-  if (hasOwnProperty(requestConfiguration, 'tagForChildDirectedTreatment')) {
+  if (isPropertySet(requestConfiguration, 'tagForChildDirectedTreatment')) {
     if (!isBoolean(requestConfiguration.tagForChildDirectedTreatment)) {
       throw new Error(
         "'requestConfiguration.tagForChildDirectedTreatment' expected a boolean value",
@@ -51,7 +51,7 @@ export function validateAdRequestConfiguration(requestConfiguration: RequestConf
     out.tagForChildDirectedTreatment = requestConfiguration.tagForChildDirectedTreatment;
   }
 
-  if (hasOwnProperty(requestConfiguration, 'tagForUnderAgeOfConsent')) {
+  if (isPropertySet(requestConfiguration, 'tagForUnderAgeOfConsent')) {
     if (!isBoolean(requestConfiguration.tagForUnderAgeOfConsent)) {
       throw new Error("'requestConfiguration.tagForUnderAgeOfConsent' expected a boolean value");
     }
@@ -59,7 +59,7 @@ export function validateAdRequestConfiguration(requestConfiguration: RequestConf
     out.tagForUnderAgeOfConsent = requestConfiguration.tagForUnderAgeOfConsent;
   }
 
-  if (hasOwnProperty(requestConfiguration, 'testDeviceIdentifiers')) {
+  if (isPropertySet(requestConfiguration, 'testDeviceIdentifiers')) {
     if (!isArray(requestConfiguration.testDeviceIdentifiers)) {
       throw new Error("'requestConfiguration.testDeviceIdentifiers' expected an array value");
     }

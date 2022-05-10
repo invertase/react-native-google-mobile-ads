@@ -37,6 +37,32 @@ describe('googleAds requestOptions', function () {
     }
   });
 
+  it('accepts undefined properties', function () {
+    const v = validator({
+      requestNonPersonalizedAdsOnly: undefined,
+      networkExtras: undefined,
+      keywords: undefined,
+      testDevices: undefined,
+      contentUrl: undefined,
+      location: undefined,
+      locationAccuracy: undefined,
+      requestAgent: undefined,
+      serverSideVerificationOptions: undefined,
+    });
+
+    v.requestNonPersonalizedAdsOnly.should.eql(undefined);
+    v.networkExtras.should.eql(undefined);
+    v.keywords.should.eql(undefined);
+    v.testDevices.should.eql(undefined);
+    v.contentUrl.should.eql(undefined);
+    v.location.should.eql(undefined);
+    v.locationAccuracy.should.eql(undefined);
+    v.requestAgent.should.eql(undefined);
+    v.serverSideVerificationOptions.should.eql(undefined);
+
+    return Promise.resolve();
+  });
+
   describe('requestNonPersonalizedAdsOnly', function () {
     it('throws if requestNonPersonalizedAdsOnly is not a boolean', function () {
       try {
