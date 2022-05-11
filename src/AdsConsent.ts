@@ -20,7 +20,7 @@ import { NativeModules } from 'react-native';
 import { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
 import { AdsConsentPurposes } from './AdsConsentPurposes';
 import { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
-import { hasOwnProperty, isArray, isBoolean, isObject, isString } from './common';
+import { isPropertySet, isArray, isBoolean, isObject, isString } from './common';
 import {
   AdsConsentFormResult,
   AdsConsentInfo,
@@ -38,7 +38,7 @@ export const AdsConsent: AdsConsentInterface = {
     }
 
     if (
-      hasOwnProperty(options, 'debugGeography') &&
+      isPropertySet(options, 'debugGeography') &&
       options.debugGeography !== AdsConsentDebugGeography.DISABLED &&
       options.debugGeography !== AdsConsentDebugGeography.EEA &&
       options.debugGeography !== AdsConsentDebugGeography.NOT_EEA
@@ -49,7 +49,7 @@ export const AdsConsent: AdsConsentInterface = {
     }
 
     if (
-      hasOwnProperty(options, 'tagForUnderAgeOfConsent') &&
+      isPropertySet(options, 'tagForUnderAgeOfConsent') &&
       !isBoolean(options.tagForUnderAgeOfConsent)
     ) {
       throw new Error(
@@ -57,7 +57,7 @@ export const AdsConsent: AdsConsentInterface = {
       );
     }
 
-    if (hasOwnProperty(options, 'testDeviceIdentifiers')) {
+    if (isPropertySet(options, 'testDeviceIdentifiers')) {
       if (!isArray(options.testDeviceIdentifiers)) {
         throw new Error(
           "AdsConsent.requestInfoUpdate(*) 'options.testDeviceIdentifiers' expected an array of string values.",

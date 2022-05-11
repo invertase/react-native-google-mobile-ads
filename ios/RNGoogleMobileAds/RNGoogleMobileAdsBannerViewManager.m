@@ -21,9 +21,10 @@
 #import <GoogleMobileAds/GADBannerView.h>
 #import <GoogleMobileAds/GADBannerViewDelegate.h>
 #import <React/RCTUIManager.h>
+#import <React/RCTView.h>
 #import "RNGoogleMobileAdsCommon.h"
 
-@interface BannerComponent : UIView <GADBannerViewDelegate, GADAppEventDelegate>
+@interface BannerComponent : RCTView <GADBannerViewDelegate, GADAppEventDelegate>
 
 @property GADBannerView *banner;
 @property(nonatomic, assign) BOOL requested;
@@ -32,6 +33,7 @@
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
 @property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
+@property(nonatomic, assign) BOOL propsChanged;
 
 @property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
 
@@ -40,6 +42,13 @@
 @end
 
 @implementation BannerComponent
+
+- (void)didSetProps:(NSArray<NSString *> *)changedProps {
+  if (_propsChanged) {
+    [self requestAd];
+  }
+  _propsChanged = false;
+}
 
 - (void)initBanner:(GADAdSize)adSize {
   if (_requested) {
@@ -60,7 +69,7 @@
 
 - (void)setUnitId:(NSString *)unitId {
   _unitId = unitId;
-  [self requestAd];
+  _propsChanged = true;
 }
 
 - (void)setSizes:(NSArray *)sizes {
@@ -74,17 +83,17 @@
     }
   }];
   _sizes = adSizes;
-  [self requestAd];
+  _propsChanged = true;
 }
 
 - (void)setRequest:(NSDictionary *)request {
   _request = request;
-  [self requestAd];
+  _propsChanged = true;
 }
 
 - (void)setManualImpressionsEnabled:(BOOL *)manualImpressionsEnabled {
   _manualImpressionsEnabled = [NSNumber numberWithBool:manualImpressionsEnabled];
-  [self requestAd];
+  _propsChanged = true;
 }
 
 - (void)requestAd {
