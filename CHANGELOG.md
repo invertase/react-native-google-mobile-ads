@@ -1,3 +1,10 @@
+### [6.2.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.2...v6.2.3) (2022-05-12)
+
+
+### Bug Fixes
+
+* **ios:** use python3, fixes issues on macOS 12.3+ ([df4acef](https://github.com/invertase/react-native-google-mobile-ads/commit/df4acefc0e5d448f0d6e4bdad369f2d783fd5042))
+
 ### [6.2.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.1...v6.2.2) (2022-05-10)
 
 
