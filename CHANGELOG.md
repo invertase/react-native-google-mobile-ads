@@ -1,3 +1,10 @@
+### [6.2.4](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.3...v6.2.4) (2022-05-12)
+
+
+### Bug Fixes
+
+* **android:** send ad size before ad loads ([3049ea3](https://github.com/invertase/react-native-google-mobile-ads/commit/3049ea34f4f7aaedd7bd20fae7be7e1de54159cc))
+
 ### [6.2.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.2...v6.2.3) (2022-05-12)
 
 
