@@ -51,6 +51,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private final String EVENT_AD_FAILED_TO_LOAD = "onAdFailedToLoad";
   private final String EVENT_AD_OPENED = "onAdOpened";
   private final String EVENT_AD_CLOSED = "onAdClosed";
+  private final String EVENT_SIZE_CHANGE = "onSizeChange";
   private final String EVENT_APP_EVENT = "onAppEvent";
   private final int COMMAND_ID_RECORD_MANUAL_IMPRESSION = 1;
 
@@ -121,6 +122,15 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
         sizeList.add(ReactNativeGoogleMobileAdsCommon.getAdSize(sizeString, reactViewGroup));
       }
     }
+
+    if (sizeList.size() > 0) {
+      AdSize adSize = sizeList.get(0);
+      WritableMap payload = Arguments.createMap();
+      payload.putDouble("width", adSize.getWidth());
+      payload.putDouble("height", adSize.getHeight());
+      sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
+    }
+
     sizes = sizeList;
     propsChanged = true;
   }
