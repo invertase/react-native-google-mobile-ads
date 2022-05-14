@@ -179,8 +179,9 @@ public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
                         }
                         rejectPromiseWithCodeAndMessage(
                             promise, code, adInspectorError.getMessage());
+                      } else {
+                        promise.resolve(null);
                       }
-                      promise.resolve(null);
                     }
                   });
             });
