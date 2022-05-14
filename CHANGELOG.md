@@ -1,3 +1,11 @@
+### [6.2.5](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.4...v6.2.5) (2022-05-14)
+
+
+### Bug Fixes
+
+* fix ad inspector callback error ([c652d5e](https://github.com/invertase/react-native-google-mobile-ads/commit/c652d5eca0d0c0e303b8450f13f9945c5c2e7964))
+* fix false error in rewarded interstitial with valid event type value ([#148](https://github.com/invertase/react-native-google-mobile-ads/issues/148)) ([7ee21bf](https://github.com/invertase/react-native-google-mobile-ads/commit/7ee21bf928c690ff54e7946c469ea6a3bbe7e6b1))
+
 ### [6.2.4](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.3...v6.2.4) (2022-05-12)
 
 
