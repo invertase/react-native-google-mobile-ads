@@ -115,8 +115,9 @@ RCT_EXPORT_METHOD(openAdInspector
                                                         stringWithFormat:@"CODE_%d", error.code],
                                                     @"message" : error.description,
                                                   } mutableCopy]];
+                           } else {
+                             resolve(nil);
                            }
-                           resolve(nil);
                          }];
 }
 
