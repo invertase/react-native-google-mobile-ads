@@ -184,7 +184,8 @@ public class ReactNativeGoogleMobileAdsCommon {
     }
 
     if (adRequestOptions.hasKey("publisherProvidedId")) {
-      builder.setPublisherProvidedId(Objects.requireNonNull(adRequestOptions.getString("publisherProvidedId")));
+      builder.setPublisherProvidedId(
+          Objects.requireNonNull(adRequestOptions.getString("publisherProvidedId")));
     }
 
     return builder.build();
