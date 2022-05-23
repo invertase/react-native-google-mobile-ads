@@ -126,5 +126,12 @@ export function validateAdRequestOptions(options?: RequestOptions) {
     out.customTargeting = options.customTargeting;
   }
 
+  if (options.publisherProvidedId) {
+    if (!isString(options.publisherProvidedId)) {
+      throw new Error("'options.publisherProvidedId' expected a string value");
+    }
+    out.publisherProvidedId = options.publisherProvidedId;
+  }
+
   return out;
 }
