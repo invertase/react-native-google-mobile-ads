@@ -107,7 +107,7 @@ function App() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = interstitial.addAdEventListener(AdEventType.LOADED => {
+    const unsubscribe = interstitial.addAdEventListener(AdEventType.LOADED, () => {
       setLoaded(true);
     });
 
