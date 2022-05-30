@@ -93,4 +93,11 @@ export interface RequestOptions {
    * See [Google Mobile SDK Docs](https://developers.google.com/admob/android/ssv) for more information.
    */
   serverSideVerificationOptions?: ServerSideVerificationOptions;
+
+  /**
+   * Publisher provided identifier (PPID) for use in frequency capping, audience segmentation and targeting,
+   * sequential ad rotation, and other audience-based ad delivery controls across devices.
+   * See [this article](https://support.google.com/admanager/answer/2880055) for more information.
+   */
+  publisherProvidedId?: string;
 }
