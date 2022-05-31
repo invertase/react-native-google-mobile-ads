@@ -1,3 +1,10 @@
+## [6.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.5...v6.3.0) (2022-05-31)
+
+
+### Features
+
+* add ppid option to request options ([#153](https://github.com/invertase/react-native-google-mobile-ads/issues/153)) ([8bbfc05](https://github.com/invertase/react-native-google-mobile-ads/commit/8bbfc058b20f599acc3fd91d0145c4f974bf2d09))
+
 ### [6.2.5](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.4...v6.2.5) (2022-05-14)
 
 
