@@ -32,7 +32,7 @@ With each call to `addAdEventListener`, you add a listener for one specific even
 -    console.log('Ad failed to load with error: ', error);
 -  }
 -}
-+rewardedAd.addAdEventListener(RewardedAdEventType.Loaded, () => {
++rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
 +  console.log('Ad has loaded');
 +});
 +rewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
@@ -46,7 +46,7 @@ With each call to `addAdEventListener`, you add a listener for one specific even
 To unsubscribe from an event, call the function returned from `addAdEventListener`.
 
 ```js
-const unsubscribe = interstitialAd.addAdEventListener(AdEventType.Loaded, () => {
+const unsubscribe = interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
   console.log('Ad has loaded');
 });
 
