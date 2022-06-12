@@ -12,6 +12,7 @@ buildscript {
 
     dependencies {
       classpath("com.android.tools.build:gradle:7.0.4")
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${safeExtGet('kotlinVersion', '1.6.10')}"
     }
   }
 }
@@ -19,6 +20,7 @@ buildscript {
 plugins {
   id "io.invertase.gradle.build" version "1.5"
 }
+apply plugin: 'kotlin-android'
 
 def packageJson = PackageJson.getForProject(project)
 def googleMobileAdsVersion = packageJson['sdkVersions']['android']['googleMobileAds']
@@ -97,3 +99,7 @@ ReactNative.shared.applyPackageVersion()
 ReactNative.shared.applyDefaultExcludes()
 ReactNative.module.applyAndroidVersions()
 ReactNative.module.applyReactNativeDependency("api")
+
+def safeExtGet(prop, fallback) {
+  rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
