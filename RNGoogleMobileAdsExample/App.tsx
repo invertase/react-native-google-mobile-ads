@@ -36,7 +36,7 @@ const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
 });
 
 class AppOpenTest implements Test {
-  adListener = undefined;
+  adListener: () => void;
   adLoaded = false;
 
   constructor() {
@@ -45,7 +45,7 @@ class AppOpenTest implements Test {
     this.adListener = appOpen.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} app open ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} app open error: ${payload.message}`);
+        console.log(`${Platform.OS} app open error: ${payload?.message}`);
       }
       if (type === AdEventType.LOADED) {
         this.adLoaded = true;
@@ -94,7 +94,7 @@ const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
 
 // To implement a test you must make a new object implementing a specific interface.
 class InterstitialTest implements Test {
-  adListener = undefined;
+  adListener: () => void;
   adLoaded = false;
 
   constructor() {
@@ -103,7 +103,7 @@ class InterstitialTest implements Test {
     this.adListener = interstitial.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} interstitial ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} interstitial error: ${payload.message}`);
+        console.log(`${Platform.OS} interstitial error: ${payload?.message}`);
       }
       if (type === AdEventType.LOADED) {
         this.adLoaded = true;
@@ -191,7 +191,7 @@ const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
   keywords: ['fashion', 'clothing'],
 });
 class RewardedTest implements Test {
-  adListener = undefined;
+  adListener: () => void;
   adLoaded = false;
 
   constructor() {
@@ -253,7 +253,7 @@ const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
   },
 );
 class RewardedInterstitialTest implements Test {
-  adListener = undefined;
+  adListener: () => void;
   adLoaded = false;
 
   constructor() {
@@ -662,9 +662,9 @@ class AdInspectorTest implements Test {
 }
 
 const GAMBannerComponent = React.forwardRef<View>((_, ref) => {
-  const bannerRef = useRef<GAMBannerAd>();
+  const bannerRef = useRef<GAMBannerAd>(null);
   const recordManualImpression = () => {
-    bannerRef.current.recordManualImpression();
+    bannerRef.current?.recordManualImpression();
   };
   return (
     <View ref={ref}>
@@ -719,7 +719,7 @@ const gamInterstitial = GAMInterstitialAd.createForAdRequest(
 );
 
 class GAMInterstitialTest implements Test {
-  adListener = undefined;
+  adListener: () => void;
   adLoaded = false;
 
   constructor() {

@@ -15,17 +15,9 @@
  *
  */
 
-#import <React/RCTUtils.h>
+#import <React/RCTBridgeModule.h>
 
-#import "RNGoogleMobileAdsAppOpenModule.h"
-#import "RNGoogleMobileAdsCommon.h"
-#import "common/RNSharedUtils.h"
-
-@implementation RNGoogleMobileAdsAppOpenModule
-#pragma mark -
-#pragma mark Module Setup
-
-RCT_EXPORT_MODULE();
+@interface RCT_EXTERN_MODULE (RNGoogleMobileAdsAppOpenModule, NSObject)
 
 - (dispatch_queue_t)methodQueue {
   return dispatch_get_main_queue();
@@ -35,63 +27,16 @@ RCT_EXPORT_MODULE();
   return YES;
 }
 
-// #pragma mark -
-// #pragma mark Google Mobile Ads Methods
+RCT_EXTERN_METHOD(appOpenLoad
+                  : (nonnull NSNumber *)requestId forAdUnitId
+                  : (nonnull NSString *)adUnitId withAdRequestOptions
+                  : (nonnull NSDictionary *)adRequestOptions)
 
-RCT_EXPORT_METHOD(appOpenLoad
-                  : (nonnull NSNumber *)requestId
-                  : (NSString *)adUnitId
-                  : (NSDictionary *)adRequestOptions) {
-  self.appOpenAd = nil;
-  [GADAppOpenAd loadWithAdUnitID:adUnitId
-                         request:[RNGoogleMobileAdsCommon buildAdRequest:adRequestOptions]
-                     orientation:UIInterfaceOrientationPortrait
-               completionHandler:^(GADAppOpenAd *_Nullable appOpenAd, NSError *_Nullable error) {
-                 if (error) {
-                   NSDictionary *codeAndMessage =
-                       [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
-                   [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_APP_OPEN
-                                              requestId:requestId
-                                                   type:GOOGLE_MOBILE_ADS_EVENT_ERROR
-                                               adUnitId:adUnitId
-                                                  error:codeAndMessage
-                                                   data:nil];
-                   return;
-                 }
-                 self.appOpenAd = appOpenAd;
-                 RNGoogleMobileAdsFullScreenContentDelegate *fullScreenContentDelegate =
-                     [[RNGoogleMobileAdsFullScreenContentDelegate alloc] init];
-                 fullScreenContentDelegate.sendAdEvent = GOOGLE_MOBILE_ADS_EVENT_APP_OPEN;
-                 fullScreenContentDelegate.requestId = requestId;
-                 fullScreenContentDelegate.adUnitId = adUnitId;
-                 self.appOpenAd.fullScreenContentDelegate = fullScreenContentDelegate;
-                 self.appOpenDelegate = fullScreenContentDelegate;
-                 [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_APP_OPEN
-                                            requestId:requestId
-                                                 type:GOOGLE_MOBILE_ADS_EVENT_LOADED
-                                             adUnitId:adUnitId
-                                                error:nil
-                                                 data:nil];
-               }];
-}
-
-RCT_EXPORT_METHOD(appOpenShow
-                  : (nonnull NSNumber *)requestId
-                  : (NSString *)adUnitId
-                  : (NSDictionary *)showOptions
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
-  if (self.appOpenAd) {
-    [self.appOpenAd presentFromRootViewController:RNGoogleMobileAdsCommon.currentViewController];
-    resolve([NSNull null]);
-  } else {
-    [RNSharedUtils
-        rejectPromiseWithUserInfo:reject
-                         userInfo:[@{
-                           @"code" : @"not-ready",
-                           @"message" : @"App Open ad attempted to show but was not ready.",
-                         } mutableCopy]];
-  }
-}
+RCT_EXTERN_METHOD(appOpenShow
+                  : (nonnull NSNumber *)requestId forAdUnitId
+                  : (nonnull NSString *)adUnitId withShowOptions
+                  : (NSDictionary *)showOptions withResolve
+                  : (RCTPromiseResolveBlock)resolve withReject
+                  : (RCTPromiseRejectBlock)reject)
 
 @end
