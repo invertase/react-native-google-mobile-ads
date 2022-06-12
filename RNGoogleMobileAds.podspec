@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
   s.source              = { :git => "#{package["repository"]["url"]}.git", :tag => "v#{s.version}" }
   s.social_media_url    = 'http://twitter.com/invertaseio'
   s.ios.deployment_target = "10.0"
-  s.source_files        = 'ios/**/*.{h,m}'
+  s.source_files        = 'ios/**/*.{h,m,swift}'
   s.weak_frameworks     = "AppTrackingTransparency"
 
   # React Native dependencies
