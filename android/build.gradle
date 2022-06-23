@@ -55,7 +55,7 @@ project.ext {
 
 apply from: file("./app-json.gradle")
 
-def appJSONGoogleMobileAdsAppIDString = ""
+def appJSONGoogleMobileAdsAppIDString
 def appJSONGoogleMobileAdsDelayAppMeasurementInitBool = false
 
 if (rootProject.ext.googleMobileAdsJson) {
@@ -64,7 +64,15 @@ if (rootProject.ext.googleMobileAdsJson) {
 }
 
 if (!appJSONGoogleMobileAdsAppIDString) {
-  // todo throw a build error?
+  println "\n\n\n"
+  println "**************************************************************************************************************"
+  println "\n\n\n"
+  println "ERROR: react-native-google-mobile-ads requires an 'android_app_id' property inside a 'react-native-google-mobile-ads' key in your app.json."
+  println "  No android_app_id property was found in this location. The native Google Mobile Ads SDK will crash on startup without it."
+  println "\n\n\n"
+  println "**************************************************************************************************************"
+  println "\n\n\n"
+  System.exit(1)
 }
 
 android {
