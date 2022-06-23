@@ -57,10 +57,14 @@ apply from: file("./app-json.gradle")
 
 def appJSONGoogleMobileAdsAppIDString
 def appJSONGoogleMobileAdsDelayAppMeasurementInitBool = false
+def appJSONGoogleMobileAdsOptimizeInitializationBool = true
+def appJSONGoogleMobileAdsOptimizeAdLoadingBool = true
 
 if (rootProject.ext.googleMobileAdsJson) {
   appJSONGoogleMobileAdsAppIDString = rootProject.ext.googleMobileAdsJson.getStringValue("android_app_id", "")
   appJSONGoogleMobileAdsDelayAppMeasurementInitBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("delay_app_measurement_init", false)
+  appJSONGoogleMobileAdsOptimizeInitializationBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("optimize_initialization", true)
+  appJSONGoogleMobileAdsOptimizeAdLoadingBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("optimize_ad_loading", true)
 }
 
 if (!appJSONGoogleMobileAdsAppIDString) {
@@ -80,7 +84,9 @@ android {
     multiDexEnabled true
     manifestPlaceholders = [
       appJSONGoogleMobileAdsAppID                  : appJSONGoogleMobileAdsAppIDString,
-      appJSONGoogleMobileAdsDelayAppMeasurementInit: appJSONGoogleMobileAdsDelayAppMeasurementInitBool
+      appJSONGoogleMobileAdsDelayAppMeasurementInit: appJSONGoogleMobileAdsDelayAppMeasurementInitBool,
+      appJSONGoogleMobileAdsOptimizeInitialization : appJSONGoogleMobileAdsOptimizeInitializationBool,
+      appJSONGoogleMobileAdsOptimizeAdLoading      : appJSONGoogleMobileAdsOptimizeAdLoadingBool
     ]
   }
   lintOptions {

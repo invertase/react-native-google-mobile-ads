@@ -13,5 +13,11 @@
       <meta-data
         android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
         android:value="${appJSONGoogleMobileAdsDelayAppMeasurementInit}"/>
+      <meta-data
+        android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
+        android:value="${appJSONGoogleMobileAdsOptimizeInitialization}"/>
+      <meta-data
+        android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
+        android:value="${appJSONGoogleMobileAdsOptimizeAdLoading}"/>
     </application>
 </manifest>
