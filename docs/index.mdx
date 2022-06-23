@@ -7,6 +7,10 @@ yarn add react-native-google-mobile-ads
 
 > On Android, before releasing your app, you must select _Yes, my app contains ads_ in the Google Play Store, Policy, App content, Manage under Ads.
 
+## Optionally configure iOS static frameworks
+
+On iOS if you need to use static frameworks (that is, `use_frameworks!` in your `Podfile`) you must add the variable `$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`. You may need this if you use this module in combination with react-native-firebase v15 and higher since it requires `use_frameworks!`.
+
 ## What does it do
 
 The AdMob module allows you to display adverts to your users. All adverts are served over the Google AdMob network, meaning
@@ -39,7 +43,7 @@ Before you are able to display ads to your users, you must have a [Google AdMob 
 "Apps" menu item, create or choose an existing Android/iOS app. Each app platform exposes a unique account ID which needs to
 be added to the project.
 
-> Attempting to build your app without a valid App ID may cause a crash during build.
+> Attempting to build your app without a valid App ID in `app.json` will cause the app to crash on start or fail to build.
 
 Under the "App settings" menu item, you can find the "App ID":
 
