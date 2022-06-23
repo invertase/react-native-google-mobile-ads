@@ -125,6 +125,16 @@ for i in "${!_PLIST_ENTRY_KEYS[@]}"; do
   echo "    ->  $i) ${_PLIST_ENTRY_KEYS[$i]}" "${_PLIST_ENTRY_TYPES[$i]}" "${_PLIST_ENTRY_VALUES[$i]}"
 done
 
+if ! [[ -f "${_TARGET_PLIST}" ]]; then
+  echo "error: unable to locate Info.plist to set properties. App will crash without GADApplicationIdentier set."
+  exit 1
+fi
+
+if ! [[ $_IOS_APP_ID ]]; then
+  echo "error: ios_appd_id key not found in react-native-google-mobile-ads key in app.json. App will crash without it."
+  exit 1
+fi
+
 for plist in "${_TARGET_PLIST}" "${_DSYM_PLIST}" ; do
   if [[ -f "${plist}" ]]; then
 
