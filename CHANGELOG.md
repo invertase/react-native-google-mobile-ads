@@ -1,3 +1,17 @@
+## [7.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.3.0...v7.0.0) (2022-06-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **android, sdk:** your android app must have minSdkVersion of 19 or higher to use this version
+
+### Features
+
+* **android, sdk:** adopt native sdk v21, minSdkVersion now 19 ([1f17e15](https://github.com/invertase/react-native-google-mobile-ads/commit/1f17e15dfafd83cf48fc98ba957eb5bc82294202))
+* **android:** init/load optimization toggles, default true, override in app.json ([05cbc7a](https://github.com/invertase/react-native-google-mobile-ads/commit/05cbc7a454ee03b05e0bfdd2adc6e092d45d6d64))
+* build-time error if app.json not configured correctly ([9139bd8](https://github.com/invertase/react-native-google-mobile-ads/commit/9139bd86a55a2f82a0577c802f698df208ef30e6)), closes [#84](https://github.com/invertase/react-native-google-mobile-ads/issues/84)
+* **ios, sdk:** use google-mobile-ads-sdk 9.6.0 ([5ef755b](https://github.com/invertase/react-native-google-mobile-ads/commit/5ef755bb4f86105399cac85379b4e2b3f397dce5))
+
 ## [6.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.2.5...v6.3.0) (2022-05-31)
 
 
