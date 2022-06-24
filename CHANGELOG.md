@@ -4,6 +4,7 @@
 ### ⚠ BREAKING CHANGES
 
 * **android, sdk:** your android app must have minSdkVersion of 19 or higher to use this version
+* **ios, sdk:** your Xcode version must be 13.2.1 or higher to use this version
 
 ### Features
 
