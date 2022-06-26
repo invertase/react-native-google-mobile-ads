@@ -1,3 +1,10 @@
+### [7.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v7.0.0...v7.0.1) (2022-06-26)
+
+
+### Bug Fixes
+
+* **android, build:** correct kotlin plugin dependency ([d3e41e9](https://github.com/invertase/react-native-google-mobile-ads/commit/d3e41e908e626f52494ca0e92c3d48efed040d2f))
+
 ## [7.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v6.3.0...v7.0.0) (2022-06-24)
 
 
