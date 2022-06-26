@@ -1,6 +1,10 @@
 import io.invertase.gradle.common.PackageJson
 
 buildscript {
+  ext.getExtOrDefault = {name, version ->
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : version
+  }
+
   // The Android Gradle plugin is only required when opening the android folder stand-alone.
   // This avoids unnecessary downloads and potential conflicts when the library is included as a
   // module dependency in an application project.
@@ -12,7 +16,15 @@ buildscript {
 
     dependencies {
       classpath("com.android.tools.build:gradle:7.0.4")
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${safeExtGet('kotlinVersion', '1.6.10')}"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.6.10')}"
+    }
+  } else {
+    repositories {
+      mavenCentral()
+    }
+
+    dependencies {
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.6.10')}"
     }
   }
 }
@@ -114,6 +126,3 @@ ReactNative.shared.applyDefaultExcludes()
 ReactNative.module.applyAndroidVersions()
 ReactNative.module.applyReactNativeDependency("api")
 
-def safeExtGet(prop, fallback) {
-  rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
-}
