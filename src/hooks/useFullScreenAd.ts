@@ -73,7 +73,7 @@ export function useFullScreenAd<
           setState({ isLoaded: true });
           break;
         case AdEventType.OPENED:
-          setState({ isOpened: true });
+          setState({ isOpened: true, isLoaded: false });
           break;
         case AdEventType.CLOSED:
           setState({ isClosed: true });
