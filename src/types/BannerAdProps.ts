@@ -147,4 +147,9 @@ export interface GAMBannerAdProps extends Omit<BannerAdProps, 'size'> {
    * When an ad received Ad Manager specific app events.
    */
   onAppEvent?: (appEvent: AppEvent) => void;
+
+  /**
+  * Called when ad is visible in viewport and send impression request
+  */
+  onAdImpression?: () => void;
 }
