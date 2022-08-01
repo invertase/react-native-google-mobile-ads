@@ -51,6 +51,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private final String EVENT_AD_FAILED_TO_LOAD = "onAdFailedToLoad";
   private final String EVENT_AD_OPENED = "onAdOpened";
   private final String EVENT_AD_CLOSED = "onAdClosed";
+  private final String EVENT_AD_IMPRESSION = "onAdImpression";
   private final String EVENT_SIZE_CHANGE = "onSizeChange";
   private final String EVENT_APP_EVENT = "onAppEvent";
   private final int COMMAND_ID_RECORD_MANUAL_IMPRESSION = 1;
@@ -207,6 +208,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           public void onAdClosed() {
             sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
           }
+
+          @Override
+          public void onAdImpression() { sendEvent(reactViewGroup, EVENT_AD_IMPRESSION, null); }
         });
     if (adView instanceof AdManagerAdView) {
       ((AdManagerAdView) adView)
