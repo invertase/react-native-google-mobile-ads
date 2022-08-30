@@ -70,7 +70,7 @@ export interface RequestOptions {
    *
    * Takes an array of string key/value pairs.
    */
-  customTargeting?: { [key: string]: string };
+  customTargeting?: { [key: string]: string[] };
 
   /**
    * Sets the request agent string to identify the ad request's origin. Third party libraries that reference the Mobile
