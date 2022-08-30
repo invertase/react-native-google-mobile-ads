@@ -178,7 +178,7 @@ public class ReactNativeGoogleMobileAdsCommon {
 
       for (Map.Entry<String, Object> entry : customTargeting.entrySet()) {
         String key = entry.getKey();
-        String value = (String) entry.getValue();
+        ArrayList<String> value = (ArrayList<String>) entry.getValue();
         builder.addCustomTargeting(key, value);
       }
     }
