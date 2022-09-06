@@ -18,6 +18,7 @@ package io.invertase.googlemobileads
  */
 
 import android.app.Activity
+import android.util.Log
 import android.util.SparseArray
 import com.facebook.react.bridge.*
 import com.google.android.gms.ads.AdLoadCallback
@@ -143,88 +144,104 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
     private val adRequestOptions: ReadableMap
   ) : AdLoadCallback<T>() {
     override fun onAdLoaded(ad: T) {
-      val adHelper = ReactNativeGoogleMobileAdsAdHelper(ad)
-      var eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_LOADED
-      var data: WritableMap? = null
+      try {
+        val adHelper = ReactNativeGoogleMobileAdsAdHelper(ad)
+        var eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_LOADED
+        var data: WritableMap? = null
 
-      if (ad is RewardedAd || ad is RewardedInterstitialAd) {
-        eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED
+        if (ad is RewardedAd || ad is RewardedInterstitialAd) {
+          eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED
 
-        val rewardItem = adHelper.rewardItem
-        data = Arguments.createMap()
-        data.putString("type", rewardItem.type)
-        data.putInt("amount", rewardItem.amount)
+          val rewardItem = adHelper.rewardItem
+          data = Arguments.createMap()
+          data.putString("type", rewardItem.type)
+          data.putInt("amount", rewardItem.amount)
 
-        adRequestOptions.getMap("serverSideVerificationOptions")
-          ?.let { serverSideVerificationOptions ->
-            val options =
-              ServerSideVerificationOptions.Builder()
-            serverSideVerificationOptions.getString("userId")?.let {
-              options.setUserId(it)
+          adRequestOptions.getMap("serverSideVerificationOptions")
+            ?.let { serverSideVerificationOptions ->
+              val options =
+                ServerSideVerificationOptions.Builder()
+              serverSideVerificationOptions.getString("userId")?.let {
+                options.setUserId(it)
+              }
+              serverSideVerificationOptions.getString("customData")?.let {
+                options.setCustomData(it)
+              }
+              adHelper.setServerSideVerificationOptions(options.build())
             }
-            serverSideVerificationOptions.getString("customData")?.let {
-              options.setCustomData(it)
-            }
-            adHelper.setServerSideVerificationOptions(options.build())
-          }
-      }
-
-      if (ad is AdManagerInterstitialAd) {
-        adHelper.setAppEventListener { name, eventData ->
-          val payload = Arguments.createMap()
-          payload.putString("name", name)
-          payload.putString("data", eventData)
-          sendAdEvent(
-            GOOGLE_MOBILE_ADS_EVENT_APP_EVENT,
-            requestId,
-            adUnitId,
-            null,
-            payload
-          )
         }
-      }
 
-      val fullScreenContentCallback: FullScreenContentCallback =
-        object : FullScreenContentCallback() {
-          override fun onAdShowedFullScreenContent() {
-            sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_OPENED)
-          }
-
-          override fun onAdDismissedFullScreenContent() {
-            sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLOSED)
-          }
-
-          override fun onAdClicked() {
-            sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLICKED)
-          }
-
-          override fun onAdImpression() {
-            // Not Implemented Yet
-          }
-
-          private fun sendAdEvent(type: String) {
+        if (ad is AdManagerInterstitialAd) {
+          adHelper.setAppEventListener { name, eventData ->
+            val payload = Arguments.createMap()
+            payload.putString("name", name)
+            payload.putString("data", eventData)
             sendAdEvent(
-              type,
+              GOOGLE_MOBILE_ADS_EVENT_APP_EVENT,
               requestId,
               adUnitId,
               null,
-              null
+              payload
             )
           }
         }
-      adHelper.setFullScreenContentCallback(fullScreenContentCallback)
 
-      adArray.put(
-        requestId,
-        ad
-      )
-      sendAdEvent(
-        eventType,
-        requestId,
-        adUnitId,
-        null,
-        data
-      )
+        val fullScreenContentCallback: FullScreenContentCallback =
+          object : FullScreenContentCallback() {
+            override fun onAdShowedFullScreenContent() {
+              sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_OPENED)
+            }
+
+            override fun onAdDismissedFullScreenContent() {
+              sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLOSED)
+            }
+
+            override fun onAdClicked() {
+              sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLICKED)
+            }
+
+            override fun onAdImpression() {
+              // Not Implemented Yet
+            }
+
+            private fun sendAdEvent(type: String) {
+              sendAdEvent(
+                type,
+                requestId,
+                adUnitId,
+                null,
+                null
+              )
+            }
+          }
+        adHelper.setFullScreenContentCallback(fullScreenContentCallback)
+
+        adArray.put(
+          requestId,
+          ad
+        )
+        sendAdEvent(
+          eventType,
+          requestId,
+          adUnitId,
+          null,
+          data
+        )
+      } catch (e: Exception) {
+          Log.w("RNGoogleMobileAds", "Unknown error on load")
+          Log.w("RNGoogleMobileAds", e)
+        val error = Arguments.createMap()
+        error.putString("code", "internal")
+        error.putString("message", e.message)
+        sendAdEvent(
+          ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
+          requestId,
+          adUnitId,
+          error,
+          null
+        )
+
+      }
     }
 
     override fun onAdFailedToLoad(loadAdError: LoadAdError) {
