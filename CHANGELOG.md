@@ -1,3 +1,14 @@
+## [8.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v7.0.1...v8.0.0) (2022-09-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **hooks:** `isLoaded` becomes false after a fullscreen ad was shown.
+
+### Features
+
+* **hooks:** automatically set isLoaded to false ([#199](https://github.com/invertase/react-native-google-mobile-ads/issues/199)) ([9d0ecac](https://github.com/invertase/react-native-google-mobile-ads/commit/9d0ecaccbb873cad3c3bd21589e7662760c094c6))
+
 ### [7.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v7.0.0...v7.0.1) (2022-06-26)
 
 
