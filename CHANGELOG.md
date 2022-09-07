@@ -1,3 +1,11 @@
+### [8.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.0.0...v8.0.1) (2022-09-07)
+
+
+### Bug Fixes
+
+* **android:** robustly handle full-screen load exceptions ([fa79d87](https://github.com/invertase/react-native-google-mobile-ads/commit/fa79d878d9653439723cc2753eb0b4c9e790ab78))
+* **deps:** android sdk 21.1.0 / ios sdk 9.9.0 ([3778a89](https://github.com/invertase/react-native-google-mobile-ads/commit/3778a8961cde96a6692438168b7ed74d8acbb544))
+
 ## [8.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v7.0.1...v8.0.0) (2022-09-06)
 
 
