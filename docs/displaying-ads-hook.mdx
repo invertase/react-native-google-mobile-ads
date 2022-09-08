@@ -38,7 +38,7 @@ The hook returns several states and functions to control ad.
 import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
 export default function App({ navigation }) {
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(TestIds.Interstitial, {
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(TestIds.INTERSTITIAL, {
     requestNonPersonalizedAdsOnly: true,
   });
 
