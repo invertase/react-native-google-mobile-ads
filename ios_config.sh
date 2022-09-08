@@ -131,7 +131,7 @@ if ! [[ -f "${_TARGET_PLIST}" ]]; then
 fi
 
 if ! [[ $_IOS_APP_ID ]]; then
-  echo "error: ios_appd_id key not found in react-native-google-mobile-ads key in app.json. App will crash without it."
+  echo "error: ios_app_id key not found in react-native-google-mobile-ads key in app.json. App will crash without it."
   exit 1
 fi
 
