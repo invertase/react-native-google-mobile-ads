@@ -1,3 +1,10 @@
+## [8.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.0.1...v8.1.0) (2022-09-16)
+
+
+### Features
+
+* **deps:** native admob SDK bumps - iOS 9.10.0 / android 21.2.0 ([b6b5c6f](https://github.com/invertase/react-native-google-mobile-ads/commit/b6b5c6f858664e77f0c00051b1eabb942bf899cd))
+
 ### [8.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.0.0...v8.0.1) (2022-09-07)
 
 
