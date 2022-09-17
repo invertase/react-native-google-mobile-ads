@@ -43,12 +43,12 @@ yarn add detox mocha jest-circus jest-environment-node @babel/preset-env typescr
 yarn add https://github.com/invertase/jet#@mikehardy/jet-next --dev
 
 # Java build tweak - or gradle runs out of memory during the build
-echo "Increasing memory available to gradle for android java build"
-echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> android/gradle.properties
+# echo "Increasing memory available to gradle for android java build"
+# echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> android/gradle.properties
 
 # Detox + Android
 echo "Integrating Detox for Android (maven repo, dependency, build config items, kotlin...)"
-sed -i -e $'s/ext {/ext {\\\n        kotlinVersion = "1.7.0"/' android/build.gradle
+sed -i -e $'s/ext {/ext {\\\n        kotlinVersion = "1.7.10"/' android/build.gradle
 sed -i -e $'s/dependencies {/dependencies {\\\n        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"/' android/build.gradle
 rm -f android/build.gradle??
 sed -i -e $'s/dependencies {/dependencies {\\\n    androidTestImplementation(project(path: ":detox"))/' android/app/build.gradle
