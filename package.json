@@ -80,6 +80,7 @@
     "tests:jest": "jest",
     "tests:jest-watch": "jest --watch",
     "tests:jest-coverage": "jest --coverage",
+    "tests:install": "cd RNGoogleMobileAdsExample && yarn",
     "tests:packager": "cd RNGoogleMobileAdsExample && yarn react-native start",
     "tests:packager:reset-cache": "cd RNGoogleMobileAdsExample && yarn react-native start --reset-cache",
     "tests:android:build": "cd RNGoogleMobileAdsExample && yarn detox build --configuration android.emu.debug",
