@@ -1,3 +1,11 @@
+### [8.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.1.0...v8.1.1) (2022-09-29)
+
+
+### Bug Fixes
+
+* **ios, config:** fix typo in ios_app_id error message ([f0fe8e8](https://github.com/invertase/react-native-google-mobile-ads/commit/f0fe8e81c3de42a1fc85174237482f98e6202770)), closes [#219](https://github.com/invertase/react-native-google-mobile-ads/issues/219)
+* **ios:** correctly handle utf-8 chars in ios-config.sh ([d2e1d44](https://github.com/invertase/react-native-google-mobile-ads/commit/d2e1d4456a79d2849f4b2434a73655a7a1a795ed)), closes [#194](https://github.com/invertase/react-native-google-mobile-ads/issues/194)
+
 ## [8.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.0.1...v8.1.0) (2022-09-16)
 
 
