@@ -47,6 +47,8 @@ function nativeModuleMethodWrapped(
   return (...args: []) => {
     const possiblePromise = method(...[...argToPrepend, ...args]);
 
+    // @ts-ignore -- return type is Promise, so tsc infers we *know* it is a promise and .then always exists, but
+    //  but the typing is actually speculative, we do need to test it
     if (possiblePromise && possiblePromise.then) {
       const jsStack = new Error().stack || '';
       return possiblePromise.catch(nativeError =>
