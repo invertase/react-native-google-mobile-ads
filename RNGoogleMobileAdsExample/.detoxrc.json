@@ -27,10 +27,20 @@
       "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk",
       "build": "cd android && ./gradlew assembleDebug assembleAndroidTest lintDebug -DtestBuildType=debug && cd .."
     },
+    "android.debug.windows": {
+      "type": "android.apk",
+      "binaryPath": "android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+      "build": "cd android && gradlew.bat assembleDebug assembleAndroidTest lintDebug -DtestBuildType=debug && cd .."
+    },
     "android.release": {
       "type": "android.apk",
       "binaryPath": "android/app/build/outputs/apk/release/app-release.apk",
       "build": "cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release && cd .."
+    },
+    "android.release.windows": {
+      "type": "android.apk",
+      "binaryPath": "android\\app\\build\\outputs\\apk\\release\\app-release.apk",
+      "build": "cd android && gradlew.bat assembleRelease assembleAndroidTest -DtestBuildType=release && cd .."
     },
     "ios.debug": {
       "type": "ios.app",
@@ -48,9 +58,17 @@
       "device": "emulator",
       "app": "android.debug"
     },
+    "android.emu.debug.windows": {
+      "device": "emulator",
+      "app": "android.debug.windows"
+    },
     "android.emu.release": {
       "device": "emulator",
       "app": "android.release"
+    },
+    "android.emu.release.windows": {
+      "device": "emulator",
+      "app": "android.release.windows"
     },
     "ios.sim.debug": {
       "device": "simulator",
