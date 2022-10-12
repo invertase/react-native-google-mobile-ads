@@ -40,7 +40,6 @@ class AppOpenTest implements Test {
   adLoaded = false;
 
   constructor() {
-    appOpen.load();
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = appOpen.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} app open ad event: ${type}`);
@@ -64,6 +63,17 @@ class AppOpenTest implements Test {
   render(onMount: (component: any) => void): React.ReactNode {
     return (
       <View style={styles.testSpacing} ref={onMount}>
+        <Button
+          title="Load App Open Ad"
+          onPress={() => {
+            try {
+              appOpen.load();
+            } catch (e) {
+              console.log(`${Platform.OS} app open load error: ${e}`);
+            }
+          }}
+        />
+        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
         <Button
           title="Show App Open Ad"
           onPress={() => {
@@ -102,7 +112,6 @@ class InterstitialTest implements Test {
   adLoaded = false;
 
   constructor() {
-    interstitial.load();
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = interstitial.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} interstitial ad event: ${type}`);
@@ -126,6 +135,17 @@ class InterstitialTest implements Test {
   render(onMount: (component: any) => void): React.ReactNode {
     return (
       <View style={styles.testSpacing} ref={onMount}>
+        <Button
+          title="Load Interstitial"
+          onPress={() => {
+            try {
+              interstitial.load();
+            } catch (e) {
+              console.log(`${Platform.OS} interstitial load error: ${e}`);
+            }
+          }}
+        />
+        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
         <Button
           title="Show Interstitial"
           onPress={() => {
@@ -203,7 +223,6 @@ class RewardedTest implements Test {
   adLoaded = false;
 
   constructor() {
-    rewarded.load();
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = rewarded.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} rewarded ad event: ${type}`);
@@ -230,6 +249,17 @@ class RewardedTest implements Test {
   render(onMount: (component: any) => void): React.ReactNode {
     return (
       <View style={styles.testSpacing} ref={onMount}>
+        <Button
+          title="Load Rewarded"
+          onPress={() => {
+            try {
+              rewarded.load();
+            } catch (e) {
+              console.log(`${Platform.OS} rewarded load error: ${e}`);
+            }
+          }}
+        />
+        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
         <Button
           title="Show Rewarded"
           onPress={() => {
@@ -269,7 +299,6 @@ class RewardedInterstitialTest implements Test {
   adLoaded = false;
 
   constructor() {
-    rewardedInterstitial.load();
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = rewardedInterstitial.addAdEventsListener(
       ({type, payload}) => {
@@ -300,6 +329,19 @@ class RewardedInterstitialTest implements Test {
   render(onMount: (component: any) => void): React.ReactNode {
     return (
       <View style={styles.testSpacing} ref={onMount}>
+        <Button
+          title="Load Rewarded Interstitial"
+          onPress={() => {
+            try {
+              rewardedInterstitial.load();
+            } catch (e) {
+              console.log(
+                `${Platform.OS} rewarded interstitial load error: ${e}`,
+              );
+            }
+          }}
+        />
+        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
         <Button
           title="Show Rewarded Interstitial"
           onPress={() => {
@@ -739,7 +781,6 @@ class GAMInterstitialTest implements Test {
   adLoaded = false;
 
   constructor() {
-    gamInterstitial.load();
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = gamInterstitial.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} GAM interstitial ad event: ${type}`);
@@ -775,8 +816,18 @@ class GAMInterstitialTest implements Test {
     return (
       <View style={styles.testSpacing} ref={onMount}>
         <Button
-          title="Show Interstitial"
-          disabled={!this.adLoaded}
+          title="Load GAM Interstitial"
+          onPress={() => {
+            try {
+              gamInterstitial.load();
+            } catch (e) {
+              console.log(`${Platform.OS} GAM Interstitial load error: ${e}`);
+            }
+          }}
+        />
+        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
+        <Button
+          title="Show GAM Interstitial"
           onPress={() => {
             gamInterstitial.show();
           }}
