@@ -67,7 +67,11 @@ class AppOpenTest implements Test {
         <Button
           title="Show App Open Ad"
           onPress={() => {
-            appOpen.show();
+            try {
+              appOpen.show();
+            } catch (e) {
+              console.log(`${Platform.OS} app open show error: ${e}`);
+            }
           }}
         />
       </View>
@@ -125,7 +129,11 @@ class InterstitialTest implements Test {
         <Button
           title="Show Interstitial"
           onPress={() => {
-            interstitial.show();
+            try {
+              interstitial.show();
+            } catch (e) {
+              console.log(`${Platform.OS} app open show error: ${e}`);
+            }
           }}
         />
       </View>
@@ -225,7 +233,11 @@ class RewardedTest implements Test {
         <Button
           title="Show Rewarded"
           onPress={() => {
-            rewarded.show();
+            try {
+              rewarded.show();
+            } catch (e) {
+              console.log(`${Platform.OS} app open show error: ${e}`);
+            }
           }}
         />
       </View>
@@ -291,7 +303,11 @@ class RewardedInterstitialTest implements Test {
         <Button
           title="Show Rewarded Interstitial"
           onPress={() => {
-            rewardedInterstitial.show();
+            try {
+              rewardedInterstitial.show();
+            } catch (e) {
+              console.log(`${Platform.OS} app open show error: ${e}`);
+            }
           }}
         />
       </View>
