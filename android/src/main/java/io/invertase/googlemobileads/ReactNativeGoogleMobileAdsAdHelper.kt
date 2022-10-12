@@ -18,88 +18,63 @@ package io.invertase.googlemobileads
  */
 
 import android.app.Activity
-import com.google.android.gms.ads.AdLoadCallback
 import com.google.android.gms.ads.FullScreenContentCallback
-import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.OnUserEarnedRewardListener
-import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.admanager.AdManagerInterstitialAd
 import com.google.android.gms.ads.admanager.AppEventListener
 import com.google.android.gms.ads.appopen.AppOpenAd
 import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardItem
 import com.google.android.gms.ads.rewarded.RewardedAd
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
 
 class ReactNativeGoogleMobileAdsAdHelper<T>(private val ad: T) {
   fun show(activity: Activity, onUserEarnedRewardListener: OnUserEarnedRewardListener?) {
     when (ad) {
-      is AppOpenAd, is InterstitialAd -> {
-        val method = ad.javaClass.getMethod("show", Activity::class.java)
-        method.invoke(ad, activity)
-      }
-      is RewardedAd, is RewardedInterstitialAd -> {
-        val method = ad.javaClass.getMethod(
-          "show",
-          Activity::class.java,
-          OnUserEarnedRewardListener::class.java
-        )
-        method.invoke(ad, activity, onUserEarnedRewardListener)
-      }
+      is AppOpenAd -> ad.show(activity)
+      is InterstitialAd -> ad.show(activity)
+      is RewardedAd -> onUserEarnedRewardListener?.let { ad.show(activity, it) }
+      is RewardedInterstitialAd -> onUserEarnedRewardListener?.let { ad.show(activity, it) }
     }
   }
 
   fun setFullScreenContentCallback(fullScreenContentCallback: FullScreenContentCallback) {
     when (ad) {
-      is AppOpenAd, is InterstitialAd, is RewardedAd, is RewardedInterstitialAd -> {
-        val method = ad.javaClass.getMethod(
-          "setFullScreenContentCallback",
-          FullScreenContentCallback::class.java
-        )
-        method.invoke(ad, fullScreenContentCallback)
-      }
+      is AppOpenAd -> ad.fullScreenContentCallback = fullScreenContentCallback
+      is InterstitialAd -> ad.fullScreenContentCallback = fullScreenContentCallback
+      is RewardedAd -> ad.fullScreenContentCallback = fullScreenContentCallback
+      is RewardedInterstitialAd -> ad.fullScreenContentCallback = fullScreenContentCallback
     }
   }
 
   fun setAppEventListener(appEventListener: AppEventListener) {
     if (ad is AdManagerInterstitialAd) {
-      val method = ad.javaClass.getMethod("setAppEventListener", AppEventListener::class.java)
-      method.invoke(ad, appEventListener)
+      ad.appEventListener = appEventListener
     }
   }
 
   fun setImmersiveMode(enabled: Boolean) {
     when (ad) {
-      is AppOpenAd, is InterstitialAd, is RewardedAd, is RewardedInterstitialAd -> {
-        val method = ad.javaClass.getMethod("setImmersiveMode", Boolean::class.javaPrimitiveType)
-        method.invoke(ad, enabled)
-      }
+      is AppOpenAd -> ad.setImmersiveMode(enabled)
+      is InterstitialAd -> ad.setImmersiveMode(enabled)
+      is RewardedAd -> ad.setImmersiveMode(enabled)
+      is RewardedInterstitialAd -> ad.setImmersiveMode(enabled)
     }
   }
 
   fun setServerSideVerificationOptions(serverSideVerificationOptions: ServerSideVerificationOptions) {
     when (ad) {
-      is RewardedAd, is RewardedInterstitialAd -> {
-        val method = ad.javaClass.getMethod(
-          "setServerSideVerificationOptions",
-          ServerSideVerificationOptions::class.java
-        )
-        method.invoke(ad, serverSideVerificationOptions)
-      }
+      is RewardedAd -> ad.setServerSideVerificationOptions(serverSideVerificationOptions)
+      is RewardedInterstitialAd -> ad.setServerSideVerificationOptions(serverSideVerificationOptions)
     }
   }
 
   val rewardItem: RewardItem
     get() {
       when (ad) {
-        is RewardedAd, is RewardedInterstitialAd -> {
-          val method = ad.javaClass.getMethod("getRewardItem")
-          return method.invoke(ad) as RewardItem
-        }
+        is RewardedAd -> return ad.rewardItem
+        is RewardedInterstitialAd -> return ad.rewardItem
       }
       throw IllegalStateException("Ad type not supported")
     }
