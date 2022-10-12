@@ -1,3 +1,10 @@
+### [8.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.1.1...v8.1.2) (2022-10-12)
+
+
+### Bug Fixes
+
+* **android, release:** rewrite helper to avoid reflection / proguard issues ([58839ce](https://github.com/invertase/react-native-google-mobile-ads/commit/58839cea515c2f577737cc1b6aa0a5ff56782085))
+
 ### [8.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.1.0...v8.1.1) (2022-09-29)
 
 
