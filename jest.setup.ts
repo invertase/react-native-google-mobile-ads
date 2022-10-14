@@ -12,12 +12,15 @@ jest.doMock('react-native', () => {
         RNAppModule: {
           addListener: jest.fn(),
           removeListeners: jest.fn(),
+          eventsAddListener: jest.fn(),
+          eventsNotifyReady: jest.fn(),
         },
         RNGoogleMobileAdsModule: {
           addListener: jest.fn(),
           removeListeners: jest.fn(),
           eventsAddListener: jest.fn(),
           eventsNotifyReady: jest.fn(),
+          interstitialLoad: jest.fn(),
         },
         RNGoogleMobileAdsInterstitialModule: {},
         RNGoogleMobileAdsRewardedModule: {},
