@@ -99,6 +99,11 @@ export abstract class MobileAd implements MobileAdInterface {
       this._isLoadCalled = false;
     }
 
+    if (type === AdEventType.ERROR) {
+      this._loaded = false;
+      this._isLoadCalled = false;
+    }
+
     let payload: AdEventPayload<EventType> = data;
     if (error) {
       payload = NativeError.fromEvent(error, 'googleMobileAds');
