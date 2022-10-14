@@ -1,4 +1,5 @@
 import { AdEventType, InterstitialAd } from '../src';
+import { NativeModules } from 'react-native';
 
 describe('Google Mobile Ads Interstitial', function () {
   describe('createForAdRequest', function () {
@@ -22,6 +23,65 @@ describe('Google Mobile Ads Interstitial', function () {
       expect(i.constructor.name).toEqual('InterstitialAd');
       expect(i.adUnitId).toEqual('abc');
       expect(i.loaded).toEqual(false);
+    });
+
+    describe('load()', () => {
+      afterEach(() => {
+        jest.clearAllMocks();
+      });
+
+      it('does call native load method', () => {
+        const ad = InterstitialAd.createForAdRequest('abc');
+
+        ad.load();
+        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+      });
+
+      it('does nothing if ad currently loading', () => {
+        const ad = InterstitialAd.createForAdRequest('abc');
+
+        ad.load();
+        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+
+        ad.load();
+        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+      });
+
+      it('does nothing if ad is already loaded', () => {
+        const ad = InterstitialAd.createForAdRequest('abc');
+
+        // @ts-ignore
+        ad._handleAdEvent({ body: { type: AdEventType.LOADED } });
+
+        ad.load();
+        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).not.toBeCalled();
+      });
+
+      it('can be called again after ad was closed', () => {
+        const ad = InterstitialAd.createForAdRequest('abc');
+
+        ad.load();
+        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+
+        // @ts-ignore
+        ad._handleAdEvent({ body: { type: AdEventType.CLOSED } });
+
+        ad.load();
+        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(2);
+      });
+
+      it('can be called again after ad failed to load', () => {
+        const ad = InterstitialAd.createForAdRequest('abc');
+
+        ad.load();
+        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+
+        // @ts-ignore
+        ad._handleAdEvent({ body: { type: AdEventType.ERROR } });
+
+        ad.load();
+        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(2);
+      });
     });
 
     describe('show', function () {
