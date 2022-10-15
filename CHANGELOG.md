@@ -1,3 +1,10 @@
+## [8.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.1.2...v8.2.0) (2022-10-15)
+
+
+### Features
+
+* allow load to be called again after error ([066986c](https://github.com/invertase/react-native-google-mobile-ads/commit/066986c0d041f2b2b2ac2818db84915a9e9e8421))
+
 ### [8.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.1.1...v8.1.2) (2022-10-12)
 
 
