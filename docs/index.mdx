@@ -9,7 +9,27 @@ yarn add react-native-google-mobile-ads
 
 ## Optionally configure iOS static frameworks
 
-On iOS if you need to use static frameworks (that is, `use_frameworks!` in your `Podfile`) you must add the variable `$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`. You may need this if you use this module in combination with react-native-firebase v15 and higher since it requires `use_frameworks!`.
+On iOS if you need to use static frameworks (that is, `use_frameworks! :linkage => :static` in your `Podfile`) you must add the variable `$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`. You may need this if you use this module in combination with react-native-firebase v15 and higher since it requires `use_frameworks!`.
+
+Expo users may enable static frameworks by using the `expo-build-properties` plugin.
+To do so [follow the official `expo-build-properties` installation instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following code into your `app.json` file:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ]
+  }
+}
+```
 
 ## What does it do
 
