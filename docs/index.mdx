@@ -62,6 +62,22 @@ Within the root of your React Native project, open the `app.json` file and add t
 }
 ```
 
+If you're an expo user, make sure the `react-native-google-mobile-ads` block is outside of the `expo` block!
+It should look like this:
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    // ...
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+  }
+}
+```
+
 For the changes to take effect, rebuild your project:
 
 ```bash
@@ -71,6 +87,12 @@ npx react-native run-ios
 
 # For Android
 npx react-native run-android
+
+# For expo users not using EAS
+npx expo prebuild
+
+# For expo users using EAS
+npx eas-cli build --profile development
 ```
 
 ### Configure outbound requests
