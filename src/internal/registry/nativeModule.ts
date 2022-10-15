@@ -16,7 +16,6 @@
  */
 
 import { NativeModules, Platform } from 'react-native';
-import { APP_NATIVE_MODULE } from '../constants';
 import { NativeError } from '../NativeError';
 import { GoogleMobileAdsNativeEventEmitter } from '../GoogleMobileAdsNativeEventEmitter';
 import { SharedEventEmitter } from '../SharedEventEmitter';
@@ -203,26 +202,4 @@ export function getNativeModule(module: ModuleInterface) {
   }
 
   return initialiseNativeModule(module);
-}
-
-/**
- * Custom wrapped app module as it does not have it's own FirebaseModule based class.
- *
- * @returns {*}
- */
-export function getAppModule() {
-  if (NATIVE_MODULE_REGISTRY[APP_NATIVE_MODULE]) {
-    return NATIVE_MODULE_REGISTRY[APP_NATIVE_MODULE];
-  }
-
-  const namespace = 'app';
-  const nativeModule = NativeModules[APP_NATIVE_MODULE];
-
-  if (!nativeModule) {
-    throw new Error(getMissingModuleHelpText(namespace));
-  }
-
-  NATIVE_MODULE_REGISTRY[APP_NATIVE_MODULE] = nativeModuleWrapped(namespace, nativeModule, []);
-
-  return NATIVE_MODULE_REGISTRY[APP_NATIVE_MODULE];
 }
