@@ -126,7 +126,7 @@ for i in "${!_PLIST_ENTRY_KEYS[@]}"; do
 done
 
 if ! [[ -f "${_TARGET_PLIST}" ]]; then
-  echo "error: unable to locate Info.plist to set properties. App will crash without GADApplicationIdentier set."
+  echo "error: unable to locate Info.plist to set properties. App will crash without GADApplicationIdentifier set."
   exit 1
 fi
 
