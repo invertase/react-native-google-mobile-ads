@@ -1,0 +1,116 @@
+name: "⚠️ Bug/Issue report - React Native Google Mobile Ads"
+description: "Please provide as much detail as possible. Issues may be closed if they do not follow the template."
+title: "[\U0001F41B] Bug Report Title - CHANGE ME "
+labels: ["help wanted"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Hello there you awesome person;**
+        Please note that the issue list of this repo is exclusively for bug reports;
+        If this is a setup issue then please make sure you've correctly followed the setup documentation, read [the common reasons for ads not showing](https://docs.page/invertase/react-native-google-mobile-ads/common-reasons-for-ads-not-showing), and searched the existing issues for your error message / issue. Most setup issues have been seen before and are all down to an incorrect setup as the guides haven't been correctly followed.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: |
+        Please describe your issue here and provide as much detail as you can.
+        Stack Overflow publishes [a handy guide describing how to ask a question](https://stackoverflow.com/help/how-to-ask) in a way that improves your chances of getting useful help. Go there and read it quickly before filing an issue. Thank you!
+        Include code snippets that show your usages of the library in the context of your project.
+        Snippets that also show how and where the library is imported in JS are useful to debug issues relating to importing or methods not found issues.
+      placeholder: Describe your issue here!
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Environment
+        
+        Please provide key information about your environment. This will help to debug!
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: Platforms
+      description: Platforms that you're experiencing the issue on
+      options:
+        - Android, but have not tested behavior on iOS
+        - iOS, but have not tested behavior on Android
+        - Only on Android
+        - Only on iOS
+        - Android and iOS
+    validations:
+      required: true
+  - type: textarea
+    id: react_native_info
+    attributes:
+      label: React Native Info
+      description: Please run `react-native info` and paste the output here.
+      placeholder: Your react-native info output
+      render: shell
+    validations:
+      required: true
+  - type: checkboxes
+    id: typescript
+    attributes:
+      label: Are your using Typescript?
+      options:
+        - label: My project is using Typescript
+          required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Key project files
+
+        Please provide the contents of the following key project files. This will help to debug!
+  - type: textarea
+    id: package_json
+    attributes:
+      label: package.json
+      render: json
+      placeholder: Content of your package.json file
+    validations:
+      required: true
+  - type: textarea
+    id: app_json
+    attributes:
+      label: app.json
+      render: json
+      placeholder: Content of your app.json file
+    validations:
+      required: true
+  - type: textarea
+    id: ios_podfile
+    attributes:
+      label: ios/Podfile
+      render: ruby
+      placeholder: Content of your ios/Podfile file
+  - type: textarea
+    id: android_build_gradle
+    attributes:
+      label: android/build.gradle
+      render: groovy
+      placeholder: Content of your android/build.gradle file
+  - type: textarea
+    id: android_app_build_gradle
+    attributes:
+      label: android/app/build.gradle
+      render: groovy
+      placeholder: Content of your android/app/build.gradle file
+  - type: textarea
+    id: android_settings_gradle
+    attributes:
+      label: android/settings.gradle
+      render: groovy
+      placeholder: Content of your android/settings.gradle file
+  - type: textarea
+    id: android_manifest_xml
+    attributes:
+      label: AndroidManifest.xml
+      render: xml
+      placeholder: Content of your AndroidManifest.xml file
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        👉 Check out [`Invertase`](https://twitter.com/invertaseio) on Twitter for updates on the library.
