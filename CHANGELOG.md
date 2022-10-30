@@ -1,3 +1,10 @@
+### [8.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.2.0...v8.2.1) (2022-10-30)
+
+
+### Bug Fixes
+
+* **deps:** android sdk 21.3.0 / ios sdk 9.12.0 ([dbb9ed3](https://github.com/invertase/react-native-google-mobile-ads/commit/dbb9ed365da3346bf3e4a1c51ad9118f71bff50c))
+
 ## [8.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.1.2...v8.2.0) (2022-10-15)
 
 
