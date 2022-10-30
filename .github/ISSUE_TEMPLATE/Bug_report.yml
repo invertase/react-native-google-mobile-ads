@@ -16,6 +16,7 @@ body:
       label: What happened?
       description: |
         Please describe your issue here and provide as much detail as you can.
+        Stack Overflow publishes [a handy guide describing how to ask a question](https://stackoverflow.com/help/how-to-ask) in a way that improves your chances of getting useful help. Go there and read it quickly before filing an issue. Thank you!
         Include code snippets that show your usages of the library in the context of your project.
         Snippets that also show how and where the library is imported in JS are useful to debug issues relating to importing or methods not found issues.
       placeholder: Describe your issue here!
