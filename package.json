@@ -126,7 +126,6 @@
     "@typescript-eslint/parser": "^5.41.0",
     "babel-jest": "^29.2.2",
     "clang-format": "1.8.0",
-    "codecov": "^3.8.3",
     "conventional-changelog-cli": "^2.2.2",
     "eslint": "^8.26.0",
     "eslint-config-prettier": "^8.5.0",
