@@ -9,7 +9,7 @@ body:
       value: |
         **Hello there you awesome person;**
         Please note that the issue list of this repo is exclusively for bug reports;
-        If this is a setup issue then please make sure you've correctly followed the setup guides, most setup issues such as 'duplicate dex files', 'default app has not been initialized' etc are all down to an incorrect setup as the guides haven't been correctly followed.
+        If this is a setup issue then please make sure you've correctly followed the setup documentation, read [the common reasons for ads not showing](https://docs.page/invertase/react-native-google-mobile-ads/common-reasons-for-ads-not-showing), and searched the existing issues for your error message / issue. Most setup issues have been seen before and are all down to an incorrect setup as the guides haven't been correctly followed.
   - type: textarea
     id: what-happened
     attributes:
