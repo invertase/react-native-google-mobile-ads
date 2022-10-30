@@ -58,7 +58,7 @@ sed -i -e $'s/rootProject.name = \'RNGoogleMobileAdsExample\'/rootProject.name =
 rm -f android/settings.gradle??
 
 # React-native builds on iOS are very noisy with warnings in other packages that drown our warnings out. Reduce warnings to just our packages.
-sed -i -e $'s/react_native_post_install(installer)/react_native_post_install(installer)\\\n\\\n    # quiet non-module warnings - only interested in google-mobile-ads warnings\\\n    installer.pods_project.targets.each do |target|\\\n      if !target.name.include? "react-native-google-mobile-ads"\\\n        target.build_configurations.each do |config|\\\n          config.build_settings["GCC_WARN_INHIBIT_ALL_WARNINGS"] = "YES"\\\n        end\\\n      end\\\n    end/' ios/Podfile
+sed -i -e $'s/__apply_Xcode_12_5_M1_post_install_workaround(installer)/__apply_Xcode_12_5_M1_post_install_workaround(installer)\\\n\\\n    # quiet non-module warnings - only interested in google-mobile-ads warnings\\\n    installer.pods_project.targets.each do |target|\\\n      if !target.name.include? "react-native-google-mobile-ads"\\\n        target.build_configurations.each do |config|\\\n          config.build_settings["GCC_WARN_INHIBIT_ALL_WARNINGS"] = "YES"\\\n        end\\\n      end\\\n    end/' ios/Podfile
 rm -f ios/Podfile??
 
 # We want to easily test normal android release build setup, which is with proguard on
@@ -70,7 +70,7 @@ rm -f android/app/build.gradle??
 # This is just a speed optimization, very optional, but asks xcodebuild to use clang and clang++ without the fully-qualified path
 # That means that you can then make a symlink in your path with clang or clang++ and have it use a different binary
 # In that way you can install ccache or buildcache and get much faster compiles...
-sed -i -e $'s/react_native_post_install(installer)/react_native_post_install(installer)\\\n\\\n    installer.pods_project.targets.each do |target|\\\n      target.build_configurations.each do |config|\\\n        config.build_settings["CC"] = "clang"\\\n        config.build_settings["LD"] = "clang"\\\n        config.build_settings["CXX"] = "clang++"\\\n        config.build_settings["LDPLUSPLUS"] = "clang++"\\\n      end\\\n    end/' ios/Podfile
+sed -i -e $'s/__apply_Xcode_12_5_M1_post_install_workaround(installer)/__apply_Xcode_12_5_M1_post_install_workaround(installer)\\\n\\\n    installer.pods_project.targets.each do |target|\\\n      target.build_configurations.each do |config|\\\n        config.build_settings["CC"] = "clang"\\\n        config.build_settings["LD"] = "clang"\\\n        config.build_settings["CXX"] = "clang++"\\\n        config.build_settings["LDPLUSPLUS"] = "clang++"\\\n      end\\\n    end/' ios/Podfile
 rm -f ios/Podfile??
 
 # run pod install after installing our module
