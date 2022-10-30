@@ -44,17 +44,17 @@ jobs:
         # This is useful for benchmarking, do 0, 1, 2, etc (up to 256 max job-per-matrix limit) for averages
         iteration: [0]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 50
 
       # Set up tool versions
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: 16
 
       - name: Configure JDK 1.11
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '11' # ubuntu-latest is about to default to 11, force it everywhere
@@ -67,7 +67,7 @@ jobs:
           echo "::set-output name=yarn-cache-dir::$(yarn cache dir)"
           echo "::set-output name=tempdir::$TMPDIR"
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -155,7 +155,7 @@ jobs:
             echo "First boot warmup completed."
 
       - name: Metro Bundler Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ steps.workflow-variables.outputs.metro-cache }}
           key: ${{ runner.os }}-metro-v1-${{ github.run_id }}
@@ -202,7 +202,7 @@ jobs:
         shell: bash
 
       - name: Upload Emulator Log
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: adb_logs
