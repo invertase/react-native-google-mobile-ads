@@ -120,7 +120,7 @@ public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
   @ReactMethod
   public void initialize(Promise promise) {
     MobileAds.initialize(
-        getApplicationContext(),
+        getCurrentActivity(),
         new OnInitializationCompleteListener() {
           @Override
           public void onInitializationComplete(InitializationStatus initializationStatus) {
@@ -157,7 +157,7 @@ public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
         .runOnUiThread(
             () -> {
               MobileAds.openAdInspector(
-                  getApplicationContext(),
+                  getCurrentActivity(),
                   new OnAdInspectorClosedListener() {
                     @Override
                     public void onAdInspectorClosed(@Nullable AdInspectorError adInspectorError) {
