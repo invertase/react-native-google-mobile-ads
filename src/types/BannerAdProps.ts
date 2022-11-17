@@ -143,6 +143,12 @@ export interface GAMBannerAdProps extends Omit<BannerAdProps, 'size'> {
    */
   manualImpressionsEnabled?: boolean;
 
+  /*
+   *
+   Only applicable for FLUID ads. Sets the width of the ad
+  * */
+  width?: number;
+
   /**
    * When an ad received Ad Manager specific app events.
    */

@@ -33,6 +33,7 @@
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
 @property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
+@property(nonatomic, copy) NSNumber *fluidWidth;
 @property(nonatomic, assign) BOOL propsChanged;
 
 @property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
@@ -56,6 +57,13 @@
   }
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
+
+    
+    if(GADAdSizeEqualToSize(adSize,GADAdSizeFluid)) {
+      CGRect frameRect = _banner.frame;
+      frameRect.size.width = [_fluidWidth integerValue];
+      _banner.frame = frameRect;
+    }
 
     ((GAMBannerView *)_banner).validAdSizes = _sizes;
     ((GAMBannerView *)_banner).appEventDelegate = self;
@@ -188,6 +196,8 @@ RCT_EXPORT_VIEW_PROPERTY(unitId, NSString);
 RCT_EXPORT_VIEW_PROPERTY(request, NSDictionary);
 
 RCT_EXPORT_VIEW_PROPERTY(manualImpressionsEnabled, BOOL);
+
+RCT_EXPORT_VIEW_PROPERTY(fluidWidth, NSNumber);
 
 RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
 
