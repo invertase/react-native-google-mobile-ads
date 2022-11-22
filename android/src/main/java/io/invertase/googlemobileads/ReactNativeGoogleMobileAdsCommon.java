@@ -40,7 +40,7 @@ import javax.annotation.Nullable;
 
 public class ReactNativeGoogleMobileAdsCommon {
 
-  static AdSize getAdSizeForAdaptiveBanner(String preDefinedAdSize, ReactViewGroup reactViewGroup) {
+  static AdSize getAdSizeForAdaptiveBanner(String preDefinedAdSize, LayoutWrapper reactViewGroup) {
 
     try {
       Display display =
@@ -63,7 +63,7 @@ public class ReactNativeGoogleMobileAdsCommon {
     }
   }
 
-  static AdSize getAdSize(String preDefinedAdSize, ReactViewGroup reactViewGroup) {
+  static AdSize getAdSize(String preDefinedAdSize, LayoutWrapper reactViewGroup) {
     if (preDefinedAdSize.matches(
         "ADAPTIVE_BANNER|ANCHORED_ADAPTIVE_BANNER|INLINE_ADAPTIVE_BANNER")) {
       return ReactNativeGoogleMobileAdsCommon.getAdSizeForAdaptiveBanner(
