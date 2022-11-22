@@ -18,7 +18,9 @@ package io.invertase.googlemobileads;
  */
 
 import android.view.ViewGroup;
+
 import androidx.annotation.NonNull;
+
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
@@ -29,7 +31,6 @@ import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
-import com.facebook.react.views.view.ReactViewGroup;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
@@ -38,20 +39,20 @@ import com.google.android.gms.ads.BaseAdView;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.admanager.AdManagerAdView;
 import com.google.android.gms.ads.admanager.AppEventListener;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class ReactNativeGoogleMobileAdsBannerAdViewManager
-    extends SimpleViewManager<ReactViewGroup> {
+  extends SimpleViewManager<LayoutWrapper> {
   private static final String REACT_CLASS = "RNGoogleMobileAdsBannerView";
-  private final String EVENT_AD_LOADED = "onAdLoaded";
   private final String EVENT_AD_FAILED_TO_LOAD = "onAdFailedToLoad";
   private final String EVENT_AD_OPENED = "onAdOpened";
   private final String EVENT_AD_CLOSED = "onAdClosed";
-  private final String EVENT_SIZE_CHANGE = "onSizeChange";
   private final String EVENT_APP_EVENT = "onAppEvent";
   private final int COMMAND_ID_RECORD_MANUAL_IMPRESSION = 1;
 
@@ -60,7 +61,6 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private String unitId;
   private Boolean manualImpressionsEnabled;
   private boolean propsChanged;
-  private boolean isFluid;
 
   @Nonnull
   @Override
@@ -70,8 +70,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @Nonnull
   @Override
-  public ReactViewGroup createViewInstance(@Nonnull ThemedReactContext themedReactContext) {
-    return new ReactViewGroup(themedReactContext);
+  public LayoutWrapper createViewInstance(@Nonnull ThemedReactContext themedReactContext) {
+    return new LayoutWrapper(themedReactContext);
   }
 
   @Override
@@ -89,12 +89,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @Override
   public void receiveCommand(
-      @NonNull ReactViewGroup reactViewGroup, String commandId, @Nullable ReadableArray args) {
+    @NonNull LayoutWrapper reactViewGroup, String commandId, @Nullable ReadableArray args) {
     super.receiveCommand(reactViewGroup, commandId, args);
     int commandIdInt = Integer.parseInt(commandId);
 
     if (commandIdInt == COMMAND_ID_RECORD_MANUAL_IMPRESSION) {
-      BaseAdView adView = getAdView(reactViewGroup);
+      BaseAdView adView = reactViewGroup.getContentView();
       if (adView instanceof AdManagerAdView) {
         ((AdManagerAdView) adView).recordManualImpression();
       }
@@ -102,19 +102,19 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   }
 
   @ReactProp(name = "unitId")
-  public void setUnitId(ReactViewGroup reactViewGroup, String value) {
+  public void setUnitId(LayoutWrapper reactViewGroup, String value) {
     unitId = value;
     propsChanged = true;
   }
 
   @ReactProp(name = "request")
-  public void setRequest(ReactViewGroup reactViewGroup, ReadableMap value) {
+  public void setRequest(LayoutWrapper reactViewGroup, ReadableMap value) {
     request = ReactNativeGoogleMobileAdsCommon.buildAdRequest(value);
     propsChanged = true;
   }
 
   @ReactProp(name = "sizes")
-  public void setSizes(ReactViewGroup reactViewGroup, ReadableArray value) {
+  public void setSizes(LayoutWrapper reactViewGroup, ReadableArray value) {
     List<AdSize> sizeList = new ArrayList<>();
     for (Object size : value.toArrayList()) {
       if (size instanceof String) {
@@ -123,26 +123,18 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       }
     }
 
-    if (sizeList.size() > 0) {
-      AdSize adSize = sizeList.get(0);
-      WritableMap payload = Arguments.createMap();
-      payload.putDouble("width", adSize.getWidth());
-      payload.putDouble("height", adSize.getHeight());
-      sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
-    }
-
     sizes = sizeList;
     propsChanged = true;
   }
 
   @ReactProp(name = "manualImpressionsEnabled")
-  public void setManualImpressionsEnabled(ReactViewGroup reactViewGroup, boolean value) {
+  public void setManualImpressionsEnabled(LayoutWrapper reactViewGroup, boolean value) {
     this.manualImpressionsEnabled = value;
     propsChanged = true;
   }
 
   @Override
-  public void onAfterUpdateTransaction(@NonNull ReactViewGroup reactViewGroup) {
+  public void onAfterUpdateTransaction(@NonNull LayoutWrapper reactViewGroup) {
     super.onAfterUpdateTransaction(reactViewGroup);
     if (propsChanged) {
       requestAd(reactViewGroup);
@@ -150,8 +142,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     propsChanged = false;
   }
 
-  private BaseAdView initAdView(ReactViewGroup reactViewGroup) {
-    BaseAdView oldAdView = getAdView(reactViewGroup);
+  private BaseAdView initAdView(LayoutWrapper reactViewGroup) {
+    BaseAdView oldAdView = reactViewGroup.getContentView();
     if (oldAdView != null) {
       oldAdView.destroy();
       reactViewGroup.removeView(oldAdView);
@@ -164,73 +156,42 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     }
     adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
     adView.setAdListener(
-        new AdListener() {
-          @Override
-          public void onAdLoaded() {
-            AdSize adSize = adView.getAdSize();
-            int left, top, width, height;
-            if (isFluid) {
-              // TODO size=FLUID is still not working
-              left = 0;
-              top = 0;
-              width = reactViewGroup.getWidth();
-              height = reactViewGroup.getHeight();
-            } else {
-              left = adView.getLeft();
-              top = adView.getTop();
-              width = adSize.getWidthInPixels(reactViewGroup.getContext());
-              height = adSize.getHeightInPixels(reactViewGroup.getContext());
-            }
-            adView.measure(width, height);
-            adView.layout(left, top, left + width, top + height);
+      new AdListener() {
+        @Override
+        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+          int errorCode = loadAdError.getCode();
+          WritableMap payload = ReactNativeGoogleMobileAdsCommon.errorCodeToMap(errorCode);
+          sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
+        }
 
-            WritableMap payload = Arguments.createMap();
-            payload.putDouble("width", PixelUtil.toDIPFromPixel(width));
-            payload.putDouble("height", PixelUtil.toDIPFromPixel(height));
+        @Override
+        public void onAdOpened() {
+          sendEvent(reactViewGroup, EVENT_AD_OPENED, null);
+        }
 
-            sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
-          }
-
-          @Override
-          public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-            int errorCode = loadAdError.getCode();
-            WritableMap payload = ReactNativeGoogleMobileAdsCommon.errorCodeToMap(errorCode);
-            sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
-          }
-
-          @Override
-          public void onAdOpened() {
-            sendEvent(reactViewGroup, EVENT_AD_OPENED, null);
-          }
-
-          @Override
-          public void onAdClosed() {
-            sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
-          }
-        });
+        @Override
+        public void onAdClosed() {
+          sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
+        }
+      });
     if (adView instanceof AdManagerAdView) {
       ((AdManagerAdView) adView)
-          .setAppEventListener(
-              new AppEventListener() {
-                @Override
-                public void onAppEvent(@NonNull String name, @Nullable String data) {
-                  WritableMap payload = Arguments.createMap();
-                  payload.putString("name", name);
-                  payload.putString("data", data);
-                  sendEvent(reactViewGroup, EVENT_APP_EVENT, payload);
-                }
-              });
+        .setAppEventListener(
+          new AppEventListener() {
+            @Override
+            public void onAppEvent(@NonNull String name, @Nullable String data) {
+              WritableMap payload = Arguments.createMap();
+              payload.putString("name", name);
+              payload.putString("data", data);
+              sendEvent(reactViewGroup, EVENT_APP_EVENT, payload);
+            }
+          });
     }
     reactViewGroup.addView(adView);
     return adView;
   }
 
-  @Nullable
-  private BaseAdView getAdView(ReactViewGroup reactViewGroup) {
-    return (BaseAdView) reactViewGroup.getChildAt(0);
-  }
-
-  private void requestAd(ReactViewGroup reactViewGroup) {
+  private void requestAd(LayoutWrapper reactViewGroup) {
     if (sizes == null || unitId == null || request == null || manualImpressionsEnabled == null) {
       return;
     }
@@ -238,11 +199,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     BaseAdView adView = initAdView(reactViewGroup);
     adView.setAdUnitId(unitId);
 
-    isFluid = false;
     if (adView instanceof AdManagerAdView) {
       if (sizes.contains(AdSize.FLUID)) {
-        isFluid = true;
-        ((AdManagerAdView) adView).setAdSizes(AdSize.FLUID);
+        ((AdManagerAdView) adView).setAdSize(AdSize.FLUID);
       } else {
         ((AdManagerAdView) adView).setAdSizes(sizes.toArray(new AdSize[0]));
       }
@@ -256,7 +215,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     adView.loadAd(request);
   }
 
-  private void sendEvent(ReactViewGroup reactViewGroup, String type, WritableMap payload) {
+  private void sendEvent(LayoutWrapper reactViewGroup, String type, WritableMap payload) {
     WritableMap event = Arguments.createMap();
     event.putString("type", type);
 
@@ -265,7 +224,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     }
 
     ((ThemedReactContext) reactViewGroup.getContext())
-        .getJSModule(RCTEventEmitter.class)
-        .receiveEvent(reactViewGroup.getId(), "onNativeEvent", event);
+      .getJSModule(RCTEventEmitter.class)
+      .receiveEvent(reactViewGroup.getId(), "onNativeEvent", event);
   }
 }
