@@ -46,7 +46,7 @@ type NativeEvent =
 const sizeRegex = /([0-9]+)x([0-9]+)/;
 
 export const BaseAd = React.forwardRef<GoogleMobileAdsBannerView, GAMBannerAdProps>(
-  ({ unitId, sizes, requestOptions, manualImpressionsEnabled, width, ...props }, ref) => {
+  ({ unitId, sizes, requestOptions, manualImpressionsEnabled, ...props }, ref) => {
     const [dimensions, setDimensions] = useState<(number | string)[]>([0, 0]);
 
     useEffect(() => {
@@ -123,8 +123,6 @@ export const BaseAd = React.forwardRef<GoogleMobileAdsBannerView, GAMBannerAdPro
           height: dimensions[1],
         };
 
-    const fluidWidth = sizes.includes(BannerAdSize.FLUID) ? width : undefined;
-
     return (
       <GoogleMobileAdsBannerView
         ref={ref}
@@ -134,7 +132,6 @@ export const BaseAd = React.forwardRef<GoogleMobileAdsBannerView, GAMBannerAdPro
         request={validateAdRequestOptions(requestOptions)}
         manualImpressionsEnabled={!!manualImpressionsEnabled}
         onNativeEvent={onNativeEvent}
-        fluidWidth={fluidWidth}
       />
     );
   },
@@ -150,7 +147,6 @@ interface NativeBannerProps {
   unitId: string;
   request: RequestOptions;
   manualImpressionsEnabled: boolean;
-  fluidWidth?: number;
   onNativeEvent: (event: { nativeEvent: NativeEvent }) => void;
 }
 

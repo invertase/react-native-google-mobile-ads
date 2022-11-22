@@ -33,7 +33,6 @@
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
 @property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
-@property(nonatomic, copy) NSNumber *fluidWidth;
 @property(nonatomic, assign) BOOL propsChanged;
 
 @property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
@@ -60,9 +59,8 @@
 
     
     if(GADAdSizeEqualToSize(adSize,GADAdSizeFluid)) {
-      CGRect frameRect = _banner.frame;
-      frameRect.size.width = [_fluidWidth integerValue];
-      _banner.frame = frameRect;
+      _banner.frame = self.bounds;
+      _banner.autoresizingMask = (UIViewAutoresizingFlexibleWidth);
     }
 
     ((GAMBannerView *)_banner).validAdSizes = _sizes;
@@ -196,8 +194,6 @@ RCT_EXPORT_VIEW_PROPERTY(unitId, NSString);
 RCT_EXPORT_VIEW_PROPERTY(request, NSDictionary);
 
 RCT_EXPORT_VIEW_PROPERTY(manualImpressionsEnabled, BOOL);
-
-RCT_EXPORT_VIEW_PROPERTY(fluidWidth, NSNumber);
 
 RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
 
