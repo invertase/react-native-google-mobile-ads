@@ -126,7 +126,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       }
     }
 
-    if (sizeList.size() > 0 && !isFluid) {
+    if (sizeList.size() > 0 && !sizeList.contains(AdSize.FLUID)) {
       AdSize adSize = sizeList.get(0);
       WritableMap payload = Arguments.createMap();
       payload.putDouble("width", adSize.getWidth());
@@ -170,9 +170,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       new AdListener() {
         @Override
         public void onAdLoaded() {
-          if(isFluid) return;
+          reactViewGroup.requestLayout();
 
-          adView.requestLayout();
+          if(isFluid) return;
 
           AdSize adSize = adView.getAdSize();
           WritableMap payload = Arguments.createMap();
