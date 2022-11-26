@@ -9,6 +9,9 @@ The React Native Google Mobile Ads module provides out of the box support for he
 within your application. The `AdsConsent` helper which comes with the module wraps the Google UMP SDK for both
 Android & iOS, and provides a single JavaScript interface for both platforms.
 
+The Google's UMP (Universal Messaging Platform) SDK is updated to support the latest IAB standards, and greatly 
+simplifies the process of setting up consent forms and ad partner listings.
+
 ## Understanding AdMob Ads
 
 Ads served by Google can be categorized as personalized or non-personalized, both requiring consent from users in the EEA. By default,
@@ -21,6 +24,8 @@ ad requests to Google serve personalized ads, with ad selection based on the use
 To setup and configure ads consent collection, first of all:
 
 - Enable and configure GDPR and IDFA messaging in the [Privacy & messaging section of AdMob's Web Console](https://apps.admob.com/v2/privacymessaging).
+
+> We recommend including legitimate interest in your GDPR-compliant messages. Well, if you do not include it, your income could be significantly reduced
 
 - For Android, add the following rule into
   `android/app/proguard-rules.pro`:
@@ -45,7 +50,6 @@ To setup and configure ads consent collection, first of all:
 }
 ```
 You'll need to generate a new development build before using it.
-
 
 ### Delaying app measurement
 
@@ -127,14 +131,57 @@ Once the user has selected their preference, the `showForm` method returns an `A
 ```js
 import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
 
-const consentInfo = await AdsConsent.requestInfoUpdate();
+const requestAdsConsent = async () => {
+  const consentInfo = await AdsConsent.requestInfoUpdate({
+    tagForUnderAgeOfConsent: false,
+    testDeviceIdentifiers: [TEST_DEVICE_ID],
+    // Always ensure debug information is removed for production apps!
+    ...__DEV__ && { debugGeography: AdsConsentDebugGeography.EEA },
+  });
 
-if (consentInfo.isConsentFormAvailable && consentInfo.status === AdsConsentStatus.REQUIRED) {
-  const { status } = await AdsConsent.showForm();
-}
+  if (
+    consentInfo.isConsentFormAvailable &&
+    (consentInfo.status === AdsConsentStatus.REQUIRED ||
+      consentInfo.status === AdsConsentStatus.UNKNOWN)
+  ) {
+    consentInfo.status = await AdsConsent.showForm();
+  }
+
+  return consentInfo.status;
+};
+
+const initializeAdmob = async () => {
+  // Request the respective consent to EEA-based users
+  await requestAdsConsent();
+
+  // Configure the ads requests
+  await mobileAds().setRequestConfiguration({
+    maxAdContentRating: MaxAdContentRating.MA,
+    tagForChildDirectedTreatment: false,
+    tagForUnderAgeOfConsent: false,
+    testDeviceIdentifiers: [TEST_DEVICE_ID],
+  });
+
+  // Initialize the AdMob service
+  return mobileAds().initialize();
+};
 ```
 
-> Do not persist the status. You could however store this locally in application state (e.g. React Context) and update the status on every app launch as it may change.
+Then, after displaying the consent forms using UMP, you can start requesting ads. If you have set `requestNonPersonalizedAdsOnly` (also called `NPA`) in your ad request, [the AdMob SDK will look at that and the consent indicated by the `TC String` and apply the most conservative setting](https://support.google.com/admob/answer/9760862). In order words, AdMob will automatically handle the request with the consent status selected by the user.
+
+```js
+const interstitial = InterstitialAd.createForAdRequest(
+  "ca-app-pub-3940256099942544/4411468910", // unit id for testing; remember to change...
+  {
+    requestNonPersonalizedAdsOnly: false,
+    keywords: ["fashion, clothes"],
+  }
+);
+```
+
+In the example above, we have indicated that we want to display personalized ads to the user (`NPA = 0`). In the event that said user does not give us consent for personalized ads through the GDPR form, we could modify the `RequestOptions` object (by setting `requestNonPersonalizedAdsOnly` to `true` (that is, `NPA = 1`)) or simply let AdMob automatically decide for us, using the most restrictive option (in this case, based on the user choices, it will not serve personalized ads).
+
+> If the user also does not agree to the basic ads consent, AdMob will use the [limited ads](https://support.google.com/admob/answer/10105530?hl=en) feature, which gives us the ability to serve ads in a limited way in the absence of consent for the use of cookies or other local storage, as referenced Google's EU User Consent policy. This may decrease the frequency of ads a bit, but it's better than not showing any ads at all.
 
 ### Inspecting consent choices
 
