@@ -1,3 +1,10 @@
+### [8.2.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.2.1...v8.2.2) (2022-11-27)
+
+
+### Bug Fixes
+
+* **ios:** use fully-specified path to required head utility ([fe69aa4](https://github.com/invertase/react-native-google-mobile-ads/commit/fe69aa44e44bec63cff0944b68cc37acde5e7976))
+
 ### [8.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.2.0...v8.2.1) (2022-10-30)
 
 
