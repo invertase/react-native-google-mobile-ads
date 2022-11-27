@@ -167,7 +167,7 @@ const initializeAdmob = async () => {
 };
 ```
 
-Then, after displaying the consent forms using UMP, you can start requesting ads. If you have set `requestNonPersonalizedAdsOnly` (also called `NPA`) in your ad request, [the AdMob SDK will look at that and the consent indicated by the `TC String` and apply the most conservative setting](https://support.google.com/admob/answer/9760862). In order words, AdMob will automatically handle the request with the consent status selected by the user.
+Then, after displaying the consent forms using UMP, you can start requesting ads. If you have set `requestNonPersonalizedAdsOnly` (also called `NPA`) in your ad request, [the AdMob SDK will look at that and the consent indicated by the `TC String` and apply the most conservative setting](https://support.google.com/admob/answer/9760862). In other words, AdMob will automatically handle the request with the consent status selected by the user.
 
 ```js
 const interstitial = InterstitialAd.createForAdRequest(
