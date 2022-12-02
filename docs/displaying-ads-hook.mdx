@@ -88,7 +88,7 @@ Return values of the hook are:
 | isOpened       | boolean                            | Whether the ad is opened. The value is remained `true` even after the ad is closed unless **new ad is requested**. |
 | isClosed       | boolean                            | Whether your ad is dismissed.                                                                                      |
 | isShowing      | boolean                            | Whether your ad is showing. The value is equal with `isOpened && !isClosed`.                                       |
-| error          | Error \| undefined                 | `Error` object throwed during ad load.                                                                             |
+| error          | Error \| undefined                 | `Error` object thrown during ad load.                                                                             |
 | reward         | [RewardedAdReward](#) \| undefined | Loaded reward item of the Rewarded Ad. Available only in RewardedAd.                                               |
 | isEarnedReward | boolean                            | Whether the user earned the reward by Rewarded Ad.                                                                 |
 | load           | Function                           | Start loading the advert with the provided RequestOptions.                                                         |
