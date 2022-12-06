@@ -195,12 +195,18 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
   } else if ([value isEqualToString:@"LEADERBOARD"]) {
     return GADAdSizeLeaderboard;
   } else if ([value isEqualToString:@"ADAPTIVE_BANNER"] ||
-             [value isEqualToString:@"ANCHORED_ADAPTIVE_BANNER"]) {
-    CGFloat viewWidth = [[UIScreen mainScreen] bounds].size.width;
+             [value isEqualToString:@"ANCHORED_ADAPTIVE_BANNER"] ||
+             [value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
+    CGRect frame = [[UIScreen mainScreen] bounds];
+    if (@available(iOS 11.0, *)) {
+      frame =
+          UIEdgeInsetsInsetRect(frame, [UIApplication sharedApplication].keyWindow.safeAreaInsets);
+    }
+    CGFloat viewWidth = frame.size.width;
+    if ([value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
+      return GADCurrentOrientationInlineAdaptiveBannerAdSizeWithWidth(viewWidth);
+    }
     return GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
-  } else if ([value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
-    CGFloat viewWidth = [[UIScreen mainScreen] bounds].size.width;
-    return GADCurrentOrientationInlineAdaptiveBannerAdSizeWithWidth(viewWidth);
   } else {
     return GADAdSizeBanner;
   }
