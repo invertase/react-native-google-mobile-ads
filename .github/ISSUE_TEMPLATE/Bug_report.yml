@@ -55,7 +55,6 @@ body:
       label: Are your using Typescript?
       options:
         - label: My project is using Typescript
-          required: true
   - type: markdown
     attributes:
       value: |
