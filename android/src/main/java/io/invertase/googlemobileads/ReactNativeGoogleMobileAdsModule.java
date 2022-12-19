@@ -120,7 +120,8 @@ public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
   @ReactMethod
   public void initialize(Promise promise) {
     MobileAds.initialize(
-        getCurrentActivity(),
+        /* Use activity when available - preferrable for mediated networks*/
+        (getCurrentActivity() != null) ? getCurrentActivity() : getApplicationContext(),
         new OnInitializationCompleteListener() {
           @Override
           public void onInitializationComplete(InitializationStatus initializationStatus) {
