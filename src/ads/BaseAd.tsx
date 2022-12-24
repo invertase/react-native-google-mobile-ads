@@ -43,7 +43,7 @@ type NativeEvent =
       data?: string;
     };
 
-const sizeRegex = /([0-9]+)x([0-9]+)/;
+const sizeRegex = /([0-9]+)x([0-9]+|)/;
 
 export const BaseAd = React.forwardRef<GoogleMobileAdsBannerView, GAMBannerAdProps>(
   ({ unitId, sizes, requestOptions, manualImpressionsEnabled, ...props }, ref) => {

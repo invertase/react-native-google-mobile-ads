@@ -163,7 +163,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
 + (GADAdSize)stringToAdSize:(NSString *)value {
   NSError *error = nil;
   NSRegularExpression *regex =
-      [NSRegularExpression regularExpressionWithPattern:@"([0-9]+)x([0-9]+)"
+      [NSRegularExpression regularExpressionWithPattern:@"([0-9]+)x([0-9]+|)"
                                                 options:0
                                                   error:&error];
   NSArray *matches = [regex matchesInString:value options:0 range:NSMakeRange(0, [value length])];
@@ -173,8 +173,12 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     if (matchText) {
       NSArray *values = [matchText componentsSeparatedByString:@"x"];
       CGFloat width = (CGFloat)[values[0] intValue];
-      CGFloat height = (CGFloat)[values[1] intValue];
-      return GADAdSizeFromCGSize(CGSizeMake(width, height));
+      if ([values[1] isEqualToString:@""]) {
+        return GADCurrentOrientationInlineAdaptiveBannerAdSizeWithWidth(width);
+      } else {
+        CGFloat height = (CGFloat)[values[1] intValue];
+        return GADAdSizeFromCGSize(CGSizeMake(width, height));
+      }
     }
   }
 

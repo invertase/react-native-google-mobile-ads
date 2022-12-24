@@ -69,17 +69,21 @@ public class ReactNativeGoogleMobileAdsCommon {
       return ReactNativeGoogleMobileAdsCommon.getAdSizeForAdaptiveBanner(
           preDefinedAdSize, reactViewGroup);
     } else {
-      return ReactNativeGoogleMobileAdsCommon.stringToAdSize(preDefinedAdSize);
+      return ReactNativeGoogleMobileAdsCommon.stringToAdSize(preDefinedAdSize, reactViewGroup);
     }
   }
 
-  static AdSize stringToAdSize(String value) {
-    Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+)");
+  static AdSize stringToAdSize(String value, ReactViewGroup reactViewGroup) {
+    Pattern pattern = Pattern.compile("([0-9]+)x([0-9]+|)");
     Matcher matcher = pattern.matcher(value);
 
     // If size is "valXval"
     if (matcher.find()) {
       int width = Integer.parseInt(matcher.group(1));
+      if (matcher.group(2).isEmpty()) {
+        return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
+            reactViewGroup.getContext(), width);
+      }
       int height = Integer.parseInt(matcher.group(2));
       return new AdSize(width, height);
     }

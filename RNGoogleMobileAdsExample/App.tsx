@@ -174,14 +174,16 @@ class InterstitialTest implements Test {
 }
 
 class BannerTest implements Test {
-  bannerAdSize: BannerAdSize | string;
+  bannerAdSize: BannerAdSize | `${number}x${number | ''}`;
+  path?: string;
 
-  constructor(bannerAdSize) {
+  constructor(bannerAdSize, path?: string) {
     this.bannerAdSize = bannerAdSize;
+    this.path = path;
   }
 
   getPath(): string {
-    return this.bannerAdSize;
+    return this.path || this.bannerAdSize;
   }
 
   getTestType(): TestType {
@@ -853,6 +855,10 @@ class GAMInterstitialTest implements Test {
 Object.keys(BannerAdSize).forEach(bannerAdSize => {
   TestRegistry.registerTest(new BannerTest(bannerAdSize));
 });
+TestRegistry.registerTest(new BannerTest('300x200', 'Banner (Custom Size)'));
+TestRegistry.registerTest(
+  new BannerTest('300x', 'Inline Adaptive Banner (Custom Width)'),
+);
 TestRegistry.registerTest(new AppOpenTest());
 TestRegistry.registerTest(new InterstitialTest());
 TestRegistry.registerTest(new RewardedTest());

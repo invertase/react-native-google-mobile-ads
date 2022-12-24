@@ -41,11 +41,11 @@ export interface BannerAdProps {
   unitId: string;
 
   /**
-   * The size of the banner. Can be a predefined size via `BannerAdSize` or custom dimensions, e.g. `300x200`.
+   * The size of the banner. Can be a predefined size via `BannerAdSize` or custom dimensions (WxH), e.g. `300x200` or `300x` for adaptive height.
    *
    * Inventory must be available for the banner size specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  size: BannerAdSize | string;
+  size: BannerAdSize | `${number}x${number | ''}`;
 
   /**
    * The request options for this banner.
