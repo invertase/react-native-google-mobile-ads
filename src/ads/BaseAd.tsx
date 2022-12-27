@@ -20,7 +20,7 @@ import React, { useState, useEffect } from 'react';
 import { NativeMethods, requireNativeComponent } from 'react-native';
 import { isFunction } from '../common';
 import { NativeError } from '../internal/NativeError';
-import { BannerAdSize } from '../BannerAdSize';
+import { BannerAdSize, GAMBannerAdSize } from '../BannerAdSize';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { GAMBannerAdProps } from '../types/BannerAdProps';
 import { RequestOptions } from '../types/RequestOptions';
@@ -58,7 +58,9 @@ export const BaseAd = React.forwardRef<GoogleMobileAdsBannerView, GAMBannerAdPro
     useEffect(() => {
       if (
         sizes.length === 0 ||
-        !sizes.every(size => size in BannerAdSize || sizeRegex.test(size))
+        !sizes.every(
+          size => size in BannerAdSize || size in GAMBannerAdSize || sizeRegex.test(size),
+        )
       ) {
         throw new Error("BannerAd: 'size(s)' expected a valid BannerAdSize or custom size string.");
       }
@@ -113,7 +115,7 @@ export const BaseAd = React.forwardRef<GoogleMobileAdsBannerView, GAMBannerAdPro
       }
     }
 
-    const style = sizes.includes(BannerAdSize.FLUID)
+    const style = sizes.includes(GAMBannerAdSize.FLUID)
       ? {
           width: '100%',
           height: dimensions[1],

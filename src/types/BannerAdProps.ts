@@ -1,4 +1,4 @@
-import { BannerAdSize } from '../BannerAdSize';
+import { BannerAdSize, GAMBannerAdSize } from '../BannerAdSize';
 import { AppEvent } from './AppEvent';
 import { RequestOptions } from './RequestOptions';
 
@@ -111,7 +111,7 @@ export interface GAMBannerAdProps extends Omit<BannerAdProps, 'size'> {
    *
    * Inventory must be available for the banner sizes specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  sizes: BannerAdSize[] | string[];
+  sizes: typeof GAMBannerAdSize[keyof typeof GAMBannerAdSize][] | string[];
 
   /**
    * Whether to enable the manual impression counting.
