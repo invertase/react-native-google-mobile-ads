@@ -59,12 +59,16 @@ export enum BannerAdSize {
   INLINE_ADAPTIVE_BANNER = 'INLINE_ADAPTIVE_BANNER',
 
   /**
-   * A dynamically sized banner that matches its parent's width and expands/contracts its height to match the ad's content after loading completes.
-   */
-  FLUID = 'FLUID',
-
-  /**
    * IAB wide skyscraper ad size (160x600 density-independent pixels). This size is currently not supported by the Google Mobile Ads network; this is intended for mediation ad networks only.
    */
   WIDE_SKYSCRAPER = 'WIDE_SKYSCRAPER',
 }
+
+export const GAMBannerAdSize = {
+  ...BannerAdSize,
+
+  /**
+   * A dynamically sized banner that matches its parent's width and expands/contracts its height to match the ad's content after loading completes.
+   */
+  FLUID: 'FLUID',
+} as const;
