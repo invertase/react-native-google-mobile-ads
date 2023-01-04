@@ -41,7 +41,6 @@ import com.google.android.gms.ads.admanager.AppEventListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -168,45 +167,47 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     BaseAdView oldAdView = getAdView(reactViewGroup);
     if (oldAdView != null) {
       reactViewGroup.removeView(oldAdView);
-      oldAdView.setAdListener(new AdListener() {
-        @Override
-        public void onAdClosed() {
-          super.onAdClosed();
-        }
-
-        @Override
-        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-          super.onAdFailedToLoad(loadAdError);
-        }
-
-        @Override
-        public void onAdOpened() {
-          super.onAdOpened();
-        }
-
-        @Override
-        public void onAdLoaded() {
-          super.onAdLoaded();
-        }
-
-        @Override
-        public void onAdClicked() {
-          super.onAdClicked();
-        }
-
-        @Override
-        public void onAdImpression() {
-          super.onAdImpression();
-        }
-      });
-      if (oldAdView instanceof AdManagerAdView) {
-        ((AdManagerAdView) oldAdView).setAppEventListener(
-          new AppEventListener() {
+      oldAdView.setAdListener(
+          new AdListener() {
             @Override
-            public void onAppEvent(@NonNull String name, @Nullable String data) {
-              // empty to clear previous listeners
+            public void onAdClosed() {
+              super.onAdClosed();
+            }
+
+            @Override
+            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+              super.onAdFailedToLoad(loadAdError);
+            }
+
+            @Override
+            public void onAdOpened() {
+              super.onAdOpened();
+            }
+
+            @Override
+            public void onAdLoaded() {
+              super.onAdLoaded();
+            }
+
+            @Override
+            public void onAdClicked() {
+              super.onAdClicked();
+            }
+
+            @Override
+            public void onAdImpression() {
+              super.onAdImpression();
             }
           });
+      if (oldAdView instanceof AdManagerAdView) {
+        ((AdManagerAdView) oldAdView)
+            .setAppEventListener(
+                new AppEventListener() {
+                  @Override
+                  public void onAppEvent(@NonNull String name, @Nullable String data) {
+                    // empty to clear previous listeners
+                  }
+                });
       }
       oldAdView.destroy();
     }
