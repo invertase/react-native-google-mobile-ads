@@ -34,12 +34,13 @@ RCT_EXPORT_MODULE();
 #pragma mark Google Mobile Ads Methods
 
 RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnitID) {
-    GADDebugOptionsViewController *debugOptionsViewController = [GADDebugOptionsViewController debugOptionsViewControllerWithAdUnitID:adUnitID];
-    
-    [[UIApplication sharedApplication].delegate.window.rootViewController
-     presentViewController:debugOptionsViewController
-     animated:YES
-     completion:nil];
+  GADDebugOptionsViewController *debugOptionsViewController =
+      [GADDebugOptionsViewController debugOptionsViewControllerWithAdUnitID:adUnitID];
+
+  [[UIApplication sharedApplication].delegate.window.rootViewController
+      presentViewController:debugOptionsViewController
+                   animated:YES
+                 completion:nil];
 }
 
 @end
