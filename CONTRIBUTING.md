@@ -132,7 +132,7 @@ See the [Conventional Commits](https://www.conventionalcommits.org/) specificati
 
 Pull Requests to master require two or more peer-review approvals and passing status checks before they can be merged.
 
-Reviews of Pull Requests are based on the following acceptance critical:
+Reviews of Pull Requests are based on the following acceptance criteria:
 
 - Does the PR provide cross-platform support?
   - i.e. if adding a new feature then does the implementation provide iOS and Android support.
