@@ -16,5 +16,5 @@ export enum InitializationState {
 export type AdapterStatus = {
   name: string;
   description: string;
-  status: InitializationState;
+  state: InitializationState;
 };
