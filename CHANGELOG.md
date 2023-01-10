@@ -1,3 +1,14 @@
+## [9.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.2.3...v9.0.0) (2023-01-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* move GAM-exclusive FLUID type to new GAMBanner const
+
+### Bug Fixes
+
+* move GAM-exclusive FLUID type to new GAMBanner const ([85545f6](https://github.com/invertase/react-native-google-mobile-ads/commit/85545f6c2a0b02af3835aabd262632cc1e67172c))
+
 ### [8.2.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v8.2.2...v8.2.3) (2023-01-10)
 
 
