@@ -74,7 +74,6 @@ class RNGoogleMobileAdsAppOpenModule: NSObject {
       GADAppOpenAd.load(
         withAdUnitID: adUnitId,
         request: adRequest,
-        orientation: UIInterfaceOrientation.portrait,
         completionHandler: completionHandler
       )
     }
