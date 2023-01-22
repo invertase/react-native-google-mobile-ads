@@ -137,8 +137,8 @@
   [self sendEvent:@"onAdClosed" payload:nil];
 }
 
-- (void)bannerView:(GAMBannerView *)bannerView
-    didReceiveAppEvent:(NSString *)name
+- (void)adView:(nonnull GADBannerView *)banner
+    didReceiveAppEvent:(nonnull NSString *)name
               withInfo:(nullable NSString *)info {
   [self sendEvent:@"onAppEvent"
           payload:@{
