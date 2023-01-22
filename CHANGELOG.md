@@ -1,3 +1,10 @@
+### [9.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v9.1.0...v9.1.1) (2023-01-22)
+
+
+### Bug Fixes
+
+* **banner, ios:** Fix not able to receive banner app event on iOS ([e9ff699](https://github.com/invertase/react-native-google-mobile-ads/commit/e9ff69953161e514e6a1209a7389e2e7c5ce51ab))
+
 ## [9.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v9.0.0...v9.1.0) (2023-01-13)
 
 
