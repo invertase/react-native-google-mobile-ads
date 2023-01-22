@@ -17,165 +17,8 @@
  */
 
 #import "RNGoogleMobileAdsBannerViewManager.h"
-#import <GoogleMobileAds/GADAppEventDelegate.h>
-#import <GoogleMobileAds/GADBannerView.h>
-#import <GoogleMobileAds/GADBannerViewDelegate.h>
 #import <React/RCTUIManager.h>
-#import <React/RCTView.h>
-#import "RNGoogleMobileAdsCommon.h"
-
-@interface BannerComponent : RCTView <GADBannerViewDelegate, GADAppEventDelegate>
-
-@property GADBannerView *banner;
-@property(nonatomic, assign) BOOL requested;
-
-@property(nonatomic, copy) NSArray *sizes;
-@property(nonatomic, copy) NSString *unitId;
-@property(nonatomic, copy) NSDictionary *request;
-@property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
-@property(nonatomic, assign) BOOL propsChanged;
-
-@property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
-
-- (void)requestAd;
-
-@end
-
-@implementation BannerComponent
-
-- (void)didSetProps:(NSArray<NSString *> *)changedProps {
-  if (_propsChanged) {
-    [self requestAd];
-  }
-  _propsChanged = false;
-}
-
-- (void)initBanner:(GADAdSize)adSize {
-  if (_requested) {
-    [_banner removeFromSuperview];
-  }
-  if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
-    _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
-
-    ((GAMBannerView *)_banner).validAdSizes = _sizes;
-    ((GAMBannerView *)_banner).appEventDelegate = self;
-    ((GAMBannerView *)_banner).enableManualImpressions = [_manualImpressionsEnabled boolValue];
-  } else {
-    _banner = [[GADBannerView alloc] initWithAdSize:adSize];
-  }
-  _banner.rootViewController = [UIApplication sharedApplication].delegate.window.rootViewController;
-  _banner.delegate = self;
-}
-
-- (void)setUnitId:(NSString *)unitId {
-  _unitId = unitId;
-  _propsChanged = true;
-}
-
-- (void)setSizes:(NSArray *)sizes {
-  __block NSMutableArray *adSizes = [[NSMutableArray alloc] initWithCapacity:sizes.count];
-  [sizes enumerateObjectsUsingBlock:^(id jsonValue, NSUInteger idx, __unused BOOL *stop) {
-    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue];
-    if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
-      RCTLogWarn(@"Invalid adSize %@", jsonValue);
-    } else {
-      [adSizes addObject:NSValueFromGADAdSize(adSize)];
-    }
-  }];
-  _sizes = adSizes;
-  _propsChanged = true;
-}
-
-- (void)setRequest:(NSDictionary *)request {
-  _request = request;
-  _propsChanged = true;
-}
-
-- (void)setManualImpressionsEnabled:(BOOL *)manualImpressionsEnabled {
-  _manualImpressionsEnabled = [NSNumber numberWithBool:manualImpressionsEnabled];
-  _propsChanged = true;
-}
-
-- (void)requestAd {
-#ifndef __LP64__
-  return;  // prevent crash on 32bit
-#endif
-
-  if (_unitId == nil || _sizes == nil || _request == nil || _manualImpressionsEnabled == nil) {
-    [self setRequested:NO];
-    return;
-  }
-
-  [self initBanner:GADAdSizeFromNSValue(_sizes[0])];
-  [self addSubview:_banner];
-  _banner.adUnitID = _unitId;
-  [self setRequested:YES];
-  [_banner loadRequest:[RNGoogleMobileAdsCommon buildAdRequest:_request]];
-  [self sendEvent:@"onSizeChange"
-          payload:@{
-            @"width" : @(_banner.bounds.size.width),
-            @"height" : @(_banner.bounds.size.height),
-          }];
-}
-
-- (void)sendEvent:(NSString *)type payload:(NSDictionary *_Nullable)payload {
-  if (!self.onNativeEvent) {
-    return;
-  }
-
-  NSMutableDictionary *event = [@{
-    @"type" : type,
-  } mutableCopy];
-
-  if (payload != nil) {
-    [event addEntriesFromDictionary:payload];
-  }
-
-  self.onNativeEvent(event);
-}
-
-- (void)bannerViewDidReceiveAd:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdLoaded"
-          payload:@{
-            @"width" : @(bannerView.bounds.size.width),
-            @"height" : @(bannerView.bounds.size.height),
-          }];
-}
-
-- (void)bannerView:(GADBannerView *)bannerView didFailToReceiveAdWithError:(NSError *)error {
-  NSDictionary *errorAndMessage = [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
-  [self sendEvent:@"onAdFailedToLoad" payload:errorAndMessage];
-}
-
-- (void)bannerViewWillPresentScreen:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdOpened" payload:nil];
-}
-
-- (void)bannerViewWillDismissScreen:(GADBannerView *)bannerView {
-  // not in use
-}
-
-- (void)bannerViewDidDismissScreen:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdClosed" payload:nil];
-}
-
-- (void)adView:(nonnull GADBannerView *)banner
-    didReceiveAppEvent:(nonnull NSString *)name
-              withInfo:(nullable NSString *)info {
-  [self sendEvent:@"onAppEvent"
-          payload:@{
-            @"name" : name,
-            @"data" : info,
-          }];
-}
-
-- (void)recordManualImpression {
-  if ([_banner class] == [GAMBannerView class]) {
-    [((GAMBannerView *)_banner) recordImpression];
-  }
-}
-
-@end
+#import "RNGoogleMobileAdsBannerComponent.h"
 
 @implementation RNGoogleMobileAdsBannerViewManager
 
@@ -194,8 +37,8 @@ RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
 RCT_EXPORT_METHOD(recordManualImpression : (nonnull NSNumber *)reactTag) {
   [self.bridge.uiManager
       addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
-        BannerComponent *banner = viewRegistry[reactTag];
-        if (!banner || ![banner isKindOfClass:[BannerComponent class]]) {
+        RNGoogleMobileAdsBannerComponent *banner = viewRegistry[reactTag];
+        if (!banner || ![banner isKindOfClass:[RNGoogleMobileAdsBannerComponent class]]) {
           RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
           return;
         }
@@ -206,7 +49,7 @@ RCT_EXPORT_METHOD(recordManualImpression : (nonnull NSNumber *)reactTag) {
 @synthesize bridge = _bridge;
 
 - (UIView *)view {
-  BannerComponent *banner = [BannerComponent new];
+  RNGoogleMobileAdsBannerComponent *banner = [RNGoogleMobileAdsBannerComponent new];
   return banner;
 }
 
