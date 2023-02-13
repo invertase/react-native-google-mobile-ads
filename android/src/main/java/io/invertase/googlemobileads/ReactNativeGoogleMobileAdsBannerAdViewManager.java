@@ -167,48 +167,6 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     BaseAdView oldAdView = getAdView(reactViewGroup);
     if (oldAdView != null) {
       reactViewGroup.removeView(oldAdView);
-      oldAdView.setAdListener(
-          new AdListener() {
-            @Override
-            public void onAdClosed() {
-              super.onAdClosed();
-            }
-
-            @Override
-            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-              super.onAdFailedToLoad(loadAdError);
-            }
-
-            @Override
-            public void onAdOpened() {
-              super.onAdOpened();
-            }
-
-            @Override
-            public void onAdLoaded() {
-              super.onAdLoaded();
-            }
-
-            @Override
-            public void onAdClicked() {
-              super.onAdClicked();
-            }
-
-            @Override
-            public void onAdImpression() {
-              super.onAdImpression();
-            }
-          });
-      if (oldAdView instanceof AdManagerAdView) {
-        ((AdManagerAdView) oldAdView)
-            .setAppEventListener(
-                new AppEventListener() {
-                  @Override
-                  public void onAppEvent(@NonNull String name, @Nullable String data) {
-                    // empty to clear previous listeners
-                  }
-                });
-      }
       oldAdView.destroy();
     }
     BaseAdView adView;
