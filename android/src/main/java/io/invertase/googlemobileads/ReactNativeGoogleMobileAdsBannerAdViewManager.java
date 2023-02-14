@@ -166,8 +166,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private BaseAdView initAdView(ReactViewGroup reactViewGroup) {
     BaseAdView oldAdView = getAdView(reactViewGroup);
     if (oldAdView != null) {
-      reactViewGroup.removeView(oldAdView);
+      oldAdView.setAdListener(null);
+      if (oldAdView instanceof AdManagerAdView) {
+        ((AdManagerAdView) oldAdView).setAppEventListener(null);
+      }
       oldAdView.destroy();
+      reactViewGroup.removeView(oldAdView);
     }
     BaseAdView adView;
     if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(unitIdMap.get(reactViewGroup.getId()))) {
