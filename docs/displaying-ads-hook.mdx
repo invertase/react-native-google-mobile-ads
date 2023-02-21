@@ -86,6 +86,7 @@ Return values of the hook are:
 | :------------- | :--------------------------------- | :----------------------------------------------------------------------------------------------------------------- |
 | isLoaded       | boolean                            | Whether the ad is loaded and ready to to be shown to the user. Automatically set to false when the ad was shown.   |
 | isOpened       | boolean                            | Whether the ad is opened. The value is remained `true` even after the ad is closed unless **new ad is requested**. |
+| isClicked      | boolean                            | Whether the ad is clicked.                                                                                         |
 | isClosed       | boolean                            | Whether your ad is dismissed.                                                                                      |
 | isShowing      | boolean                            | Whether your ad is showing. The value is equal with `isOpened && !isClosed`.                                       |
 | error          | Error \| undefined                 | `Error` object throwed during ad load.                                                                             |
