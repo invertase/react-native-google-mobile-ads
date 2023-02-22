@@ -1,3 +1,10 @@
+### [9.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v9.1.1...v9.1.2) (2023-02-22)
+
+
+### Bug Fixes
+
+* **banner, android:** support props for multiple view instances ([8c61e8b](https://github.com/invertase/react-native-google-mobile-ads/commit/8c61e8bc226cbaa0102abba9dd72697d69166242))
+
 ### [9.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v9.1.0...v9.1.1) (2023-01-22)
 
 
