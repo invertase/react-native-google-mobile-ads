@@ -13,6 +13,7 @@ public class ReactNativeAdView extends ReactViewGroup {
   private boolean manualImpressionsEnabled;
   private boolean propsChanged;
   private boolean isFluid;
+  private boolean fullWidthEnabled;
 
   public ReactNativeAdView(final Context context) {
     super(context);
@@ -64,5 +65,13 @@ public class ReactNativeAdView extends ReactViewGroup {
 
   public boolean getIsFluid() {
     return this.isFluid;
+  }
+
+  public void setFullWidthEnabled(boolean fullWidthEnabled) {
+    this.fullWidthEnabled = fullWidthEnabled;
+  }
+
+  public boolean getFullWidthEnabled() {
+    return this.fullWidthEnabled;
   }
 }
