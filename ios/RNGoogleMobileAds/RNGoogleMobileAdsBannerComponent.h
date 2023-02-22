@@ -30,6 +30,7 @@
 @property(nonatomic, copy) NSDictionary *request;
 @property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
 @property(nonatomic, assign) BOOL propsChanged;
+@property(nonatomic, assign) BOOL fullWidthEnabled;
 
 @property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
 

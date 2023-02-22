@@ -74,6 +74,11 @@
   _propsChanged = true;
 }
 
+- (void)setFullWidthEnabled:(BOOL)fullWidthEnabled {
+  _fullWidthEnabled = fullWidthEnabled;
+  _propsChanged = true;
+}
+
 - (void)requestAd {
 #ifndef __LP64__
   return;  // prevent crash on 32bit
@@ -113,10 +118,17 @@
 }
 
 - (void)bannerViewDidReceiveAd:(GADBannerView *)bannerView {
+  GADAdSize adSize = bannerView.adSize;
+
+  if (_fullWidthEnabled) {
+    adSize.size.width = CGRectGetWidth([[UIScreen mainScreen] bounds]);
+    [((GAMBannerView *)bannerView) resize:adSize];
+  }
+
   [self sendEvent:@"onAdLoaded"
           payload:@{
-            @"width" : @(bannerView.bounds.size.width),
-            @"height" : @(bannerView.bounds.size.height),
+            @"width" : @(adSize.size.width),
+            @"height" : @(adSize.size.height),
           }];
 }
 

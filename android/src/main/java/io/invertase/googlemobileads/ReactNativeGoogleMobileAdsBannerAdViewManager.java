@@ -135,6 +135,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     reactViewGroup.setPropsChanged(true);
   }
 
+  @ReactProp(name = "fullWidthEnabled")
+  public void setFullWidthEnabled(ReactNativeAdView reactViewGroup, Boolean value) {
+    reactViewGroup.setFullWidthEnabled(value);
+    reactViewGroup.setPropsChanged(true);
+  }
+
   @Override
   public void onAfterUpdateTransaction(@NonNull ReactNativeAdView reactViewGroup) {
     super.onAfterUpdateTransaction(reactViewGroup);
@@ -174,6 +180,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
               width = reactViewGroup.getWidth();
               height = reactViewGroup.getHeight();
             } else {
+              if (Boolean.TRUE.equals(reactViewGroup.getFullWidthEnabled())
+                  && adView instanceof AdManagerAdView) {
+                adSize = new AdSize(AdSize.FULL_WIDTH, adSize.getHeight());
+                ((AdManagerAdView) adView).setAdSizes(adSize);
+              }
               left = adView.getLeft();
               top = adView.getTop();
               width = adSize.getWidthInPixels(reactViewGroup.getContext());
