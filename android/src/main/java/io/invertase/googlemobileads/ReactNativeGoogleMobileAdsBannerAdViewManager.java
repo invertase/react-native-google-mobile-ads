@@ -138,7 +138,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @Override
   public void onAfterUpdateTransaction(@NonNull ReactNativeAdView reactViewGroup) {
     super.onAfterUpdateTransaction(reactViewGroup);
-    if (Boolean.TRUE.equals(reactViewGroup.getPropsChanged())) {
+    if (reactViewGroup.getPropsChanged()) {
       requestAd(reactViewGroup);
     }
     reactViewGroup.setPropsChanged(false);
@@ -167,7 +167,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           public void onAdLoaded() {
             AdSize adSize = adView.getAdSize();
             int left, top, width, height;
-            if (Boolean.TRUE.equals(reactViewGroup.getIsFluid())) {
+            if (reactViewGroup.getIsFluid()) {
               // TODO size=FLUID is still not working
               left = 0;
               top = 0;
