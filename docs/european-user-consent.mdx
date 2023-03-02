@@ -28,6 +28,7 @@ To setup and configure ads consent collection, first of all:
   -keep class com.google.android.gms.internal.consent_sdk.** { *; }
   ```
 - For Expo users, add extraProguardRules property to `app.json` file following this guide [Expo](https://docs.expo.dev/versions/latest/sdk/build-properties/#pluginconfigtypeandroid):
+
 ```json
 {
   "expo": {
@@ -37,15 +38,15 @@ To setup and configure ads consent collection, first of all:
         {
           "android": {
             "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }"
-          },
+          }
         }
       ]
     ]
   }
 }
 ```
-You'll need to generate a new development build before using it.
 
+You'll need to generate a new development build before using it.
 
 ### Delaying app measurement
 

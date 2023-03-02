@@ -169,6 +169,37 @@ mobileAds()
 
 If you are using mediation, you may wish to wait until the promise is settled before loading ads, as this will ensure that all mediation adapters are initialized.
 
+### App Tracking Transparency (iOS)
+
+Apple requires apps to display the App Tracking Transparency authorization request for accessing the IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads).
+Within your projects `app.json` file, you have to use the `user_tracking_usage_description` to describe your usage:
+
+```json
+{
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "user_tracking_usage_description": "This identifier will be used to deliver personalized ads to you."
+  }
+}
+```
+
+To request the App Tracking Transparency authorization we recommend using the [react-native-permissions](https://github.com/zoontek/react-native-permissions) library or making it part of the UMP consent flow [European User Consent page](/european-user-consent).
+
+```js
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+
+const result = await check(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
+if (result === RESULTS.DENIED) {
+  // The permission has not been requested, so request it.
+  await request(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
+}
+
+const adapterStatuses = await mobileAds().initialize();
+
+// Now ads can be loaded.
+```
+
 ### European User Consent
 
 Out of the box, AdMob does not handle any related regulations which you may need to enforce on your application.
