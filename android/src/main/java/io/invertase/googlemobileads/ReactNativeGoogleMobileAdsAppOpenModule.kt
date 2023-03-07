@@ -56,7 +56,6 @@ class ReactNativeGoogleMobileAdsAppOpenModule(reactContext: ReactApplicationCont
       activity,
       adUnitId,
       adRequest,
-      AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT,
       object :
         AppOpenAd.AppOpenAdLoadCallback() {
         override fun onAdLoaded(ad: AppOpenAd) {
