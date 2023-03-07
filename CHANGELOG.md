@@ -1,3 +1,15 @@
+## [10.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v9.1.2...v10.0.0) (2023-03-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** - Ads are no longer served on iOS 11. iOS 12 is required to retrieve ads, though iOS 10 is still supported.
+- Building with bitcode is no longer supported. Disabling bitcode in your mobile apps is now required to integrate the Google Mobile Ads SDK (iOS).
+
+### Features
+
+* **deps:** mobile ads sdk upgrade - ios 10.2.0 / android 21.5.0 ([feb7eb3](https://github.com/invertase/react-native-google-mobile-ads/commit/feb7eb341b71c4aaf95ad04a11454ec18638e21c))
+
 ### [9.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v9.1.1...v9.1.2) (2023-02-22)
 
 
