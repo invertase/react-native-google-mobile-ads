@@ -1,7 +1,5 @@
 package io.invertase.googlemobileads.common;
 
-import android.content.Context;
-
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.views.view.ReactViewGroup;
 import com.google.android.gms.ads.AdRequest;
