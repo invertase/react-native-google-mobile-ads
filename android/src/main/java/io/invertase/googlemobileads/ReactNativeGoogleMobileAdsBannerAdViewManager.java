@@ -267,7 +267,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       event.merge(payload);
     }
 
-    ((ThemedReactContext) reactViewGroup.getContext())
+    reactViewGroup.getReactContext()
         .getJSModule(RCTEventEmitter.class)
         .receiveEvent(reactViewGroup.getId(), "onNativeEvent", event);
   }
