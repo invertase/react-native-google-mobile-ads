@@ -141,7 +141,7 @@
     "lerna": "6.0.1",
     "prettier": "^2.7.1",
     "react": "^18.2.0",
-    "react-native": "0.70.4",
+    "react-native": "0.70.7",
     "react-native-builder-bob": "^0.20.0",
     "react-test-renderer": "^18.2.0",
     "rimraf": "^3.0.2",
