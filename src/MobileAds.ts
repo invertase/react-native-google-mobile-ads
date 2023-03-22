@@ -73,6 +73,10 @@ class MobileAdsModule extends Module implements MobileAdsModuleInterface {
   openAdInspector() {
     return this.native.openAdInspector();
   }
+
+  openDebugMenu(adUnit: string) {
+    this.native.openDebugMenu(adUnit);
+  }
 }
 
 const MobileAdsInstance = new MobileAdsModule(

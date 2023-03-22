@@ -121,4 +121,13 @@ RCT_EXPORT_METHOD(openAdInspector
                          }];
 }
 
+RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnit) {
+  GADDebugOptionsViewController *debugOptionsViewController =
+      [GADDebugOptionsViewController debugOptionsViewControllerWithAdUnitID:adUnit];
+  [RCTSharedApplication().delegate.window.rootViewController
+      presentViewController:debugOptionsViewController
+                   animated:YES
+                 completion:nil];
+}
+
 @end

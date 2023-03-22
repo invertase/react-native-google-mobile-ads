@@ -50,4 +50,16 @@ export interface MobileAdsModuleInterface {
    * Returns the shared event emitter instance used for all JS event routing.
    */
   emitter: EventEmitter;
+
+  /**
+   * Opens the Ad Debug Menu.
+   *
+   * Android: `initialize` needs to be called before calling this function.
+   *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/debug
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/ios/debug
+   *
+   * @param adUnit Any valid ad unit from your Ad Manager account is sufficient to open the debug options menu.
+   */
+  openDebugMenu(adUnit: string): void;
 }

@@ -849,6 +849,45 @@ class GAMInterstitialTest implements Test {
   }
 }
 
+class DebugMenuTest implements Test {
+  constructor() {
+    // Android requires SDK initialization before opening the Debug Menu
+    Platform.OS === 'android' && MobileAds().initialize().catch(console.error);
+  }
+
+  getPath(): string {
+    return 'DebugMenuTest';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return (
+      <View style={styles.testSpacing} ref={onMount}>
+        <Button
+          title="Show Ad Debug Menu"
+          onPress={() => {
+            MobileAds().openDebugMenu(TestIds.BANNER);
+          }}
+        />
+      </View>
+    );
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
+    }
+  }
+}
+
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
 Object.keys(BannerAdSize).forEach(bannerAdSize => {
   TestRegistry.registerTest(new BannerTest(bannerAdSize));
@@ -865,6 +904,7 @@ TestRegistry.registerTest(new RewardedInterstitialHookTest());
 TestRegistry.registerTest(new AdInspectorTest());
 TestRegistry.registerTest(new GAMBannerTest());
 TestRegistry.registerTest(new GAMInterstitialTest());
+TestRegistry.registerTest(new DebugMenuTest());
 
 const App = () => {
   return (
