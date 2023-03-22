@@ -1,3 +1,10 @@
+### [10.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.0.0...v10.0.1) (2023-03-22)
+
+
+### Bug Fixes
+
+* **android banner:** debug menu opening ([3b1f34c](https://github.com/invertase/react-native-google-mobile-ads/commit/3b1f34cb850d89555f6350d5c8b50e4c242a3a78))
+
 ## [10.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v9.1.2...v10.0.0) (2023-03-07)
 
 
