@@ -59,5 +59,13 @@ describe('Admob', function () {
         );
       });
     });
+
+    describe('testDebugMenu', function () {
+      it('throws if adUnit is empty', function () {
+        expect(() => {
+          admob().openDebugMenu('');
+        }).toThrowError('openDebugMenu expected a non-empty string value');
+      });
+    });
   });
 });
