@@ -184,7 +184,7 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
-				45C611FC64AEF0F9B8CED897 /* [CP-User] [RNGoogleMobileAds] Configuration */,
+				72ECC0AD4840F3125EC2222E /* [CP-User] [RNGoogleMobileAds] Configuration */,
 			);
 			buildRules = (
 			);
@@ -284,7 +284,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-RNGoogleMobileAdsExample/Pods-RNGoogleMobileAdsExample-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		45C611FC64AEF0F9B8CED897 /* [CP-User] [RNGoogleMobileAds] Configuration */ = {
+		72ECC0AD4840F3125EC2222E /* [CP-User] [RNGoogleMobileAds] Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -506,6 +506,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -531,6 +532,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
