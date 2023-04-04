@@ -186,4 +186,12 @@ public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
                   });
             });
   }
+
+  @ReactMethod
+  public void openDebugMenu(final String adUnit) {
+    if (getCurrentActivity() != null) {
+      getCurrentActivity()
+          .runOnUiThread(() -> MobileAds.openDebugMenu(getCurrentActivity(), adUnit));
+    }
+  }
 }

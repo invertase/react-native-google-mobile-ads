@@ -22,4 +22,5 @@ export interface GoogleMobileAdsNativeModule {
   rewardedShow: AdShowFunction;
   rewardedInterstitialLoad: AdLoadFunction;
   rewardedInterstitialShow: AdShowFunction;
+  openDebugMenu(adUnit: string): void;
 }
