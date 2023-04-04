@@ -1,3 +1,10 @@
+## [10.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.0.1...v10.1.0) (2023-04-04)
+
+
+### Features
+
+* **ads-module:** open debug menu programmatically ([3480f1b](https://github.com/invertase/react-native-google-mobile-ads/commit/3480f1b76ae950b8711db791a46e1a4a396c1bb9))
+
 ### [10.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.0.0...v10.0.1) (2023-03-22)
 
 
