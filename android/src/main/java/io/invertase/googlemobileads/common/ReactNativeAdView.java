@@ -1,6 +1,6 @@
 package io.invertase.googlemobileads.common;
 
-import com.facebook.react.uimanager.ThemedReactContext;
+import android.content.Context;
 import com.facebook.react.views.view.ReactViewGroup;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
@@ -13,11 +13,9 @@ public class ReactNativeAdView extends ReactViewGroup {
   private boolean manualImpressionsEnabled;
   private boolean propsChanged;
   private boolean isFluid;
-  private ThemedReactContext reactContext;
 
-  public ReactNativeAdView(final ThemedReactContext context) {
-    super(context.getCurrentActivity());
-    setReactContext(context);
+  public ReactNativeAdView(final Context context) {
+    super(context);
   }
 
   public void setRequest(AdRequest request) {
@@ -66,13 +64,5 @@ public class ReactNativeAdView extends ReactViewGroup {
 
   public boolean getIsFluid() {
     return this.isFluid;
-  }
-
-  public ThemedReactContext getReactContext() {
-    return reactContext;
-  }
-
-  public void setReactContext(ThemedReactContext reactContext) {
-    this.reactContext = reactContext;
   }
 }
