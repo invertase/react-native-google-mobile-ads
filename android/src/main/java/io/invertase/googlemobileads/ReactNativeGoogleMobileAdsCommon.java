@@ -21,15 +21,15 @@ import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.views.view.ReactViewGroup;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest;
+
+import io.invertase.googlemobileads.common.ReactNativeAdView;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
 import java.util.Map;
@@ -40,11 +40,11 @@ import javax.annotation.Nullable;
 
 public class ReactNativeGoogleMobileAdsCommon {
 
-  static AdSize getAdSizeForAdaptiveBanner(String preDefinedAdSize, ReactViewGroup reactViewGroup) {
+  static AdSize getAdSizeForAdaptiveBanner(String preDefinedAdSize, ReactNativeAdView reactNativeAdView) {
 
     try {
       Display display =
-          Objects.requireNonNull(((ReactContext) reactViewGroup.getContext()).getCurrentActivity())
+          Objects.requireNonNull((reactNativeAdView.getReactContext()).getCurrentActivity())
               .getWindowManager()
               .getDefaultDisplay();
 
@@ -54,20 +54,20 @@ public class ReactNativeGoogleMobileAdsCommon {
 
       if ("INLINE_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
         return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
-            reactViewGroup.getContext(), adWidth);
+            reactNativeAdView.getContext(), adWidth);
       }
       return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-          reactViewGroup.getContext(), adWidth);
+          reactNativeAdView.getContext(), adWidth);
     } catch (Exception e) {
       return AdSize.BANNER;
     }
   }
 
-  static AdSize getAdSize(String preDefinedAdSize, ReactViewGroup reactViewGroup) {
+  static AdSize getAdSize(String preDefinedAdSize, ReactNativeAdView reactNativeAdView) {
     if (preDefinedAdSize.matches(
         "ADAPTIVE_BANNER|ANCHORED_ADAPTIVE_BANNER|INLINE_ADAPTIVE_BANNER")) {
       return ReactNativeGoogleMobileAdsCommon.getAdSizeForAdaptiveBanner(
-          preDefinedAdSize, reactViewGroup);
+          preDefinedAdSize, reactNativeAdView);
     } else {
       return ReactNativeGoogleMobileAdsCommon.stringToAdSize(preDefinedAdSize);
     }
