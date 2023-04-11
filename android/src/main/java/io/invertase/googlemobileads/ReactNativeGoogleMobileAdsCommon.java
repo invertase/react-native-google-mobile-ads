@@ -28,7 +28,6 @@ import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest;
-
 import io.invertase.googlemobileads.common.ReactNativeAdView;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
@@ -40,7 +39,8 @@ import javax.annotation.Nullable;
 
 public class ReactNativeGoogleMobileAdsCommon {
 
-  static AdSize getAdSizeForAdaptiveBanner(String preDefinedAdSize, ReactNativeAdView reactNativeAdView) {
+  static AdSize getAdSizeForAdaptiveBanner(
+      String preDefinedAdSize, ReactNativeAdView reactNativeAdView) {
 
     try {
       Display display =

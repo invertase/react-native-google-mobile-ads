@@ -82,7 +82,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @Override
   public void receiveCommand(
-      @NonNull ReactNativeAdView reactNativeAdView, String commandId, @Nullable ReadableArray args) {
+      @NonNull ReactNativeAdView reactNativeAdView,
+      String commandId,
+      @Nullable ReadableArray args) {
     super.receiveCommand(reactNativeAdView, commandId, args);
     int commandIdInt = Integer.parseInt(commandId);
 
