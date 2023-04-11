@@ -73,6 +73,11 @@ class MobileAdsModule extends Module implements MobileAdsModuleInterface {
   openAdInspector() {
     return this.native.openAdInspector();
   }
+
+  openDebugMenu(adUnit: string) {
+    if (!adUnit) throw new Error('googleMobileAds.openDebugMenu expected a non-empty string value');
+    this.native.openDebugMenu(adUnit);
+  }
 }
 
 const MobileAdsInstance = new MobileAdsModule(
