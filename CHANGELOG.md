@@ -1,3 +1,10 @@
+### [10.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.1.1...v10.1.2) (2023-04-12)
+
+
+### Bug Fixes
+
+* **android-debug:** use activity for GAM ([984247f](https://github.com/invertase/react-native-google-mobile-ads/commit/984247ff80dab36004bd49c27a20f489e075029b))
+
 ### [10.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.1.0...v10.1.1) (2023-04-09)
 
 
