@@ -22,12 +22,11 @@ import { BaseAd, GoogleMobileAdsBannerView } from './BaseAd';
 
 export class GAMBannerAd extends React.Component<GAMBannerAdProps> {
   private ref = createRef<GoogleMobileAdsBannerView>();
-  private commonIDRecordManualImpression = "1";
 
   recordManualImpression() {
     UIManager.dispatchViewManagerCommand(
       findNodeHandle(this.ref.current),
-     UIManager.getViewManagerConfig('RNGoogleMobileAdsBannerView').Commands.recordManualImpression
+      UIManager.getViewManagerConfig('RNGoogleMobileAdsBannerView').Commands.recordManualImpression,
       undefined,
     );
   }
