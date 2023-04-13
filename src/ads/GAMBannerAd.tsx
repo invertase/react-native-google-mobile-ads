@@ -27,7 +27,7 @@ export class GAMBannerAd extends React.Component<GAMBannerAdProps> {
   recordManualImpression() {
     UIManager.dispatchViewManagerCommand(
       findNodeHandle(this.ref.current),
-      this.commonIDRecordManualImpression,
+     UIManager.getViewManagerConfig('RNGoogleMobileAdsBannerView').Commands.recordManualImpression
       undefined,
     );
   }
