@@ -1,3 +1,10 @@
+### [10.1.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.1.2...v10.1.3) (2023-04-13)
+
+
+### Bug Fixes
+
+*  Solved issue with method recordManualImpression for GAMBannerAd ([#363](https://github.com/invertase/react-native-google-mobile-ads/issues/363)) ([a7dbc74](https://github.com/invertase/react-native-google-mobile-ads/commit/a7dbc748d355528f1f7edbdd497736255adcfcc0))
+
 ### [10.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.1.1...v10.1.2) (2023-04-12)
 
 
