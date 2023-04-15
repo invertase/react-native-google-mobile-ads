@@ -104,6 +104,24 @@ if [[ ${_SEARCH_RESULT} ]]; then
     _PLIST_ENTRY_VALUES+=("$_IOS_APP_ID")
   fi
 
+  # config.sk_ad_network_items
+  _SK_AD_NETWORK_ITEMS=$(getJsonKeyValue "$_JSON_OUTPUT_RAW" "sk_ad_network_items")
+  if [[ $_SK_AD_NETWORK_ITEMS ]]; then
+    _PLIST_ENTRY_KEYS+=("SKAdNetworkItems")
+    _PLIST_ENTRY_TYPES+=("array")
+    _PLIST_ENTRY_VALUES+=("")
+
+    oldifs=$IFS
+    IFS=$'\n'
+    array=($(echo "$_SK_AD_NETWORK_ITEMS"))
+    IFS=$oldifs
+    for i in "${!array[@]}"; do
+      _PLIST_ENTRY_KEYS+=("SKAdNetworkItems:$i:SKAdNetworkIdentifier")
+      _PLIST_ENTRY_TYPES+=("string")
+      _PLIST_ENTRY_VALUES+=("${array[i]}")  
+    done
+  fi
+
     # config.user_tracking_usage_description
   _USER_TRACKING_USAGE_DESCRIPTION=$(getJsonKeyValue "$_JSON_OUTPUT_RAW" "user_tracking_usage_description")
   if [[ $_USER_TRACKING_USAGE_DESCRIPTION ]]; then
