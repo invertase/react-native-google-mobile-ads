@@ -1,3 +1,10 @@
+## [10.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.2.0...v10.3.0) (2023-04-18)
+
+
+### Features
+
+* **ios:** add SKAdNetwork identifiers trough app.json ([7ccbb6b](https://github.com/invertase/react-native-google-mobile-ads/commit/7ccbb6b13f800e90bcd2f0a22cc49e85d77d70dc))
+
 ## [10.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.1.3...v10.2.0) (2023-04-14)
 
 
