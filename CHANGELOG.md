@@ -1,3 +1,10 @@
+### [10.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.3.0...v10.3.1) (2023-04-19)
+
+
+### Bug Fixes
+
+* **ios:** incompatibility with react-native-version ([5ead5f0](https://github.com/invertase/react-native-google-mobile-ads/commit/5ead5f01712e307e7c3c1ef0dfcc6ec6f892fd66))
+
 ## [10.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.2.0...v10.3.0) (2023-04-18)
 
 
