@@ -112,7 +112,8 @@ if [[ ${_SEARCH_RESULT} ]]; then
     _PLIST_ENTRY_VALUES+=("")
 
     oldifs=$IFS
-    IFS=$'\n'
+    IFS="
+"
     array=($(echo "$_SK_AD_NETWORK_ITEMS"))
     IFS=$oldifs
     for i in "${!array[@]}"; do
