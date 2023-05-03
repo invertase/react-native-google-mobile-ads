@@ -1,3 +1,10 @@
+### [10.3.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.3.1...v10.3.2) (2023-05-03)
+
+
+### Bug Fixes
+
+* **ios:** no command found ([91ffad4](https://github.com/invertase/react-native-google-mobile-ads/commit/91ffad45b11699f62820b37d7553a516dd9cbd68))
+
 ### [10.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v10.3.0...v10.3.1) (2023-04-19)
 
 
