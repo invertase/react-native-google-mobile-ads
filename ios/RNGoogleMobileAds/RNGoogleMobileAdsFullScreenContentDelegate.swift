@@ -1,3 +1,5 @@
+#if !targetEnvironment(macCatalyst)
+
 import Foundation
 import GoogleMobileAds
 
@@ -70,3 +72,5 @@ class RNGoogleMobileAdsFullScreenContentDelegate: NSObject, GADFullScreenContent
     )
   }
 }
+
+#endif

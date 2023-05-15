@@ -15,6 +15,8 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
+
 #import "RNGoogleMobileAdsBannerComponent.h"
 #import <React/RCTLog.h>
 #import "RNGoogleMobileAdsCommon.h"
@@ -154,3 +156,5 @@
 }
 
 @end
+
+#endif

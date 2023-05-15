@@ -16,6 +16,8 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
+
 #import <React/RCTBridgeModule.h>
 @import GoogleMobileAds;
 
@@ -64,3 +66,5 @@ extern NSString *const GOOGLE_MOBILE_ADS_EVENT_APP_EVENT;
 
 extern NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED;
 extern NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD;
+
+#endif

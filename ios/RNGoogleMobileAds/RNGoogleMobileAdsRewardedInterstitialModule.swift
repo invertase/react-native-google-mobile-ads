@@ -15,6 +15,8 @@
  *
  */
 
+#if !targetEnvironment(macCatalyst)
+
 import Foundation
 import GoogleMobileAds
 
@@ -79,3 +81,5 @@ class RNGoogleMobileAdsRewardedInterstitialModule: NSObject {
     }
   }
 }
+
+#endif
