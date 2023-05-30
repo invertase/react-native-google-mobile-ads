@@ -3,7 +3,9 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **deps:** mobile ads sdk upgrade - ios 10.5.0 android 22.1.0
+* Updated minimum supported Xcode version to 14.1.
+  * armv7 is not supported in Xcode 14 and has been removed from the SDK.
+* The minimum deployment target has been increased to iOS 11.0.
 
 ### Features
 
