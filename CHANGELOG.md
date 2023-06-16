@@ -1,3 +1,10 @@
+### [11.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.1.0...v11.1.1) (2023-06-16)
+
+
+### Bug Fixes
+
+* **android:** android build error issue fixed for RN 0.72 "Cannot set the value of read-only property 'force' " ([16ad8ec](https://github.com/invertase/react-native-google-mobile-ads/commit/16ad8ec124a14ea2fc7e7c72515a91dfe237f1be))
+
 ## [11.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.0.0...v11.1.0) (2023-06-08)
 
 
