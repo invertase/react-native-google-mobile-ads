@@ -37,7 +37,7 @@ RCT_EXPORT_MODULE();
 #pragma mark Google Mobile Ads Methods
 
 RCT_EXPORT_METHOD(initialize : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
-# if !TARGET_OS_MACCATALYST
+#if !TARGET_OS_MACCATALYST
   [[GADMobileAds sharedInstance]
       startWithCompletionHandler:^(GADInitializationStatus *_Nonnull status) {
         NSDictionary *adapterStatuses = [status adapterStatusesByClassName];
@@ -65,7 +65,7 @@ RCT_EXPORT_METHOD(setRequestConfiguration
 }
 
 - (void)setRequestConfiguration:(NSDictionary *)requestConfiguration {
-# if !TARGET_OS_MACCATALYST
+#if !TARGET_OS_MACCATALYST
   if (requestConfiguration[@"maxAdContentRating"]) {
     NSString *rating = requestConfiguration[@"maxAdContentRating"];
     if ([rating isEqualToString:@"G"]) {
@@ -110,7 +110,7 @@ RCT_EXPORT_METHOD(setRequestConfiguration
 RCT_EXPORT_METHOD(openAdInspector
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {
-# if !TARGET_OS_MACCATALYST
+#if !TARGET_OS_MACCATALYST
   [GADMobileAds.sharedInstance
       presentAdInspectorFromViewController:RCTSharedApplication().delegate.window.rootViewController
                          completionHandler:^(NSError *_Nullable error) {
@@ -126,18 +126,18 @@ RCT_EXPORT_METHOD(openAdInspector
                              resolve(nil);
                            }
                          }];
-# endif
+#endif
 }
 
 RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnit) {
-# if !TARGET_OS_MACCATALYST
+#if !TARGET_OS_MACCATALYST
   GADDebugOptionsViewController *debugOptionsViewController =
       [GADDebugOptionsViewController debugOptionsViewControllerWithAdUnitID:adUnit];
   [RCTSharedApplication().delegate.window.rootViewController
       presentViewController:debugOptionsViewController
                    animated:YES
                  completion:nil];
-# endif
+#endif
 }
 
 @end

@@ -59,7 +59,7 @@ RCT_EXPORT_METHOD(requestInfoUpdate
                   : (NSDictionary *)options
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {
-# if !TARGET_OS_MACCATALYST
+#if !TARGET_OS_MACCATALYST
   UMPRequestParameters *parameters = [[UMPRequestParameters alloc] init];
   UMPDebugSettings *debugSettings = [[UMPDebugSettings alloc] init];
 
@@ -91,11 +91,11 @@ RCT_EXPORT_METHOD(requestInfoUpdate
                                });
                              }
                            }];
-# endif
+#endif
 }
 
 RCT_EXPORT_METHOD(showForm : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
-# if !TARGET_OS_MACCATALYST
+#if !TARGET_OS_MACCATALYST
   [UMPConsentForm loadWithCompletionHandler:^(UMPConsentForm *form, NSError *loadError) {
     if (loadError) {
       [RNSharedUtils rejectPromiseWithUserInfo:reject
@@ -124,13 +124,13 @@ RCT_EXPORT_METHOD(showForm : (RCTPromiseResolveBlock)resolve : (RCTPromiseReject
                   }];
     }
   }];
-# endif
+#endif
 }
 
 RCT_EXPORT_METHOD(reset) {
-# if !TARGET_OS_MACCATALYST
+#if !TARGET_OS_MACCATALYST
   [UMPConsentInformation.sharedInstance reset];
-# endif
+#endif
 }
 
 RCT_EXPORT_METHOD(getTCString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
