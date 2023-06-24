@@ -16,6 +16,8 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
+
 #import "RNGoogleMobileAdsCommon.h"
 #import "common/RNRCTEventEmitter.h"
 
@@ -231,3 +233,5 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
 }
 
 @end
+
+#endif

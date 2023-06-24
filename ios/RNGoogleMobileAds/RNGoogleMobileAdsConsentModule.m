@@ -19,7 +19,9 @@
 #import <React/RCTUtils.h>
 
 #import <React/RCTConvert.h>
+#if !TARGET_OS_MACCATALYST
 #include <UserMessagingPlatform/UserMessagingPlatform.h>
+#endif
 #import "RCTBridgeModule.h"
 #import "RNGoogleMobileAdsConsentModule.h"
 #import "common/RNSharedUtils.h"
@@ -37,6 +39,7 @@ RCT_EXPORT_MODULE();
 #pragma mark -
 #pragma mark Google Mobile Ads Methods
 
+#if !TARGET_OS_MACCATALYST
 - (NSString *)getConsentStatusString:(UMPConsentStatus)consentStatus {
   switch (consentStatus) {
     case UMPConsentStatusRequired:
@@ -50,11 +53,13 @@ RCT_EXPORT_MODULE();
       return @"UNKNOWN";
   }
 }
+#endif
 
 RCT_EXPORT_METHOD(requestInfoUpdate
                   : (NSDictionary *)options
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {
+#if !TARGET_OS_MACCATALYST
   UMPRequestParameters *parameters = [[UMPRequestParameters alloc] init];
   UMPDebugSettings *debugSettings = [[UMPDebugSettings alloc] init];
 
@@ -86,9 +91,11 @@ RCT_EXPORT_METHOD(requestInfoUpdate
                                });
                              }
                            }];
+#endif
 }
 
 RCT_EXPORT_METHOD(showForm : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+#if !TARGET_OS_MACCATALYST
   [UMPConsentForm loadWithCompletionHandler:^(UMPConsentForm *form, NSError *loadError) {
     if (loadError) {
       [RNSharedUtils rejectPromiseWithUserInfo:reject
@@ -117,9 +124,14 @@ RCT_EXPORT_METHOD(showForm : (RCTPromiseResolveBlock)resolve : (RCTPromiseReject
                   }];
     }
   }];
+#endif
 }
 
-RCT_EXPORT_METHOD(reset) { [UMPConsentInformation.sharedInstance reset]; }
+RCT_EXPORT_METHOD(reset) {
+#if !TARGET_OS_MACCATALYST
+  [UMPConsentInformation.sharedInstance reset];
+#endif
+}
 
 RCT_EXPORT_METHOD(getTCString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
   @try {

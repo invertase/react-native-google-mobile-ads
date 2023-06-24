@@ -35,6 +35,7 @@ RCT_EXPORT_VIEW_PROPERTY(manualImpressionsEnabled, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
 
 RCT_EXPORT_METHOD(recordManualImpression : (nonnull NSNumber *)reactTag) {
+#if !TARGET_OS_MACCATALYST
   [self.bridge.uiManager
       addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
         RNGoogleMobileAdsBannerComponent *banner = viewRegistry[reactTag];
@@ -44,13 +45,18 @@ RCT_EXPORT_METHOD(recordManualImpression : (nonnull NSNumber *)reactTag) {
         }
         [banner recordManualImpression];
       }];
+#endif
 }
 
 @synthesize bridge = _bridge;
 
 - (UIView *)view {
+#if TARGET_OS_MACCATALYST
+  return nil;
+#else
   RNGoogleMobileAdsBannerComponent *banner = [RNGoogleMobileAdsBannerComponent new];
   return banner;
+#endif
 }
 
 - (dispatch_queue_t)methodQueue {

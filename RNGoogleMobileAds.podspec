@@ -30,7 +30,9 @@ Pod::Spec.new do |s|
     google_ump_sdk_version = $RNGoogleUmpSDKVersion
   end
 
+  if !ENV['MAC_CATALYST']
   s.dependency          'GoogleUserMessagingPlatform', google_ump_sdk_version
+  end
 
   if defined?($RNGoogleMobileAdsSDKVersion)
     Pod::UI.puts "#{s.name}: Using user specified Google Mobile-Ads SDK version '#{$RNGoogleMobileAdsSDKVersion}'"
@@ -38,7 +40,9 @@ Pod::Spec.new do |s|
   end
 
   # AdMob dependencies
+  if !ENV['MAC_CATALYST']
   s.dependency          'Google-Mobile-Ads-SDK', google_mobile_ads_sdk_version
+  end
 
   if defined?($RNGoogleMobileAdsAsStaticFramework)
     Pod::UI.puts "#{s.name}: Using overridden static_framework value of '#{$RNGoogleMobileAdsAsStaticFramework}'"
