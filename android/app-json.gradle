@@ -28,6 +28,17 @@ for (int i = 0; i <= 3; i++) {
   }
 }
 
+// Read .env file and construct env vars map
+Map<String, String> envVars = null
+File envFile = new File(parentDir, '.env')
+if (envFile.exists()) {
+  String envContent = envFile.text
+  for (String line : envContent.split('\n')) {
+    def (key, value) = line.split('=')
+    envVars[key] = value
+  }
+}
+
 if (configFile != null && configFile.exists()) {
   rootProject.logger.info ":${project.name} ${fileName} found at ${configFile.toString()}"
   Object json = null
@@ -41,7 +52,7 @@ if (configFile != null && configFile.exists()) {
       "-e",
       "console.log(JSON.stringify(require('${configFile.absolutePath}')));"
     ]
-      .execute(null, projectDir)
+      .execute(envVars, projectDir)  // Pass env vars to node process
       .text
       .trim()
     if (configOutput && !configOutput.isEmpty()) {
