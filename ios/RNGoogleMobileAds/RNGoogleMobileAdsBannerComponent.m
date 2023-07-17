@@ -66,8 +66,13 @@
   _propsChanged = true;
 }
 
-- (void)setRequest:(NSDictionary *)request {
-  _request = request;
+- (void)setRequest:(NSString *)request {
+  NSData *jsonData = [request dataUsingEncoding:NSUTF8StringEncoding];
+  NSError *error = nil;
+  _request = [NSJSONSerialization JSONObjectWithData:jsonData options:kNilOptions error:&error];
+  if (error) {
+    NSLog(@"Error parsing JSON: %@", error.localizedDescription);
+  }
   _propsChanged = true;
 }
 

@@ -25,6 +25,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 import com.facebook.react.bridge.*;
+import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.common.LifecycleState;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import java.io.File;
@@ -239,28 +240,29 @@ public class SharedUtils {
   }
 
   public static WritableMap jsonObjectToWritableMap(JSONObject jsonObject) throws JSONException {
-    Iterator<String> iterator = jsonObject.keys();
-    WritableMap writableMap = Arguments.createMap();
+    WritableMap map = new WritableNativeMap();
 
+    Iterator<String> iterator = jsonObject.keys();
     while (iterator.hasNext()) {
       String key = iterator.next();
       Object value = jsonObject.get(key);
-      if (value instanceof Float || value instanceof Double) {
-        writableMap.putDouble(key, jsonObject.getDouble(key));
-      } else if (value instanceof Number) {
-        writableMap.putInt(key, jsonObject.getInt(key));
-      } else if (value instanceof String) {
-        writableMap.putString(key, jsonObject.getString(key));
-      } else if (value instanceof JSONObject) {
-        writableMap.putMap(key, jsonObjectToWritableMap(jsonObject.getJSONObject(key)));
+      if (value instanceof JSONObject) {
+        map.putMap(key, jsonObjectToWritableMap((JSONObject) value));
       } else if (value instanceof JSONArray) {
-        writableMap.putArray(key, jsonArrayToWritableArray(jsonObject.getJSONArray(key)));
-      } else if (value == JSONObject.NULL) {
-        writableMap.putNull(key);
+        map.putArray(key, jsonArrayToWritableArray((JSONArray) value));
+      } else if (value instanceof Boolean) {
+        map.putBoolean(key, (Boolean) value);
+      } else if (value instanceof Integer) {
+        map.putInt(key, (Integer) value);
+      } else if (value instanceof Double) {
+        map.putDouble(key, (Double) value);
+      } else if (value instanceof String) {
+        map.putString(key, (String) value);
+      } else {
+        map.putString(key, value.toString());
       }
     }
-
-    return writableMap;
+    return map;
   }
 
   public static WritableArray jsonArrayToWritableArray(JSONArray jsonArray) throws JSONException {

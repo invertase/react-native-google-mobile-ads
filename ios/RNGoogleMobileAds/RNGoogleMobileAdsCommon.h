@@ -18,8 +18,8 @@
 
 #if !TARGET_OS_MACCATALYST
 
+#import <GoogleMobileAds/GoogleMobileAds.h>
 #import <React/RCTBridgeModule.h>
-@import GoogleMobileAds;
 
 @interface RNGoogleMobileAdsCommon : NSObject
 
