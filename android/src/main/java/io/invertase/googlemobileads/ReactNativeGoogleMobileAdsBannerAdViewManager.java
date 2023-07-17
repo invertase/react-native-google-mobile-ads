@@ -22,14 +22,14 @@ import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
-import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.PixelUtil;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.UIManagerHelper;
 import com.facebook.react.uimanager.annotations.ReactProp;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
+import com.facebook.react.uimanager.events.EventDispatcher;
 import com.facebook.react.views.view.ReactViewGroup;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
@@ -40,12 +40,15 @@ import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.admanager.AdManagerAdView;
 import com.google.android.gms.ads.admanager.AppEventListener;
 import io.invertase.googlemobileads.common.ReactNativeAdView;
+import io.invertase.googlemobileads.common.SharedUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class ReactNativeGoogleMobileAdsBannerAdViewManager
     extends SimpleViewManager<ReactNativeAdView> {
@@ -73,7 +76,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @Override
   public Map<String, Object> getExportedCustomDirectEventTypeConstants() {
     MapBuilder.Builder<String, Object> builder = MapBuilder.builder();
-    builder.put("onNativeEvent", MapBuilder.of("registrationName", "onNativeEvent"));
+    builder.put(OnNativeEvent.EVENT_NAME, MapBuilder.of("registrationName", "onNativeEvent"));
     return builder.build();
   }
 
@@ -104,9 +107,15 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   }
 
   @ReactProp(name = "request")
-  public void setRequest(ReactNativeAdView reactViewGroup, ReadableMap value) {
-    reactViewGroup.setRequest(ReactNativeGoogleMobileAdsCommon.buildAdRequest(value));
-    reactViewGroup.setPropsChanged(true);
+  public void setRequest(ReactNativeAdView reactViewGroup, String value) {
+    try {
+      JSONObject jsonObject = new JSONObject(value);
+      WritableMap writableMap = SharedUtils.jsonObjectToWritableMap(jsonObject);
+      reactViewGroup.setRequest(ReactNativeGoogleMobileAdsCommon.buildAdRequest(writableMap));
+      reactViewGroup.setPropsChanged(true);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
   }
 
   @ReactProp(name = "sizes")
@@ -274,8 +283,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       event.merge(payload);
     }
 
-    ((ThemedReactContext) reactViewGroup.getContext())
-        .getJSModule(RCTEventEmitter.class)
-        .receiveEvent(reactViewGroup.getId(), "onNativeEvent", event);
+    ThemedReactContext themedReactContext = ((ThemedReactContext) reactViewGroup.getContext());
+    EventDispatcher eventDispatcher =
+        UIManagerHelper.getEventDispatcherForReactTag(themedReactContext, reactViewGroup.getId());
+    if (eventDispatcher != null) {
+      eventDispatcher.dispatchEvent(new OnNativeEvent(reactViewGroup.getId(), event));
+    }
   }
 }

@@ -27,6 +27,16 @@ jest.doMock('react-native', () => {
         RNGoogleMobileAdsRewardedModule: {},
         RNGoogleMobileAdsConsentModule: {},
       },
+      TurboModuleRegistry: {
+        getEnforcing: () => {
+          return {
+            initialize: jest.fn(),
+            setRequestConfiguration: jest.fn(),
+            openAdInspector: jest.fn(),
+            openDebugMenu: jest.fn(),
+          };
+        },
+      },
     },
     ReactNative,
   );

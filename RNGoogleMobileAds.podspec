@@ -18,11 +18,11 @@ Pod::Spec.new do |s|
   s.source              = { :git => "#{package["repository"]["url"]}.git", :tag => "v#{s.version}" }
   s.social_media_url    = 'http://twitter.com/invertaseio'
   s.ios.deployment_target = "10.0"
-  s.source_files        = 'ios/**/*.{h,m,swift}'
+  s.source_files        = "ios/**/*.{h,m,mm,swift}"
   s.weak_frameworks     = "AppTrackingTransparency"
 
   # React Native dependencies
-  s.dependency          'React-Core'
+  install_modules_dependencies(s)
 
   # Other dependencies
   if defined?($RNGoogleUmpSDKVersion)

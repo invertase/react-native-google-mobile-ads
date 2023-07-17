@@ -1,12 +1,9 @@
-import { NativeModules } from 'react-native';
-
+import RNGoogleMobileAdsModule from './NativeGoogleMobileAdsModule';
 import { validateAdRequestConfiguration } from './validateAdRequestConfiguration';
 import { SharedEventEmitter } from './internal/SharedEventEmitter';
 import { GoogleMobileAdsNativeEventEmitter } from './internal/GoogleMobileAdsNativeEventEmitter';
 import { MobileAdsModuleInterface } from './types/MobileAdsModule.interface';
 import { RequestConfiguration } from './types/RequestConfiguration';
-
-const { RNGoogleMobileAdsModule } = NativeModules;
 
 const NATIVE_MODULE_EVENT_SUBSCRIPTIONS: Record<string, unknown> = {};
 

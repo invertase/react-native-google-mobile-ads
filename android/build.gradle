@@ -41,6 +41,13 @@ def jsonMinSdk = packageJson['sdkVersions']['android']['minSdk']
 def jsonTargetSdk = packageJson['sdkVersions']['android']['targetSdk']
 def jsonCompileSdk = packageJson['sdkVersions']['android']['compileSdk']
 def jsonBuildTools = packageJson['sdkVersions']['android']['buildTools']
+def isNewArchitectureEnabled() {
+    return project.hasProperty("newArchEnabled") && project.newArchEnabled == "true"
+}
+
+if (isNewArchitectureEnabled()) {
+    apply plugin: "com.facebook.react"
+}
 
 project.ext {
   set('react-native', [
@@ -100,6 +107,7 @@ android {
       appJSONGoogleMobileAdsOptimizeInitialization : appJSONGoogleMobileAdsOptimizeInitializationBool,
       appJSONGoogleMobileAdsOptimizeAdLoading      : appJSONGoogleMobileAdsOptimizeAdLoadingBool
     ]
+    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
   }
   lintOptions {
     disable 'GradleCompatible'
