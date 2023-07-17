@@ -29,7 +29,7 @@ class GANativeEventEmitter extends NativeEventEmitter {
 
   addListener(
     eventType: string,
-    listener: (event: { appName?: string }) => void,
+    listener: (event: { adUnitId: string; requestId: number }) => void,
     context?: Record<string, unknown>,
   ) {
     if (!this.ready) {
