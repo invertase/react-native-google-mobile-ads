@@ -26,4 +26,14 @@ describe('Google Mobile Ads Banner', function () {
       "BannerAd: 'size(s)' expected a valid BannerAdSize or custom size string.",
     );
   });
+
+  it('throws if requestOptions is invalid.', function () {
+    let errorMsg;
+    try {
+      render(<BannerAd unitId={MOCK_ID} size={BannerAdSize.BANNER} requestOptions={'options'} />);
+    } catch (e) {
+      errorMsg = e.message;
+    }
+    expect(errorMsg).toEqual("BannerAd: 'options' expected an object value");
+  });
 });

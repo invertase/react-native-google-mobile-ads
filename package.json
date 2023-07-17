@@ -153,5 +153,13 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "codegenConfig": {
+    "name": "RNGoogleMobileAdsSpec",
+    "type": "all",
+    "jsSrcsDir": "./src",
+    "android": {
+      "javaPackageName": "io.invertase.googlemobileads"
+    }
   }
 }

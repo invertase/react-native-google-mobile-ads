@@ -30,6 +30,21 @@ React Native Google Mobile Ads is built with three key principals in mind;
 - 📄 **Well documented**
   - full reference & installation documentation alongside detailed guides and FAQs
 
+## Migrating to the New Architecture Status (backwards compatible)
+This package can be used in both The Old and [The New Architecture](https://reactnative.dev/docs/the-new-architecture/landing-page).
+When using The New Architecture, some legacy code will still be used though. See status below:
+
+- **iOS**
+  - Mobile Ads SDK Methods (Turbo Native Module) 🟢🟢🟢🟢
+  - Banners (Fabric Native Component) 🟢🟢🟢🟢
+  - Full Screen Ads (Turbo Native Module) ⚪⚪⚪⚪
+  - User Messaging Platform (Turbo Native Module) ⚪⚪⚪⚪
+- **Android**
+  - Mobile Ads SDK Methods (Turbo Native Module) ⚪⚪⚪⚪
+  - Banners (Fabric Native Component) ⚪⚪⚪⚪
+  - Full Screen Ads (Turbo Native Module) ⚪⚪⚪⚪
+  - User Messaging Platform (Turbo Native Module) ⚪⚪⚪⚪
+
 ## Documentation
 
 - [Installation](https://docs.page/invertase/react-native-google-mobile-ads)
