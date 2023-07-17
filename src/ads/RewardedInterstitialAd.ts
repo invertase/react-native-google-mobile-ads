@@ -16,7 +16,6 @@
  */
 
 import { isString } from '../common';
-import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
@@ -116,7 +115,7 @@ export class RewardedInterstitialAd extends MobileAd {
     const requestId = RewardedInterstitialAd._rewardedInterstitialRequest++;
     return new RewardedInterstitialAd(
       'rewarded_interstitial',
-      MobileAds(),
+      'RNGoogleMobileAdsRewardedInterstitialModule',
       requestId,
       adUnitId,
       options,

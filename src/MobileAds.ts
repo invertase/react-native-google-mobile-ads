@@ -1,60 +1,43 @@
-import { Module } from './internal';
+import { NativeModules } from 'react-native';
+
 import { validateAdRequestConfiguration } from './validateAdRequestConfiguration';
-import { version } from './version';
+import { SharedEventEmitter } from './internal/SharedEventEmitter';
+import { GoogleMobileAdsNativeEventEmitter } from './internal/GoogleMobileAdsNativeEventEmitter';
 import { MobileAdsModuleInterface } from './types/MobileAdsModule.interface';
 import { RequestConfiguration } from './types/RequestConfiguration';
-import { App, Config } from './types/Module.interface';
 
-const namespace = 'google_mobile_ads';
+const { RNGoogleMobileAdsModule } = NativeModules;
 
-const nativeModuleName = [
-  'RNGoogleMobileAdsModule',
-  'RNGoogleMobileAdsAppOpenModule',
-  'RNGoogleMobileAdsInterstitialModule',
-  'RNGoogleMobileAdsRewardedModule',
-  'RNGoogleMobileAdsRewardedInterstitialModule',
+const NATIVE_MODULE_EVENT_SUBSCRIPTIONS: Record<string, unknown> = {};
+
+const nativeEvents = [
+  'google_mobile_ads_app_open_event',
+  'google_mobile_ads_interstitial_event',
+  'google_mobile_ads_rewarded_event',
+  'google_mobile_ads_rewarded_interstitial_event',
 ];
 
-type Event = {
-  adUnitId: string;
-  requestId: number;
-};
+class MobileAdsModule implements MobileAdsModuleInterface {
+  constructor() {
+    if (nativeEvents && nativeEvents.length) {
+      for (let i = 0, len = nativeEvents.length; i < len; i++) {
+        this.subscribeToNativeModuleEvent(nativeEvents[i]);
+      }
+    }
+  }
 
-class MobileAdsModule extends Module implements MobileAdsModuleInterface {
-  constructor(app: App, config: Config) {
-    super(app, config);
+  subscribeToNativeModuleEvent(eventName: string) {
+    if (!NATIVE_MODULE_EVENT_SUBSCRIPTIONS[eventName]) {
+      GoogleMobileAdsNativeEventEmitter.addListener(eventName, event => {
+        SharedEventEmitter.emit(`${eventName}:${event.adUnitId}:${event.requestId}`, event);
+      });
 
-    this.emitter.addListener('google_mobile_ads_app_open_event', (event: Event) => {
-      this.emitter.emit(
-        `google_mobile_ads_app_open_event:${event.adUnitId}:${event.requestId}`,
-        event,
-      );
-    });
-
-    this.emitter.addListener('google_mobile_ads_interstitial_event', (event: Event) => {
-      this.emitter.emit(
-        `google_mobile_ads_interstitial_event:${event.adUnitId}:${event.requestId}`,
-        event,
-      );
-    });
-
-    this.emitter.addListener('google_mobile_ads_rewarded_event', (event: Event) => {
-      this.emitter.emit(
-        `google_mobile_ads_rewarded_event:${event.adUnitId}:${event.requestId}`,
-        event,
-      );
-    });
-
-    this.emitter.addListener('google_mobile_ads_rewarded_interstitial_event', (event: Event) => {
-      this.emitter.emit(
-        `google_mobile_ads_rewarded_interstitial_event:${event.adUnitId}:${event.requestId}`,
-        event,
-      );
-    });
+      NATIVE_MODULE_EVENT_SUBSCRIPTIONS[eventName] = true;
+    }
   }
 
   initialize() {
-    return this.native.initialize();
+    return RNGoogleMobileAdsModule.initialize();
   }
 
   setRequestConfiguration(requestConfiguration: RequestConfiguration) {
@@ -67,33 +50,20 @@ class MobileAdsModule extends Module implements MobileAdsModuleInterface {
       }
     }
 
-    return this.native.setRequestConfiguration(config);
+    return RNGoogleMobileAdsModule.setRequestConfiguration(config);
   }
 
   openAdInspector() {
-    return this.native.openAdInspector();
+    return RNGoogleMobileAdsModule.openAdInspector();
   }
 
   openDebugMenu(adUnit: string) {
     if (!adUnit) throw new Error('googleMobileAds.openDebugMenu expected a non-empty string value');
-    this.native.openDebugMenu(adUnit);
+    RNGoogleMobileAdsModule.openDebugMenu(adUnit);
   }
 }
 
-const MobileAdsInstance = new MobileAdsModule(
-  { name: 'AppName' },
-  {
-    version,
-    namespace,
-    nativeModuleName,
-    nativeEvents: [
-      'google_mobile_ads_app_open_event',
-      'google_mobile_ads_interstitial_event',
-      'google_mobile_ads_rewarded_event',
-      'google_mobile_ads_rewarded_interstitial_event',
-    ],
-  },
-);
+const MobileAdsInstance = new MobileAdsModule();
 
 export const MobileAds = () => {
   return MobileAdsInstance;
