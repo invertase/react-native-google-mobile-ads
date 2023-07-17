@@ -34,17 +34,23 @@ describe('Google Mobile Ads Interstitial', function () {
         const ad = InterstitialAd.createForAdRequest('abc');
 
         ad.load();
-        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeModules.RNGoogleMobileAdsInterstitialModule.interstitialLoad).toBeCalledTimes(
+          1,
+        );
       });
 
       it('does nothing if ad currently loading', () => {
         const ad = InterstitialAd.createForAdRequest('abc');
 
         ad.load();
-        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeModules.RNGoogleMobileAdsInterstitialModule.interstitialLoad).toBeCalledTimes(
+          1,
+        );
 
         ad.load();
-        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeModules.RNGoogleMobileAdsInterstitialModule.interstitialLoad).toBeCalledTimes(
+          1,
+        );
       });
 
       it('does nothing if ad is already loaded', () => {
@@ -54,33 +60,41 @@ describe('Google Mobile Ads Interstitial', function () {
         ad._handleAdEvent({ body: { type: AdEventType.LOADED } });
 
         ad.load();
-        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).not.toBeCalled();
+        expect(NativeModules.RNGoogleMobileAdsInterstitialModule.interstitialLoad).not.toBeCalled();
       });
 
       it('can be called again after ad was closed', () => {
         const ad = InterstitialAd.createForAdRequest('abc');
 
         ad.load();
-        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeModules.RNGoogleMobileAdsInterstitialModule.interstitialLoad).toBeCalledTimes(
+          1,
+        );
 
         // @ts-ignore
         ad._handleAdEvent({ body: { type: AdEventType.CLOSED } });
 
         ad.load();
-        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(2);
+        expect(NativeModules.RNGoogleMobileAdsInterstitialModule.interstitialLoad).toBeCalledTimes(
+          2,
+        );
       });
 
       it('can be called again after ad failed to load', () => {
         const ad = InterstitialAd.createForAdRequest('abc');
 
         ad.load();
-        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeModules.RNGoogleMobileAdsInterstitialModule.interstitialLoad).toBeCalledTimes(
+          1,
+        );
 
         // @ts-ignore
         ad._handleAdEvent({ body: { type: AdEventType.ERROR } });
 
         ad.load();
-        expect(NativeModules.RNGoogleMobileAdsModule.interstitialLoad).toBeCalledTimes(2);
+        expect(NativeModules.RNGoogleMobileAdsInterstitialModule.interstitialLoad).toBeCalledTimes(
+          2,
+        );
       });
     });
 

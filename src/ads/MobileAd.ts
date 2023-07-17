@@ -15,27 +15,39 @@
  *
  */
 
-import { EmitterSubscription } from 'react-native';
+import { EmitterSubscription, NativeModules } from 'react-native';
 import { isFunction, isOneOf } from '../common';
 import { NativeError } from '../internal/NativeError';
 import { AdEventType } from '../AdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
+import { SharedEventEmitter } from '../internal/SharedEventEmitter';
 import { AdEventListener, AdEventPayload } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
-import { MobileAdsModuleInterface } from '../types/MobileAdsModule.interface';
 import { RewardedAdReward } from '../types/RewardedAdReward';
 import { GAMAdEventType } from '../GAMAdEventType';
 import { AppEvent } from '../types/AppEvent';
 import { validateAdShowOptions } from '../validateAdShowOptions';
 
+type AdType = 'app_open' | 'interstitial' | 'rewarded' | 'rewarded_interstitial';
+type NativeModule =
+  | 'RNGoogleMobileAdsAppOpenModule'
+  | 'RNGoogleMobileAdsInterstitialModule'
+  | 'RNGoogleMobileAdsRewardedModule'
+  | 'RNGoogleMobileAdsRewardedInterstitialModule';
 type EventType = AdEventType | RewardedAdEventType | GAMAdEventType;
+type AdLoadFunction = (requestId: number, adUnitId: string, requestOptions: RequestOptions) => void;
+type AdShowFunction = (
+  requestId: number,
+  adUnitId: string,
+  showOptions?: AdShowOptions,
+) => Promise<void>;
 
 export abstract class MobileAd implements MobileAdInterface {
-  protected _type: 'app_open' | 'interstitial' | 'rewarded' | 'rewarded_interstitial';
-  protected _googleMobileAds: MobileAdsModuleInterface;
+  protected _type: AdType;
+  protected _nativeModule: NativeModule;
   protected _requestId: number;
   protected _adUnitId: string;
   protected _requestOptions: RequestOptions;
@@ -48,14 +60,14 @@ export abstract class MobileAd implements MobileAdInterface {
   protected _nativeListener: EmitterSubscription;
 
   protected constructor(
-    type: 'app_open' | 'interstitial' | 'rewarded' | 'rewarded_interstitial',
-    googleMobileAds: MobileAdsModuleInterface,
+    type: AdType,
+    nativeModule: NativeModule,
     requestId: number,
     adUnitId: string,
     requestOptions: RequestOptions,
   ) {
     this._type = type;
-    this._googleMobileAds = googleMobileAds;
+    this._nativeModule = nativeModule;
     this._requestId = requestId;
     this._adUnitId = adUnitId;
     this._requestOptions = requestOptions;
@@ -75,7 +87,7 @@ export abstract class MobileAd implements MobileAdInterface {
     this._adEventListenerId = 0;
     this._adEventsListenerId = 0;
 
-    this._nativeListener = googleMobileAds.emitter.addListener(
+    this._nativeListener = SharedEventEmitter.addListener(
       `google_mobile_ads_${type}_event:${adUnitId}:${requestId}`,
       this._handleAdEvent.bind(this),
     );
@@ -183,7 +195,7 @@ export abstract class MobileAd implements MobileAdInterface {
     }
 
     this._isLoadCalled = true;
-    const load = this._googleMobileAds.native[`${this._camelCaseType}Load`];
+    const load: AdLoadFunction = NativeModules[this._nativeModule][`${this._camelCaseType}Load`];
     load(this._requestId, this._adUnitId, this._requestOptions);
   }
 
@@ -205,7 +217,7 @@ export abstract class MobileAd implements MobileAdInterface {
       }
     }
 
-    const show = this._googleMobileAds.native[`${this._camelCaseType}Show`];
+    const show: AdShowFunction = NativeModules[this._nativeModule][`${this._camelCaseType}Show`];
     return show(this._requestId, this._adUnitId, options);
   }
 

@@ -16,7 +16,6 @@
  */
 
 import { isString } from '../common';
-import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
@@ -42,7 +41,13 @@ export class AppOpenAd extends MobileAd {
     }
 
     const requestId = AppOpenAd._appOpenRequest++;
-    return new AppOpenAd('app_open', MobileAds(), requestId, adUnitId, options);
+    return new AppOpenAd(
+      'app_open',
+      'RNGoogleMobileAdsAppOpenModule',
+      requestId,
+      adUnitId,
+      options,
+    );
   }
 
   addAdEventsListener<T extends AdEventType>(listener: AdEventsListener<T>): () => void {

@@ -16,7 +16,6 @@
  */
 
 import { isString } from '../common';
-import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
@@ -112,7 +111,13 @@ export class RewardedAd extends MobileAd {
     }
 
     const requestId = RewardedAd._rewardedRequest++;
-    return new RewardedAd('rewarded', MobileAds(), requestId, adUnitId, options);
+    return new RewardedAd(
+      'rewarded',
+      'RNGoogleMobileAdsRewardedModule',
+      requestId,
+      adUnitId,
+      options,
+    );
   }
 
   addAdEventsListener<T extends AdEventType | RewardedAdEventType>(

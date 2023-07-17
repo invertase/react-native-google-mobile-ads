@@ -16,7 +16,6 @@
  */
 
 import { isString } from '../common';
-import { MobileAds } from '../MobileAds';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { MobileAd } from './MobileAd';
 import { AdEventType } from '../AdEventType';
@@ -102,7 +101,13 @@ export class InterstitialAd extends MobileAd {
     }
 
     const requestId = InterstitialAd._interstitialRequest++;
-    return new InterstitialAd('interstitial', MobileAds(), requestId, adUnitId, options);
+    return new InterstitialAd(
+      'interstitial',
+      'RNGoogleMobileAdsInterstitialModule',
+      requestId,
+      adUnitId,
+      options,
+    );
   }
 
   addAdEventsListener<T extends AdEventType>(listener: AdEventsListener<T>) {
