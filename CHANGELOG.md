@@ -1,3 +1,10 @@
+## [11.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.1.1...v11.2.0) (2023-07-18)
+
+
+### Features
+
+* **catalyst:** support building on catalyst, though ads will not work ([#389](https://github.com/invertase/react-native-google-mobile-ads/issues/389)) ([ab55792](https://github.com/invertase/react-native-google-mobile-ads/commit/ab55792673b732f84eeb772a2626d0dc50b85a50))
+
 ### [11.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.1.0...v11.1.1) (2023-06-16)
 
 
