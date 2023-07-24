@@ -117,12 +117,12 @@ RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnit) {
 
   if (requestConfiguration[@"tagForChildDirectedTreatment"]) {
     BOOL tag = [requestConfiguration[@"tagForChildDirectedTreatment"] boolValue];
-    [GADMobileAds.sharedInstance.requestConfiguration tagForChildDirectedTreatment:tag];
+    GADMobileAds.sharedInstance.requestConfiguration.tagForChildDirectedTreatment = tag;
   }
 
   if (requestConfiguration[@"tagForUnderAgeOfConsent"]) {
     BOOL tag = [requestConfiguration[@"tagForUnderAgeOfConsent"] boolValue];
-    [GADMobileAds.sharedInstance.requestConfiguration tagForUnderAgeOfConsent:tag];
+    GADMobileAds.sharedInstance.requestConfiguration.tagForUnderAgeOfConsent = tag;
   }
 
   if (requestConfiguration[@"testDeviceIdentifiers"]) {
