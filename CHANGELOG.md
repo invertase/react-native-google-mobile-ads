@@ -1,3 +1,10 @@
+## [11.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.2.0...v11.3.0) (2023-07-24)
+
+
+### Features
+
+* **ios:** sdk methods and banners on new architecture ([3ee9d02](https://github.com/invertase/react-native-google-mobile-ads/commit/3ee9d020eaa5dd6b050d43d8ce72756bf131d9f8))
+
 ## [11.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.1.1...v11.2.0) (2023-07-18)
 
 
