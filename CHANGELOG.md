@@ -1,3 +1,15 @@
+## [11.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.4.1...v11.5.0) (2023-07-25)
+
+
+### Features
+
+* google ump sdk upgrade - 2.1.0 ([848986d](https://github.com/invertase/react-native-google-mobile-ads/commit/848986d73e44df641f2ab2718928a7592b8436d9))
+
+
+### Bug Fixes
+
+* **android:** example app gradle plugin location ([57ec80c](https://github.com/invertase/react-native-google-mobile-ads/commit/57ec80c6c349841ff6fb2f093349d94936f7a827))
+
 ### [11.4.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.4.0...v11.4.1) (2023-07-25)
 
 
