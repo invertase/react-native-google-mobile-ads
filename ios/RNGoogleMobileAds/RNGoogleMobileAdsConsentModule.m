@@ -55,6 +55,21 @@ RCT_EXPORT_MODULE();
 }
 #endif
 
+#if !TARGET_OS_MACCATALYST
+- (NSString *)getPrivacyOptionsRequirementStatusString:
+    (UMPPrivacyOptionsRequirementStatus)privacyOptionsRequirementStatus {
+  switch (privacyOptionsRequirementStatus) {
+    case UMPPrivacyOptionsRequirementStatusRequired:
+      return @"REQUIRED";
+    case UMPPrivacyOptionsRequirementStatusNotRequired:
+      return @"NOT_REQUIRED";
+    case UMPPrivacyOptionsRequirementStatusUnknown:
+    default:
+      return @"UNKNOWN";
+  }
+}
+#endif
+
 RCT_EXPORT_METHOD(requestInfoUpdate
                   : (NSDictionary *)options
                   : (RCTPromiseResolveBlock)resolve
@@ -85,6 +100,12 @@ RCT_EXPORT_METHOD(requestInfoUpdate
                                  @"status" : [self
                                      getConsentStatusString:UMPConsentInformation.sharedInstance
                                                                 .consentStatus],
+                                 @"canRequestAds" :
+                                     @(UMPConsentInformation.sharedInstance.canRequestAds),
+                                 @"privacyOptionsRequirementStatus" :
+                                     [self getPrivacyOptionsRequirementStatusString:
+                                               UMPConsentInformation.sharedInstance
+                                                   .privacyOptionsRequirementStatus],
                                  @"isConsentFormAvailable" :
                                      @(UMPConsentInformation.sharedInstance.formStatus ==
                                        UMPFormStatusAvailable)

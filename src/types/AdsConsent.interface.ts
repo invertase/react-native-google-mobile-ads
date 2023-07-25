@@ -1,6 +1,7 @@
 import { TCModel } from '@iabtcf/core';
 import { AdsConsentDebugGeography } from '../AdsConsentDebugGeography';
 import { AdsConsentStatus } from '../AdsConsentStatus';
+import { AdsConsentPrivacyOptionsRequirementStatus } from '../AdsConsentPrivacyOptionsRequirementStatus';
 
 /**
  * Under the Google [EU User Consent Policy](https://www.google.com/about/company/consentstaging.html), you must make certain disclosures to your users in the European Economic Area (EEA)
@@ -166,6 +167,16 @@ export interface AdsConsentInfo {
    *  - `OBTAINED`: User consent already obtained.
    */
   status: AdsConsentStatus;
+
+  /**
+   * Indicates whether the app has completed the necessary steps for gathering updated user consent.
+   */
+  canRequestAds: boolean;
+
+  /**
+   * Privacy options requirement status.
+   */
+  privacyOptionsRequirementStatus: AdsConsentPrivacyOptionsRequirementStatus;
 
   /**
    * If `true` a consent form is available.

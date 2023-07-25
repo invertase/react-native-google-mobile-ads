@@ -56,6 +56,19 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
     }
   }
 
+  private String getPrivacyOptionsRequirementStatusString(
+      ConsentInformation.PrivacyOptionsRequirementStatus privacyOptionsRequirementStatus) {
+    switch (privacyOptionsRequirementStatus) {
+      case REQUIRED:
+        return "REQUIRED";
+      case NOT_REQUIRED:
+        return "NOT_REQUIRED";
+      case UNKNOWN:
+      default:
+        return "UNKNOWN";
+    }
+  }
+
   @ReactMethod
   public void requestInfoUpdate(@Nonnull final ReadableMap options, final Promise promise) {
     try {
@@ -98,6 +111,11 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
             WritableMap requestInfoMap = Arguments.createMap();
             requestInfoMap.putString(
                 "status", getConsentStatusString(consentInformation.getConsentStatus()));
+            requestInfoMap.putBoolean("canRequestAds", consentInformation.canRequestAds());
+            requestInfoMap.putString(
+                "privacyOptionsRequirementStatus",
+                getPrivacyOptionsRequirementStatusString(
+                    consentInformation.getPrivacyOptionsRequirementStatus()));
             requestInfoMap.putBoolean(
                 "isConsentFormAvailable", consentInformation.isConsentFormAvailable());
             promise.resolve(requestInfoMap);
