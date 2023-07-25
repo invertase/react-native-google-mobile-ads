@@ -1,3 +1,10 @@
+### [11.4.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.4.0...v11.4.1) (2023-07-25)
+
+
+### Bug Fixes
+
+* **ios:** incompatible integer to pointer conversion ([e25113d](https://github.com/invertase/react-native-google-mobile-ads/commit/e25113ded42508e364a6d6b9bd46b7e88b612041))
+
 ## [11.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.3.0...v11.4.0) (2023-07-24)
 
 
