@@ -148,6 +148,29 @@ RCT_EXPORT_METHOD(showForm : (RCTPromiseResolveBlock)resolve : (RCTPromiseReject
 #endif
 }
 
+RCT_EXPORT_METHOD(showPrivacyOptionsForm
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+#if !TARGET_OS_MACCATALYST
+  [UMPConsentForm
+      presentPrivacyOptionsFormFromViewController:[UIApplication sharedApplication]
+                                                      .delegate.window.rootViewController
+                                completionHandler:^(NSError *_Nullable formError) {
+                                  if (formError) {
+                                    [RNSharedUtils
+                                        rejectPromiseWithUserInfo:reject
+                                                         userInfo:[@{
+                                                           @"code" : @"privacy-options-form-error",
+                                                           @"message" :
+                                                               formError.localizedDescription,
+                                                         } mutableCopy]];
+                                  } else {
+                                    resolve(@"Privacy options form presented successfully.");
+                                  }
+                                }];
+#endif
+}
+
 RCT_EXPORT_METHOD(reset) {
 #if !TARGET_OS_MACCATALYST
   [UMPConsentInformation.sharedInstance reset];
