@@ -62,6 +62,11 @@ export interface AdsConsentInterface {
   showForm(): Promise<AdsConsentFormResult>;
 
   /**
+   * Presents a privacy options form if privacyOptionsRequirementStatus is required.
+   */
+  showPrivacyOptionsForm(): Promise<string>;
+
+  /**
    * Returns the value stored under the `IABTCF_TCString` key
    * in NSUserDefaults (iOS) / SharedPreferences (Android) as
    * defined by the IAB Europe Transparency & Consent Framework.

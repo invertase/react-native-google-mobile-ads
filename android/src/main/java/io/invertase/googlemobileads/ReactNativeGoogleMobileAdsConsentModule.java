@@ -168,6 +168,34 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   }
 
   @ReactMethod
+  public void showPrivacyOptionsForm(final Promise promise) {
+    try {
+      if (getCurrentActivity() == null) {
+        rejectPromiseWithCodeAndMessage(
+            promise,
+            "null-activity",
+            "Privacy options form attempted to show but the current Activity was null.");
+        return;
+      }
+      getCurrentActivity()
+          .runOnUiThread(
+              () ->
+                  UserMessagingPlatform.showPrivacyOptionsForm(
+                      getCurrentActivity(),
+                      formError -> {
+                        if (formError != null) {
+                          rejectPromiseWithCodeAndMessage(
+                              promise, "privacy-options-form-error", formError.getMessage());
+                        } else {
+                          promise.resolve("Privacy options form presented successfully.");
+                        }
+                      }));
+    } catch (Exception e) {
+      rejectPromiseWithCodeAndMessage(promise, "consent-form-error", e.toString());
+    }
+  }
+
+  @ReactMethod
   public void reset() {
     consentInformation.reset();
   }

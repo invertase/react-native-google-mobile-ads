@@ -80,6 +80,10 @@ export const AdsConsent: AdsConsentInterface = {
     return native.showForm();
   },
 
+  showPrivacyOptionsForm(): Promise<string> {
+    return native.showPrivacyOptionsForm();
+  },
+
   reset(): void {
     return native.reset();
   },
