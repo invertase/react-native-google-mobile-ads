@@ -6,11 +6,9 @@ We welcome any type of contribution, not just code. You can help with;
 
 - **QA**: file bug reports, the more details you can give the better (e.g. platform versions, screenshots SDK versions & logs)
 - **Docs**: improve reference coverage, add more examples, fix typos or anything else you can spot.
-  - At the top of every page on our docs site you can click the `Edit Page` button to go to that pages markdown file or TypeScript definition file, or view the [documents](https://github.com/invertase/react-native-google-mobile-ads/tree/main/docs) directly
+  - At the bottom of every page on our docs site you can click the `Edit this page` button to go to that pages markdown file or view the [documents](https://github.com/invertase/react-native-google-mobile-ads/tree/main/docs) directly
 - **Community**: presenting the project at meetups, organizing a dedicated meetup for the local community, ...
 - **Code**: take a look at the [open issues](issues). Even if you can't write code, commenting on them, showing that you care about a given issue matters.
-
----
 
 ## Project Guidelines
 
@@ -55,35 +53,11 @@ You can reach out to us directly via Discord direct messages or Twitter if you'd
   - Twitter: [@elliothesp](https://twitter.com/elliothesp)
   - Discord: `Alias#3980`
 
----
-
 ## Code Guidelines
 
 ### Your First Contribution
 
 Working on your first Pull Request? You can learn how from this _free_ series, [How to Contribute to an Open Source Project on GitHub](https://egghead.io/series/how-to-contribute-to-an-open-source-project-on-github).
-
-### Implementation Guidelines
-
-- Ensure any new JS implementations mirror the official Firebase JS SDK implementation.
-  - This includes matching up with the same method names, types, usages, inputs and outputs.
-  - In some instances this is not always possible.
-- Methods/Features that are specific to a single platform only should be documented as such and the types description `@platform` annotated;
-
-  ```ts
-  export SomeInterface {
-    /**
-     * A cool method.
-     *
-     * @platform ios iOS
-     */
-    aCoolMethod(): Promize<null>;
-  }
-  ```
-
-- If a method works on both platforms then there's no need to annotate it
-
----
 
 ## Local Setup
 
@@ -102,11 +76,9 @@ cd react-native-google-mobile-ads
 yarn
 ```
 
----
-
 ## Submitting code for review
 
-All code changes should be submitted as a pull request to the master branch.
+All code changes should be submitted as a pull request to the `main` branch.
 
 The bigger the pull request, the longer it will take to review and merge. Try to break down large pull requests in smaller chunks that are easier to review and merge. It is also always helpful to have some context for your pull request. What was the purpose? Why does it matter to you? Tag in any linked issues.
 
@@ -130,15 +102,13 @@ See the [Conventional Commits](https://www.conventionalcommits.org/) specificati
 
 ### Code review process
 
-Pull Requests to master require two or more peer-review approvals and passing status checks before they can be merged.
+Pull Requests to the `main` branch require one or more peer-review approvals and passing status checks before they can be merged.
 
 Reviews of Pull Requests are based on the following acceptance criteria:
 
 - Does the PR provide cross-platform support?
   - i.e. if adding a new feature then does the implementation provide iOS and Android support.
   - Pull Requests should not be merged unless both platforms are supported (unless the feature is specific to one platform only)
-- Pull Request follows the Firebase Web SDKs API/implementation.
-  - In some instances this is not always possible.
 - If APIs have changed;
   - Has the documentation been updated?
   - Have the TypeScript types been added?
@@ -147,7 +117,7 @@ Reviews of Pull Requests are based on the following acceptance criteria:
   - Other tests through Jest.
 - Do all CI checks pass.
 
-Once a PR is merged into master; new versions of the changed packages are automatically created and published to NPM.
+Once a PR is merged into the `main` branch; new versions of the changed packages are automatically created and published to NPM.
 
 ## [No Brown M&M's](http://en.wikipedia.org/wiki/Van_Halen#Contract_riders)
 
