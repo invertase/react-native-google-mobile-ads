@@ -1,3 +1,15 @@
+## [11.6.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.5.0...v11.6.0) (2023-07-27)
+
+
+### Features
+
+* expose showPrivacyOptionsForm method ([284b2f3](https://github.com/invertase/react-native-google-mobile-ads/commit/284b2f375a20768aebed30021ce100bf8d0add89))
+
+
+### Bug Fixes
+
+* **ios:** Build support on both architectures ([2eac953](https://github.com/invertase/react-native-google-mobile-ads/commit/2eac953baf2d8efe915ef9fbf8bdd7396e707057))
+
 ## [11.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.4.1...v11.5.0) (2023-07-25)
 
 
