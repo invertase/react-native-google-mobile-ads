@@ -50,19 +50,12 @@ When using The New Architecture, some legacy code will still be used though. See
 - [Installation](https://docs.page/invertase/react-native-google-mobile-ads)
 - [Displaying Ads](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads)
 
-<!--
-- [Quick Start](https://rnfirebase.io/)
-- [Reference API](https://rnfirebase.io/reference) -->
-
 ## Contributing
-
-<!-- - [Overview](https://rnfirebase.io) -->
 
 - [Issues](https://github.com/invertase/react-native-google-mobile-ads/issues)
 - [PRs](https://github.com/invertase/react-native-google-mobile-ads/pulls)
-<!-- - [Documentation](https://rnfirebase.io) -->
-- [Community](https://github.com/invertase/react-native-google-mobile-ads/blob/master/CONTRIBUTING.md)
-- [Code of Conduct](https://github.com/invertase/meta/blob/master/CODE_OF_CONDUCT.md)
+- [Guidelines](https://github.com/invertase/react-native-google-mobile-ads/blob/main/CONTRIBUTING.md)
+- [Code of Conduct](https://github.com/invertase/meta/blob/main/CODE_OF_CONDUCT.md)
 
 ## License
 
