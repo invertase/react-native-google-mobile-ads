@@ -1,3 +1,10 @@
+### [11.6.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.6.1...v11.6.2) (2023-07-31)
+
+
+### Bug Fixes
+
+* export AdsConsentPrivacyOptionsRequirementStatus ([43988a3](https://github.com/invertase/react-native-google-mobile-ads/commit/43988a3c56a337b5dd9ce53634e63d928ff9bf12))
+
 ### [11.6.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.6.0...v11.6.1) (2023-07-28)
 
 
