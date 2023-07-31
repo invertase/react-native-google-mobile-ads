@@ -25,6 +25,7 @@ export { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
 export { AdsConsentPurposes } from './AdsConsentPurposes';
 export { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
 export { AdsConsentStatus } from './AdsConsentStatus';
+export { AdsConsentPrivacyOptionsRequirementStatus } from './AdsConsentPrivacyOptionsRequirementStatus';
 export { MaxAdContentRating } from './MaxAdContentRating';
 export { TestIds } from './TestIds';
 export { AdEventType } from './AdEventType';
