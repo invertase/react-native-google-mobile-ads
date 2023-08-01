@@ -16,7 +16,7 @@ buildscript {
 
     dependencies {
       classpath("com.android.tools.build:gradle:7.0.4")
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.6.10')}"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.8.22')}"
     }
   } else {
     repositories {
@@ -24,7 +24,7 @@ buildscript {
     }
 
     dependencies {
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.6.10')}"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.8.22')}"
     }
   }
 }
