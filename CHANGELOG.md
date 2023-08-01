@@ -1,3 +1,10 @@
+### [11.6.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.6.2...v11.6.3) (2023-08-01)
+
+
+### Bug Fixes
+
+* kotlin version ([fc26606](https://github.com/invertase/react-native-google-mobile-ads/commit/fc26606234dd069d6addf201b6991d7c24d3d558))
+
 ### [11.6.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.6.1...v11.6.2) (2023-07-31)
 
 
