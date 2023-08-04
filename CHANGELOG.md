@@ -1,3 +1,10 @@
+### [11.6.4](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.6.3...v11.6.4) (2023-08-04)
+
+
+### Bug Fixes
+
+* **ios:** support new arch in rn 0.70 ([589a0fa](https://github.com/invertase/react-native-google-mobile-ads/commit/589a0fa7299286b937292fdec999d3a9644dcf87))
+
 ### [11.6.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.6.2...v11.6.3) (2023-08-01)
 
 
