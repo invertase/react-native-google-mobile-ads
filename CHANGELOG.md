@@ -1,3 +1,10 @@
+### [11.6.5](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.6.4...v11.6.5) (2023-08-05)
+
+
+### Bug Fixes
+
+* banner ad not showing when requestoptions absent ([e0f7982](https://github.com/invertase/react-native-google-mobile-ads/commit/e0f7982fe001de952b9a939ca02878d407d99b6b))
+
 ### [11.6.4](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.6.3...v11.6.4) (2023-08-04)
 
 
