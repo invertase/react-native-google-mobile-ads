@@ -49,7 +49,7 @@ export const BaseAd = React.forwardRef<
     }
   }, [sizes]);
 
-  const parsedRequestOptions = JSON.stringify(requestOptions);
+  const parsedRequestOptions = JSON.stringify(requestOptions || {});
 
   useEffect(() => {
     if (requestOptions) {
