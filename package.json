@@ -41,7 +41,7 @@
   ],
   "sdkVersions": {
     "ios": {
-      "googleMobileAds": "10.8.0",
+      "googleMobileAds": "10.9.0",
       "googleUmp": "2.1.0"
     },
     "android": {
