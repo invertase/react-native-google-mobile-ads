@@ -26,7 +26,7 @@ concurrency:
 jobs:
   android:
     name: Android
-    runs-on: macos-latest
+    runs-on: macos-13
     timeout-minutes: 70
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
