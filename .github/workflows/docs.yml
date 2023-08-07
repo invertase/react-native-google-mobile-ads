@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 1
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
       - name: Install Dependencies
         uses: nick-invision/retry@v2
         with:
