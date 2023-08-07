@@ -7,7 +7,8 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "prepare": "patch-package"
   },
   "dependencies": {
     "react": "18.2.0",
@@ -32,6 +33,7 @@
     "jet": "https://github.com/invertase/jet#@mikehardy/jet-next",
     "metro-react-native-babel-preset": "0.73.8",
     "mocha": "^10.2.0",
+    "patch-package": "^8.0.0",
     "prettier": "^2.4.1",
     "react-test-renderer": "18.2.0",
     "typescript": "^5.0.2"
