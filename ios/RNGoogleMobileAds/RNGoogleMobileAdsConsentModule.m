@@ -165,7 +165,11 @@ RCT_EXPORT_METHOD(showPrivacyOptionsForm
                                                                formError.localizedDescription,
                                                          } mutableCopy]];
                                   } else {
-                                    resolve(@"Privacy options form presented successfully.");
+                                    resolve(@{
+                                      @"status" : [self
+                                          getConsentStatusString:UMPConsentInformation
+                                                                     .sharedInstance.consentStatus],
+                                    });
                                   }
                                 }];
 #endif

@@ -64,7 +64,7 @@ export interface AdsConsentInterface {
   /**
    * Presents a privacy options form if privacyOptionsRequirementStatus is required.
    */
-  showPrivacyOptionsForm(): Promise<string>;
+  showPrivacyOptionsForm(): Promise<AdsConsentPrivacyOptionsFormResult>;
 
   /**
    * Returns the value stored under the `IABTCF_TCString` key
@@ -150,6 +150,21 @@ export interface AdsConsentInfoOptions {
 export interface AdsConsentFormResult {
   /**
    * The consent status of the user after closing the consent form.
+   *
+   *  - `UNKNOWN`: Unknown consent status.
+   *  - `REQUIRED`: User consent required but not yet obtained.
+   *  - `NOT_REQUIRED`: User consent not required.
+   *  - `OBTAINED`: User consent already obtained.
+   */
+  status: AdsConsentStatus;
+}
+
+/**
+ * The result of a Google-rendered privacy options form.
+ */
+export interface AdsConsentPrivacyOptionsFormResult {
+  /**
+   * The consent status of the user after closing the privacy options form.
    *
    *  - `UNKNOWN`: Unknown consent status.
    *  - `REQUIRED`: User consent required but not yet obtained.

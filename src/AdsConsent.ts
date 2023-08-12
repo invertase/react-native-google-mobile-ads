@@ -26,6 +26,7 @@ import {
   AdsConsentInfo,
   AdsConsentInfoOptions,
   AdsConsentInterface,
+  AdsConsentPrivacyOptionsFormResult,
   AdsConsentUserChoices,
 } from './types/AdsConsent.interface';
 
@@ -80,7 +81,7 @@ export const AdsConsent: AdsConsentInterface = {
     return native.showForm();
   },
 
-  showPrivacyOptionsForm(): Promise<string> {
+  showPrivacyOptionsForm(): Promise<AdsConsentPrivacyOptionsFormResult> {
     return native.showPrivacyOptionsForm();
   },
 

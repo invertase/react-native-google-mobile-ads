@@ -193,7 +193,10 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
                       rejectPromiseWithCodeAndMessage(
                           promise, "privacy-options-form-error", formError.getMessage());
                     } else {
-                      promise.resolve("Privacy options form presented successfully.");
+                      WritableMap resultMap = Arguments.createMap();
+                      resultMap.putString(
+                          "status", getConsentStatusString(consentInformation.getConsentStatus()));
+                      promise.resolve(resultMap);
                     }
                   }));
     } catch (Exception e) {
