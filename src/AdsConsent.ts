@@ -22,7 +22,6 @@ import { AdsConsentPurposes } from './AdsConsentPurposes';
 import { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
 import { isPropertySet, isArray, isBoolean, isObject, isString } from './common';
 import {
-  AdsConsentFormResult,
   AdsConsentInfo,
   AdsConsentInfoOptions,
   AdsConsentInterface,
@@ -76,11 +75,11 @@ export const AdsConsent: AdsConsentInterface = {
     return native.requestInfoUpdate(options);
   },
 
-  showForm(): Promise<AdsConsentFormResult> {
+  showForm(): Promise<AdsConsentInfo> {
     return native.showForm();
   },
 
-  showPrivacyOptionsForm(): Promise<string> {
+  showPrivacyOptionsForm(): Promise<AdsConsentInfo> {
     return native.showPrivacyOptionsForm();
   },
 
