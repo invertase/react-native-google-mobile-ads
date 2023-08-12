@@ -70,6 +70,20 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
     }
   }
 
+  private WritableMap getConsentInformation() {
+    WritableMap consentStatusMap = Arguments.createMap();
+    consentStatusMap.putString(
+        "status", getConsentStatusString(consentInformation.getConsentStatus()));
+    consentStatusMap.putBoolean("canRequestAds", consentInformation.canRequestAds());
+    consentStatusMap.putString(
+        "privacyOptionsRequirementStatus",
+        getPrivacyOptionsRequirementStatusString(
+            consentInformation.getPrivacyOptionsRequirementStatus()));
+    consentStatusMap.putBoolean(
+        "isConsentFormAvailable", consentInformation.isConsentFormAvailable());
+    return consentStatusMap;
+  }
+
   @ReactMethod
   public void requestInfoUpdate(@Nonnull final ReadableMap options, final Promise promise) {
     try {
@@ -111,17 +125,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
           currentActivity,
           consentRequestParameters,
           () -> {
-            WritableMap requestInfoMap = Arguments.createMap();
-            requestInfoMap.putString(
-                "status", getConsentStatusString(consentInformation.getConsentStatus()));
-            requestInfoMap.putBoolean("canRequestAds", consentInformation.canRequestAds());
-            requestInfoMap.putString(
-                "privacyOptionsRequirementStatus",
-                getPrivacyOptionsRequirementStatusString(
-                    consentInformation.getPrivacyOptionsRequirementStatus()));
-            requestInfoMap.putBoolean(
-                "isConsentFormAvailable", consentInformation.isConsentFormAvailable());
-            promise.resolve(requestInfoMap);
+            promise.resolve(getConsentInformation());
           },
           formError ->
               rejectPromiseWithCodeAndMessage(
@@ -156,11 +160,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
                               rejectPromiseWithCodeAndMessage(
                                   promise, "consent-form-error", formError.getMessage());
                             } else {
-                              WritableMap consentFormMap = Arguments.createMap();
-                              consentFormMap.putString(
-                                  "status",
-                                  getConsentStatusString(consentInformation.getConsentStatus()));
-                              promise.resolve(consentFormMap);
+                              promise.resolve(getConsentInformation());
                             }
                           }),
                   formError ->
@@ -193,7 +193,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
                       rejectPromiseWithCodeAndMessage(
                           promise, "privacy-options-form-error", formError.getMessage());
                     } else {
-                      promise.resolve("Privacy options form presented successfully.");
+                      promise.resolve(getConsentInformation());
                     }
                   }));
     } catch (Exception e) {

@@ -70,6 +70,20 @@ RCT_EXPORT_MODULE();
 }
 #endif
 
+#if !TARGET_OS_MACCATALYST
+- (NSDictionary *)getConsentInformation {
+  return @{
+    @"status" : [self getConsentStatusString:UMPConsentInformation.sharedInstance.consentStatus],
+    @"canRequestAds" : @(UMPConsentInformation.sharedInstance.canRequestAds),
+    @"privacyOptionsRequirementStatus" :
+        [self getPrivacyOptionsRequirementStatusString:UMPConsentInformation.sharedInstance
+                                                           .privacyOptionsRequirementStatus],
+    @"isConsentFormAvailable" :
+        @(UMPConsentInformation.sharedInstance.formStatus == UMPFormStatusAvailable)
+  };
+}
+#endif
+
 RCT_EXPORT_METHOD(requestInfoUpdate
                   : (NSDictionary *)options
                   : (RCTPromiseResolveBlock)resolve
@@ -96,20 +110,7 @@ RCT_EXPORT_METHOD(requestInfoUpdate
                                                       @"message" : error.localizedDescription,
                                                     } mutableCopy]];
                              } else {
-                               resolve(@{
-                                 @"status" : [self
-                                     getConsentStatusString:UMPConsentInformation.sharedInstance
-                                                                .consentStatus],
-                                 @"canRequestAds" :
-                                     @(UMPConsentInformation.sharedInstance.canRequestAds),
-                                 @"privacyOptionsRequirementStatus" :
-                                     [self getPrivacyOptionsRequirementStatusString:
-                                               UMPConsentInformation.sharedInstance
-                                                   .privacyOptionsRequirementStatus],
-                                 @"isConsentFormAvailable" :
-                                     @(UMPConsentInformation.sharedInstance.formStatus ==
-                                       UMPFormStatusAvailable)
-                               });
+                               resolve([self getConsentInformation]);
                              }
                            }];
 #endif
@@ -125,24 +126,20 @@ RCT_EXPORT_METHOD(showForm : (RCTPromiseResolveBlock)resolve : (RCTPromiseReject
                                         @"message" : loadError.localizedDescription,
                                       } mutableCopy]];
     } else {
-      [form
-          presentFromViewController:[UIApplication sharedApplication]
-                                        .delegate.window.rootViewController
-                  completionHandler:^(NSError *_Nullable dismissError) {
-                    if (dismissError) {
-                      [RNSharedUtils
-                          rejectPromiseWithUserInfo:reject
-                                           userInfo:[@{
-                                             @"code" : @"consent-form-error",
-                                             @"message" : dismissError.localizedDescription,
-                                           } mutableCopy]];
-                    } else {
-                      resolve(@{
-                        @"status" : [self getConsentStatusString:UMPConsentInformation
-                                                                     .sharedInstance.consentStatus],
-                      });
-                    }
-                  }];
+      [form presentFromViewController:[UIApplication sharedApplication]
+                                          .delegate.window.rootViewController
+                    completionHandler:^(NSError *_Nullable dismissError) {
+                      if (dismissError) {
+                        [RNSharedUtils
+                            rejectPromiseWithUserInfo:reject
+                                             userInfo:[@{
+                                               @"code" : @"consent-form-error",
+                                               @"message" : dismissError.localizedDescription,
+                                             } mutableCopy]];
+                      } else {
+                        resolve([self getConsentInformation]);
+                      }
+                    }];
     }
   }];
 #endif
@@ -165,7 +162,7 @@ RCT_EXPORT_METHOD(showPrivacyOptionsForm
                                                                formError.localizedDescription,
                                                          } mutableCopy]];
                                   } else {
-                                    resolve(@"Privacy options form presented successfully.");
+                                    resolve([self getConsentInformation]);
                                   }
                                 }];
 #endif
