@@ -1,3 +1,14 @@
+## [12.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.7.0...v12.0.0) (2023-08-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Alters the return types of two methods
+
+### Features
+
+* return consent info whenever it changes ([f04ac01](https://github.com/invertase/react-native-google-mobile-ads/commit/f04ac01b9e1455e9d3c12eb20a7e96edef45b346))
+
 ## [11.7.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.6.5...v11.7.0) (2023-08-07)
 
 
