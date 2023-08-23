@@ -130,9 +130,7 @@ import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
 
 const consentInfo = await AdsConsent.requestInfoUpdate();
 
-if (consentInfo.isConsentFormAvailable && consentInfo.status === AdsConsentStatus.REQUIRED) {
-  const { status } = await AdsConsent.showForm();
-}
+const { status } = await AdsConsent.loadAndShowConsentFormIfRequired();
 ```
 
 > Do not persist the status. You could however store this locally in application state (e.g. React Context) and update the status on every app launch as it may change.
