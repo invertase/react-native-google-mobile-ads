@@ -67,6 +67,13 @@ export interface AdsConsentInterface {
   showPrivacyOptionsForm(): Promise<AdsConsentInfo>;
 
   /**
+   * Loads a consent form and immediately presents it if consentStatus is required.
+   *
+   * This method is intended for the use case of showing a form if needed when the app starts.
+   */
+  loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo>;
+
+  /**
    * Returns the value stored under the `IABTCF_TCString` key
    * in NSUserDefaults (iOS) / SharedPreferences (Android) as
    * defined by the IAB Europe Transparency & Consent Framework.

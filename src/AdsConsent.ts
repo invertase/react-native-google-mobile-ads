@@ -83,6 +83,10 @@ export const AdsConsent: AdsConsentInterface = {
     return native.showPrivacyOptionsForm();
   },
 
+  loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo> {
+    return native.loadAndShowConsentFormIfRequired();
+  },
+
   reset(): void {
     return native.reset();
   },

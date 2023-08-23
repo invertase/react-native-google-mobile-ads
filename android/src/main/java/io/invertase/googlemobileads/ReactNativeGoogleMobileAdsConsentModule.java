@@ -202,6 +202,37 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   }
 
   @ReactMethod
+  public void loadAndShowConsentFormIfRequired(final Promise promise) {
+    try {
+      Activity currentActivity = getCurrentActivity();
+
+      if (currentActivity == null) {
+        rejectPromiseWithCodeAndMessage(
+            promise,
+            "null-activity",
+            "Consent form attempted to load and show if required but the current Activity was"
+                + " null.");
+        return;
+      }
+
+      currentActivity.runOnUiThread(
+          () ->
+              UserMessagingPlatform.loadAndShowConsentFormIfRequired(
+                  currentActivity,
+                  formError -> {
+                    if (formError != null) {
+                      rejectPromiseWithCodeAndMessage(
+                          promise, "consent-form-error", formError.getMessage());
+                    } else {
+                      promise.resolve(getConsentInformation());
+                    }
+                  }));
+    } catch (Exception e) {
+      rejectPromiseWithCodeAndMessage(promise, "consent-form-error", e.toString());
+    }
+  }
+
+  @ReactMethod
   public void reset() {
     consentInformation.reset();
   }
