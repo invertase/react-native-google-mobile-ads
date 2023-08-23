@@ -168,6 +168,29 @@ RCT_EXPORT_METHOD(showPrivacyOptionsForm
 #endif
 }
 
+RCT_EXPORT_METHOD(loadAndShowConsentFormIfRequired
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+#if !TARGET_OS_MACCATALYST
+  [UMPConsentForm
+      loadAndPresentIfRequiredFromViewController:[UIApplication sharedApplication]
+                                                     .delegate.window.rootViewController
+                               completionHandler:^(NSError *_Nullable formError) {
+                                 if (formError) {
+                                   [RNSharedUtils
+                                       rejectPromiseWithUserInfo:reject
+                                                        userInfo:[@{
+                                                          @"code" : @"consent-form-error",
+                                                          @"message" :
+                                                              formError.localizedDescription,
+                                                        } mutableCopy]];
+                                 } else {
+                                   resolve([self getConsentInformation]);
+                                 }
+                               }];
+#endif
+}
+
 RCT_EXPORT_METHOD(reset) {
 #if !TARGET_OS_MACCATALYST
   [UMPConsentInformation.sharedInstance reset];
