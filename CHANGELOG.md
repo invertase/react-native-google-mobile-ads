@@ -1,3 +1,10 @@
+## [12.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.0.0...v12.1.0) (2023-08-29)
+
+
+### Features
+
+* **consent:** expose the new loadAndShowConsentFormIfRequired method ([509f9b7](https://github.com/invertase/react-native-google-mobile-ads/commit/509f9b7e8a3fd27108219954e662a3bb8fb23d4c))
+
 ## [12.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v11.7.0...v12.0.0) (2023-08-13)
 
 
