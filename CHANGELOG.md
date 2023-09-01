@@ -1,3 +1,10 @@
+### [12.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.1.0...v12.1.1) (2023-09-01)
+
+
+### Bug Fixes
+
+* missing events of type GAMAdEventType in addAdEventListener ([073cc21](https://github.com/invertase/react-native-google-mobile-ads/commit/073cc217df7fd8332a72f98c288798ea26736d8d))
+
 ## [12.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.0.0...v12.1.0) (2023-08-29)
 
 
