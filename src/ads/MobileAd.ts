@@ -147,6 +147,7 @@ export abstract class MobileAd implements MobileAdInterface {
     if (
       !(
         isOneOf(type, Object.values(AdEventType)) ||
+        isOneOf(type, Object.values(GAMAdEventType)) ||
         (isOneOf(type, Object.values(RewardedAdEventType)) &&
           (this._type === 'rewarded' || this._type === 'rewarded_interstitial'))
       )
