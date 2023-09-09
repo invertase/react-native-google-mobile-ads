@@ -167,12 +167,16 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     }
     BaseAdView adView;
     if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(reactViewGroup.getUnitId())) {
-      // in order to display the debug menu for GAM ads we need the activity context
-      // https://github.com/invertase/react-native-google-mobile-ads/issues/188
-      adView =
-          new AdManagerAdView(
-              Objects.requireNonNull(
-                  ((ReactContext) reactViewGroup.getContext()).getCurrentActivity()));
+      if (((ReactContext) reactViewGroup.getContext()).getCurrentActivity() != null) {
+        // in order to display the debug menu for GAM ads we need the activity context
+        // https://github.com/invertase/react-native-google-mobile-ads/issues/188
+        adView =
+            new AdManagerAdView(
+                Objects.requireNonNull(
+                    ((ReactContext) reactViewGroup.getContext()).getCurrentActivity()));
+      } else {
+        return null;
+      }
     } else {
       adView = new AdView(reactViewGroup.getContext());
     }
@@ -255,24 +259,25 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     }
 
     BaseAdView adView = initAdView(reactViewGroup);
-    adView.setAdUnitId(unitId);
-
-    reactViewGroup.setIsFluid(false);
-    if (adView instanceof AdManagerAdView) {
-      if (sizes.contains(AdSize.FLUID)) {
-        reactViewGroup.setIsFluid(true);
-        ((AdManagerAdView) adView).setAdSizes(AdSize.FLUID);
+    if (adView != null) {
+      adView.setAdUnitId(unitId);
+      reactViewGroup.setIsFluid(false);
+      if (adView instanceof AdManagerAdView) {
+        if (sizes.contains(AdSize.FLUID)) {
+          reactViewGroup.setIsFluid(true);
+          ((AdManagerAdView) adView).setAdSizes(AdSize.FLUID);
+        } else {
+          ((AdManagerAdView) adView).setAdSizes(sizes.toArray(new AdSize[0]));
+        }
+        if (manualImpressionsEnabled) {
+          ((AdManagerAdView) adView).setManualImpressionsEnabled(true);
+        }
       } else {
-        ((AdManagerAdView) adView).setAdSizes(sizes.toArray(new AdSize[0]));
+        adView.setAdSize(sizes.get(0));
       }
-      if (manualImpressionsEnabled) {
-        ((AdManagerAdView) adView).setManualImpressionsEnabled(true);
-      }
-    } else {
-      adView.setAdSize(sizes.get(0));
-    }
 
-    adView.loadAd(request);
+      adView.loadAd(request);
+    }
   }
 
   private void sendEvent(ReactNativeAdView reactViewGroup, String type, WritableMap payload) {
