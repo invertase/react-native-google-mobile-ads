@@ -17,6 +17,7 @@ package io.invertase.googlemobileads;
  *
  */
 
+import android.app.Activity;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
@@ -44,7 +45,6 @@ import io.invertase.googlemobileads.common.SharedUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.json.JSONException;
@@ -167,13 +167,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     }
     BaseAdView adView;
     if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(reactViewGroup.getUnitId())) {
-      if (((ReactContext) reactViewGroup.getContext()).getCurrentActivity() != null) {
+      Activity currentActivity = ((ReactContext) reactViewGroup.getContext()).getCurrentActivity();
+      if (currentActivity != null) {
         // in order to display the debug menu for GAM ads we need the activity context
         // https://github.com/invertase/react-native-google-mobile-ads/issues/188
-        adView =
-            new AdManagerAdView(
-                Objects.requireNonNull(
-                    ((ReactContext) reactViewGroup.getContext()).getCurrentActivity()));
+        adView = new AdManagerAdView(currentActivity);
       } else {
         return null;
       }
