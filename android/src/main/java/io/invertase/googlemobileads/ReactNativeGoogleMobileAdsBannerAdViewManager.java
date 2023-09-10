@@ -17,6 +17,7 @@ package io.invertase.googlemobileads;
  *
  */
 
+import android.app.Activity;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
