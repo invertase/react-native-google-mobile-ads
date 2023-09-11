@@ -1,3 +1,11 @@
+### [12.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.1.1...v12.1.2) (2023-09-11)
+
+
+### Bug Fixes
+
+* **android:** crash when activity context not available ([7c89579](https://github.com/invertase/react-native-google-mobile-ads/commit/7c8957907f3237ebf245e9871e625868d1d77e25))
+* **android:** race condition getting current activity ([b3a09e1](https://github.com/invertase/react-native-google-mobile-ads/commit/b3a09e1f77627af7f2cbeb9bdee22541165992a8))
+
 ### [12.1.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.1.0...v12.1.1) (2023-09-01)
 
 
