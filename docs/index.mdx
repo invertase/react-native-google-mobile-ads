@@ -107,13 +107,29 @@ npx react-native run-ios
 
 # For Android
 npx react-native run-android
+```
 
-# For expo users not using EAS
+> ⚠️ This module contains custom native code which is NOT supported by Expo Go
+
+If you're using Expo without EAS, run the following commands:
+
+```bash
+# For iOS
 npx expo prebuild
+npx expo run:ios
 
-# For expo users using EAS
+# For Android
+npx expo prebuild
+npx expo run:android
+```
+
+If you're using Expo with EAS, create a new build:
+
+```bash
 npx eas-cli build --profile development
 ```
+
+Don't forget to install the new build on your device!
 
 ### Configure outbound requests
 
