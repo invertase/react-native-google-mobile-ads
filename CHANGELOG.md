@@ -1,3 +1,10 @@
+## [12.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.1.2...v12.2.0) (2023-09-25)
+
+
+### Features
+
+* **deps:** mobile ads sdk upgrade - ios 10.10.0 android 22.4.0 ([96b2450](https://github.com/invertase/react-native-google-mobile-ads/commit/96b24509e476f62373d6b98b0bce62caf27e6c1e))
+
 ### [12.1.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.1.1...v12.1.2) (2023-09-11)
 
 
