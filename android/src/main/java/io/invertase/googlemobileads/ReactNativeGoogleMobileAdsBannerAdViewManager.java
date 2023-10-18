@@ -155,9 +155,42 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     reactViewGroup.setPropsChanged(false);
   }
 
-  private BaseAdView initAdView(ReactNativeAdView reactViewGroup) {
+  // added: create function to use in onAdsOpened and onAdsLoaded
+  private WritableMap displayAds(@NonNull ReactNativeAdView reactViewGroup, BaseAdView adView) {
+    AdSize adSize = adView.getAdSize();
+    int left, top, width, height;
+    if (reactViewGroup.getIsFluid()) {
+      // TODO size=FLUID is still not working
+      left = 0;
+      top = 0;
+      width = reactViewGroup.getWidth();
+      height = reactViewGroup.getHeight();
+    } else {
+      left = adView.getLeft();
+      top = adView.getTop();
+      width = adSize.getWidthInPixels(reactViewGroup.getContext());
+      height = adSize.getHeightInPixels(reactViewGroup.getContext());
+    }
+    adView.measure(width, height);
+    adView.layout(left, top, left + width, top + height);
+
+    WritableMap payload = Arguments.createMap();
+    payload.putDouble("width", PixelUtil.toDIPFromPixel(width));
+    payload.putDouble("height", PixelUtil.toDIPFromPixel(height));
+
+    // Ref: Collapsible banner ads are only available for Google demand during the beta period. Ads served through mediation show as normal, non-collapsible banner ads.
     BaseAdView oldAdView = getAdView(reactViewGroup);
     if (oldAdView != null) {
+      reactViewGroup.removeView(oldAdView);
+      reactViewGroup.addView(adView);
+    }
+    return payload;
+  }
+  private BaseAdView initAdView(ReactNativeAdView reactViewGroup) {
+    BaseAdView oldAdView = getAdView(reactViewGroup);
+
+    if (oldAdView != null) {
+
       oldAdView.setAdListener(null);
       if (oldAdView instanceof AdManagerAdView) {
         ((AdManagerAdView) oldAdView).setAppEventListener(null);
@@ -176,34 +209,21 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
         return null;
       }
     } else {
-      adView = new AdView(reactViewGroup.getContext());
+      // adView = new AdView(reactViewGroup.getContext());
+      Activity currentActivity = ((ReactContext) reactViewGroup.getContext()).getCurrentActivity();
+      if (currentActivity != null) {
+        adView = new AdView(currentActivity);
+      } else {
+        adView = new AdView(reactViewGroup.getContext());
+      }
     }
     adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
     adView.setAdListener(
         new AdListener() {
           @Override
           public void onAdLoaded() {
-            AdSize adSize = adView.getAdSize();
-            int left, top, width, height;
-            if (reactViewGroup.getIsFluid()) {
-              // TODO size=FLUID is still not working
-              left = 0;
-              top = 0;
-              width = reactViewGroup.getWidth();
-              height = reactViewGroup.getHeight();
-            } else {
-              left = adView.getLeft();
-              top = adView.getTop();
-              width = adSize.getWidthInPixels(reactViewGroup.getContext());
-              height = adSize.getHeightInPixels(reactViewGroup.getContext());
-            }
-            adView.measure(width, height);
-            adView.layout(left, top, left + width, top + height);
-
-            WritableMap payload = Arguments.createMap();
-            payload.putDouble("width", PixelUtil.toDIPFromPixel(width));
-            payload.putDouble("height", PixelUtil.toDIPFromPixel(height));
-
+            // added: call displayAds to refresh ads
+            WritableMap payload = displayAds(reactViewGroup, adView);
             sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
           }
 
@@ -216,11 +236,14 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
           @Override
           public void onAdOpened() {
+
             sendEvent(reactViewGroup, EVENT_AD_OPENED, null);
           }
 
           @Override
           public void onAdClosed() {
+            // added: call displayAds to refresh ads
+            WritableMap payload = displayAds(reactViewGroup, adView);
             sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
           }
         });
