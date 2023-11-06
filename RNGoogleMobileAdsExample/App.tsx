@@ -11,6 +11,7 @@ import {
 import {Test, TestRegistry, TestResult, TestRunner, TestType} from 'jet';
 
 import MobileAds, {
+  type PaidEvent,
   AdEventType,
   AdsConsent,
   AdsConsentDebugGeography,
@@ -19,6 +20,7 @@ import MobileAds, {
   TestIds,
   BannerAd,
   BannerAdSize,
+  RevenuePrecisions,
   RewardedAd,
   RewardedAdEventType,
   useInterstitialAd,
@@ -43,6 +45,9 @@ class AppOpenTest implements Test {
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = appOpen.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} app open ad event: ${type}`);
+      if (type === AdEventType.PAID) {
+        console.log(payload);
+      }
       if (type === AdEventType.ERROR) {
         console.log(`${Platform.OS} app open error: ${payload?.message}`);
       }
@@ -115,6 +120,9 @@ class InterstitialTest implements Test {
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = interstitial.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} interstitial ad event: ${type}`);
+      if (type === AdEventType.PAID) {
+        console.log('Paid', payload);
+      }
       if (type === AdEventType.ERROR) {
         console.log(`${Platform.OS} interstitial error: ${payload?.message}`);
       }
@@ -197,6 +205,13 @@ class BannerTest implements Test {
           requestOptions={{
             requestNonPersonalizedAdsOnly: true,
           }}
+          onPaid={(event: PaidEvent) => {
+            console.log(
+              `Paid: ${event.value} ${event.currency} (precision ${
+                RevenuePrecisions[event.precision]
+              }})`,
+            );
+          }}
         />
       </View>
     );
@@ -226,6 +241,9 @@ class RewardedTest implements Test {
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = rewarded.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} rewarded ad event: ${type}`);
+      if (type === AdEventType.PAID) {
+        console.log(payload);
+      }
       if (type === AdEventType.ERROR) {
         console.log(
           `${Platform.OS} rewarded error: ${(payload as Error).message}`,
@@ -303,6 +321,9 @@ class RewardedInterstitialTest implements Test {
     this.adListener = rewardedInterstitial.addAdEventsListener(
       ({type, payload}) => {
         console.log(`${Platform.OS} rewarded interstitial ad event: ${type}`);
+        if (type === AdEventType.PAID) {
+          console.log(payload);
+        }
         if (type === AdEventType.ERROR) {
           console.log(
             `${Platform.OS} rewarded interstitial error: ${

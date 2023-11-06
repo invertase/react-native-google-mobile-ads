@@ -1,5 +1,6 @@
 import { BannerAdSize, GAMBannerAdSize } from '../BannerAdSize';
 import { AppEvent } from './AppEvent';
+import type { PaidEventListener } from './PaidEventListener';
 import { RequestOptions } from './RequestOptions';
 
 /**
@@ -71,6 +72,12 @@ export interface BannerAdProps {
    * Called when the user is about to return to the app after tapping on an ad.
    */
   onAdClosed?: () => void;
+
+  /**
+   * Called when ad generates revenue.
+   * See: https://developers.google.com/admob/android/impression-level-ad-revenue
+   */
+  onPaid?: PaidEventListener;
 }
 
 /**

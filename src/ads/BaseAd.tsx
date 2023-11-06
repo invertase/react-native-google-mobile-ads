@@ -19,6 +19,7 @@
 import React, { useState, useEffect } from 'react';
 import { NativeSyntheticEvent } from 'react-native';
 import { isFunction } from '../common';
+import { RevenuePrecisions } from '../common/constants';
 import { NativeError } from '../internal/NativeError';
 import GoogleMobileAdsBannerView from './GoogleMobileAdsBannerViewNativeComponent';
 import type { NativeEvent } from './GoogleMobileAdsBannerViewNativeComponent';
@@ -80,6 +81,12 @@ export const BaseAd = React.forwardRef<
           type: 'onAppEvent';
           name: string;
           data?: string;
+        }
+      | {
+          type: 'onPaid';
+          currency: string;
+          precision: RevenuePrecisions;
+          value: number;
         };
     const { type } = nativeEvent;
 
@@ -103,6 +110,16 @@ export const BaseAd = React.forwardRef<
             data: nativeEvent.data,
           };
           if ((eventHandler = props[type])) eventHandler(eventPayload);
+          break;
+        case 'onPaid':
+          const handler = props[type];
+          if (handler) {
+            handler({
+              currency: nativeEvent.currency,
+              precision: nativeEvent.precision,
+              value: nativeEvent.value,
+            });
+          }
           break;
         default:
           if ((eventHandler = props[type])) eventHandler();
