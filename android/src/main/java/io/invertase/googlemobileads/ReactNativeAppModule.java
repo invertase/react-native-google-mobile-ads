@@ -166,7 +166,8 @@ public class ReactNativeAppModule extends ReactNativeModule {
     // constants.put("FIREBASE_RAW_JSON", ReactNativeJSON.getSharedInstance().getRawJSON());
 
     // Precision types in ad revenue events.
-    // See: https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
+    // See:
+    // https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
     constants.put("REVENUE_PRECISION_UNKNOWN", AdValue.PrecisionType.UNKNOWN);
     constants.put("REVENUE_PRECISION_ESTIMATED", AdValue.PrecisionType.ESTIMATED);
     constants.put("REVENUE_PRECISION_PUBLISHER_PROVIDED", AdValue.PrecisionType.PUBLISHER_PROVIDED);

@@ -182,16 +182,17 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       adView = new AdView(reactViewGroup.getContext());
     }
     adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-    adView.setOnPaidEventListener(new OnPaidEventListener() {
-        @Override
-        public void onPaidEvent(AdValue adValue) {
-          WritableMap payload = Arguments.createMap();
-          payload.putDouble("value", 1e-6 * adValue.getValueMicros());
-          payload.putDouble("precision", adValue.getPrecisionType());
-          payload.putString("currency", adValue.getCurrencyCode());
-          sendEvent(reactViewGroup, EVENT_PAID, payload);
-        }
-      });
+    adView.setOnPaidEventListener(
+        new OnPaidEventListener() {
+          @Override
+          public void onPaidEvent(AdValue adValue) {
+            WritableMap payload = Arguments.createMap();
+            payload.putDouble("value", 1e-6 * adValue.getValueMicros());
+            payload.putDouble("precision", adValue.getPrecisionType());
+            payload.putString("currency", adValue.getCurrencyCode());
+            sendEvent(reactViewGroup, EVENT_PAID, payload);
+          }
+        });
     adView.setAdListener(
         new AdListener() {
           @Override
