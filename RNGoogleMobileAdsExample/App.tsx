@@ -444,7 +444,7 @@ class AdConsentTest implements Test {
 }
 
 const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
-  const {load, show, error, isLoaded, isClicked, isClosed, isOpened} =
+  const {load, show, error, isLoaded, isClicked, isClosed, isOpened, revenue} =
     useInterstitialAd(TestIds.INTERSTITIAL);
   useEffect(() => {
     load();
@@ -459,6 +459,10 @@ const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
       `${Platform.OS} interstitial hook state - loaded/opened/clicked/closed: ${isLoaded}/${isOpened}/${isClicked}/${isClosed}`,
     );
   }, [isLoaded, isOpened, isClicked, isClosed]);
+
+  if (revenue) {
+    console.log('Revenue', revenue);
+  }
 
   return (
     <View style={styles.testSpacing} ref={ref}>
