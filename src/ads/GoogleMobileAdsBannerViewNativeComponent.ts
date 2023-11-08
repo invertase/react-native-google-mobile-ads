@@ -12,6 +12,9 @@ export type NativeEvent = {
   message?: string;
   name?: string;
   data?: string;
+  currency?: string;
+  precision?: Float;
+  value?: Float;
 };
 
 export interface NativeProps extends ViewProps {
