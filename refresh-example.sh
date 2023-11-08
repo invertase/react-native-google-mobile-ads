@@ -28,6 +28,10 @@ else
   # Our e2e tests themselves are obviously custom
   mkdir -p TEMP/e2e
   cp -r RNGoogleMobileAdsExample/e2e/* TEMP/e2e/
+
+  # We may have patches
+  mkdir -p TEMP/patches
+  cp -r RNGoogleMobileAdsExample/patches/* TEMP/patches
 fi
 
 # Purge the old sample
@@ -38,9 +42,14 @@ npm_config_yes=true npx react-native init RNGoogleMobileAdsExample --skip-instal
 pushd RNGoogleMobileAdsExample
 rm -rf .ruby-version Gemfile Gemfile.lock _ruby-version _bundle .bundle
 yarn add 'link:../'
-yarn add detox mocha jest-circus jest-environment-node @babel/preset-env typescript --dev
+yarn add detox@19 mocha jest-circus jest-environment-node @babel/preset-env typescript --dev
 #yarn add 'link:../../jet/'
 yarn add https://github.com/invertase/jet#@mikehardy/jet-next --dev
+
+# In case we have patches, add this:
+yarn add patch-package --dev
+npm_config_yes=true npx json -I -f package.json -e 'this.scripts.postinstall = "patch-package"'
+yarn
 
 # Java build tweak - or gradle runs out of memory during the build
 # echo "Increasing memory available to gradle for android java build"
@@ -58,7 +67,7 @@ sed -i -e $'s/rootProject.name = \'RNGoogleMobileAdsExample\'/rootProject.name =
 rm -f android/settings.gradle??
 
 # React-native builds on iOS are very noisy with warnings in other packages that drown our warnings out. Reduce warnings to just our packages.
-sed -i -e $'s/__apply_Xcode_12_5_M1_post_install_workaround(installer)/__apply_Xcode_12_5_M1_post_install_workaround(installer)\\\n\\\n    # quiet non-module warnings - only interested in google-mobile-ads warnings\\\n    installer.pods_project.targets.each do |target|\\\n      if !target.name.include? "react-native-google-mobile-ads"\\\n        target.build_configurations.each do |config|\\\n          config.build_settings["GCC_WARN_INHIBIT_ALL_WARNINGS"] = "YES"\\\n        end\\\n      end\\\n    end/' ios/Podfile
+sed -i -e $'s/post_install do |installer|/post_install do |installer|\\\n\\\n    # quiet non-module warnings - only interested in google-mobile-ads warnings\\\n    installer.pods_project.targets.each do |target|\\\n      if !target.name.include? "react-native-google-mobile-ads"\\\n        target.build_configurations.each do |config|\\\n          config.build_settings["GCC_WARN_INHIBIT_ALL_WARNINGS"] = "YES"\\\n        end\\\n      end\\\n    end\\\n/' ios/Podfile
 rm -f ios/Podfile??
 
 # We want to easily test normal android release build setup, which is with proguard on
@@ -67,10 +76,10 @@ rm -f android/app/build.gradle??
 sed -i -e $'s/proguardFiles/proguardFile "${rootProject.projectDir}\/..\/node_modules\/detox\/android\/detox\/proguard-rules-app.pro"\\\n            proguardFiles/' android/app/build.gradle
 rm -f android/app/build.gradle??
 
-# This is just a speed optimization, very optional, but asks xcodebuild to use clang and clang++ without the fully-qualified path
+# Optional: build performance optimization to use ccache - asks xcodebuild to use clang and clang++ without the fully-qualified path
 # That means that you can then make a symlink in your path with clang or clang++ and have it use a different binary
 # In that way you can install ccache or buildcache and get much faster compiles...
-sed -i -e $'s/__apply_Xcode_12_5_M1_post_install_workaround(installer)/__apply_Xcode_12_5_M1_post_install_workaround(installer)\\\n\\\n    installer.pods_project.targets.each do |target|\\\n      target.build_configurations.each do |config|\\\n        config.build_settings["CC"] = "clang"\\\n        config.build_settings["LD"] = "clang"\\\n        config.build_settings["CXX"] = "clang++"\\\n        config.build_settings["LDPLUSPLUS"] = "clang++"\\\n      end\\\n    end/' ios/Podfile
+sed -i -e $'s/post_install do |installer|/post_install do |installer|\\\n    installer.pods_project.targets.each do |target|\\\n      target.build_configurations.each do |config|\\\n        config.build_settings["CC"] = "clang"\\\n        config.build_settings["LD"] = "clang"\\\n        config.build_settings["CXX"] = "clang++"\\\n        config.build_settings["LDPLUSPLUS"] = "clang++"\\\n      end\\\n    end\\\n/' ios/Podfile
 rm -f ios/Podfile??
 
 # run pod install after installing our module
