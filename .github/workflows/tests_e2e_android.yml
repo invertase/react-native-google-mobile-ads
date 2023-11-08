@@ -53,11 +53,11 @@ jobs:
         with:
           node-version: 18
 
-      - name: Configure JDK 1.11
+      - name: Configure JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '11' # ubuntu-latest is about to default to 11, force it everywhere
+          java-version: '17'
 
       # Set path variables needed for caches
       - name: Set workflow variables
