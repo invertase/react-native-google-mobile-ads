@@ -26,7 +26,7 @@ jobs:
           node-version: 18
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
+        run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
       - uses: actions/cache@v2
         name: Yarn Cache
         id: yarn-cache
@@ -72,7 +72,7 @@ jobs:
           node-version: 18
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
+        run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
       - uses: actions/cache@v3
         name: Yarn Cache
         id: yarn-cache
@@ -104,7 +104,7 @@ jobs:
   #         node-version: 18
   #     - name: Get yarn cache directory path
   #       id: yarn-cache-dir-path
-  #       run: echo "::set-output name=dir::$(yarn cache dir)"
+  #       run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
   #     - uses: actions/cache@v2
   #       name: Yarn Cache
   #       id: yarn-cache
