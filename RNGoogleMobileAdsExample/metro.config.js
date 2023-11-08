@@ -1,9 +1,4 @@
-/**
- * Metro configuration for React Native
- * https://github.com/facebook/react-native
- *
- * @format
- */
+const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 
 const path = require('path');
 const fs = require('fs');
@@ -14,8 +9,10 @@ function escapeRegExp(string) {
   return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-// NOTE: The Metro bundler does not support symlinks (see https://github.com/facebook/metro/issues/1), which NPM uses for local packages.
-//       To work around this, we supplement the logic to follow symbolic links.
+// NOTE: The metro bundler is *supposed* to support symbolic links but I (@mikehardy) was unable to get the support to work
+//       I had problems similar to: https://github.com/facebook/metro/issues/1029#issuecomment-1759769002
+//       So I implemented the new "config merging", but the config we merge in is the augmented package
+//       resolution style from before metro supported native symbolic links
 
 // Create a mapping of package ids to linked directories.
 function processModuleSymLinks() {
@@ -71,7 +68,7 @@ const [moduleMappings, moduleExclusions] = processModuleSymLinks();
 console.log('Mapping the following sym linked packages:');
 console.log(moduleMappings);
 
-module.exports = {
+const config = {
   transformer: {
     getTransformOptions: async () => ({
       transform: {
@@ -103,3 +100,5 @@ module.exports = {
   // Also additionally watch all the mapped local directories for changes to support live updates.
   watchFolders: Object.values(moduleMappings),
 };
+
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);
