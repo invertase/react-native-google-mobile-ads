@@ -92,6 +92,25 @@ class RNGoogleMobileAdsFullScreenAd<T>: NSObject where T : GADFullScreenPresenti
         return
       }
       
+      let paidEventHandler = {(value: GADAdValue) in
+        self.sendAdEvent(
+          "paid",
+          requestId: requestId,
+          adUnitId: adUnitId,
+          error: nil,
+          data: [
+            "value": value.value,
+            "precision": value.precision.rawValue,
+            "currency": value.currencyCode,
+          ]
+        );
+      };
+
+      (ad as? GADRewardedAd)?.paidEventHandler = paidEventHandler;
+      (ad as? GADRewardedInterstitialAd)?.paidEventHandler = paidEventHandler;
+      (ad as? GADInterstitialAd)?.paidEventHandler = paidEventHandler;
+      (ad as? GADAppOpenAd)?.paidEventHandler = paidEventHandler;
+
       if (ad is GADRewardedAd || ad is GADRewardedInterstitialAd) {
         if let serverSideVerificationOptions =
             adRequestOptions["serverSideVerificationOptions"] as? Dictionary<String, Any> {

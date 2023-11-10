@@ -24,8 +24,10 @@ import com.facebook.react.bridge.*
 import com.google.android.gms.ads.AdLoadCallback
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.OnPaidEventListener;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.admanager.AdManagerInterstitialAd
+import com.google.android.gms.ads.appopen.AppOpenAd
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
@@ -148,6 +150,27 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
         val adHelper = ReactNativeGoogleMobileAdsAdHelper(ad)
         var eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_LOADED
         var data: WritableMap? = null
+
+        var paidEventListener = OnPaidEventListener { adValue ->
+          val payload = Arguments.createMap()
+          payload.putDouble("value", 1e-6 * adValue.getValueMicros());
+          payload.putDouble("precision", 1.0 * adValue.getPrecisionType());
+          payload.putString("currency", adValue.getCurrencyCode());
+          sendAdEvent(
+            ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_PAID,
+            requestId,
+            adUnitId,
+            null,
+            payload
+          )
+        }
+
+        when (ad) {
+          is AdManagerInterstitialAd -> ad.onPaidEventListener = paidEventListener
+          is AppOpenAd -> ad.onPaidEventListener = paidEventListener
+          is RewardedAd -> ad.onPaidEventListener = paidEventListener
+          is RewardedInterstitialAd -> ad.onPaidEventListener = paidEventListener
+        }
 
         if (ad is RewardedAd || ad is RewardedInterstitialAd) {
           eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED

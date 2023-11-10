@@ -44,4 +44,5 @@ export { useAppOpenAd } from './hooks/useAppOpenAd';
 export { useInterstitialAd } from './hooks/useInterstitialAd';
 export { useRewardedAd } from './hooks/useRewardedAd';
 export { useRewardedInterstitialAd } from './hooks/useRewardedInterstitialAd';
+export { RevenuePrecisions } from './common/constants';
 export * from './types';

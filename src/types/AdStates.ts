@@ -1,4 +1,5 @@
 import { AdShowOptions } from './AdShowOptions';
+import type { PaidEvent } from './PaidEventListener';
 import { RewardedAdReward } from './RewardedAdReward';
 
 export interface AdStates {
@@ -22,6 +23,10 @@ export interface AdStates {
    * JavaScript Error containing the error code and message thrown by the Ad.
    */
   error?: Error;
+  /**
+   * Payload from the last impression-level ad revenue event.
+   */
+  revenue?: PaidEvent;
   /**
    * Loaded reward item of the Rewarded Ad.
    */

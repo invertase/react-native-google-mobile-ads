@@ -109,6 +109,14 @@ using namespace facebook::react;
   } else {
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
   }
+  _banner.paidEventHandler = ^(GADAdValue *_Nonnull value) {
+    std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
+        _eventEmitter)
+        ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent {
+          .type = "onPaid", .value = value.value.doubleValue,
+          .precision = @(value.precision).doubleValue, .currency = value.currencyCode.UTF8String
+        });
+  };
   _banner.rootViewController = [UIApplication sharedApplication].delegate.window.rootViewController;
   _banner.delegate = self;
 }
