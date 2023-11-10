@@ -1,3 +1,10 @@
+## [12.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.3.0...v12.4.0) (2023-11-10)
+
+
+### Features
+
+* exposes impression-level ad revenue events ([969dbfa](https://github.com/invertase/react-native-google-mobile-ads/commit/969dbfac50a4147531e7d06f1fbbf0ea80426c96))
+
 ## [12.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.2.0...v12.3.0) (2023-10-08)
 
 
