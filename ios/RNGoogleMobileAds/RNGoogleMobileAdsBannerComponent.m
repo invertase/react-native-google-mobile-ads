@@ -95,6 +95,14 @@
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];
+  _banner.paidEventHandler = ^(GADAdValue *_Nonnull value) {
+    [self sendEvent:@"onPaid"
+            payload:@{
+              @"value" : value.value,
+              @"precision" : @(value.precision),
+              @"currency" : value.currencyCode,
+            }];
+  };
   [_banner loadRequest:[RNGoogleMobileAdsCommon buildAdRequest:_request]];
   [self sendEvent:@"onSizeChange"
           payload:@{

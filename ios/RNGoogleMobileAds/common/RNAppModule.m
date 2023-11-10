@@ -17,6 +17,10 @@
 
 #import <React/RCTUtils.h>
 
+#if !TARGET_OS_MACCATALYST
+#import <GoogleMobileAds/GoogleMobileAds.h>
+#endif
+
 #import "RNAppModule.h"
 #import "RNJSON.h"
 #import "RNMeta.h"
@@ -148,6 +152,15 @@ RCT_EXPORT_METHOD(removeListeners : (NSInteger)count) {
   NSMutableDictionary *constants = [NSMutableDictionary new];
 
   constants[@"ADMOB_RAW_JSON"] = [[RNJSON shared] getRawJSON];
+
+  // Precision types in ad revenue events.
+  // See: https://developers.google.com/admob/ios/impression-level-ad-revenue#objective-c
+#if !TARGET_OS_MACCATALYST
+  constants[@"REVENUE_PRECISION_UNKNOWN"] = @(GADAdValuePrecisionUnknown);
+  constants[@"REVENUE_PRECISION_ESTIMATED"] = @(GADAdValuePrecisionEstimated);
+  constants[@"REVENUE_PRECISION_PUBLISHER_PROVIDED"] = @(GADAdValuePrecisionPublisherProvided);
+  constants[@"REVENUE_PRECISION_PRECISE"] = @(GADAdValuePrecisionPrecise);
+#endif
 
   return constants;
 }

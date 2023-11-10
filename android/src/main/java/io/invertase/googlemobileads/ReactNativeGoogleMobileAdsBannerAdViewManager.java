@@ -35,9 +35,11 @@ import com.facebook.react.views.view.ReactViewGroup;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdValue;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.BaseAdView;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.OnPaidEventListener;
 import com.google.android.gms.ads.admanager.AdManagerAdView;
 import com.google.android.gms.ads.admanager.AppEventListener;
 import io.invertase.googlemobileads.common.ReactNativeAdView;
@@ -57,6 +59,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private final String EVENT_AD_FAILED_TO_LOAD = "onAdFailedToLoad";
   private final String EVENT_AD_OPENED = "onAdOpened";
   private final String EVENT_AD_CLOSED = "onAdClosed";
+  private final String EVENT_PAID = "onPaid";
   private final String EVENT_SIZE_CHANGE = "onSizeChange";
   private final String EVENT_APP_EVENT = "onAppEvent";
   private final int COMMAND_ID_RECORD_MANUAL_IMPRESSION = 1;
@@ -179,6 +182,17 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       adView = new AdView(reactViewGroup.getContext());
     }
     adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+    adView.setOnPaidEventListener(
+        new OnPaidEventListener() {
+          @Override
+          public void onPaidEvent(AdValue adValue) {
+            WritableMap payload = Arguments.createMap();
+            payload.putDouble("value", 1e-6 * adValue.getValueMicros());
+            payload.putDouble("precision", adValue.getPrecisionType());
+            payload.putString("currency", adValue.getCurrencyCode());
+            sendEvent(reactViewGroup, EVENT_PAID, payload);
+          }
+        });
     adView.setAdListener(
         new AdListener() {
           @Override

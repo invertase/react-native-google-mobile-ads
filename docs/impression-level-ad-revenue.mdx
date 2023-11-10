@@ -1,0 +1,41 @@
+# Impression-level ad revenue
+
+[Impression-level ad revenue] helps to calculate more precise data on
+the lifetime value (LTV) of app users. When enabled, AdMob sends back
+the ad revenue for each ad impression shown on the user's device. This
+data can be used to understand users' activities.
+
+To use this feature:
+
+1.  Enable the feature in the AdMob console, as explained in
+    the [Impression-level ad revenue] documentation.
+
+2.  For banner ad components use their `onPaid` prop to setup ad revenue event
+    listeners. It should have the signature `(event: PaidEvent) => void`.
+
+    For &laquo;full-screen&raquo; ads (app open, interstitial, _etc._) use
+    their `addAdEventListener` methods to setup a listener, and look for
+    the event with type `paid`, which payload will be a `PaidEvent` object.
+
+    For &laquo;full-screen&raquo; displayed using hooks, the hooks return
+    optional `revenue` value. If present, it keeps the last received `PaidEvent`
+    for the ad.
+
+The `PaidEvent` type is:
+
+```ts
+type PaidEvent = {
+  currency: string;
+  precision: RevenuePrecisions;
+  value: number;
+};
+```
+
+where `RevenuePrecisions` is an enum with keys `ESTIMATED`, `PRECISE`,
+`PUBLISHER_PROVIDED`, and `UNKNOWN`. It can be imported from the library as
+
+```ts
+import { RevenuePrecisions } from 'react-native-google-mobile-ads';
+```
+
+[Impression-level ad revenue]: https://support.google.com/admob/answer/11322405?hl=en

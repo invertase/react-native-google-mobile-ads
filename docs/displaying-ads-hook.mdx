@@ -90,6 +90,7 @@ Return values of the hook are:
 | isClosed       | boolean                            | Whether your ad is dismissed.                                                                                      |
 | isShowing      | boolean                            | Whether your ad is showing. The value is equal with `isOpened && !isClosed`.                                       |
 | error          | Error \| undefined                 | `Error` object throwed during ad load.                                                                             |
+| revenue        | PaidEvent                          | See [Impression-level ad revenue] |
 | reward         | [RewardedAdReward](#) \| undefined | Loaded reward item of the Rewarded Ad. Available only in RewardedAd.                                               |
 | isEarnedReward | boolean                            | Whether the user earned the reward by Rewarded Ad.                                                                 |
 | load           | Function                           | Start loading the advert with the provided RequestOptions.                                                         |
@@ -98,3 +99,5 @@ Return values of the hook are:
 > Note that `isOpened` value remains `true` even after the ad is closed.
 > The value changes to `false` when ad is initialized via calling `load()`.
 > To determine whether the ad is currently showing, use `isShowing` value.
+
+[Impression-level ad revenue]: /impression-level-ad-revenue
