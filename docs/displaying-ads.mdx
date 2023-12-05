@@ -22,7 +22,6 @@ import { AppOpenAd, TestIds, AdEventType } from 'react-native-google-mobile-ads'
 const adUnitId = __DEV__ ? TestIds.APP_OPEN : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const appOpenAd = AppOpenAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 
@@ -76,7 +75,6 @@ import { InterstitialAd, TestIds, AdEventType } from 'react-native-google-mobile
 const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 ```
@@ -99,7 +97,6 @@ import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile
 const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 
@@ -164,7 +161,6 @@ import { RewardedAd, TestIds } from 'react-native-google-mobile-ads';
 const adUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const rewarded = RewardedAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 ```
@@ -187,7 +183,6 @@ import { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mo
 const adUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const rewarded = RewardedAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 
@@ -286,7 +281,6 @@ const adUnitId = __DEV__
   : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 ```
@@ -315,7 +309,6 @@ const adUnitId = __DEV__
   : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 
@@ -416,10 +409,6 @@ function App() {
     <BannerAd
       unitId={adUnitId}
       size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-      requestOptions={{
-        // Optional request options
-        requestNonPersonalizedAdsOnly: true,
-      }}
     />
   );
 }
@@ -488,9 +477,6 @@ function App() {
     <GAMBannerAd
       unitId={adUnitId}
       sizes={[BannerAdSize.FULL_BANNER]}
-      requestOptions={{
-        requestNonPersonalizedAdsOnly: true,
-      }}
     />
   );
 }
