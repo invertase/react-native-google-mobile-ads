@@ -189,7 +189,12 @@ class BannerTest implements Test {
   }
 
   getPath(): string {
-    return this.bannerAdSize;
+    return this.bannerAdSize
+      .split('_')
+      .map(
+        s => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1),
+      )
+      .join('');
   }
 
   getTestType(): TestType {
@@ -212,6 +217,43 @@ class BannerTest implements Test {
                 RevenuePrecisions[event.precision]
               }})`,
             );
+          }}
+        />
+      </View>
+    );
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
+    }
+  }
+}
+
+class CollapsibleBannerTest implements Test {
+  getPath(): string {
+    return 'CollapsibleBanner';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return (
+      <View ref={onMount}>
+        <BannerAd
+          unitId={TestIds.ADAPTIVE_BANNER}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{
+            networkExtras: {
+              collapsible: 'top',
+            },
           }}
         />
       </View>
@@ -918,6 +960,7 @@ class DebugMenuTest implements Test {
 Object.keys(BannerAdSize).forEach(bannerAdSize => {
   TestRegistry.registerTest(new BannerTest(bannerAdSize));
 });
+TestRegistry.registerTest(new CollapsibleBannerTest());
 TestRegistry.registerTest(new AppOpenTest());
 TestRegistry.registerTest(new InterstitialTest());
 TestRegistry.registerTest(new RewardedTest());
