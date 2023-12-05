@@ -14,9 +14,7 @@ Google AdMob dashboard under "Ad units" should be used:
 import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
 export default function App() {
-  const interstitialAd = useInterstitialAd(TestIds.Interstitial, {
-    requestNonPersonalizedAdsOnly: true,
-  });
+  const interstitialAd = useInterstitialAd(TestIds.Interstitial);
 
   return <View>{/* ... */}</View>;
 }
@@ -38,9 +36,7 @@ The hook returns several states and functions to control ad.
 import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
 export default function App({ navigation }) {
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(TestIds.INTERSTITIAL, {
-    requestNonPersonalizedAdsOnly: true,
-  });
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(TestIds.INTERSTITIAL);
 
   useEffect(() => {
     // Start loading the interstitial straight away

@@ -206,9 +206,6 @@ class BannerTest implements Test {
               : TestIds.BANNER
           }
           size={this.bannerAdSize}
-          requestOptions={{
-            requestNonPersonalizedAdsOnly: true,
-          }}
           onPaid={(event: PaidEvent) => {
             console.log(
               `Paid: ${event.value} ${event.currency} (precision ${
