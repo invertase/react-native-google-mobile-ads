@@ -417,6 +417,7 @@ function App() {
       unitId={adUnitId}
       size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
       requestOptions={{
+        // Optional request options
         requestNonPersonalizedAdsOnly: true,
       }}
     />
@@ -444,6 +445,33 @@ or network triggers an event:
 
 Each render of the component loads a single advert, allowing you to display multiple adverts at once. If you need to reload/change
 an advert for a currently mounted component, you'll need to force a re-render inside of your own code.
+
+### Collapsible banner ads
+
+Collapsible banner ads are banner ads that are initially presented as a larger overlay, with a button to collapse them to the originally requested banner size.
+Collapsible banner ads are intended to improve performance of anchored ads that are otherwise a smaller size.
+This guide shows how to turn on collapsible banner ads for existing banner placements.
+
+```js
+import React from 'react';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+
+function App() {
+  return (
+    <BannerAd
+      unitId={adUnitId}
+      size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+      requestOptions={{
+        networkExtras: {
+          collapsible: 'bottom',
+        },
+      }}
+    />
+  );
+}
+```
 
 ### Displaying Google Ad Manager Banner
 
