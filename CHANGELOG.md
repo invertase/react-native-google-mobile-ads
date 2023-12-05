@@ -1,3 +1,10 @@
+### [12.5.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.5.0...v12.5.1) (2023-12-05)
+
+
+### Bug Fixes
+
+* update demo ad ids ([324c213](https://github.com/invertase/react-native-google-mobile-ads/commit/324c2133cf988920a8688b6eefb37834c9aa2207))
+
 ## [12.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.4.0...v12.5.0) (2023-12-05)
 
 
