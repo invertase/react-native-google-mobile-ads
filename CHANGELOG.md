@@ -1,3 +1,15 @@
+## [12.6.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.5.1...v12.6.0) (2023-12-05)
+
+
+### Features
+
+* collapsible banner ads (beta) ([345aaae](https://github.com/invertase/react-native-google-mobile-ads/commit/345aaaebf8ed389861173dda435685cb59c85233))
+
+
+### Bug Fixes
+
+* remove redundant requestPersonalizedAdsOnly from docs (replaced by UMP) ([79468a7](https://github.com/invertase/react-native-google-mobile-ads/commit/79468a75e7b9e4d48dda9302116a6c5738d570b3))
+
 ### [12.5.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.5.0...v12.5.1) (2023-12-05)
 
 
