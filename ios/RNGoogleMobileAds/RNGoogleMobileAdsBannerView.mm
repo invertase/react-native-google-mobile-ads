@@ -94,6 +94,13 @@ using namespace facebook::react;
   [super updateProps:props oldProps:oldProps];
 }
 
+- (void)dealloc {
+  if (_banner) {
+    [_banner removeFromSuperview];
+    _banner = nil;
+  }
+}
+
 #pragma mark - Methods
 
 - (void)initBanner:(GADAdSize)adSize {
