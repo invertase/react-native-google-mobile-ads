@@ -23,6 +23,13 @@
 
 @implementation RNGoogleMobileAdsBannerComponent
 
+- (void)dealloc {
+  if (_banner) {
+    [_banner removeFromSuperview];
+    _banner = nil;
+  }
+}
+
 - (void)didSetProps:(NSArray<NSString *> *)changedProps {
   if (_propsChanged) {
     [self requestAd];

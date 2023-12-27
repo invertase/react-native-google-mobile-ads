@@ -158,6 +158,20 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     reactViewGroup.setPropsChanged(false);
   }
 
+  @Override
+  public void onDropViewInstance(@NonNull ReactNativeAdView reactViewGroup) {
+    BaseAdView adView = getAdView(reactViewGroup);
+    if (adView != null) {
+      adView.setAdListener(null);
+      if (adView instanceof AdManagerAdView) {
+        ((AdManagerAdView) adView).setAppEventListener(null);
+      }
+      adView.destroy();
+      reactViewGroup.removeView(adView);
+    }
+    super.onDropViewInstance(reactViewGroup);
+  }
+
   private BaseAdView initAdView(ReactNativeAdView reactViewGroup) {
     BaseAdView oldAdView = getAdView(reactViewGroup);
     if (oldAdView != null) {
