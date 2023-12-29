@@ -48,33 +48,6 @@ To setup and configure ads consent collection, first of all:
 
 You'll need to generate a new development build before using it.
 
-### Delaying app measurement
-
-By default, the Google Mobile Ads SDK initializes app measurement and begins sending user-level event data to Google immediately when the app starts.
-If your app will be used by users within the EEA, it is important you prevent app measurement until your first ad has been requested (after consent).
-
-Within your projects `app.json` file, set the `delay_app_measurement_init` to `true` to delay app measurement:
-
-```json
-{
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "delay_app_measurement_init": true
-  }
-}
-```
-
-Once set, rebuild your application:
-
-```bash
-# For iOS
-npx react-native run-ios
-
-# For Android
-npx react-native run-android
-```
-
 ### App Tracking Transparency
 
 If you want to handle Apple's App Tracking Transparency requirements, ensure you've configured and published your [ATT message](https://developers.google.com/admob/ump/ios/quick-start#app_tracking_transparency) in your Google AdMob account.
@@ -131,6 +104,14 @@ import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
 const consentInfo = await AdsConsent.requestInfoUpdate();
 
 const { status } = await AdsConsent.loadAndShowConsentFormIfRequired();
+
+if (status.canRequestAds) {
+  // (iOS) Handle Apple's App Tracking Transparency.
+
+  // Initialize the Google Mobile Ads SDK.
+
+  // Request an ad...
+}
 ```
 
 > Do not persist the status. You could however store this locally in application state (e.g. React Context) and update the status on every app launch as it may change.
