@@ -103,9 +103,9 @@ import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
 
 const consentInfo = await AdsConsent.requestInfoUpdate();
 
-const { status } = await AdsConsent.loadAndShowConsentFormIfRequired();
+const { canRequestAds } = await AdsConsent.loadAndShowConsentFormIfRequired();
 
-if (status.canRequestAds) {
+if (canRequestAds) {
   // (iOS) Handle Apple's App Tracking Transparency.
 
   // Initialize the Google Mobile Ads SDK.
