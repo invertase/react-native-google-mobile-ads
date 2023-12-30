@@ -233,6 +233,11 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   }
 
   @ReactMethod
+  public void getConsentInfo(Promise promise) {
+    promise.resolve(getConsentInformation());
+  }
+
+  @ReactMethod
   public void reset() {
     consentInformation.reset();
   }

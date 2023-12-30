@@ -74,6 +74,19 @@ export interface AdsConsentInterface {
   loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo>;
 
   /**
+   * Returns the UMP Consent Information from the last known session.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * const consentInfo = await AdsConsent.getConsentInfo();
+   * ```
+   */
+  getConsentInfo(): Promise<AdsConsentInfo>;
+
+  /**
    * Returns the value stored under the `IABTCF_TCString` key
    * in NSUserDefaults (iOS) / SharedPreferences (Android) as
    * defined by the IAB Europe Transparency & Consent Framework.
