@@ -95,11 +95,55 @@ see [Inspecting consent choices] below.
 
 ### Gathering user consent
 
-To request consent, call these methods as early as possible within your app before presenting any ads.
-Once the user has selected their preference, the `showForm` method returns an `AdsConsentFormResult` interface, containing the updated consent status:
+You should request an update of the user's consent information at every app launch, using `requestInfoUpdate`.
+This determines whether your user needs to provide consent if they haven't done so already, or if their consent has expired.
+
+After you have received the most up-to-date consent status, call `loadAndShowConsentFormIfRequired` to load a consent form.
+If the consent status is required, the SDK loads a form and immediately presents it.
+The completion handler is called after the form is dismissed. If consent is not required, the completion handler is called immediately.
+
+Before requesting ads in your app, check if you have obtained consent from the user using `canRequestAds`.
+If an error occurs during the consent gathering process, you should still attempt to request ads.
+The UMP SDK uses the consent status from the previous session.
 
 ```js
-import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
+import mobileAds, { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
+
+const isMobileAdsStartCalled = false;
+
+// Request an update for the consent information.
+AdsConsent.requestInfoUpdate().then(() => {
+
+  AdsConsent.loadAndShowConsentFormIfRequired().then(adsConsentInfo => {
+
+    // Consent has been gathered.
+    if (adsConsentInfo.canRequestAds) {
+      startGoogleMobileAdsSDK()
+    }
+  })
+})
+
+// Check if you can initialize the Google Mobile Ads SDK in parallel
+// while checking for new consent information. Consent obtained in
+// the previous session can be used to request ads.
+// So you can start loading ads as soon as possible after your app launches.
+const {canRequestAds} = await AdsConsent.getConsentInfo()
+if (canRequestAds) {
+  startGoogleMobileAdsSDK()
+}
+
+async function startGoogleMobileAdsSDK() {
+  if (isMobileAdsStartCalled) return;
+
+  isMobileAdsStartCalled = true;
+
+  // (iOS) Handle Apple's App Tracking Transparency.
+
+  // Initialize the Google Mobile Ads SDK.
+  await mobileAds().initialize()
+
+  // Request an ad...
+}
 
 const consentInfo = await AdsConsent.requestInfoUpdate();
 
