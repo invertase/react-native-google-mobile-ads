@@ -144,18 +144,6 @@ async function startGoogleMobileAdsSDK() {
 
   // Request an ad...
 }
-
-const consentInfo = await AdsConsent.requestInfoUpdate();
-
-const { canRequestAds } = await AdsConsent.loadAndShowConsentFormIfRequired();
-
-if (canRequestAds) {
-  // (iOS) Handle Apple's App Tracking Transparency.
-
-  // Initialize the Google Mobile Ads SDK.
-
-  // Request an ad...
-}
 ```
 
 > Do not persist the status. You could however store this locally in application state (e.g. React Context) and update the status on every app launch as it may change.
