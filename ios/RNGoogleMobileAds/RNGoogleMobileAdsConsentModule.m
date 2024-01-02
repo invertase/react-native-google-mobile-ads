@@ -217,4 +217,19 @@ RCT_EXPORT_METHOD(getTCString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRej
   }
 }
 
+RCT_EXPORT_METHOD(getGdprApplies
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  @try {
+    BOOL gdprApplies = [[NSUserDefaults standardUserDefaults] boolForKey:@"IABTCF_gdprApplies"];
+    resolve(@(gdprApplies));
+  } @catch (NSError *error) {
+    [RNSharedUtils rejectPromiseWithUserInfo:reject
+                                    userInfo:[@{
+                                      @"code" : @"consent-string-error",
+                                      @"message" : error.localizedDescription,
+                                    } mutableCopy]];
+  }
+}
+
 @end
