@@ -104,6 +104,10 @@ export const AdsConsent: AdsConsentInterface = {
     return TCString.decode(tcString);
   },
 
+  getGdprApplies(): Promise<boolean> {
+    return native.getGdprApplies();
+  },
+
   async getUserChoices(): Promise<AdsConsentUserChoices> {
     const tcString = await native.getTCString();
 
