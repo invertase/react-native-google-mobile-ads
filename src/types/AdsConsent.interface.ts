@@ -118,6 +118,25 @@ export interface AdsConsentInterface {
   getTCModel(): Promise<TCModel>;
 
   /**
+   * Returns the value stored under the `IABTCF_gdprApplies` key
+   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
+   * defined by the IAB Europe Transparency & Consent Framework.
+   *
+   * More information available here:
+   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * await AdsConsent.requestInfoUpdate();
+   * const gdprApplies = await AdsConsent.getGdprApplies();
+   * ```
+   */
+  getGdprApplies(): Promise<boolean>;
+
+  /**
    * Provides information about a user's consent choices.
    *
    * #### Example
