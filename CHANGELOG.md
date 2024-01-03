@@ -1,3 +1,10 @@
+## [12.8.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.7.1...v12.8.0) (2024-01-03)
+
+
+### Features
+
+* add method to check if gdpr applies ([011d68d](https://github.com/invertase/react-native-google-mobile-ads/commit/011d68d299a5ad88a13e7628b3d60d97c60380f4))
+
 ### [12.7.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.7.0...v12.7.1) (2023-12-31)
 
 
