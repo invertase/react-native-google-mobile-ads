@@ -33,6 +33,10 @@ if (configFile != null && configFile.exists()) {
   Object json = null
 
   try {
+    // The config may be either in Expo javascript (app.config.js) or JSON (app.json)
+    // If it is configured in Expo javascript, requiring it will generate a config
+    // If it is configured in JSON, requiring it will also generate the config
+    // So, use node to pull in the config file to get us a JSON string for either case
     def configOutput = [
       "node",
       "-e",
