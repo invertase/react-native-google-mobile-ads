@@ -33,23 +33,32 @@ if (configFile != null && configFile.exists()) {
   Object json = null
 
   try {
+    // On windows, we need to escape path separators in the path before exec'ing shell
+    def configFileAbsolutePath = configFile.absolutePath
+    if (System.properties['os.name'].toLowerCase().contains('windows')) {
+        configFileAbsolutePath = configFileAbsolutePath.replace("\\", "\\\\")
+    }
+    // rootProject.logger.warn "have a path of ${configFileAbsolutePath}"
+
     // The config may be either in Expo javascript (app.config.js) or JSON (app.json)
     // If it is configured in Expo javascript, requiring it will generate a config
     // If it is configured in JSON, requiring it will also generate the config
     // So, use node to pull in the config file to get us a JSON string for either case
-    def configOutput = [
+    def configOutput = new StringBuffer();
+    def configReadProc = [
       "node",
       "-e",
-      "console.log(JSON.stringify(require('${configFile.absolutePath}')));"
+      "console.log(JSON.stringify(require('${configFileAbsolutePath}')));"
     ]
     .execute(null, projectDir)
-    .text
-    .trim()
+    configReadProc.waitForProcessOutput(configOutput, System.err)
+    configOutput = configOutput.toString().trim()
+    // rootProject.logger.warn "got configOutput of ${configOutput.toString()}"
 
     if (configOutput && !configOutput.isEmpty()) {
-      json = new JsonSlurper().parseText(configOutput.toString())
+      json = new JsonSlurper().parseText(configOutput)
     } else {
-      rootProject.logger.warn ":${project.name} received empty output while parsing ${configFile} found at ${configFile.toString()}."
+      throw new Exception(":${project.name} received empty output while parsing ${configFile} found at ${configFile.toString()}.")
     }
   } catch (Exception ignored) {
     rootProject.logger.warn ":${project.name} failed to parse ${configFile} found at ${configFile.toString()}."
