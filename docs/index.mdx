@@ -12,7 +12,9 @@ yarn add react-native-google-mobile-ads
 On iOS if you need to use static frameworks (that is, `use_frameworks! :linkage => :static` in your `Podfile`) you must add the variable `$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`. You may need this if you use this module in combination with react-native-firebase v15 and higher since it requires `use_frameworks!`.
 
 Expo users may enable static frameworks by using the `expo-build-properties` plugin.
-To do so [follow the official `expo-build-properties` installation instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following code into your `app.json` file:
+To do so [follow the official `expo-build-properties` installation instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following code into your `app.json` or `app.config.js` file:
+
+#### app.json
 
 ```json
 {
@@ -27,6 +29,25 @@ To do so [follow the official `expo-build-properties` installation instructions]
         }
       ]
     ]
+  }
+}
+```
+
+#### app.config.js
+
+```js
+{
+  expo: {
+    plugins: [
+      [
+        'expo-build-properties',
+        {
+          ios: {
+            useFrameworks: 'static',
+          },
+        },
+      ],
+    ];
   }
 }
 ```
@@ -63,14 +84,16 @@ Before you are able to display ads to your users, you must have a [Google AdMob 
 "Apps" menu item, create or choose an existing Android/iOS app. Each app platform exposes a unique account ID which needs to
 be added to the project.
 
-> Attempting to build your app without a valid App ID in `app.json` will cause the app to crash on start or fail to build.
+> Attempting to build your app without a valid App ID in `app.json` or `app.config.js` will cause the app to crash on start or fail to build.
 
 Under the "App settings" menu item, you can find the "App ID":
 
 ![Google AdMob App ID](https://prismic-io.s3.amazonaws.com/invertase%2F52dd6900-108c-47a6-accb-699fde963b99_new+project+%2813%29.jpg)
 
-Within the root of your React Native project, open the `app.json` file and add the
+Within the root of your React Native project, open the `app.json` or (if using Expo) `app.config.js` file and add the
 `android_app_id` & `ios_app_id` keys with the IDs from the Google AdMob console:
+
+#### app.json
 
 ```json
 // <project-root>/app.json
@@ -82,8 +105,22 @@ Within the root of your React Native project, open the `app.json` file and add t
 }
 ```
 
+#### app.config.js
+
+```js
+// <project-root>/app.config.js
+module.exports = {
+  'react-native-google-mobile-ads': {
+    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+  },
+};
+```
+
 If you're an expo user, make sure the `react-native-google-mobile-ads` block is outside of the `expo` block!
 It should look like this:
+
+#### app.json
 
 ```json
 // <project-root>/app.json
@@ -96,6 +133,21 @@ It should look like this:
     "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
   }
 }
+```
+
+#### app.config.js
+
+```js
+// <project-root>/app.config.js
+module.exports = {
+  expo: {
+    // ...
+  },
+  'react-native-google-mobile-ads': {
+    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+  },
+};
 ```
 
 For the changes to take effect, rebuild your project:
@@ -188,7 +240,9 @@ If you are using mediation, you may wish to wait until the promise is settled be
 ### Enable SKAdNetwork to track conversions (iOS)
 
 The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google and participating third-party buyers attribute an app install even when the IDFA is not available.
-Within your projects `app.json` file, add the advised [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks):
+Within your projects `app.json`/`app.config.js` file, add the advised [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks):
+
+#### app.json
 
 ```json
 {
@@ -250,10 +304,28 @@ Within your projects `app.json` file, add the advised [SKAdNetwork identifiers](
 }
 ```
 
+#### app.config.js
+
+```js
+module.exports = {
+  'react-native-google-mobile-ads': {
+    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+    sk_ad_network_items: [
+      // list of network ids removed to avoid duplication
+      // please refer to the list in the `app.jaon` configuration section for the list of
+      // network ids you should include here and paste them into your `app.config.js` file
+    ],
+  },
+};
+```
+
 ### App Tracking Transparency (iOS)
 
 Apple requires apps to display the App Tracking Transparency authorization request for accessing the IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads).
-Within your projects `app.json` file, you have to use the `user_tracking_usage_description` to describe your usage:
+Within your projects `app.json` or `app.config.js` file, you have to use the `user_tracking_usage_description` to describe your usage:
+
+#### app.json
 
 ```json
 {
@@ -263,6 +335,19 @@ Within your projects `app.json` file, you have to use the `user_tracking_usage_d
     "user_tracking_usage_description": "This identifier will be used to deliver personalized ads to you."
   }
 }
+```
+
+#### app.config.js
+
+```js
+module.exports = {
+  'react-native-google-mobile-ads': {
+    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+    user_tracking_usage_description:
+      'This identifier will be used to deliver personalized ads to you.',
+  },
+};
 ```
 
 To request the App Tracking Transparency authorization we recommend using the [react-native-permissions](https://github.com/zoontek/react-native-permissions) library or making it part of the UMP consent flow [European User Consent page](/european-user-consent).
