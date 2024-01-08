@@ -16,6 +16,13 @@
 #
 set -e
 
+if [[ -f "$PODS_ROOT/../.xcode.env" ]]; then
+  source "$PODS_ROOT/../.xcode.env"
+fi
+if [[ -f "$PODS_ROOT/../.xcode.env.local" ]]; then
+  source "$PODS_ROOT/../.xcode.env.local"
+fi
+
 _MAX_LOOKUPS=2;
 _SEARCH_RESULT=''
 _RN_ROOT_EXISTS=''
@@ -23,11 +30,13 @@ _CURRENT_LOOKUPS=1
 _PROJECT_ABBREVIATION="RNGoogleMobileAds"
 _JSON_ROOT="'react-native-google-mobile-ads'"
 _JSON_FILE_NAME='app.json'
+_JS_APP_CONFIG_FILE_NAME='app.config.js'
 _JSON_OUTPUT_BASE64='e30=' # { }
 _CURRENT_SEARCH_DIR=${PROJECT_DIR}
 _PLIST_BUDDY=/usr/libexec/PlistBuddy
 _TARGET_PLIST="${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}"
 _DSYM_PLIST="${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist"
+_IS_CONFIG_JS=false
 
 # plist arrays
 _PLIST_ENTRY_KEYS=()
@@ -65,18 +74,36 @@ fi;
 
 while true; do
   _CURRENT_SEARCH_DIR=$(dirname "$_CURRENT_SEARCH_DIR")
-  if [[ "$_CURRENT_SEARCH_DIR" == "/" ]] || [[ ${_CURRENT_LOOKUPS} -gt ${_MAX_LOOKUPS} ]]; then break; fi;
-  echo "info:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME} file."
-  _SEARCH_RESULT=$(find "$_CURRENT_SEARCH_DIR" -maxdepth 2 -name ${_JSON_FILE_NAME} -print | /usr/bin/head -n 1)
-  if [[ ${_SEARCH_RESULT} ]]; then
-    echo "info:      ${_JSON_FILE_NAME} found at $_SEARCH_RESULT"
+
+  if [[ "$_CURRENT_SEARCH_DIR" == "/" ]] || [[ ${_CURRENT_LOOKUPS} -gt ${_MAX_LOOKUPS} ]]; then
     break;
   fi;
+
+  echo "info:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME}/${_JS_APP_CONFIG_FILE_NAME} file."
+
+  _SEARCH_RESULT=$(find "$_CURRENT_SEARCH_DIR" -maxdepth 2 \( -name ${_JSON_FILE_NAME} -o -name ${_JS_APP_CONFIG_FILE_NAME} \) -print | /usr/bin/head -n 1)
+
+  if [[ "$(basename ${_SEARCH_RESULT})" = "${_JS_APP_CONFIG_FILE_NAME}" ]]; then
+    _IS_CONFIG_JS=true
+    echo "info:      ${_JS_APP_CONFIG_FILE_NAME} found at $_SEARCH_RESULT"
+    break;
+  fi;
+
+  if [[ "$(basename ${_SEARCH_RESULT})" = "${_JSON_FILE_NAME}" ]]; then
+    echo "info:      ${_JSON_FILE_NAME} found at ${_SEARCH_RESULT}"
+    break;
+  fi;
+
   _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))
 done
 
 if [[ ${_SEARCH_RESULT} ]]; then
-  _JSON_OUTPUT_RAW=$(cat "${_SEARCH_RESULT}")
+  if [[ ${_IS_CONFIG_JS} == "true" ]]; then
+    _JSON_OUTPUT_RAW=$("${NODE_BINARY}" -e "console.log(JSON.stringify(require('${_SEARCH_RESULT}')));")
+  else
+    _JSON_OUTPUT_RAW=$(cat "${_SEARCH_RESULT}")
+  fi;
+
   _RN_ROOT_EXISTS=$(ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output[$_JSON_ROOT]" || echo '')
 
   if [[ ${_RN_ROOT_EXISTS} ]]; then
@@ -176,3 +203,4 @@ for plist in "${_TARGET_PLIST}" "${_DSYM_PLIST}" ; do
 done
 
 echo "info: <- ${_PROJECT_ABBREVIATION} build script finished"
+
