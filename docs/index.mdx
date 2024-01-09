@@ -33,7 +33,7 @@ To do so [follow the official `expo-build-properties` installation instructions]
 }
 ```
 
-#### app.config.js
+#### app.config.js / app.config.ts
 
 ```js
 {
@@ -84,13 +84,13 @@ Before you are able to display ads to your users, you must have a [Google AdMob 
 "Apps" menu item, create or choose an existing Android/iOS app. Each app platform exposes a unique account ID which needs to
 be added to the project.
 
-> Attempting to build your app without a valid App ID in `app.json` or `app.config.js` will cause the app to crash on start or fail to build.
+> Attempting to build your app without a valid App ID in `app.json` or `app.config.js / app.config.ts` will cause the app to crash on start or fail to build.
 
 Under the "App settings" menu item, you can find the "App ID":
 
 ![Google AdMob App ID](https://prismic-io.s3.amazonaws.com/invertase%2F52dd6900-108c-47a6-accb-699fde963b99_new+project+%2813%29.jpg)
 
-Within the root of your React Native project, open the `app.json` or (if using Expo) `app.config.js` file and add the
+Within the root of your React Native project, open the `app.json` or (if using Expo) `app.config[.js|.ts]` file and add the
 `android_app_id` & `ios_app_id` keys with the IDs from the Google AdMob console:
 
 #### app.json
@@ -105,19 +105,7 @@ Within the root of your React Native project, open the `app.json` or (if using E
 }
 ```
 
-#### app.config.js
-
-```js
-// <project-root>/app.config.js
-module.exports = {
-  'react-native-google-mobile-ads': {
-    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-  },
-};
-```
-
-If you're an expo user, make sure the `react-native-google-mobile-ads` block is outside of the `expo` block!
+If you're an expo user, make sure the `react-native-google-mobile-ads` block is in the expo.extra
 It should look like this:
 
 #### app.json
@@ -127,25 +115,29 @@ It should look like this:
 {
   "expo": {
     // ...
-  },
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+    "extra": {
+      "react-native-google-mobile-ads": {
+        "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+        "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+      }
+    }
   }
 }
 ```
 
-#### app.config.js
+#### app.config.js / app.config.ts
 
 ```js
 // <project-root>/app.config.js
 module.exports = {
   expo: {
     // ...
-  },
-  'react-native-google-mobile-ads': {
-    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+    extra: {
+      'react-native-google-mobile-ads': {
+        android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+      },
+    },
   },
 };
 ```

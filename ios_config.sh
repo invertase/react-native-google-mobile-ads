@@ -23,7 +23,7 @@ if [[ -f "$PODS_ROOT/../.xcode.env.local" ]]; then
   source "$PODS_ROOT/../.xcode.env.local"
 fi
 
-_MAX_LOOKUPS=2;
+_MAX_LOOKUPS=2
 _SEARCH_RESULT=''
 _RN_ROOT_EXISTS=''
 _CURRENT_LOOKUPS=1
@@ -31,6 +31,7 @@ _PROJECT_ABBREVIATION="RNGoogleMobileAds"
 _JSON_ROOT="'react-native-google-mobile-ads'"
 _JSON_FILE_NAME='app.json'
 _JS_APP_CONFIG_FILE_NAME='app.config.js'
+_TS_APP_CONFIG_FILE_NAME='app.config.ts'
 _JSON_OUTPUT_BASE64='e30=' # { }
 _CURRENT_SEARCH_DIR=${PROJECT_DIR}
 _PLIST_BUDDY=/usr/libexec/PlistBuddy
@@ -48,20 +49,21 @@ function setPlistValue {
   ${_PLIST_BUDDY} -c "Add :$1 $2 '$3'" $4 || echo "info:      '$1' already exists"
 }
 
-function getJsonKeyValue () {
+function getJsonKeyValue() {
   if [[ ${_RN_ROOT_EXISTS} ]]; then
     ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$1'); puts output[$_JSON_ROOT]['$2']"
   else
     echo ""
-  fi;
+  fi
 }
 
-function jsonBoolToYesNo () {
+function jsonBoolToYesNo() {
   if [[ $1 == "false" ]]; then
     echo "NO"
   elif [[ $1 == "true" ]]; then
     echo "YES"
-  else echo "NO"
+  else
+    echo "NO"
   fi
 }
 
@@ -70,45 +72,47 @@ echo "info: 1) Locating ${_JSON_FILE_NAME} file:"
 
 if [[ -z ${_CURRENT_SEARCH_DIR} ]]; then
   _CURRENT_SEARCH_DIR=$(pwd)
-fi;
+fi
 
 while true; do
   _CURRENT_SEARCH_DIR=$(dirname "$_CURRENT_SEARCH_DIR")
 
   if [[ "$_CURRENT_SEARCH_DIR" == "/" ]] || [[ ${_CURRENT_LOOKUPS} -gt ${_MAX_LOOKUPS} ]]; then
-    break;
-  fi;
+    break
+  fi
 
-  echo "info:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME}/${_JS_APP_CONFIG_FILE_NAME} file."
+  echo "info:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME}/${_JS_APP_CONFIG_FILE_NAME}/${_TS_APP_CONFIG_FILE_NAME} file."
 
-  _SEARCH_RESULT=$(find "$_CURRENT_SEARCH_DIR" -maxdepth 2 \( -name ${_JSON_FILE_NAME} -o -name ${_JS_APP_CONFIG_FILE_NAME} \) -print | /usr/bin/head -n 1)
+  _SEARCH_RESULT=$(find "$_CURRENT_SEARCH_DIR" -maxdepth 2 \( -name ${_JSON_FILE_NAME} -o -name ${_JS_APP_CONFIG_FILE_NAME} -o -name ${_TS_APP_CONFIG_FILE_NAME} \) -print | /usr/bin/head -n 1)
 
-  if [[ "$(basename ${_SEARCH_RESULT})" = "${_JS_APP_CONFIG_FILE_NAME}" ]]; then
+  if [[ "$(basename ${_SEARCH_RESULT})" = "${_JS_APP_CONFIG_FILE_NAME}" ]] || [[ "$(basename ${_SEARCH_RESULT})" = "${_TS_APP_CONFIG_FILE_NAME}" ]]; then
     _IS_CONFIG_JS=true
-    echo "info:      ${_JS_APP_CONFIG_FILE_NAME} found at $_SEARCH_RESULT"
-    break;
-  fi;
+    echo "info:     expo config found at $_SEARCH_RESULT"
+    break
+  fi
 
   if [[ "$(basename ${_SEARCH_RESULT})" = "${_JSON_FILE_NAME}" ]]; then
     echo "info:      ${_JSON_FILE_NAME} found at ${_SEARCH_RESULT}"
-    break;
-  fi;
+    break
+  fi
 
-  _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))
+  _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS + 1))
 done
 
 if [[ ${_SEARCH_RESULT} ]]; then
   if [[ ${_IS_CONFIG_JS} == "true" ]]; then
-    _JSON_OUTPUT_RAW=$("${NODE_BINARY}" -e "console.log(JSON.stringify(require('${_SEARCH_RESULT}')));")
+    _APP_CONFIG_DIR_NAME=$(dirname $_SEARCH_RESULT)
+    _JSON_OUTPUT_RAW=$("${NODE_BINARY}" -e "try { const expoConfig = require('@expo/config'); console.log(JSON.stringify(expoConfig.getConfig('${_APP_CONFIG_DIR_NAME}')?.exp?.extra));  } catch (e) { if (e instanceof Error && e.code === 'MODULE_NOT_FOUND') { console.error('You have an expo app.config[.js|.ts] file but do not have @expo/config installed. @expo/config is required for react-native-google-mobile-ads to read the app.config[.js|.ts] file and should be installed by default with expo. Please install @expo/config and try again.') } else { throw e }}")
+    echo $_JSON_OUTPUT_RAW
   else
     _JSON_OUTPUT_RAW=$(cat "${_SEARCH_RESULT}")
-  fi;
+  fi
 
   _RN_ROOT_EXISTS=$(ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output[$_JSON_ROOT]" || echo '')
-
+  echo ${_JSON_OUTPUT_RAW} >rn-google-mobile-ads.json
   if [[ ${_RN_ROOT_EXISTS} ]]; then
     if ! python3 --version >/dev/null 2>&1; then echo "python3 not found, app.json file processing error." && exit 1; fi
-    _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64;print(base64.b64encode(bytes(json.dumps(json.loads(open('"'${_SEARCH_RESULT}'"', '"'rb'"').read())['${_JSON_ROOT}']), '"'utf-8'"')).decode())' || echo "e30=")
+    _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64;print(base64.b64encode(bytes(json.dumps(json.loads(open("rn-google-mobile-ads.json", '"'rb'"').read())['${_JSON_ROOT}']), '"'utf-8'"')).decode())' || echo "e30=")
   fi
 
   _PLIST_ENTRY_KEYS+=("google_mobile_ads_json_raw")
@@ -146,11 +150,11 @@ if [[ ${_SEARCH_RESULT} ]]; then
     for i in "${!array[@]}"; do
       _PLIST_ENTRY_KEYS+=("SKAdNetworkItems:$i:SKAdNetworkIdentifier")
       _PLIST_ENTRY_TYPES+=("string")
-      _PLIST_ENTRY_VALUES+=("${array[i]}")  
+      _PLIST_ENTRY_VALUES+=("${array[i]}")
     done
   fi
 
-    # config.user_tracking_usage_description
+  # config.user_tracking_usage_description
   _USER_TRACKING_USAGE_DESCRIPTION=$(getJsonKeyValue "$_JSON_OUTPUT_RAW" "user_tracking_usage_description")
   if [[ $_USER_TRACKING_USAGE_DESCRIPTION ]]; then
     _PLIST_ENTRY_KEYS+=("NSUserTrackingUsageDescription")
@@ -162,7 +166,7 @@ else
   _PLIST_ENTRY_TYPES+=("string")
   _PLIST_ENTRY_VALUES+=("$_JSON_OUTPUT_BASE64")
   echo "warning:   A ${_JSON_FILE_NAME} file was not found, whilst this file is optional it is recommended to include it to auto-configure services."
-fi;
+fi
 
 echo "info: 2) Injecting Info.plist entries: "
 
@@ -181,7 +185,7 @@ if ! [[ $_IOS_APP_ID ]]; then
   exit 1
 fi
 
-for plist in "${_TARGET_PLIST}" "${_DSYM_PLIST}" ; do
+for plist in "${_TARGET_PLIST}" "${_DSYM_PLIST}"; do
   if [[ -f "${plist}" ]]; then
 
     # paths with spaces break the call to setPlistValue. temporarily modify
@@ -203,4 +207,3 @@ for plist in "${_TARGET_PLIST}" "${_DSYM_PLIST}" ; do
 done
 
 echo "info: <- ${_PROJECT_ABBREVIATION} build script finished"
-
