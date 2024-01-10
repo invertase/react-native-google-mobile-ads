@@ -232,4 +232,20 @@ RCT_EXPORT_METHOD(getGdprApplies
   }
 }
 
+RCT_EXPORT_METHOD(getPurposeConsents
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  @try {
+    NSString *purposeConsents =
+        [[NSUserDefaults standardUserDefaults] stringForKey:@"IABTCF_PurposeConsents"];
+    resolve(purposeConsents);
+  } @catch (NSError *error) {
+    [RNSharedUtils rejectPromiseWithUserInfo:reject
+                                    userInfo:[@{
+                                      @"code" : @"consent-string-error",
+                                      @"message" : error.localizedDescription,
+                                    } mutableCopy]];
+  }
+}
+
 @end
