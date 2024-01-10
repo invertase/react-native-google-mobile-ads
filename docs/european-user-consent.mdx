@@ -77,7 +77,8 @@ npx react-native run-android
 
 ### App Tracking Transparency
 
-If you want to handle Apple's App Tracking Transparency requirements, ensure you've configured and published your [ATT message](https://developers.google.com/admob/ump/ios/quick-start#app_tracking_transparency) in your Google AdMob account.
+If you configure an [ATT message](https://support.google.com/admob/answer/10115331) in your Google AdMob account, the UMP SDK will automatically handle the ATT alert.
+This will also show an IDFA explainer message. If you don't want to show an explainer message you can show the ATT alert [manually](https://docs.page/invertase/react-native-google-mobile-ads#app-tracking-transparency-ios).
 Also, within your projects `app.json` file, you have to use the `user_tracking_usage_description` to to describe your usage:
 
 ```json
@@ -164,7 +165,12 @@ async function startGoogleMobileAdsSDK() {
 
   isMobileAdsStartCalled = true;
 
-  // (iOS) Handle Apple's App Tracking Transparency.
+  // (Optional, iOS) Handle Apple's App Tracking Transparency manually.
+  const gdprApplies = await AdsConsent.getGdprApplies();
+  const hasConsentForPurposeOne = gdprApplies ? (await AdsConsent.getPurposeConsents()).startsWith("1") : false;
+  if (!gdprApplies || hasConsentForPurposeOne) {
+    // Request ATT...
+  }
 
   // Initialize the Google Mobile Ads SDK.
   await mobileAds().initialize()
