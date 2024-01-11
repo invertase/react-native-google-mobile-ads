@@ -167,7 +167,7 @@ async function startGoogleMobileAdsSDK() {
 
   // (Optional, iOS) Handle Apple's App Tracking Transparency manually.
   const gdprApplies = await AdsConsent.getGdprApplies();
-  const hasConsentForPurposeOne = gdprApplies ? (await AdsConsent.getPurposeConsents()).startsWith("1") : false;
+  const hasConsentForPurposeOne = gdprApplies && (await AdsConsent.getPurposeConsents()).startsWith("1");
   if (!gdprApplies || hasConsentForPurposeOne) {
     // Request ATT...
   }
