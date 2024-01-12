@@ -120,6 +120,14 @@ jobs:
           max_attempts: 3
           command: cd RNGoogleMobileAdsExample && yarn detox build-framework-cache
 
+      - name: Install applesimutils and xcbeautify
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 5
+          retry_wait_seconds: 60
+          max_attempts: 3
+          command: HOMEBREW_NO_AUTO_UPDATE=1 brew tap wix/brew && HOMEBREW_NO_AUTO_UPDATE=1 brew install applesimutils xcbeautify && applesimutils --list
+
       - name: Build iOS App
         run: |
           export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
@@ -134,14 +142,6 @@ jobs:
           yarn tests:ios:build
           ccache -s
         shell: bash
-
-      - name: Install applesimutils
-        uses: nick-invision/retry@v2
-        with:
-          timeout_minutes: 5
-          retry_wait_seconds: 60
-          max_attempts: 3
-          command: HOMEBREW_NO_AUTO_UPDATE=1 brew tap wix/brew && HOMEBREW_NO_AUTO_UPDATE=1 brew install applesimutils && applesimutils --list
 
       - name: Metro Bundler Cache
         uses: actions/cache@v3
