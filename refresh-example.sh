@@ -49,7 +49,6 @@ yarn add https://github.com/invertase/jet#@mikehardy/jet-next --dev
 # In case we have patches, add this:
 yarn add patch-package --dev
 npm_config_yes=true npx json -I -f package.json -e 'this.scripts.postinstall = "patch-package"'
-yarn
 
 # Java build tweak - or gradle runs out of memory during the build
 # echo "Increasing memory available to gradle for android java build"
@@ -82,9 +81,6 @@ rm -f android/app/build.gradle??
 sed -i -e $'s/post_install do |installer|/post_install do |installer|\\\n    installer.pods_project.targets.each do |target|\\\n      target.build_configurations.each do |config|\\\n        config.build_settings["CC"] = "clang"\\\n        config.build_settings["LD"] = "clang"\\\n        config.build_settings["CXX"] = "clang++"\\\n        config.build_settings["LDPLUSPLUS"] = "clang++"\\\n      end\\\n    end\\\n/' ios/Podfile
 rm -f ios/Podfile??
 
-# run pod install after installing our module
-npm_config_yes=true npx pod-install
-
 # Copy the important files back in
 popd
 echo "Copying Google Mobile Ads customized example files into refreshed RNGoogleMobileAdsExample..."
@@ -95,3 +91,7 @@ cp -frv TEMP/* RNGoogleMobileAdsExample/
 
 # Clean up after ourselves
 \rm -fr TEMP
+
+# Run the install, which will run any patches if we have them so we're ready to go
+yarn tests:install
+yarn tests:ios:pod:install
