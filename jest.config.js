@@ -1,6 +1,7 @@
 module.exports = {
   preset: 'react-native',
-  modulePathIgnorePatterns: ['<rootDir>/example/node_modules', '<rootDir>/lib/'],
+  modulePathIgnorePatterns: ['<rootDir>/RNGoogleMobileAdsExample/node_modules', '<rootDir>/lib/'],
   setupFiles: ['./jest.setup.ts'],
-  testRegex: '(/^__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
+  testPathIgnorePatterns: ['<rootDir>/RNGoogleMobileAdsExample'],
+  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
 };

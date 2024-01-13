@@ -35,7 +35,7 @@ jobs:
       # Set up tool versions
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
 
       - uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -173,17 +173,12 @@ jobs:
         continue-on-error: true
         run: yarn tests:ios:test
 
-      - name: Compress Simulator Log
-        continue-on-error: true
-        if: always()
-        run: gzip -9 simulator.log
-
       - name: Upload Simulator Log
         uses: actions/upload-artifact@v3
         if: always()
         with:
           name: simulator_log
-          path: simulator.log.gz
+          path: simulator.log
 
       - uses: codecov/codecov-action@v3
         with:
