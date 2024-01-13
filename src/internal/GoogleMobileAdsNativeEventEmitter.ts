@@ -52,8 +52,10 @@ class GANativeEventEmitter extends NativeEventEmitter {
     const originalRemove = subscription.remove;
     const newRemove = () => {
       RNAppModule.eventsRemoveListener(eventType, false);
+      // @ts-ignore -- the types have moved on, but old versions may need it...
       if (super.removeSubscription != null) {
         // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
+        // @ts-ignore -- the types have moved on, but old versions may need it...
         super.removeSubscription(subscription);
       } else if (originalRemove != null) {
         // This is for RN >= 0.65
@@ -72,7 +74,9 @@ class GANativeEventEmitter extends NativeEventEmitter {
   // This is likely no longer ever called, but it is here for backwards compatibility with RN <= 0.64
   removeSubscription(subscription: EmitterSubscription) {
     RNAppModule.eventsRemoveListener(subscription.eventType.replace('rnapp_', ''), false);
+    // @ts-ignore -- the types have moved on, but old versions may need it...
     if (super.removeSubscription != null) {
+      // @ts-ignore -- the types have moved on, but old versions may need it...
       super.removeSubscription(subscription);
     }
   }
