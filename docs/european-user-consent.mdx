@@ -137,7 +137,7 @@ The UMP SDK uses the consent status from the previous session.
 ```js
 import mobileAds, { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
 
-const isMobileAdsStartCalled = false;
+let isMobileAdsStartCalled = false;
 
 // Request an update for the consent information.
 AdsConsent.requestInfoUpdate().then(() => {
