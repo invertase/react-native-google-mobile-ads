@@ -189,8 +189,10 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     Activity currentActivity = ((ReactContext) reactViewGroup.getContext()).getCurrentActivity();
     if (currentActivity == null) return null;
 
-    BaseAdView adView = ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(reactViewGroup.getUnitId())
-      ? new AdManagerAdView(currentActivity) : new AdView(currentActivity);
+    BaseAdView adView =
+        ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(reactViewGroup.getUnitId())
+            ? new AdManagerAdView(currentActivity)
+            : new AdView(currentActivity);
 
     adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
     adView.setOnPaidEventListener(
