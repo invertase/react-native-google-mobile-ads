@@ -139,7 +139,7 @@ export const AdsConsent: AdsConsentInterface = {
         AdsConsentPurposes.CREATE_A_PERSONALISED_ADS_PROFILE,
       ),
       createAPersonalisedContentProfile: tcModel.purposeConsents.has(
-        AdsConsentPurposes.CREATE_A_PERSONALISED_ADS_PROFILE,
+        AdsConsentPurposes.CREATE_A_PERSONALISED_CONTENT_PROFILE,
       ),
       developAndImproveProducts: tcModel.purposeConsents.has(
         AdsConsentPurposes.DEVELOP_AND_IMPROVE_PRODUCTS,
