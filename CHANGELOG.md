@@ -1,3 +1,15 @@
+## [12.11.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.10.0...v12.11.0) (2024-02-19)
+
+
+### Features
+
+* **android:** potentially improves mediation performance for banners ([#527](https://github.com/invertase/react-native-google-mobile-ads/issues/527)) ([32f550a](https://github.com/invertase/react-native-google-mobile-ads/commit/32f550a54a073c7c0c49278364c21cb4a1df994e))
+
+
+### Bug Fixes
+
+* **consent:** the package returns the wrong value for consent for 'Create a personalized content profile' purpose ([7aef863](https://github.com/invertase/react-native-google-mobile-ads/commit/7aef86346fa2a5205e24035bc53c6dfa80b843d9))
+
 ## [12.10.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.9.0...v12.10.0) (2024-01-11)
 
 
