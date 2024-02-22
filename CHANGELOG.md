@@ -1,3 +1,10 @@
+### [13.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.0.0...v13.0.1) (2024-02-22)
+
+
+### Bug Fixes
+
+* to support app privacy manifests, cocoapods has to be at >= 1.12.0 ([ac8e06e](https://github.com/invertase/react-native-google-mobile-ads/commit/ac8e06ed8c79b54881452484060021c18525f2c1))
+
 ## [13.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v12.11.0...v13.0.0) (2024-02-22)
 
 
