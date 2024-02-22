@@ -18,6 +18,7 @@ Pod::Spec.new do |s|
   s.source              = { :git => "#{package["repository"]["url"]}.git", :tag => "v#{s.version}" }
   s.social_media_url    = 'http://twitter.com/invertaseio'
   s.ios.deployment_target = "12.0"
+  s.cocoapods_version   = '>= 1.12.0'
   s.source_files        = "ios/**/*.{h,m,mm,swift}"
   s.weak_frameworks     = "AppTrackingTransparency"
 
