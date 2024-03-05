@@ -1,3 +1,10 @@
+### [13.0.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.0.1...v13.0.2) (2024-03-05)
+
+
+### Bug Fixes
+
+* TestIds.ADAPTIVE_BANNER undefined type error ([ffbc7b1](https://github.com/invertase/react-native-google-mobile-ads/commit/ffbc7b1d4b667c629f578b17020f99bbb1512a00))
+
 ### [13.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.0.0...v13.0.1) (2024-02-22)
 
 
