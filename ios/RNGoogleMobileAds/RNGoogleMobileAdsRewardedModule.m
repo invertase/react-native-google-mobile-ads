@@ -15,6 +15,8 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
+
 #import <React/RCTBridgeModule.h>
 
 @interface RCT_EXTERN_MODULE (RNGoogleMobileAdsRewardedModule, NSObject)
@@ -40,3 +42,5 @@ RCT_EXTERN_METHOD(rewardedShow
                   : (RCTPromiseRejectBlock)reject)
 
 @end
+
+#endif

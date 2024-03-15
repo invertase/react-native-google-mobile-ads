@@ -1,6 +1,7 @@
 import { TCModel } from '@iabtcf/core';
 import { AdsConsentDebugGeography } from '../AdsConsentDebugGeography';
 import { AdsConsentStatus } from '../AdsConsentStatus';
+import { AdsConsentPrivacyOptionsRequirementStatus } from '../AdsConsentPrivacyOptionsRequirementStatus';
 
 /**
  * Under the Google [EU User Consent Policy](https://www.google.com/about/company/consentstaging.html), you must make certain disclosures to your users in the European Economic Area (EEA)
@@ -58,7 +59,32 @@ export interface AdsConsentInterface {
    *
    * ```
    */
-  showForm(): Promise<AdsConsentFormResult>;
+  showForm(): Promise<AdsConsentInfo>;
+
+  /**
+   * Presents a privacy options form if privacyOptionsRequirementStatus is required.
+   */
+  showPrivacyOptionsForm(): Promise<AdsConsentInfo>;
+
+  /**
+   * Loads a consent form and immediately presents it if consentStatus is required.
+   *
+   * This method is intended for the use case of showing a form if needed when the app starts.
+   */
+  loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo>;
+
+  /**
+   * Returns the UMP Consent Information from the last known session.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * const consentInfo = await AdsConsent.getConsentInfo();
+   * ```
+   */
+  getConsentInfo(): Promise<AdsConsentInfo>;
 
   /**
    * Returns the value stored under the `IABTCF_TCString` key
@@ -90,6 +116,45 @@ export interface AdsConsentInterface {
    * ```
    */
   getTCModel(): Promise<TCModel>;
+
+  /**
+   * Returns the value stored under the `IABTCF_gdprApplies` key
+   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
+   * defined by the IAB Europe Transparency & Consent Framework.
+   *
+   * More information available here:
+   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * await AdsConsent.requestInfoUpdate();
+   * const gdprApplies = await AdsConsent.getGdprApplies();
+   * ```
+   */
+  getGdprApplies(): Promise<boolean>;
+
+  /**
+   * Returns the value stored under the `IABTCF_PurposeConsents` key
+   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
+   * defined by the IAB Europe Transparency & Consent Framework.
+   *
+   * More information available here:
+   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * await AdsConsent.requestInfoUpdate();
+   * const purposeConsents = await AdsConsent.getPurposeConsents();
+   * const hasConsentForPurposeOne = purposeConsents.startsWith("1");
+   * ```
+   */
+  getPurposeConsents(): Promise<string>;
 
   /**
    * Provides information about a user's consent choices.
@@ -139,21 +204,6 @@ export interface AdsConsentInfoOptions {
 }
 
 /**
- * The result of a Google-rendered consent form.
- */
-export interface AdsConsentFormResult {
-  /**
-   * The consent status of the user after closing the consent form.
-   *
-   *  - `UNKNOWN`: Unknown consent status.
-   *  - `REQUIRED`: User consent required but not yet obtained.
-   *  - `NOT_REQUIRED`: User consent not required.
-   *  - `OBTAINED`: User consent already obtained.
-   */
-  status: AdsConsentStatus;
-}
-
-/**
  * The result of requesting info about a users consent status.
  */
 export interface AdsConsentInfo {
@@ -166,6 +216,16 @@ export interface AdsConsentInfo {
    *  - `OBTAINED`: User consent already obtained.
    */
   status: AdsConsentStatus;
+
+  /**
+   * Indicates whether the app has completed the necessary steps for gathering updated user consent.
+   */
+  canRequestAds: boolean;
+
+  /**
+   * Privacy options requirement status.
+   */
+  privacyOptionsRequirementStatus: AdsConsentPrivacyOptionsRequirementStatus;
 
   /**
    * If `true` a consent form is available.

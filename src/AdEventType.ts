@@ -53,6 +53,12 @@ export enum AdEventType {
   OPENED = 'opened',
 
   /**
+   * Called when ad generates revenue.
+   * See: https://developers.google.com/admob/android/impression-level-ad-revenue
+   */
+  PAID = 'paid',
+
+  /**
    * The user clicked the advert.
    */
   CLICKED = 'clicked',

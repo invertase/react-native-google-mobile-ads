@@ -22,7 +22,6 @@ import { AppOpenAd, TestIds, AdEventType } from 'react-native-google-mobile-ads'
 const adUnitId = __DEV__ ? TestIds.APP_OPEN : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const appOpenAd = AppOpenAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 
@@ -76,7 +75,6 @@ import { InterstitialAd, TestIds, AdEventType } from 'react-native-google-mobile
 const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 ```
@@ -99,7 +97,6 @@ import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile
 const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 
@@ -164,7 +161,6 @@ import { RewardedAd, TestIds } from 'react-native-google-mobile-ads';
 const adUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const rewarded = RewardedAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 ```
@@ -187,7 +183,6 @@ import { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mo
 const adUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const rewarded = RewardedAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 
@@ -286,7 +281,6 @@ const adUnitId = __DEV__
   : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 ```
@@ -315,7 +309,6 @@ const adUnitId = __DEV__
   : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(adUnitId, {
-  requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 
@@ -409,16 +402,13 @@ a banner:
 import React from 'react';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
-const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 function App() {
   return (
     <BannerAd
       unitId={adUnitId}
-      size={BannerAdSize.FULL_BANNER}
-      requestOptions={{
-        requestNonPersonalizedAdsOnly: true,
-      }}
+      size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
     />
   );
 }
@@ -440,9 +430,37 @@ or network triggers an event:
 - `onAdFailedToLoad`
 - `onAdLeftApplication`
 - `onAdOpened`
+- `onPaid` &mdash; On [impression-level ad revenue](https://support.google.com/admob/answer/11322405?hl=en) events.
 
 Each render of the component loads a single advert, allowing you to display multiple adverts at once. If you need to reload/change
 an advert for a currently mounted component, you'll need to force a re-render inside of your own code.
+
+### Collapsible banner ads
+
+Collapsible banner ads are banner ads that are initially presented as a larger overlay, with a button to collapse them to the originally requested banner size.
+Collapsible banner ads are intended to improve performance of anchored ads that are otherwise a smaller size.
+This guide shows how to turn on collapsible banner ads for existing banner placements.
+
+```js
+import React from 'react';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+
+function App() {
+  return (
+    <BannerAd
+      unitId={adUnitId}
+      size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+      requestOptions={{
+        networkExtras: {
+          collapsible: 'bottom',
+        },
+      }}
+    />
+  );
+}
+```
 
 ### Displaying Google Ad Manager Banner
 
@@ -459,9 +477,6 @@ function App() {
     <GAMBannerAd
       unitId={adUnitId}
       sizes={[BannerAdSize.FULL_BANNER]}
-      requestOptions={{
-        requestNonPersonalizedAdsOnly: true,
-      }}
     />
   );
 }

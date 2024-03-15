@@ -22,6 +22,7 @@ export * from './AdsConsent.interface';
 export * from './AdShowOptions';
 export * from './AdStates';
 export * from './BannerAdProps';
+export * from './PaidEventListener';
 export * from './RequestConfiguration';
 export * from './RequestOptions';
 export * from './RewardedAdReward';

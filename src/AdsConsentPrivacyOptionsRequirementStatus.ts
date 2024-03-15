@@ -15,7 +15,22 @@
  *
  */
 
-export { AppModule as Module } from './Module';
-export { NativeError } from './NativeError';
-export * from './registry/nativeModule';
-export { SharedEventEmitter } from './SharedEventEmitter';
+/**
+ * AdsConsentPrivacyOptionsRequirementStatus enum.
+ */
+export enum AdsConsentPrivacyOptionsRequirementStatus {
+  /**
+   * Unknown consent status, AdsConsent.requestInfoUpdate needs to be called to update it.
+   */
+  UNKNOWN = 'UNKNOWN',
+
+  /**
+   * User consent required but not yet obtained.
+   */
+  REQUIRED = 'REQUIRED',
+
+  /**
+   * User consent not required.
+   */
+  NOT_REQUIRED = 'NOT_REQUIRED',
+}

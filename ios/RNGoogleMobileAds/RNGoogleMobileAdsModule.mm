@@ -15,10 +15,15 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
 #import <GoogleMobileAds/GoogleMobileAds.h>
+#endif
 #import <React/RCTUtils.h>
 
 #import "RNGoogleMobileAdsModule.h"
+#ifdef RCT_NEW_ARCH_ENABLED
+#import "RNGoogleMobileAdsSpec.h"
+#endif
 #import "common/RNSharedUtils.h"
 
 @implementation RNGoogleMobileAdsModule
@@ -35,6 +40,42 @@ RCT_EXPORT_MODULE();
 #pragma mark Google Mobile Ads Methods
 
 RCT_EXPORT_METHOD(initialize : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+  [self initialize:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(setRequestConfiguration
+                  : (NSDictionary *)requestConfiguration
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [self setRequestConfiguration:requestConfiguration resolve:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(openAdInspector
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [self openAdInspector:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnit) {
+#if !TARGET_OS_MACCATALYST
+  GADDebugOptionsViewController *debugOptionsViewController =
+      [GADDebugOptionsViewController debugOptionsViewControllerWithAdUnitID:adUnit];
+  [RCTSharedApplication().delegate.window.rootViewController
+      presentViewController:debugOptionsViewController
+                   animated:YES
+                 completion:nil];
+#endif
+}
+
+#ifdef RCT_NEW_ARCH_ENABLED
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+    (const facebook::react::ObjCTurboModule::InitParams &)params {
+  return std::make_shared<facebook::react::NativeGoogleMobileAdsModuleSpecJSI>(params);
+}
+#endif
+
+- (void)initialize:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
+#if !TARGET_OS_MACCATALYST
   [[GADMobileAds sharedInstance]
       startWithCompletionHandler:^(GADInitializationStatus *_Nonnull status) {
         NSDictionary *adapterStatuses = [status adapterStatusesByClassName];
@@ -50,17 +91,13 @@ RCT_EXPORT_METHOD(initialize : (RCTPromiseResolveBlock)resolve : (RCTPromiseReje
         }
         resolve(result);
       }];
+#endif
 }
 
-RCT_EXPORT_METHOD(setRequestConfiguration
-                  : (NSDictionary *)requestConfiguration
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
-  [self setRequestConfiguration:requestConfiguration];
-  resolve([NSNull null]);
-}
-
-- (void)setRequestConfiguration:(NSDictionary *)requestConfiguration {
+- (void)setRequestConfiguration:(NSDictionary *)requestConfiguration
+                        resolve:(RCTPromiseResolveBlock)resolve
+                         reject:(RCTPromiseRejectBlock)reject {
+#if !TARGET_OS_MACCATALYST
   if (requestConfiguration[@"maxAdContentRating"]) {
     NSString *rating = requestConfiguration[@"maxAdContentRating"];
     if ([rating isEqualToString:@"G"]) {
@@ -80,12 +117,14 @@ RCT_EXPORT_METHOD(setRequestConfiguration
 
   if (requestConfiguration[@"tagForChildDirectedTreatment"]) {
     BOOL tag = [requestConfiguration[@"tagForChildDirectedTreatment"] boolValue];
-    [GADMobileAds.sharedInstance.requestConfiguration tagForChildDirectedTreatment:tag];
+    GADMobileAds.sharedInstance.requestConfiguration.tagForChildDirectedTreatment =
+        [NSNumber numberWithBool:tag];
   }
 
   if (requestConfiguration[@"tagForUnderAgeOfConsent"]) {
     BOOL tag = [requestConfiguration[@"tagForUnderAgeOfConsent"] boolValue];
-    [GADMobileAds.sharedInstance.requestConfiguration tagForUnderAgeOfConsent:tag];
+    GADMobileAds.sharedInstance.requestConfiguration.tagForUnderAgeOfConsent =
+        [NSNumber numberWithBool:tag];
   }
 
   if (requestConfiguration[@"testDeviceIdentifiers"]) {
@@ -99,11 +138,13 @@ RCT_EXPORT_METHOD(setRequestConfiguration
     }
     GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = devices;
   }
+
+  resolve([NSNull null]);
+#endif
 }
 
-RCT_EXPORT_METHOD(openAdInspector
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+- (void)openAdInspector:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
+#if !TARGET_OS_MACCATALYST
   [GADMobileAds.sharedInstance
       presentAdInspectorFromViewController:RCTSharedApplication().delegate.window.rootViewController
                          completionHandler:^(NSError *_Nullable error) {
@@ -119,6 +160,7 @@ RCT_EXPORT_METHOD(openAdInspector
                              resolve(nil);
                            }
                          }];
+#endif
 }
 
 @end

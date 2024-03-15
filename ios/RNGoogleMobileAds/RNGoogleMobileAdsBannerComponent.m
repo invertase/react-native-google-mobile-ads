@@ -1,4 +1,3 @@
-//
 /**
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
@@ -16,32 +15,20 @@
  *
  */
 
-#import "RNGoogleMobileAdsBannerViewManager.h"
-#import <GoogleMobileAds/GADAppEventDelegate.h>
-#import <GoogleMobileAds/GADBannerView.h>
-#import <GoogleMobileAds/GADBannerViewDelegate.h>
-#import <React/RCTUIManager.h>
-#import <React/RCTView.h>
+#if !TARGET_OS_MACCATALYST
+
+#import "RNGoogleMobileAdsBannerComponent.h"
+#import <React/RCTLog.h>
 #import "RNGoogleMobileAdsCommon.h"
 
-@interface BannerComponent : RCTView <GADBannerViewDelegate, GADAppEventDelegate>
+@implementation RNGoogleMobileAdsBannerComponent
 
-@property GADBannerView *banner;
-@property(nonatomic, assign) BOOL requested;
-
-@property(nonatomic, copy) NSArray *sizes;
-@property(nonatomic, copy) NSString *unitId;
-@property(nonatomic, copy) NSDictionary *request;
-@property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
-@property(nonatomic, assign) BOOL propsChanged;
-
-@property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
-
-- (void)requestAd;
-
-@end
-
-@implementation BannerComponent
+- (void)dealloc {
+  if (_banner) {
+    [_banner removeFromSuperview];
+    _banner = nil;
+  }
+}
 
 - (void)didSetProps:(NSArray<NSString *> *)changedProps {
   if (_propsChanged) {
@@ -92,8 +79,13 @@
   _propsChanged = true;
 }
 
-- (void)setRequest:(NSDictionary *)request {
-  _request = request;
+- (void)setRequest:(NSString *)request {
+  NSData *jsonData = [request dataUsingEncoding:NSUTF8StringEncoding];
+  NSError *error = nil;
+  _request = [NSJSONSerialization JSONObjectWithData:jsonData options:kNilOptions error:&error];
+  if (error) {
+    NSLog(@"Error parsing JSON: %@", error.localizedDescription);
+  }
   _propsChanged = true;
 }
 
@@ -116,6 +108,14 @@
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];
+  _banner.paidEventHandler = ^(GADAdValue *_Nonnull value) {
+    [self sendEvent:@"onPaid"
+            payload:@{
+              @"value" : value.value,
+              @"precision" : @(value.precision),
+              @"currency" : value.currencyCode,
+            }];
+  };
   [_banner loadRequest:[RNGoogleMobileAdsCommon buildAdRequest:_request]];
   [self sendEvent:@"onSizeChange"
           payload:@{
@@ -165,8 +165,8 @@
   [self sendEvent:@"onAdClosed" payload:nil];
 }
 
-- (void)bannerView:(GAMBannerView *)bannerView
-    didReceiveAppEvent:(NSString *)name
+- (void)adView:(nonnull GADBannerView *)banner
+    didReceiveAppEvent:(nonnull NSString *)name
               withInfo:(nullable NSString *)info {
   [self sendEvent:@"onAppEvent"
           payload:@{
@@ -183,41 +183,4 @@
 
 @end
 
-@implementation RNGoogleMobileAdsBannerViewManager
-
-RCT_EXPORT_MODULE(RNGoogleMobileAdsBannerView);
-
-RCT_EXPORT_VIEW_PROPERTY(sizes, NSArray);
-
-RCT_EXPORT_VIEW_PROPERTY(unitId, NSString);
-
-RCT_EXPORT_VIEW_PROPERTY(request, NSDictionary);
-
-RCT_EXPORT_VIEW_PROPERTY(manualImpressionsEnabled, BOOL);
-
-RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
-
-RCT_EXPORT_METHOD(recordManualImpression : (nonnull NSNumber *)reactTag) {
-  [self.bridge.uiManager
-      addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
-        BannerComponent *banner = viewRegistry[reactTag];
-        if (!banner || ![banner isKindOfClass:[BannerComponent class]]) {
-          RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
-          return;
-        }
-        [banner recordManualImpression];
-      }];
-}
-
-@synthesize bridge = _bridge;
-
-- (UIView *)view {
-  BannerComponent *banner = [BannerComponent new];
-  return banner;
-}
-
-- (dispatch_queue_t)methodQueue {
-  return dispatch_get_main_queue();
-}
-
-@end
+#endif

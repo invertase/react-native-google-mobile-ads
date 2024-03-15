@@ -1,7 +1,4 @@
-import { EventEmitter } from 'react-native';
-
 import { AdapterStatus } from './AdapterStatus';
-import { GoogleMobileAdsNativeModule } from './GoogleMobileAdsNativeModule';
 import { RequestConfiguration } from './RequestConfiguration';
 
 /**
@@ -42,12 +39,14 @@ export interface MobileAdsModuleInterface {
   openAdInspector(): Promise<void>;
 
   /**
-   * The native module instance for the Google Mobile Ads service.
+   * Opens the Ad Debug Menu.
+   *
+   * Android: `initialize` needs to be called before calling this function.
+   *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/debug
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/ios/debug
+   *
+   * @param adUnit Any valid ad unit from your Ad Manager account is sufficient to open the debug options menu.
    */
-  native: GoogleMobileAdsNativeModule;
-
-  /**
-   * Returns the shared event emitter instance used for all JS event routing.
-   */
-  emitter: EventEmitter;
+  openDebugMenu(adUnit: string): void;
 }

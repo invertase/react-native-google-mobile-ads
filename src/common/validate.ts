@@ -15,27 +15,6 @@
  *
  */
 
-import { Platform } from 'react-native';
-
-const AlphaNumericUnderscore = /^[a-zA-Z0-9_]+$/;
-
-export function objectKeyValuesAreStrings(object: Record<string, unknown>) {
-  if (!isObject(object)) {
-    return false;
-  }
-
-  const entries = Object.entries(object);
-
-  for (let i = 0; i < entries.length; i++) {
-    const [key, value] = entries[i];
-    if (!isString(key) || !isString(value)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 /**
  * Simple is null check.
  *
@@ -57,17 +36,6 @@ export function isObject(value: unknown) {
 }
 
 /**
- * Simple is date check
- * https://stackoverflow.com/a/44198641
- * @param value
- * @returns {boolean}
- */
-export function isDate(value: number) {
-  // use the global isNaN() and not Number.isNaN() since it will validate an Invalid Date
-  return value && Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value);
-}
-
-/**
  * Simple is function check
  *
  * @param value
@@ -84,33 +52,6 @@ export function isFunction(value: unknown) {
  */
 export function isString(value: unknown) {
   return typeof value === 'string';
-}
-
-/**
- * Simple is number check
- * @param value
- * @return {boolean}
- */
-export function isNumber(value: unknown): value is number {
-  return typeof value === 'number';
-}
-
-/**
- * Simple finite check
- * @param value
- * @returns {boolean}
- */
-export function isFinite(value: unknown) {
-  return Number.isFinite(value);
-}
-
-/**
- * Simple integer check
- * @param value
- * @returns {boolean}
- */
-export function isInteger(value: unknown) {
-  return Number.isInteger(value);
 }
 
 /**
@@ -142,16 +83,6 @@ export function isUndefined(value: unknown): value is undefined {
 }
 
 /**
- * /^[a-zA-Z0-9_]+$/
- *
- * @param value
- * @returns {boolean}
- */
-export function isAlphaNumericUnderscore(value: string) {
-  return AlphaNumericUnderscore.test(value);
-}
-
-/**
  * URL test
  * @param url
  * @returns {boolean}
@@ -173,33 +104,4 @@ export function isOneOf(value: unknown, oneOf: unknown[] = []) {
     return false;
   }
   return oneOf.includes(value);
-}
-
-export function noop() {
-  // noop-🐈
-}
-
-export function validateOptionalNativeDependencyExists(
-  firebaseJsonKey: string,
-  apiName: string,
-  nativeFnExists: boolean,
-) {
-  if (nativeFnExists) {
-    return;
-  }
-  let errorMessage =
-    "You attempted to use an optional API that's not enabled natively. \n\n To enable ";
-
-  errorMessage += apiName;
-  errorMessage += ` please set the 'react-native' -> '${firebaseJsonKey}' key to true in your firebase.json file`;
-
-  if (Platform.OS === 'android') {
-    errorMessage += ' and rebuild your Android app.';
-  } else {
-    errorMessage +=
-      ', re-run pod install and rebuild your iOS app. ' +
-      "If you're not using Pods then make sure you've have downloaded the necessary Firebase iOS SDK dependencies for this API.";
-  }
-
-  throw new Error(errorMessage);
 }

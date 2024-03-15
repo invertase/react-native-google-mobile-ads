@@ -26,6 +26,7 @@ import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdStates, AdHookReturns } from '../types/AdStates';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RewardedAdReward } from '../types/RewardedAdReward';
+import type { PaidEvent } from '../types';
 
 const initialState: AdStates = {
   isLoaded: false,
@@ -74,6 +75,9 @@ export function useFullScreenAd<
           break;
         case AdEventType.OPENED:
           setState({ isOpened: true });
+          break;
+        case AdEventType.PAID:
+          setState({ revenue: payload as unknown as PaidEvent });
           break;
         case AdEventType.CLOSED:
           setState({ isClosed: true, isLoaded: false });

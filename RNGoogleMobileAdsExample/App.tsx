@@ -11,6 +11,7 @@ import {
 import {Test, TestRegistry, TestResult, TestRunner, TestType} from 'jet';
 
 import MobileAds, {
+  type PaidEvent,
   AdEventType,
   AdsConsent,
   AdsConsentDebugGeography,
@@ -19,6 +20,7 @@ import MobileAds, {
   TestIds,
   BannerAd,
   BannerAdSize,
+  RevenuePrecisions,
   RewardedAd,
   RewardedAdEventType,
   useInterstitialAd,
@@ -43,6 +45,9 @@ class AppOpenTest implements Test {
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = appOpen.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} app open ad event: ${type}`);
+      if (type === AdEventType.PAID) {
+        console.log(payload);
+      }
       if (type === AdEventType.ERROR) {
         console.log(`${Platform.OS} app open error: ${payload?.message}`);
       }
@@ -115,6 +120,9 @@ class InterstitialTest implements Test {
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = interstitial.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} interstitial ad event: ${type}`);
+      if (type === AdEventType.PAID) {
+        console.log('Paid', payload);
+      }
       if (type === AdEventType.ERROR) {
         console.log(`${Platform.OS} interstitial error: ${payload?.message}`);
       }
@@ -181,7 +189,12 @@ class BannerTest implements Test {
   }
 
   getPath(): string {
-    return this.bannerAdSize;
+    return this.bannerAdSize
+      .split('_')
+      .map(
+        s => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1),
+      )
+      .join('');
   }
 
   getTestType(): TestType {
@@ -192,10 +205,55 @@ class BannerTest implements Test {
     return (
       <View ref={onMount}>
         <BannerAd
-          unitId={TestIds.BANNER}
+          unitId={
+            this.bannerAdSize.includes('ADAPTIVE_BANNER')
+              ? TestIds.ADAPTIVE_BANNER
+              : TestIds.BANNER
+          }
           size={this.bannerAdSize}
+          onPaid={(event: PaidEvent) => {
+            console.log(
+              `Paid: ${event.value} ${event.currency} (precision ${
+                RevenuePrecisions[event.precision]
+              }})`,
+            );
+          }}
+        />
+      </View>
+    );
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
+    }
+  }
+}
+
+class CollapsibleBannerTest implements Test {
+  getPath(): string {
+    return 'CollapsibleBanner';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return (
+      <View ref={onMount}>
+        <BannerAd
+          unitId={TestIds.ADAPTIVE_BANNER}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
           requestOptions={{
-            requestNonPersonalizedAdsOnly: true,
+            networkExtras: {
+              collapsible: 'top',
+            },
           }}
         />
       </View>
@@ -226,6 +284,9 @@ class RewardedTest implements Test {
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
     this.adListener = rewarded.addAdEventsListener(({type, payload}) => {
       console.log(`${Platform.OS} rewarded ad event: ${type}`);
+      if (type === AdEventType.PAID) {
+        console.log(payload);
+      }
       if (type === AdEventType.ERROR) {
         console.log(
           `${Platform.OS} rewarded error: ${(payload as Error).message}`,
@@ -303,6 +364,9 @@ class RewardedInterstitialTest implements Test {
     this.adListener = rewardedInterstitial.addAdEventsListener(
       ({type, payload}) => {
         console.log(`${Platform.OS} rewarded interstitial ad event: ${type}`);
+        if (type === AdEventType.PAID) {
+          console.log(payload);
+        }
         if (type === AdEventType.ERROR) {
           console.log(
             `${Platform.OS} rewarded interstitial error: ${
@@ -423,7 +487,7 @@ class AdConsentTest implements Test {
 }
 
 const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
-  const {load, show, error, isLoaded, isClicked, isClosed, isOpened} =
+  const {load, show, error, isLoaded, isClicked, isClosed, isOpened, revenue} =
     useInterstitialAd(TestIds.INTERSTITIAL);
   useEffect(() => {
     load();
@@ -438,6 +502,10 @@ const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
       `${Platform.OS} interstitial hook state - loaded/opened/clicked/closed: ${isLoaded}/${isOpened}/${isClicked}/${isClosed}`,
     );
   }, [isLoaded, isOpened, isClicked, isClosed]);
+
+  if (revenue) {
+    console.log('Revenue', revenue);
+  }
 
   return (
     <View style={styles.testSpacing} ref={ref}>
@@ -849,10 +917,50 @@ class GAMInterstitialTest implements Test {
   }
 }
 
+class DebugMenuTest implements Test {
+  constructor() {
+    // Android requires SDK initialization before opening the Debug Menu
+    Platform.OS === 'android' && MobileAds().initialize().catch(console.error);
+  }
+
+  getPath(): string {
+    return 'DebugMenuTest';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return (
+      <View style={styles.testSpacing} ref={onMount}>
+        <Button
+          title="Show Ad Debug Menu"
+          onPress={() => {
+            MobileAds().openDebugMenu(TestIds.BANNER);
+          }}
+        />
+      </View>
+    );
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
+    }
+  }
+}
+
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
 Object.keys(BannerAdSize).forEach(bannerAdSize => {
   TestRegistry.registerTest(new BannerTest(bannerAdSize));
 });
+TestRegistry.registerTest(new CollapsibleBannerTest());
 TestRegistry.registerTest(new AppOpenTest());
 TestRegistry.registerTest(new InterstitialTest());
 TestRegistry.registerTest(new RewardedTest());
@@ -865,6 +973,7 @@ TestRegistry.registerTest(new RewardedInterstitialHookTest());
 TestRegistry.registerTest(new AdInspectorTest());
 TestRegistry.registerTest(new GAMBannerTest());
 TestRegistry.registerTest(new GAMInterstitialTest());
+TestRegistry.registerTest(new DebugMenuTest());
 
 const App = () => {
   return (

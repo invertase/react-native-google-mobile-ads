@@ -21,6 +21,7 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
+import com.google.android.gms.ads.AdValue;
 import io.invertase.googlemobileads.common.RCTConvert;
 import io.invertase.googlemobileads.common.ReactNativeEvent;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
@@ -163,6 +164,14 @@ public class ReactNativeAppModule extends ReactNativeModule {
     // constants.put("NATIVE_FIREBASE_APPS", appsList);
 
     // constants.put("FIREBASE_RAW_JSON", ReactNativeJSON.getSharedInstance().getRawJSON());
+
+    // Precision types in ad revenue events.
+    // See:
+    // https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
+    constants.put("REVENUE_PRECISION_UNKNOWN", AdValue.PrecisionType.UNKNOWN);
+    constants.put("REVENUE_PRECISION_ESTIMATED", AdValue.PrecisionType.ESTIMATED);
+    constants.put("REVENUE_PRECISION_PUBLISHER_PROVIDED", AdValue.PrecisionType.PUBLISHER_PROVIDED);
+    constants.put("REVENUE_PRECISION_PRECISE", AdValue.PrecisionType.PRECISE);
 
     return constants;
   }

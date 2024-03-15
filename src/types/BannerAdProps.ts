@@ -1,5 +1,6 @@
-import { BannerAdSize } from '../BannerAdSize';
+import { BannerAdSize, GAMBannerAdSize } from '../BannerAdSize';
 import { AppEvent } from './AppEvent';
+import type { PaidEventListener } from './PaidEventListener';
 import { RequestOptions } from './RequestOptions';
 
 /**
@@ -71,6 +72,12 @@ export interface BannerAdProps {
    * Called when the user is about to return to the app after tapping on an ad.
    */
   onAdClosed?: () => void;
+
+  /**
+   * Called when ad generates revenue.
+   * See: https://developers.google.com/admob/android/impression-level-ad-revenue
+   */
+  onPaid?: PaidEventListener;
 }
 
 /**
@@ -111,7 +118,7 @@ export interface GAMBannerAdProps extends Omit<BannerAdProps, 'size'> {
    *
    * Inventory must be available for the banner sizes specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  sizes: BannerAdSize[] | string[];
+  sizes: typeof GAMBannerAdSize[keyof typeof GAMBannerAdSize][] | string[];
 
   /**
    * Whether to enable the manual impression counting.

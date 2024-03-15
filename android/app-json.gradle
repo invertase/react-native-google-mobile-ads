@@ -1,30 +1,67 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
-String fileName = "app.json"
+String[] fileNames = ["app.json", "app.config.js"]
+String fileName = null
 String jsonRoot = "react-native-google-mobile-ads"
 String jsonRaw = "GOOGLE_MOBILE_ADS_JSON_RAW"
 
-File jsonFile = null
+File configFile = null
 File parentDir = rootProject.projectDir
 
 for (int i = 0; i <= 3; i++) {
   if (parentDir == null) break
   parentDir = parentDir.parentFile
   if (parentDir != null) {
-    jsonFile = new File(parentDir, fileName)
-    if (jsonFile.exists()) break
+    configFile = new File(parentDir, fileNames[0])
+    if (configFile.exists()) {
+      fileName = fileNames[0]
+      break
+    }
+    else {
+      configFile = new File(parentDir, fileNames[1])
+      if (configFile.exists()) {
+        fileName = fileNames[0]
+        break
+      }
+    }
   }
 }
 
-if (jsonFile != null && jsonFile.exists()) {
-  rootProject.logger.info ":${project.name} ${fileName} found at ${jsonFile.toString()}"
+if (configFile != null && configFile.exists()) {
+  rootProject.logger.info ":${project.name} ${fileName} found at ${configFile.toString()}"
   Object json = null
 
   try {
-    json = new JsonSlurper().parseText(jsonFile.text)
+    // On windows, we need to escape path separators in the path before exec'ing shell
+    def configFileAbsolutePath = configFile.absolutePath
+    if (System.properties['os.name'].toLowerCase().contains('windows')) {
+        configFileAbsolutePath = configFileAbsolutePath.replace("\\", "\\\\")
+    }
+    // rootProject.logger.warn "have a path of ${configFileAbsolutePath}"
+
+    // The config may be either in Expo javascript (app.config.js) or JSON (app.json)
+    // If it is configured in Expo javascript, requiring it will generate a config
+    // If it is configured in JSON, requiring it will also generate the config
+    // So, use node to pull in the config file to get us a JSON string for either case
+    def configOutput = new StringBuffer();
+    def configReadProc = [
+      "node",
+      "-e",
+      "console.log(JSON.stringify(require('${configFileAbsolutePath}')));"
+    ]
+    .execute(null, projectDir)
+    configReadProc.waitForProcessOutput(configOutput, System.err)
+    configOutput = configOutput.toString().trim()
+    // rootProject.logger.warn "got configOutput of ${configOutput.toString()}"
+
+    if (configOutput && !configOutput.isEmpty()) {
+      json = new JsonSlurper().parseText(configOutput)
+    } else {
+      throw new Exception(":${project.name} received empty output while parsing ${configFile} found at ${configFile.toString()}.")
+    }
   } catch (Exception ignored) {
-    rootProject.logger.warn ":${project.name} failed to parse ${fileName} found at ${jsonFile.toString()}."
+    rootProject.logger.warn ":${project.name} failed to parse ${configFile} found at ${configFile.toString()}."
     rootProject.logger.warn ignored.toString()
   }
 

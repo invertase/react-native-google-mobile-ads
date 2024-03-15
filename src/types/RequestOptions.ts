@@ -1,3 +1,9 @@
+/**
+ * Collapsible Placement.
+ * The collapsible placement defines how the expanded region anchors to the banner ad.
+ */
+export type CollapsiblePlacement = 'top' | 'bottom';
+
 export interface ServerSideVerificationOptions {
   /**
    * User identifier.
@@ -41,7 +47,7 @@ export interface RequestOptions {
    *   },
    * });
    */
-  networkExtras?: { [key: string]: string };
+  networkExtras?: { [key: string]: string } & { collapsible?: CollapsiblePlacement };
 
   /**
    * An array of keywords to be sent when loading the ad.

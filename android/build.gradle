@@ -16,7 +16,7 @@ buildscript {
 
     dependencies {
       classpath("com.android.tools.build:gradle:7.0.4")
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.6.10')}"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.8.22')}"
     }
   } else {
     repositories {
@@ -24,7 +24,7 @@ buildscript {
     }
 
     dependencies {
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.6.10')}"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.8.22')}"
     }
   }
 }
@@ -41,6 +41,13 @@ def jsonMinSdk = packageJson['sdkVersions']['android']['minSdk']
 def jsonTargetSdk = packageJson['sdkVersions']['android']['targetSdk']
 def jsonCompileSdk = packageJson['sdkVersions']['android']['compileSdk']
 def jsonBuildTools = packageJson['sdkVersions']['android']['buildTools']
+def isNewArchitectureEnabled() {
+    return project.hasProperty("newArchEnabled") && project.newArchEnabled == "true"
+}
+
+if (isNewArchitectureEnabled()) {
+    apply plugin: "com.facebook.react"
+}
 
 project.ext {
   set('react-native', [
@@ -83,7 +90,7 @@ if (!appJSONGoogleMobileAdsAppIDString) {
   println "\n\n\n"
   println "**************************************************************************************************************"
   println "\n\n\n"
-  println "ERROR: react-native-google-mobile-ads requires an 'android_app_id' property inside a 'react-native-google-mobile-ads' key in your app.json."
+  println "ERROR: react-native-google-mobile-ads requires an 'android_app_id' property inside a 'react-native-google-mobile-ads' key in your app.json or app.config.js."
   println "  No android_app_id property was found in this location. The native Google Mobile Ads SDK will crash on startup without it."
   println "\n\n\n"
   println "**************************************************************************************************************"
@@ -100,6 +107,7 @@ android {
       appJSONGoogleMobileAdsOptimizeInitialization : appJSONGoogleMobileAdsOptimizeInitializationBool,
       appJSONGoogleMobileAdsOptimizeAdLoading      : appJSONGoogleMobileAdsOptimizeAdLoadingBool
     ]
+    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
   }
   lintOptions {
     disable 'GradleCompatible'
@@ -117,7 +125,7 @@ repositories {
 }
 
 dependencies {
-  implementation("com.google.android.gms:play-services-ads:${googleMobileAdsVersion}") { force = true; }
+  implementation("com.google.android.gms:play-services-ads:${googleMobileAdsVersion}")
   api "com.google.android.ump:user-messaging-platform:${googleUmpVersion}"
 }
 

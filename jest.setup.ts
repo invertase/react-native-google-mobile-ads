@@ -20,11 +20,22 @@ jest.doMock('react-native', () => {
           removeListeners: jest.fn(),
           eventsAddListener: jest.fn(),
           eventsNotifyReady: jest.fn(),
+        },
+        RNGoogleMobileAdsInterstitialModule: {
           interstitialLoad: jest.fn(),
         },
-        RNGoogleMobileAdsInterstitialModule: {},
         RNGoogleMobileAdsRewardedModule: {},
         RNGoogleMobileAdsConsentModule: {},
+      },
+      TurboModuleRegistry: {
+        getEnforcing: () => {
+          return {
+            initialize: jest.fn(),
+            setRequestConfiguration: jest.fn(),
+            openAdInspector: jest.fn(),
+            openDebugMenu: jest.fn(),
+          };
+        },
       },
     },
     ReactNative,

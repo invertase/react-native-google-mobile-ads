@@ -16,19 +16,17 @@
  */
 
 import React, { createRef } from 'react';
-import { findNodeHandle, UIManager } from 'react-native';
 import { GAMBannerAdProps } from '../types/BannerAdProps';
-import { BaseAd, GoogleMobileAdsBannerView } from './BaseAd';
+import { BaseAd } from './BaseAd';
+import GoogleMobileAdsBannerView, { Commands } from './GoogleMobileAdsBannerViewNativeComponent';
 
 export class GAMBannerAd extends React.Component<GAMBannerAdProps> {
-  private ref = createRef<GoogleMobileAdsBannerView>();
+  private ref = createRef<React.ElementRef<typeof GoogleMobileAdsBannerView>>();
 
   recordManualImpression() {
-    UIManager.dispatchViewManagerCommand(
-      findNodeHandle(this.ref.current),
-      'recordManualImpression',
-      undefined,
-    );
+    if (this.ref.current) {
+      Commands.recordManualImpression(this.ref.current);
+    }
   }
 
   render() {

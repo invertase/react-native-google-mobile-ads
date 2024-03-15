@@ -14,9 +14,7 @@ Google AdMob dashboard under "Ad units" should be used:
 import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
 export default function App() {
-  const interstitialAd = useInterstitialAd(TestIds.Interstitial, {
-    requestNonPersonalizedAdsOnly: true,
-  });
+  const interstitialAd = useInterstitialAd(TestIds.Interstitial);
 
   return <View>{/* ... */}</View>;
 }
@@ -38,9 +36,7 @@ The hook returns several states and functions to control ad.
 import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
 export default function App({ navigation }) {
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(TestIds.INTERSTITIAL, {
-    requestNonPersonalizedAdsOnly: true,
-  });
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(TestIds.INTERSTITIAL);
 
   useEffect(() => {
     // Start loading the interstitial straight away
@@ -86,9 +82,11 @@ Return values of the hook are:
 | :------------- | :--------------------------------- | :----------------------------------------------------------------------------------------------------------------- |
 | isLoaded       | boolean                            | Whether the ad is loaded and ready to to be shown to the user. Automatically set to false when the ad was shown.   |
 | isOpened       | boolean                            | Whether the ad is opened. The value is remained `true` even after the ad is closed unless **new ad is requested**. |
+| isClicked      | boolean                            | Whether the ad is clicked.                                                                                         |
 | isClosed       | boolean                            | Whether your ad is dismissed.                                                                                      |
 | isShowing      | boolean                            | Whether your ad is showing. The value is equal with `isOpened && !isClosed`.                                       |
 | error          | Error \| undefined                 | `Error` object throwed during ad load.                                                                             |
+| revenue        | PaidEvent                          | See [Impression-level ad revenue] |
 | reward         | [RewardedAdReward](#) \| undefined | Loaded reward item of the Rewarded Ad. Available only in RewardedAd.                                               |
 | isEarnedReward | boolean                            | Whether the user earned the reward by Rewarded Ad.                                                                 |
 | load           | Function                           | Start loading the advert with the provided RequestOptions.                                                         |
@@ -97,3 +95,5 @@ Return values of the hook are:
 > Note that `isOpened` value remains `true` even after the ad is closed.
 > The value changes to `false` when ad is initialized via calling `load()`.
 > To determine whether the ad is currently showing, use `isShowing` value.
+
+[Impression-level ad revenue]: /impression-level-ad-revenue

@@ -1,4 +1,5 @@
 import admob, { MaxAdContentRating } from '../src';
+import RNGoogleMobileAdsModule from '../src/NativeGoogleMobileAdsModule';
 
 describe('Admob', function () {
   describe('setRequestConfiguration()', function () {
@@ -57,6 +58,34 @@ describe('Admob', function () {
         ).toThrowError(
           "setRequestConfiguration(*) 'requestConfiguration.testDeviceIdentifiers' expected an array value",
         );
+      });
+    });
+
+    describe('testDebugMenu', function () {
+      it('does call native initialize method', () => {
+        admob().initialize();
+        expect(RNGoogleMobileAdsModule.initialize).toBeCalledTimes(1);
+      });
+
+      it('does call native setRequestConfiguration method', () => {
+        admob().setRequestConfiguration({ tagForChildDirectedTreatment: true });
+        expect(RNGoogleMobileAdsModule.setRequestConfiguration).toBeCalledTimes(1);
+      });
+
+      it('does call native openAdInspector method', () => {
+        admob().openAdInspector();
+        expect(RNGoogleMobileAdsModule.openAdInspector).toBeCalledTimes(1);
+      });
+
+      it('does call native openDebugMenu method', () => {
+        admob().openDebugMenu('12345');
+        expect(RNGoogleMobileAdsModule.openDebugMenu).toBeCalledTimes(1);
+      });
+
+      it('throws if adUnit is empty', function () {
+        expect(() => {
+          admob().openDebugMenu('');
+        }).toThrowError('openDebugMenu expected a non-empty string value');
       });
     });
   });

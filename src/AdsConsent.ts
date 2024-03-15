@@ -22,7 +22,6 @@ import { AdsConsentPurposes } from './AdsConsentPurposes';
 import { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
 import { isPropertySet, isArray, isBoolean, isObject, isString } from './common';
 import {
-  AdsConsentFormResult,
   AdsConsentInfo,
   AdsConsentInfoOptions,
   AdsConsentInterface,
@@ -76,8 +75,20 @@ export const AdsConsent: AdsConsentInterface = {
     return native.requestInfoUpdate(options);
   },
 
-  showForm(): Promise<AdsConsentFormResult> {
+  showForm(): Promise<AdsConsentInfo> {
     return native.showForm();
+  },
+
+  showPrivacyOptionsForm(): Promise<AdsConsentInfo> {
+    return native.showPrivacyOptionsForm();
+  },
+
+  loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo> {
+    return native.loadAndShowConsentFormIfRequired();
+  },
+
+  getConsentInfo(): Promise<AdsConsentInfo> {
+    return native.getConsentInfo();
   },
 
   reset(): void {
@@ -91,6 +102,14 @@ export const AdsConsent: AdsConsentInterface = {
   async getTCModel(): Promise<TCModel> {
     const tcString = await native.getTCString();
     return TCString.decode(tcString);
+  },
+
+  getGdprApplies(): Promise<boolean> {
+    return native.getGdprApplies();
+  },
+
+  getPurposeConsents(): Promise<string> {
+    return native.getPurposeConsents();
   },
 
   async getUserChoices(): Promise<AdsConsentUserChoices> {
@@ -120,7 +139,7 @@ export const AdsConsent: AdsConsentInterface = {
         AdsConsentPurposes.CREATE_A_PERSONALISED_ADS_PROFILE,
       ),
       createAPersonalisedContentProfile: tcModel.purposeConsents.has(
-        AdsConsentPurposes.CREATE_A_PERSONALISED_ADS_PROFILE,
+        AdsConsentPurposes.CREATE_A_PERSONALISED_CONTENT_PROFILE,
       ),
       developAndImproveProducts: tcModel.purposeConsents.has(
         AdsConsentPurposes.DEVELOP_AND_IMPROVE_PRODUCTS,
