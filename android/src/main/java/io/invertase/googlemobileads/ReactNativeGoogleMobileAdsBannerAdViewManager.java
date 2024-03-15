@@ -210,23 +210,27 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           @Override
           public void onAdLoaded() {
             AdSize adSize = adView.getAdSize();
-            int left, top, width, height;
+            int width, height;
             if (reactViewGroup.getIsFluid()) {
-              reactViewGroup.requestLayout();
-              left = 0;
-              top = 0;
               width = reactViewGroup.getWidth();
               height = reactViewGroup.getHeight();
+
+              adView.addOnLayoutChangeListener(
+                (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                  WritableMap payload = Arguments.createMap();
+                  payload.putDouble("width", PixelUtil.toDIPFromPixel(right - left));
+                  payload.putDouble("height", PixelUtil.toDIPFromPixel(bottom - top));
+                  sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
+                });
             } else {
-              left = adView.getLeft();
-              top = adView.getTop();
+              int left = adView.getLeft();
+              int top = adView.getTop();
               width = adSize.getWidthInPixels(reactViewGroup.getContext());
               height = adSize.getHeightInPixels(reactViewGroup.getContext());
-            }
-            adView.measure(width, height);
-            adView.layout(left, top, left + width, top + height);
 
-          if (reactViewGroup.getIsFluid()) return;
+              adView.measure(width, height);
+              adView.layout(left, top, left + width, top + height);
+            }
 
           WritableMap payload = Arguments.createMap();
             payload.putDouble("width", PixelUtil.toDIPFromPixel(width));

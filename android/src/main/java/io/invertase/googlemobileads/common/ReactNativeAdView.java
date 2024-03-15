@@ -2,10 +2,21 @@ package io.invertase.googlemobileads.common;
 
 import android.content.Context;
 import android.widget.FrameLayout;
+
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import java.util.List;
 
+/**
+ * Using FrameLayout instead of ReactViewGroup
+ *
+ * This is because in the case of fluid ads,
+ * - JS side will usually not specify the ad height
+ * - Also, after loading the fluid ad, we need to measure the ad height and update the layout
+ * Which isn't possible with ReactViewGroup since it overrides requestLayout by a noop
+ *
+ * See https://github.com/facebook/react-native/issues/17968 for more details
+ */
 public class ReactNativeAdView extends FrameLayout {
   private AdRequest request;
   private List<AdSize> sizes;
@@ -20,11 +31,25 @@ public class ReactNativeAdView extends FrameLayout {
     post(measureAndLayout);
   }
 
+  /**
+   * This ensures the adview is properly measured and laid out if its layout changed after being loaded
+   * This happens everytime for fluid ads, but cannot happen for fixed size ads loading additional content
+   *
+   * See https://github.com/facebook/react-native/issues/17968 for more details
+   */
   private final Runnable measureAndLayout = () -> {
-    measure(
-      MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
-      MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.EXACTLY));
-    layout(getLeft(), getTop(), getRight(), getBottom());
+    /**
+     * For fluid ads, we usually don't specify the ad height from JS side, so mark it as
+     * unspecified and let it dynamically determine its size
+     *
+     * See https://developers.google.com/ad-manager/mobile-ads-sdk/android/native/styles#fluid_size
+     */
+    int heightMeasureSpec = isFluid ?
+      MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED) :
+      MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.EXACTLY);
+
+    measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY), heightMeasureSpec);
+    layout(getLeft(), getTop(), getRight(), getTop() + getHeight());
   };
 
   public ReactNativeAdView(final Context context) {
