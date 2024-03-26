@@ -1,7 +1,7 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
-String[] fileNames = ["app.json", "app.config.js"]
+String[] fileNames = ["app.json", "app.config.js", "app.config.ts"]
 String fileName = null
 String jsonRoot = "react-native-google-mobile-ads"
 String jsonRaw = "GOOGLE_MOBILE_ADS_JSON_RAW"
@@ -10,18 +10,13 @@ File configFile = null
 File parentDir = rootProject.projectDir
 
 for (int i = 0; i <= 3; i++) {
-  if (parentDir == null) break
+  if (parentDir == null || (configFile != null && configFile.exists())) break
   parentDir = parentDir.parentFile
   if (parentDir != null) {
-    configFile = new File(parentDir, fileNames[0])
-    if (configFile.exists()) {
-      fileName = fileNames[0]
-      break
-    }
-    else {
-      configFile = new File(parentDir, fileNames[1])
+    for(int j = 0; j < fileNames.length; j++) {
+      configFile = new File(parentDir, fileNames[j])
       if (configFile.exists()) {
-        fileName = fileNames[0]
+        fileName = configFile.name
         break
       }
     }
@@ -35,22 +30,45 @@ if (configFile != null && configFile.exists()) {
   try {
     // On windows, we need to escape path separators in the path before exec'ing shell
     def configFileAbsolutePath = configFile.absolutePath
+    def configDirAbsolutePath = configFile.parentFile.absolutePath
     if (System.properties['os.name'].toLowerCase().contains('windows')) {
         configFileAbsolutePath = configFileAbsolutePath.replace("\\", "\\\\")
+        configDirAbsolutePath = configDirAbsolutePath.replace("\\", "\\\\")
     }
     // rootProject.logger.warn "have a path of ${configFileAbsolutePath}"
 
-    // The config may be either in Expo javascript (app.config.js) or JSON (app.json)
+    // The config may be either in Expo javascript (app.config.(js|ts)) or JSON (app.json)
     // If it is configured in Expo javascript, requiring it will generate a config
     // If it is configured in JSON, requiring it will also generate the config
     // So, use node to pull in the config file to get us a JSON string for either case
     def configOutput = new StringBuffer();
+    def configReadCmd = fileName.substring(fileName.lastIndexOf(".") + 1)  ==~ /^(js|ts)$/ ? """
+      try {
+        const expoConfig = require('@expo/config')
+        console.log(
+          JSON.stringify(
+            expoConfig.getConfig('${configDirAbsolutePath}')?.exp?.extra
+          )
+        );
+      } catch (e) {
+        if (e instanceof Error && e.code === "MODULE_NOT_FOUND") {
+          console.error("You have an expo app.config[.js|.ts] file but do not have \"@expo/config\" installed. \"@expo/config\" is required for react-native-google-mobile-ads to read the app.config[.js|.ts] file and should be installed by default with expo. Please install \"@expo/config\" and try again.")
+        } else {
+          throw e
+        }
+      }
+
+    """ : """
+      console.log(JSON.stringify(require('${configFileAbsolutePath}')));
+    """
+
     def configReadProc = [
       "node",
       "-e",
-      "console.log(JSON.stringify(require('${configFileAbsolutePath}')));"
-    ]
-    .execute(null, projectDir)
+      configReadCmd
+    ].execute(null, projectDir)
+
+
     configReadProc.waitForProcessOutput(configOutput, System.err)
     configOutput = configOutput.toString().trim()
     // rootProject.logger.warn "got configOutput of ${configOutput.toString()}"
@@ -97,7 +115,7 @@ if (configFile != null && configFile.exists()) {
   }
 } else {
   rootProject.ext.googleMobileAdsJson = false
-  rootProject.logger.info ":${project.name} no ${fileName} found, skipping"
+  rootProject.logger.info ":${project.name} no ${fileNames.join(', ')} found, skipping"
   android {
     defaultConfig {
       buildConfigField "String", jsonRaw, '"{}"'
