@@ -41,15 +41,15 @@
   ],
   "sdkVersions": {
     "ios": {
-      "googleMobileAds": "11.0.1",
-      "googleUmp": "2.2.0"
+      "googleMobileAds": "11.2.0",
+      "googleUmp": "2.3.0"
     },
     "android": {
-      "minSdk": 19,
+      "minSdk": 21,
       "targetSdk": 33,
       "compileSdk": 33,
       "buildTools": "33.0.0",
-      "googleMobileAds": "22.5.0",
+      "googleMobileAds": "23.0.0",
       "googleUmp": "2.2.0"
     }
   },
