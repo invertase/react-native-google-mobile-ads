@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { NativeSyntheticEvent } from 'react-native';
+import { DimensionValue, NativeSyntheticEvent } from 'react-native';
 import { isFunction } from '../common';
 import { RevenuePrecisions } from '../common/constants';
 import { NativeError } from '../internal/NativeError';
@@ -137,12 +137,12 @@ export const BaseAd = React.forwardRef<
 
   const style = sizes.includes(GAMBannerAdSize.FLUID)
     ? {
-        width: '100%',
-        height: dimensions[1],
+        width: '100%' as DimensionValue,
+        height: dimensions[1] as DimensionValue,
       }
     : {
-        width: dimensions[0],
-        height: dimensions[1],
+        width: dimensions[0] as DimensionValue,
+        height: dimensions[1] as DimensionValue,
       };
 
   return (

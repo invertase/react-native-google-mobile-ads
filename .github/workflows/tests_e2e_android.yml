@@ -51,28 +51,28 @@ jobs:
       # Set up tool versions
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
 
-      - name: Configure JDK 1.11
+      - name: Configure JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '11' # ubuntu-latest is about to default to 11, force it everywhere
+          java-version: '17'
 
       # Set path variables needed for caches
       - name: Set workflow variables
         id: workflow-variables
         run: |
-          echo "::set-output name=metro-cache::$HOME/.metro"
-          echo "::set-output name=yarn-cache-dir::$(yarn cache dir)"
-          echo "::set-output name=tempdir::$TMPDIR"
+          echo "metro-cache=$HOME/.metro" >> $GITHUB_OUTPUT
+          echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+          echo "tempdir=$TMPDIR" >> $GITHUB_OUTPUT
 
       - uses: actions/cache@v3
         name: Yarn Cache
         id: yarn-cache
         with:
           path: ${{ steps.workflow-variables.outputs.yarn-cache-dir }}
-          key: ${{ runner.os }}-yarn-v1-${{ hashFiles('**/package.json') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: ${{ runner.os }}-yarn-v1
 
       - name: Yarn Install
@@ -195,15 +195,9 @@ jobs:
         with:
           verbose: true
 
-      - name: Compress Emulator Log
-        continue-on-error: true
-        if: always()
-        run: gzip -9 adb-log.txt
-        shell: bash
-
       - name: Upload Emulator Log
         uses: actions/upload-artifact@v3
         if: always()
         with:
           name: adb_logs
-          path: adb-log.txt.gz
+          path: adb-log.txt

@@ -23,16 +23,16 @@ jobs:
           fetch-depth: 1
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
+        run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
       - uses: actions/cache@v2
         name: Yarn Cache
         id: yarn-cache
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/package.json') }}
+          path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
@@ -72,13 +72,13 @@ jobs:
           node-version: 18
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
+        run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
       - uses: actions/cache@v3
         name: Yarn Cache
         id: yarn-cache
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/package.json') }}
+          path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
@@ -104,12 +104,12 @@ jobs:
   #         node-version: 18
   #     - name: Get yarn cache directory path
   #       id: yarn-cache-dir-path
-  #       run: echo "::set-output name=dir::$(yarn cache dir)"
+  #       run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
   #     - uses: actions/cache@v2
   #       name: Yarn Cache
   #       id: yarn-cache
   #       with:
-  #         path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+  #         path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
   #         key: ${{ runner.os }}-yarn-${{ hashFiles('**/package.json') }}-with-website
   #         restore-keys: |
   #           ${{ runner.os }}-yarn-

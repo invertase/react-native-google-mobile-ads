@@ -17,6 +17,7 @@
 
 // @ts-ignore: Could not find a declaration file
 import Emitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
+// @ts-ignore we need to true up our types here but it does work
 import { EventEmitter } from 'react-native';
 
 export const SharedEventEmitter: EventEmitter = new Emitter();
