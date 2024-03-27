@@ -44,8 +44,7 @@
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
 
-    
-    if(GADAdSizeEqualToSize(adSize,GADAdSizeFluid)) {
+    if (GADAdSizeEqualToSize(adSize, GADAdSizeFluid)) {
       _banner.frame = self.bounds;
       _banner.autoresizingMask = (UIViewAutoresizingFlexibleWidth);
     }
@@ -94,14 +93,14 @@
   _propsChanged = true;
 }
 
-- (GADAdSize) getInitialAdSize {
-    for (NSValue *sizeValue in _sizes) {
-        GADAdSize adSize = GADAdSizeFromNSValue(sizeValue);
-        if (GADAdSizeEqualToSize(adSize, GADAdSizeFluid)) {
-            return GADAdSizeFluid;
-        }
+- (GADAdSize)getInitialAdSize {
+  for (NSValue *sizeValue in _sizes) {
+    GADAdSize adSize = GADAdSizeFromNSValue(sizeValue);
+    if (GADAdSizeEqualToSize(adSize, GADAdSizeFluid)) {
+      return GADAdSizeFluid;
     }
-    return GADAdSizeFromNSValue(_sizes[0]);
+  }
+  return GADAdSizeFromNSValue(_sizes[0]);
 }
 
 - (void)requestAd {

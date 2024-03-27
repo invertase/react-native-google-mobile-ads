@@ -216,12 +216,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
               height = reactViewGroup.getHeight();
 
               adView.addOnLayoutChangeListener(
-                (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-                  WritableMap payload = Arguments.createMap();
-                  payload.putDouble("width", PixelUtil.toDIPFromPixel(right - left));
-                  payload.putDouble("height", PixelUtil.toDIPFromPixel(bottom - top));
-                  sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
-                });
+                  (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    WritableMap payload = Arguments.createMap();
+                    payload.putDouble("width", PixelUtil.toDIPFromPixel(right - left));
+                    payload.putDouble("height", PixelUtil.toDIPFromPixel(bottom - top));
+                    sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
+                  });
             } else {
               int left = adView.getLeft();
               int top = adView.getTop();
@@ -232,42 +232,42 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
               adView.layout(left, top, left + width, top + height);
             }
 
-          WritableMap payload = Arguments.createMap();
+            WritableMap payload = Arguments.createMap();
             payload.putDouble("width", PixelUtil.toDIPFromPixel(width));
             payload.putDouble("height", PixelUtil.toDIPFromPixel(height));
 
-          sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
-        }
+            sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
+          }
 
-        @Override
-        public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-          int errorCode = loadAdError.getCode();
-          WritableMap payload = ReactNativeGoogleMobileAdsCommon.errorCodeToMap(errorCode);
-          sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
-        }
+          @Override
+          public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+            int errorCode = loadAdError.getCode();
+            WritableMap payload = ReactNativeGoogleMobileAdsCommon.errorCodeToMap(errorCode);
+            sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
+          }
 
-        @Override
-        public void onAdOpened() {
-          sendEvent(reactViewGroup, EVENT_AD_OPENED, null);
-        }
+          @Override
+          public void onAdOpened() {
+            sendEvent(reactViewGroup, EVENT_AD_OPENED, null);
+          }
 
-        @Override
-        public void onAdClosed() {
-          sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
-        }
-      });
+          @Override
+          public void onAdClosed() {
+            sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
+          }
+        });
     if (adView instanceof AdManagerAdView) {
       ((AdManagerAdView) adView)
-        .setAppEventListener(
-          new AppEventListener() {
-            @Override
-            public void onAppEvent(@NonNull String name, @Nullable String data) {
-              WritableMap payload = Arguments.createMap();
-              payload.putString("name", name);
-              payload.putString("data", data);
-              sendEvent(reactViewGroup, EVENT_APP_EVENT, payload);
-            }
-          });
+          .setAppEventListener(
+              new AppEventListener() {
+                @Override
+                public void onAppEvent(@NonNull String name, @Nullable String data) {
+                  WritableMap payload = Arguments.createMap();
+                  payload.putString("name", name);
+                  payload.putString("data", data);
+                  sendEvent(reactViewGroup, EVENT_APP_EVENT, payload);
+                }
+              });
     }
     reactViewGroup.addView(adView);
     return adView;
