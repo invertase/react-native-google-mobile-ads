@@ -19,6 +19,7 @@ module.exports = {
   },
   env: {
     'jest/globals': true,
+    node: true,
   },
   rules: {
     'jest/no-identical-title': 0,
