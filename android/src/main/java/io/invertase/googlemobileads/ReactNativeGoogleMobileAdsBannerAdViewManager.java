@@ -295,10 +295,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       if (adView instanceof AdManagerAdView) {
         if (sizes.contains(AdSize.FLUID)) {
           reactViewGroup.setIsFluid(true);
-          ((AdManagerAdView) adView).setAdSizes(AdSize.FLUID);
-        } else {
-          ((AdManagerAdView) adView).setAdSizes(sizes.toArray(new AdSize[0]));
         }
+        ((AdManagerAdView) adView).setAdSizes(sizes.toArray(new AdSize[0]));
+
         if (manualImpressionsEnabled) {
           ((AdManagerAdView) adView).setManualImpressionsEnabled(true);
         }

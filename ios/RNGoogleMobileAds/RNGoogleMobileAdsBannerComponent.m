@@ -94,6 +94,16 @@
   _propsChanged = true;
 }
 
+- (GADAdSize) getInitialAdSize {
+    for (NSValue *sizeValue in _sizes) {
+        GADAdSize adSize = GADAdSizeFromNSValue(sizeValue);
+        if (GADAdSizeEqualToSize(adSize, GADAdSizeFluid)) {
+            return GADAdSizeFluid;
+        }
+    }
+    return GADAdSizeFromNSValue(_sizes[0]);
+}
+
 - (void)requestAd {
 #ifndef __LP64__
   return;  // prevent crash on 32bit
@@ -104,7 +114,7 @@
     return;
   }
 
-  [self initBanner:GADAdSizeFromNSValue(_sizes[0])];
+  [self initBanner:[self getInitialAdSize]];
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];
