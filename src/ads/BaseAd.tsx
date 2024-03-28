@@ -93,10 +93,11 @@ export const BaseAd = React.forwardRef<
         };
     const { type } = nativeEvent;
 
-    if (type !== 'onSizeChange' && isFunction(props[type])) {
+    if (isFunction(props[type])) {
       let eventHandler, eventPayload;
       switch (type) {
         case 'onAdLoaded':
+        case 'onSizeChange':
           eventPayload = {
             width: nativeEvent.width,
             height: nativeEvent.height,

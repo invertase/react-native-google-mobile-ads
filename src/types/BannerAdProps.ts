@@ -78,6 +78,11 @@ export interface BannerAdProps {
    * See: https://developers.google.com/admob/android/impression-level-ad-revenue
    */
   onPaid?: PaidEventListener;
+
+  /**
+   * Called when ad size dimensions changed
+   */
+  onSizeChange?: (dimensions: { width: number; height: number }) => void;
 }
 
 /**
