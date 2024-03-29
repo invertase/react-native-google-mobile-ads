@@ -4,6 +4,7 @@
  *
  * @format
  */
+const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 
 const path = require('path');
 const fs = require('fs');
@@ -71,7 +72,7 @@ const [moduleMappings, moduleExclusions] = processModuleSymLinks();
 console.log('Mapping the following sym linked packages:');
 console.log(moduleMappings);
 
-module.exports = {
+const config = {
   transformer: {
     getTransformOptions: async () => ({
       transform: {
@@ -103,3 +104,5 @@ module.exports = {
   // Also additionally watch all the mapped local directories for changes to support live updates.
   watchFolders: Object.values(moduleMappings),
 };
+
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);
