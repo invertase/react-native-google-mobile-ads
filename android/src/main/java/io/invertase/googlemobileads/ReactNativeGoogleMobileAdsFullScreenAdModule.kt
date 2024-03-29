@@ -145,7 +145,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
     private val adUnitId: String,
     private val adRequestOptions: ReadableMap
   ) : AdLoadCallback<T>() {
-    override fun onAdLoaded(ad: T) {
+    override fun onAdLoaded(ad: T & Any) {
       try {
         val adHelper = ReactNativeGoogleMobileAdsAdHelper(ad)
         var eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_LOADED
