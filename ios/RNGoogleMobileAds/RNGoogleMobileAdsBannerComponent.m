@@ -44,6 +44,11 @@
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
 
+    if (GADAdSizeEqualToSize(adSize, GADAdSizeFluid)) {
+      _banner.frame = self.bounds;
+      _banner.autoresizingMask = (UIViewAutoresizingFlexibleWidth);
+    }
+
     ((GAMBannerView *)_banner).validAdSizes = _sizes;
     ((GAMBannerView *)_banner).appEventDelegate = self;
     ((GAMBannerView *)_banner).enableManualImpressions = [_manualImpressionsEnabled boolValue];
@@ -88,6 +93,16 @@
   _propsChanged = true;
 }
 
+- (GADAdSize)getInitialAdSize {
+  for (NSValue *sizeValue in _sizes) {
+    GADAdSize adSize = GADAdSizeFromNSValue(sizeValue);
+    if (GADAdSizeEqualToSize(adSize, GADAdSizeFluid)) {
+      return GADAdSizeFluid;
+    }
+  }
+  return GADAdSizeFromNSValue(_sizes[0]);
+}
+
 - (void)requestAd {
 #ifndef __LP64__
   return;  // prevent crash on 32bit
@@ -98,7 +113,7 @@
     return;
   }
 
-  [self initBanner:GADAdSizeFromNSValue(_sizes[0])];
+  [self initBanner:[self getInitialAdSize]];
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];

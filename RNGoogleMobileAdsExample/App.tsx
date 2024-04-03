@@ -20,6 +20,7 @@ import MobileAds, {
   TestIds,
   BannerAd,
   BannerAdSize,
+  GAMBannerAdSize,
   RevenuePrecisions,
   RewardedAd,
   RewardedAdEventType,
@@ -787,7 +788,13 @@ class AdInspectorTest implements Test {
   }
 }
 
-const GAMBannerComponent = React.forwardRef<View>((_, ref) => {
+const GAMBannerComponent = React.forwardRef<
+  View,
+  {
+    unitId: string;
+    sizes: GAMBannerAdSize[];
+  }
+>(({unitId, sizes}, ref) => {
   const bannerRef = useRef<GAMBannerAd>(null);
   const recordManualImpression = () => {
     bannerRef.current?.recordManualImpression();
@@ -797,8 +804,8 @@ const GAMBannerComponent = React.forwardRef<View>((_, ref) => {
       {/* To test FLUID size ad, use `TestIds.GAM_NATIVE` */}
       <GAMBannerAd
         ref={bannerRef}
-        unitId={TestIds.GAM_BANNER}
-        sizes={[BannerAdSize.ADAPTIVE_BANNER]}
+        unitId={unitId}
+        sizes={sizes}
         requestOptions={{
           requestNonPersonalizedAdsOnly: true,
         }}
@@ -812,8 +819,29 @@ const GAMBannerComponent = React.forwardRef<View>((_, ref) => {
   );
 });
 class GAMBannerTest implements Test {
+  constructor(
+    private readonly props: {
+      unitId: string;
+      sizes: GAMBannerAdSize[];
+    },
+  ) {}
+
   getPath(): string {
-    return 'GAMBanner';
+    return (
+      'GAMBanner ' +
+      this.props.sizes
+        .map(size =>
+          size
+            .split('_')
+            .map(
+              (s: string) =>
+                s.toLowerCase().charAt(0).toUpperCase() +
+                s.toLowerCase().slice(1),
+            )
+            .join(''),
+        )
+        .join('_')
+    );
   }
 
   getTestType(): TestType {
@@ -821,7 +849,7 @@ class GAMBannerTest implements Test {
   }
 
   render(onMount: (component: any) => void): React.ReactNode {
-    return <GAMBannerComponent ref={onMount} />;
+    return <GAMBannerComponent ref={onMount} {...this.props} />;
   }
 
   execute(component: any, complete: (result: TestResult) => void): void {
@@ -971,7 +999,18 @@ TestRegistry.registerTest(new RewardedHookTest());
 TestRegistry.registerTest(new AppOpenHookTest());
 TestRegistry.registerTest(new RewardedInterstitialHookTest());
 TestRegistry.registerTest(new AdInspectorTest());
-TestRegistry.registerTest(new GAMBannerTest());
+TestRegistry.registerTest(
+  new GAMBannerTest({
+    unitId: TestIds.GAM_BANNER,
+    sizes: [BannerAdSize.ADAPTIVE_BANNER],
+  }),
+);
+TestRegistry.registerTest(
+  new GAMBannerTest({
+    unitId: TestIds.GAM_NATIVE,
+    sizes: [GAMBannerAdSize.FLUID],
+  }),
+);
 TestRegistry.registerTest(new GAMInterstitialTest());
 TestRegistry.registerTest(new DebugMenuTest());
 
