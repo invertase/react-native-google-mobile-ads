@@ -29,7 +29,7 @@ export { AdsConsentPrivacyOptionsRequirementStatus } from './AdsConsentPrivacyOp
 export { MaxAdContentRating } from './MaxAdContentRating';
 export { TestIds } from './TestIds';
 export { AdEventType } from './AdEventType';
-export { BannerAdSize } from './BannerAdSize';
+export { BannerAdSize, GAMBannerAdSize } from './BannerAdSize';
 export { GAMAdEventType } from './GAMAdEventType';
 export { RewardedAdEventType } from './RewardedAdEventType';
 export { AdsConsent } from './AdsConsent';

@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { NativeSyntheticEvent } from 'react-native';
+import { NativeSyntheticEvent, Platform } from 'react-native';
 import { isFunction } from '../common';
 import { RevenuePrecisions } from '../common/constants';
 import { NativeError } from '../internal/NativeError';
@@ -26,6 +26,7 @@ import type { NativeEvent } from './GoogleMobileAdsBannerViewNativeComponent';
 import { BannerAdSize, GAMBannerAdSize } from '../BannerAdSize';
 import { validateAdRequestOptions } from '../validateAdRequestOptions';
 import { GAMBannerAdProps } from '../types/BannerAdProps';
+import { debounce } from '../common/debounce';
 
 const sizeRegex = /([0-9]+)x([0-9]+)/;
 
@@ -34,6 +35,8 @@ export const BaseAd = React.forwardRef<
   GAMBannerAdProps
 >(({ unitId, sizes, requestOptions, manualImpressionsEnabled, ...props }, ref) => {
   const [dimensions, setDimensions] = useState<(number | string)[]>([0, 0]);
+
+  const debouncedSetDimensions = debounce(setDimensions, 100);
 
   useEffect(() => {
     if (!unitId) {
@@ -90,10 +93,11 @@ export const BaseAd = React.forwardRef<
         };
     const { type } = nativeEvent;
 
-    if (type !== 'onSizeChange' && isFunction(props[type])) {
+    if (isFunction(props[type])) {
       let eventHandler, eventPayload;
       switch (type) {
         case 'onAdLoaded':
+        case 'onSizeChange':
           eventPayload = {
             width: nativeEvent.width,
             height: nativeEvent.height,
@@ -129,8 +133,24 @@ export const BaseAd = React.forwardRef<
     if (type === 'onAdLoaded' || type === 'onSizeChange') {
       const width = Math.ceil(nativeEvent.width);
       const height = Math.ceil(nativeEvent.height);
+
       if (width && height && JSON.stringify([width, height]) !== JSON.stringify(dimensions)) {
-        setDimensions([width, height]);
+        /**
+         * On Android, it seems the ad size is not always the definitive on the first onAdLoaded event.
+         * So if we change the size here with an incorrect value, then we relayout the ad on native side
+         * and it might cause an incorrect size to be set.
+         *
+         * To reproduce this issue, go to the example app, on the "GAMBanner Fluid" example
+         * and reload the ad several times
+         *
+         * on my low-end Samsung A10s, it always took less than 100ms in debug mode to get the correct size
+         * hence the 100ms debounce
+         */
+        if (sizes.includes(GAMBannerAdSize.FLUID) && Platform.OS === 'android') {
+          debouncedSetDimensions([width, height]);
+        } else {
+          setDimensions([width, height]);
+        }
       }
     }
   }
