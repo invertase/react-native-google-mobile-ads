@@ -1,3 +1,15 @@
+## [13.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.1.0...v13.2.0) (2024-04-03)
+
+
+### Features
+
+* add FLUID size support ([c09a326](https://github.com/invertase/react-native-google-mobile-ads/commit/c09a3267ecfbedc9b7ad66f68967e480e9fe09ad))
+
+
+### Bug Fixes
+
+* android build error 'onAdLoaded' overrides nothing ([bd52c12](https://github.com/invertase/react-native-google-mobile-ads/commit/bd52c12b2c9edbf92a809f814a0c1b4ca8b3e492))
+
 ## [13.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.0.2...v13.1.0) (2024-03-26)
 
 
