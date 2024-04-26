@@ -117,8 +117,10 @@
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];
+
+  RNGoogleMobileAdsBannerComponent * __weak weakSelf = self;
   _banner.paidEventHandler = ^(GADAdValue *_Nonnull value) {
-    [self sendEvent:@"onPaid"
+    [weakSelf sendEvent:@"onPaid"
             payload:@{
               @"value" : value.value,
               @"precision" : @(value.precision),
