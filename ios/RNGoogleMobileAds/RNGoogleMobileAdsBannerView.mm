@@ -35,6 +35,11 @@ using namespace facebook::react;
   [super prepareForRecycle];
   static const auto defaultProps = std::make_shared<const RNGoogleMobileAdsBannerViewProps>();
   _props = defaultProps;
+
+  if (_banner) {
+    [_banner removeFromSuperview];
+    _banner = nil;
+  }
 }
 
 - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps {
