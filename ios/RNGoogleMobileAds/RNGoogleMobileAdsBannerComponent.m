@@ -117,15 +117,17 @@
   [self addSubview:_banner];
   _banner.adUnitID = _unitId;
   [self setRequested:YES];
-
-  RNGoogleMobileAdsBannerComponent * __weak weakSelf = self;
+  __weak typeof(self) weakSelf = self;
   _banner.paidEventHandler = ^(GADAdValue *_Nonnull value) {
-    [weakSelf sendEvent:@"onPaid"
-            payload:@{
-              @"value" : value.value,
-              @"precision" : @(value.precision),
-              @"currency" : value.currencyCode,
-            }];
+    typeof(self) strongSelf = weakSelf;
+    if (strongSelf) {
+      [strongSelf sendEvent:@"onPaid"
+                  payload:@{
+        @"value" : value.value,
+        @"precision" : @(value.precision),
+        @"currency" : value.currencyCode,
+      }];
+    }
   };
   [_banner loadRequest:[RNGoogleMobileAdsCommon buildAdRequest:_request]];
   [self sendEvent:@"onSizeChange"
