@@ -1,3 +1,11 @@
+### [13.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.2.0...v13.2.1) (2024-05-02)
+
+
+### Bug Fixes
+
+* **banner, ios:** banner not destroyed in new arch ([2d8bdb5](https://github.com/invertase/react-native-google-mobile-ads/commit/2d8bdb562c9ecd968e11bad73310874ecf5b82ec))
+* **banner, ios:** fixed memory leak ([5cbf0e9](https://github.com/invertase/react-native-google-mobile-ads/commit/5cbf0e9f785107a33e5b3569c13cff5e5d186c8a))
+
 ## [13.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.1.0...v13.2.0) (2024-04-03)
 
 
