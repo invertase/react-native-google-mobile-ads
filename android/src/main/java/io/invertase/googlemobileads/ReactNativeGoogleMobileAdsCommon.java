@@ -177,9 +177,16 @@ public class ReactNativeGoogleMobileAdsCommon {
       Map<String, Object> customTargeting = adRequestOptions.getMap("customTargeting").toHashMap();
 
       for (Map.Entry<String, Object> entry : customTargeting.entrySet()) {
-        String key = entry.getKey();
-        String value = (String) entry.getValue();
-        builder.addCustomTargeting(key, value);
+        Object value = entry.getValue();
+        String type = value.getClass().getSimpleName();
+
+        if (type.equals("String")) {
+          String finalValue = (String) value;
+          builder.addCustomTargeting(key, finalValue);
+        } else {
+          ArrayList finalValue = (ArrayList) value;
+          builder.addCustomTargeting(key, finalValue);
+        }
       }
     }
 
