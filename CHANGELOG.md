@@ -1,3 +1,10 @@
+## [13.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.2.1...v13.3.0) (2024-05-13)
+
+
+### Features
+
+* **android:** Add support for ArrayList ([7303730](https://github.com/invertase/react-native-google-mobile-ads/commit/7303730a702ff2141be8fd417d7977ccf07f463c))
+
 ### [13.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.2.0...v13.2.1) (2024-05-02)
 
 
