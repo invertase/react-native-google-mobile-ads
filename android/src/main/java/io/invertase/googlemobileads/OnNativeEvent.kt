@@ -16,6 +16,6 @@ class OnNativeEvent(viewId: Int, private val event: WritableMap) : Event<OnNativ
     }
 
     companion object {
-        const val EVENT_NAME = "topNative"
+        const val EVENT_NAME = "topNativeEvent"
     }
 }
