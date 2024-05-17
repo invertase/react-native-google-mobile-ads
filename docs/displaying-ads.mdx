@@ -399,18 +399,33 @@ The module exposes a [`BannerAd`](/reference/admob/bannerad) component. The `uni
 a banner:
 
 ```js
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 function App() {
-  return (
-    <BannerAd
-      unitId={adUnitId}
-      size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-    />
-  );
+  const appState = useRef(AppState.currentState);
+  const [key, setKey] = useState(Date.now());
+
+  // WKWebView can terminate if app is in a "suspended state", resulting in an empty banner when app returns to foreground.
+  // A Google Mobile Ads Advisor suggests requesting a new ad when the app is foregrounded.
+  // For more details, see: [https://groups.google.com/g/google-admob-ads-sdk/c/rwBpqOUr8m8]
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (appState.current.match(/background/) && nextAppState === 'active') {
+        setKey(`banner-${Date.now()}`);
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  return <BannerAd key={key} unitId={adUnitId} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />;
 }
 ```
 
@@ -473,12 +488,7 @@ import { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-a
 const adUnitId = __DEV__ ? TestIds.GAM_BANNER : '/xxx/yyyy';
 
 function App() {
-  return (
-    <GAMBannerAd
-      unitId={adUnitId}
-      sizes={[BannerAdSize.FULL_BANNER]}
-    />
-  );
+  return <GAMBannerAd unitId={adUnitId} sizes={[BannerAdSize.FULL_BANNER]} />;
 }
 ```
 
