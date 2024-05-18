@@ -407,7 +407,7 @@ const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/y
 
 function App() {
   const appState = useRef(AppState.currentState);
-  const [key, setKey] = useState(Date.now());
+  const [key, setKey] = useState(`banner-${Date.now()}`);
 
   // WKWebView can terminate if app is in a "suspended state", resulting in an empty banner when app returns to foreground.
   // A Google Mobile Ads Advisor suggests requesting a new ad when the app is foregrounded.
