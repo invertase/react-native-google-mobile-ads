@@ -1,3 +1,11 @@
+### [13.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.3.0...v13.3.1) (2024-05-19)
+
+
+### Bug Fixes
+
+* topNative name changed to topNativeEvent. ([b4cbea3](https://github.com/invertase/react-native-google-mobile-ads/commit/b4cbea3cbff42bdae7a630bd7daf03ebb1fca49c))
+* Typescript error in the docs ([4ad8bc7](https://github.com/invertase/react-native-google-mobile-ads/commit/4ad8bc7a967040eecc60a2ad631bc14c2cada443))
+
 ## [13.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.2.1...v13.3.0) (2024-05-13)
 
 
