@@ -187,6 +187,7 @@ class BannerTest implements Test {
 
   constructor(bannerAdSize) {
     this.bannerAdSize = bannerAdSize;
+    this.bannerRef = React.createRef();
   }
 
   getPath(): string {
@@ -206,6 +207,7 @@ class BannerTest implements Test {
     return (
       <View ref={onMount}>
         <BannerAd
+          ref={this.bannerRef}
           unitId={
             this.bannerAdSize.includes('ADAPTIVE_BANNER')
               ? TestIds.ADAPTIVE_BANNER
@@ -218,6 +220,12 @@ class BannerTest implements Test {
                 RevenuePrecisions[event.precision]
               }})`,
             );
+          }}
+        />
+        <Button
+          title="reload"
+          onPress={() => {
+            this.bannerRef.current?.load();
           }}
         />
       </View>

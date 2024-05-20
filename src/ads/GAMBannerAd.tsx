@@ -29,6 +29,12 @@ export class GAMBannerAd extends React.Component<GAMBannerAdProps> {
     }
   }
 
+  load() {
+    if (this.ref.current) {
+      Commands.load(this.ref.current);
+    }
+  }
+
   render() {
     return <BaseAd ref={this.ref} {...this.props} />;
   }
