@@ -36,6 +36,7 @@
 @property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
 
 - (void)requestAd;
+- (void)load;
 - (void)recordManualImpression;
 
 @end

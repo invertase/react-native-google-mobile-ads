@@ -55,6 +55,20 @@ RCT_EXPORT_METHOD(recordManualImpression : (nonnull NSNumber *)reactTag) {
 #endif
 }
 
+RCT_EXPORT_METHOD(load : (nonnull NSNumber *)reactTag) {
+#if !TARGET_OS_MACCATALYST
+  [self.bridge.uiManager
+      addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
+        RNGoogleMobileAdsBannerComponent *banner = viewRegistry[reactTag];
+        if (!banner || ![banner isKindOfClass:[RNGoogleMobileAdsBannerComponent class]]) {
+          RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
+          return;
+        }
+        [banner load];
+      }];
+#endif
+}
+
 #ifdef RCT_NEW_ARCH_ENABLE
 
 #else

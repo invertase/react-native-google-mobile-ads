@@ -29,10 +29,11 @@ export type ComponentType = HostComponent<NativeProps>;
 
 interface NativeCommands {
   recordManualImpression: (viewRef: React.ElementRef<ComponentType>) => void;
+  load: (viewRef: React.ElementRef<ComponentType>) => void;
 }
 
 export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
-  supportedCommands: ['recordManualImpression'],
+  supportedCommands: ['recordManualImpression', 'load'],
 });
 
 export default codegenNativeComponent<NativeProps>(

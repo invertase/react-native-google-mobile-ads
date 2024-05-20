@@ -146,21 +146,27 @@ using namespace facebook::react;
     [self addSubview:_banner];
     _banner.adUnitID = _unitId;
     [self setRequested:YES];
-    [_banner loadRequest:[RNGoogleMobileAdsCommon buildAdRequest:_request]];
-    if (_eventEmitter != nullptr) {
-      std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
-          _eventEmitter)
-          ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
-              .type = "onSizeChange",
-              .width = _banner.bounds.size.width,
-              .height = _banner.bounds.size.height});
-    }
+    [self load];
+  }
+}
+
+- (void)load {
+  [_banner loadRequest:[RNGoogleMobileAdsCommon buildAdRequest:_request]];
+  if (_eventEmitter != nullptr) {
+    std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
+        _eventEmitter)
+        ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
+            .type = "onSizeChange",
+            .width = _banner.bounds.size.width,
+            .height = _banner.bounds.size.height});
   }
 }
 
 - (void)handleCommand:(const NSString *)commandName args:(const NSArray *)args {
   if ([commandName isEqual:@"recordManualImpression"]) {
     [self recordManualImpression];
+  } else if ([commandName isEqual:@"load"]) {
+    [self load];
   }
 }
 

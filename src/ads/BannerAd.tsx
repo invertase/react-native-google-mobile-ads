@@ -15,10 +15,21 @@
  *
  */
 
-import React from 'react';
+import React, { createRef } from 'react';
 import { BannerAdProps } from '../types/BannerAdProps';
 import { BaseAd } from './BaseAd';
+import GoogleMobileAdsBannerView, { Commands } from './GoogleMobileAdsBannerViewNativeComponent';
 
-export function BannerAd({ size, ...props }: BannerAdProps) {
-  return <BaseAd sizes={[size]} {...props} />;
+export class BannerAd extends React.Component<BannerAdProps> {
+  private ref = createRef<React.ElementRef<typeof GoogleMobileAdsBannerView>>();
+
+  load() {
+    if (this.ref.current) {
+      Commands.load(this.ref.current);
+    }
+  }
+
+  render() {
+    return <BaseAd ref={this.ref} sizes={[this.props.size]} {...this.props} />;
+  }
 }
