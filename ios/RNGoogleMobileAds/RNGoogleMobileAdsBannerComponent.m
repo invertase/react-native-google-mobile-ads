@@ -122,13 +122,17 @@
     typeof(self) strongSelf = weakSelf;
     if (strongSelf) {
       [strongSelf sendEvent:@"onPaid"
-                  payload:@{
-        @"value" : value.value,
-        @"precision" : @(value.precision),
-        @"currency" : value.currencyCode,
-      }];
+                    payload:@{
+                      @"value" : value.value,
+                      @"precision" : @(value.precision),
+                      @"currency" : value.currencyCode,
+                    }];
     }
   };
+  [self load];
+}
+
+- (void)load {
   [_banner loadRequest:[RNGoogleMobileAdsCommon buildAdRequest:_request]];
   [self sendEvent:@"onSizeChange"
           payload:@{
