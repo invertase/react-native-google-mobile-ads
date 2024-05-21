@@ -1,3 +1,10 @@
+## [13.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.4.0...v13.5.0) (2024-05-21)
+
+
+### Features
+
+* add method to reload banner ad ([2a57487](https://github.com/invertase/react-native-google-mobile-ads/commit/2a574874624af515d6ecfc8819385ab4c6c73912))
+
 ## [13.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.3.1...v13.4.0) (2024-05-20)
 
 
