@@ -399,9 +399,9 @@ The module exposes a [`BannerAd`](/reference/admob/bannerad) component. The `uni
 a banner:
 
 ```js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize, TestIds, useForeground } from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
@@ -410,22 +410,10 @@ function App() {
   const appState = useRef(AppState.currentState);
 
   // (iOS) WKWebView can terminate if app is in a "suspended state", resulting in an empty banner when app returns to foreground.
-  // Therefore it's advised to "manually" request a new ad when the app is foregrounded.
-  // For more details, see: https://groups.google.com/g/google-admob-ads-sdk/c/rwBpqOUr8m8
-  useEffect(() => {
-    if (Platform.OS === 'ios') {
-      const subscription = AppState.addEventListener('change', nextAppState => {
-        if (appState.current.match(/background/) && nextAppState === 'active') {
-          bannerRef.current?.load();
-        }
-        appState.current = nextAppState;
-      });
-
-      return () => {
-        subscription.remove();
-      };
-    }
-  }, []);
+  // Therefore it's advised to "manually" request a new ad when the app is foregrounded (https://groups.google.com/g/google-admob-ads-sdk/c/rwBpqOUr8m8).
+  useForeground(() => {
+    Platform.OS === 'ios' && bannerRef.current?.load();
+  })
 
   return (
     <BannerAd ref={bannerRef} unitId={adUnitId} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />
