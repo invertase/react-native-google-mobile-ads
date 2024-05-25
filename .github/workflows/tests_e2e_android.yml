@@ -191,22 +191,22 @@ jobs:
           curl --output /dev/null --silent --head --fail "http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&inlineSourceMap=true"
           echo "...javascript bundle ready."
 
-      # - name: Run Emulator Tests
-      #   uses: reactivecircus/android-emulator-runner@v2
-      #   timeout-minutes: 30
-      #   continue-on-error: true
-      #   with:
-      #     api-level: ${{ matrix.api-level }}
-      #     avd-name: TestingAVD
-      #     force-avd-creation: false
-      #     target: ${{ matrix.target }}
-      #     arch: ${{ matrix.arch }}
-      #     emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-      #     sdcard-path-or-size: 100M
-      #     disable-animations: true
-      #     script: |
-      #       $ANDROID_HOME/platform-tools/adb logcat '*:D' > adb-log.txt &
-      #       yarn tests:android:test
+      - name: Run Emulator Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 30
+        continue-on-error: true
+        with:
+          api-level: ${{ matrix.api-level }}
+          avd-name: TestingAVD
+          force-avd-creation: false
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          sdcard-path-or-size: 100M
+          disable-animations: true
+          script: |
+            $ANDROID_HOME/platform-tools/adb logcat '*:D' > adb-log.txt &
+            yarn tests:android:run
 
       - uses: codecov/codecov-action@v3
         with:

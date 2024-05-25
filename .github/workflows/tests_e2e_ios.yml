@@ -121,20 +121,6 @@ jobs:
           max_attempts: 3
           command: cd RNGoogleMobileAdsExample && yarn detox build-framework-cache
 
-      - name: Build iOS App
-        run: |
-          export CCACHE_SLOPPINESS=clang_index_store,file_stat_matches,include_file_ctime,include_file_mtime,ivfsoverlay,pch_defines,modules,system_headers,time_macros
-          export CCACHE_FILECLONE=true
-          export CCACHE_DEPEND=true
-          export CCACHE_INODECACHE=true
-          ccache -s
-          export SKIP_BUNDLING=1
-          export RCT_NO_LAUNCH_PACKAGER=1
-          set -o pipefail
-          yarn tests:ios:build
-          ccache -s
-        shell: bash
-
       - name: Install applesimutils
         uses: nick-invision/retry@v2
         with:
@@ -168,10 +154,10 @@ jobs:
         continue-on-error: true
         run: nohup sh -c "sleep 30 && xcrun simctl spawn booted log stream --level debug --style compact > simulator.log 2>&1 &"
 
-      # - name: Detox Test
-      #   timeout-minutes: 10
-      #   continue-on-error: true
-      #   run: yarn tests:ios:test
+      - name: Build and Run e2e app
+        timeout-minutes: 10
+        continue-on-error: true
+        run: yarn tests:ios:run
 
       - name: Upload Simulator Log
         uses: actions/upload-artifact@v3
