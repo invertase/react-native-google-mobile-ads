@@ -74,7 +74,7 @@ jobs:
         with:
           key: ${{ runner.os }}-v2 # makes a unique key w/related restore key internally
           create-symlink: true
-          max-size: 500M
+          max-size: 750M
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -103,7 +103,7 @@ jobs:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
-          command: yarn --no-audit --prefer-offline && cd RNGoogleMobileAdsExample && DETOX_DISABLE_POSTINSTALL=1 yarn --no-audit --prefer-offline
+          command: yarn && DETOX_DISABLE_POSTINSTALL=1 yarn tests:install
 
       - name: Pod Install
         uses: nick-fields/retry@v3
@@ -127,7 +127,7 @@ jobs:
           timeout_minutes: 5
           retry_wait_seconds: 60
           max_attempts: 3
-          command: HOMEBREW_NO_AUTO_UPDATE=1 brew tap wix/brew && HOMEBREW_NO_AUTO_UPDATE=1 brew install applesimutils && applesimutils --list
+          command: HOMEBREW_NO_AUTO_UPDATE=1 brew tap wix/brew && HOMEBREW_NO_AUTO_UPDATE=1 brew install applesimutils
 
       - name: Metro Bundler Cache
         uses: actions/cache@v4
@@ -155,7 +155,7 @@ jobs:
         run: nohup sh -c "sleep 30 && xcrun simctl spawn booted log stream --level debug --style compact > simulator.log 2>&1 &"
 
       - name: Build and Run e2e app
-        timeout-minutes: 10
+        timeout-minutes: 20
         continue-on-error: true
         run: yarn tests:ios:run
 

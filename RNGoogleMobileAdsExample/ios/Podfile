@@ -34,7 +34,25 @@ target 'RNGoogleMobileAdsExample' do
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
-      :ccache_enabled => true
+      # :ccache_enabled => true
     )
+
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings["CC"] = "clang"
+        config.build_settings["LD"] = "clang"
+        config.build_settings["CXX"] = "clang++"
+        config.build_settings["LDPLUSPLUS"] = "clang++"
+      end
+    end
+
+    # quiet non-module warnings - only interested in google-mobile-ads warnings
+    installer.pods_project.targets.each do |target|
+      if !target.name.include? "react-native-google-mobile-ads"
+        target.build_configurations.each do |config|
+          config.build_settings["GCC_WARN_INHIBIT_ALL_WARNINGS"] = "YES"
+        end
+      end
+    end
   end
 end
