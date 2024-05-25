@@ -33,7 +33,7 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       # Set up tool versions
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
@@ -41,7 +41,7 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 50
 
@@ -53,7 +53,7 @@ jobs:
           echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
           echo "xcode-version=$(xcodebuild -version|tail -1|cut -f3 -d' ')" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -61,7 +61,7 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: ${{ runner.os }}-yarn-v1
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Detox Framework Cache
         id: detox-cache
         with:
@@ -82,14 +82,14 @@ jobs:
           ruby-version: 3
 
       - name: Update Ruby build tools
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 2
           retry_wait_seconds: 60
           max_attempts: 3
           command: gem update cocoapods xcodeproj
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Cache Pods
         id: pods-cache
         with:
@@ -98,7 +98,7 @@ jobs:
           restore-keys: ${{ runner.os }}-pods-v2
 
       - name: Yarn Install
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 10
           retry_wait_seconds: 60
@@ -106,7 +106,7 @@ jobs:
           command: yarn --no-audit --prefer-offline && cd RNGoogleMobileAdsExample && DETOX_DISABLE_POSTINSTALL=1 yarn --no-audit --prefer-offline
 
       - name: Pod Install
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 10
           retry_wait_seconds: 30
@@ -114,7 +114,7 @@ jobs:
           command: yarn tests:ios:pod:install
 
       - name: Build Detox Framework Cache
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 10
           retry_wait_seconds: 60
@@ -122,7 +122,7 @@ jobs:
           command: cd RNGoogleMobileAdsExample && yarn detox build-framework-cache
 
       - name: Install applesimutils
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 5
           retry_wait_seconds: 60
@@ -130,7 +130,7 @@ jobs:
           command: HOMEBREW_NO_AUTO_UPDATE=1 brew tap wix/brew && HOMEBREW_NO_AUTO_UPDATE=1 brew install applesimutils && applesimutils --list
 
       - name: Metro Bundler Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ steps.workflow-variables.outputs.metro-cache }}
           key: ${{ runner.os }}-metro-v1-${{ github.run_id }}
@@ -160,12 +160,12 @@ jobs:
         run: yarn tests:ios:run
 
       - name: Upload Simulator Log
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: simulator_log
           path: simulator.log
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           verbose: true

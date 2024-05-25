@@ -24,13 +24,13 @@ jobs:
     name: Create patch-package Patches
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Future ideas:
       # - make into an action, parameterize directories to pack, and package names to install
       # - name patches w/PR as "semver prerelease" and SHA as "semver build info". Needs patch-package enhancement.
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Get yarn cache directory path
@@ -45,7 +45,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 10
           retry_wait_seconds: 60
@@ -88,7 +88,7 @@ jobs:
         shell: bash
 
       - name: Upload Test Patches
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: patches
           path: ~/template/patches/
