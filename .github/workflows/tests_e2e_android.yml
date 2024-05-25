@@ -26,7 +26,7 @@ concurrency:
 jobs:
   android:
     name: Android
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -44,6 +44,23 @@ jobs:
         # This is useful for benchmarking, do 0, 1, 2, etc (up to 256 max job-per-matrix limit) for averages
         iteration: [0]
     steps:
+      - name: Liberate disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - uses: actions/checkout@v3
         with:
           fetch-depth: 50
