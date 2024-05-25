@@ -32,19 +32,18 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
-
+          node-version: 20
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - uses: actions/cache@v3
+        run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+      - uses: actions/cache/restore@v4
         name: Yarn Cache
         id: yarn-cache
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
-
+          restore-keys: |
+            ${{ runner.os }}-yarn-
       - name: Yarn Install
         uses: nick-invision/retry@v2
         with:
@@ -63,9 +62,10 @@ jobs:
           mv *tgz $HOME/scratch
           ls -la $HOME/scratch/*$CLEAN_PACKAGE_NAME*
           cd $HOME
-          npx react-native init template
+          npx react-native init template --skip-install --skip-git-init
           cd template
-          yarn add patch-package --save-dev
+          yarn
+          yarn add patch-package --dev
           mkdir patches || true
           echo "Installing $CLEAN_PACKAGE_NAME into fresh template app, then clobbering with PR version"
           yarn add $PACKAGE_NAME
@@ -74,6 +74,14 @@ jobs:
           mv react-native-google-mobile-ads/package.json package/
           \rm -fr react-native-google-mobile-ads
           mv package react-native-google-mobile-ads
+          # do some cleaning so the patch is minimal - TODO fix .npmignore/package.json files block
+          rm react-native-google-mobile-ads/CHANGELOG.md
+          rm react-native-google-mobile-ads/android/.npmignore
+          rm react-native-google-mobile-ads/ios/.npmignore
+          rm react-native-google-mobile-ads/ios/RNGoogleMobileAds.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+          rm react-native-google-mobile-ads/ios/RNGoogleMobileAds.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+          rm react-native-google-mobile-ads/ios/RNGoogleMobileAds.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+          rm react-native-google-mobile-ads/RNGoogleMobileAdsExample/android/gradle/wrapper/gradle-wrapper.jar
           popd
           npx patch-package $PACKAGE_NAME || true
           ls -la $HOME/template/patches
@@ -84,6 +92,13 @@ jobs:
         with:
           name: patches
           path: ~/template/patches/
+
+      - uses: actions/cache/save@v4
+        name: Yarn Cache Save
+        if: "${{ github.ref == 'refs/heads/main' }}"
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
 
       # create a comment on the PR and any related issues with a direct link to the archive,
       # a call for testers, and perhaps a paste-able set of commands to install them
