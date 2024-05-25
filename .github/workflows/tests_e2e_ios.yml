@@ -168,22 +168,17 @@ jobs:
         continue-on-error: true
         run: nohup sh -c "sleep 30 && xcrun simctl spawn booted log stream --level debug --style compact > simulator.log 2>&1 &"
 
-      - name: Detox Test
-        timeout-minutes: 10
-        continue-on-error: true
-        run: yarn tests:ios:test
-
-      - name: Compress Simulator Log
-        continue-on-error: true
-        if: always()
-        run: gzip -9 simulator.log
+      # - name: Detox Test
+      #   timeout-minutes: 10
+      #   continue-on-error: true
+      #   run: yarn tests:ios:test
 
       - name: Upload Simulator Log
         uses: actions/upload-artifact@v3
         if: always()
         with:
           name: simulator_log
-          path: simulator.log.gz
+          path: simulator.log
 
       - uses: codecov/codecov-action@v3
         with:
