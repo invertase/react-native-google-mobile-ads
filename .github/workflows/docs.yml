@@ -20,13 +20,24 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - name: Install Dependencies
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3
+        name: Yarn Cache
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Yarn Install
         uses: nick-invision/retry@v2
         with:
-          timeout_minutes: 10
+          timeout_minutes: 5
           retry_wait_seconds: 60
           max_attempts: 3
-          command: sudo npm install --global spellchecker-cli
+          command: yarn --no-audit --prefer-offline
       - name: Spell check
         run: |
           yarn lint:spellcheck
