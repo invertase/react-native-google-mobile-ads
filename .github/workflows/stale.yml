@@ -13,7 +13,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v6
+      - uses: actions/stale@v9
         with:
           operations-per-run: 1000
           stale-issue-message: |
@@ -30,8 +30,8 @@ jobs:
             If you think this is a mistake please comment and ping a maintainer to get this merged ASAP! Thanks for contributing!
 
             You have 15 days until this gets closed automatically
-          exempt-issue-labels: 'good%20first%20issue,worfkow:%20needs%20review'
-          exempt-pr-labels: 'good%20first%20issue,workflow:%20needs%20review'
+          exempt-issue-labels: 'good first issue,worflow: needs review'
+          exempt-pr-labels: 'good first issue,workflow: needs review'
           close-issue-reason: not_planned
           days-before-stale: 28
           days-before-close: 15

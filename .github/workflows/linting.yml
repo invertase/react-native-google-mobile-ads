@@ -18,16 +18,16 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -36,7 +36,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 3
           retry_wait_seconds: 30
@@ -54,7 +54,7 @@ jobs:
           repo-token: '${{ secrets.GITHUB_TOKEN }}'
           report-json: 'eslint-report.json'
       - name: Upload ESLint report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: eslint-report.json
           path: eslint-report.json
@@ -64,16 +64,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -82,7 +82,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v3
         with:
           timeout_minutes: 3
           retry_wait_seconds: 30
@@ -96,16 +96,16 @@ jobs:
   #   runs-on: ubuntu-latest
   #   timeout-minutes: 15
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v4
   #       with:
   #         fetch-depth: 1
-  #     - uses: actions/setup-node@v2
+  #     - uses: actions/setup-node@v4
   #       with:
   #         node-version: 18
   #     - name: Get yarn cache directory path
   #       id: yarn-cache-dir-path
   #       run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-  #     - uses: actions/cache@v2
+  #     - uses: actions/cache@v4
   #       name: Yarn Cache
   #       id: yarn-cache
   #       with:
@@ -114,14 +114,14 @@ jobs:
   #         restore-keys: |
   #           ${{ runner.os }}-yarn-
   #     - name: Yarn Install
-  #       uses: nick-invision/retry@v2
+  #       uses: nick-fields/retry@v3
   #       with:
   #         timeout_minutes: 3
   #         retry_wait_seconds: 30
   #         max_attempts: 3
   #         command: yarn --no-audit --prefer-offline
   #     - name: Yarn Install (Website)
-  #       uses: nick-invision/retry@v2
+  #       uses: nick-fields/retry@v3
   #       with:
   #         timeout_minutes: 3
   #         retry_wait_seconds: 30
