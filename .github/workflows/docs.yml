@@ -27,7 +27,7 @@ jobs:
         name: Yarn Cache
         id: yarn-cache
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
