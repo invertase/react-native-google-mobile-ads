@@ -40,7 +40,6 @@ _SEARCH_RESULT=''
 _RN_ROOT_EXISTS=''
 _CURRENT_LOOKUPS=1
 _PROJECT_ABBREVIATION="RNGoogleMobileAds"
-_JSON_ROOT="'react-native-google-mobile-ads'"
 _JSON_FILE_NAME='app.json'
 _JS_APP_CONFIG_FILE_NAME='app.config.js'
 _JSON_OUTPUT_BASE64='e30=' # { }
@@ -62,7 +61,7 @@ function setPlistValue {
 
 function getJsonKeyValue () {
   if [[ ${_RN_ROOT_EXISTS} ]]; then
-    ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$1'); puts output[$_JSON_ROOT]['$2']"
+    ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$1'); puts output['extra']['react-native-google-mobile-ads']['$2']"
   else
     echo ""
   fi;
@@ -116,11 +115,11 @@ if [[ ${_SEARCH_RESULT} ]]; then
     _JSON_OUTPUT_RAW=$(cat "${_SEARCH_RESULT}")
   fi;
 
-  _RN_ROOT_EXISTS=$(ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output[$_JSON_ROOT]" || echo '')
+  _RN_ROOT_EXISTS=$(ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output['extra']['react-native-google-mobile-ads']" || echo '')
 
   if [[ ${_RN_ROOT_EXISTS} ]]; then
     if ! python3 --version >/dev/null 2>&1; then echo "python3 not found, app.json file processing error." && exit 1; fi
-    _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64;print(base64.b64encode(bytes(json.dumps(json.loads(open('"'${_SEARCH_RESULT}'"', '"'rb'"').read())['${_JSON_ROOT}']), '"'utf-8'"')).decode())' || echo "e30=")
+    _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64;print(base64.b64encode(bytes(json.dumps(json.loads(open('"'${_SEARCH_RESULT}'"', '"'rb'"').read())['extra']['react-native-google-mobile-ads']), '"'utf-8'"')).decode())' || echo "e30=")
   fi
 
   _PLIST_ENTRY_KEYS+=("google_mobile_ads_json_raw")
@@ -215,4 +214,3 @@ for plist in "${_TARGET_PLIST}" "${_DSYM_PLIST}" ; do
 done
 
 echo "info: <- ${_PROJECT_ABBREVIATION} build script finished"
-
