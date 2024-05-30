@@ -73,7 +73,7 @@
     "lint:ios:fix": "clang-format -i --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google",
     "lint:markdown:check": "prettier --check \"docs/**/*.md[x]\"",
     "lint:markdown:fix": "prettier --write \"docs/**/*.md[x]\"",
-    "lint:report": "eslint --output-file=eslint-report.json --format=json . --ext .js,.jsx,.ts,.tsx",
+    "lint:report": "eslint --output-file=eslint-report.json --format=json src/ --ext .js,.jsx,.ts,.tsx",
     "lint:spellcheck": "spellchecker --quiet --files=\"docs/**/*.md\" --dictionaries=\"./.spellcheck.dict.txt\" --reports=\"spelling.json\" --plugins spell indefinite-article repeated-words syntax-mentions syntax-urls frontmatter",
     "tsc:compile": "tsc --project . --noEmit",
     "lint": "yarn lint:code && yarn tsc:compile",
