@@ -32,6 +32,8 @@ interface NativeCommands {
   load: (viewRef: React.ElementRef<ComponentType>) => void;
 }
 
+// SyntaxError "'Commands' is a reserved export and may only be used to export the result of codegenNativeCommands"
+// @ts-ignore -- migration to react-native 0.73+
 export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
   supportedCommands: ['recordManualImpression', 'load'],
 });
