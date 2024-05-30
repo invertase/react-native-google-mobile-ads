@@ -113,7 +113,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.19.6",
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/preset-env": "^7.19.4",
+    "@react-native/babel-preset": "^0.74.83",
     "@semantic-release/changelog": "^6.0.1",
     "@semantic-release/commit-analyzer": "^9.0.2",
     "@semantic-release/git": "^10.0.1",
