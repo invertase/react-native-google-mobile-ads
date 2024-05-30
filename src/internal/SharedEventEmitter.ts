@@ -15,8 +15,6 @@
  *
  */
 
-// @ts-ignore: Could not find a declaration file
-import Emitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
-import { EventEmitter } from 'react-native';
+import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
 
-export const SharedEventEmitter: EventEmitter = new Emitter();
+export const SharedEventEmitter: EventEmitter = new EventEmitter();
