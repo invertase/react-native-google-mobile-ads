@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { NativeSyntheticEvent, Platform } from 'react-native';
+import { DimensionValue, NativeSyntheticEvent, Platform } from 'react-native';
 import { isFunction } from '../common';
 import { RevenuePrecisions } from '../common/constants';
 import { NativeError } from '../internal/NativeError';
@@ -34,7 +34,7 @@ export const BaseAd = React.forwardRef<
   React.ElementRef<typeof GoogleMobileAdsBannerView>,
   GAMBannerAdProps
 >(({ unitId, sizes, requestOptions, manualImpressionsEnabled, ...props }, ref) => {
-  const [dimensions, setDimensions] = useState<(number | string)[]>([0, 0]);
+  const [dimensions, setDimensions] = useState<(number | DimensionValue)[]>([0, 0]);
 
   const debouncedSetDimensions = debounce(setDimensions, 100);
 
@@ -157,7 +157,7 @@ export const BaseAd = React.forwardRef<
 
   const style = sizes.includes(GAMBannerAdSize.FLUID)
     ? {
-        width: '100%',
+        width: '100%' as DimensionValue,
         height: dimensions[1],
       }
     : {

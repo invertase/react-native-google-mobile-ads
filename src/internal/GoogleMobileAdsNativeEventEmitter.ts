@@ -52,8 +52,11 @@ class GANativeEventEmitter extends NativeEventEmitter {
     const originalRemove = subscription.remove;
     const newRemove = () => {
       RNAppModule.eventsRemoveListener(eventType, false);
+      // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
+      // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
       if (super.removeSubscription != null) {
         // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
+        // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
         super.removeSubscription(subscription);
       } else if (originalRemove != null) {
         // This is for RN >= 0.65
@@ -72,7 +75,11 @@ class GANativeEventEmitter extends NativeEventEmitter {
   // This is likely no longer ever called, but it is here for backwards compatibility with RN <= 0.64
   removeSubscription(subscription: EmitterSubscription) {
     RNAppModule.eventsRemoveListener(subscription.eventType.replace('rnapp_', ''), false);
+    // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
+    // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
     if (super.removeSubscription != null) {
+      // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
+      // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
       super.removeSubscription(subscription);
     }
   }
