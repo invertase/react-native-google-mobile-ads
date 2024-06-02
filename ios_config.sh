@@ -61,7 +61,8 @@ function setPlistValue {
 
 function getJsonKeyValue () {
   if [[ ${_RN_ROOT_EXISTS} ]]; then
-    ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$1'); puts output['expo']['extra']['react-native-google-mobile-ads']['$2']"
+    ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$1'); if output.dig('expo', 'extra', 'react-native-google-mobile-ads', '$2'); then puts output['expo']['extra']['react-native-google-mobile-ads']['$2']; else ''; end" || \
+    ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$1'); if output.dig('extra', 'react-native-google-mobile-ads', '$2'); then puts output['extra']['react-native-google-mobile-ads']['$2']; else ''; end"
   else
     echo ""
   fi;
@@ -115,11 +116,13 @@ if [[ ${_SEARCH_RESULT} ]]; then
     _JSON_OUTPUT_RAW=$(cat "${_SEARCH_RESULT}")
   fi;
 
-  _RN_ROOT_EXISTS=$(ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output['expo']['extra']['react-native-google-mobile-ads']" || echo '')
+  _RN_ROOT_EXISTS=$(ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); if output.dig('expo', 'extra', 'react-native-google-mobile-ads'); then puts true; else ''; end" || \
+                    ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); if output.dig('extra', 'react-native-google-mobile-ads'); then puts true; else ''; end" || echo '')
 
   if [[ ${_RN_ROOT_EXISTS} ]]; then
     if ! python3 --version >/dev/null 2>&1; then echo "python3 not found, app.json file processing error." && exit 1; fi
-    _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64;print(base64.b64encode(bytes(json.dumps(json.loads(open('"'${_SEARCH_RESULT}'"', '"'rb'"').read())['expo']['extra']['react-native-google-mobile-ads']), '"'utf-8'"')).decode())' || echo "e30=")
+    _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64; data=json.loads(open('"'${_SEARCH_RESULT}'"', '"'rb'"').read()); output=data; key_path=["expo", "extra", "react-native-google-mobile-ads"]; for key in key_path: output=output.get(key, {}); print(base64.b64encode(bytes(json.dumps(output), '"'utf-8'"')).decode())' || \
+                          python3 -c 'import json,sys,base64; data=json.loads(open('"'${_SEARCH_RESULT}'"', '"'rb'"').read()); output=data; key_path=["extra", "react-native-google-mobile-ads"]; for key in key_path: output=output.get(key, {}); print(base64.b64encode(bytes(json.dumps(output), '"'utf-8'"')).decode())' || echo "e30=")
   fi
 
   _PLIST_ENTRY_KEYS+=("google_mobile_ads_json_raw")
