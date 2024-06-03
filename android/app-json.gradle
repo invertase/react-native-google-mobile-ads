@@ -21,7 +21,7 @@ for (int i = 0; i <= 3; i++) {
     else {
       configFile = new File(parentDir, fileNames[1])
       if (configFile.exists()) {
-        fileName = fileNames[0]
+        fileName = fileNames[1]
         break
       }
     }
@@ -33,17 +33,11 @@ if (configFile != null && configFile.exists()) {
   Object json = null
 
   try {
-    // On windows, we need to escape path separators in the path before exec'ing shell
     def configFileAbsolutePath = configFile.absolutePath
     if (System.properties['os.name'].toLowerCase().contains('windows')) {
         configFileAbsolutePath = configFileAbsolutePath.replace("\\", "\\\\")
     }
-    // rootProject.logger.warn "have a path of ${configFileAbsolutePath}"
 
-    // The config may be either in Expo javascript (app.config.js) or JSON (app.json)
-    // If it is configured in Expo javascript, requiring it will generate a config
-    // If it is configured in JSON, requiring it will also generate the config
-    // So, use node to pull in the config file to get us a JSON string for either case
     def configOutput = new StringBuffer();
     def configReadProc = [
       "node",
@@ -53,7 +47,6 @@ if (configFile != null && configFile.exists()) {
     .execute(null, projectDir)
     configReadProc.waitForProcessOutput(configOutput, System.err)
     configOutput = configOutput.toString().trim()
-    // rootProject.logger.warn "got configOutput of ${configOutput.toString()}"
 
     if (configOutput && !configOutput.isEmpty()) {
       json = new JsonSlurper().parseText(configOutput)
@@ -65,18 +58,30 @@ if (configFile != null && configFile.exists()) {
     rootProject.logger.warn ignored.toString()
   }
 
-  if (json && json[jsonRoot]) {
-    String jsonStr = JsonOutput.toJson(JsonOutput.toJson(json[jsonRoot]))
+  def getAdsConfig = { x ->
+    if (x?.expo?.extra?.get(jsonRoot)) {
+      return x.expo.extra[jsonRoot]
+    } else if (x?.extra?.get(jsonRoot)) {
+      return x.extra[jsonRoot]
+    } else if (x?.get(jsonRoot)) {
+      return x[jsonRoot]
+    } else {
+      return null
+    }
+  }
+
+  def adsConfig = getAdsConfig(json)
+
+  if (adsConfig != null) {
+    String jsonStr = JsonOutput.toJson(JsonOutput.toJson(adsConfig))
 
     rootProject.ext.googleMobileAdsJson = [
-      raw: json[jsonRoot],
+      raw: adsConfig,
       isFlagEnabled: { key, defaultValue ->
-        if (json[jsonRoot] == null || json[jsonRoot][key] == null) return defaultValue
-        return json[jsonRoot][key] == true ? true : false
+        return adsConfig[key] == true ? true : defaultValue
       },
       getStringValue: { key, defaultValue ->
-        if (json[jsonRoot] == null) return defaultValue
-        return json[jsonRoot][key] ? json[jsonRoot][key] : defaultValue
+        return adsConfig[key] ? adsConfig[key] : defaultValue
       }
     ]
 
