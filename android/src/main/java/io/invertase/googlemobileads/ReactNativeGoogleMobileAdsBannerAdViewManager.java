@@ -95,7 +95,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   public void receiveCommand(
       @NonNull ReactNativeAdView reactViewGroup, String commandId, @Nullable ReadableArray args) {
     super.receiveCommand(reactViewGroup, commandId, args);
-    int commandIdInt = Integer.parseInt(commandId);
+    Map<String, Integer> commandsMap = getCommandsMap();
+    Integer commandIdInt = commandsMap.get(commandId);
 
     if (commandIdInt == COMMAND_ID_RECORD_MANUAL_IMPRESSION) {
       BaseAdView adView = getAdView(reactViewGroup);
