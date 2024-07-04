@@ -1,3 +1,10 @@
+### [13.6.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.6.0...v13.6.1) (2024-07-04)
+
+
+### Bug Fixes
+
+* **android:** commands mapped incorrectly ([cf9ee6e](https://github.com/invertase/react-native-google-mobile-ads/commit/cf9ee6ef93ec635c738f7dc2420ace67ffa52fdd))
+
 ## [13.6.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.5.0...v13.6.0) (2024-07-04)
 
 
