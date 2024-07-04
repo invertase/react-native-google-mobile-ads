@@ -1,3 +1,20 @@
+## [13.6.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.5.0...v13.6.0) (2024-07-04)
+
+
+### Features
+
+* make reloading a banner on foreground easier with a hook ([af5ca02](https://github.com/invertase/react-native-google-mobile-ads/commit/af5ca02702a1a9fa3c6efbd0788aed24ebb3f91c))
+
+
+### Bug Fixes
+
+* **types:** update react-native dev dep, forward-port typings ([dbb0208](https://github.com/invertase/react-native-google-mobile-ads/commit/dbb0208d19cbb88be2069689dba258cd0edf7e04))
+
+
+### Performance Improvements
+
+* **ci:** avoid big globs in hashFiles ([3093345](https://github.com/invertase/react-native-google-mobile-ads/commit/3093345f12a37e4c3c9cf85d83ddf18f13796690))
+
 ## [13.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.4.0...v13.5.0) (2024-05-21)
 
 
