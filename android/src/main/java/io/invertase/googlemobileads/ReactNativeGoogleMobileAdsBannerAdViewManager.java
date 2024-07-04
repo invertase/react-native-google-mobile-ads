@@ -61,8 +61,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private final String EVENT_PAID = "onPaid";
   private final String EVENT_SIZE_CHANGE = "onSizeChange";
   private final String EVENT_APP_EVENT = "onAppEvent";
-  private final int COMMAND_ID_RECORD_MANUAL_IMPRESSION = 1;
-  private final int COMMAND_ID_LOAD = 2;
+  private final String COMMAND_ID_RECORD_MANUAL_IMPRESSION = "recordManualImpression";
+  private final String COMMAND_ID_LOAD = "load";
 
   @Nonnull
   @Override
@@ -83,26 +83,17 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     return builder.build();
   }
 
-  @Nullable
-  @Override
-  public Map<String, Integer> getCommandsMap() {
-    return MapBuilder.of(
-        "recordManualImpression", COMMAND_ID_RECORD_MANUAL_IMPRESSION,
-        "load", COMMAND_ID_LOAD);
-  }
-
   @Override
   public void receiveCommand(
       @NonNull ReactNativeAdView reactViewGroup, String commandId, @Nullable ReadableArray args) {
     super.receiveCommand(reactViewGroup, commandId, args);
-    int commandIdInt = Integer.parseInt(commandId);
 
-    if (commandIdInt == COMMAND_ID_RECORD_MANUAL_IMPRESSION) {
+    if (commandId.equals(COMMAND_ID_RECORD_MANUAL_IMPRESSION)) {
       BaseAdView adView = getAdView(reactViewGroup);
       if (adView instanceof AdManagerAdView) {
         ((AdManagerAdView) adView).recordManualImpression();
       }
-    } else if (commandIdInt == COMMAND_ID_LOAD) {
+    } else if (commandId.equals(COMMAND_ID_LOAD)) {
       BaseAdView adView = getAdView(reactViewGroup);
       AdRequest request = reactViewGroup.getRequest();
       adView.loadAd(request);
