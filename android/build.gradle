@@ -74,19 +74,20 @@ project.ext {
 
 apply from: file("./app-json.gradle")
 
+def isExpoProject = project.findProject(":expo") != null
 def appJSONGoogleMobileAdsAppIDString
 def appJSONGoogleMobileAdsDelayAppMeasurementInitBool = false
 def appJSONGoogleMobileAdsOptimizeInitializationBool = true
 def appJSONGoogleMobileAdsOptimizeAdLoadingBool = true
 
-if (rootProject.ext.googleMobileAdsJson) {
+if (rootProject.ext.has("googleMobileAdsJson")) {
   appJSONGoogleMobileAdsAppIDString = rootProject.ext.googleMobileAdsJson.getStringValue("android_app_id", "")
   appJSONGoogleMobileAdsDelayAppMeasurementInitBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("delay_app_measurement_init", false)
   appJSONGoogleMobileAdsOptimizeInitializationBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("optimize_initialization", true)
   appJSONGoogleMobileAdsOptimizeAdLoadingBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("optimize_ad_loading", true)
 }
 
-if (!appJSONGoogleMobileAdsAppIDString) {
+if (!appJSONGoogleMobileAdsAppIDString && !isExpoProject) {
   println "\n\n\n"
   println "**************************************************************************************************************"
   println "\n\n\n"
