@@ -62,7 +62,7 @@ describe('Expo Config Plugin Tests', () => {
 
     const androidManifest = await fs.readFile(androidManifestPath, 'utf8');
     expect(androidManifest).toContain(
-      '<meta-data android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION" android:value="true"/>',
+      '<meta-data android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION" android:value="true" tools:replace="android:value"/>',
     );
   });
 
@@ -76,7 +76,7 @@ describe('Expo Config Plugin Tests', () => {
 
     const androidManifest = await fs.readFile(androidManifestPath, 'utf8');
     expect(androidManifest).toContain(
-      '<meta-data android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING" android:value="true"/>',
+      '<meta-data android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING" android:value="true" tools:replace="android:value"/>',
     );
   });
 

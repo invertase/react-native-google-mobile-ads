@@ -16,14 +16,34 @@ type PluginParameters = {
   userTrackingUsageDescription?: string;
 };
 
+function addReplacingMainApplicationMetaDataItem(
+  manifest: AndroidConfig.Manifest.AndroidManifest,
+  itemName: string,
+  itemValue: string,
+): AndroidConfig.Manifest.AndroidManifest {
+  AndroidConfig.Manifest.ensureToolsAvailable(manifest);
+
+  const newItem = {
+    $: {
+      'android:name': itemName,
+      'android:value': itemValue,
+      'tools:replace': 'android:value',
+    },
+  } as AndroidConfig.Manifest.ManifestMetaData;
+
+  const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(manifest);
+  mainApplication['meta-data'] = mainApplication['meta-data'] ?? [];
+  mainApplication['meta-data'].push(newItem);
+
+  return manifest;
+}
+
 const withAndroidAppId: ConfigPlugin<PluginParameters['androidAppId']> = (config, androidAppId) => {
   if (androidAppId === undefined) return config;
 
   return withAndroidManifest(config, config => {
-    const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(config.modResults);
-
-    AndroidConfig.Manifest.addMetaDataItemToMainApplication(
-      mainApplication,
+    addReplacingMainApplicationMetaDataItem(
+      config.modResults,
       'com.google.android.gms.ads.APPLICATION_ID',
       androidAppId,
     );
@@ -38,10 +58,8 @@ const withAndroidAppMeasurementInitDelayed: ConfigPlugin<
   if (delayAppMeasurementInit === undefined) return config;
 
   return withAndroidManifest(config, config => {
-    const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(config.modResults);
-
-    AndroidConfig.Manifest.addMetaDataItemToMainApplication(
-      mainApplication,
+    addReplacingMainApplicationMetaDataItem(
+      config.modResults,
       'com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT',
       delayAppMeasurementInit.toString(),
     );
@@ -54,10 +72,8 @@ const withAndroidInitializationOptimized: ConfigPlugin<
   PluginParameters['optimizeInitialization']
 > = (config, optimizeInitialization = true) => {
   return withAndroidManifest(config, config => {
-    const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(config.modResults);
-
-    AndroidConfig.Manifest.addMetaDataItemToMainApplication(
-      mainApplication,
+    addReplacingMainApplicationMetaDataItem(
+      config.modResults,
       'com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION',
       optimizeInitialization.toString(),
     );
@@ -71,10 +87,8 @@ const withAndroidAdLoadingOptimized: ConfigPlugin<PluginParameters['optimizeAdLo
   optimizeAdLoading = true,
 ) => {
   return withAndroidManifest(config, config => {
-    const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(config.modResults);
-
-    AndroidConfig.Manifest.addMetaDataItemToMainApplication(
-      mainApplication,
+    addReplacingMainApplicationMetaDataItem(
+      config.modResults,
       'com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING',
       optimizeAdLoading.toString(),
     );
