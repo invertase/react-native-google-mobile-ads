@@ -75,7 +75,7 @@ project.ext {
 apply from: file("./app-json.gradle")
 
 def isExpoProject = project.findProject(":expo") != null
-def appJSONGoogleMobileAdsAppIDString
+def appJSONGoogleMobileAdsAppIDString = ""
 def appJSONGoogleMobileAdsDelayAppMeasurementInitBool = false
 def appJSONGoogleMobileAdsOptimizeInitializationBool = true
 def appJSONGoogleMobileAdsOptimizeAdLoadingBool = true
