@@ -90,10 +90,11 @@ Under the "App settings" menu item, you can find the "App ID":
 
 ![Google AdMob App ID](https://prismic-io.s3.amazonaws.com/invertase%2F52dd6900-108c-47a6-accb-699fde963b99_new+project+%2813%29.jpg)
 
-Within the root of your React Native project, open the `app.json` or (if using Expo) `app.config.js` file and add the
-`android_app_id` & `ios_app_id` keys with the IDs from the Google AdMob console:
+The app IDs for Android and iOS need to be inserted into your apps native code.
+For React Native projects without Expo, you can add the app IDs to the `app.json` file.
+For Expo projects, we provide an [Expo config plugin](https://docs.expo.dev/config-plugins/introduction/).
 
-#### app.json
+#### React Native Project (without Expo)
 
 ```json
 // <project-root>/app.json
@@ -103,51 +104,6 @@ Within the root of your React Native project, open the `app.json` or (if using E
     "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
   }
 }
-```
-
-#### app.config.js
-
-```js
-// <project-root>/app.config.js
-module.exports = {
-  'react-native-google-mobile-ads': {
-    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-  },
-};
-```
-
-If you're an expo user, make sure the `react-native-google-mobile-ads` block is outside of the `expo` block!
-It should look like this:
-
-#### app.json
-
-```json
-// <project-root>/app.json
-{
-  "expo": {
-    // ...
-  },
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
-  }
-}
-```
-
-#### app.config.js
-
-```js
-// <project-root>/app.config.js
-module.exports = {
-  expo: {
-    // ...
-  },
-  'react-native-google-mobile-ads': {
-    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-  },
-};
 ```
 
 For the changes to take effect, rebuild your project:
@@ -161,7 +117,29 @@ npx react-native run-ios
 npx react-native run-android
 ```
 
+#### Expo Project
+
 > ⚠️ This module contains custom native code which is NOT supported by Expo Go
+
+This library contains an Expo config plugin which you must add to your `app.json`, `app.config.js` or `app.config.ts` file.
+For these changes to take effect, your must rebuild your project's native code and install the new build on your device.
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+        }
+      ]
+    ]
+  }
+}
+```
 
 If you're using Expo without EAS, run the following commands:
 
@@ -178,10 +156,12 @@ npx expo run:android
 If you're using Expo with EAS, create a new build:
 
 ```bash
+# For online builds
 npx eas-cli build --profile development
-```
 
-Don't forget to install the new build on your device!
+# For local builds
+npx eas-cli build --profile development --local
+```
 
 ### Configure outbound requests
 
