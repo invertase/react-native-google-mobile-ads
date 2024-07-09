@@ -112,9 +112,9 @@ done
 
 # Bail out if project is using Expo
 _PACKAGE_JSON_PATH=$(dirname "${_SEARCH_RESULT}")/${_PACKAGE_JSON_NAME}
-_IS_PROJECT_USING_EXPO=$(ruby -KU -e "require 'json'; package=JSON.parse(File.read('./package.json')); puts package['dependencies']")
+_IS_PROJECT_USING_EXPO=$(ruby -KU -e "require 'json'; package=JSON.parse(File.read('${_PACKAGE_JSON_PATH}')); puts package['dependencies'].key?('expo')")
 
-if [[ ${_IS_PROJECT_USING_EXPO} ]]; then
+if [[ ${_IS_PROJECT_USING_EXPO} == "true" ]]; then
   echo "info: Expo project detected, assume Expo Config Plugin is used."
   exit 0
 fi
