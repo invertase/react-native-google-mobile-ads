@@ -102,12 +102,16 @@ if (!appJSONGoogleMobileAdsAppIDString && !isExpoProject) {
 android {
   defaultConfig {
     multiDexEnabled true
-    manifestPlaceholders = [
-      appJSONGoogleMobileAdsAppID                  : appJSONGoogleMobileAdsAppIDString,
-      appJSONGoogleMobileAdsDelayAppMeasurementInit: appJSONGoogleMobileAdsDelayAppMeasurementInitBool,
-      appJSONGoogleMobileAdsOptimizeInitialization : appJSONGoogleMobileAdsOptimizeInitializationBool,
-      appJSONGoogleMobileAdsOptimizeAdLoading      : appJSONGoogleMobileAdsOptimizeAdLoadingBool
-    ]
+
+    if (!isExpoProject) {
+      manifestPlaceholders = [
+        appJSONGoogleMobileAdsAppID                  : appJSONGoogleMobileAdsAppIDString,
+        appJSONGoogleMobileAdsDelayAppMeasurementInit: appJSONGoogleMobileAdsDelayAppMeasurementInitBool,
+        appJSONGoogleMobileAdsOptimizeInitialization : appJSONGoogleMobileAdsOptimizeInitializationBool,
+        appJSONGoogleMobileAdsOptimizeAdLoading      : appJSONGoogleMobileAdsOptimizeAdLoadingBool
+      ]
+    }
+
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
   }
   lintOptions {
