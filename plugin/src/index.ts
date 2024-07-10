@@ -115,7 +115,7 @@ const withIosAppMeasurementInitDelayed: ConfigPlugin<
   });
 };
 
-const withIosAkAdNetworkItems: ConfigPlugin<PluginParameters['skAdNetworkItems']> = (
+const withIosSkAdNetworkItems: ConfigPlugin<PluginParameters['skAdNetworkItems']> = (
   config,
   skAdNetworkItems,
 ) => {
@@ -186,7 +186,7 @@ const withReactNativeGoogleMobileAds: ConfigPlugin<PluginParameters> = (
     // iOS
     [withIosAppId, iosAppId],
     [withIosAppMeasurementInitDelayed, delayAppMeasurementInit],
-    [withIosAkAdNetworkItems, skAdNetworkItems],
+    [withIosSkAdNetworkItems, skAdNetworkItems],
     [withIosUserTrackingUsageDescription, userTrackingUsageDescription],
   ]);
 };
