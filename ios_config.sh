@@ -94,7 +94,7 @@ while true; do
 
   echo "info:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME}/${_JS_APP_CONFIG_FILE_NAME} file."
 
-  _SEARCH_RESULT=$(find "$_CURRENT_SEARCH_DIR" -maxdepth 2 \( -name ${_JSON_FILE_NAME} -o -name ${_JS_APP_CONFIG_FILE_NAME} \) -print | /usr/bin/head -n 1)
+  _SEARCH_RESULT=$(find "$_CURRENT_SEARCH_DIR" -maxdepth 2 '(' -name ${_JSON_FILE_NAME} -o -name ${_JS_APP_CONFIG_FILE_NAME} ')' -print | /usr/bin/head -n 1)
 
   if [[ "$(basename ${_SEARCH_RESULT})" = "${_JS_APP_CONFIG_FILE_NAME}" ]]; then
     _IS_CONFIG_JS=true
