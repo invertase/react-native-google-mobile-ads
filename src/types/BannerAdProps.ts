@@ -123,7 +123,7 @@ export interface GAMBannerAdProps extends Omit<BannerAdProps, 'size'> {
    *
    * Inventory must be available for the banner sizes specified, otherwise a no-fill error will be sent to `onAdFailedToLoad`.
    */
-  sizes: typeof GAMBannerAdSize[keyof typeof GAMBannerAdSize][] | string[];
+  sizes: (typeof GAMBannerAdSize)[keyof typeof GAMBannerAdSize][] | string[];
 
   /**
    * Whether to enable the manual impression counting.
