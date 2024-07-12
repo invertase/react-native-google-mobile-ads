@@ -90,10 +90,11 @@ Under the "App settings" menu item, you can find the "App ID":
 
 ![Google AdMob App ID](https://prismic-io.s3.amazonaws.com/invertase%2F52dd6900-108c-47a6-accb-699fde963b99_new+project+%2813%29.jpg)
 
-Within the root of your React Native project, open the `app.json` or (if using Expo) `app.config.js` file and add the
-`android_app_id` & `ios_app_id` keys with the IDs from the Google AdMob console:
+The app IDs for Android and iOS need to be inserted into your apps native code.
+For React Native projects without Expo, you can add the app IDs to the `app.json` file.
+For Expo projects, we provide an [Expo config plugin](https://docs.expo.dev/config-plugins/introduction/).
 
-#### app.json
+#### For React Native projects (without Expo)
 
 ```json
 // <project-root>/app.json
@@ -103,51 +104,6 @@ Within the root of your React Native project, open the `app.json` or (if using E
     "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
   }
 }
-```
-
-#### app.config.js
-
-```js
-// <project-root>/app.config.js
-module.exports = {
-  'react-native-google-mobile-ads': {
-    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-  },
-};
-```
-
-If you're an expo user, make sure the `react-native-google-mobile-ads` block is outside of the `expo` block!
-It should look like this:
-
-#### app.json
-
-```json
-// <project-root>/app.json
-{
-  "expo": {
-    // ...
-  },
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
-  }
-}
-```
-
-#### app.config.js
-
-```js
-// <project-root>/app.config.js
-module.exports = {
-  expo: {
-    // ...
-  },
-  'react-native-google-mobile-ads': {
-    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-  },
-};
 ```
 
 For the changes to take effect, rebuild your project:
@@ -161,7 +117,29 @@ npx react-native run-ios
 npx react-native run-android
 ```
 
+#### For Expo projects
+
 > ⚠️ This module contains custom native code which is NOT supported by Expo Go
+
+This library contains an Expo config plugin which you must add to your `app.json`, `app.config.js` or `app.config.ts` file.
+For these changes to take effect, your must rebuild your project's native code and install the new build on your device.
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+        }
+      ]
+    ]
+  }
+}
+```
 
 If you're using Expo without EAS, run the following commands:
 
@@ -178,10 +156,12 @@ npx expo run:android
 If you're using Expo with EAS, create a new build:
 
 ```bash
+# For online builds
 npx eas-cli build --profile development
-```
 
-Don't forget to install the new build on your device!
+# For local builds
+npx eas-cli build --profile development --local
+```
 
 ### Configure outbound requests
 
@@ -240,11 +220,13 @@ If you are using mediation, you may wish to wait until the promise is settled be
 ### Enable SKAdNetwork to track conversions (iOS)
 
 The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google and participating third-party buyers attribute an app install even when the IDFA is not available.
-Within your projects `app.json`/`app.config.js` file, add the advised [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks):
+Within your projects `app.json` file, add the advised [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks).
+Note that these identifiers are subject to change and should be updated regularly.
 
-#### app.json
+#### For React Native projects (without Expo)
 
 ```json
+// <project-root>/app.json
 {
   "react-native-google-mobile-ads": {
     "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
@@ -304,30 +286,38 @@ Within your projects `app.json`/`app.config.js` file, add the advised [SKAdNetwo
 }
 ```
 
-#### app.config.js
+#### For Expo projects
 
-```js
-module.exports = {
-  'react-native-google-mobile-ads': {
-    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    sk_ad_network_items: [
-      // list of network ids removed to avoid duplication
-      // please refer to the list in the `app.jaon` configuration section for the list of
-      // network ids you should include here and paste them into your `app.config.js` file
-    ],
-  },
-};
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "skAdNetworkItems": [
+            // list of network ids removed to avoid duplication
+            // please refer to the list in the `app.jaon` configuration section above
+          ],
+        }
+      ]
+    ]
+  }
+}
 ```
 
 ### App Tracking Transparency (iOS)
 
 Apple requires apps to display the App Tracking Transparency authorization request for accessing the IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads).
-Within your projects `app.json` or `app.config.js` file, you have to use the `user_tracking_usage_description` to describe your usage:
+Within your projects `app.json` file, you have to provide a user tracking usage description:
 
-#### app.json
+#### For React Native projects (without Expo)
 
 ```json
+// <project-root>/app.json
 {
   "react-native-google-mobile-ads": {
     "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
@@ -337,18 +327,27 @@ Within your projects `app.json` or `app.config.js` file, you have to use the `us
 }
 ```
 
-#### app.config.js
+#### For Expo projects
 
-```js
-module.exports = {
-  'react-native-google-mobile-ads': {
-    android_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    ios_app_id: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
-    user_tracking_usage_description:
-      'This identifier will be used to deliver personalized ads to you.',
-  },
-};
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+        }
+      ]
+    ]
+  }
+}
 ```
+
+#### Requesting App Tracking Transparency authorization
 
 To request the App Tracking Transparency authorization we recommend using the [react-native-permissions](https://github.com/zoontek/react-native-permissions) library or making it part of the UMP consent flow [European User Consent page](/european-user-consent).
 

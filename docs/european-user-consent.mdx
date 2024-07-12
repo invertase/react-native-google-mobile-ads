@@ -79,9 +79,12 @@ npx react-native run-android
 
 If you configure an [ATT message](https://support.google.com/admob/answer/10115331) in your Google AdMob account, the UMP SDK will automatically handle the ATT alert.
 This will also show an IDFA explainer message. If you don't want to show an explainer message you can show the ATT alert [manually](https://docs.page/invertase/react-native-google-mobile-ads#app-tracking-transparency-ios).
-Also, within your projects `app.json` file, you have to use the `user_tracking_usage_description` to to describe your usage:
+Also, within your projects `app.json` file, you have to provide a user tracking usage description (once set, rebuild your application):
+
+#### For React Native projects (without Expo)
 
 ```json
+// <project-root>/app.json
 {
   "react-native-google-mobile-ads": {
     "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
@@ -91,7 +94,25 @@ Also, within your projects `app.json` file, you have to use the `user_tracking_u
 }
 ```
 
-Once set, rebuild your application.
+#### For Expo projects
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+        }
+      ]
+    ]
+  }
+}
+```
 
 ### Requesting consent information
 

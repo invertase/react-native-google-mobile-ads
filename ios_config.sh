@@ -49,6 +49,7 @@ _PLIST_BUDDY=/usr/libexec/PlistBuddy
 _TARGET_PLIST="${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}"
 _DSYM_PLIST="${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist"
 _IS_CONFIG_JS=false
+_PACKAGE_JSON_NAME='package.json'
 
 # plist arrays
 _PLIST_ENTRY_KEYS=()
@@ -108,6 +109,15 @@ while true; do
 
   _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))
 done
+
+# Bail out if project is using Expo
+_PACKAGE_JSON_PATH=$(dirname "${_SEARCH_RESULT}")/${_PACKAGE_JSON_NAME}
+_IS_PROJECT_USING_EXPO=$(ruby -KU -e "require 'json'; package=JSON.parse(File.read('${_PACKAGE_JSON_PATH}')); puts package['dependencies'].key?('expo')")
+
+if [[ ${_IS_PROJECT_USING_EXPO} == "true" ]]; then
+  echo "info: Expo project detected, assume Expo Config Plugin is used."
+  exit 0
+fi
 
 if [[ ${_SEARCH_RESULT} ]]; then
   if [[ ${_IS_CONFIG_JS} == "true" ]]; then

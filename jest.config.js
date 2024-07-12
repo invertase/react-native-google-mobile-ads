@@ -3,5 +3,5 @@ module.exports = {
   modulePathIgnorePatterns: ['<rootDir>/RNGoogleMobileAdsExample/node_modules', '<rootDir>/lib/'],
   setupFiles: ['./jest.setup.ts'],
   testPathIgnorePatterns: ['<rootDir>/RNGoogleMobileAdsExample'],
-  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
+  testRegex: '(/__tests__/.*\\.(test|spec))\\.[jt]sx?$',
 };
