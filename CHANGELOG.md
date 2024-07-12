@@ -1,3 +1,10 @@
+### [14.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.0.0...v14.0.1) (2024-07-12)
+
+
+### Bug Fixes
+
+* **android:** replace deprecated onCatalystInstanceDestroy method ([816c269](https://github.com/invertase/react-native-google-mobile-ads/commit/816c2691d0c3f511e8f5af66e5a44493e80ea95b))
+
 ## [14.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.6.1...v14.0.0) (2024-07-12)
 
 
