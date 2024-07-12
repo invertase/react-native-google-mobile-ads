@@ -1,3 +1,14 @@
+## [14.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.6.1...v14.0.0) (2024-07-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* Add expo config plugin
+
+### Features
+
+* Add expo config plugin ([848348f](https://github.com/invertase/react-native-google-mobile-ads/commit/848348f747d711a9eeea5a4ed9ede6e4b0e90d45))
+
 ### [13.6.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v13.6.0...v13.6.1) (2024-07-04)
 
 
