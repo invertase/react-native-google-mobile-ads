@@ -92,7 +92,7 @@ if (!appJSONGoogleMobileAdsAppIDString && !isExpoProject) {
   println "\n\n\n"
   println "**************************************************************************************************************"
   println "\n\n\n"
-  println "ERROR: react-native-google-mobile-ads requires an 'android_app_id' property inside a 'react-native-google-mobile-ads' key in your app.json or app.config.js."
+  println "ERROR: react-native-google-mobile-ads requires an 'android_app_id' property inside a 'react-native-google-mobile-ads' key in your app.json."
   println "  No android_app_id property was found in this location. The native Google Mobile Ads SDK will crash on startup without it."
   println "\n\n\n"
   println "**************************************************************************************************************"
