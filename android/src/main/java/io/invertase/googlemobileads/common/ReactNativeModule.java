@@ -66,7 +66,7 @@ public class ReactNativeModule extends ReactContextBaseJavaModule implements Con
   }
 
   @Override
-  public void onCatalystInstanceDestroy() {
+  public void invalidate() {
     executorService.shutdown();
   }
 
