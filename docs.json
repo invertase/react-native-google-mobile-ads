@@ -6,7 +6,7 @@
     [
       "Getting Started",
       [
-        ["Installation", "/"],
+        ["Getting Started", "/"],
         ["Displaying Ads", "/displaying-ads"],
         ["Common Reasons For Ads Not Showing", "/common-reasons-for-ads-not-showing"]
       ]

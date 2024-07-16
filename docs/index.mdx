@@ -1,4 +1,18 @@
-# Installation
+# Getting Started
+
+The AdMob module allows you to display adverts to your users. All adverts are served over the Google AdMob network, meaning
+a [Google AdMob account](https://apps.admob.com) is required.
+
+<YouTube id="9qCxo0D-Sak" />
+
+The module supports four types of Ads:
+
+1. Full screen [App Open Ads](/displaying-ads#app-open-ads).
+2. Full screen [Interstitial Ads](/displaying-ads#interstitial-ads).
+3. Full screen [Rewarded Ads](/displaying-ads#rewarded-ads).
+4. Component based [Banner Ads](/displaying-ads#banner-ads).
+
+## Installation
 
 ```bash
 # Install the admob module
@@ -7,7 +21,7 @@ yarn add react-native-google-mobile-ads
 
 > On Android, before releasing your app, you must select _Yes, my app contains ads_ in the Google Play Store, Policy, App content, Manage under Ads.
 
-## Optionally configure iOS static frameworks
+### Optionally configure iOS static frameworks
 
 On iOS if you need to use static frameworks (that is, `use_frameworks! :linkage => :static` in your `Podfile`) you must add the variable `$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`. You may need this if you use this module in combination with react-native-firebase v15 and higher since it requires `use_frameworks!`.
 
@@ -51,32 +65,6 @@ To do so [follow the official `expo-build-properties` installation instructions]
   }
 }
 ```
-
-## What does it do
-
-The AdMob module allows you to display adverts to your users. All adverts are served over the Google AdMob network, meaning
-a [Google AdMob account](https://apps.admob.com) is required.
-
-<YouTube id="9qCxo0D-Sak" />
-
-The module supports four types of Ads:
-
-1. Full screen [App Open Ads](/displaying-ads#app-open-ads).
-2. Full screen [Interstitial Ads](/displaying-ads#interstitial-ads).
-3. Full screen [Rewarded Ads](/displaying-ads#rewarded-ads).
-4. Component based [Banner Ads](/displaying-ads#banner-ads).
-
-## Getting Started
-
-A number of steps must be taken and considered before you start serving adverts to your users:
-
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-  - [Setting up Google AdMob](#setting-up-google-admob)
-  - [Configure outbound requests](#configure-outbound-requests)
-  - [European User Consent](#european-user-consent)
-  - [Test ads](#test-ads)
-- [Next Steps](#next-steps)
 
 ### Setting up Google AdMob
 
