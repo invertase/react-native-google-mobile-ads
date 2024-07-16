@@ -2,14 +2,29 @@
   "name": "React Native Google Mobile Ads",
   "twitter": "invertaseio",
   "sidebar": [
-    ["Installation", "/"],
-    ["Displaying Ads", "/displaying-ads"],
-    ["Displaying Ads via Hook", "/displaying-ads-hook"],
-    ["European User Consent", "/european-user-consent"],
-    ["Ad Inspector", "/ad-inspector"],
-    ["Impression-level ad revenue", "/impression-level-ad-revenue"],
-    ["Common Reasons For Ads Not Showing", "/common-reasons-for-ads-not-showing"],
-    ["Migrating to v5", "/migrating-to-v5"],
-    ["Migrating to v6", "/migrating-to-v6"]
+    [
+      "Getting Started",
+      [
+        ["Installation", "/"],
+        ["Displaying Ads", "/displaying-ads"],
+        ["Common Reasons For Ads Not Showing", "/common-reasons-for-ads-not-showing"]
+      ]
+    ],
+    [
+      "Advanced Usage",
+      [
+        ["Displaying Ads via Hook", "/displaying-ads-hook"],
+        ["European User Consent", "/european-user-consent"],
+        ["Ad Inspector", "/ad-inspector"],
+        ["Impression-level ad revenue", "/impression-level-ad-revenue"]
+      ]
+    ],
+    [
+      "Migration Guides",
+      [
+        ["Migrating to v5", "/migrating-to-v5"],
+        ["Migrating to v6", "/migrating-to-v6"]
+      ]
+    ]
   ]
 }
