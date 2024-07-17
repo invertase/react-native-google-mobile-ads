@@ -18,16 +18,21 @@ ad requests to Google serve personalized ads, with ad selection based on the use
 
 ## Handling consent
 
-To setup and configure ads consent collection, first of all:
+To setup and configure ads consent collection, start by enabling and configuring GDPR and IDFA messaging in the [Privacy & messaging section of AdMob's Web Console](https://apps.admob.com/v2/privacymessaging).
 
-- Enable and configure GDPR and IDFA messaging in the [Privacy & messaging section of AdMob's Web Console](https://apps.admob.com/v2/privacymessaging).
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
 
-- For Android, add the following rule into
-  `android/app/proguard-rules.pro`:
-  ```
-  -keep class com.google.android.gms.internal.consent_sdk.** { *; }
-  ```
-- For Expo users, add extraProguardRules property to `app.json` file following this guide [Expo](https://docs.expo.dev/versions/latest/sdk/build-properties/#pluginconfigtypeandroid):
+For Android, add the following rule into `android/app/proguard-rules.pro`:
+
+```
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
+```
+
+</TabItem>
+<TabItem value="expo">
+
+Add the `extraProguardRules` property to `app.json` file as described in the [Expo documentation](https://docs.expo.dev/versions/latest/sdk/build-properties/#pluginconfigtypeandroid):
 
 ```json
 {
@@ -48,14 +53,21 @@ To setup and configure ads consent collection, first of all:
 
 You'll need to generate a new development build before using it.
 
+</TabItem>
+</Tabs>
+
 ### Delaying app measurement
 
 By default, the Google Mobile Ads SDK initializes app measurement and begins sending user-level event data to Google immediately when the app starts.
 If your app will be used by users within the EEA, it is important you prevent app measurement until your first ad has been requested (after consent).
 
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
 Within your projects `app.json` file, set the `delay_app_measurement_init` to `true` to delay app measurement:
 
 ```json
+// <project-root>/app.json
 {
   "react-native-google-mobile-ads": {
     "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
@@ -65,15 +77,33 @@ Within your projects `app.json` file, set the `delay_app_measurement_init` to `t
 }
 ```
 
-Once set, rebuild your application:
+</TabItem>
+<TabItem value="expo">
 
-```bash
-# For iOS
-npx react-native run-ios
+Within your projects `app.json` file, set the `delayAppMeasurementInit` to `true` to delay app measurement:
 
-# For Android
-npx react-native run-android
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "delayAppMeasurementInit": true
+        }
+      ]
+    ]
+  }
+}
 ```
+
+</TabItem>
+</Tabs>
+
+Once set, rebuild your application.
 
 ### App Tracking Transparency
 
@@ -81,7 +111,8 @@ If you configure an [ATT message](https://support.google.com/admob/answer/101153
 This will also show an IDFA explainer message. If you don't want to show an explainer message you can show the ATT alert [manually](https://docs.page/invertase/react-native-google-mobile-ads#app-tracking-transparency-ios).
 Also, within your projects `app.json` file, you have to provide a user tracking usage description (once set, rebuild your application):
 
-#### For React Native projects (without Expo)
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
 
 ```json
 // <project-root>/app.json
@@ -94,7 +125,8 @@ Also, within your projects `app.json` file, you have to provide a user tracking 
 }
 ```
 
-#### For Expo projects
+</TabItem>
+<TabItem value="expo">
 
 ```json
 // <project-root>/app.json
@@ -113,6 +145,9 @@ Also, within your projects `app.json` file, you have to provide a user tracking 
   }
 }
 ```
+
+</TabItem>
+</Tabs>
 
 ### Requesting consent information
 
@@ -140,7 +175,7 @@ the the actual user consent**. It simply indicates if you now have a consent res
 (_i.e._ if user consent is **required**, the form has been presented, and user has
 **denied** the consent, the status returned by this method will be `OBTAINED`,
 and not `REQUIRED` as some may expect). To check the actual consent status
-see [Inspecting consent choices] below.
+see [Inspecting consent choices](/european-user-consent/#inspecting-consent-choices) below.
 
 ### Gathering user consent
 
@@ -280,7 +315,3 @@ AdsConsent.reset();
 In case of troubles, double-check the original documentation for underlying
 UMP SDK for [Android](https://developers.google.com/admob/ump/android/quick-start) /
 [iOS](https://developers.google.com/admob/ump/ios/quick-start).
-
-<!-- links -->
-
-[inspecting consent choices]: #inspecting-consent-choices
