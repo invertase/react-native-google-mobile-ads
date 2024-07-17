@@ -1,22 +1,58 @@
-# Installation
+# Getting Started
+
+The AdMob module allows you to display adverts to your users. All adverts are served over the Google AdMob network, meaning
+a [Google AdMob account](https://apps.admob.com) is required.
+
+<YouTube id="9qCxo0D-Sak" />
+
+The module supports four types of Ads:
+
+1. Full screen [App Open Ads](/displaying-ads#app-open-ads).
+2. Full screen [Interstitial Ads](/displaying-ads#interstitial-ads).
+3. Full screen [Rewarded Ads](/displaying-ads#rewarded-ads).
+4. Component based [Banner Ads](/displaying-ads#banner-ads).
+
+## Installation
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
 
 ```bash
 # Install the admob module
-yarn add react-native-google-mobile-ads
+npm install react-native-google-mobile-ads
 ```
+
+</TabItem>
+<TabItem value="expo">
+
+```bash
+# Install the admob module and config plugin
+npx expo install react-native-google-mobile-ads
+```
+
+</TabItem>
+</Tabs>
 
 > On Android, before releasing your app, you must select _Yes, my app contains ads_ in the Google Play Store, Policy, App content, Manage under Ads.
 
-## Optionally configure iOS static frameworks
+### Optionally configure iOS static frameworks
 
-On iOS if you need to use static frameworks (that is, `use_frameworks! :linkage => :static` in your `Podfile`) you must add the variable `$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`. You may need this if you use this module in combination with react-native-firebase v15 and higher since it requires `use_frameworks!`.
+Follow these steps on iOS if you need to use static frameworks (that is, `use_frameworks! :linkage => :static` in your `Podfile`).
+You may need this if you use this module in combination with `react-native-firebase` v15 and higher since it requires `use_frameworks!`.
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+To enable static frameworks, you must add the variable `$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`.
+
+</TabItem>
+<TabItem value="expo">
 
 Expo users may enable static frameworks by using the `expo-build-properties` plugin.
-To do so [follow the official `expo-build-properties` installation instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following code into your `app.json` or `app.config.js` file:
-
-#### app.json
+To do so [follow the official `expo-build-properties` installation instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following code into your `app.json` file:
 
 ```json
+// <project-root>/app.json
 {
   "expo": {
     "plugins": [
@@ -33,50 +69,8 @@ To do so [follow the official `expo-build-properties` installation instructions]
 }
 ```
 
-#### app.config.js
-
-```js
-{
-  expo: {
-    plugins: [
-      [
-        'expo-build-properties',
-        {
-          ios: {
-            useFrameworks: 'static',
-          },
-        },
-      ],
-    ];
-  }
-}
-```
-
-## What does it do
-
-The AdMob module allows you to display adverts to your users. All adverts are served over the Google AdMob network, meaning
-a [Google AdMob account](https://apps.admob.com) is required.
-
-<YouTube id="9qCxo0D-Sak" />
-
-The module supports four types of Ads:
-
-1. Full screen [App Open Ads](/displaying-ads#app-open-ads).
-2. Full screen [Interstitial Ads](/displaying-ads#interstitial-ads).
-3. Full screen [Rewarded Ads](/displaying-ads#rewarded-ads).
-4. Component based [Banner Ads](/displaying-ads#banner-ads).
-
-## Getting Started
-
-A number of steps must be taken and considered before you start serving adverts to your users:
-
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-  - [Setting up Google AdMob](#setting-up-google-admob)
-  - [Configure outbound requests](#configure-outbound-requests)
-  - [European User Consent](#european-user-consent)
-  - [Test ads](#test-ads)
-- [Next Steps](#next-steps)
+</TabItem>
+</Tabs>
 
 ### Setting up Google AdMob
 
@@ -84,7 +78,7 @@ Before you are able to display ads to your users, you must have a [Google AdMob 
 "Apps" menu item, create or choose an existing Android/iOS app. Each app platform exposes a unique account ID which needs to
 be added to the project.
 
-> Attempting to build your app without a valid App ID in `app.json` or `app.config.js` will cause the app to crash on start or fail to build.
+> Attempting to build your app without a valid App ID in `app.json` will cause the app to crash on start or fail to build.
 
 Under the "App settings" menu item, you can find the "App ID":
 
@@ -94,7 +88,9 @@ The app IDs for Android and iOS need to be inserted into your apps native code.
 For React Native projects without Expo, you can add the app IDs to the `app.json` file.
 For Expo projects, we provide an [Expo config plugin](https://docs.expo.dev/config-plugins/introduction/).
 
-#### For React Native projects (without Expo)
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
 
 ```json
 // <project-root>/app.json
@@ -117,11 +113,10 @@ npx react-native run-ios
 npx react-native run-android
 ```
 
-#### For Expo projects
+</TabItem>
+<TabItem value="expo">
 
-> ⚠️ This module contains custom native code which is NOT supported by Expo Go
-
-This library contains an Expo config plugin which you must add to your `app.json`, `app.config.js` or `app.config.ts` file.
+This library contains an Expo config plugin which you must add to your `app.json` file.
 For these changes to take effect, your must rebuild your project's native code and install the new build on your device.
 
 ```json
@@ -140,6 +135,8 @@ For these changes to take effect, your must rebuild your project's native code a
   }
 }
 ```
+
+> ⚠️ This module contains custom native code which is NOT supported by Expo Go
 
 If you're using Expo without EAS, run the following commands:
 
@@ -162,6 +159,9 @@ npx eas-cli build --profile development
 # For local builds
 npx eas-cli build --profile development --local
 ```
+
+</TabItem>
+</Tabs>
 
 ### Configure outbound requests
 
@@ -223,7 +223,8 @@ The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork
 Within your projects `app.json` file, add the advised [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks).
 Note that these identifiers are subject to change and should be updated regularly.
 
-#### For React Native projects (without Expo)
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
 
 ```json
 // <project-root>/app.json
@@ -286,7 +287,8 @@ Note that these identifiers are subject to change and should be updated regularl
 }
 ```
 
-#### For Expo projects
+</TabItem>
+<TabItem value="expo">
 
 ```json
 // <project-root>/app.json
@@ -299,8 +301,55 @@ Note that these identifiers are subject to change and should be updated regularl
           "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
           "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
           "skAdNetworkItems": [
-            // list of network ids removed to avoid duplication
-            // please refer to the list in the `app.jaon` configuration section above
+            "cstr6suwn9.skadnetwork",
+            "4fzdc2evr5.skadnetwork",
+            "4pfyvq9l8r.skadnetwork",
+            "2fnua5tdw4.skadnetwork",
+            "ydx93a7ass.skadnetwork",
+            "5a6flpkh64.skadnetwork",
+            "p78axxw29g.skadnetwork",
+            "v72qych5uu.skadnetwork",
+            "ludvb6z3bs.skadnetwork",
+            "cp8zw746q7.skadnetwork",
+            "3sh42y64q3.skadnetwork",
+            "c6k4g5qg8m.skadnetwork",
+            "s39g8k73mm.skadnetwork",
+            "3qy4746246.skadnetwork",
+            "f38h382jlk.skadnetwork",
+            "hs6bdukanm.skadnetwork",
+            "v4nxqhlyqp.skadnetwork",
+            "wzmmz9fp6w.skadnetwork",
+            "yclnxrl5pm.skadnetwork",
+            "t38b2kh725.skadnetwork",
+            "7ug5zh24hu.skadnetwork",
+            "gta9lk7p23.skadnetwork",
+            "vutu7akeur.skadnetwork",
+            "y5ghdn5j9k.skadnetwork",
+            "n6fk4nfna4.skadnetwork",
+            "v9wttpbfk9.skadnetwork",
+            "n38lu8286q.skadnetwork",
+            "47vhws6wlr.skadnetwork",
+            "kbd757ywx3.skadnetwork",
+            "9t245vhmpl.skadnetwork",
+            "eh6m2bh4zr.skadnetwork",
+            "a2p9lx4jpn.skadnetwork",
+            "22mmun2rn5.skadnetwork",
+            "4468km3ulz.skadnetwork",
+            "2u9pt9hc89.skadnetwork",
+            "8s468mfl3y.skadnetwork",
+            "klf5c3l5u5.skadnetwork",
+            "ppxm28t8ap.skadnetwork",
+            "ecpz2srf59.skadnetwork",
+            "uw77j35x4d.skadnetwork",
+            "pwa73g5rt2.skadnetwork",
+            "mlmmfzh3r3.skadnetwork",
+            "578prtvx9j.skadnetwork",
+            "4dzt52r2t5.skadnetwork",
+            "e5fvkxwrpn.skadnetwork",
+            "8c4e2ghe7u.skadnetwork",
+            "zq492l623r.skadnetwork",
+            "3rd42ekr43.skadnetwork",
+            "3qcr597p9d.skadnetwork"
           ],
         }
       ]
@@ -309,12 +358,16 @@ Note that these identifiers are subject to change and should be updated regularl
 }
 ```
 
+</TabItem>
+</Tabs>
+
 ### App Tracking Transparency (iOS)
 
 Apple requires apps to display the App Tracking Transparency authorization request for accessing the IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads).
 Within your projects `app.json` file, you have to provide a user tracking usage description:
 
-#### For React Native projects (without Expo)
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
 
 ```json
 // <project-root>/app.json
@@ -327,7 +380,8 @@ Within your projects `app.json` file, you have to provide a user tracking usage 
 }
 ```
 
-#### For Expo projects
+</TabItem>
+<TabItem value="expo">
 
 ```json
 // <project-root>/app.json
@@ -346,6 +400,9 @@ Within your projects `app.json` file, you have to provide a user tracking usage 
   }
 }
 ```
+
+</TabItem>
+</Tabs>
 
 #### Requesting App Tracking Transparency authorization
 
