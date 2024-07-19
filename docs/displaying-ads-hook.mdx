@@ -20,9 +20,11 @@ export default function App() {
 }
 ```
 
-> The `adUnitid` parameter can also be used to manage creation and destruction of an ad instance.
-> If `adUnitid` is set or changed, new ad instance will be created and previous ad instance will be destroyed if exists.
-> If `adUnitid` is set to `null`, no ad instance will be created and previous ad instance will be destroyed if exists.
+<Info>
+The `adUnitid` parameter can also be used to manage creation and destruction of an ad instance.
+If `adUnitid` is set or changed, new ad instance will be created and previous ad instance will be destroyed if exists.
+If `adUnitid` is set to `null`, no ad instance will be created and previous ad instance will be destroyed if exists.
+</Info>
 
 The second argument is an additional optional request options object to be sent whilst loading an advert, such as keywords & location.
 Setting additional request options helps AdMob choose better tailored ads from the network. View the [`RequestOptions`](/reference/admob/requestoptions)
@@ -92,8 +94,10 @@ Return values of the hook are:
 | load           | Function                           | Start loading the advert with the provided RequestOptions.                                                         |
 | show           | Function                           | Show the loaded advert to the user.                                                                                |
 
-> Note that `isOpened` value remains `true` even after the ad is closed.
-> The value changes to `false` when ad is initialized via calling `load()`.
-> To determine whether the ad is currently showing, use `isShowing` value.
+<Info>
+Note that `isOpened` value remains `true` even after the ad is closed.
+The value changes to `false` when ad is initialized via calling `load()`.
+To determine whether the ad is currently showing, use `isShowing` value.
+</Info>
 
 [Impression-level ad revenue]: /impression-level-ad-revenue
