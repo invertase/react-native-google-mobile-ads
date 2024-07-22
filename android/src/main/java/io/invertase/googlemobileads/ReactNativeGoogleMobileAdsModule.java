@@ -194,4 +194,14 @@ public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
           .runOnUiThread(() -> MobileAds.openDebugMenu(getCurrentActivity(), adUnit));
     }
   }
+
+  @ReactMethod
+  public void setAppVolume(final Float volume) {
+    MobileAds.setAppVolume(volume);
+  }
+
+  @ReactMethod
+  public void setAppMuted(final Boolean muted) {
+    MobileAds.setAppMuted(muted);
+  }
 }

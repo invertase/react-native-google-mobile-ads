@@ -67,6 +67,18 @@ RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnit) {
 #endif
 }
 
+RCT_EXPORT_METHOD(setAppVolume : (float)volume) {
+#if !TARGET_OS_MACCATALYST
+  GADMobileAds.sharedInstance.applicationVolume = volume;
+#endif
+}
+
+RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
+#if !TARGET_OS_MACCATALYST
+  GADMobileAds.sharedInstance.applicationMuted = muted;
+#endif
+}
+
 #ifdef RCT_NEW_ARCH_ENABLED
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params {
