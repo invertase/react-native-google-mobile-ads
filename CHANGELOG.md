@@ -1,3 +1,10 @@
+## [14.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.1.0...v14.2.0) (2024-07-23)
+
+
+### Features
+
+* **video:** add support for video ad volume control ([c1d821d](https://github.com/invertase/react-native-google-mobile-ads/commit/c1d821d82c546e4e00db4865f9c3159cb7bcd495))
+
 ## [14.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.0.1...v14.1.0) (2024-07-16)
 
 
