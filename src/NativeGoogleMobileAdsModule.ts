@@ -9,6 +9,8 @@ export interface Spec extends TurboModule {
   setRequestConfiguration(requestConfiguration?: UnsafeObject): Promise<void>;
   openAdInspector(): Promise<void>;
   openDebugMenu(adUnit: string): void;
+  setAppVolume(volume: number): void;
+  setAppMuted(muted: boolean): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsModule');

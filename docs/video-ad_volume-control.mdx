@@ -1,0 +1,49 @@
+# Video ad volume control
+
+<Info>
+Video volume controls apply only to Google ads and are not forwarded to mediation networks.
+</Info>
+
+If your app has its own volume controls, such as custom music or sound effect volumes, disclosing app volume to the Google Mobile Ads SDK enables video ads to respect app volume settings. This ensures users receive video ads with the expected audio volume.
+
+The device volume, controlled through volume buttons or OS-level volume slider, determines the volume for device audio output. However, apps can independently adjust volume levels relative to the device volume to tailor the audio experience.
+
+For App Open, Banner, Interstitial, Rewarded, and Rewarded Interstitial ad formats you can report the relative app volume to the Google Mobile Ads SDK by calling the `setAppVolume` function. Valid ad volume values range from `0.0` (silent) to `1.0` (current device volume). Here's an example of how to report the relative app volume to the SDK:
+
+```js
+import React from 'react';
+import MobileAds, { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.GAM_BANNER : '/xxx/yyyy';
+
+function App() {
+  MobileAds().setAppVolume(0.5);
+
+  return <GAMBannerAd unitId={adUnitId} sizes={[BannerAdSize.FULL_BANNER]} />;
+}
+```
+
+<Error>
+Lowering your app's audio volume reduces video ad eligibility and might reduce your app's ad revenue. You should only utilize this API if your app provides custom volume controls to the user, and the user's volume is properly reflected in the API.
+</Error>
+
+For App Open, Banner, Interstitial, Rewarded, and Rewarded Interstitial ad formats, you can inform the Google Mobile Ads SDK that the app volume has been muted by calling the `setAppMuted` function:
+
+```js
+import React from 'react';
+import MobileAds, { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.GAM_BANNER : '/xxx/yyyy';
+
+function App() {
+  MobileAds().setAppMuted(true);
+
+  return <GAMBannerAd unitId={adUnitId} sizes={[BannerAdSize.FULL_BANNER]} />;
+}
+```
+
+By default, `appVolume` is set to 1 (the current device volume) and `appMuted` is set to `NO`.
+
+<Error>
+Muting your app reduces video ad eligibility and might reduce your app's ad revenue. You should only utilize this API if your app provides a custom mute control to the user, and the user's mute decision is properly reflected in the API.
+</Error>

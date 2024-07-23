@@ -87,6 +87,22 @@ describe('Admob', function () {
           admob().openDebugMenu('');
         }).toThrowError('openDebugMenu expected a non-empty string value');
       });
+
+      it('does call native setAppVolume method', () => {
+        admob().setAppVolume(0.5);
+        expect(RNGoogleMobileAdsModule.setAppVolume).toBeCalledTimes(1);
+      });
+
+      it('throws if setAppVolume is greater than 1', function () {
+        expect(() => {
+          admob().setAppVolume(2);
+        }).toThrowError('The app volume must be a value between 0 and 1 inclusive.');
+      });
+
+      it('does call native setAppMuted method', () => {
+        admob().setAppMuted(true);
+        expect(RNGoogleMobileAdsModule.setAppMuted).toBeCalledTimes(1);
+      });
     });
   });
 });
