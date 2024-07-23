@@ -61,7 +61,7 @@ class MobileAdsModule implements MobileAdsModuleInterface {
 
   setAppVolume(volume: number) {
     if (volume < 0 || volume > 1)
-      throw new Error('The app volume must be a value between 0 and 1 inclusice.');
+      throw new Error('The app volume must be a value between 0 and 1 inclusive.');
     RNGoogleMobileAdsModule.setAppVolume(volume);
   }
 

@@ -93,10 +93,10 @@ describe('Admob', function () {
         expect(RNGoogleMobileAdsModule.setAppVolume).toBeCalledTimes(1);
       });
 
-      it('throws if setAppVolume is greater then 1', function () {
+      it('throws if setAppVolume is greater than 1', function () {
         expect(() => {
           admob().setAppVolume(2);
-        }).toThrowError('The app volume must be a value between 0 and 1 inclusice.');
+        }).toThrowError('The app volume must be a value between 0 and 1 inclusive.');
       });
 
       it('does call native setAppMuted method', () => {
