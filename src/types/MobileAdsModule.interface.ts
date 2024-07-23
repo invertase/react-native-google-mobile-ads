@@ -49,4 +49,32 @@ export interface MobileAdsModuleInterface {
    * @param adUnit Any valid ad unit from your Ad Manager account is sufficient to open the debug options menu.
    */
   openDebugMenu(adUnit: string): void;
+
+  /**
+   * Sets the application's audio volume. Affects audio volumes of all ads relative to other audio output.
+   *
+   * Warning: Lowering your app's audio volume reduces video ad eligibility and may reduce your app's ad revenue.
+   * You should only utilize this API if your app provides custom volume controls to the user, and you should reflect
+   * the user's volume choice in this API.
+   *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/global-settings
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/ios/global-settings
+   *
+   * @param volume the volume as a float from 0 (muted) to 1.0 (full media volume). Defaults to 1.0
+   */
+  setAppVolume(volume: number): void;
+
+  /**
+   * Indicates whether the application's audio is muted. Affects initial mute state for all ads.
+   *
+   * Warning: Muting your application reduces video ad eligibility and may reduce your app's ad revenue.
+   * You should only utilize this API if your app provides a custom mute control to the user, and you should
+   * reflect the user's mute decision in this API.
+   *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/global-settings
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/ios/global-settings
+   *
+   * @param muted true if the app is muted, false otherwise. Defaults to false.
+   */
+  setAppMuted(muted: boolean): void;
 }

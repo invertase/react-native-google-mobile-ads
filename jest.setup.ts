@@ -34,6 +34,8 @@ jest.doMock('react-native', () => {
             setRequestConfiguration: jest.fn(),
             openAdInspector: jest.fn(),
             openDebugMenu: jest.fn(),
+            setAppVolume: jest.fn(),
+            setAppMuted: jest.fn(),
           };
         },
       },

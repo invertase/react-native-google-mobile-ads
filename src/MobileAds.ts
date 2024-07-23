@@ -58,6 +58,16 @@ class MobileAdsModule implements MobileAdsModuleInterface {
     if (!adUnit) throw new Error('googleMobileAds.openDebugMenu expected a non-empty string value');
     RNGoogleMobileAdsModule.openDebugMenu(adUnit);
   }
+
+  setAppVolume(volume: number) {
+    if (volume < 0 || volume > 1)
+      throw new Error('The app volume must be a value between 0 and 1 inclusive.');
+    RNGoogleMobileAdsModule.setAppVolume(volume);
+  }
+
+  setAppMuted(muted: boolean) {
+    RNGoogleMobileAdsModule.setAppMuted(muted);
+  }
 }
 
 const MobileAdsInstance = new MobileAdsModule();
