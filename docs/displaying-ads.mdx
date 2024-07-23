@@ -423,7 +423,9 @@ function App() {
 The `size` prop takes a [`BannerAdSize`](/reference/admob/banneradsize) type, and once the advert is available, will
 fill the space for the chosen size.
 
-> If no inventory for the size specified is available, an error will be thrown via `onAdFailedToLoad`!
+<Info>
+If no inventory for the size specified is available, an error will be thrown via `onAdFailedToLoad`!
+</Info>
 
 The `requestOptions` prop is additional optional request options object to be sent whilst loading an advert, such as keywords & location.
 Setting additional request options helps AdMob choose better tailored ads from the network. View the [`RequestOptions`](/reference/admob/requestoptions)
