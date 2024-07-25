@@ -74,8 +74,7 @@ project.ext {
 
 apply from: file("./app-json.gradle")
 
-def rootPackageJson = PackageJson.getForProject(rootProject)
-def isExpoProject = rootPackageJson['dependencies'].containsKey('expo')
+def isManagedExpoProject = !rootProject.file("android").exists() && !rootProject.file("ios").exists()
 def appJSONGoogleMobileAdsAppIDString = ""
 def appJSONGoogleMobileAdsDelayAppMeasurementInitBool = false
 def appJSONGoogleMobileAdsOptimizeInitializationBool = true
@@ -88,7 +87,7 @@ if (rootProject.ext.has("googleMobileAdsJson")) {
   appJSONGoogleMobileAdsOptimizeAdLoadingBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("optimize_ad_loading", true)
 }
 
-if (!appJSONGoogleMobileAdsAppIDString && !isExpoProject) {
+if (!appJSONGoogleMobileAdsAppIDString && !isManagedExpoProject) {
   println "\n\n\n"
   println "**************************************************************************************************************"
   println "\n\n\n"

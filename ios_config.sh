@@ -88,12 +88,9 @@ while true; do
   _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))
 done
 
-# Bail out if project is using Expo
-_PACKAGE_JSON_PATH=$(dirname "${_SEARCH_RESULT}")/${_PACKAGE_JSON_NAME}
-_IS_PROJECT_USING_EXPO=$(ruby -KU -e "require 'json'; package=JSON.parse(File.read('${_PACKAGE_JSON_PATH}')); puts package['dependencies'].key?('expo')")
-
-if [[ ${_IS_PROJECT_USING_EXPO} == "true" ]]; then
-  echo "info: Expo project detected, assume Expo Config Plugin is used."
+# Bail out if project is a managed Expo project:
+if [[ ! -d "${PROJECT_DIR}/ios" ]] && [[ ! -d "${PROJECT_DIR}/android" ]]; then
+  echo "info: Project does not contain an ios or android folder, assume it's a managed Expo project using our Expo Config Plugin."
   exit 0
 fi
 
