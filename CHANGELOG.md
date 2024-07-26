@@ -1,3 +1,10 @@
+### [14.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.0...v14.2.1) (2024-07-26)
+
+
+### Bug Fixes
+
+* expo managed project detection ([79acdc2](https://github.com/invertase/react-native-google-mobile-ads/commit/79acdc230bff5dd12d44b269f7dadd485a40496e))
+
 ## [14.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.1.0...v14.2.0) (2024-07-23)
 
 
