@@ -1,5 +1,5 @@
 {
-  "include": ["src"],
+  "include": ["src", "type-test.ts"],
   "compilerOptions": {
     "target": "esnext",
     "module": "commonjs",
