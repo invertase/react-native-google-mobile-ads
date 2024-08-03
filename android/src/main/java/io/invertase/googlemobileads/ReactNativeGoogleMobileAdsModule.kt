@@ -1,4 +1,4 @@
-package io.invertase.googlemobileads;
+package io.invertase.googlemobileads
 
 /*
  * Copyright (c) 2016-present Invertase Limited & Contributors
@@ -17,191 +17,150 @@ package io.invertase.googlemobileads;
  *
  */
 
-import androidx.annotation.Nullable;
-import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.Promise;
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.WritableArray;
-import com.facebook.react.bridge.WritableMap;
-import com.google.android.gms.ads.AdInspectorError;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.MobileAds;
-import com.google.android.gms.ads.OnAdInspectorClosedListener;
-import com.google.android.gms.ads.RequestConfiguration;
-import com.google.android.gms.ads.initialization.AdapterStatus;
-import com.google.android.gms.ads.initialization.InitializationStatus;
-import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
-import io.invertase.googlemobileads.common.ReactNativeModule;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import com.facebook.react.bridge.*
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.initialization.InitializationStatus
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener
+import com.google.android.gms.ads.RequestConfiguration
+import com.google.android.gms.ads.AdInspectorError
+import com.google.android.gms.ads.OnAdInspectorClosedListener
 
-public class ReactNativeGoogleMobileAdsModule extends ReactNativeModule {
-  private static final String SERVICE = "RNGoogleMobileAdsModule";
+private const val SERVICE = "RNGoogleMobileAdsModule";
 
-  ReactNativeGoogleMobileAdsModule(ReactApplicationContext reactContext) {
-    super(reactContext, SERVICE);
-  }
+class ReactNativeGoogleMobileAdsModule(
+  reactContext: ReactApplicationContext
+) : ReactContextBaseJavaModule(reactContext) {
 
-  private RequestConfiguration buildRequestConfiguration(ReadableMap requestConfiguration) {
-    RequestConfiguration.Builder builder = new RequestConfiguration.Builder();
+  override fun getName() = SERVICE
+
+  private fun buildRequestConfiguration(
+    requestConfiguration: ReadableMap
+  ): RequestConfiguration {
+    val builder = RequestConfiguration.Builder()
 
     if (requestConfiguration.hasKey("testDeviceIdentifiers")) {
-      ArrayList<Object> devices =
-          Objects.requireNonNull(requestConfiguration.getArray("testDeviceIdentifiers"))
-              .toArrayList();
-
-      List<String> testDeviceIds = new ArrayList<>();
-
-      for (Object device : devices) {
-        String id = (String) device;
-
-        if (id.equals("EMULATOR")) {
-          testDeviceIds.add(AdRequest.DEVICE_ID_EMULATOR);
+      val devices = checkNotNull(requestConfiguration.getArray("testDeviceIdentifiers")).toArrayList()
+      val testDeviceIds = devices.map {
+        val id = it as String;
+        if (id == "EMULATOR") {
+          AdRequest.DEVICE_ID_EMULATOR
         } else {
-          testDeviceIds.add(id);
+          id
         }
       }
-      builder.setTestDeviceIds(testDeviceIds);
+
+      builder.setTestDeviceIds(testDeviceIds)
     }
 
     if (requestConfiguration.hasKey("maxAdContentRating")) {
-      String rating = requestConfiguration.getString("maxAdContentRating");
+      val rating = requestConfiguration.getString("maxAdContentRating")
 
-      switch (Objects.requireNonNull(rating)) {
-        case "G":
-          builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G);
-          break;
-        case "PG":
-          builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_PG);
-          break;
-        case "T":
-          builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_T);
-          break;
-        case "MA":
-          builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_MA);
-          break;
+      when (rating) {
+        "G" -> builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+        "PG" -> builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_PG)
+        "T" -> builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_T)
+        "MA" -> builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_MA)
       }
     }
 
     if (requestConfiguration.hasKey("tagForChildDirectedTreatment")) {
-      boolean tagForChildDirectedTreatment =
-          requestConfiguration.getBoolean("tagForChildDirectedTreatment");
-      if (tagForChildDirectedTreatment) {
-        builder.setTagForChildDirectedTreatment(
-            RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE);
-      } else {
-        builder.setTagForChildDirectedTreatment(
-            RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE);
-      }
-    } else {
+      val tagForChildDirectedTreatment = requestConfiguration.getBoolean("tagForChildDirectedTreatment")
       builder.setTagForChildDirectedTreatment(
-          RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_UNSPECIFIED);
+        if (tagForChildDirectedTreatment) {
+          RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE
+        } else {
+          RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE
+        }
+      )
+    } else {
+      builder.setTagForChildDirectedTreatment(RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_UNSPECIFIED)
     }
 
     if (requestConfiguration.hasKey("tagForUnderAgeOfConsent")) {
-      boolean tagForUnderAgeOfConsent = requestConfiguration.getBoolean("tagForUnderAgeOfConsent");
-      if (tagForUnderAgeOfConsent) {
-        builder.setTagForUnderAgeOfConsent(RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_TRUE);
-      } else {
-        builder.setTagForUnderAgeOfConsent(RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_FALSE);
-      }
-    } else {
+      val tagForUnderAgeOfConsent = requestConfiguration.getBoolean("tagForUnderAgeOfConsent")
       builder.setTagForUnderAgeOfConsent(
-          RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_UNSPECIFIED);
+        if (tagForUnderAgeOfConsent) {
+          RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_TRUE
+        } else {
+          RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_FALSE
+        }
+      )
+    } else {
+      builder.setTagForUnderAgeOfConsent(RequestConfiguration.TAG_FOR_UNDER_AGE_OF_CONSENT_UNSPECIFIED)
     }
 
-    return builder.build();
+    return builder.build()
   }
 
   @ReactMethod
-  public void initialize(Promise promise) {
+  fun initialize(promise: Promise) {
     MobileAds.initialize(
-        getApplicationContext(),
-        new OnInitializationCompleteListener() {
-          @Override
-          public void onInitializationComplete(InitializationStatus initializationStatus) {
-            WritableArray result = Arguments.createArray();
-            for (Map.Entry<String, AdapterStatus> entry :
-                initializationStatus.getAdapterStatusMap().entrySet()) {
-              WritableMap info = Arguments.createMap();
-              info.putString("name", entry.getKey());
-              info.putInt("state", entry.getValue().getInitializationState().ordinal());
-              info.putString("description", entry.getValue().getDescription());
-              result.pushMap(info);
+      reactApplicationContext,
+      OnInitializationCompleteListener { initializationStatus ->
+        val result = Arguments.createArray()
+        for ((key, value) in initializationStatus.adapterStatusMap) {
+          val info = Arguments.createMap();
+          info.putString("name", key)
+          info.putInt("state", value.initializationState.ordinal)
+          info.putString("description", value.description)
+          result.pushMap(info);
+        }
+        promise.resolve(result)
+      });
+  }
+
+  @ReactMethod
+  fun setRequestConfiguration(
+    requestConfiguration: ReadableMap,
+    promise: Promise
+  ) {
+    MobileAds.setRequestConfiguration(buildRequestConfiguration(requestConfiguration))
+    promise.resolve(null)
+  }
+
+  @ReactMethod
+  fun openAdInspector(promise: Promise) {
+    val activity = currentActivity
+    if (activity == null) {
+      promise.reject("null-activity", "Ad Inspector attempted to open but the current Activity was null.")
+      return
+    }
+    activity.runOnUiThread {
+      MobileAds.openAdInspector(
+        reactApplicationContext,
+        OnAdInspectorClosedListener { adInspectorError ->
+          if (adInspectorError != null) {
+            val code = when (adInspectorError.code) {
+              AdInspectorError.ERROR_CODE_INTERNAL_ERROR -> "INTERNAL_ERROR"
+              AdInspectorError.ERROR_CODE_FAILED_TO_LOAD -> "FAILED_TO_LOAD"
+              AdInspectorError.ERROR_CODE_NOT_IN_TEST_MODE -> "NOT_IN_TEST_MODE"
+              AdInspectorError.ERROR_CODE_ALREADY_OPEN -> "ALREADY_OPEN"
+              else -> ""
             }
-            promise.resolve(result);
+            promise.reject(code, adInspectorError.message)
+          } else {
+            promise.resolve(null);
           }
-        });
-  }
-
-  @ReactMethod
-  public void setRequestConfiguration(ReadableMap requestConfiguration, Promise promise) {
-    MobileAds.setRequestConfiguration(buildRequestConfiguration(requestConfiguration));
-    promise.resolve(null);
-  }
-
-  @ReactMethod
-  public void openAdInspector(Promise promise) {
-    if (getCurrentActivity() == null) {
-      rejectPromiseWithCodeAndMessage(
-          promise,
-          "null-activity",
-          "Ad Inspector attempted to open but the current Activity was null.");
-      return;
+        }
     }
-    getCurrentActivity()
-        .runOnUiThread(
-            () -> {
-              MobileAds.openAdInspector(
-                  getApplicationContext(),
-                  new OnAdInspectorClosedListener() {
-                    @Override
-                    public void onAdInspectorClosed(@Nullable AdInspectorError adInspectorError) {
-                      if (adInspectorError != null) {
-                        String code = "";
-                        switch (adInspectorError.getCode()) {
-                          case AdInspectorError.ERROR_CODE_INTERNAL_ERROR:
-                            code = "INTERNAL_ERROR";
-                            break;
-                          case AdInspectorError.ERROR_CODE_FAILED_TO_LOAD:
-                            code = "FAILED_TO_LOAD";
-                            break;
-                          case AdInspectorError.ERROR_CODE_NOT_IN_TEST_MODE:
-                            code = "NOT_IN_TEST_MODE";
-                            break;
-                          case AdInspectorError.ERROR_CODE_ALREADY_OPEN:
-                            code = "ALREADY_OPEN";
-                            break;
-                        }
-                        rejectPromiseWithCodeAndMessage(
-                            promise, code, adInspectorError.getMessage());
-                      } else {
-                        promise.resolve(null);
-                      }
-                    }
-                  });
-            });
+    )
   }
 
+
   @ReactMethod
-  public void openDebugMenu(final String adUnit) {
-    if (getCurrentActivity() != null) {
-      getCurrentActivity()
-          .runOnUiThread(() -> MobileAds.openDebugMenu(getCurrentActivity(), adUnit));
+  fun openDebugMenu(adUnit: String) {
+    currentActivity?.runOnUiThread {
+      MobileAds.openDebugMenu(currentActivity, adUnit)
     }
   }
 
   @ReactMethod
-  public void setAppVolume(final Float volume) {
-    MobileAds.setAppVolume(volume);
+  fun setAppVolume(volume: Float) {
+    MobileAds.setAppVolume(volume)
   }
 
   @ReactMethod
-  public void setAppMuted(final Boolean muted) {
-    MobileAds.setAppMuted(muted);
+  fun setAppMuted(muted: Boolean) {
+    MobileAds.setAppMuted(muted)
   }
 }
