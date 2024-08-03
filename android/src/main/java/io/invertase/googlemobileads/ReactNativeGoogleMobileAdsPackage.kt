@@ -1,4 +1,4 @@
-package io.invertase.googlemobileads;
+package io.invertase.googlemobileads
 
 /*
  * Copyright (c) 2016-present Invertase Limited & Contributors
@@ -17,33 +17,26 @@ package io.invertase.googlemobileads;
  *
  */
 
-import com.facebook.react.ReactPackage;
-import com.facebook.react.bridge.NativeModule;
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.uimanager.ViewManager;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import javax.annotation.Nonnull;
+import com.facebook.react.ReactPackage
+import com.facebook.react.bridge.NativeModule
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.uimanager.ViewManager
 
 @SuppressWarnings("unused")
-public class ReactNativeGoogleMobileAdsPackage implements ReactPackage {
-  @Override
-  public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-    List<NativeModule> modules = new ArrayList<>();
-    modules.add(new ReactNativeAppModule(reactContext));
-    modules.add(new ReactNativeGoogleMobileAdsModule(reactContext));
-    modules.add(new ReactNativeGoogleMobileAdsConsentModule(reactContext));
-    modules.add(new ReactNativeGoogleMobileAdsAppOpenModule(reactContext));
-    modules.add(new ReactNativeGoogleMobileAdsInterstitialModule(reactContext));
-    modules.add(new ReactNativeGoogleMobileAdsRewardedModule(reactContext));
-    modules.add(new ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext));
-    return modules;
-  }
+class ReactNativeGoogleMobileAdsPackage : ReactPackage {
+  override fun createNativeModules(reactContext: ReactApplicationContext) = listOf(
+    ReactNativeAppModule(reactContext),
+    ReactNativeGoogleMobileAdsModule(reactContext),
+    ReactNativeGoogleMobileAdsConsentModule(reactContext),
+    ReactNativeGoogleMobileAdsAppOpenModule(reactContext),
+    ReactNativeGoogleMobileAdsInterstitialModule(reactContext),
+    ReactNativeGoogleMobileAdsRewardedModule(reactContext),
+    ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext)
+  )
 
-  @Nonnull
-  @Override
-  public List<ViewManager> createViewManagers(@Nonnull ReactApplicationContext reactContext) {
-    return Arrays.asList(new ReactNativeGoogleMobileAdsBannerAdViewManager());
+  override fun createViewManagers(
+    reactContext: ReactApplicationContext
+  ): List<ViewManager<*, *>> {
+    return listOf(ReactNativeGoogleMobileAdsBannerAdViewManager())
   }
 }
