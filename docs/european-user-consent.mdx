@@ -57,12 +57,12 @@ Add the `extraProguardRules` property to `app.json`, `app.config.js`, or `app.co
 ```js
 // <project-root>/app.config.js
 module.exports = {
-  "plugins": [
+  plugins: [
     [
-      "expo-build-properties",
+      'expo-build-properties',
       {
-        "android": {
-          "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }",
+        android: {
+          extraProguardRules: '-keep class com.google.android.gms.internal.consent_sdk.** { *; }',
         },
       },
     ],
@@ -73,12 +73,12 @@ module.exports = {
 ```ts
 // <project-root>/app.config.ts
 export default {
-  "plugins": [
+  plugins: [
     [
-      "expo-build-properties",
+      'expo-build-properties',
       {
-        "android": {
-          "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }",
+        android: {
+          extraProguardRules: '-keep class com.google.android.gms.internal.consent_sdk.** { *; }',
         },
       },
     ],
@@ -139,13 +139,13 @@ Within your projects `app.json`, `app.config.js`, or `app.config.ts` file, set t
 ```js
 // <project-root>/app.config.js
 module.exports = {
-  "plugins": [
+  plugins: [
     [
-      "react-native-google-mobile-ads",
+      'react-native-google-mobile-ads',
       {
-        "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-        "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-        "delayAppMeasurementInit": true
+        androidAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        iosAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        delayAppMeasurementInit: true
       }
     ]
   ]
@@ -155,13 +155,13 @@ module.exports = {
 ```ts
 // <project-root>/app.config.ts
 export default {
-  "plugins": [
+  plugins: [
     [
-      "react-native-google-mobile-ads",
+      'react-native-google-mobile-ads',
       {
-        "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-        "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-        "delayAppMeasurementInit": true
+        androidAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        iosAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        delayAppMeasurementInit: true
       }
     ]
   ]
@@ -217,13 +217,13 @@ Also, within your projects configuration file, you have to provide a user tracki
 ```js
 // <project-root>/app.config.js
 module.exports = {
-  "plugins": [
+  plugins: [
     [
-      "react-native-google-mobile-ads",
+      'react-native-google-mobile-ads',
       {
-        "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-        "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-        "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+        androidAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        iosAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        userTrackingUsageDescription: 'This identifier will be used to deliver personalized ads to you.'
       }
     ]
   ]
@@ -233,13 +233,13 @@ module.exports = {
 ```ts
 // <project-root>/app.config.ts
 export default {
-  "plugins": [
+  plugins: [
     [
-      "react-native-google-mobile-ads",
+      'react-native-google-mobile-ads',
       {
-        "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-        "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-        "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+        androidAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        iosAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        userTrackingUsageDescription: 'This identifier will be used to deliver personalized ads to you.'
       }
     ]
   ]
