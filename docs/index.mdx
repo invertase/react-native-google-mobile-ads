@@ -53,6 +53,7 @@ To enable static frameworks, you must add the variable `$RNGoogleMobileAdsAsStat
 Expo users may enable static frameworks by using the `expo-build-properties` plugin.
 To do so [follow the official `expo-build-properties` installation instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following code into your `app.json`, `app.config.js`, or `app.config.ts` file:
 
+<Accordion title="app.json" defaultOpen>
 ```json
 // <project-root>/app.json
 {
@@ -70,7 +71,11 @@ To do so [follow the official `expo-build-properties` installation instructions]
   }
 }
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.js">
 ```js
 // <project-root>/app.config.js
 module.exports = {
@@ -86,7 +91,11 @@ module.exports = {
   ]
 };
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.ts">
 ```ts
 // <project-root>/app.config.ts
 export default {
@@ -102,6 +111,7 @@ export default {
   ]
 };
 ```
+</Accordion>
 
 </TabItem>
 </Tabs>
@@ -155,6 +165,7 @@ npx react-native run-android
 This library contains an Expo config plugin which you must add to your `app.json`, `app.config.js`, or `app.config.ts` file.
 For these changes to take effect, your must rebuild your project's native code and install the new build on your device.
 
+<Accordion title="app.json" defaultOpen>
 ```json
 // <project-root>/app.json
 {
@@ -171,7 +182,11 @@ For these changes to take effect, your must rebuild your project's native code a
   }
 }
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.js">
 ```js
 // <project-root>/app.config.js
 module.exports = {
@@ -186,7 +201,11 @@ module.exports = {
   ]
 };
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.ts">
 ```ts
 // <project-root>/app.config.ts
 export default {
@@ -201,6 +220,9 @@ export default {
   ]
 };
 ```
+</Accordion>
+
+<br />
 
 <Warning>
 ️ This module contains custom native code which is NOT supported by Expo Go
@@ -360,6 +382,7 @@ Note that these identifiers are subject to change and should be updated regularl
 </TabItem>
 <TabItem value="expo">
 
+<Accordion title="app.json" defaultOpen>
 ```json
 // <project-root>/app.json
 {
@@ -427,7 +450,11 @@ Note that these identifiers are subject to change and should be updated regularl
   }
 }
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.js">
 ```js
 // <project-root>/app.config.js
 module.exports = {
@@ -445,7 +472,11 @@ module.exports = {
   ]
 };
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.ts">
 ```ts
 // <project-root>/app.config.ts
 export default {
@@ -463,6 +494,7 @@ export default {
   ]
 };
 ```
+</Accordion>
 
 </TabItem>
 </Tabs>
@@ -489,6 +521,7 @@ Within your projects configuration file, you have to provide a user tracking usa
 </TabItem>
 <TabItem value="expo">
 
+<Accordion title="app.json" defaultOpen>
 ```json
 // <project-root>/app.json
 {
@@ -506,7 +539,11 @@ Within your projects configuration file, you have to provide a user tracking usa
   }
 }
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.js">
 ```js
 // <project-root>/app.config.js
 module.exports = {
@@ -522,7 +559,11 @@ module.exports = {
   ]
 };
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.ts">
 ```ts
 // <project-root>/app.config.ts
 export default {
@@ -538,6 +579,7 @@ export default {
   ]
 };
 ```
+</Accordion>
 
 </TabItem>
 </Tabs>

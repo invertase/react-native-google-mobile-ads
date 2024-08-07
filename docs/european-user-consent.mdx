@@ -36,6 +36,7 @@ For Android, add the following rule into `android/app/proguard-rules.pro`:
 
 Add the `extraProguardRules` property to `app.json`, `app.config.js`, or `app.config.ts` file as described in the [Expo documentation](https://docs.expo.dev/versions/latest/sdk/build-properties/#pluginconfigtypeandroid):
 
+<Accordion title="app.json" defaultOpen>
 ```json
 // <project-root>/app.json
 {
@@ -53,7 +54,11 @@ Add the `extraProguardRules` property to `app.json`, `app.config.js`, or `app.co
   }
 }
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.js">
 ```js
 // <project-root>/app.config.js
 module.exports = {
@@ -69,7 +74,11 @@ module.exports = {
   ],
 };
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.ts">
 ```ts
 // <project-root>/app.config.ts
 export default {
@@ -85,7 +94,7 @@ export default {
   ]
 };
 ```
-
+</Accordion>
 
 You'll need to generate a new development build before using it.
 
@@ -118,6 +127,7 @@ Within your projects `app.json` file, set the `delay_app_measurement_init` to `t
 
 Within your projects `app.json`, `app.config.js`, or `app.config.ts` file, set the `delayAppMeasurementInit` to `true` to delay app measurement:
 
+<Accordion title="app.json" defaultOpen>
 ```json
 // <project-root>/app.json
 {
@@ -135,7 +145,11 @@ Within your projects `app.json`, `app.config.js`, or `app.config.ts` file, set t
   }
 }
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.js">
 ```js
 // <project-root>/app.config.js
 module.exports = {
@@ -151,7 +165,11 @@ module.exports = {
   ]
 };
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.ts">
 ```ts
 // <project-root>/app.config.ts
 export default {
@@ -167,6 +185,7 @@ export default {
   ]
 };
 ```
+</Accordion>
 
 </TabItem>
 </Tabs>
@@ -196,6 +215,7 @@ Also, within your projects configuration file, you have to provide a user tracki
 </TabItem>
 <TabItem value="expo">
 
+<Accordion title="app.json" defaultOpen>
 ```json
 // <project-root>/app.json
 {
@@ -213,7 +233,11 @@ Also, within your projects configuration file, you have to provide a user tracki
   }
 }
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.js">
 ```js
 // <project-root>/app.config.js
 module.exports = {
@@ -229,7 +253,11 @@ module.exports = {
   ]
 };
 ```
+</Accordion>
 
+<br />
+
+<Accordion title="app.config.ts">
 ```ts
 // <project-root>/app.config.ts
 export default {
@@ -245,6 +273,7 @@ export default {
   ]
 };
 ```
+</Accordion>
 
 </TabItem>
 </Tabs>
