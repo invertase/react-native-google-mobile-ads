@@ -5,7 +5,7 @@ import util from 'util';
 
 const execAsync = util.promisify(exec);
 
-describe('Expo Config Plugin Tests', () => {
+describe.each(['app.json', 'app.config.js', 'app.config.ts'])('Expo Config Plugin Tests', expoConfigFileName => {
   const fixturesPath = path.join(__dirname, 'fixtures');
   const testAppPath = path.join(__dirname, 'build');
   const infoPlistPath = path.join(testAppPath, 'ios', 'example', 'Info.plist');
@@ -21,7 +21,10 @@ describe('Expo Config Plugin Tests', () => {
   beforeEach(async () => {
     await fs.rm(testAppPath, { recursive: true, force: true });
     await fs.mkdir(testAppPath);
-    await fs.copyFile(path.join(fixturesPath, 'app.json'), path.join(testAppPath, 'app.json'));
+    await fs.copyFile(
+      path.join(fixturesPath, expoConfigFileName),
+      path.join(testAppPath, expoConfigFileName),
+    );
     await fs.copyFile(
       path.join(fixturesPath, 'package.json'),
       path.join(testAppPath, 'package.json'),
@@ -34,8 +37,8 @@ describe('Expo Config Plugin Tests', () => {
 
   it('Warns about missing androidAppId', async () => {
     await fs.copyFile(
-      path.join(fixturesPath, 'app-without-params.json'),
-      path.join(testAppPath, 'app.json'),
+      path.join(fixturesPath, "without-params", expoConfigFileName),
+      path.join(testAppPath, expoConfigFileName),
     );
 
     const { stderr } = await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
@@ -44,8 +47,8 @@ describe('Expo Config Plugin Tests', () => {
 
   it('Warns about missing iosAppId', async () => {
     await fs.copyFile(
-      path.join(fixturesPath, 'app-without-params.json'),
-      path.join(testAppPath, 'app.json'),
+      path.join(fixturesPath, "without-params", expoConfigFileName),
+      path.join(testAppPath, expoConfigFileName),
     );
 
     const { stderr } = await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
@@ -54,8 +57,8 @@ describe('Expo Config Plugin Tests', () => {
 
   it('Optimizes initialization on Android by default', async () => {
     await fs.copyFile(
-      path.join(fixturesPath, 'app-without-params.json'),
-      path.join(testAppPath, 'app.json'),
+      path.join(fixturesPath, "without-params", expoConfigFileName),
+      path.join(testAppPath, expoConfigFileName),
     );
 
     await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
@@ -68,8 +71,8 @@ describe('Expo Config Plugin Tests', () => {
 
   it('Optimizes ad loading on Android by default', async () => {
     await fs.copyFile(
-      path.join(fixturesPath, 'app-without-params.json'),
-      path.join(testAppPath, 'app.json'),
+      path.join(fixturesPath, "without-params", expoConfigFileName),
+      path.join(testAppPath, expoConfigFileName),
     );
 
     await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
