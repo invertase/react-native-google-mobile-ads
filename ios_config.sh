@@ -88,12 +88,6 @@ while true; do
   _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))
 done
 
-# Bail out if project is a managed Expo project:
-if [[ ! -d "${PROJECT_DIR}/ios" ]] && [[ ! -d "${PROJECT_DIR}/android" ]]; then
-  echo "info: Project does not contain an ios or android folder, assume it's a managed Expo project using our Expo Config Plugin."
-  exit 0
-fi
-
 if [[ ${_SEARCH_RESULT} ]]; then
   _JSON_OUTPUT_RAW=$(cat "${_SEARCH_RESULT}")
   _RN_ROOT_EXISTS=$(ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output[$_JSON_ROOT]" || echo '')
@@ -169,8 +163,9 @@ if ! [[ -f "${_TARGET_PLIST}" ]]; then
 fi
 
 if ! [[ $_IOS_APP_ID ]]; then
-  echo "error: ios_app_id key not found in react-native-google-mobile-ads key in app.json. App will crash without it."
-  exit 1
+  echo "warning: ios_app_id key not found in react-native-google-mobile-ads key in app.json. App will crash without it."
+  echo "         You can safely ignore this warning if you are using our Expo config plugin."
+  exit 0
 fi
 
 for plist in "${_TARGET_PLIST}" "${_DSYM_PLIST}" ; do
