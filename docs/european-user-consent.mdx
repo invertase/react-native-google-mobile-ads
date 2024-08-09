@@ -34,9 +34,11 @@ For Android, add the following rule into `android/app/proguard-rules.pro`:
 </TabItem>
 <TabItem value="expo">
 
-Add the `extraProguardRules` property to `app.json` file as described in the [Expo documentation](https://docs.expo.dev/versions/latest/sdk/build-properties/#pluginconfigtypeandroid):
+Add the `extraProguardRules` property to `app.json`, `app.config.js`, or `app.config.ts` file as described in the [Expo documentation](https://docs.expo.dev/versions/latest/sdk/build-properties/#pluginconfigtypeandroid):
 
+<Accordion title="app.json" defaultOpen>
 ```json
+// <project-root>/app.json
 {
   "expo": {
     "plugins": [
@@ -52,6 +54,47 @@ Add the `extraProguardRules` property to `app.json` file as described in the [Ex
   }
 }
 ```
+</Accordion>
+
+<br />
+
+<Accordion title="app.config.js">
+```js
+// <project-root>/app.config.js
+module.exports = {
+  plugins: [
+    [
+      'expo-build-properties',
+      {
+        android: {
+          extraProguardRules: '-keep class com.google.android.gms.internal.consent_sdk.** { *; }',
+        },
+      },
+    ],
+  ],
+};
+```
+</Accordion>
+
+<br />
+
+<Accordion title="app.config.ts">
+```ts
+// <project-root>/app.config.ts
+export default {
+  plugins: [
+    [
+      'expo-build-properties',
+      {
+        android: {
+          extraProguardRules: '-keep class com.google.android.gms.internal.consent_sdk.** { *; }',
+        },
+      },
+    ],
+  ]
+};
+```
+</Accordion>
 
 You'll need to generate a new development build before using it.
 
@@ -82,8 +125,9 @@ Within your projects `app.json` file, set the `delay_app_measurement_init` to `t
 </TabItem>
 <TabItem value="expo">
 
-Within your projects `app.json` file, set the `delayAppMeasurementInit` to `true` to delay app measurement:
+Within your projects `app.json`, `app.config.js`, or `app.config.ts` file, set the `delayAppMeasurementInit` to `true` to delay app measurement:
 
+<Accordion title="app.json" defaultOpen>
 ```json
 // <project-root>/app.json
 {
@@ -101,6 +145,47 @@ Within your projects `app.json` file, set the `delayAppMeasurementInit` to `true
   }
 }
 ```
+</Accordion>
+
+<br />
+
+<Accordion title="app.config.js">
+```js
+// <project-root>/app.config.js
+module.exports = {
+  plugins: [
+    [
+      'react-native-google-mobile-ads',
+      {
+        androidAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        iosAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        delayAppMeasurementInit: true
+      }
+    ]
+  ]
+};
+```
+</Accordion>
+
+<br />
+
+<Accordion title="app.config.ts">
+```ts
+// <project-root>/app.config.ts
+export default {
+  plugins: [
+    [
+      'react-native-google-mobile-ads',
+      {
+        androidAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        iosAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        delayAppMeasurementInit: true
+      }
+    ]
+  ]
+};
+```
+</Accordion>
 
 </TabItem>
 </Tabs>
@@ -111,7 +196,7 @@ Once set, rebuild your application.
 
 If you configure an [ATT message](https://support.google.com/admob/answer/10115331) in your Google AdMob account, the UMP SDK will automatically handle the ATT alert.
 This will also show an IDFA explainer message. If you don't want to show an explainer message you can show the ATT alert [manually](https://docs.page/invertase/react-native-google-mobile-ads#app-tracking-transparency-ios).
-Also, within your projects `app.json` file, you have to provide a user tracking usage description (once set, rebuild your application):
+Also, within your projects configuration file, you have to provide a user tracking usage description (once set, rebuild your application):
 
 <Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
 <TabItem value="bare">
@@ -130,6 +215,7 @@ Also, within your projects `app.json` file, you have to provide a user tracking 
 </TabItem>
 <TabItem value="expo">
 
+<Accordion title="app.json" defaultOpen>
 ```json
 // <project-root>/app.json
 {
@@ -147,6 +233,47 @@ Also, within your projects `app.json` file, you have to provide a user tracking 
   }
 }
 ```
+</Accordion>
+
+<br />
+
+<Accordion title="app.config.js">
+```js
+// <project-root>/app.config.js
+module.exports = {
+  plugins: [
+    [
+      'react-native-google-mobile-ads',
+      {
+        androidAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        iosAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        userTrackingUsageDescription: 'This identifier will be used to deliver personalized ads to you.'
+      }
+    ]
+  ]
+};
+```
+</Accordion>
+
+<br />
+
+<Accordion title="app.config.ts">
+```ts
+// <project-root>/app.config.ts
+export default {
+  plugins: [
+    [
+      'react-native-google-mobile-ads',
+      {
+        androidAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        iosAppId: 'ca-app-pub-xxxxxxxx~xxxxxxxx',
+        userTrackingUsageDescription: 'This identifier will be used to deliver personalized ads to you.'
+      }
+    ]
+  ]
+};
+```
+</Accordion>
 
 </TabItem>
 </Tabs>
