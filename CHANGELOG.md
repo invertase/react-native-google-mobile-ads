@@ -1,3 +1,10 @@
+### [14.2.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.1...v14.2.2) (2024-08-09)
+
+
+### Bug Fixes
+
+* hotfix building without an app.json file ([fe0f4f2](https://github.com/invertase/react-native-google-mobile-ads/commit/fe0f4f2285b7da5a14cb7d8dd88c501efa3505c4))
+
 ### [14.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.0...v14.2.1) (2024-07-26)
 
 
