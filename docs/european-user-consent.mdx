@@ -34,9 +34,10 @@ For Android, add the following rule into `android/app/proguard-rules.pro`:
 </TabItem>
 <TabItem value="expo">
 
-Add the `extraProguardRules` property to `app.json` file as described in the [Expo documentation](https://docs.expo.dev/versions/latest/sdk/build-properties/#pluginconfigtypeandroid):
+Add the `extraProguardRules` property to `app.json`, `app.config.js`, or `app.config.ts` file as described in the [Expo documentation](https://docs.expo.dev/versions/latest/sdk/build-properties/#pluginconfigtypeandroid):
 
 ```json
+// <project-root>/app.json
 {
   "expo": {
     "plugins": [
@@ -82,7 +83,7 @@ Within your projects `app.json` file, set the `delay_app_measurement_init` to `t
 </TabItem>
 <TabItem value="expo">
 
-Within your projects `app.json` file, set the `delayAppMeasurementInit` to `true` to delay app measurement:
+Within your projects `app.json`, `app.config.js`, or `app.config.ts` file, set the `delayAppMeasurementInit` to `true` to delay app measurement:
 
 ```json
 // <project-root>/app.json
@@ -111,7 +112,7 @@ Once set, rebuild your application.
 
 If you configure an [ATT message](https://support.google.com/admob/answer/10115331) in your Google AdMob account, the UMP SDK will automatically handle the ATT alert.
 This will also show an IDFA explainer message. If you don't want to show an explainer message you can show the ATT alert [manually](https://docs.page/invertase/react-native-google-mobile-ads#app-tracking-transparency-ios).
-Also, within your projects `app.json` file, you have to provide a user tracking usage description (once set, rebuild your application):
+Also, within your projects configuration file, you have to provide a user tracking usage description (once set, rebuild your application):
 
 <Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
 <TabItem value="bare">
