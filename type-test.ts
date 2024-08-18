@@ -27,7 +27,7 @@ import mobileAds, {
   useRewardedAd,
   useRewardedInterstitialAd,
   useForeground,
-} from '.';
+} from './src';
 
 // static exports
 console.log(SDK_VERSION);
