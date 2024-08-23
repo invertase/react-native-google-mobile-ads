@@ -24,6 +24,7 @@ import {
   isUndefined,
   isValidUrl,
 } from './common';
+import { version } from './version';
 import { RequestOptions } from './types/RequestOptions';
 
 export function validateAdRequestOptions(options?: RequestOptions) {
@@ -97,6 +98,8 @@ export function validateAdRequestOptions(options?: RequestOptions) {
     }
 
     out.requestAgent = options.requestAgent;
+  } else {
+    out.requestAgent = `rn-invertase-${version}`;
   }
 
   if (options.serverSideVerificationOptions) {
