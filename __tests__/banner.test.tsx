@@ -1,8 +1,22 @@
+import * as ReactNative from 'react-native';
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { BannerAd, BannerAdSize } from '../src';
 
 const MOCK_ID = 'MOCK_ID';
+
+jest.doMock('react-native', () => {
+  return Object.setPrototypeOf(
+    {
+      ...ReactNative,
+      Platform: {
+        OS: 'android',
+        select: () => {},
+      },
+    },
+    ReactNative,
+  );
+});
 
 describe('Google Mobile Ads Banner', function () {
   it('throws if no unit ID was provided.', function () {
