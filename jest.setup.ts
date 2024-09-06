@@ -28,6 +28,7 @@ jest.doMock('react-native', () => {
         RNGoogleMobileAdsConsentModule: {},
       },
       TurboModuleRegistry: {
+        ...ReactNative.TurboModuleRegistry,
         getEnforcing: () => {
           return {
             initialize: jest.fn(),
