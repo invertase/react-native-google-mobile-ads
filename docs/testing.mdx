@@ -1,0 +1,17 @@
+# Testing
+
+The React Native Google Mobile Ads library depends on a lot of platform-specific native code which you likely want to mock in your tests.
+
+## Testing with Jest
+
+This library ships with a Jest setup file that mocks the native code for you.
+To use it, add the following to your Jest configuration:
+
+```json
+// jest.config.js|ts|mjs|cjs|json
+{
+  "setupFiles": [
+    "./node_modules/react-native-google-mobile-ads/jest.setup.ts"
+  ]
+}
+```
