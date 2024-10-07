@@ -19,10 +19,10 @@ package io.invertase.googlemobileads
 
 import com.facebook.react.bridge.*
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.initialization.InitializationStatus
 import com.google.android.gms.ads.initialization.OnInitializationCompleteListener
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.ads.AdInspectorError
+import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.OnAdInspectorClosedListener
 
 private const val SERVICE = "RNGoogleMobileAdsModule";
@@ -139,18 +139,18 @@ class ReactNativeGoogleMobileAdsModule(
             }
             promise.reject(code, adInspectorError.message)
           } else {
-            promise.resolve(null);
+            promise.resolve(null)
           }
         }
+      )
     }
-    )
   }
 
 
   @ReactMethod
   fun openDebugMenu(adUnit: String) {
     currentActivity?.runOnUiThread {
-      MobileAds.openDebugMenu(currentActivity, adUnit)
+      MobileAds.openDebugMenu(currentActivity!!, adUnit)
     }
   }
 
