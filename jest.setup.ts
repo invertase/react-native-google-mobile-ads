@@ -3,10 +3,6 @@ import * as ReactNative from 'react-native';
 jest.doMock('react-native', () => {
   return Object.setPrototypeOf(
     {
-      Platform: {
-        OS: 'android',
-        select: () => {},
-      },
       NativeModules: {
         ...ReactNative.NativeModules,
         RNAppModule: {
@@ -28,6 +24,7 @@ jest.doMock('react-native', () => {
         RNGoogleMobileAdsConsentModule: {},
       },
       TurboModuleRegistry: {
+        ...ReactNative.TurboModuleRegistry,
         getEnforcing: () => {
           return {
             initialize: jest.fn(),
