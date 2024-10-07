@@ -10,18 +10,18 @@
     "test": "jest"
   },
   "dependencies": {
-    "react": "18.2.0",
-    "react-native": "0.74.1",
+    "react": "18.3.1",
+    "react-native": "0.75.4",
     "react-native-google-mobile-ads": "link:../"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@babel/preset-env": "^7.24.5",
     "@babel/runtime": "^7.20.0",
-    "@react-native/babel-preset": "0.74.83",
-    "@react-native/eslint-config": "0.74.83",
-    "@react-native/metro-config": "0.74.83",
-    "@react-native/typescript-config": "0.74.83",
+    "@react-native/babel-preset": "0.75.4",
+    "@react-native/eslint-config": "0.75.4",
+    "@react-native/metro-config": "0.75.4",
+    "@react-native/typescript-config": "0.75.4",
     "@types/react": "^18.2.6",
     "@types/react-test-renderer": "^18.0.0",
     "babel-jest": "^29.6.3",
@@ -33,7 +33,7 @@
     "jet": "https://github.com/invertase/jet#@mikehardy/jet-next",
     "mocha": "^10.4.0",
     "prettier": "2.8.8",
-    "react-test-renderer": "18.2.0",
+    "react-test-renderer": "18.3.1",
     "typescript": "^5.4.5"
   },
   "engines": {
