@@ -1,3 +1,11 @@
+### [14.2.4](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.3...v14.2.4) (2024-10-07)
+
+
+### Bug Fixes
+
+* **android:** fixup java->kotlin transition from 622 ([e62bcb4](https://github.com/invertase/react-native-google-mobile-ads/commit/e62bcb421bf63da63df0f4a9f7a2f23e28f75395))
+* jest setup was voiding custom turbo mocks ([#636](https://github.com/invertase/react-native-google-mobile-ads/issues/636)) ([8866d8a](https://github.com/invertase/react-native-google-mobile-ads/commit/8866d8a349be8169588ad9834fb501a31047ced6))
+
 ### [14.2.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.2...v14.2.3) (2024-08-23)
 
 
