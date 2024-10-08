@@ -1,3 +1,10 @@
+### [14.2.5](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.4...v14.2.5) (2024-10-08)
+
+
+### Bug Fixes
+
+* type tests were messing with type generation ([#643](https://github.com/invertase/react-native-google-mobile-ads/issues/643)) ([63bbb54](https://github.com/invertase/react-native-google-mobile-ads/commit/63bbb5431a02487f5ea13f72ace601ffed9f7204))
+
 ### [14.2.4](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.3...v14.2.4) (2024-10-07)
 
 
