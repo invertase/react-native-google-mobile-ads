@@ -11,6 +11,8 @@ class OnNativeEvent(viewId: Int, private val event: WritableMap) : Event<OnNativ
 
     override fun getCoalescingKey(): Short = 0
 
+    override fun canCoalesce(): Boolean = false
+
     override fun getEventData(): WritableMap? {
         return event
     }
