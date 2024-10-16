@@ -34,7 +34,8 @@ npx expo install react-native-google-mobile-ads
 </Tabs>
 
 <Info>
-On Android, before releasing your app, you must select "Yes, my app contains ads" in the Google Play Console under "Policy and programmes" > "App content" > "Manage".
+  On Android, before releasing your app, you must select "Yes, my app contains ads" in the Google
+  Play Console under "Policy and programmes" > "App content" > "Manage".
 </Info>
 
 ### Optionally configure iOS static frameworks
@@ -81,7 +82,8 @@ Before you are able to display ads to your users, you must have a [Google AdMob 
 be added to the project.
 
 <Warning>
-Attempting to build your app without configuring a valid App ID for this package will cause the app to crash on start or fail to build.
+  Attempting to build your app without configuring a valid App ID for this package will cause the
+  app to crash on start or fail to build.
 </Warning>
 
 Under the "App settings" menu item, you can find the "App ID":
@@ -91,7 +93,6 @@ Under the "App settings" menu item, you can find the "App ID":
 The app IDs for Android and iOS need to be inserted into your apps native code.
 For bare React Native projects, you can add the app IDs to the `app.json` file.
 For Expo projects, we provide an [Expo config plugin](https://docs.expo.dev/config-plugins/introduction/).
-
 
 <Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
 <TabItem value="bare">
@@ -140,9 +141,7 @@ For these changes to take effect, your must rebuild your project's native code a
 }
 ```
 
-<Warning>
-️ This module contains custom native code which is NOT supported by Expo Go
-</Warning>
+<Warning>️ This module contains custom native code which is NOT supported by Expo Go</Warning>
 
 If you're using Expo without EAS, run the following commands:
 
@@ -209,8 +208,10 @@ Before loading ads, have your app initialize the Google Mobile Ads SDK by callin
 This needs to be done only once, ideally at app launch.
 
 <Warning>
-Ads may be preloaded by the Mobile Ads SDK or mediation partner SDKs upon calling `initialize`.
-If you need to obtain consent from users in the European Economic Area (EEA), set any request-specific flags (such as tagForChildDirectedTreatment), or otherwise take action before loading ads, ensure you do so before initializing the Mobile Ads SDK.
+  Ads may be preloaded by the Mobile Ads SDK or mediation partner SDKs upon calling `initialize`. If
+  you need to obtain consent from users in the European Economic Area (EEA), set any
+  request-specific flags (such as tagForChildDirectedTreatment), or otherwise take action before
+  loading ads, ensure you do so before initializing the Mobile Ads SDK.
 </Warning>
 
 ```js
@@ -243,10 +244,8 @@ Note that these identifiers are subject to change and should be updated regularl
     "sk_ad_network_items": [
       "cstr6suwn9.skadnetwork",
       "4fzdc2evr5.skadnetwork",
-      "4pfyvq9l8r.skadnetwork",
       "2fnua5tdw4.skadnetwork",
       "ydx93a7ass.skadnetwork",
-      "5a6flpkh64.skadnetwork",
       "p78axxw29g.skadnetwork",
       "v72qych5uu.skadnetwork",
       "ludvb6z3bs.skadnetwork",
@@ -255,39 +254,34 @@ Note that these identifiers are subject to change and should be updated regularl
       "c6k4g5qg8m.skadnetwork",
       "s39g8k73mm.skadnetwork",
       "3qy4746246.skadnetwork",
-      "f38h382jlk.skadnetwork",
       "hs6bdukanm.skadnetwork",
+      "mlmmfzh3r3.skadnetwork",
       "v4nxqhlyqp.skadnetwork",
       "wzmmz9fp6w.skadnetwork",
+      "su67r6k2v3.skadnetwork",
       "yclnxrl5pm.skadnetwork",
-      "t38b2kh725.skadnetwork",
       "7ug5zh24hu.skadnetwork",
       "gta9lk7p23.skadnetwork",
       "vutu7akeur.skadnetwork",
       "y5ghdn5j9k.skadnetwork",
-      "n6fk4nfna4.skadnetwork",
       "v9wttpbfk9.skadnetwork",
       "n38lu8286q.skadnetwork",
       "47vhws6wlr.skadnetwork",
       "kbd757ywx3.skadnetwork",
       "9t245vhmpl.skadnetwork",
-      "eh6m2bh4zr.skadnetwork",
       "a2p9lx4jpn.skadnetwork",
       "22mmun2rn5.skadnetwork",
       "4468km3ulz.skadnetwork",
       "2u9pt9hc89.skadnetwork",
       "8s468mfl3y.skadnetwork",
-      "klf5c3l5u5.skadnetwork",
       "ppxm28t8ap.skadnetwork",
-      "ecpz2srf59.skadnetwork",
       "uw77j35x4d.skadnetwork",
       "pwa73g5rt2.skadnetwork",
-      "mlmmfzh3r3.skadnetwork",
       "578prtvx9j.skadnetwork",
       "4dzt52r2t5.skadnetwork",
+      "tl55sbb4fm.skadnetwork",
       "e5fvkxwrpn.skadnetwork",
       "8c4e2ghe7u.skadnetwork",
-      "zq492l623r.skadnetwork",
       "3rd42ekr43.skadnetwork",
       "3qcr597p9d.skadnetwork"
     ]
@@ -358,7 +352,7 @@ Note that these identifiers are subject to change and should be updated regularl
             "zq492l623r.skadnetwork",
             "3rd42ekr43.skadnetwork",
             "3qcr597p9d.skadnetwork"
-          ],
+          ]
         }
       ]
     ]
