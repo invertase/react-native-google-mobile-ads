@@ -40,3 +40,10 @@ jest.doMock('react-native', () => {
     ReactNative,
   );
 });
+jest.doMock('./src/ads/GoogleMobileAdsBannerViewNativeComponent', () => {
+  return {
+    __esModule: true,
+    Commands: {},
+    default: ReactNative.View,
+  };
+});
