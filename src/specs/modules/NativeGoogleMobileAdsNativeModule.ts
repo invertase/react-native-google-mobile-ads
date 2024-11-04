@@ -17,24 +17,29 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import type { Double, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
-import { AdapterStatus } from '../../types';
+export type NativeAdProps = {
+  responseId: string;
+  advertiser: string | null;
+  body: string | null;
+  callToAction: string | null;
+  headline: string | null;
+  price: string | null;
+  store: string | null;
+  ratings: Double | null;
+  icon: NativeAdImage | null;
+  images: Array<NativeAdImage> | null;
+  extras: UnsafeObject | null;
+};
+
+export type NativeAdImage = {
+  url: string;
+  scale: Double;
+};
 
 export interface Spec extends TurboModule {
-  readonly getConstants: () => {
-    REVENUE_PRECISION_ESTIMATED: number;
-    REVENUE_PRECISION_PRECISE: number;
-    REVENUE_PRECISION_PUBLISHER_PROVIDED: number;
-    REVENUE_PRECISION_UNKNOWN: number;
-  };
-
-  initialize(): Promise<AdapterStatus[]>;
-  setRequestConfiguration(requestConfiguration?: UnsafeObject): Promise<void>;
-  openAdInspector(): Promise<void>;
-  openDebugMenu(adUnit: string): void;
-  setAppVolume(volume: number): void;
-  setAppMuted(muted: boolean): void;
+  load(adUnitId: string, requestOptions: UnsafeObject): Promise<NativeAdProps>;
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsModule');
+export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsNativeModule');
