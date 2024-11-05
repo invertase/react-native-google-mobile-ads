@@ -110,7 +110,21 @@ using namespace facebook::react;
 - (void)registerAsset:(NSString *)assetKey reactTag:(NSInteger)reactTag {
   RCTExecuteOnMainQueue(^{
     UIView *view = [_bridge.uiManager viewForReactTag:@(reactTag)];
-    [_nativeAdView setValue:view forKey:assetKey];
+    NSDictionary *viewMappings = @{
+        @"advertiser": @"advertiserView",
+        @"body": @"bodyView",
+        @"cta": @"callToActionView",
+        @"headline": @"headlineView",
+        @"price": @"priceView",
+        @"store": @"storeView",
+        @"ratings": @"starRatingView",
+        @"icon": @"iconView",
+        @"images": @"imageView"
+    };
+    NSString *property = viewMappings[assetKey];
+    if (property) {
+        [_nativeAdView setValue:view forKey:property];
+    }
     [self reloadAd];
   });
 }
@@ -122,7 +136,6 @@ using namespace facebook::react;
   _debouncedReload = dispatch_block_create(DISPATCH_BLOCK_NO_QOS_CLASS, ^{
     if (_nativeAd != nil) {
       _nativeAdView.nativeAd =_nativeAd;
-      NSLog(@"%@", _nativeAd);
     }
   });
   dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC);

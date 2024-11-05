@@ -51,7 +51,9 @@ export const NativeAdView = (props: NativeAdViewProps) => {
   );
 };
 
-export const NativeAsset = (props: { assetKey: string; children: ReactElement }) => {
+export type NativeAssetProps = { assetKey: string; children: ReactElement };
+
+export const NativeAsset = (props: NativeAssetProps) => {
   const { assetKey, children } = props;
   const { viewRef } = useContext(NativeAdContext);
   const ref = useRef(null);

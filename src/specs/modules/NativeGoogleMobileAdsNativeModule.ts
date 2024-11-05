@@ -19,6 +19,18 @@ import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
 import type { Double, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
+export enum NativeAssetType {
+  ADVERTISER = 'advertiser',
+  BODY = 'body',
+  CTA = 'callToAction',
+  HEADLINE = 'headline',
+  PRICE = 'price',
+  STORE = 'store',
+  RATINGS = 'ratings',
+  ICONS = 'icons',
+  IMAGES = 'images',
+}
+
 export type NativeAdProps = {
   responseId: string;
   advertiser: string | null;

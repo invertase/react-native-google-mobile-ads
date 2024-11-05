@@ -17,7 +17,7 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import type { Float, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
 import { AdapterStatus } from '../../types';
 
@@ -33,7 +33,7 @@ export interface Spec extends TurboModule {
   setRequestConfiguration(requestConfiguration?: UnsafeObject): Promise<void>;
   openAdInspector(): Promise<void>;
   openDebugMenu(adUnit: string): void;
-  setAppVolume(volume: number): void;
+  setAppVolume(volume: Float): void;
   setAppMuted(muted: boolean): void;
 }
 

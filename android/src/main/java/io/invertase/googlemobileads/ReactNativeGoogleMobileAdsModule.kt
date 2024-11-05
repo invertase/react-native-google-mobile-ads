@@ -26,13 +26,11 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdValue;
 import com.google.android.gms.ads.OnAdInspectorClosedListener
 
-private const val SERVICE = "RNGoogleMobileAdsModule";
-
 class ReactNativeGoogleMobileAdsModule(
   reactContext: ReactApplicationContext
-) : ReactContextBaseJavaModule(reactContext) {
+) : NativeGoogleMobileAdsModuleSpec(reactContext) {
 
-  override fun getName() = SERVICE
+  override fun getName() = NAME
 
   override fun getConstants(): Map<String, Any> {
     return mapOf(
@@ -105,8 +103,7 @@ class ReactNativeGoogleMobileAdsModule(
     return builder.build()
   }
 
-  @ReactMethod
-  fun initialize(promise: Promise) {
+  override fun initialize(promise: Promise) {
     MobileAds.initialize(
       // in react-native, the Activity instance *may* go away, becoming null after initialize
       // it is not clear if that can happen here without an initialize necessarily following the Activity lifecycle
@@ -127,17 +124,15 @@ class ReactNativeGoogleMobileAdsModule(
       });
   }
 
-  @ReactMethod
-  fun setRequestConfiguration(
-    requestConfiguration: ReadableMap,
+  override fun setRequestConfiguration(
+    requestConfiguration: ReadableMap?,
     promise: Promise
   ) {
-    MobileAds.setRequestConfiguration(buildRequestConfiguration(requestConfiguration))
+    MobileAds.setRequestConfiguration(buildRequestConfiguration(requestConfiguration ?: Arguments.createMap()))
     promise.resolve(null)
   }
 
-  @ReactMethod
-  fun openAdInspector(promise: Promise) {
+  override fun openAdInspector(promise: Promise) {
     val activity = currentActivity
     if (activity == null) {
       promise.reject("null-activity", "Ad Inspector attempted to open but the current Activity was null.")
@@ -165,20 +160,21 @@ class ReactNativeGoogleMobileAdsModule(
   }
 
 
-  @ReactMethod
-  fun openDebugMenu(adUnit: String) {
+  override fun openDebugMenu(adUnit: String) {
     currentActivity?.runOnUiThread {
       MobileAds.openDebugMenu(currentActivity!!, adUnit)
     }
   }
 
-  @ReactMethod
-  fun setAppVolume(volume: Float) {
-    MobileAds.setAppVolume(volume)
+  override fun setAppVolume(volume: Double) {
+    MobileAds.setAppVolume(volume.toFloat())
   }
 
-  @ReactMethod
-  fun setAppMuted(muted: Boolean) {
+  override fun setAppMuted(muted: Boolean) {
     MobileAds.setAppMuted(muted)
+  }
+
+  companion object {
+    const val NAME = "RNGoogleMobileAdsModule"
   }
 }

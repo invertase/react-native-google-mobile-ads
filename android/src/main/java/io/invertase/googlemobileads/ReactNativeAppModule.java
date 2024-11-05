@@ -30,10 +30,10 @@ import io.invertase.googlemobileads.common.ReactNativeModule;
 import io.invertase.googlemobileads.common.ReactNativePreferences;
 
 public class ReactNativeAppModule extends ReactNativeModule {
-  private static final String TAG = "RNAppModule";
+  static final String NAME = "RNAppModule";
 
   ReactNativeAppModule(ReactApplicationContext reactContext) {
-    super(reactContext, TAG);
+    super(reactContext, NAME);
   }
 
   @Override

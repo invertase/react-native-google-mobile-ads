@@ -54,11 +54,13 @@ RCT_EXPORT_MODULE();
 requestOptions:(NSDictionary *)requestOptions
      resolve:(RCTPromiseResolveBlock)resolve
       reject:(RCTPromiseRejectBlock)reject {
+  GADNativeAdImageAdLoaderOptions *imageOptions = [[GADNativeAdImageAdLoaderOptions alloc] init];
+  imageOptions.disableImageLoading = YES;
   GADAdLoader *adLoader = [[GADAdLoader alloc]
                            initWithAdUnitID:adUnitId
                            rootViewController:[RNGoogleMobileAdsCommon currentViewController]
-                           adTypes:@[ GADAdLoaderAdTypeNative ]
-                           options:@[]];
+                           adTypes:@[GADAdLoaderAdTypeNative]
+                           options:@[imageOptions]];
   NSNumber *requestId = @(_requestCount);
   RNGoogleMobileAdsNativeLoadDelegate *delegate = [[RNGoogleMobileAdsNativeLoadDelegate alloc] initWithCompletionHandler:^(GADNativeAd *nativeAd, NSError *error) {
     [_loaders removeObjectForKey:requestId];

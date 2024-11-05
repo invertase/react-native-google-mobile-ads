@@ -461,17 +461,23 @@ const NativeComponent = () => {
     <NativeAdView
       nativeAd={nativeAd}>
       <View style={{ padding: 16 }}>
-        <NativeAsset assetKey={'headlineView'}>
+        <NativeAsset assetKey={'headline'}>
           <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
         </NativeAsset>
-        <NativeAsset assetKey={'bodyView'}>
+        <NativeAsset assetKey={'body'}>
           <Text>{nativeAd.body}</Text>
         </NativeAsset>
       </View>
-      <NativeAsset assetKey={'callToActionView'}>
-        <View style={{ backgroundColor: '#4285F4', paddingHorizontal: 16, paddingVertical: 12 }}>
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>{nativeAd.callToAction}</Text>
-        </View>
+      <NativeAsset assetKey={'cta'}>
+        <Text style={{
+          color: 'white',
+          fontWeight: 'bold',
+          backgroundColor: '#4285F4',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+        }}>
+          {nativeAd.callToAction}
+        </Text>
       </NativeAsset>
     </NativeAdView>
   );
