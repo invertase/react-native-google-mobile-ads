@@ -1,3 +1,10 @@
+## [14.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.5...v14.3.0) (2024-11-12)
+
+
+### Features
+
+* get purpose legitimate interests ([#653](https://github.com/invertase/react-native-google-mobile-ads/issues/653)) ([f711a2c](https://github.com/invertase/react-native-google-mobile-ads/commit/f711a2c1e399dea8344e73ebc64cb27f4426f195))
+
 ### [14.2.5](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.4...v14.2.5) (2024-10-08)
 
 
