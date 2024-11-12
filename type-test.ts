@@ -149,6 +149,7 @@ console.log(RewardedAdEventType.EARNED_REWARD);
 AdsConsent.getConsentInfo().then(info => info.canRequestAds);
 AdsConsent.getGdprApplies().then(applies => applies);
 AdsConsent.getPurposeConsents().then(consents => consents);
+AdsConsent.getPurposeLegitimateInterests().then(legitimateInterests => legitimateInterests);
 AdsConsent.getTCModel().then(model => model.cmpId);
 AdsConsent.getTCString().then(string => string);
 AdsConsent.getUserChoices().then(choices => choices.selectBasicAds);

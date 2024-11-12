@@ -157,6 +157,26 @@ export interface AdsConsentInterface {
   getPurposeConsents(): Promise<string>;
 
   /**
+   * Returns the value stored under the `IABTCF_PurposeLegitimateInterests` key
+   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
+   * defined by the IAB Europe Transparency & Consent Framework.
+   *
+   * More information available here:
+   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * await AdsConsent.requestInfoUpdate();
+   * const purposeLegitimateInterests = await AdsConsent.getPurposeLegitimateInterests();
+   * const hasLegitimateInterestForPurposeTwo = purposeLegitimateInterests.split("")[1] === "1";
+   * ```
+   */
+  getPurposeLegitimateInterests(): Promise<string>;
+
+  /**
    * Provides information about a user's consent choices.
    *
    * #### Example

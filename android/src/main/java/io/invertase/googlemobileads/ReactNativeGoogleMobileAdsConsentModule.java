@@ -278,4 +278,16 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
       rejectPromiseWithCodeAndMessage(promise, "consent-string-error", e.toString());
     }
   }
+
+  @ReactMethod
+  public void getPurposeLegitimateInterests(Promise promise) {
+    try {
+      SharedPreferences prefs =
+          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+      String purposeLegitimateInterests = prefs.getString("IABTCF_PurposeLegitimateInterests", "");
+      promise.resolve(purposeLegitimateInterests);
+    } catch (Exception e) {
+      rejectPromiseWithCodeAndMessage(promise, "consent-string-error", e.toString());
+    }
+  }
 }

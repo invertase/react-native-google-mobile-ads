@@ -248,4 +248,20 @@ RCT_EXPORT_METHOD(getPurposeConsents
   }
 }
 
+RCT_EXPORT_METHOD(getPurposeLegitimateInterests
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  @try {
+    NSString *purposeLegitimateInterests =
+        [[NSUserDefaults standardUserDefaults] stringForKey:@"IABTCF_PurposeLegitimateInterests"];
+    resolve(purposeLegitimateInterests);
+  } @catch (NSError *error) {
+    [RNSharedUtils rejectPromiseWithUserInfo:reject
+                                    userInfo:[@{
+                                      @"code" : @"consent-string-error",
+                                      @"message" : error.localizedDescription,
+                                    } mutableCopy]];
+  }
+}
+
 @end
