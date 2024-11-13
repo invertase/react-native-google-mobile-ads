@@ -1,3 +1,10 @@
+### [14.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.3.0...v14.3.1) (2024-11-13)
+
+
+### Bug Fixes
+
+* **android:** disable coalescing of native events ([#646](https://github.com/invertase/react-native-google-mobile-ads/issues/646)) ([fce51b1](https://github.com/invertase/react-native-google-mobile-ads/commit/fce51b19477dda8e2bd2c4b3bcf29dacb36efd16))
+
 ## [14.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.2.5...v14.3.0) (2024-11-12)
 
 
