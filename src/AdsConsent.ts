@@ -91,6 +91,11 @@ export const AdsConsent: AdsConsentInterface = {
     return native.getConsentInfo();
   },
 
+  async gatherConsent(options: AdsConsentInfoOptions = {}): Promise<AdsConsentInfo> {
+    await this.requestInfoUpdate(options);
+    return this.loadAndShowConsentFormIfRequired();
+  },
+
   reset(): void {
     return native.reset();
   },
