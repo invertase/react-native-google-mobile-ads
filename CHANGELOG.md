@@ -1,3 +1,10 @@
+## [14.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.3.1...v14.4.0) (2024-11-15)
+
+
+### Features
+
+* gather consent method to make user consent easier ([#654](https://github.com/invertase/react-native-google-mobile-ads/issues/654)) ([9a9e5e5](https://github.com/invertase/react-native-google-mobile-ads/commit/9a9e5e5d5d8abfaaa4d2339d16a14db3ff4cf1a0))
+
 ### [14.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.3.0...v14.3.1) (2024-11-13)
 
 
