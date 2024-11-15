@@ -198,22 +198,17 @@ import mobileAds, { AdsConsent, AdsConsentStatus } from 'react-native-google-mob
 
 let isMobileAdsStartCalled = false;
 
-// Request an update for the consent information.
-AdsConsent.requestInfoUpdate().then(() => {
-
-  AdsConsent.loadAndShowConsentFormIfRequired().then(adsConsentInfo => {
-
-    // Consent has been gathered.
-    if (adsConsentInfo.canRequestAds) {
+// Request consent information and load/present a consent form if necessary.
+AdsConsent.gatherConsent()
+  .then(({canRequestAds}) => {
+    if (canRequestAds) {
       startGoogleMobileAdsSDK()
     }
   })
-})
+  .catch((error) => console.error('Consent gathering failed:', error))
 
-// Check if you can initialize the Google Mobile Ads SDK in parallel
-// while checking for new consent information. Consent obtained in
-// the previous session can be used to request ads.
-// So you can start loading ads as soon as possible after your app launches.
+// Check if you can initialize the Google Mobile Ads SDK in parallel 
+// using consent obtained in the previous session.
 const {canRequestAds} = await AdsConsent.getConsentInfo()
 if (canRequestAds) {
   startGoogleMobileAdsSDK()
@@ -221,7 +216,6 @@ if (canRequestAds) {
 
 async function startGoogleMobileAdsSDK() {
   if (isMobileAdsStartCalled) return;
-
   isMobileAdsStartCalled = true;
 
   // (Optional, iOS) Handle Apple's App Tracking Transparency manually.
