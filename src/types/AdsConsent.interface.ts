@@ -87,6 +87,12 @@ export interface AdsConsentInterface {
   getConsentInfo(): Promise<AdsConsentInfo>;
 
   /**
+   * Helper method to call the UMP SDK methods to request consent information and load/present a
+   * consent form if necessary.
+   */
+  gatherConsent(): Promise<AdsConsentInfo>;
+
+  /**
    * Returns the value stored under the `IABTCF_TCString` key
    * in NSUserDefaults (iOS) / SharedPreferences (Android) as
    * defined by the IAB Europe Transparency & Consent Framework.
