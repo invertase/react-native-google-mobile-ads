@@ -113,13 +113,14 @@ using namespace facebook::react;
     NSDictionary *viewMappings = @{
         @"advertiser": @"advertiserView",
         @"body": @"bodyView",
-        @"cta": @"callToActionView",
+        @"callToAction": @"callToActionView",
         @"headline": @"headlineView",
         @"price": @"priceView",
         @"store": @"storeView",
-        @"ratings": @"starRatingView",
+        @"starRating": @"starRatingView",
         @"icon": @"iconView",
-        @"images": @"imageView"
+        @"image": @"imageView",
+        @"media": @"mediaView"
     };
     NSString *property = viewMappings[assetKey];
     if (property) {

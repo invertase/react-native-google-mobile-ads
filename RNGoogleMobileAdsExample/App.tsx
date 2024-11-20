@@ -1,6 +1,7 @@
 import React, {RefObject, useEffect, useRef, useState} from 'react';
 import {
   Button,
+  Image,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -34,7 +35,7 @@ import MobileAds, {
   useRewardedInterstitialAd,
   NativeAdView,
   NativeAd,
-  NativeAsset,
+  NativeAsset, NativeAssetType,
 } from 'react-native-google-mobile-ads';
 
 const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
@@ -450,7 +451,7 @@ const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.GAM_NATIVE).then(setNativeAd).catch(console.error);
+    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
   }, []);
 
   if (!nativeAd) {
@@ -460,15 +461,38 @@ const NativeComponent = () => {
   return (
     <NativeAdView
       nativeAd={nativeAd}>
-      <View style={{ padding: 16 }}>
-        <NativeAsset assetKey={'headline'}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
-        </NativeAsset>
-        <NativeAsset assetKey={'body'}>
+      <View style={{ padding: 16, gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {nativeAd.icon && (
+            <NativeAsset assetKey={NativeAssetType.ICON}>
+              <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} />
+            </NativeAsset>
+          )}
+          <NativeAsset assetKey={NativeAssetType.HEADLINE}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
+          </NativeAsset>
+          <Text style={{
+            backgroundColor: '#FBBC04',
+            color: 'white',
+            paddingHorizontal: 4,
+            paddingVertical: 2,
+            fontWeight: 'bold',
+            fontSize: 11,
+            borderRadius: 4,
+          }}>
+            AD
+          </Text>
+        </View>
+        {nativeAd.advertiser && (
+          <NativeAsset assetKey={NativeAssetType.ADVERTISER}>
+            <Text>{nativeAd.advertiser}</Text>
+          </NativeAsset>
+        )}
+        <NativeAsset assetKey={NativeAssetType.BODY}>
           <Text>{nativeAd.body}</Text>
         </NativeAsset>
       </View>
-      <NativeAsset assetKey={'cta'}>
+      <NativeAsset assetKey={NativeAssetType.CALL_TO_ACTION}>
         <Text style={{
           color: 'white',
           fontWeight: 'bold',

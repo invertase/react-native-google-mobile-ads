@@ -51,9 +51,17 @@ class ReactNativeGoogleMobileAdsNativeModule(
         data.putString("price", nativeAd.price)
         data.putString("store", nativeAd.store)
         nativeAd.starRating?.let {
-          data.putDouble("ratings", it)
+          data.putDouble("starRating", it)
         } ?: run {
-          data.putNull("ratings")
+          data.putNull("starRating")
+        }
+        nativeAd.icon?.let {
+          val icon = Arguments.createMap()
+          icon.putDouble("scale", it.scale)
+          icon.putString("url", it.uri.toString())
+          data.putMap("icon", icon)
+        } ?: run {
+          data.putNull("icon")
         }
 
         promise.resolve(data)

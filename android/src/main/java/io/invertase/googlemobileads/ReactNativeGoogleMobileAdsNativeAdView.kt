@@ -59,13 +59,13 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     when (assetKey) {
       "advertiser" -> nativeAdView.advertiserView = assetView
       "body" -> nativeAdView.bodyView = assetView
-      "cta" -> nativeAdView.callToActionView = assetView
+      "callToAction" -> nativeAdView.callToActionView = assetView
       "headline" -> nativeAdView.headlineView = assetView
       "price" -> nativeAdView.priceView = assetView
       "store" -> nativeAdView.storeView = assetView
-      "ratings" -> nativeAdView.starRatingView = assetView
+      "starRating" -> nativeAdView.starRatingView = assetView
       "icon" -> nativeAdView.iconView = assetView
-      "images" -> nativeAdView.imageView = assetView
+      "image" -> nativeAdView.imageView = assetView
     }
     reloadAd()
   }

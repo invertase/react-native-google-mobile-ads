@@ -82,7 +82,11 @@ requestOptions:(NSDictionary *)requestOptions
       @"headline": nativeAd.headline ?: [NSNull null],
       @"price": nativeAd.price ?: [NSNull null],
       @"store": nativeAd.store ?: [NSNull null],
-      @"ratings": nativeAd.starRating ?: [NSNull null],
+      @"starRating": nativeAd.starRating ?: [NSNull null],
+      @"icon": nativeAd.icon != nil ? @{
+        @"scale": @(nativeAd.icon.scale),
+        @"url": nativeAd.icon.imageURL.absoluteString
+      } : [NSNull null]
     });
   }];
   [_loaders setObject:adLoader forKey:requestId];

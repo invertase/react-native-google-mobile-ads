@@ -15,13 +15,13 @@
  *
  */
 
-import { isString } from '../common';
-import { validateAdRequestOptions } from '../validateAdRequestOptions';
-import { RequestOptions } from '../types';
+import { isString } from '../../common';
+import { validateAdRequestOptions } from '../../validateAdRequestOptions';
+import { RequestOptions } from '../../types';
 import NativeGoogleMobileAdsNativeModule, {
   NativeAdImage,
   NativeAdProps,
-} from '../specs/modules/NativeGoogleMobileAdsNativeModule';
+} from '../../specs/modules/NativeGoogleMobileAdsNativeModule';
 
 /**
  * A class for loading Native Ads.
@@ -35,7 +35,7 @@ export class NativeAd {
   headline!: string | null;
   price!: string | null;
   store!: string | null;
-  ratings!: number | null;
+  starRating!: number | null;
   icon!: NativeAdImage | null;
   images!: Array<NativeAdImage> | null;
   extras!: Record<string, unknown> | null;
