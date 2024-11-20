@@ -1,0 +1,65 @@
+diff --git a/node_modules/detox/android/detox/src/full/java/com/wix/detox/espresso/common/SliderHelper.kt b/node_modules/detox/android/detox/src/full/java/com/wix/detox/espresso/common/SliderHelper.kt
+index af77cda..bee610a 100644
+--- a/node_modules/detox/android/detox/src/full/java/com/wix/detox/espresso/common/SliderHelper.kt
++++ b/node_modules/detox/android/detox/src/full/java/com/wix/detox/espresso/common/SliderHelper.kt
+@@ -4,12 +4,12 @@ import android.view.View
+ import androidx.appcompat.widget.AppCompatSeekBar
+ import com.facebook.react.bridge.JavaOnlyMap
+ import com.facebook.react.uimanager.ReactStylesDiffMap
+-import com.facebook.react.views.slider.ReactSlider
++// import com.facebook.react.views.slider.ReactSlider
+ import com.wix.detox.common.DetoxErrors.DetoxIllegalStateException
+ import com.wix.detox.espresso.action.common.ReflectUtils
+ import org.joor.Reflect
+ 
+-private const val CLASS_REACT_SLIDER_LEGACY = "com.facebook.react.views.slider.ReactSlider"
++// private const val CLASS_REACT_SLIDER_LEGACY = "com.facebook.react.views.slider.ReactSlider"
+ private const val CLASS_REACT_SLIDER_COMMUNITY = "com.reactnativecommunity.slider.ReactSlider"
+ 
+ abstract class SliderHelper(protected val slider: AppCompatSeekBar) {
+@@ -48,8 +48,8 @@ abstract class SliderHelper(protected val slider: AppCompatSeekBar) {
+ 
+         fun maybeCreate(view: View): SliderHelper? =
+             when {
+-                ReflectUtils.isAssignableFrom(view, CLASS_REACT_SLIDER_LEGACY)
+-                   -> LegacySliderHelper(view as ReactSlider)
++                // ReflectUtils.isAssignableFrom(view, CLASS_REACT_SLIDER_LEGACY)
++                //    -> LegacySliderHelper(view as ReactSlider)
+                 ReflectUtils.isAssignableFrom(view, CLASS_REACT_SLIDER_COMMUNITY)
+                     -> CommunitySliderHelper(view as AppCompatSeekBar)
+                 else
+@@ -58,14 +58,14 @@ abstract class SliderHelper(protected val slider: AppCompatSeekBar) {
+     }
+ }
+ 
+-private class LegacySliderHelper(slider: AppCompatSeekBar): SliderHelper(slider) {
+-    override fun setProgressJS(valueJS: Double) {
+-        val reactSliderManager = com.facebook.react.views.slider.ReactSliderManager()
+-        reactSliderManager.updateProperties(slider as ReactSlider, buildStyles("value", valueJS))
+-    }
++// private class LegacySliderHelper(slider: AppCompatSeekBar): SliderHelper(slider) {
++//     override fun setProgressJS(valueJS: Double) {
++//         val reactSliderManager = com.facebook.react.views.slider.ReactSliderManager()
++//         reactSliderManager.updateProperties(slider as ReactSlider, buildStyles("value", valueJS))
++//     }
+ 
+-    private fun buildStyles(vararg keysAndValues: Any) = ReactStylesDiffMap(JavaOnlyMap.of(*keysAndValues))
+-}
++//     private fun buildStyles(vararg keysAndValues: Any) = ReactStylesDiffMap(JavaOnlyMap.of(*keysAndValues))
++// }
+ 
+ private class CommunitySliderHelper(slider: AppCompatSeekBar): SliderHelper(slider) {
+     override fun setProgressJS(valueJS: Double) {
+diff --git a/node_modules/detox/src/devices/common/drivers/ios/tools/AppleSimUtils.js b/node_modules/detox/src/devices/common/drivers/ios/tools/AppleSimUtils.js
+index 585c99b..46e4b83 100644
+--- a/node_modules/detox/src/devices/common/drivers/ios/tools/AppleSimUtils.js
++++ b/node_modules/detox/src/devices/common/drivers/ios/tools/AppleSimUtils.js
+@@ -272,7 +272,7 @@ class AppleSimUtils {
+       // want to make sure it isn't now.
+       if (err.code === 3 &&
+           (err.stderr.includes(`the app is not currently running`) ||
+-           err.stderr.includes(`The operation couldn’t be completed. found nothing to terminate`))) {
++           err.stderr.includes(`found nothing to terminate`))) {
+         return;
+       }
+ 
