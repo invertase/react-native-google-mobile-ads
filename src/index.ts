@@ -46,6 +46,7 @@ export { RewardedInterstitialAd } from './ads/RewardedInterstitialAd';
 export { BannerAd } from './ads/BannerAd';
 export { NativeAd } from './ads/native-ad/NativeAd';
 export { NativeAdView } from './ads/native-ad/NativeAdView';
+export { NativeMediaView } from './ads/native-ad/NativeMediaView';
 export { NativeAsset, NativeAssetType } from './ads/native-ad/NativeAsset';
 export { GAMBannerAd } from './ads/GAMBannerAd';
 export { GAMInterstitialAd } from './ads/GAMInterstitialAd';

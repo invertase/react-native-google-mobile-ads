@@ -19,26 +19,15 @@
 #import <GoogleMobileAds/GADNativeAd.h>
 
 #ifdef RCT_NEW_ARCH_ENABLED
-
 #import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
+
 @interface RNGoogleMobileAdsNativeModule : NSObject <NativeGoogleMobileAdsNativeModuleSpec>
-
 #else
-
 #import <React/RCTBridgeModule.h>
-@interface RNGoogleMobileAdsNativeModule : NSObject <RCTBridgeModule>
 
+@interface RNGoogleMobileAdsNativeModule : NSObject <RCTBridgeModule>
 #endif
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId;
-
-@end
-
-typedef void (^RNGoogleMobileAdsNativeLoadCompletionHandler)(GADNativeAd *_Nullable nativeAd,
-                                                             NSError *_Nullable error);
-
-@interface RNGoogleMobileAdsNativeLoadDelegate : NSObject <GADNativeAdLoaderDelegate>
-
-- (instancetype)initWithCompletionHandler:(RNGoogleMobileAdsNativeLoadCompletionHandler)completionHandler;
 
 @end

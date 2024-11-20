@@ -12,30 +12,33 @@ import {
 import {Test, TestRegistry, TestResult, TestRunner, TestType} from 'jet';
 
 import MobileAds, {
-  type PaidEvent,
   AdEventType,
   AdsConsent,
   AdsConsentDebugGeography,
   AppOpenAd,
-  InterstitialAd,
-  TestIds,
   BannerAd,
   BannerAdSize,
+  GAMAdEventType,
+  GAMBannerAd,
   GAMBannerAdSize,
+  GAMInterstitialAd,
+  InterstitialAd,
+  NativeAd,
+  NativeAdView,
+  NativeAsset,
+  NativeAssetType,
+  NativeMediaAspectRatio,
+  NativeMediaView,
+  type PaidEvent,
   RevenuePrecisions,
   RewardedAd,
   RewardedAdEventType,
-  useInterstitialAd,
-  useAppOpenAd,
-  useRewardedAd,
-  GAMInterstitialAd,
-  GAMAdEventType,
-  GAMBannerAd,
   RewardedInterstitialAd,
+  TestIds,
+  useAppOpenAd,
+  useInterstitialAd,
+  useRewardedAd,
   useRewardedInterstitialAd,
-  NativeAdView,
-  NativeAd,
-  NativeAsset, NativeAssetType,
 } from 'react-native-google-mobile-ads';
 
 const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
@@ -451,7 +454,11 @@ const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
+    NativeAd.createForAdRequest(TestIds.GAM_NATIVE, {
+      aspectRatio: NativeMediaAspectRatio.LANDSCAPE,
+    })
+      .then(setNativeAd)
+      .catch(console.error);
   }, []);
 
   if (!nativeAd) {
@@ -492,6 +499,7 @@ const NativeComponent = () => {
           <Text>{nativeAd.body}</Text>
         </NativeAsset>
       </View>
+      <NativeMediaView />
       <NativeAsset assetKey={NativeAssetType.CALL_TO_ACTION}>
         <Text style={{
           color: 'white',

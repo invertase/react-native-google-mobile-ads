@@ -28,18 +28,18 @@
 NS_ASSUME_NONNULL_BEGIN
 
 #ifdef RCT_NEW_ARCH_ENABLED
-@interface RNGoogleMobileAdsNativeView : RCTViewComponentView
+@interface RNGoogleMobileAdsMediaView : RCTViewComponentView
 
-@property(nonatomic, strong, nullable) GADNativeAdView *contentView;
+@property(nonatomic, strong, nullable) GADMediaView *contentView;
 #else
-@interface RNGoogleMobileAdsNativeView : GADNativeAdView
+@interface RNGoogleMobileAdsMediaView : GADMediaView
 
 - (instancetype)initWithBridge:(RCTBridge *)bridge;
 #endif
 
 @end
 
-@interface RNGoogleMobileAdsNativeViewManager : RCTViewManager
+@interface RNGoogleMobileAdsMediaViewManager : RCTViewManager
 
 @end
 

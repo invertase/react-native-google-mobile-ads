@@ -17,10 +17,11 @@
 
 import { isString } from '../../common';
 import { validateAdRequestOptions } from '../../validateAdRequestOptions';
-import { RequestOptions } from '../../types';
+import { NativeAdRequestOptions } from '../../types';
 import NativeGoogleMobileAdsNativeModule, {
   NativeAdImage,
   NativeAdProps,
+  NativeMediaContent,
 } from '../../specs/modules/NativeGoogleMobileAdsNativeModule';
 
 /**
@@ -38,6 +39,7 @@ export class NativeAd {
   starRating!: number | null;
   icon!: NativeAdImage | null;
   images!: Array<NativeAdImage> | null;
+  mediaContent!: NativeMediaContent | null;
   extras!: Record<string, unknown> | null;
 
   constructor(adUnitId: string, props: NativeAdProps) {
@@ -63,7 +65,7 @@ export class NativeAd {
    */
   static async createForAdRequest(
     adUnitId: string,
-    requestOptions?: RequestOptions,
+    requestOptions?: NativeAdRequestOptions,
   ): Promise<NativeAd> {
     if (!isString(adUnitId)) {
       throw new Error("NativeAd.createForAdRequest(*) 'adUnitId' expected an string value.");

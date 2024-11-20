@@ -17,7 +17,7 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { Double, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import type { Double, Float, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
 export type NativeAdProps = {
   responseId: string;
@@ -30,12 +30,19 @@ export type NativeAdProps = {
   starRating: Double | null;
   icon: NativeAdImage | null;
   images: Array<NativeAdImage> | null;
+  mediaContent: NativeMediaContent;
   extras: UnsafeObject | null;
 };
 
 export type NativeAdImage = {
   url: string;
   scale: Double;
+};
+
+export type NativeMediaContent = {
+  aspectRatio: Float;
+  hasVideoContent: boolean;
+  duration: Float;
 };
 
 export interface Spec extends TurboModule {

@@ -15,7 +15,7 @@ export enum NativeAssetType {
   IMAGE = 'image',
 }
 
-export type NativeAssetProps = { assetKey: NativeAssetType | string; children: ReactElement };
+export type NativeAssetProps = { assetKey: NativeAssetType; children: ReactElement };
 
 export const NativeAsset = (props: NativeAssetProps) => {
   const { assetKey, children } = props;

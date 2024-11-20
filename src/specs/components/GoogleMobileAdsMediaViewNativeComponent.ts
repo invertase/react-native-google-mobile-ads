@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,32 +15,15 @@
  *
  */
 
-#import <GoogleMobileAds/GADNativeAd.h>
-#import <React/RCTBridge.h>
-#import <React/RCTUIManager.h>
+import type { HostComponent, ViewProps } from 'react-native';
+import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
 
-#ifdef RCT_NEW_ARCH_ENABLED
-#import <React/RCTViewComponentView.h>
-#else
-#import <React/RCTView.h>
-#endif
+export interface NativeProps extends ViewProps {
+  responseId: string;
+}
 
-NS_ASSUME_NONNULL_BEGIN
+type NativeViewComponentType = HostComponent<NativeProps>;
 
-#ifdef RCT_NEW_ARCH_ENABLED
-@interface RNGoogleMobileAdsNativeView : RCTViewComponentView
-
-@property(nonatomic, strong, nullable) GADNativeAdView *contentView;
-#else
-@interface RNGoogleMobileAdsNativeView : GADNativeAdView
-
-- (instancetype)initWithBridge:(RCTBridge *)bridge;
-#endif
-
-@end
-
-@interface RNGoogleMobileAdsNativeViewManager : RCTViewManager
-
-@end
-
-NS_ASSUME_NONNULL_END
+export default codegenNativeComponent<NativeProps>(
+  'RNGoogleMobileAdsMediaView',
+) as NativeViewComponentType;

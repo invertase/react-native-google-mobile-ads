@@ -20,11 +20,22 @@
 #import "RNGoogleMobileAdsNativeModule.h"
 #import "RNGoogleMobileAdsCommon.h"
 
+typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable nativeAd,
+                                                   NSError *_Nullable error);
+
+@interface RNGMANativeAdHolder : NSObject <GADNativeAdLoaderDelegate, GADNativeAdDelegate>
+
+@property GADNativeAd *nativeAd;
+
+- (instancetype)initWithAdUnitId:(NSString *)adUnitId requestOptions:(NSDictionary *)requestOptions;
+
+- (void)loadWithCompletionHandler:(RNGMANativeAdLoadCompletionHandler)completionHandler;
+
+@end
+
 @implementation RNGoogleMobileAdsNativeModule {
-  int _requestCount;
-  NSMutableDictionary<NSNumber *, id> *_loaders;
-  NSMutableDictionary<NSNumber *, id> *_delegates;
-  NSMutableDictionary<NSString *, GADNativeAd *> *_loadedAds;
+  NSMutableSet<id> *_requestedAds;
+  NSMutableDictionary<NSString *, RNGMANativeAdHolder *> *_loadedAds;
 }
 
 RCT_EXPORT_MODULE();
@@ -42,83 +53,110 @@ RCT_EXPORT_MODULE();
 
 - (instancetype)init {
   if (self = [super init]) {
-    _requestCount = 0;
-    _loaders = [NSMutableDictionary dictionary];
-    _delegates = [NSMutableDictionary dictionary];
+    _requestedAds = [NSMutableSet set];
     _loadedAds = [NSMutableDictionary dictionary];
   }
   return self;
 }
 
 - (void)load:(NSString *)adUnitId
-requestOptions:(NSDictionary *)requestOptions
-     resolve:(RCTPromiseResolveBlock)resolve
-      reject:(RCTPromiseRejectBlock)reject {
-  GADNativeAdImageAdLoaderOptions *imageOptions = [[GADNativeAdImageAdLoaderOptions alloc] init];
-  imageOptions.disableImageLoading = YES;
-  GADAdLoader *adLoader = [[GADAdLoader alloc]
-                           initWithAdUnitID:adUnitId
-                           rootViewController:[RNGoogleMobileAdsCommon currentViewController]
-                           adTypes:@[GADAdLoaderAdTypeNative]
-                           options:@[imageOptions]];
-  NSNumber *requestId = @(_requestCount);
-  RNGoogleMobileAdsNativeLoadDelegate *delegate = [[RNGoogleMobileAdsNativeLoadDelegate alloc] initWithCompletionHandler:^(GADNativeAd *nativeAd, NSError *error) {
-    [_loaders removeObjectForKey:requestId];
-    [_delegates removeObjectForKey:requestId];
-    
+    requestOptions:(NSDictionary *)requestOptions
+           resolve:(RCTPromiseResolveBlock)resolve
+            reject:(RCTPromiseRejectBlock)reject {
+  RNGMANativeAdHolder *adHolder = [[RNGMANativeAdHolder alloc] initWithAdUnitId:adUnitId
+                                                                 requestOptions:requestOptions];
+  [_requestedAds addObject:adHolder];
+
+  [adHolder loadWithCompletionHandler:^(GADNativeAd *nativeAd, NSError *error) {
+    [_requestedAds removeObject:adHolder];
+
     if (error != nil) {
       reject(@"ERROR_LOAD", error.description, error);
       return;
     }
-    
+
     NSString *responseId = nativeAd.responseInfo.responseIdentifier;
-    [_loadedAds setValue:nativeAd forKey:responseId];
-    
+    [_loadedAds setValue:adHolder forKey:responseId];
+
     resolve(@{
-      @"responseId": responseId,
-      @"advertiser": nativeAd.advertiser ?: [NSNull null],
-      @"body": nativeAd.body ?: [NSNull null],
-      @"callToAction": nativeAd.callToAction ?: [NSNull null],
-      @"headline": nativeAd.headline ?: [NSNull null],
-      @"price": nativeAd.price ?: [NSNull null],
-      @"store": nativeAd.store ?: [NSNull null],
-      @"starRating": nativeAd.starRating ?: [NSNull null],
-      @"icon": nativeAd.icon != nil ? @{
-        @"scale": @(nativeAd.icon.scale),
-        @"url": nativeAd.icon.imageURL.absoluteString
-      } : [NSNull null]
+      @"responseId" : responseId,
+      @"advertiser" : nativeAd.advertiser ?: [NSNull null],
+      @"body" : nativeAd.body ?: [NSNull null],
+      @"callToAction" : nativeAd.callToAction ?: [NSNull null],
+      @"headline" : nativeAd.headline ?: [NSNull null],
+      @"price" : nativeAd.price ?: [NSNull null],
+      @"store" : nativeAd.store ?: [NSNull null],
+      @"starRating" : nativeAd.starRating ?: [NSNull null],
+      @"icon" : nativeAd.icon != nil
+          ? @{@"scale" : @(nativeAd.icon.scale), @"url" : nativeAd.icon.imageURL.absoluteString}
+          : [NSNull null],
+      @"mediaContent" : @{
+        @"aspectRatio" : @(nativeAd.mediaContent.aspectRatio),
+        @"hasVideoContent" : @(nativeAd.mediaContent.hasVideoContent),
+      }
     });
   }];
-  [_loaders setObject:adLoader forKey:requestId];
-  [_delegates setObject:delegate forKey:requestId];
-  adLoader.delegate = delegate;
-  [adLoader loadRequest:[RNGoogleMobileAdsCommon buildAdRequest:requestOptions]];
 }
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId {
-  return [_loadedAds valueForKey:responseId];
+  return [_loadedAds valueForKey:responseId].nativeAd;
 }
 
 @end
 
-@implementation RNGoogleMobileAdsNativeLoadDelegate {
-  RNGoogleMobileAdsNativeLoadCompletionHandler _completionHandler;
+@implementation RNGMANativeAdHolder {
+  GADAdLoader *_adLoader;
+  GAMRequest *_adRequest;
+  RNGMANativeAdLoadCompletionHandler _completionHandler;
 }
 
-- (instancetype)initWithCompletionHandler:(RNGoogleMobileAdsNativeLoadCompletionHandler)completionHandler
-{
+- (instancetype)initWithAdUnitId:(NSString *)adUnitId
+                  requestOptions:(NSDictionary *)requestOptions {
   if (self = [super init]) {
-    _completionHandler = completionHandler;
+    GADNativeAdImageAdLoaderOptions *imageOptions = [[GADNativeAdImageAdLoaderOptions alloc] init];
+//    imageOptions.disableImageLoading = YES;
+    GADNativeAdMediaAdLoaderOptions *mediaOptions = [[GADNativeAdMediaAdLoaderOptions alloc] init];
+    if (requestOptions[@"aspectRatio"]) {
+      switch ([requestOptions[@"aspectRatio"] intValue]) {
+        case 1:
+          mediaOptions.mediaAspectRatio = GADMediaAspectRatioAny;
+          break;
+        case 2:
+          mediaOptions.mediaAspectRatio = GADMediaAspectRatioLandscape;
+          break;
+        case 3:
+          mediaOptions.mediaAspectRatio = GADMediaAspectRatioPortrait;
+          break;
+        case 4:
+          mediaOptions.mediaAspectRatio = GADMediaAspectRatioSquare;
+          break;
+      }
+    }
+    
+    _adLoader =
+        [[GADAdLoader alloc] initWithAdUnitID:adUnitId
+                           rootViewController:[RNGoogleMobileAdsCommon currentViewController]
+                                      adTypes:@[ GADAdLoaderAdTypeNative ]
+                                      options:@[ imageOptions, mediaOptions ]];
+    _adLoader.delegate = self;
+    _adRequest = [RNGoogleMobileAdsCommon buildAdRequest:requestOptions];
   }
   return self;
 }
 
-- (void)adLoader:(nonnull GADAdLoader *)adLoader didReceiveNativeAd:(nonnull GADNativeAd *)nativeAd {
+- (void)loadWithCompletionHandler:(RNGMANativeAdLoadCompletionHandler)completionHandler {
+  _completionHandler = completionHandler;
+  [_adLoader loadRequest:_adRequest];
+}
+
+- (void)adLoader:(nonnull GADAdLoader *)adLoader
+    didReceiveNativeAd:(nonnull GADNativeAd *)nativeAd {
+  _nativeAd = nativeAd;
   _completionHandler(nativeAd, nil);
 }
 
 - (void)adLoader:(nonnull GADAdLoader *)adLoader
-didFailToReceiveAdWithError:(nonnull NSError *)error {
+    didFailToReceiveAdWithError:(nonnull NSError *)error {
   _completionHandler(nil, error);
 }
 
