@@ -114,7 +114,7 @@ RCT_EXPORT_MODULE();
                   requestOptions:(NSDictionary *)requestOptions {
   if (self = [super init]) {
     GADNativeAdImageAdLoaderOptions *imageOptions = [[GADNativeAdImageAdLoaderOptions alloc] init];
-//    imageOptions.disableImageLoading = YES;
+    //    imageOptions.disableImageLoading = YES;
     GADNativeAdMediaAdLoaderOptions *mediaOptions = [[GADNativeAdMediaAdLoaderOptions alloc] init];
     if (requestOptions[@"aspectRatio"]) {
       switch ([requestOptions[@"aspectRatio"] intValue]) {
@@ -132,7 +132,7 @@ RCT_EXPORT_MODULE();
           break;
       }
     }
-    
+
     _adLoader =
         [[GADAdLoader alloc] initWithAdUnitID:adUnitId
                            rootViewController:[RNGoogleMobileAdsCommon currentViewController]
