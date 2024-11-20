@@ -20,7 +20,10 @@ package io.invertase.googlemobileads
 import android.annotation.SuppressLint
 import android.widget.FrameLayout
 import com.facebook.react.bridge.ReactContext
+import com.facebook.react.uimanager.UIManagerHelper
+import com.facebook.react.uimanager.common.UIManagerType
 import com.facebook.react.views.view.ReactViewGroup
+import com.google.android.gms.ads.nativead.MediaView
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
 
 @SuppressLint("ViewConstructor")
 class ReactNativeGoogleMobileAdsNativeAdView(
@@ -55,7 +59,8 @@ class ReactNativeGoogleMobileAdsNativeAdView(
   }
 
   fun registerAsset(assetKey: String, reactTag: Int) {
-    val assetView = context.fabricUIManager?.resolveView(reactTag) ?: return
+    val uiManager = UIManagerHelper.getUIManager(context, UIManagerType.FABRIC)
+    val assetView = uiManager?.resolveView(reactTag) ?: return
     when (assetKey) {
       "advertiser" -> nativeAdView.advertiserView = assetView
       "body" -> nativeAdView.bodyView = assetView
@@ -66,6 +71,7 @@ class ReactNativeGoogleMobileAdsNativeAdView(
       "starRating" -> nativeAdView.starRatingView = assetView
       "icon" -> nativeAdView.iconView = assetView
       "image" -> nativeAdView.imageView = assetView
+      "media" -> nativeAdView.mediaView = assetView as MediaView
     }
     reloadAd()
   }
@@ -74,7 +80,21 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     reloadJob?.cancel()
     reloadJob = CoroutineScope(Dispatchers.Main).launch {
       delay(100)
+      requestLayout()
       nativeAd?.let { nativeAdView.setNativeAd(it) }
     }
+  }
+
+  override fun requestLayout() {
+    super.requestLayout()
+    post(measureAndLayout)
+  }
+
+  private val measureAndLayout = Runnable {
+    measure(
+      MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+      MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+    )
+    layout(left, top, right, bottom)
   }
 }

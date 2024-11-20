@@ -22,6 +22,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.MediaAspectRatio
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdOptions
 
@@ -33,8 +34,20 @@ class ReactNativeGoogleMobileAdsNativeModule(
   override fun getName() = NAME
 
   override fun load(adUnitId: String, requestOptions: ReadableMap, promise: Promise) {
+    val mediaAspectRatio = if (requestOptions.hasKey("aspectRatio")) {
+      when (requestOptions.getInt("aspectRatio")) {
+        1 -> MediaAspectRatio.ANY
+        2 -> MediaAspectRatio.PORTRAIT
+        3 -> MediaAspectRatio.LANDSCAPE
+        4 -> MediaAspectRatio.SQUARE
+        else -> MediaAspectRatio.UNKNOWN
+      }
+    } else {
+      MediaAspectRatio.ANY
+    }
     val nativeAdOptions = NativeAdOptions.Builder()
-      .setReturnUrlsForImageAssets(true)
+//      .setReturnUrlsForImageAssets(true)
+        .setMediaAspectRatio(mediaAspectRatio)
       .build()
     val adLoader = AdLoader.Builder(reactApplicationContext, adUnitId)
       .withNativeAdOptions(nativeAdOptions)
@@ -62,6 +75,13 @@ class ReactNativeGoogleMobileAdsNativeModule(
           data.putMap("icon", icon)
         } ?: run {
           data.putNull("icon")
+        }
+        val mediaContent = Arguments.createMap()
+        nativeAd.mediaContent?.let {
+          mediaContent.putDouble("aspectRatio", it.aspectRatio.toDouble())
+          mediaContent.putBoolean("hasVideoContent", it.hasVideoContent())
+          mediaContent.putDouble("duration", it.duration.toDouble())
+          data.putMap("mediaContent", mediaContent)
         }
 
         promise.resolve(data)

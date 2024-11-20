@@ -31,7 +31,8 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
   ): List<ViewManager<*, *>> {
     return listOf(
       ReactNativeGoogleMobileAdsBannerAdViewManager(),
-      ReactNativeGoogleMobileAdsNativeAdViewManager(reactContext)
+      ReactNativeGoogleMobileAdsNativeAdViewManager(reactContext),
+      ReactNativeGoogleMobileAdsMediaViewManager(reactContext)
     )
   }
 
@@ -59,7 +60,6 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
           ReactNativeAppModule.NAME,
           false, // canOverrideExistingModule
           false, // needsEagerInit
-          false, // hasConstants
           false, // isCxxModule
           false,  // isTurboModule
         )
@@ -67,7 +67,6 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
         ReactModuleInfo(
           ReactNativeGoogleMobileAdsModule.NAME,
           ReactNativeGoogleMobileAdsModule.NAME,
-          false,
           false,
           false,
           false,
@@ -81,13 +80,11 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
           false,
           false,
           false,
-          false,
         )
       moduleInfos[ReactNativeGoogleMobileAdsAppOpenModule.NAME] =
         ReactModuleInfo(
           ReactNativeGoogleMobileAdsAppOpenModule.NAME,
           ReactNativeGoogleMobileAdsAppOpenModule.NAME,
-          false,
           false,
           false,
           false,
@@ -101,13 +98,11 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
         false,
         false,
         false,
-        false,
       )
       moduleInfos[ReactNativeGoogleMobileAdsRewardedModule.NAME] =
         ReactModuleInfo(
           ReactNativeGoogleMobileAdsRewardedModule.NAME,
           ReactNativeGoogleMobileAdsRewardedModule.NAME,
-          false,
           false,
           false,
           false,
@@ -121,13 +116,11 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
           false,
           false,
           false,
-          false,
         )
       moduleInfos[ReactNativeGoogleMobileAdsNativeModule.NAME] =
         ReactModuleInfo(
           ReactNativeGoogleMobileAdsNativeModule.NAME,
           ReactNativeGoogleMobileAdsNativeModule.NAME,
-          false,
           false,
           false,
           false,

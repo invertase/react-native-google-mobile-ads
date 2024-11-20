@@ -93,6 +93,7 @@ RCT_EXPORT_MODULE();
       @"mediaContent" : @{
         @"aspectRatio" : @(nativeAd.mediaContent.aspectRatio),
         @"hasVideoContent" : @(nativeAd.mediaContent.hasVideoContent),
+        @"duration" : @(nativeAd.mediaContent.duration)
       }
     });
   }];
@@ -103,6 +104,8 @@ RCT_EXPORT_MODULE();
 }
 
 @end
+
+#pragma mark - RNGMANativeAdHolder
 
 @implementation RNGMANativeAdHolder {
   GADAdLoader *_adLoader;
@@ -149,15 +152,45 @@ RCT_EXPORT_MODULE();
   [_adLoader loadRequest:_adRequest];
 }
 
+#pragma mark - GADNativeAdLoaderDelegate
+
 - (void)adLoader:(nonnull GADAdLoader *)adLoader
     didReceiveNativeAd:(nonnull GADNativeAd *)nativeAd {
   _nativeAd = nativeAd;
+  _nativeAd.delegate = self;
   _completionHandler(nativeAd, nil);
 }
 
 - (void)adLoader:(nonnull GADAdLoader *)adLoader
     didFailToReceiveAdWithError:(nonnull NSError *)error {
   _completionHandler(nil, error);
+}
+
+#pragma mark - GADNativeAdDelegate
+
+- (void)nativeAdDidRecordImpression:(GADNativeAd *)nativeAd {
+  // The native ad was shown.
+}
+
+- (void)nativeAdDidRecordClick:(GADNativeAd *)nativeAd {
+  // The native ad was clicked on.
+}
+
+- (void)nativeAdWillPresentScreen:(GADNativeAd *)nativeAd {
+  // The native ad will present a full screen view.
+}
+
+- (void)nativeAdWillDismissScreen:(GADNativeAd *)nativeAd {
+  // The native ad will dismiss a full screen view.
+}
+
+- (void)nativeAdDidDismissScreen:(GADNativeAd *)nativeAd {
+  // The native ad did dismiss a full screen view.
+}
+
+- (void)nativeAdWillLeaveApplication:(GADNativeAd *)nativeAd {
+  // The native ad will cause the app to become inactive and
+  // open a new app.
 }
 
 @end
