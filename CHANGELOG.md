@@ -1,3 +1,10 @@
+### [14.4.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.4.0...v14.4.1) (2024-11-23)
+
+
+### Bug Fixes
+
+* missing default requestagent ([d56ac12](https://github.com/invertase/react-native-google-mobile-ads/commit/d56ac12ffae5a5711701a9c2e3650d83333db87e))
+
 ## [14.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.3.1...v14.4.0) (2024-11-15)
 
 
