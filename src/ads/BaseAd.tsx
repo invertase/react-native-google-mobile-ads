@@ -16,7 +16,7 @@
  *
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DimensionValue, NativeSyntheticEvent, Platform } from 'react-native';
 import { isFunction } from '../common';
 import { RevenuePrecisions } from '../common/constants';
@@ -53,19 +53,18 @@ export const BaseAd = React.forwardRef<
     }
   }, [sizes]);
 
-  const parsedRequestOptions = JSON.stringify(requestOptions || {});
-
-  useEffect(() => {
+  const validatedRequestOptions = useMemo(() => {
     if (requestOptions) {
       try {
-        validateAdRequestOptions(requestOptions);
+        return validateAdRequestOptions(requestOptions);
       } catch (e) {
         if (e instanceof Error) {
           throw new Error(`BannerAd: ${e.message}`);
         }
       }
     }
-  }, [parsedRequestOptions]);
+    return {};
+  }, [requestOptions]);
 
   function onNativeEvent(event: NativeSyntheticEvent<NativeEvent>) {
     const nativeEvent = event.nativeEvent as
@@ -171,7 +170,7 @@ export const BaseAd = React.forwardRef<
       sizes={sizes}
       style={style}
       unitId={unitId}
-      request={parsedRequestOptions}
+      request={JSON.stringify(validatedRequestOptions)}
       manualImpressionsEnabled={!!manualImpressionsEnabled}
       onNativeEvent={onNativeEvent}
     />
