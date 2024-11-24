@@ -1,3 +1,10 @@
+### [14.4.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.4.1...v14.4.2) (2024-11-24)
+
+
+### Bug Fixes
+
+* resolve AndroidManifest conflict for AD_SERVICES_CONFIG ([#660](https://github.com/invertase/react-native-google-mobile-ads/issues/660)) ([831bb8f](https://github.com/invertase/react-native-google-mobile-ads/commit/831bb8f0541b71dddd6cfd6b04f09c235604699a))
+
 ### [14.4.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.4.0...v14.4.1) (2024-11-23)
 
 
