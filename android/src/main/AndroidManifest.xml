@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="io.invertase.googlemobileads">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -19,5 +20,26 @@
       <meta-data
         android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
         android:value="${appJSONGoogleMobileAdsOptimizeAdLoading}"/>
+
+      <!-- This may generate a warning during your build:
+
+           > property#android.adservices.AD_SERVICES_CONFIG@android:resource
+           > was tagged at AndroidManifest.xml:23 to replace other declarations
+           > but no other declaration present
+
+           You may safely ignore this warning.
+
+           We must include this in case you also use Firebase Analytics in some
+           of its configurations, as it may also include this file, and the two
+           will collide and cause a build error if we don't set this one to take
+           priority via replacement.
+
+           https://github.com/invertase/react-native-google-mobile-ads/issues/657
+
+      -->
+      <property
+        android:name="android.adservices.AD_SERVICES_CONFIG"
+        android:resource="@xml/gma_ad_services_config"
+        tools:replace="android:resource" />
     </application>
 </manifest>
