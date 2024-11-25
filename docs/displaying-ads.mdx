@@ -91,7 +91,7 @@ To listen to events, such as when the advert from the network has loaded or when
 
 ```jsx
 import React, { useEffect, useState } from 'react';
-import { Button } from 'react-native';
+import { Button, Platform, StatusBar } from 'react-native';
 import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
@@ -104,15 +104,32 @@ function App() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = interstitial.addAdEventListener(AdEventType.LOADED, () => {
+    const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
       setLoaded(true);
+    });
+
+    const unsubscribeOpened = interstitial.addAdEventListener(AdEventType.OPENED, () => {
+      if (Platform.OS === 'ios') {
+        // Prevent the close button from being unreachable by hiding the status bar on iOS
+        StatusBar.setHidden(true)
+      }
+    });
+
+    const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+      if (Platform.OS === 'ios') {
+        StatusBar.setHidden(false)
+      }
     });
 
     // Start loading the interstitial straight away
     interstitial.load();
 
     // Unsubscribe from events on unmount
-    return unsubscribe;
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeOpened();
+      unsubscribeClosed();
+    };
   }, []);
 
   // No advert ready to show yet
