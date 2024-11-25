@@ -17,15 +17,18 @@ jest.doMock('react-native', () => {
           eventsAddListener: jest.fn(),
           eventsNotifyReady: jest.fn(),
         },
-        RNGoogleMobileAdsInterstitialModule: {
-          interstitialLoad: jest.fn(),
-        },
         RNGoogleMobileAdsRewardedModule: {},
         RNGoogleMobileAdsConsentModule: {},
       },
       TurboModuleRegistry: {
         ...ReactNative.TurboModuleRegistry,
-        getEnforcing: () => {
+        getEnforcing: moduleName => {
+          if (moduleName === 'RNGoogleMobileAdsInterstitialModule') {
+            return {
+              interstitialLoad: jest.fn(),
+            };
+          }
+
           return {
             initialize: jest.fn(),
             setRequestConfiguration: jest.fn(),
@@ -40,7 +43,7 @@ jest.doMock('react-native', () => {
     ReactNative,
   );
 });
-jest.doMock('./src/ads/GoogleMobileAdsBannerViewNativeComponent', () => {
+jest.doMock('./src/specs/components/GoogleMobileAdsBannerViewNativeComponent', () => {
   return {
     __esModule: true,
     Commands: {},

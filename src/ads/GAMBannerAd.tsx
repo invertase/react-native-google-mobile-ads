@@ -18,7 +18,9 @@
 import React, { createRef } from 'react';
 import { GAMBannerAdProps } from '../types/BannerAdProps';
 import { BaseAd } from './BaseAd';
-import GoogleMobileAdsBannerView, { Commands } from './GoogleMobileAdsBannerViewNativeComponent';
+import GoogleMobileAdsBannerView, {
+  Commands,
+} from '../specs/components/GoogleMobileAdsBannerViewNativeComponent';
 
 export class GAMBannerAd extends React.Component<GAMBannerAdProps> {
   private ref = createRef<React.ElementRef<typeof GoogleMobileAdsBannerView>>();

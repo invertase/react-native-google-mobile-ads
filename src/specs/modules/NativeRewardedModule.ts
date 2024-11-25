@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,23 +15,12 @@
  *
  */
 
-import React, { createRef } from 'react';
-import { BannerAdProps } from '../types/BannerAdProps';
-import { BaseAd } from './BaseAd';
-import GoogleMobileAdsBannerView, {
-  Commands,
-} from '../specs/components/GoogleMobileAdsBannerViewNativeComponent';
+import { TurboModule, TurboModuleRegistry } from 'react-native';
+import { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
-export class BannerAd extends React.Component<BannerAdProps> {
-  private ref = createRef<React.ElementRef<typeof GoogleMobileAdsBannerView>>();
-
-  load() {
-    if (this.ref.current) {
-      Commands.load(this.ref.current);
-    }
-  }
-
-  render() {
-    return <BaseAd ref={this.ref} sizes={[this.props.size]} {...this.props} />;
-  }
+export interface Spec extends TurboModule {
+  rewardedLoad(requestId: number, adUnitId: string, requestOptions: UnsafeObject): void;
+  rewardedShow(requestId: number, adUnitId: string, showOptions?: UnsafeObject): Promise<void>;
 }
+
+export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsRewardedModule');

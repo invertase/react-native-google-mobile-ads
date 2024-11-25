@@ -15,7 +15,7 @@
  *
  */
 
-import { EmitterSubscription, NativeModules } from 'react-native';
+import { EmitterSubscription } from 'react-native';
 import { isFunction, isOneOf } from '../common';
 import { NativeError } from '../internal/NativeError';
 import { AdEventType } from '../AdEventType';
@@ -32,11 +32,6 @@ import { AppEvent } from '../types/AppEvent';
 import { validateAdShowOptions } from '../validateAdShowOptions';
 
 type AdType = 'app_open' | 'interstitial' | 'rewarded' | 'rewarded_interstitial';
-type NativeModule =
-  | 'RNGoogleMobileAdsAppOpenModule'
-  | 'RNGoogleMobileAdsInterstitialModule'
-  | 'RNGoogleMobileAdsRewardedModule'
-  | 'RNGoogleMobileAdsRewardedInterstitialModule';
 type EventType = AdEventType | RewardedAdEventType | GAMAdEventType;
 type AdLoadFunction = (requestId: number, adUnitId: string, requestOptions: RequestOptions) => void;
 type AdShowFunction = (
@@ -47,9 +42,10 @@ type AdShowFunction = (
 
 export abstract class MobileAd implements MobileAdInterface {
   protected _type: AdType;
-  protected _nativeModule: NativeModule;
   protected _requestId: number;
   protected _adUnitId: string;
+  protected _adLoadFunction: AdLoadFunction;
+  protected _adShowFunction: AdShowFunction;
   protected _requestOptions: RequestOptions;
   protected _loaded: boolean;
   protected _isLoadCalled: boolean;
@@ -61,15 +57,17 @@ export abstract class MobileAd implements MobileAdInterface {
 
   protected constructor(
     type: AdType,
-    nativeModule: NativeModule,
     requestId: number,
     adUnitId: string,
+    adLoadFunction: AdLoadFunction,
+    adShowFunction: AdShowFunction,
     requestOptions: RequestOptions,
   ) {
     this._type = type;
-    this._nativeModule = nativeModule;
     this._requestId = requestId;
     this._adUnitId = adUnitId;
+    this._adLoadFunction = adLoadFunction;
+    this._adShowFunction = adShowFunction;
     this._requestOptions = requestOptions;
 
     this._loaded = false;
@@ -177,18 +175,6 @@ export abstract class MobileAd implements MobileAdInterface {
     return this.constructor.name;
   }
 
-  protected get _camelCaseType() {
-    let type: 'appOpen' | 'interstitial' | 'rewarded' | 'rewardedInterstitial';
-    if (this._type === 'app_open') {
-      type = 'appOpen';
-    } else if (this._type === 'rewarded_interstitial') {
-      type = 'rewardedInterstitial';
-    } else {
-      type = this._type;
-    }
-    return type;
-  }
-
   public load() {
     // Prevent multiple load calls
     if (this._loaded || this._isLoadCalled) {
@@ -196,8 +182,7 @@ export abstract class MobileAd implements MobileAdInterface {
     }
 
     this._isLoadCalled = true;
-    const load: AdLoadFunction = NativeModules[this._nativeModule][`${this._camelCaseType}Load`];
-    load(this._requestId, this._adUnitId, this._requestOptions);
+    this._adLoadFunction(this._requestId, this._adUnitId, this._requestOptions);
   }
 
   public show(showOptions?: AdShowOptions) {
@@ -218,8 +203,7 @@ export abstract class MobileAd implements MobileAdInterface {
       }
     }
 
-    const show: AdShowFunction = NativeModules[this._nativeModule][`${this._camelCaseType}Show`];
-    return show(this._requestId, this._adUnitId, options);
+    return this._adShowFunction(this._requestId, this._adUnitId, options);
   }
 
   public abstract addAdEventsListener<T extends never>(listener: AdEventsListener<T>): () => void;

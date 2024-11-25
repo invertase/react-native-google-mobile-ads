@@ -23,6 +23,7 @@ import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
+import NativeRewardedModule from '../specs/modules/NativeRewardedModule';
 
 /**
  * A class for interacting and showing Rewarded Ads.
@@ -113,9 +114,10 @@ export class RewardedAd extends MobileAd {
     const requestId = RewardedAd._rewardedRequest++;
     return new RewardedAd(
       'rewarded',
-      'RNGoogleMobileAdsRewardedModule',
       requestId,
       adUnitId,
+      NativeRewardedModule.rewardedLoad,
+      NativeRewardedModule.rewardedShow,
       options,
     );
   }

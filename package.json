@@ -168,7 +168,7 @@
   "codegenConfig": {
     "name": "RNGoogleMobileAdsSpec",
     "type": "all",
-    "jsSrcsDir": "./src",
+    "jsSrcsDir": "./src/specs",
     "android": {
       "javaPackageName": "io.invertase.googlemobileads"
     }
