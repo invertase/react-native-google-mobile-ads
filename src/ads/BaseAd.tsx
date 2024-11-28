@@ -33,7 +33,7 @@ const sizeRegex = /([0-9]+)x([0-9]+)/;
 export const BaseAd = React.forwardRef<
   React.ElementRef<typeof GoogleMobileAdsBannerView>,
   GAMBannerAdProps
->(({ unitId, sizes, requestOptions, manualImpressionsEnabled, ...props }, ref) => {
+>(({ unitId, sizes, maxHeight, requestOptions, manualImpressionsEnabled, ...props }, ref) => {
   const [dimensions, setDimensions] = useState<(number | DimensionValue)[]>([0, 0]);
 
   const debouncedSetDimensions = debounce(setDimensions, 100);
@@ -168,6 +168,7 @@ export const BaseAd = React.forwardRef<
     <GoogleMobileAdsBannerView
       ref={ref}
       sizes={sizes}
+      maxAdHeight={maxHeight}
       style={style}
       unitId={unitId}
       request={JSON.stringify(validatedRequestOptions)}

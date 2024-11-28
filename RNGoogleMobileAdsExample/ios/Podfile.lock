@@ -1514,7 +1514,7 @@ PODS:
     - React-logger (= 0.76.2)
     - React-perflogger (= 0.76.2)
     - React-utils (= 0.76.2)
-  - RNGoogleMobileAds (14.4.0):
+  - RNGoogleMobileAds (14.4.2):
     - DoubleConversion
     - glog
     - Google-Mobile-Ads-SDK (= 11.10.0)
@@ -1814,10 +1814,10 @@ SPEC CHECKSUMS:
   React-utils: ed6cb7ba089ac0856aa104df12691e99abbf14e1
   ReactCodegen: 93b271af49774429f34d7fd561197020d86436e2
   ReactCommon: 208cb02e3c0bb8a727b3e1a1782202bcfa5d9631
-  RNGoogleMobileAds: e9c8c98e7748e612c4669951336785d2f5ae1937
+  RNGoogleMobileAds: 9c58ba24a74d300ac88f64363276f33acd1a521a
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 96872ee462cfc43866ad013c8160d4ff6b85709b
 
 PODFILE CHECKSUM: f699c82614f0340e3985855a1efdaa77a260037e
 
-COCOAPODS: 1.16.1
+COCOAPODS: 1.15.2

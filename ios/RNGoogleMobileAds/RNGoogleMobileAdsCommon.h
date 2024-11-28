@@ -34,7 +34,7 @@
               error:(nullable NSDictionary *)error
                data:(nullable NSDictionary *)data;
 
-+ (GADAdSize)stringToAdSize:(NSString *)value;
++ (GADAdSize)stringToAdSize:(NSString *)value withMaxHeight:(CGFloat)maxHeight;
 
 + (BOOL)isAdManagerUnit:(NSString *)unitId;
 

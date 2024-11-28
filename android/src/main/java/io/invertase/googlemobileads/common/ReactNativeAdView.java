@@ -2,6 +2,7 @@ package io.invertase.googlemobileads.common;
 
 import android.content.Context;
 import android.widget.FrameLayout;
+import com.facebook.react.bridge.ReadableArray;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.List;
 public class ReactNativeAdView extends FrameLayout {
   private AdRequest request;
   private List<AdSize> sizes;
+  private ReadableArray sizesArray;
+  private float maxAdHeight;
   private String unitId;
   private boolean manualImpressionsEnabled;
   private boolean propsChanged;
@@ -72,6 +75,22 @@ public class ReactNativeAdView extends FrameLayout {
 
   public List<AdSize> getSizes() {
     return this.sizes;
+  }
+
+  public void setSizesArray(ReadableArray sizesArray) {
+    this.sizesArray = sizesArray;
+  }
+
+  public ReadableArray getSizesArray() {
+    return this.sizesArray;
+  }
+
+  public void setMaxAdHeight(float maxAdHeight) {
+    this.maxAdHeight = maxAdHeight;
+  }
+
+  public float getMaxAdHeight() {
+    return this.maxAdHeight;
   }
 
   public void setUnitId(String unitId) {

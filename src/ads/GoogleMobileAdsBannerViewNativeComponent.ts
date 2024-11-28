@@ -19,6 +19,7 @@ export type NativeEvent = {
 
 export interface NativeProps extends ViewProps {
   sizes: string[];
+  maxAdHeight?: Float;
   unitId: string;
   request: string;
   manualImpressionsEnabled: boolean;

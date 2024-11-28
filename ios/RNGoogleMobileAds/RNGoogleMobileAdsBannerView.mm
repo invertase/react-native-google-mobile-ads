@@ -55,11 +55,15 @@ using namespace facebook::react;
     propsChanged = true;
   }
 
-  if (oldViewProps.sizes != newViewProps.sizes) {
+  if (oldViewProps.sizes != newViewProps.sizes || oldViewProps.maxAdHeight != newViewProps.maxAdHeight) {
     NSMutableArray *adSizes = [NSMutableArray arrayWithCapacity:newViewProps.sizes.size()];
+    CGFloat maxAdHeight = -1;
+    if (newViewProps.maxAdHeight > 0) {
+      maxAdHeight = newViewProps.maxAdHeight;
+    }
     for (auto i = 0; i < newViewProps.sizes.size(); i++) {
       NSString *jsonValue = [[NSString alloc] initWithUTF8String:newViewProps.sizes[i].c_str()];
-      GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue];
+      GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue withMaxHeight: maxAdHeight];
       if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
         RCTLogWarn(@"Invalid adSize %@", jsonValue);
       } else {

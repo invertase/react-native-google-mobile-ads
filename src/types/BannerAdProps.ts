@@ -48,6 +48,7 @@ export interface BannerAdProps {
    */
   size: BannerAdSize | string;
 
+  maxHeight?: number;
   /**
    * The request options for this banner.
    */
