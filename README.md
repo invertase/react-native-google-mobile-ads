@@ -35,18 +35,20 @@ React Native Google Mobile Ads is built with three key principals in mind;
 This package can be used in both The Old and [The New Architecture](https://reactnative.dev/docs/the-new-architecture/landing-page).
 When using The New Architecture, some legacy code will still be used though. See status below:
 
-| Platform | Feature                                       | Status      |
-| -------- | --------------------------------------------- | ----------- |
-| iOS      | Mobile Ads SDK Methods (Turbo Native Module)  | ✅ Complete |
-| iOS      | Banners (Fabric Native Component)             | ✅ Complete |
-| iOS      | Full Screen Ads (Turbo Native Module)         | ⏳ To-Do    |
-| iOS      | User Messaging Platform (Turbo Native Module) | ⏳ To-Do    |
-| iOS      | EventEmitter (Turbo Native Module)            | ⏳ To-Do    |
-| Android  | Mobile Ads SDK Methods (Turbo Native Module)  | ⏳ To-Do    |
-| Android  | Banners (Fabric Native Component)             | ⏳ To-Do    |
-| Android  | Full Screen Ads (Turbo Native Module)         | ⏳ To-Do    |
-| Android  | User Messaging Platform (Turbo Native Module) | ⏳ To-Do    |
-| Android  | EventEmitter (Turbo Native Module)            | ⏳ To-Do    |
+| Platform | Feature                                           | Status      |
+| -------- | ------------------------------------------------- | ----------- |
+| iOS      | Mobile Ads SDK Methods (Turbo Native Module)      | ✅ Complete |
+| iOS      | Banners (Fabric Native Component)                 | ✅ Complete |
+| iOS      | Full Screen Ads (Turbo Native Module)             | ⏳ To-Do    |
+| iOS      | User Messaging Platform (Turbo Native Module)     | ⏳ To-Do    |
+| iOS      | EventEmitter (Turbo Native Module)                | ⏳ To-Do    |
+| iOS      | Revenue Precision Constants (Turbo Native Module) | ⏳ To-Do    |
+| Android  | Mobile Ads SDK Methods (Turbo Native Module)      | ⏳ To-Do    |
+| Android  | Banners (Fabric Native Component)                 | ⏳ To-Do    |
+| Android  | Full Screen Ads (Turbo Native Module)             | ⏳ To-Do    |
+| Android  | User Messaging Platform (Turbo Native Module)     | ⏳ To-Do    |
+| Android  | EventEmitter (Turbo Native Module)                | ⏳ To-Do    |
+| Android  | Revenue Precision Constants (Turbo Native Module) | ⏳ To-Do    |
 
 ## Documentation
 
