@@ -184,10 +184,11 @@ class InterstitialTest implements Test {
 
 class BannerTest implements Test {
   bannerAdSize: BannerAdSize | string;
-
-  constructor(bannerAdSize) {
+  maxHeight: number | undefined;
+  constructor(bannerAdSize, maxHeight: number | undefined = undefined) {
     this.bannerAdSize = bannerAdSize;
     this.bannerRef = React.createRef();
+    this.maxHeight = maxHeight;
   }
 
   getPath(): string {
@@ -196,7 +197,7 @@ class BannerTest implements Test {
       .map(
         s => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1),
       )
-      .join('');
+      .join('').concat(this.maxHeight ? `MaxHeight${this.maxHeight}` : '');
   }
 
   getTestType(): TestType {
@@ -214,6 +215,7 @@ class BannerTest implements Test {
               : TestIds.BANNER
           }
           size={this.bannerAdSize}
+          maxHeight={this.maxHeight}
           onPaid={(event: PaidEvent) => {
             console.log(
               `Paid: ${event.value} ${event.currency} (precision ${
@@ -994,6 +996,9 @@ class DebugMenuTest implements Test {
 
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
 Object.keys(BannerAdSize).forEach(bannerAdSize => {
+  if (bannerAdSize === "INLINE_ADAPTIVE_BANNER") {
+    TestRegistry.registerTest(new BannerTest(bannerAdSize, 100))
+  }
   TestRegistry.registerTest(new BannerTest(bannerAdSize));
 });
 TestRegistry.registerTest(new CollapsibleBannerTest());
@@ -1025,7 +1030,7 @@ TestRegistry.registerTest(new DebugMenuTest());
 const App = () => {
   return (
     <SafeAreaView>
-      <ScrollView contentInsetAdjustmentBehavior="automatic">
+      <ScrollView contentContainerStyle={{ paddingRight: 15 }} contentInsetAdjustmentBehavior="automatic">
         <TestRunner />
       </ScrollView>
     </SafeAreaView>
