@@ -30,6 +30,7 @@ import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest;
+import io.invertase.googlemobileads.common.ReactNativeAdView;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
 import java.util.Map;
@@ -51,8 +52,16 @@ public class ReactNativeGoogleMobileAdsCommon {
       DisplayMetrics outMetrics = new DisplayMetrics();
       display.getMetrics(outMetrics);
       int adWidth = (int) (outMetrics.widthPixels / outMetrics.density);
+      float maxAdHeight = ((ReactNativeAdView)reactViewGroup).getMaxAdHeight();
 
       if ("INLINE_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
+        if (maxAdHeight > 0) {
+          if (maxAdHeight < 32) {
+            return AdSize.getInlineAdaptiveBannerAdSize(adWidth, 32);
+          } else {
+            return AdSize.getInlineAdaptiveBannerAdSize(adWidth, Math.round(maxAdHeight));
+          }
+        }
         return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
             reactViewGroup.getContext(), adWidth);
       }

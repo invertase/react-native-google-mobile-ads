@@ -135,8 +135,15 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       payload.putDouble("height", adSize.getHeight());
       sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
     }
-
+    reactViewGroup.setSizesArray(value);
     reactViewGroup.setSizes(sizeList);
+    reactViewGroup.setPropsChanged(true);
+  }
+
+  @ReactProp(name = "maxAdHeight")
+  public void setMaxAdHeight(ReactNativeAdView reactViewGroup, float value) {
+    reactViewGroup.setMaxAdHeight(value);
+    this.setSizes(reactViewGroup, reactViewGroup.getSizesArray());
     reactViewGroup.setPropsChanged(true);
   }
 
