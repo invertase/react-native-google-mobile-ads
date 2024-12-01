@@ -95,7 +95,7 @@ class ReactNativeGoogleMobileAdsModule(
   @ReactMethod
   fun initialize(promise: Promise) {
     MobileAds.initialize(
-      reactApplicationContext,
+      currentActivity ?: reactApplicationContext,
       OnInitializationCompleteListener { initializationStatus ->
         val result = Arguments.createArray()
         for ((key, value) in initializationStatus.adapterStatusMap) {
