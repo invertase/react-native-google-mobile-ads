@@ -1,3 +1,10 @@
+### [14.4.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.4.2...v14.4.3) (2024-12-02)
+
+
+### Bug Fixes
+
+* **android:** use currentActivity in initialize if !null, aids use of mediation adapters ([#664](https://github.com/invertase/react-native-google-mobile-ads/issues/664)) ([410bcdc](https://github.com/invertase/react-native-google-mobile-ads/commit/410bcdc7917e3ba21567020f84bcfffb3513edfc))
+
 ### [14.4.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.4.1...v14.4.2) (2024-11-24)
 
 
