@@ -95,7 +95,12 @@ class ReactNativeGoogleMobileAdsModule(
   @ReactMethod
   fun initialize(promise: Promise) {
     MobileAds.initialize(
-      reactApplicationContext,
+      // in react-native, the Activity instance *may* go away, becoming null after initialize
+      // it is not clear if that can happen here without an initialize necessarily following the Activity lifecycle
+      // it is not clear if that will cause problems even if it happens, but users that have widely deployed this
+      // with the use of currentActivity have not seen problems
+      // reference if it needs attention: https://github.com/invertase/react-native-google-mobile-ads/pull/664
+      currentActivity ?: reactApplicationContext,
       OnInitializationCompleteListener { initializationStatus ->
         val result = Arguments.createArray()
         for ((key, value) in initializationStatus.adapterStatusMap) {
