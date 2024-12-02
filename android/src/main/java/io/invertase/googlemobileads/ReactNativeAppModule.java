@@ -33,10 +33,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ReactNativeAppModule extends ReactNativeModule {
-  private static final String TAG = "RNAppModule";
+  static final String NAME = "RNAppModule";
 
   ReactNativeAppModule(ReactApplicationContext reactContext) {
-    super(reactContext, TAG);
+    super(reactContext, NAME);
   }
 
   @Override

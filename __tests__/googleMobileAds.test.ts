@@ -1,5 +1,5 @@
 import admob, { MaxAdContentRating } from '../src';
-import RNGoogleMobileAdsModule from '../src/NativeGoogleMobileAdsModule';
+import RNGoogleMobileAdsModule from '../src/specs/modules/NativeGoogleMobileAdsModule';
 
 describe('Admob', function () {
   describe('setRequestConfiguration()', function () {

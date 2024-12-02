@@ -15,16 +15,15 @@
  *
  */
 
-export * from './AdapterStatus';
-export * from './AdEventListener';
-export * from './AdEventsListener';
-export * from './AdsConsent.interface';
-export * from './AdShowOptions';
-export * from './AdStates';
-export * from './BannerAdProps';
-export * from './PaidEventListener';
-export * from './RequestConfiguration';
-export * from './RequestOptions';
-export * from './RewardedAdReward';
-export * from './AppEvent';
-export * from './NativeAdRequestOptions';
+import type { HostComponent, ViewProps } from 'react-native';
+import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
+
+export interface NativeProps extends ViewProps {
+  responseId: string;
+}
+
+type NativeViewComponentType = HostComponent<NativeProps>;
+
+export default codegenNativeComponent<NativeProps>(
+  'RNGoogleMobileAdsMediaView',
+) as NativeViewComponentType;

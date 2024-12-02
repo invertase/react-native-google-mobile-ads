@@ -1,6 +1,7 @@
-import React, {useEffect, useRef} from 'react';
+import React, {RefObject, useEffect, useRef, useState} from 'react';
 import {
   Button,
+  Image,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -11,26 +12,32 @@ import {
 import {Test, TestRegistry, TestResult, TestRunner, TestType} from 'jet';
 
 import MobileAds, {
-  type PaidEvent,
   AdEventType,
   AdsConsent,
   AdsConsentDebugGeography,
   AppOpenAd,
-  InterstitialAd,
-  TestIds,
   BannerAd,
   BannerAdSize,
+  GAMAdEventType,
+  GAMBannerAd,
   GAMBannerAdSize,
+  GAMInterstitialAd,
+  InterstitialAd,
+  NativeAd,
+  NativeAdView,
+  NativeAsset,
+  NativeAssetType,
+  NativeMediaAspectRatio,
+  NativeMediaView,
+  type PaidEvent,
   RevenuePrecisions,
   RewardedAd,
   RewardedAdEventType,
-  useInterstitialAd,
-  useAppOpenAd,
-  useRewardedAd,
-  GAMInterstitialAd,
-  GAMAdEventType,
-  GAMBannerAd,
   RewardedInterstitialAd,
+  TestIds,
+  useAppOpenAd,
+  useInterstitialAd,
+  useRewardedAd,
   useRewardedInterstitialAd,
 } from 'react-native-google-mobile-ads';
 
@@ -184,8 +191,9 @@ class InterstitialTest implements Test {
 
 class BannerTest implements Test {
   bannerAdSize: BannerAdSize | string;
+  bannerRef: RefObject<BannerAd>;
 
-  constructor(bannerAdSize) {
+  constructor(bannerAdSize: BannerAdSize) {
     this.bannerAdSize = bannerAdSize;
     this.bannerRef = React.createRef();
   }
@@ -438,6 +446,103 @@ class RewardedInterstitialTest implements Test {
     } finally {
       complete(results);
       this.adListener();
+    }
+  }
+}
+
+const NativeComponent = () => {
+  const [nativeAd, setNativeAd] = useState<NativeAd>();
+
+  useEffect(() => {
+    NativeAd.createForAdRequest(TestIds.GAM_NATIVE, {
+      aspectRatio: NativeMediaAspectRatio.LANDSCAPE,
+    })
+      .then(setNativeAd)
+      .catch(console.error);
+  }, []);
+
+  if (!nativeAd) {
+    return null;
+  }
+
+  return (
+    <NativeAdView
+      nativeAd={nativeAd}>
+      <View style={{ padding: 16, gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {nativeAd.icon && (
+            <NativeAsset assetKey={NativeAssetType.ICON}>
+              <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} />
+            </NativeAsset>
+          )}
+          <NativeAsset assetKey={NativeAssetType.HEADLINE}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
+          </NativeAsset>
+          <Text style={{
+            backgroundColor: '#FBBC04',
+            color: 'white',
+            paddingHorizontal: 4,
+            paddingVertical: 2,
+            fontWeight: 'bold',
+            fontSize: 11,
+            borderRadius: 4,
+          }}>
+            AD
+          </Text>
+        </View>
+        {nativeAd.advertiser && (
+          <NativeAsset assetKey={NativeAssetType.ADVERTISER}>
+            <Text>{nativeAd.advertiser}</Text>
+          </NativeAsset>
+        )}
+        <NativeAsset assetKey={NativeAssetType.BODY}>
+          <Text>{nativeAd.body}</Text>
+        </NativeAsset>
+      </View>
+      <NativeMediaView />
+      <NativeAsset assetKey={NativeAssetType.CALL_TO_ACTION}>
+        <Text style={{
+          color: 'white',
+          fontWeight: 'bold',
+          backgroundColor: '#4285F4',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+        }}>
+          {nativeAd.callToAction}
+        </Text>
+      </NativeAsset>
+    </NativeAdView>
+  );
+};
+
+class NativeTest implements Test {
+  constructor() {
+  }
+
+  getPath(): string {
+    return 'Native';
+  }
+
+  getTestType(): TestType {
+    return TestType.Interactive;
+  }
+
+  render(onMount: (component: any) => void): React.ReactNode {
+    return (
+      <View ref={onMount}>
+        <NativeComponent />
+      </View>
+    );
+  }
+
+  execute(component: any, complete: (result: TestResult) => void): void {
+    let results = new TestResult();
+    try {
+      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
+    } catch (error) {
+      results.errors.push('Received unexpected error...');
+    } finally {
+      complete(results);
     }
   }
 }
@@ -800,7 +905,7 @@ const GAMBannerComponent = React.forwardRef<
   View,
   {
     unitId: string;
-    sizes: GAMBannerAdSize[];
+    sizes: (keyof typeof GAMBannerAdSize)[];
   }
 >(({unitId, sizes}, ref) => {
   const bannerRef = useRef<GAMBannerAd>(null);
@@ -830,7 +935,7 @@ class GAMBannerTest implements Test {
   constructor(
     private readonly props: {
       unitId: string;
-      sizes: GAMBannerAdSize[];
+      sizes: (keyof typeof GAMBannerAdSize)[];
     },
   ) {}
 
@@ -993,7 +1098,7 @@ class DebugMenuTest implements Test {
 }
 
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
-Object.keys(BannerAdSize).forEach(bannerAdSize => {
+Object.values(BannerAdSize).forEach(bannerAdSize => {
   TestRegistry.registerTest(new BannerTest(bannerAdSize));
 });
 TestRegistry.registerTest(new CollapsibleBannerTest());
@@ -1006,6 +1111,7 @@ TestRegistry.registerTest(new InterstitialHookTest());
 TestRegistry.registerTest(new RewardedHookTest());
 TestRegistry.registerTest(new AppOpenHookTest());
 TestRegistry.registerTest(new RewardedInterstitialHookTest());
+TestRegistry.registerTest(new NativeTest());
 TestRegistry.registerTest(new AdInspectorTest());
 TestRegistry.registerTest(
   new GAMBannerTest({

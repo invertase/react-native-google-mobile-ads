@@ -35,11 +35,11 @@ import javax.annotation.Nonnull;
 
 public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
 
-  private static final String TAG = "RNGoogleMobileAdsConsentModule";
+  static final String NAME = "RNGoogleMobileAdsConsentModule";
   private ConsentInformation consentInformation;
 
   public ReactNativeGoogleMobileAdsConsentModule(ReactApplicationContext reactContext) {
-    super(reactContext, TAG);
+    super(reactContext, NAME);
     consentInformation = UserMessagingPlatform.getConsentInformation(reactContext);
   }
 

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,19 @@
  *
  */
 
-export * from './AdapterStatus';
-export * from './AdEventListener';
-export * from './AdEventsListener';
-export * from './AdsConsent.interface';
-export * from './AdShowOptions';
-export * from './AdStates';
-export * from './BannerAdProps';
-export * from './PaidEventListener';
-export * from './RequestConfiguration';
-export * from './RequestOptions';
-export * from './RewardedAdReward';
-export * from './AppEvent';
-export * from './NativeAdRequestOptions';
+#import <GoogleMobileAds/GADAdLoader.h>
+#import <GoogleMobileAds/GADNativeAd.h>
+
+#ifdef RCT_NEW_ARCH_ENABLED
+#import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
+
+@interface RNGoogleMobileAdsNativeModule : NSObject <NativeGoogleMobileAdsNativeModuleSpec>
+#else
+#import <React/RCTBridgeModule.h>
+
+@interface RNGoogleMobileAdsNativeModule : NSObject <RCTBridgeModule>
+#endif
+
+- (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId;
+
+@end

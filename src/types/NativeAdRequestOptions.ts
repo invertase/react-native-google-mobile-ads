@@ -15,16 +15,15 @@
  *
  */
 
-export * from './AdapterStatus';
-export * from './AdEventListener';
-export * from './AdEventsListener';
-export * from './AdsConsent.interface';
-export * from './AdShowOptions';
-export * from './AdStates';
-export * from './BannerAdProps';
-export * from './PaidEventListener';
-export * from './RequestConfiguration';
-export * from './RequestOptions';
-export * from './RewardedAdReward';
-export * from './AppEvent';
-export * from './NativeAdRequestOptions';
+import { RequestOptions } from './RequestOptions';
+
+export enum NativeMediaAspectRatio {
+  ANY = 1,
+  LANDSCAPE = 2,
+  PORTRAIT = 3,
+  SQUARE = 4,
+}
+
+export interface NativeAdRequestOptions extends RequestOptions {
+  aspectRatio?: NativeMediaAspectRatio;
+}

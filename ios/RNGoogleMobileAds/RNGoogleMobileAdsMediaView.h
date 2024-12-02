@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,32 @@
  *
  */
 
-export * from './AdapterStatus';
-export * from './AdEventListener';
-export * from './AdEventsListener';
-export * from './AdsConsent.interface';
-export * from './AdShowOptions';
-export * from './AdStates';
-export * from './BannerAdProps';
-export * from './PaidEventListener';
-export * from './RequestConfiguration';
-export * from './RequestOptions';
-export * from './RewardedAdReward';
-export * from './AppEvent';
-export * from './NativeAdRequestOptions';
+#import <GoogleMobileAds/GADNativeAd.h>
+#import <React/RCTBridge.h>
+#import <React/RCTUIManager.h>
+
+#ifdef RCT_NEW_ARCH_ENABLED
+#import <React/RCTViewComponentView.h>
+#else
+#import <React/RCTView.h>
+#endif
+
+NS_ASSUME_NONNULL_BEGIN
+
+#ifdef RCT_NEW_ARCH_ENABLED
+@interface RNGoogleMobileAdsMediaView : RCTViewComponentView
+
+@property(nonatomic, strong, nullable) GADMediaView *contentView;
+#else
+@interface RNGoogleMobileAdsMediaView : GADMediaView
+
+- (instancetype)initWithBridge:(RCTBridge *)bridge;
+#endif
+
+@end
+
+@interface RNGoogleMobileAdsMediaViewManager : RCTViewManager
+
+@end
+
+NS_ASSUME_NONNULL_END
