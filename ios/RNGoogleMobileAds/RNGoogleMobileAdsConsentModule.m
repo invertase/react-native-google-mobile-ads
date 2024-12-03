@@ -200,7 +200,9 @@ RCT_EXPORT_METHOD(reset) {
 RCT_EXPORT_METHOD(getConsentInfo
                   : (RCTPromiseResolveBlock)resolve
                   : (RCTPromiseRejectBlock)reject) {
+#if !TARGET_OS_MACCATALYST
   resolve([self getConsentInformation]);
+#endif
 }
 
 RCT_EXPORT_METHOD(getTCString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
