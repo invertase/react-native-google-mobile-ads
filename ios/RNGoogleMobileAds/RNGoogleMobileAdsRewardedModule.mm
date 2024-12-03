@@ -15,6 +15,8 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
+
 #import "RNGoogleMobileAdsRewardedModule.h"
 #import <GoogleMobileAds/GoogleMobileAds.h>
 #ifdef RCT_NEW_ARCH_ENABLED
@@ -94,3 +96,5 @@ RCT_EXPORT_METHOD(invalidate) { [_ad invalidate]; }
 }
 
 @end
+
+#endif

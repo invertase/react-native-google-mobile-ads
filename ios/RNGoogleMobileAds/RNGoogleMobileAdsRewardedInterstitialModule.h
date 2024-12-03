@@ -15,6 +15,8 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
+
 #import <Foundation/Foundation.h>
 
 #ifdef RCT_NEW_ARCH_ENABLED
@@ -31,3 +33,5 @@
 #endif
 
 @end
+
+#endif

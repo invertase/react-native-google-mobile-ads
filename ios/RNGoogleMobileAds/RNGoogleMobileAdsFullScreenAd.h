@@ -15,6 +15,8 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
+
 #import <Foundation/Foundation.h>
 #import <GoogleMobileAds/GoogleMobileAds.h>
 #import "RNGoogleMobileAdsFullScreenContentDelegate.h"
@@ -47,3 +49,5 @@
                    reject:(RCTPromiseRejectBlock)reject;
 
 @end
+
+#endif

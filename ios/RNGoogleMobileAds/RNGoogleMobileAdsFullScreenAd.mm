@@ -15,6 +15,8 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
+
 #import "RNGoogleMobileAdsFullScreenAd.h"
 #import "RNGoogleMobileAdsCommon.h"
 
@@ -214,3 +216,5 @@
 }
 
 @end
+
+#endif
