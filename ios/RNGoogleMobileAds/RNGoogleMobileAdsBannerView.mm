@@ -1,3 +1,5 @@
+#if !TARGET_OS_MACCATALYST
+
 // This guard prevent the code from being compiled in the old architecture
 #ifdef RCT_NEW_ARCH_ENABLED
 #import "RNGoogleMobileAdsBannerView.h"
@@ -236,11 +238,14 @@ using namespace facebook::react;
   }
 }
 
+@end
+
 #pragma mark - RNGoogleMobileAdsBannerViewCls
 
 Class<RCTComponentViewProtocol> RNGoogleMobileAdsBannerViewCls(void) {
   return RNGoogleMobileAdsBannerView.class;
 }
 
-@end
+#endif
+
 #endif

@@ -22,6 +22,7 @@ import { AdEventType } from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
+import NativeAppOpenModule from '../specs/modules/NativeAppOpenModule';
 
 export class AppOpenAd extends MobileAd {
   protected static _appOpenRequest = 0;
@@ -43,9 +44,10 @@ export class AppOpenAd extends MobileAd {
     const requestId = AppOpenAd._appOpenRequest++;
     return new AppOpenAd(
       'app_open',
-      'RNGoogleMobileAdsAppOpenModule',
       requestId,
       adUnitId,
+      NativeAppOpenModule.appOpenLoad,
+      NativeAppOpenModule.appOpenShow,
       options,
     );
   }

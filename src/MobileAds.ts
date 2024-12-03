@@ -1,4 +1,4 @@
-import RNGoogleMobileAdsModule from './NativeGoogleMobileAdsModule';
+import RNGoogleMobileAdsModule from './specs/modules/NativeGoogleMobileAdsModule';
 import { validateAdRequestConfiguration } from './validateAdRequestConfiguration';
 import { SharedEventEmitter } from './internal/SharedEventEmitter';
 import { GoogleMobileAdsNativeEventEmitter } from './internal/GoogleMobileAdsNativeEventEmitter';

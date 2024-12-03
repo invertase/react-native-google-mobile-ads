@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,23 +15,22 @@
  *
  */
 
-import React, { createRef } from 'react';
-import { BannerAdProps } from '../types/BannerAdProps';
-import { BaseAd } from './BaseAd';
-import GoogleMobileAdsBannerView, {
-  Commands,
-} from '../specs/components/GoogleMobileAdsBannerViewNativeComponent';
+#if !TARGET_OS_MACCATALYST
 
-export class BannerAd extends React.Component<BannerAdProps> {
-  private ref = createRef<React.ElementRef<typeof GoogleMobileAdsBannerView>>();
+#import <Foundation/Foundation.h>
+#import <GoogleMobileAds/GoogleMobileAds.h>
 
-  load() {
-    if (this.ref.current) {
-      Commands.load(this.ref.current);
-    }
-  }
+@interface RNGoogleMobileAdsFullScreenContentDelegate
+    : NSObject <GADFullScreenContentDelegate, GADAppEventDelegate>
 
-  render() {
-    return <BaseAd ref={this.ref} sizes={[this.props.size]} {...this.props} />;
-  }
-}
+@property(nonatomic, strong, readonly) NSString *adEventName;
+@property(nonatomic, assign, readonly) int requestId;
+@property(nonatomic, strong, readonly) NSString *adUnitId;
+
+- (instancetype)initWithAdEventName:(NSString *)adEventName
+                          requestId:(int)requestId
+                           adUnitId:(NSString *)adUnitId;
+
+@end
+
+#endif
