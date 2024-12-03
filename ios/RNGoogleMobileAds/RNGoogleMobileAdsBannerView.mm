@@ -238,13 +238,14 @@ using namespace facebook::react;
   }
 }
 
+@end
+
 #pragma mark - RNGoogleMobileAdsBannerViewCls
 
 Class<RCTComponentViewProtocol> RNGoogleMobileAdsBannerViewCls(void) {
   return RNGoogleMobileAdsBannerView.class;
 }
 
-@end
 #endif
 
 #endif
