@@ -1,3 +1,10 @@
+## [14.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.4.3...v14.5.0) (2024-12-03)
+
+
+### Features
+
+* **ios:** full screen ads on new arch ([4e1cf8f](https://github.com/invertase/react-native-google-mobile-ads/commit/4e1cf8f23152358b97196250c615e5b225506994))
+
 ### [14.4.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.4.2...v14.4.3) (2024-12-02)
 
 
