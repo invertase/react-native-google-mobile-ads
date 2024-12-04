@@ -22,7 +22,9 @@
 #if !TARGET_OS_MACCATALYST
 #include <UserMessagingPlatform/UserMessagingPlatform.h>
 #endif
-#import "RCTBridgeModule.h"
+#ifdef RCT_NEW_ARCH_ENABLED
+#import "RNGoogleMobileAdsSpec.h"
+#endif
 #import "RNGoogleMobileAdsConsentModule.h"
 #import "common/RNSharedUtils.h"
 
@@ -92,7 +94,8 @@ RCT_EXPORT_METHOD(requestInfoUpdate
   UMPRequestParameters *parameters = [[UMPRequestParameters alloc] init];
   UMPDebugSettings *debugSettings = [[UMPDebugSettings alloc] init];
 
-  debugSettings.geography = [options[@"debugGeography"] integerValue] ?: UMPDebugGeographyDisabled;
+  debugSettings.geography =
+      (UMPDebugGeography)([options[@"debugGeography"] integerValue] ?: UMPDebugGeographyDisabled);
   debugSettings.testDeviceIdentifiers =
       [options valueForKeyPath:@"testDeviceIdentifiers"] ?: [[NSMutableArray alloc] init];
 
@@ -117,6 +120,105 @@ RCT_EXPORT_METHOD(requestInfoUpdate
 }
 
 RCT_EXPORT_METHOD(showForm : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+  [self showForm:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(showPrivacyOptionsForm
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [self showPrivacyOptionsForm:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(loadAndShowConsentFormIfRequired
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [self loadAndShowConsentFormIfRequired:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(reset) {
+#if !TARGET_OS_MACCATALYST
+  [UMPConsentInformation.sharedInstance reset];
+#endif
+}
+
+RCT_EXPORT_METHOD(getConsentInfo
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [self getConsentInfo:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(getTCString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+  [self getTCString:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(getGdprApplies
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [self getGdprApplies:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(getPurposeConsents
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [self getPurposeConsents:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(getPurposeLegitimateInterests
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
+  [self getPurposeLegitimateInterests:resolve reject:reject];
+}
+
+#ifdef RCT_NEW_ARCH_ENABLED
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+    (const facebook::react::ObjCTurboModule::InitParams &)params {
+  return std::make_shared<facebook::react::NativeConsentModuleSpecJSI>(params);
+}
+#endif
+
+#ifdef RCT_NEW_ARCH_ENABLED
+- (void)requestInfoUpdate:(JS::NativeConsentModule::AdsConsentInfoOptions &)options
+                  resolve:(RCTPromiseResolveBlock)resolve
+                   reject:(RCTPromiseRejectBlock)reject {
+#if !TARGET_OS_MACCATALYST
+  UMPRequestParameters *parameters = [[UMPRequestParameters alloc] init];
+  UMPDebugSettings *debugSettings = [[UMPDebugSettings alloc] init];
+
+  debugSettings.geography =
+      static_cast<UMPDebugGeography>(options.debugGeography().value_or(UMPDebugGeographyDisabled));
+  debugSettings.testDeviceIdentifiers = options.testDeviceIdentifiers().has_value()
+      ? ^{
+          NSMutableArray *array = [[NSMutableArray alloc] init];
+          FB::LazyVector<NSString *, id> identifiers = options.testDeviceIdentifiers().value();
+          for (NSUInteger i = 0; i < identifiers.size(); i++) {
+              [array addObject:identifiers[i]];  // Direct access by index
+          }
+          return array;
+      }()
+      : [[NSMutableArray alloc] init];
+
+  parameters.debugSettings = debugSettings;
+  parameters.tagForUnderAgeOfConsent = options.tagForUnderAgeOfConsent().value_or(FALSE);
+
+  [UMPConsentInformation.sharedInstance
+      requestConsentInfoUpdateWithParameters:parameters
+                           completionHandler:^(NSError *_Nullable error) {
+                             if (error) {
+                               [RNSharedUtils
+                                   rejectPromiseWithUserInfo:reject
+                                                    userInfo:[@{
+                                                      @"code" : @"consent-update-failed",
+                                                      @"message" : error.localizedDescription,
+                                                    } mutableCopy]];
+                             } else {
+                               resolve([self getConsentInformation]);
+                             }
+                           }];
+#endif
+}
+#endif
+
+- (void)showForm:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
 #if !TARGET_OS_MACCATALYST
   [UMPConsentForm loadWithCompletionHandler:^(UMPConsentForm *form, NSError *loadError) {
     if (loadError) {
@@ -145,9 +247,8 @@ RCT_EXPORT_METHOD(showForm : (RCTPromiseResolveBlock)resolve : (RCTPromiseReject
 #endif
 }
 
-RCT_EXPORT_METHOD(showPrivacyOptionsForm
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+- (void)showPrivacyOptionsForm:(RCTPromiseResolveBlock)resolve
+                        reject:(RCTPromiseRejectBlock)reject {
 #if !TARGET_OS_MACCATALYST
   [UMPConsentForm
       presentPrivacyOptionsFormFromViewController:[UIApplication sharedApplication]
@@ -168,9 +269,8 @@ RCT_EXPORT_METHOD(showPrivacyOptionsForm
 #endif
 }
 
-RCT_EXPORT_METHOD(loadAndShowConsentFormIfRequired
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+- (void)loadAndShowConsentFormIfRequired:(RCTPromiseResolveBlock)resolve
+                                  reject:(RCTPromiseRejectBlock)reject {
 #if !TARGET_OS_MACCATALYST
   [UMPConsentForm
       loadAndPresentIfRequiredFromViewController:[UIApplication sharedApplication]
@@ -191,21 +291,13 @@ RCT_EXPORT_METHOD(loadAndShowConsentFormIfRequired
 #endif
 }
 
-RCT_EXPORT_METHOD(reset) {
-#if !TARGET_OS_MACCATALYST
-  [UMPConsentInformation.sharedInstance reset];
-#endif
-}
-
-RCT_EXPORT_METHOD(getConsentInfo
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+- (void)getConsentInfo:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
 #if !TARGET_OS_MACCATALYST
   resolve([self getConsentInformation]);
 #endif
 }
 
-RCT_EXPORT_METHOD(getTCString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+- (void)getTCString:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
   @try {
     // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
     NSString *tcString = [[NSUserDefaults standardUserDefaults] objectForKey:@"IABTCF_TCString"];
@@ -219,9 +311,7 @@ RCT_EXPORT_METHOD(getTCString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRej
   }
 }
 
-RCT_EXPORT_METHOD(getGdprApplies
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+- (void)getGdprApplies:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
   @try {
     BOOL gdprApplies = [[NSUserDefaults standardUserDefaults] boolForKey:@"IABTCF_gdprApplies"];
     resolve(@(gdprApplies));
@@ -234,9 +324,7 @@ RCT_EXPORT_METHOD(getGdprApplies
   }
 }
 
-RCT_EXPORT_METHOD(getPurposeConsents
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+- (void)getPurposeConsents:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
   @try {
     NSString *purposeConsents =
         [[NSUserDefaults standardUserDefaults] stringForKey:@"IABTCF_PurposeConsents"];
@@ -250,9 +338,8 @@ RCT_EXPORT_METHOD(getPurposeConsents
   }
 }
 
-RCT_EXPORT_METHOD(getPurposeLegitimateInterests
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+- (void)getPurposeLegitimateInterests:(RCTPromiseResolveBlock)resolve
+                               reject:(RCTPromiseRejectBlock)reject {
   @try {
     NSString *purposeLegitimateInterests =
         [[NSUserDefaults standardUserDefaults] stringForKey:@"IABTCF_PurposeLegitimateInterests"];
