@@ -175,4 +175,21 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
 #endif
 }
 
+- (NSDictionary *)constantsToExport {
+  return @{
+  // Precision types in ad revenue events.
+  // See: https://developers.google.com/admob/ios/impression-level-ad-revenue#objective-c
+#if !TARGET_OS_MACCATALYST
+    @"REVENUE_PRECISION_UNKNOWN" : @(GADAdValuePrecisionUnknown),
+    @"REVENUE_PRECISION_ESTIMATED" : @(GADAdValuePrecisionEstimated),
+    @"REVENUE_PRECISION_PUBLISHER_PROVIDED" : @(GADAdValuePrecisionPublisherProvided),
+    @"REVENUE_PRECISION_PRECISE" : @(GADAdValuePrecisionPrecise)
+  };
+#endif
+}
+
+- (NSDictionary *)getConstants {
+  return [self constantsToExport];
+}
+
 @end

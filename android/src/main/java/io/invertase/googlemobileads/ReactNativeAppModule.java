@@ -21,7 +21,6 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
-import com.google.android.gms.ads.AdValue;
 import io.invertase.googlemobileads.common.RCTConvert;
 import io.invertase.googlemobileads.common.ReactNativeEvent;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
@@ -29,8 +28,6 @@ import io.invertase.googlemobileads.common.ReactNativeJSON;
 import io.invertase.googlemobileads.common.ReactNativeMeta;
 import io.invertase.googlemobileads.common.ReactNativeModule;
 import io.invertase.googlemobileads.common.ReactNativePreferences;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ReactNativeAppModule extends ReactNativeModule {
   private static final String TAG = "RNAppModule";
@@ -149,30 +146,5 @@ public class ReactNativeAppModule extends ReactNativeModule {
   public void preferencesClearAll(Promise promise) {
     ReactNativePreferences.getSharedInstance().clearAll();
     promise.resolve(null);
-  }
-
-  @Override
-  public Map<String, Object> getConstants() {
-    Map<String, Object> constants = new HashMap<>();
-    // List<Map<String, Object>> appsList = new ArrayList<>();
-    // List<ReactNativeApp> reactNativeApps = ReactNativeApp.getApps(getReactApplicationContext());
-
-    // for (ReactNativeApp app : reactNativeApps) {
-    //   appsList.add(RCTConvertFirebase.reactNativeAppToMap(app));
-    // }
-
-    // constants.put("NATIVE_FIREBASE_APPS", appsList);
-
-    // constants.put("FIREBASE_RAW_JSON", ReactNativeJSON.getSharedInstance().getRawJSON());
-
-    // Precision types in ad revenue events.
-    // See:
-    // https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
-    constants.put("REVENUE_PRECISION_UNKNOWN", AdValue.PrecisionType.UNKNOWN);
-    constants.put("REVENUE_PRECISION_ESTIMATED", AdValue.PrecisionType.ESTIMATED);
-    constants.put("REVENUE_PRECISION_PUBLISHER_PROVIDED", AdValue.PrecisionType.PUBLISHER_PROVIDED);
-    constants.put("REVENUE_PRECISION_PRECISE", AdValue.PrecisionType.PRECISE);
-
-    return constants;
   }
 }
