@@ -1,11 +1,11 @@
-import { NativeModules } from 'react-native';
+import RNGoogleMobileAdsModule from '../specs/modules/NativeGoogleMobileAdsModule';
 
 const {
   REVENUE_PRECISION_ESTIMATED,
   REVENUE_PRECISION_PRECISE,
   REVENUE_PRECISION_PUBLISHER_PROVIDED,
   REVENUE_PRECISION_UNKNOWN,
-} = NativeModules.RNAppModule.getConstants?.() ?? {};
+} = RNGoogleMobileAdsModule.getConstants?.() ?? {};
 
 export enum RevenuePrecisions {
   ESTIMATED = REVENUE_PRECISION_ESTIMATED,
