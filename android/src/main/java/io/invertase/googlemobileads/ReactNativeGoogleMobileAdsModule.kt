@@ -23,6 +23,7 @@ import com.google.android.gms.ads.initialization.OnInitializationCompleteListene
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.ads.AdInspectorError
 import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdValue;
 import com.google.android.gms.ads.OnAdInspectorClosedListener
 
 private const val SERVICE = "RNGoogleMobileAdsModule";
@@ -32,6 +33,18 @@ class ReactNativeGoogleMobileAdsModule(
 ) : ReactContextBaseJavaModule(reactContext) {
 
   override fun getName() = SERVICE
+
+  override fun getConstants(): Map<String, Any> {
+    return mapOf(
+        // Precision types in ad revenue events.
+        // See:
+        // https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
+        "REVENUE_PRECISION_UNKNOWN" to AdValue.PrecisionType.UNKNOWN,
+        "REVENUE_PRECISION_ESTIMATED" to AdValue.PrecisionType.ESTIMATED,
+        "REVENUE_PRECISION_PUBLISHER_PROVIDED" to AdValue.PrecisionType.PUBLISHER_PROVIDED,
+        "REVENUE_PRECISION_PRECISE" to AdValue.PrecisionType.PRECISE
+    )
+  }
 
   private fun buildRequestConfiguration(
     requestConfiguration: ReadableMap
