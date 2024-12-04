@@ -18,7 +18,6 @@
 export * from './AdapterStatus';
 export * from './AdEventListener';
 export * from './AdEventsListener';
-export * from './AdsConsent.interface';
 export * from './AdShowOptions';
 export * from './AdStates';
 export * from './BannerAdProps';

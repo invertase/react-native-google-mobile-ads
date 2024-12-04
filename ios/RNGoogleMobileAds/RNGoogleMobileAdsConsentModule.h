@@ -1,4 +1,3 @@
-//
 /**
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
@@ -16,10 +15,22 @@
  *
  */
 
+#if !TARGET_OS_MACCATALYST
+
 #import <Foundation/Foundation.h>
 
-#import <React/RCTBridgeModule.h>
+#ifdef RCT_NEW_ARCH_ENABLED
 
+#import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
+@interface RNGoogleMobileAdsConsentModule : NSObject <NativeConsentModuleSpec>
+
+#else
+
+#import <React/RCTBridgeModule.h>
 @interface RNGoogleMobileAdsConsentModule : NSObject <RCTBridgeModule>
 
+#endif
+
 @end
+
+#endif
