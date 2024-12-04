@@ -40,7 +40,7 @@ When using The New Architecture, some legacy code will still be used though. See
 | iOS      | Mobile Ads SDK Methods (Turbo Native Module)      | ✅ Complete |
 | iOS      | Banners (Fabric Native Component)                 | ✅ Complete |
 | iOS      | Full Screen Ads (Turbo Native Module)             | ✅ Complete |
-| iOS      | User Messaging Platform (Turbo Native Module)     | ⏳ To-Do    |
+| iOS      | User Messaging Platform (Turbo Native Module)     | ✅ Complete |
 | iOS      | EventEmitter (Turbo Native Module)                | ⏳ To-Do    |
 | iOS      | Revenue Precision Constants (Turbo Native Module) | ✅ Complete |
 | Android  | Mobile Ads SDK Methods (Turbo Native Module)      | ⏳ To-Do    |
