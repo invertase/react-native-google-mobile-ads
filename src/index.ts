@@ -21,11 +21,17 @@ import { version } from './version';
 export const SDK_VERSION = version;
 
 export { default, MobileAds } from './MobileAds';
-export { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
+export {
+  AdsConsentDebugGeography,
+  AdsConsentInfo,
+  AdsConsentInfoOptions,
+  AdsConsentInterface,
+  AdsConsentPrivacyOptionsRequirementStatus,
+  AdsConsentStatus,
+  AdsConsentUserChoices,
+} from './specs/modules/NativeConsentModule';
 export { AdsConsentPurposes } from './AdsConsentPurposes';
 export { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
-export { AdsConsentStatus } from './AdsConsentStatus';
-export { AdsConsentPrivacyOptionsRequirementStatus } from './AdsConsentPrivacyOptionsRequirementStatus';
 export { MaxAdContentRating } from './MaxAdContentRating';
 export { TestIds } from './TestIds';
 export { AdEventType } from './AdEventType';

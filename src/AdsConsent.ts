@@ -16,22 +16,18 @@
  */
 
 import { TCModel, TCString } from '@iabtcf/core';
-import { NativeModules } from 'react-native';
-import { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
 import { AdsConsentPurposes } from './AdsConsentPurposes';
 import { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
 import { isPropertySet, isArray, isBoolean, isObject, isString } from './common';
 import {
-  AdsConsentInfo,
-  AdsConsentInfoOptions,
   AdsConsentInterface,
-  AdsConsentUserChoices,
-} from './types/AdsConsent.interface';
-
-const native = NativeModules.RNGoogleMobileAdsConsentModule;
+  AdsConsentDebugGeography,
+  AdsConsentInfoOptions,
+} from './specs/modules/NativeConsentModule';
+import native from './specs/modules/NativeConsentModule';
 
 export const AdsConsent: AdsConsentInterface = {
-  requestInfoUpdate(options: AdsConsentInfoOptions = {}): Promise<AdsConsentInfo> {
+  requestInfoUpdate(options: AdsConsentInfoOptions = {}) {
     if (!isObject(options)) {
       throw new Error("AdsConsent.requestInfoUpdate(*) 'options' expected an object value.");
     }
@@ -75,53 +71,53 @@ export const AdsConsent: AdsConsentInterface = {
     return native.requestInfoUpdate(options);
   },
 
-  showForm(): Promise<AdsConsentInfo> {
+  showForm() {
     return native.showForm();
   },
 
-  showPrivacyOptionsForm(): Promise<AdsConsentInfo> {
+  showPrivacyOptionsForm() {
     return native.showPrivacyOptionsForm();
   },
 
-  loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo> {
+  loadAndShowConsentFormIfRequired() {
     return native.loadAndShowConsentFormIfRequired();
   },
 
-  getConsentInfo(): Promise<AdsConsentInfo> {
+  getConsentInfo() {
     return native.getConsentInfo();
   },
 
-  async gatherConsent(options: AdsConsentInfoOptions = {}): Promise<AdsConsentInfo> {
+  async gatherConsent(options: AdsConsentInfoOptions = {}) {
     await this.requestInfoUpdate(options);
     return this.loadAndShowConsentFormIfRequired();
   },
 
-  reset(): void {
+  reset() {
     return native.reset();
   },
 
-  getTCString(): Promise<string> {
+  getTCString() {
     return native.getTCString();
   },
 
-  async getTCModel(): Promise<TCModel> {
+  async getTCModel() {
     const tcString = await native.getTCString();
     return TCString.decode(tcString);
   },
 
-  getGdprApplies(): Promise<boolean> {
+  getGdprApplies() {
     return native.getGdprApplies();
   },
 
-  getPurposeConsents(): Promise<string> {
+  getPurposeConsents() {
     return native.getPurposeConsents();
   },
 
-  getPurposeLegitimateInterests(): Promise<string> {
+  getPurposeLegitimateInterests() {
     return native.getPurposeLegitimateInterests();
   },
 
-  async getUserChoices(): Promise<AdsConsentUserChoices> {
+  async getUserChoices() {
     const tcString = await native.getTCString();
 
     let tcModel: TCModel;

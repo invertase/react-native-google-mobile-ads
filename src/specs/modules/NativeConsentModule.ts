@@ -1,212 +1,88 @@
-import { TCModel } from '@iabtcf/core';
-import { AdsConsentDebugGeography } from '../AdsConsentDebugGeography';
-import { AdsConsentStatus } from '../AdsConsentStatus';
-import { AdsConsentPrivacyOptionsRequirementStatus } from '../AdsConsentPrivacyOptionsRequirementStatus';
-
 /**
- * Under the Google [EU User Consent Policy](https://www.google.com/about/company/consentstaging.html), you must make certain disclosures to your users in the European Economic Area (EEA)
- * and obtain their consent to use cookies or other local storage, where legally required, and to use personal data
- * (such as AdID) to serve ads. This policy reflects the requirements of the EU ePrivacy Directive and the
- * General Data Protection Regulation (GDPR).
+ * Copyright (c) 2016-present Invertase Limited & Contributors
  *
- * It is recommended that you determine the status of a user's consent at every app launch. The user consent status is held
- * on the device until a condition changes which requires the user to consent again, such as a change in publishers.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this library except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * For more information, see [here](https://developers.google.com/admob/ump/android/quick-start#delay_app_measurement_optional).
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
 
-export interface AdsConsentInterface {
+import { TurboModule, TurboModuleRegistry } from 'react-native';
+import { TCModel } from '@iabtcf/core';
+
+/**
+ * AdsConsentDebugGeography enum.
+ *
+ * Used to set a mock location when testing the `AdsConsent` helper.
+ */
+export enum AdsConsentDebugGeography {
   /**
-   * Requests user consent information.
-   *
-   * The response from this method provides information about consent form availability and consent status.
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent } from 'react-native-google-mobile-ads';
-   *
-   * const consentInfo = await AdsConsent.requestInfoUpdate();
-   * console.log('A consent form is available:', consentInfo.isConsentFormAvailable);
-   * console.log('User consent status:', consentInfo.status);
-   * ```
-   * @param options An AdsConsentInfoOptions interface.
+   * Disable any debug geography.
    */
-  requestInfoUpdate(options?: AdsConsentInfoOptions): Promise<AdsConsentInfo>;
+  DISABLED = 0,
 
   /**
-   * Shows a Google-rendered user consent form.
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
-   *
-   * async function requestConsent() {
-   *   const consentInfo = await AdsConsent.requestInfoUpdate();
-   *
-   *   // Check if user requires consent
-   *   if (
-   *     consentInfo.isConsentFormAvailable &&
-   *     (consentInfo.status === AdsConsentStatus.UNKNOWN ||
-   *       consentInfo.status === AdsConsentStatus.REQUIRED)) {
-   *     // Show a Google-rendered form
-   *     const formResult = await AdsConsent.showForm();
-   *
-   *     console.log('User consent obtained: ', formResult.status === AdsConsentStatus.OBTAINED);
-   *   }
-   * }
-   *
-   * ```
+   * Sets the location to within the EEA.
    */
-  showForm(): Promise<AdsConsentInfo>;
+  EEA = 1,
 
   /**
-   * Presents a privacy options form if privacyOptionsRequirementStatus is required.
+   * Sets the location to outside of the EEA.
    */
-  showPrivacyOptionsForm(): Promise<AdsConsentInfo>;
+  NOT_EEA = 2,
+}
+
+/**
+ * AdsConsentStatus enum.
+ */
+export enum AdsConsentStatus {
+  /**
+   * Unknown consent status, AdsConsent.requestInfoUpdate needs to be called to update it.
+   */
+  UNKNOWN = 'UNKNOWN',
 
   /**
-   * Loads a consent form and immediately presents it if consentStatus is required.
-   *
-   * This method is intended for the use case of showing a form if needed when the app starts.
+   * User consent required but not yet obtained.
    */
-  loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo>;
+  REQUIRED = 'REQUIRED',
 
   /**
-   * Returns the UMP Consent Information from the last known session.
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
-   *
-   * const consentInfo = await AdsConsent.getConsentInfo();
-   * ```
+   * User consent not required.
    */
-  getConsentInfo(): Promise<AdsConsentInfo>;
+  NOT_REQUIRED = 'NOT_REQUIRED',
 
   /**
-   * Helper method to call the UMP SDK methods to request consent information and load/present a
-   * consent form if necessary.
+   * User consent already obtained.
    */
-  gatherConsent(): Promise<AdsConsentInfo>;
+  OBTAINED = 'OBTAINED',
+}
+
+/**
+ * AdsConsentPrivacyOptionsRequirementStatus enum.
+ */
+export enum AdsConsentPrivacyOptionsRequirementStatus {
+  /**
+   * Unknown consent status, AdsConsent.requestInfoUpdate needs to be called to update it.
+   */
+  UNKNOWN = 'UNKNOWN',
 
   /**
-   * Returns the value stored under the `IABTCF_TCString` key
-   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
-   * defined by the IAB Europe Transparency & Consent Framework.
-   *
-   * More information available here:
-   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
-   *
-   * const tcString = await AdsConsent.getTCString();
-   * ```
+   * User consent required but not yet obtained.
    */
-  getTCString(): Promise<string>;
+  REQUIRED = 'REQUIRED',
 
   /**
-   * Returns the TC Model of the saved IAB TCF 2.0 String.
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
-   *
-   * const tcModel = await AdsConsent.getTCModel();
-   * ```
+   * User consent not required.
    */
-  getTCModel(): Promise<TCModel>;
-
-  /**
-   * Returns the value stored under the `IABTCF_gdprApplies` key
-   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
-   * defined by the IAB Europe Transparency & Consent Framework.
-   *
-   * More information available here:
-   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
-   *
-   * await AdsConsent.requestInfoUpdate();
-   * const gdprApplies = await AdsConsent.getGdprApplies();
-   * ```
-   */
-  getGdprApplies(): Promise<boolean>;
-
-  /**
-   * Returns the value stored under the `IABTCF_PurposeConsents` key
-   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
-   * defined by the IAB Europe Transparency & Consent Framework.
-   *
-   * More information available here:
-   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
-   *
-   * await AdsConsent.requestInfoUpdate();
-   * const purposeConsents = await AdsConsent.getPurposeConsents();
-   * const hasConsentForPurposeOne = purposeConsents.startsWith("1");
-   * ```
-   */
-  getPurposeConsents(): Promise<string>;
-
-  /**
-   * Returns the value stored under the `IABTCF_PurposeLegitimateInterests` key
-   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
-   * defined by the IAB Europe Transparency & Consent Framework.
-   *
-   * More information available here:
-   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
-   *
-   * await AdsConsent.requestInfoUpdate();
-   * const purposeLegitimateInterests = await AdsConsent.getPurposeLegitimateInterests();
-   * const hasLegitimateInterestForPurposeTwo = purposeLegitimateInterests.split("")[1] === "1";
-   * ```
-   */
-  getPurposeLegitimateInterests(): Promise<string>;
-
-  /**
-   * Provides information about a user's consent choices.
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
-   *
-   * const { storeAndAccessInformationOnDevice } = await AdsConsent.getUserChoices();
-   * ```
-   */
-  getUserChoices(): Promise<AdsConsentUserChoices>;
-
-  /**
-   * Resets the UMP SDK state.
-   *
-   * #### Example
-   *
-   * ```js
-   * import { AdsConsent } from '@invertase/react-native-google-ads';
-   *
-   * AdsConsent.reset();
-   * ```
-   */
-  reset(): void;
+  NOT_REQUIRED = 'NOT_REQUIRED',
 }
 
 /**
@@ -433,3 +309,215 @@ export interface AdsConsentUserChoices {
    */
   usePreciseGeolocationData: boolean;
 }
+
+export interface AdsConsentInterface {
+  /**
+   * Requests user consent information.
+   *
+   * The response from this method provides information about consent form availability and consent status.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from 'react-native-google-mobile-ads';
+   *
+   * const consentInfo = await AdsConsent.requestInfoUpdate();
+   * console.log('A consent form is available:', consentInfo.isConsentFormAvailable);
+   * console.log('User consent status:', consentInfo.status);
+   * ```
+   * @param options An AdsConsentInfoOptions interface.
+   */
+  requestInfoUpdate(options?: AdsConsentInfoOptions): Promise<AdsConsentInfo>;
+
+  /**
+   * Shows a Google-rendered user consent form.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
+   *
+   * async function requestConsent() {
+   *   const consentInfo = await AdsConsent.requestInfoUpdate();
+   *
+   *   // Check if user requires consent
+   *   if (
+   *     consentInfo.isConsentFormAvailable &&
+   *     (consentInfo.status === AdsConsentStatus.UNKNOWN ||
+   *       consentInfo.status === AdsConsentStatus.REQUIRED)) {
+   *     // Show a Google-rendered form
+   *     const formResult = await AdsConsent.showForm();
+   *
+   *     console.log('User consent obtained: ', formResult.status === AdsConsentStatus.OBTAINED);
+   *   }
+   * }
+   *
+   * ```
+   */
+  showForm(): Promise<AdsConsentInfo>;
+
+  /**
+   * Presents a privacy options form if privacyOptionsRequirementStatus is required.
+   */
+  showPrivacyOptionsForm(): Promise<AdsConsentInfo>;
+
+  /**
+   * Loads a consent form and immediately presents it if consentStatus is required.
+   *
+   * This method is intended for the use case of showing a form if needed when the app starts.
+   */
+  loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo>;
+
+  /**
+   * Returns the UMP Consent Information from the last known session.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * const consentInfo = await AdsConsent.getConsentInfo();
+   * ```
+   */
+  getConsentInfo(): Promise<AdsConsentInfo>;
+
+  /**
+   * Helper method to call the UMP SDK methods to request consent information and load/present a
+   * consent form if necessary.
+   */
+  gatherConsent(): Promise<AdsConsentInfo>;
+
+  /**
+   * Returns the value stored under the `IABTCF_TCString` key
+   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
+   * defined by the IAB Europe Transparency & Consent Framework.
+   *
+   * More information available here:
+   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * const tcString = await AdsConsent.getTCString();
+   * ```
+   */
+  getTCString(): Promise<string>;
+
+  /**
+   * Returns the TC Model of the saved IAB TCF 2.0 String.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * const tcModel = await AdsConsent.getTCModel();
+   * ```
+   */
+  getTCModel(): Promise<TCModel>;
+
+  /**
+   * Returns the value stored under the `IABTCF_gdprApplies` key
+   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
+   * defined by the IAB Europe Transparency & Consent Framework.
+   *
+   * More information available here:
+   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * await AdsConsent.requestInfoUpdate();
+   * const gdprApplies = await AdsConsent.getGdprApplies();
+   * ```
+   */
+  getGdprApplies(): Promise<boolean>;
+
+  /**
+   * Returns the value stored under the `IABTCF_PurposeConsents` key
+   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
+   * defined by the IAB Europe Transparency & Consent Framework.
+   *
+   * More information available here:
+   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * await AdsConsent.requestInfoUpdate();
+   * const purposeConsents = await AdsConsent.getPurposeConsents();
+   * const hasConsentForPurposeOne = purposeConsents.startsWith("1");
+   * ```
+   */
+  getPurposeConsents(): Promise<string>;
+
+  /**
+   * Returns the value stored under the `IABTCF_PurposeLegitimateInterests` key
+   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
+   * defined by the IAB Europe Transparency & Consent Framework.
+   *
+   * More information available here:
+   * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * await AdsConsent.requestInfoUpdate();
+   * const purposeLegitimateInterests = await AdsConsent.getPurposeLegitimateInterests();
+   * const hasLegitimateInterestForPurposeTwo = purposeLegitimateInterests.split("")[1] === "1";
+   * ```
+   */
+  getPurposeLegitimateInterests(): Promise<string>;
+
+  /**
+   * Provides information about a user's consent choices.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * const { storeAndAccessInformationOnDevice } = await AdsConsent.getUserChoices();
+   * ```
+   */
+  getUserChoices(): Promise<AdsConsentUserChoices>;
+
+  /**
+   * Resets the UMP SDK state.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from '@invertase/react-native-google-ads';
+   *
+   * AdsConsent.reset();
+   * ```
+   */
+  reset(): void;
+}
+
+export interface Spec extends TurboModule {
+  requestInfoUpdate(options?: AdsConsentInfoOptions): Promise<AdsConsentInfo>;
+  showForm(): Promise<AdsConsentInfo>;
+  showPrivacyOptionsForm(): Promise<AdsConsentInfo>;
+  loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo>;
+  getConsentInfo(): Promise<AdsConsentInfo>;
+  gatherConsent(): Promise<AdsConsentInfo>;
+  getTCString(): Promise<string>;
+  getTCModel(): Promise<TCModel>;
+  getGdprApplies(): Promise<boolean>;
+  getPurposeConsents(): Promise<string>;
+  getPurposeLegitimateInterests(): Promise<string>;
+  getUserChoices(): Promise<AdsConsentUserChoices>;
+  reset(): void;
+}
+
+export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsConsentModule');
