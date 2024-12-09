@@ -15,20 +15,21 @@
  *
  */
 
-#import <Foundation/Foundation.h>
+#import "RNSharedUtils.h"
 
-@interface RNJSON : NSObject
+#pragma mark -
+#pragma mark Constants
 
-- (BOOL)contains:(NSString *)key;
+@implementation RNSharedUtils
+static NSString *const RNErrorDomain = @"RNErrorDomain";
 
-- (BOOL)getBooleanValue:(NSString *)key defaultValue:(BOOL)defaultValue;
+#pragma mark -
+#pragma mark Methods
 
-- (NSString *)getStringValue:(NSString *)key defaultValue:(NSString *)defaultValue;
-
-- (NSDictionary *)getAll;
-
-- (NSString *)getRawJSON;
-
-+ (RNJSON *)shared;
++ (void)rejectPromiseWithUserInfo:(RCTPromiseRejectBlock)reject
+                         userInfo:(NSMutableDictionary *)userInfo {
+  NSError *error = [NSError errorWithDomain:RNErrorDomain code:666 userInfo:userInfo];
+  reject(userInfo[@"code"], userInfo[@"message"], error);
+}
 
 @end

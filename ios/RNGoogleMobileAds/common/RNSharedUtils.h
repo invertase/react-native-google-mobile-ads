@@ -36,12 +36,8 @@
 #pragma mark -
 #pragma mark Methods
 
-+ (void)sendJSEvent:name:(NSString *)name body:(NSDictionary *)body;
-
 + (void)rejectPromiseWithUserInfo:(RCTPromiseRejectBlock)reject
                          userInfo:(NSMutableDictionary *)userInfo;
-
-+ (NSString *)getISO8601String:(NSDate *)date;
 
 @end
 
