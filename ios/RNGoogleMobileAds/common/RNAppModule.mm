@@ -18,9 +18,6 @@
 #import <React/RCTUtils.h>
 
 #import "RNAppModule.h"
-#import "RNJSON.h"
-#import "RNMeta.h"
-#import "RNPreferences.h"
 #import "RNRCTEventEmitter.h"
 #import "RNSharedUtils.h"
 
@@ -49,58 +46,6 @@ RCT_EXPORT_MODULE();
 
 - (void)invalidate {
   [[RNRCTEventEmitter shared] invalidate];
-}
-
-#pragma mark -
-#pragma mark META Methods
-
-RCT_EXPORT_METHOD(metaGetAll
-                  : (RCTPromiseResolveBlock)resolve rejecter
-                  : (RCTPromiseRejectBlock)reject) {
-  resolve([RNMeta getAll]);
-}
-
-#pragma mark -
-#pragma mark JSON Methods
-
-RCT_EXPORT_METHOD(jsonGetAll
-                  : (RCTPromiseResolveBlock)resolve rejecter
-                  : (RCTPromiseRejectBlock)reject) {
-  resolve([[RNJSON shared] getAll]);
-}
-
-#pragma mark -
-#pragma mark Preference Methods
-
-RCT_EXPORT_METHOD(preferencesSetBool
-                  : (NSString *)key boolValue
-                  : (BOOL)boolValue resolver
-                  : (RCTPromiseResolveBlock)resolve rejecter
-                  : (RCTPromiseRejectBlock)reject) {
-  [[RNPreferences shared] setBooleanValue:key boolValue:boolValue];
-  resolve([NSNull null]);
-}
-
-RCT_EXPORT_METHOD(preferencesSetString
-                  : (NSString *)key stringValue
-                  : (NSString *)stringValue resolver
-                  : (RCTPromiseResolveBlock)resolve rejecter
-                  : (RCTPromiseRejectBlock)reject) {
-  [[RNPreferences shared] setStringValue:key stringValue:stringValue];
-  resolve([NSNull null]);
-}
-
-RCT_EXPORT_METHOD(preferencesGetAll
-                  : (RCTPromiseResolveBlock)resolve rejecter
-                  : (RCTPromiseRejectBlock)reject) {
-  resolve([[RNPreferences shared] getAll]);
-}
-
-RCT_EXPORT_METHOD(preferencesClearAll
-                  : (RCTPromiseResolveBlock)resolve rejecter
-                  : (RCTPromiseRejectBlock)reject) {
-  [[RNPreferences shared] clearAll];
-  resolve([NSNull null]);
 }
 
 #pragma mark -
