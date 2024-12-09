@@ -1,3 +1,11 @@
+## [14.6.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.5.0...v14.6.0) (2024-12-09)
+
+
+### Features
+
+* **ios:** precision constants on new arch ([1a503f2](https://github.com/invertase/react-native-google-mobile-ads/commit/1a503f2bac3e86e825d9052df0576c18abf60a36))
+* **ios:** UMP consent SDK on new arch ([19e9379](https://github.com/invertase/react-native-google-mobile-ads/commit/19e9379a80a3cfe597aacf7ce2e6bad49e82dcb9))
+
 ## [14.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.4.3...v14.5.0) (2024-12-03)
 
 
