@@ -30,14 +30,24 @@ export enum AdsConsentDebugGeography {
   DISABLED = 0,
 
   /**
-   * Sets the location to within the EEA.
+   * Geography appears as in EEA for debug devices.
    */
   EEA = 1,
 
   /**
-   * Sets the location to outside of the EEA.
+   * @deprecated Use `OTHER`.
    */
   NOT_EEA = 2,
+
+  /**
+   * Geography appears as in a regulated US State.
+   */
+  REGULATED_US_STATE = 3,
+
+  /**
+   * Geography appears as in a region with no regulation in force.
+   */
+  OTHER = 4,
 }
 
 /**
