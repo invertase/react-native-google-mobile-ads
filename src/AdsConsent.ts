@@ -36,10 +36,12 @@ export const AdsConsent: AdsConsentInterface = {
       isPropertySet(options, 'debugGeography') &&
       options.debugGeography !== AdsConsentDebugGeography.DISABLED &&
       options.debugGeography !== AdsConsentDebugGeography.EEA &&
-      options.debugGeography !== AdsConsentDebugGeography.NOT_EEA
+      options.debugGeography !== AdsConsentDebugGeography.NOT_EEA &&
+      options.debugGeography !== AdsConsentDebugGeography.REGULATED_US_STATE &&
+      options.debugGeography !== AdsConsentDebugGeography.OTHER
     ) {
       throw new Error(
-        "AdsConsent.requestInfoUpdate(*) 'options.debugGeography' expected one of AdsConsentDebugGeography.DISABLED, AdsConsentDebugGeography.EEA or AdsConsentDebugGeography.NOT_EEA.",
+        "AdsConsent.requestInfoUpdate(*) 'options.debugGeography' expected one of AdsConsentDebugGeography.DISABLED, AdsConsentDebugGeography.EEA, AdsConsentDebugGeography.NOT_EEA, AdsConsentDebugGeography.REGULATED_US_STATE or AdsConsentDebugGeography.OTHER.",
       );
     }
 
