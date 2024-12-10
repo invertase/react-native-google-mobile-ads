@@ -143,7 +143,10 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @ReactProp(name = "maxAdHeight")
   public void setMaxAdHeight(ReactNativeAdView reactViewGroup, float value) {
     reactViewGroup.setMaxAdHeight(value);
-    this.setSizes(reactViewGroup, reactViewGroup.getSizesArray());
+    ReadableArray adSizes = reactViewGroup.getSizesArray();
+    if (adSizes != null) {
+      this.setSizes(reactViewGroup, adSizes);
+    }
     reactViewGroup.setPropsChanged(true);
   }
 
