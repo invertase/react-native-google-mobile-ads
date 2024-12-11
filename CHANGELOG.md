@@ -1,3 +1,10 @@
+## [14.7.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.6.0...v14.7.0) (2024-12-11)
+
+
+### Features
+
+* update mobile ads sdk, ump sdk and add new geography options ([8562627](https://github.com/invertase/react-native-google-mobile-ads/commit/8562627818c5bb4a9dc735a32b26282f9b3f56ae))
+
 ## [14.6.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.5.0...v14.6.0) (2024-12-09)
 
 
