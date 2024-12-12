@@ -401,7 +401,10 @@ Within your projects configuration file, you have to provide a user tracking usa
 
 #### Requesting App Tracking Transparency authorization
 
-To request the App Tracking Transparency authorization we recommend using the [react-native-permissions](https://github.com/zoontek/react-native-permissions) library or making it part of the UMP consent flow [European User Consent page](/european-user-consent).
+To request the App Tracking Transparency authorization we recommend using a library or making it part of the UMP consent flow [European User Consent page](/european-user-consent).
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
 
 ```js
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
@@ -416,6 +419,29 @@ const adapterStatuses = await mobileAds().initialize();
 
 // Now ads can be loaded.
 ```
+
+</TabItem>
+<TabItem value="expo">
+
+```js
+import {
+  getTrackingPermissionsAsync,
+  PermissionStatus,
+  requestTrackingPermissionsAsync,
+} from 'expo-tracking-transparency';
+
+const { status } = await getTrackingPermissionsAsync();
+if (status === PermissionStatus.UNDETERMINED) {
+  await requestTrackingPermissionsAsync();
+}
+
+const adapterStatuses = await mobileAds().initialize();
+
+// Now ads can be loaded.
+```
+
+</TabItem>
+</Tabs>
 
 ### European User Consent
 
