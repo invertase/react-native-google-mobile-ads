@@ -1,3 +1,10 @@
+### [14.7.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.7.0...v14.7.1) (2024-12-12)
+
+
+### Bug Fixes
+
+* warning requiresMainQueueSetup ([b6c2ee7](https://github.com/invertase/react-native-google-mobile-ads/commit/b6c2ee7eed3d1967f49f7a2212d58cf1c1af9a38))
+
 ## [14.7.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.6.0...v14.7.0) (2024-12-11)
 
 
