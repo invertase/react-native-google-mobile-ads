@@ -241,7 +241,7 @@ Note that these identifiers are subject to change and should be updated regularl
   "react-native-google-mobile-ads": {
     "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
     "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "sk_ad_network_items": {{ JSON.stringify(skAdNetworkItems) }}
+    "sk_ad_network_items": {{ skAdNetworkItems }}
   }
 }
 ```
@@ -259,7 +259,7 @@ Note that these identifiers are subject to change and should be updated regularl
         {
           "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
           "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-          "skAdNetworkItems": [{{ skAdNetworkItems | toJSON }}]
+          "skAdNetworkItems": [{{ skAdNetworkItems }}]
         }
       ]
     ]
