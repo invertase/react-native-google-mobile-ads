@@ -96,7 +96,7 @@ Rewarded ads are ads that users have the option of interacting with in exchange 
 Rewarded interstitial is a type of incentivized ad format that allows you offer rewards for ads that appear automatically during natural app transitions.
 Unlike rewarded ads, users aren't required to opt-in to view a rewarded interstitial.
 
-<img width="400" src="https://developers.google.com/static/admob/images/format-rewarded.svg" alt="Rewarded interstitial">
+<img width="400" src="https://developers.google.com/static/admob/images/format-rewarded-interstitial.svg" alt="Rewarded interstitial">
 
 [Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#rewarded-interstitial-ads)
 
