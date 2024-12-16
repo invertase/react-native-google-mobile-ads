@@ -77,6 +77,10 @@ Banner (320x50), Large banner (320x100), Medium rectangle (300x250), full banner
 
 [Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#banner-ads-component)
 
+### Native
+
+Coming soon...
+
 ### Interstitial
 
 Interstitial ads are full-screen ads that cover the interface of an app until closed by the user.
