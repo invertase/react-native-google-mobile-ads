@@ -30,6 +30,89 @@ React Native Google Mobile Ads is built with three key principals in mind;
 - 📄 **Well documented**
   - full reference & installation documentation alongside detailed guides and FAQs
 
+## Ad formats
+
+### App open
+
+App open ads are a special ad format intended for publishers wishing to monetize their app load screens.
+
+<img width="200" src="https://developers.google.com/static/admob/images/app-open-ad.png" alt="App open ad">
+
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#app-open-ads)
+
+### Banner
+
+Banner ad units display rectangular ads that occupy a portion of an app's layout.
+They stay on screen while users are interacting with the app, either anchored at the top or bottom of the screen or inline with content as the user scrolls.
+Banner ads can refresh automatically after a certain period of time.
+
+#### Anchored adaptive
+
+A dynamically sized banner that is full-width and auto-height. Anchored adaptive banners are expected to be always on-screen, locked to the screen’s top or bottom.
+
+<img width="200" src="https://developers.google.com/static/admob/images/Android_adaptive.png" alt="Anchored adaptive">
+
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#banner-ads-component)
+
+#### Inline adaptive
+
+Inline adaptive banners are larger, taller banners compared to anchored adaptive banners.
+They are of variable height, and can be as tall as the device screen.
+They are intended to be placed in scrolling content.
+
+<img width="600" src="https://developers.google.com/static/admob/images/inline-adaptive.png" alt="Inline adaptive">
+
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#banner-ads-component)
+
+#### Collapsible
+
+Collapsible banner ads are intended to improve performance of anchored ads that are otherwise a smaller size.
+
+<img width="400" src="https://developers.google.com/static/admob/images/collapsible-banner.png" alt="Collapsible banner">
+
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#collapsible-banner-ads)
+
+#### Fixed size (legacy)
+
+The Google Mobile Ads SDK supports fixed ad sizes for situations where adaptive banners ads don't meet your needs.
+Banner (320x50), Large banner (320x100), Medium rectangle (300x250), full banner (468x60) and leaderboard (728x90).
+
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#banner-ads-component)
+
+### Native
+
+Native ads allow you to customize the look and feel of the ads that appear in your app.
+You decide how and where they're placed, so the layout is more consistent your app's design.
+
+<img width="300" src="https://developers.google.com/static/admob/images/format-native.svg" alt="Native">
+
+[Work In Progress](https://github.com/invertase/react-native-google-mobile-ads/pull/650)
+
+### Interstitial
+
+Interstitial ad units show full-page ads in your app. Place them at natural breaks & transitions in your app's interface, such as after level completion in a gaming app.
+
+<img width="300" src="https://developers.google.com/static/admob/images/format-interstitial.svg" alt="Interstitial">
+
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#interstitial-ads)
+
+### Rewarded
+
+AdMob rewarded ad units allow you to reward users with in-app items for interacting with video ads, playable ads, and surveys.
+
+<img width="300" src="https://developers.google.com/static/admob/images/format-rewarded.svg" alt="Rewarded">
+
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#rewarded-ads)
+
+### Rewarded Interstitial
+
+Rewarded interstitial is a type of incentivized ad format that allows you offer rewards for ads that appear automatically during natural app transitions.
+Unlike rewarded ads, users aren't required to opt-in to view a rewarded interstitial.
+
+<img width="300" src="https://developers.google.com/static/admob/images/format-rewarded-interstitial.svg" alt="Rewarded interstitial">
+
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#rewarded-interstitial-ads)
+
 ## Migrating to the New Architecture Status (backwards compatible)
 
 This package can be used in both The Old and [The New Architecture](https://reactnative.dev/docs/the-new-architecture/landing-page).
