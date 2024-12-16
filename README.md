@@ -30,6 +30,20 @@ React Native Google Mobile Ads is built with three key principals in mind;
 - 📄 **Well documented**
   - full reference & installation documentation alongside detailed guides and FAQs
 
+## Ad formats
+
+| **Ad Format**             | **Description**                                                                                                                                                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **App Open**              | App open ads are a special ad format intended for publishers wishing to monetize their app load screens.                                                                                                                             |
+| **Banner Ads**            | Banner ads are rectangular ads that occupy a portion of an app's layout.                                                                                                                                                             |
+| - **Anchored Adaptive**   | A dynamically sized banner that is full-width and auto-height.                                                                                                                                                                       |
+| - **Inline Adaptive**     | Inline adaptive banners are larger, taller banners compared to anchored adaptive banners. They are of variable height, and can be as tall as the device screen. They are intended to be placed in scrolling content.                 |
+| - **Collapsible**         | Collapsible banner ads are intended to improve performance of anchored ads that are otherwise a smaller size.                                                                                                                        |
+| - **Fixed Size**          | The Google Mobile Ads SDK supports fixed ad sizes for situations where adaptive banners ads don't meet your needs.Banner (320x50), Large banner (320x100), Medium rectangle (300x250), full banner (468x60) and leaderboard (728x90) |
+| **Interstitial**          | Interstitial ads are full-screen ads that cover the interface of an app until closed by the user.                                                                                                                                    |
+| **Rewarded**              | Rewarded ads are ads that users have the option of interacting with in exchange for in-app rewards.                                                                                                                                  |
+| **Rewarded Interstitial** | Rewarded interstitial is a type of incentivized ad format that allows you offer rewards for ads that appear automatically during natural app transitions.                                                                            |
+
 ## Migrating to the New Architecture Status (backwards compatible)
 
 This package can be used in both The Old and [The New Architecture](https://reactnative.dev/docs/the-new-architecture/landing-page).
