@@ -75,6 +75,8 @@ Collapsible banner ads are intended to improve performance of anchored ads that 
 The Google Mobile Ads SDK supports fixed ad sizes for situations where adaptive banners ads don't meet your needs.
 Banner (320x50), Large banner (320x100), Medium rectangle (300x250), full banner (468x60) and leaderboard (728x90).
 
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#banner-ads-component)
+
 ### Interstitial
 
 Interstitial ads are full-screen ads that cover the interface of an app until closed by the user.
