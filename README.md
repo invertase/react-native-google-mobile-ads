@@ -79,7 +79,7 @@ Banner (320x50), Large banner (320x100), Medium rectangle (300x250), full banner
 
 Interstitial ads are full-screen ads that cover the interface of an app until closed by the user.
 
-<img width="400" src="https://developers.google.com/static/admob/images/format-interstitial.svg" alt="Interstitial">
+<img width="300" src="https://developers.google.com/static/admob/images/format-interstitial.svg" alt="Interstitial">
 
 [Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#interstitial-ads)
 
@@ -87,7 +87,7 @@ Interstitial ads are full-screen ads that cover the interface of an app until cl
 
 Rewarded ads are ads that users have the option of interacting with in exchange for in-app rewards.
 
-<img width="400" src="https://developers.google.com/static/admob/images/format-rewarded.svg" alt="Rewarded">
+<img width="300" src="https://developers.google.com/static/admob/images/format-rewarded.svg" alt="Rewarded">
 
 [Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#rewarded-ads)
 
@@ -96,7 +96,7 @@ Rewarded ads are ads that users have the option of interacting with in exchange 
 Rewarded interstitial is a type of incentivized ad format that allows you offer rewards for ads that appear automatically during natural app transitions.
 Unlike rewarded ads, users aren't required to opt-in to view a rewarded interstitial.
 
-<img width="400" src="https://developers.google.com/static/admob/images/format-rewarded-interstitial.svg" alt="Rewarded interstitial">
+<img width="300" src="https://developers.google.com/static/admob/images/format-rewarded-interstitial.svg" alt="Rewarded interstitial">
 
 [Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#rewarded-interstitial-ads)
 
