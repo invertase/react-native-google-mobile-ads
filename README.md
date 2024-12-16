@@ -36,7 +36,11 @@ React Native Google Mobile Ads is built with three key principals in mind;
 
 App open ads are a special ad format intended for publishers wishing to monetize their app load screens.
 
-![App open ad](https://developers.google.com/static/admob/images/app-open-ad.png)
+<img src="https://developers.google.com/static/admob/images/app-open-ad.png" alt="App Open Ad Example" style="max-width: 100px; height: auto;">
+
+### Banner
+
+Banner ads are rectangular ads that occupy a portion of an app's layout.
 
 | **Ad Format**             | **Description**                                                                                                                                                                                                                      |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
