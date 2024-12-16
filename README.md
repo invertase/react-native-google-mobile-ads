@@ -54,13 +54,13 @@ Inline adaptive banners are larger, taller banners compared to anchored adaptive
 They are of variable height, and can be as tall as the device screen.
 They are intended to be placed in scrolling content.
 
-<img width="200" src="https://developers.google.com/static/admob/images/inline-adaptive.png" alt="Inline adaptive">
+<img width="600" src="https://developers.google.com/static/admob/images/inline-adaptive.png" alt="Inline adaptive">
 
 #### Collapsible
 
 Collapsible banner ads are intended to improve performance of anchored ads that are otherwise a smaller size.
 
-<img width="200" src="https://developers.google.com/static/admob/images/collapsible-banner.png" alt="collapsible banner">
+<img width="400" src="https://developers.google.com/static/admob/images/collapsible-banner.png" alt="collapsible banner">
 
 #### Fixed size
 
