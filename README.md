@@ -32,9 +32,14 @@ React Native Google Mobile Ads is built with three key principals in mind;
 
 ## Ad formats
 
+### App open
+
+App open ads are a special ad format intended for publishers wishing to monetize their app load screens.
+
+![App open ad](https://developers.google.com/static/admob/images/app-open-ad.png)
+
 | **Ad Format**             | **Description**                                                                                                                                                                                                                      |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **App Open**              | App open ads are a special ad format intended for publishers wishing to monetize their app load screens.                                                                                                                             |
 | **Banner Ads**            | Banner ads are rectangular ads that occupy a portion of an app's layout.                                                                                                                                                             |
 | - **Anchored Adaptive**   | A dynamically sized banner that is full-width and auto-height.                                                                                                                                                                       |
 | - **Inline Adaptive**     | Inline adaptive banners are larger, taller banners compared to anchored adaptive banners. They are of variable height, and can be as tall as the device screen. They are intended to be placed in scrolling content.                 |
