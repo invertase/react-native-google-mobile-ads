@@ -394,8 +394,10 @@ export interface AdsConsentInterface {
   /**
    * Helper method to call the UMP SDK methods to request consent information and load/present a
    * consent form if necessary.
+   *
+   * @param options An AdsConsentInfoOptions interface.
    */
-  gatherConsent(): Promise<AdsConsentInfo>;
+  gatherConsent(options?: AdsConsentInfoOptions): Promise<AdsConsentInfo>;
 
   /**
    * Returns the value stored under the `IABTCF_TCString` key
@@ -520,13 +522,10 @@ export interface Spec extends TurboModule {
   showPrivacyOptionsForm(): Promise<AdsConsentInfo>;
   loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo>;
   getConsentInfo(): Promise<AdsConsentInfo>;
-  gatherConsent(): Promise<AdsConsentInfo>;
   getTCString(): Promise<string>;
-  getTCModel(): Promise<TCModel>;
   getGdprApplies(): Promise<boolean>;
   getPurposeConsents(): Promise<string>;
   getPurposeLegitimateInterests(): Promise<string>;
-  getUserChoices(): Promise<AdsConsentUserChoices>;
   reset(): void;
 }
 
