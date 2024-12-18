@@ -189,6 +189,8 @@ After you have received the most up-to-date consent status, call `loadAndShowCon
 If the consent status is required, the SDK loads a form and immediately presents it.
 The completion handler is called after the form is dismissed. If consent is not required, the completion handler is called immediately.
 
+To make it easier we added a helper method `gatherConsent` that combines requesting consent information and loading/presenting a consent form if necessary.
+
 Before requesting ads in your app, check if you have obtained consent from the user using `canRequestAds`.
 If an error occurs during the consent gathering process, you should still attempt to request ads.
 The UMP SDK uses the consent status from the previous session.
