@@ -1,3 +1,10 @@
+### [14.7.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.7.1...v14.7.2) (2024-12-18)
+
+
+### Bug Fixes
+
+* gatherConsent missing options, remove js helpers from native module spec ([46145b9](https://github.com/invertase/react-native-google-mobile-ads/commit/46145b9abe2a2d6c3a1456ac3e8b265cca49c30a))
+
 ### [14.7.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.7.0...v14.7.1) (2024-12-12)
 
 
