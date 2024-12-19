@@ -48,6 +48,10 @@ export interface BannerAdProps {
    */
   size: BannerAdSize | string;
 
+  /**
+   * Limit inline adaptive banner height.
+   * By default, inline adaptive banners instantiated without a maxHeight value have a maxHeight equal to the device height.
+   */
   maxHeight?: number;
   /**
    * The request options for this banner.
