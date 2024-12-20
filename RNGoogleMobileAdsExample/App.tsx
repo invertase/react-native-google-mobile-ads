@@ -186,7 +186,7 @@ class BannerTest implements Test {
   bannerAdSize: BannerAdSize | string;
   maxHeight?: number;
   
-  constructor(bannerAdSize, maxHeight: number | undefined = undefined) {
+  constructor(bannerAdSize, maxHeight?: number) {
     this.bannerAdSize = bannerAdSize;
     this.bannerRef = React.createRef();
     this.maxHeight = maxHeight;
