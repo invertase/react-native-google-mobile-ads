@@ -58,8 +58,6 @@ public class ReactNativeGoogleMobileAdsCommon {
     if (maxAdHeight > 0) {
         return AdSize.getInlineAdaptiveBannerAdSize(adWidth, Math.round(Math.max(maxAdHeight, 32)));
     }
-    return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
-        reactViewGroup.getContext(), adWidth);
         return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
             reactViewGroup.getContext(), adWidth);
       }
