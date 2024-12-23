@@ -185,9 +185,8 @@ class InterstitialTest implements Test {
 class BannerTest implements Test {
   bannerAdSize: BannerAdSize | string;
 
-  constructor(bannerAdSize) {
+  constructor(bannerAdSize: BannerAdSize | string) {
     this.bannerAdSize = bannerAdSize;
-    this.bannerRef = React.createRef();
   }
 
   getPath(): string {
@@ -205,30 +204,11 @@ class BannerTest implements Test {
 
   render(onMount: (component: any) => void): React.ReactNode {
     return (
-      <View ref={onMount}>
-        <BannerAd
-          ref={this.bannerRef}
-          unitId={
-            this.bannerAdSize.includes('ADAPTIVE_BANNER')
-              ? TestIds.ADAPTIVE_BANNER
-              : TestIds.BANNER
-          }
-          size={this.bannerAdSize}
-          onPaid={(event: PaidEvent) => {
-            console.log(
-              `Paid: ${event.value} ${event.currency} (precision ${
-                RevenuePrecisions[event.precision]
-              }})`,
-            );
-          }}
-        />
-        <Button
-          title="reload"
-          onPress={() => {
-            this.bannerRef.current?.load();
-          }}
-        />
-      </View>
+      <BannerContainer
+        ref={onMount}
+        bannerAdSize={this.bannerAdSize}
+      />
+
     );
   }
 
@@ -241,6 +221,58 @@ class BannerTest implements Test {
     } finally {
       complete(results);
     }
+  }
+}
+
+
+class BannerContainer extends React.Component<{ bannerAdSize: string }, { enableContainerAdaptiveMode: boolean }> {
+  state = {
+    enableContainerAdaptiveMode: true
+  }
+  bannerRef = React.createRef();
+
+
+  render(): React.ReactNode {
+    return (
+      <>
+        <View style={{ width: "50%"}}>
+          <BannerAd
+            ref={this.bannerRef}
+            unitId={
+              this.props.bannerAdSize.includes('ADAPTIVE_BANNER')
+                ? TestIds.ADAPTIVE_BANNER
+                : TestIds.BANNER
+            }
+            size={this.props.bannerAdSize}
+            adaptiveMode={this.state.enableContainerAdaptiveMode ? "CONTAINER" : "MAIN_SCREEN"}
+            onPaid={(event: PaidEvent) => {
+              console.log(
+                `Paid: ${event.value} ${event.currency} (precision ${RevenuePrecisions[event.precision]
+                }})`,
+              );
+            }}
+          />
+        </View>
+        <Button
+          title="reload"
+          onPress={() => {
+            this.bannerRef.current?.load();
+          }}
+        />
+        <Button
+          title={
+            this.state.enableContainerAdaptiveMode
+              ? "Adapt to main screen"
+              : "Adapt to container"
+          }
+          onPress={() => {
+            this.setState(state => ({
+              enableContainerAdaptiveMode: !state.enableContainerAdaptiveMode
+            }))
+          }}
+        />
+      </>
+    )
   }
 }
 

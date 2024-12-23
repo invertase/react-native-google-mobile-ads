@@ -39,6 +39,8 @@ RCT_EXPORT_VIEW_PROPERTY(request, NSString);
 
 RCT_EXPORT_VIEW_PROPERTY(manualImpressionsEnabled, BOOL);
 
+RCT_EXPORT_VIEW_PROPERTY(adaptiveMode, NSString);
+
 RCT_EXPORT_VIEW_PROPERTY(onNativeEvent, RCTBubblingEventBlock);
 
 RCT_EXPORT_METHOD(recordManualImpression : (nonnull NSNumber *)reactTag) {

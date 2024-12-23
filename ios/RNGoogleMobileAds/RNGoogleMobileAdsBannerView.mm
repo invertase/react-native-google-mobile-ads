@@ -44,6 +44,27 @@ using namespace facebook::react;
   }
 }
 
+- (void)layoutSubviews {
+  [super layoutSubviews];
+
+  CGFloat width = self.frame.size.width;
+
+  if (width == _viewWidth) {
+    return;
+  }
+
+  _viewWidth = width;
+
+  const auto &props = *std::static_pointer_cast<RNGoogleMobileAdsBannerViewProps const>(_props);
+
+  NSString *adaptiveMode = [[NSString alloc] initWithUTF8String:props.adaptiveMode.c_str()];
+
+  if ([adaptiveMode isEqualToString:@"CONTAINER"]) {
+    [self updateSizes:props.sizes withAdaptiveMode:adaptiveMode];
+    [self requestAd];
+  }
+}
+
 - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps {
   const auto &oldViewProps =
       *std::static_pointer_cast<RNGoogleMobileAdsBannerViewProps const>(_props);
@@ -57,18 +78,12 @@ using namespace facebook::react;
     propsChanged = true;
   }
 
-  if (oldViewProps.sizes != newViewProps.sizes) {
-    NSMutableArray *adSizes = [NSMutableArray arrayWithCapacity:newViewProps.sizes.size()];
-    for (auto i = 0; i < newViewProps.sizes.size(); i++) {
-      NSString *jsonValue = [[NSString alloc] initWithUTF8String:newViewProps.sizes[i].c_str()];
-      GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue];
-      if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
-        RCTLogWarn(@"Invalid adSize %@", jsonValue);
-      } else {
-        [adSizes addObject:NSValueFromGADAdSize(adSize)];
-      }
-    }
-    _sizes = adSizes;
+  if (oldViewProps.sizes != newViewProps.sizes ||
+      oldViewProps.adaptiveMode != newViewProps.adaptiveMode) {
+    NSString *adaptiveMode =
+        [[NSString alloc] initWithUTF8String:newViewProps.adaptiveMode.c_str()];
+
+    [self updateSizes:newViewProps.sizes withAdaptiveMode:adaptiveMode];
     propsChanged = true;
   }
 
@@ -143,13 +158,20 @@ using namespace facebook::react;
   if (_unitId == nil || _sizes == nil || _request == nil || _manualImpressionsEnabled == nil) {
     [self setRequested:NO];
     return;
-  } else {
-    [self initBanner:GADAdSizeFromNSValue(_sizes[0])];
-    [self addSubview:_banner];
-    _banner.adUnitID = _unitId;
-    [self setRequested:YES];
-    [self load];
   }
+
+  CGSize cgSize = CGSizeFromGADAdSize(GADAdSizeFromNSValue(_sizes[0]));
+
+  if (cgSize.width == 0) {
+    [self setRequested:NO];
+    return;
+  }
+
+  [self initBanner:GADAdSizeFromNSValue(_sizes[0])];
+  [self addSubview:_banner];
+  _banner.adUnitID = _unitId;
+  [self setRequested:YES];
+  [self load];
 }
 
 - (void)load {
@@ -176,6 +198,24 @@ using namespace facebook::react;
   if ([_banner class] == [GAMBannerView class]) {
     [((GAMBannerView *)_banner) recordImpression];
   }
+}
+
+- (void)updateSizes:(const std::vector<std::string>)sizes
+    withAdaptiveMode:(NSString *)adaptiveMode {
+  NSMutableArray *adSizes = [NSMutableArray arrayWithCapacity:sizes.size()];
+  for (auto i = 0; i < sizes.size(); i++) {
+    NSString *jsonValue = [[NSString alloc] initWithUTF8String:sizes[i].c_str()];
+    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue
+                                              withAdaptiveMode:adaptiveMode
+                                                 withViewWidth:_viewWidth];
+    if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
+      RCTLogWarn(@"Invalid adSize %@", jsonValue);
+    } else {
+      [adSizes addObject:NSValueFromGADAdSize(adSize)];
+    }
+  }
+
+  _sizes = adSizes;
 }
 
 #pragma mark - Events

@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RNGoogleMobileAdsBannerView
     : RCTViewComponentView <GADBannerViewDelegate, GADAppEventDelegate>
 
+@property CGFloat viewWidth;
+
 @property GADBannerView *banner;
 @property(nonatomic, assign) BOOL requested;
 

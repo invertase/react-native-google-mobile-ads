@@ -73,7 +73,15 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @Nonnull
   @Override
   public ReactNativeAdView createViewInstance(@Nonnull ThemedReactContext themedReactContext) {
-    return new ReactNativeAdView(themedReactContext);
+    ReactNativeAdView reactViewGroup = new ReactNativeAdView(themedReactContext);
+
+    reactViewGroup.setWidthChangedConsumer(
+        (width) -> {
+          this.updateSizes(reactViewGroup);
+          this.requestAd(reactViewGroup);
+        });
+
+    return reactViewGroup;
   }
 
   @Override
@@ -120,29 +128,29 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @ReactProp(name = "sizes")
   public void setSizes(ReactNativeAdView reactViewGroup, ReadableArray value) {
-    List<AdSize> sizeList = new ArrayList<>();
+    ArrayList<String> sizeList = new ArrayList<>();
+
     for (Object size : value.toArrayList()) {
       if (size instanceof String) {
-        String sizeString = (String) size;
-        sizeList.add(ReactNativeGoogleMobileAdsCommon.getAdSize(sizeString, reactViewGroup));
+        sizeList.add((String) size);
       }
     }
 
-    if (sizeList.size() > 0 && !sizeList.contains(AdSize.FLUID)) {
-      AdSize adSize = sizeList.get(0);
-      WritableMap payload = Arguments.createMap();
-      payload.putDouble("width", adSize.getWidth());
-      payload.putDouble("height", adSize.getHeight());
-      sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
-    }
-
-    reactViewGroup.setSizes(sizeList);
+    reactViewGroup.setRawSizes(sizeList);
+    this.updateSizes(reactViewGroup);
     reactViewGroup.setPropsChanged(true);
   }
 
   @ReactProp(name = "manualImpressionsEnabled")
   public void setManualImpressionsEnabled(ReactNativeAdView reactViewGroup, boolean value) {
     reactViewGroup.setManualImpressionsEnabled(value);
+    reactViewGroup.setPropsChanged(true);
+  }
+
+  @ReactProp(name = "adaptiveMode")
+  public void setAdaptiveMode(ReactNativeAdView reactViewGroup, String value) {
+    reactViewGroup.setAdaptiveMode(value);
+    this.updateSizes(reactViewGroup);
     reactViewGroup.setPropsChanged(true);
   }
 
@@ -167,6 +175,23 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       reactViewGroup.removeView(adView);
     }
     super.onDropViewInstance(reactViewGroup);
+  }
+
+  private void updateSizes(ReactNativeAdView reactViewGroup) {
+    List<AdSize> sizeList = new ArrayList<>();
+    for (String size : reactViewGroup.getRawSizes()) {
+      sizeList.add(ReactNativeGoogleMobileAdsCommon.getAdSize(size, reactViewGroup));
+    }
+
+    if (sizeList.size() > 0 && !sizeList.contains(AdSize.FLUID)) {
+      AdSize adSize = sizeList.get(0);
+      WritableMap payload = Arguments.createMap();
+      payload.putDouble("width", adSize.getWidth());
+      payload.putDouble("height", adSize.getHeight());
+      sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
+    }
+
+    reactViewGroup.setSizes(sizeList);
   }
 
   private BaseAdView initAdView(ReactNativeAdView reactViewGroup) {
@@ -282,7 +307,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     AdRequest request = reactViewGroup.getRequest();
     Boolean manualImpressionsEnabled = reactViewGroup.getManualImpressionsEnabled();
 
-    if (sizes == null || unitId == null || request == null || manualImpressionsEnabled == null) {
+    if (sizes == null
+        || sizes.get(0).getWidth() == 0
+        || unitId == null
+        || request == null
+        || manualImpressionsEnabled == null) {
       return;
     }
 

@@ -54,6 +54,11 @@ export interface BannerAdProps {
   requestOptions?: RequestOptions;
 
   /**
+   * By default adaptive ad size width is equal to the main screen width.
+   */
+  adaptiveMode?: 'CONTAINER' | 'MAIN_SCREEN';
+
+  /**
    * When an ad has finished loading.
    */
   onAdLoaded?: (dimensions: { width: number; height: number }) => void;

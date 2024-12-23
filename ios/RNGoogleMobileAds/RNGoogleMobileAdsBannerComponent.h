@@ -24,13 +24,17 @@
 
 @interface RNGoogleMobileAdsBannerComponent : RCTView <GADBannerViewDelegate, GADAppEventDelegate>
 
+@property CGFloat viewWidth;
+
 @property GADBannerView *banner;
 @property(nonatomic, assign) BOOL requested;
 
+@property(nonatomic, copy) NSArray *rawSizes;
 @property(nonatomic, copy) NSArray *sizes;
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
 @property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
+@property(nonatomic, copy) NSString *adaptiveMode;
 @property(nonatomic, assign) BOOL propsChanged;
 
 @property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;

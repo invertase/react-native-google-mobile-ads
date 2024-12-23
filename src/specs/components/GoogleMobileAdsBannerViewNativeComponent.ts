@@ -22,6 +22,7 @@ export interface NativeProps extends ViewProps {
   unitId: string;
   request: string;
   manualImpressionsEnabled: boolean;
+  adaptiveMode: string;
   onNativeEvent: BubblingEventHandler<NativeEvent>;
 }
 

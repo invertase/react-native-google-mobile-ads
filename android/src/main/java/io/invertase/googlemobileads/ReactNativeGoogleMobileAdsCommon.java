@@ -20,7 +20,6 @@ package io.invertase.googlemobileads;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Display;
-import android.view.ViewGroup;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
@@ -30,6 +29,7 @@ import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest;
+import io.invertase.googlemobileads.common.ReactNativeAdView;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
 import java.util.Map;
@@ -40,17 +40,49 @@ import javax.annotation.Nullable;
 
 public class ReactNativeGoogleMobileAdsCommon {
 
-  static AdSize getAdSizeForAdaptiveBanner(String preDefinedAdSize, ViewGroup reactViewGroup) {
+  static DisplayMetrics getDisplayOutMetrics(ReactNativeAdView reactViewGroup) {
+    Display display =
+        Objects.requireNonNull(((ReactContext) reactViewGroup.getContext()).getCurrentActivity())
+            .getWindowManager()
+            .getDefaultDisplay();
+
+    DisplayMetrics outMetrics = new DisplayMetrics();
+    display.getMetrics(outMetrics);
+
+    return outMetrics;
+  }
+
+  static int getWindowWidth(ReactNativeAdView reactViewGroup) {
+    DisplayMetrics outMetrics =
+        ReactNativeGoogleMobileAdsCommon.getDisplayOutMetrics(reactViewGroup);
+    return (int) (outMetrics.widthPixels / outMetrics.density);
+  }
+
+  static int getViewWidth(ReactNativeAdView reactViewGroup) {
+    DisplayMetrics outMetrics =
+        ReactNativeGoogleMobileAdsCommon.getDisplayOutMetrics(reactViewGroup);
+    return (int) (reactViewGroup.getViewWidth() / outMetrics.density);
+  }
+
+  static AdSize getAdSizeForAdaptiveBanner(
+      String preDefinedAdSize, ReactNativeAdView reactViewGroup) {
 
     try {
-      Display display =
-          Objects.requireNonNull(((ReactContext) reactViewGroup.getContext()).getCurrentActivity())
-              .getWindowManager()
-              .getDefaultDisplay();
+      String adaptiveMode = reactViewGroup.getAdaptiveMode();
 
-      DisplayMetrics outMetrics = new DisplayMetrics();
-      display.getMetrics(outMetrics);
-      int adWidth = (int) (outMetrics.widthPixels / outMetrics.density);
+      if (adaptiveMode == null) {
+        return new AdSize(0, 0);
+      }
+
+      int adWidth = getViewWidth(reactViewGroup);
+
+      if (!adaptiveMode.equals("CONTAINER")) {
+        adWidth = ReactNativeGoogleMobileAdsCommon.getWindowWidth(reactViewGroup);
+      }
+
+      if (adWidth == 0) {
+        return new AdSize(0, 0);
+      }
 
       if ("INLINE_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
         return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
@@ -63,7 +95,7 @@ public class ReactNativeGoogleMobileAdsCommon {
     }
   }
 
-  static AdSize getAdSize(String preDefinedAdSize, ViewGroup reactViewGroup) {
+  static AdSize getAdSize(String preDefinedAdSize, ReactNativeAdView reactViewGroup) {
     if (preDefinedAdSize.matches(
         "ADAPTIVE_BANNER|ANCHORED_ADAPTIVE_BANNER|INLINE_ADAPTIVE_BANNER")) {
       return ReactNativeGoogleMobileAdsCommon.getAdSizeForAdaptiveBanner(

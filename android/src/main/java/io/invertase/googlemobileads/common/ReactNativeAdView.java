@@ -5,6 +5,7 @@ import android.widget.FrameLayout;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Using FrameLayout instead of ReactViewGroup
@@ -18,10 +19,14 @@ import java.util.List;
 public class ReactNativeAdView extends FrameLayout {
   private AdRequest request;
   private List<AdSize> sizes;
+  private List<String> rawSizes;
   private String unitId;
   private boolean manualImpressionsEnabled;
   private boolean propsChanged;
   private boolean isFluid;
+  private String adaptiveMode;
+  private int viewWidth = 0;
+  private Consumer<Integer> widthChangedConsumer;
 
   @Override
   public void requestLayout() {
@@ -74,6 +79,14 @@ public class ReactNativeAdView extends FrameLayout {
     return this.sizes;
   }
 
+  public void setRawSizes(List<String> rawSizes) {
+    this.rawSizes = rawSizes;
+  }
+
+  public List<String> getRawSizes() {
+    return this.rawSizes;
+  }
+
   public void setUnitId(String unitId) {
     this.unitId = unitId;
   }
@@ -104,5 +117,34 @@ public class ReactNativeAdView extends FrameLayout {
 
   public boolean getIsFluid() {
     return this.isFluid;
+  }
+
+  public void setAdaptiveMode(String adaptiveMode) {
+    this.adaptiveMode = adaptiveMode;
+  }
+
+  public String getAdaptiveMode() {
+    return this.adaptiveMode;
+  }
+
+  public int getViewWidth() {
+    return this.viewWidth;
+  }
+
+  public void setWidthChangedConsumer(Consumer<Integer> consumer) {
+    this.widthChangedConsumer = consumer;
+  }
+
+  @Override
+  protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+    super.onSizeChanged(w, h, oldw, oldh);
+
+    this.viewWidth = w;
+
+    if (!adaptiveMode.equals("CONTAINER") || widthChangedConsumer == null || w == oldw) {
+      return;
+    }
+
+    widthChangedConsumer.accept(viewWidth);
   }
 }

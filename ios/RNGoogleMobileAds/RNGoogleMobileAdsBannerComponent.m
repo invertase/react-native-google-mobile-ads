@@ -23,6 +23,23 @@
 
 @implementation RNGoogleMobileAdsBannerComponent
 
+- (void)layoutSubviews {
+  [super layoutSubviews];
+
+  CGFloat width = self.frame.size.width;
+
+  if (width == _viewWidth) {
+    return;
+  }
+
+  _viewWidth = width;
+
+  if ([_adaptiveMode isEqualToString:@"CONTAINER"]) {
+    [self updateSizes];
+    [self requestAd];
+  }
+}
+
 - (void)dealloc {
   if (_banner) {
     [_banner removeFromSuperview];
@@ -65,16 +82,8 @@
 }
 
 - (void)setSizes:(NSArray *)sizes {
-  __block NSMutableArray *adSizes = [[NSMutableArray alloc] initWithCapacity:sizes.count];
-  [sizes enumerateObjectsUsingBlock:^(id jsonValue, NSUInteger idx, __unused BOOL *stop) {
-    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue];
-    if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
-      RCTLogWarn(@"Invalid adSize %@", jsonValue);
-    } else {
-      [adSizes addObject:NSValueFromGADAdSize(adSize)];
-    }
-  }];
-  _sizes = adSizes;
+  _rawSizes = sizes;
+  [self updateSizes];
   _propsChanged = true;
 }
 
@@ -93,6 +102,27 @@
   _propsChanged = true;
 }
 
+- (void)setAdaptiveMode:(NSString *)adaptiveMode {
+  _adaptiveMode = adaptiveMode;
+  [self updateSizes];
+  _propsChanged = true;
+}
+
+- (void)updateSizes {
+  __block NSMutableArray *adSizes = [[NSMutableArray alloc] initWithCapacity:_rawSizes.count];
+  [_rawSizes enumerateObjectsUsingBlock:^(id jsonValue, NSUInteger idx, __unused BOOL *stop) {
+    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue
+                                              withAdaptiveMode:_adaptiveMode
+                                                 withViewWidth:_viewWidth];
+    if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
+      RCTLogWarn(@"Invalid adSize %@", jsonValue);
+    } else {
+      [adSizes addObject:NSValueFromGADAdSize(adSize)];
+    }
+  }];
+  _sizes = adSizes;
+}
+
 - (GADAdSize)getInitialAdSize {
   for (NSValue *sizeValue in _sizes) {
     GADAdSize adSize = GADAdSizeFromNSValue(sizeValue);
@@ -109,6 +139,13 @@
 #endif
 
   if (_unitId == nil || _sizes == nil || _request == nil || _manualImpressionsEnabled == nil) {
+    [self setRequested:NO];
+    return;
+  }
+
+  CGSize cgSize = CGSizeFromGADAdSize(GADAdSizeFromNSValue(_sizes[0]));
+
+  if (cgSize.width == 0) {
     [self setRequested:NO];
     return;
   }

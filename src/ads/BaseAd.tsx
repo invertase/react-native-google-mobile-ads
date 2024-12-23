@@ -33,7 +33,18 @@ const sizeRegex = /([0-9]+)x([0-9]+)/;
 export const BaseAd = React.forwardRef<
   React.ElementRef<typeof GoogleMobileAdsBannerView>,
   GAMBannerAdProps
->(({ unitId, sizes, requestOptions, manualImpressionsEnabled, ...props }, ref) => {
+>(
+  (
+    {
+      unitId,
+      sizes,
+      requestOptions,
+      manualImpressionsEnabled,
+      adaptiveMode = 'MAIN_SCREEN',
+      ...props
+    },
+    ref,
+  ) => {
   const [dimensions, setDimensions] = useState<(number | DimensionValue)[]>([0, 0]);
 
   const debouncedSetDimensions = debounce(setDimensions, 100);
@@ -154,7 +165,7 @@ export const BaseAd = React.forwardRef<
     }
   }
 
-  const style = sizes.includes(GAMBannerAdSize.FLUID)
+  const style = shouldAdaptToContainer(sizes, adaptiveMode)
     ? {
         width: '100%' as DimensionValue,
         height: dimensions[1],
@@ -172,8 +183,31 @@ export const BaseAd = React.forwardRef<
       unitId={unitId}
       request={JSON.stringify(validatedRequestOptions)}
       manualImpressionsEnabled={!!manualImpressionsEnabled}
+      adaptiveMode={adaptiveMode}
       onNativeEvent={onNativeEvent}
     />
   );
 });
+
+const shouldAdaptToContainer = (
+  sizes: GAMBannerAdProps['sizes'],
+  adaptiveMode: GAMBannerAdProps['adaptiveMode'],
+) => {
+  if (sizes.includes(GAMBannerAdSize.FLUID)) {
+    return true;
+  }
+
+  if (adaptiveMode === 'MAIN_SCREEN') {
+    return false;
+  }
+
+  const adaptiveSizes: string[] = [
+    GAMBannerAdSize.ANCHORED_ADAPTIVE_BANNER,
+    GAMBannerAdSize.INLINE_ADAPTIVE_BANNER,
+    GAMBannerAdSize.ADAPTIVE_BANNER,
+  ];
+
+  return sizes.some(size => adaptiveSizes.includes(size));
+};
+
 BaseAd.displayName = 'BaseAd';

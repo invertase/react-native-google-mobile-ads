@@ -162,7 +162,9 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
   [[RNRCTEventEmitter shared] sendEventWithName:event body:payload];
 }
 
-+ (GADAdSize)stringToAdSize:(NSString *)value {
++ (GADAdSize)stringToAdSize:(NSString *)value
+           withAdaptiveMode:(NSString *)adaptiveMode
+              withViewWidth:(CGFloat)viewWidth {
   NSError *error = nil;
   NSRegularExpression *regex =
       [NSRegularExpression regularExpressionWithPattern:@"([0-9]+)x([0-9]+)"
@@ -199,16 +201,16 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
   } else if ([value isEqualToString:@"ADAPTIVE_BANNER"] ||
              [value isEqualToString:@"ANCHORED_ADAPTIVE_BANNER"] ||
              [value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
-    CGRect frame = [[UIScreen mainScreen] bounds];
-    if (@available(iOS 11.0, *)) {
-      frame =
-          UIEdgeInsetsInsetRect(frame, [UIApplication sharedApplication].keyWindow.safeAreaInsets);
+    CGFloat width = viewWidth;
+
+    if ([adaptiveMode isEqualToString:@"MAIN_SCREEN"]) {
+      width = [self getMainScreenWidth];
     }
-    CGFloat viewWidth = frame.size.width;
+
     if ([value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
-      return GADCurrentOrientationInlineAdaptiveBannerAdSizeWithWidth(viewWidth);
+      return GADCurrentOrientationInlineAdaptiveBannerAdSizeWithWidth(width);
     }
-    return GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
+    return GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(width);
   } else {
     return GADAdSizeBanner;
   }
@@ -230,6 +232,17 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     presentedController = controller.presentedViewController;
   }
   return controller;
+}
+
++ (CGFloat)getMainScreenWidth {
+  CGRect frame = [[UIScreen mainScreen] bounds];
+
+  if (@available(iOS 11.0, *)) {
+    frame =
+        UIEdgeInsetsInsetRect(frame, [UIApplication sharedApplication].keyWindow.safeAreaInsets);
+  }
+
+  return frame.size.width;
 }
 
 @end
