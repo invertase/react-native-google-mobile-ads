@@ -80,8 +80,8 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     reloadJob?.cancel()
     reloadJob = CoroutineScope(Dispatchers.Main).launch {
       delay(100)
-      requestLayout()
       nativeAd?.let { nativeAdView.setNativeAd(it) }
+      nativeAdView.rootView.requestLayout()
     }
   }
 
