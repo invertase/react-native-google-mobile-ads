@@ -74,6 +74,14 @@ using namespace facebook::react;
   return NO;
 }
 
+- (void)mountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView index:(NSInteger)index {
+  [_nativeAdView insertSubview:childComponentView atIndex:index];
+}
+
+- (void)unmountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView index:(NSInteger)index {
+  [childComponentView removeFromSuperview];
+}
+
 - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps {
   const auto &oldViewProps =
       *std::static_pointer_cast<RNGoogleMobileAdsNativeViewProps const>(_props);
@@ -137,6 +145,7 @@ using namespace facebook::react;
     };
     NSString *property = viewMappings[assetKey];
     if (property) {
+      view.userInteractionEnabled = NO;
       [_nativeAdView setValue:view forKey:property];
       [self reloadAd];
     }
