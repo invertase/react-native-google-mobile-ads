@@ -32,15 +32,15 @@ class ReactNativeGoogleMobileAdsModule(
 
   override fun getName() = NAME
 
-  override fun getConstants(): Map<String, Any> {
+  override fun getTypedExportedConstants(): Map<String, Any> {
     return mapOf(
-        // Precision types in ad revenue events.
-        // See:
-        // https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
-        "REVENUE_PRECISION_UNKNOWN" to AdValue.PrecisionType.UNKNOWN,
-        "REVENUE_PRECISION_ESTIMATED" to AdValue.PrecisionType.ESTIMATED,
-        "REVENUE_PRECISION_PUBLISHER_PROVIDED" to AdValue.PrecisionType.PUBLISHER_PROVIDED,
-        "REVENUE_PRECISION_PRECISE" to AdValue.PrecisionType.PRECISE
+      // Precision types in ad revenue events.
+      // See:
+      // https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
+      "REVENUE_PRECISION_UNKNOWN" to AdValue.PrecisionType.UNKNOWN,
+      "REVENUE_PRECISION_ESTIMATED" to AdValue.PrecisionType.ESTIMATED,
+      "REVENUE_PRECISION_PUBLISHER_PROVIDED" to AdValue.PrecisionType.PUBLISHER_PROVIDED,
+      "REVENUE_PRECISION_PRECISE" to AdValue.PrecisionType.PRECISE
     )
   }
 
