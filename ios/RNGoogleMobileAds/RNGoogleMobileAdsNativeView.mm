@@ -74,11 +74,13 @@ using namespace facebook::react;
   return NO;
 }
 
-- (void)mountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView index:(NSInteger)index {
+- (void)mountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView
+                          index:(NSInteger)index {
   [_nativeAdView insertSubview:childComponentView atIndex:index];
 }
 
-- (void)unmountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView index:(NSInteger)index {
+- (void)unmountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView
+                            index:(NSInteger)index {
   [childComponentView removeFromSuperview];
 }
 
