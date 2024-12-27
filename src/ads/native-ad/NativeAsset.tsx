@@ -33,23 +33,25 @@ export enum NativeAssetType {
   IMAGE = 'image',
 }
 
-export type NativeAssetProps = { assetType: NativeAssetType; children: ReactElement };
+export type NativeAssetProps = {
+  assetType: NativeAssetType;
+  children: ReactElement;
+};
 
 export const NativeAsset = (props: NativeAssetProps) => {
   const { assetType, children } = props;
   const { viewRef } = useContext(NativeAdContext);
-  const ref = useRef(null);
+  const ref = useRef<React.Component>(null);
 
   useEffect(() => {
-    const node = ref.current;
-    if (!node || !viewRef.current) {
+    if (!viewRef.current) {
       return;
     }
+    const node = ref.current;
     const reactTag = findNodeHandle(node);
     if (reactTag) {
       Commands.registerAsset(viewRef.current, assetType, reactTag);
     }
-    // TODO: unregister asset in cleanup?
   }, [viewRef]);
 
   if (!React.isValidElement(children)) {

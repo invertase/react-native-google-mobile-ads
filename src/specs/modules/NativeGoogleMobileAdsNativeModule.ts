@@ -57,6 +57,7 @@ export type NativeAdEventPayload = {
 
 export interface Spec extends TurboModule {
   load(adUnitId: string, requestOptions: UnsafeObject): Promise<NativeAdProps>;
+  destroy(responseId: string): void;
   readonly onAdEvent: EventEmitter<NativeAdEventPayload>;
 }
 

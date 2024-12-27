@@ -94,6 +94,7 @@ export class NativeAd {
   }
 
   destroy() {
+    NativeGoogleMobileAdsNativeModule.destroy(this.responseId);
     this.nativeEventSubscription.remove();
     this.removeAllAdEventListeners();
   }

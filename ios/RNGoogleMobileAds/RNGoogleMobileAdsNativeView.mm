@@ -127,7 +127,7 @@ using namespace facebook::react;
 #ifdef RCT_NEW_ARCH_ENABLED
       GADMediaView *mediaView = ((RNGoogleMobileAdsMediaView *)view).contentView;
 #else
-      GADMediaView *mediaView = (RNGoogleMobileAdsMediaView *) view);
+      GADMediaView *mediaView = (RNGoogleMobileAdsMediaView *) view;
 #endif
       [_nativeAdView setMediaView:mediaView];
       [self reloadAd];
@@ -165,6 +165,14 @@ using namespace facebook::react;
   });
   dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC);
   dispatch_after(time, dispatch_get_main_queue(), _debouncedReload);
+}
+
+- (void)dealloc {
+  _nativeAdView = nil;
+  if (_debouncedReload != nil) {
+    dispatch_block_cancel(_debouncedReload);
+    _debouncedReload = nil;
+  }
 }
 
 @end

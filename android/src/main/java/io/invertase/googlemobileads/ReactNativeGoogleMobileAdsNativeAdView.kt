@@ -90,6 +90,13 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     post(measureAndLayout)
   }
 
+  fun destroy() {
+    reloadJob?.cancel()
+    reloadJob = null
+    nativeAdView.removeView(viewGroup)
+    nativeAdView.destroy()
+  }
+
   private val measureAndLayout = Runnable {
     measure(
       MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),

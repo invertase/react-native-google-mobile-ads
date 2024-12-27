@@ -26,7 +26,7 @@ typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable native
 @interface RNGMANativeAdHolder
     : NSObject <GADNativeAdLoaderDelegate, GADNativeAdDelegate, GADVideoControllerDelegate>
 
-@property GADNativeAd *nativeAd;
+@property(strong, nullable) GADNativeAd *nativeAd;
 
 - (instancetype)initWithNativeModule:(RNGoogleMobileAdsNativeModule *)nativeModule
                             adUnitId:(NSString *)adUnitId
@@ -34,11 +34,12 @@ typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable native
 
 - (void)loadWithCompletionHandler:(RNGMANativeAdLoadCompletionHandler)completionHandler;
 
+- (void)dispose;
+
 @end
 
 @implementation RNGoogleMobileAdsNativeModule {
-  NSMutableSet<id> *_requestedAds;
-  NSMutableDictionary<NSString *, RNGMANativeAdHolder *> *_loadedAds;
+  NSMutableDictionary<NSString *, RNGMANativeAdHolder *> *_adHolders;
 }
 
 RCT_EXPORT_MODULE();
@@ -56,8 +57,7 @@ RCT_EXPORT_MODULE();
 
 - (instancetype)init {
   if (self = [super init]) {
-    _requestedAds = [NSMutableSet set];
-    _loadedAds = [NSMutableDictionary dictionary];
+    _adHolders = [NSMutableDictionary dictionary];
   }
   return self;
 }
@@ -69,18 +69,15 @@ RCT_EXPORT_MODULE();
   RNGMANativeAdHolder *adHolder = [[RNGMANativeAdHolder alloc] initWithNativeModule:self
                                                                            adUnitId:adUnitId
                                                                      requestOptions:requestOptions];
-  [_requestedAds addObject:adHolder];
 
   [adHolder loadWithCompletionHandler:^(GADNativeAd *nativeAd, NSError *error) {
-    [_requestedAds removeObject:adHolder];
-
     if (error != nil) {
       reject(@"ERROR_LOAD", error.description, error);
       return;
     }
 
     NSString *responseId = nativeAd.responseInfo.responseIdentifier;
-    [_loadedAds setValue:adHolder forKey:responseId];
+    [_adHolders setValue:adHolder forKey:responseId];
 
     resolve(@{
       @"responseId" : responseId,
@@ -103,8 +100,13 @@ RCT_EXPORT_MODULE();
   }];
 }
 
+- (void)destroy:(NSString *)responseId {
+  [[_adHolders valueForKey:responseId] dispose];
+  [_adHolders removeObjectForKey:responseId];
+}
+
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId {
-  return [_loadedAds valueForKey:responseId].nativeAd;
+  return [_adHolders valueForKey:responseId].nativeAd;
 }
 
 @end
@@ -112,7 +114,7 @@ RCT_EXPORT_MODULE();
 #pragma mark - RNGMANativeAdHolder
 
 @implementation RNGMANativeAdHolder {
-  RNGoogleMobileAdsNativeModule *_nativeModule;
+  __weak RNGoogleMobileAdsNativeModule *_nativeModule;
   GADAdLoader *_adLoader;
   GAMRequest *_adRequest;
   RNGMANativeAdLoadCompletionHandler _completionHandler;
@@ -181,6 +183,14 @@ RCT_EXPORT_MODULE();
   [_adLoader loadRequest:_adRequest];
 }
 
+- (void)dispose {
+  _nativeAd = nil;
+  _nativeModule = nil;
+  _adLoader = nil;
+  _adRequest = nil;
+  _completionHandler = nil;
+}
+
 #pragma mark - GADNativeAdLoaderDelegate
 
 - (void)adLoader:(nonnull GADAdLoader *)adLoader
@@ -191,11 +201,13 @@ RCT_EXPORT_MODULE();
     nativeAd.mediaContent.videoController.delegate = self;
   }
   _completionHandler(nativeAd, nil);
+  _completionHandler = nil;
 }
 
 - (void)adLoader:(nonnull GADAdLoader *)adLoader
     didFailToReceiveAdWithError:(nonnull NSError *)error {
   _completionHandler(nil, error);
+  _completionHandler = nil;
 }
 
 #pragma mark - GADNativeAdDelegate
@@ -245,6 +257,9 @@ RCT_EXPORT_MODULE();
 }
 
 - (void)emitAdEvent:(NSString *)type {
+  if (_nativeModule == nil || _nativeAd == nil) {
+    return;
+  }
   [_nativeModule
       emitOnAdEvent:@{@"responseId" : _nativeAd.responseInfo.responseIdentifier, @"type" : type}];
 }

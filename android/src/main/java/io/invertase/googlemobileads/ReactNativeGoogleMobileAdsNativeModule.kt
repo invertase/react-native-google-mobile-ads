@@ -32,7 +32,7 @@ import com.google.android.gms.ads.nativead.NativeAdOptions
 class ReactNativeGoogleMobileAdsNativeModule(
   reactContext: ReactApplicationContext
 ) : NativeGoogleMobileAdsNativeModuleSpec(reactContext) {
-  private val loadedAds = HashMap<String, NativeAd>()
+  private val adHolders = HashMap<String, NativeAdHolder>()
 
   override fun getName() = NAME
 
@@ -40,7 +40,7 @@ class ReactNativeGoogleMobileAdsNativeModule(
     val holder = NativeAdHolder(adUnitId, requestOptions)
     holder.loadAd { nativeAd ->
       val responseId = nativeAd.responseInfo?.responseId ?: return@loadAd
-      loadedAds[responseId] = nativeAd
+      adHolders[responseId] = holder
 
       val data = Arguments.createMap()
       data.putString("responseId", responseId)
@@ -75,12 +75,18 @@ class ReactNativeGoogleMobileAdsNativeModule(
     }
   }
 
+  override fun destroy(responseId: String) {
+    adHolders[responseId]?.destroy()
+    adHolders.remove(responseId)
+  }
+
   fun getNativeAd(responseId: String): NativeAd? {
-    return loadedAds[responseId]
+    return adHolders[responseId]?.nativeAd
   }
 
   private inner class NativeAdHolder(private val adUnitId: String, private val requestOptions: ReadableMap) {
-    private var nativeAd: NativeAd? = null
+    var nativeAd: NativeAd? = null
+      private set
 
     private val adListener: AdListener = object : AdListener() {
       override fun onAdImpression() {
@@ -170,6 +176,11 @@ class ReactNativeGoogleMobileAdsNativeModule(
         .build()
       val adRequest = ReactNativeGoogleMobileAdsCommon.buildAdRequest(requestOptions)
       adLoader.loadAd(adRequest)
+    }
+
+    fun destroy() {
+      nativeAd?.destroy()
+      nativeAd = null
     }
 
     private fun emitAdEvent(type: String) {

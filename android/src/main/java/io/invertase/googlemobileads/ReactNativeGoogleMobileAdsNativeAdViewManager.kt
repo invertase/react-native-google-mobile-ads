@@ -40,6 +40,18 @@ class ReactNativeGoogleMobileAdsNativeAdViewManager(
 
   override fun createViewInstance(context: ThemedReactContext): ReactNativeGoogleMobileAdsNativeAdView = ReactNativeGoogleMobileAdsNativeAdView(context)
 
+  override fun onDropViewInstance(adView: ReactNativeGoogleMobileAdsNativeAdView) {
+    super.onDropViewInstance(adView)
+    adView.destroy()
+  }
+
+  override fun prepareToRecycleView(
+    reactContext: ThemedReactContext,
+    view: ReactNativeGoogleMobileAdsNativeAdView
+  ): ReactNativeGoogleMobileAdsNativeAdView? {
+    return null
+  }
+
   @ReactProp(name = "responseId")
   override fun setResponseId(adView: ReactNativeGoogleMobileAdsNativeAdView, responseId: String?) {
     adView.setResponseId(responseId)
