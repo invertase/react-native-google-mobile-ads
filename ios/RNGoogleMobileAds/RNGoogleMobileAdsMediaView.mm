@@ -81,21 +81,12 @@ using namespace facebook::react;
 
   if (oldViewProps.responseId != newViewProps.responseId) {
     NSString *responseId = [[NSString alloc] initWithUTF8String:newViewProps.responseId.c_str()];
-    GADNativeAd *nativeAd = [_nativeModule nativeAdForResponseId:responseId];
-    _mediaView.mediaContent = nativeAd.mediaContent;
-    _mediaView.contentMode = _contentMode;
+    [self setResponseId:responseId];
   }
 
   if (oldViewProps.resizeMode != newViewProps.resizeMode) {
     NSString *resizeMode = [[NSString alloc] initWithUTF8String:newViewProps.resizeMode.c_str()];
-    if ([resizeMode isEqualToString:@"cover"]) {
-      _contentMode = UIViewContentModeScaleAspectFill;
-    } else if ([resizeMode isEqualToString:@"contain"]) {
-      _contentMode = UIViewContentModeScaleAspectFit;
-    } else if ([resizeMode isEqualToString:@"stretch"]) {
-      _contentMode = UIViewContentModeScaleToFill;
-    }
-    _mediaView.contentMode = _contentMode;
+    [self setResizeMode:resizeMode];
   }
 
   [super updateProps:props oldProps:oldProps];
@@ -115,6 +106,27 @@ using namespace facebook::react;
 
 #endif  // RCT_NEW_ARCH_ENABLED
 
+#pragma mark - Common logics
+
+- (void)setResponseId:(NSString *)responseId {
+  _responseId = responseId;
+  GADNativeAd *nativeAd = [_nativeModule nativeAdForResponseId:responseId];
+  _mediaView.mediaContent = nativeAd.mediaContent;
+  _mediaView.contentMode = _contentMode;
+}
+
+- (void)setResizeMode:(NSString *)resizeMode {
+  _resizeMode = resizeMode;
+  if ([resizeMode isEqualToString:@"cover"]) {
+    _contentMode = UIViewContentModeScaleAspectFill;
+  } else if ([resizeMode isEqualToString:@"contain"]) {
+    _contentMode = UIViewContentModeScaleAspectFit;
+  } else if ([resizeMode isEqualToString:@"stretch"]) {
+    _contentMode = UIViewContentModeScaleToFill;
+  }
+  _mediaView.contentMode = _contentMode;
+}
+
 @end
 
 @implementation RNGoogleMobileAdsMediaViewManager
@@ -122,6 +134,8 @@ using namespace facebook::react;
 RCT_EXPORT_MODULE(RNGoogleMobileAdsMediaView)
 
 RCT_EXPORT_VIEW_PROPERTY(responseId, NSString)
+
+RCT_EXPORT_VIEW_PROPERTY(resizeMode, NSString)
 
 #ifndef RCT_NEW_ARCH_ENABLED
 - (UIView *)view {

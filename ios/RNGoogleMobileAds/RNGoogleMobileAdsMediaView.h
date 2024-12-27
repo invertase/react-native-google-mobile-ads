@@ -37,6 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithBridge:(RCTBridge *)bridge;
 #endif
 
+@property(nonatomic, copy) NSString *responseId;
+@property(nonatomic, copy) NSString *resizeMode;
+
 @end
 
 @interface RNGoogleMobileAdsMediaViewManager : RCTViewManager

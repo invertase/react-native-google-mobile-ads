@@ -28,19 +28,19 @@ import com.google.android.gms.ads.OnAdInspectorClosedListener
 
 class ReactNativeGoogleMobileAdsModule(
   reactContext: ReactApplicationContext
-) : NativeGoogleMobileAdsModuleSpec(reactContext) {
+) : ReactContextBaseJavaModule(reactContext) {
 
   override fun getName() = NAME
 
-  override fun getTypedExportedConstants(): Map<String, Any> {
+  override fun getConstants(): Map<String, Any> {
     return mapOf(
-      // Precision types in ad revenue events.
-      // See:
-      // https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
-      "REVENUE_PRECISION_UNKNOWN" to AdValue.PrecisionType.UNKNOWN,
-      "REVENUE_PRECISION_ESTIMATED" to AdValue.PrecisionType.ESTIMATED,
-      "REVENUE_PRECISION_PUBLISHER_PROVIDED" to AdValue.PrecisionType.PUBLISHER_PROVIDED,
-      "REVENUE_PRECISION_PRECISE" to AdValue.PrecisionType.PRECISE
+        // Precision types in ad revenue events.
+        // See:
+        // https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
+        "REVENUE_PRECISION_UNKNOWN" to AdValue.PrecisionType.UNKNOWN,
+        "REVENUE_PRECISION_ESTIMATED" to AdValue.PrecisionType.ESTIMATED,
+        "REVENUE_PRECISION_PUBLISHER_PROVIDED" to AdValue.PrecisionType.PUBLISHER_PROVIDED,
+        "REVENUE_PRECISION_PRECISE" to AdValue.PrecisionType.PRECISE
     )
   }
 
@@ -103,7 +103,8 @@ class ReactNativeGoogleMobileAdsModule(
     return builder.build()
   }
 
-  override fun initialize(promise: Promise) {
+  @ReactMethod
+  fun initialize(promise: Promise) {
     MobileAds.initialize(
       // in react-native, the Activity instance *may* go away, becoming null after initialize
       // it is not clear if that can happen here without an initialize necessarily following the Activity lifecycle
@@ -124,7 +125,8 @@ class ReactNativeGoogleMobileAdsModule(
       });
   }
 
-  override fun setRequestConfiguration(
+  @ReactMethod
+  fun setRequestConfiguration(
     requestConfiguration: ReadableMap?,
     promise: Promise
   ) {
@@ -132,7 +134,8 @@ class ReactNativeGoogleMobileAdsModule(
     promise.resolve(null)
   }
 
-  override fun openAdInspector(promise: Promise) {
+  @ReactMethod
+  fun openAdInspector(promise: Promise) {
     val activity = currentActivity
     if (activity == null) {
       promise.reject("null-activity", "Ad Inspector attempted to open but the current Activity was null.")
@@ -159,18 +162,20 @@ class ReactNativeGoogleMobileAdsModule(
     }
   }
 
-
-  override fun openDebugMenu(adUnit: String) {
+  @ReactMethod
+  fun openDebugMenu(adUnit: String) {
     currentActivity?.runOnUiThread {
       MobileAds.openDebugMenu(currentActivity!!, adUnit)
     }
   }
 
-  override fun setAppVolume(volume: Double) {
+  @ReactMethod
+  fun setAppVolume(volume: Double) {
     MobileAds.setAppVolume(volume.toFloat())
   }
 
-  override fun setAppMuted(muted: Boolean) {
+  @ReactMethod
+  fun setAppMuted(muted: Boolean) {
     MobileAds.setAppMuted(muted)
   }
 

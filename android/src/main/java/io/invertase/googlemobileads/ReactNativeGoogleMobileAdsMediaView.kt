@@ -27,7 +27,7 @@ class ReactNativeGoogleMobileAdsMediaView(
   private val context: ReactContext
 ): MediaView(context) {
   fun setResponseId(responseId: String?) {
-    val nativeModule = context.getNativeModule(ReactNativeGoogleMobileAdsNativeModule.NAME) as ReactNativeGoogleMobileAdsNativeModule?
+    val nativeModule = context.getNativeModule(ReactNativeGoogleMobileAdsNativeModule::class.java)
     nativeModule?.getNativeAd(responseId ?: "")?.let {
       this.mediaContent = it.mediaContent
       requestLayout()

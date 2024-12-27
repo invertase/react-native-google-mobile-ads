@@ -463,7 +463,7 @@ const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.GAM_NATIVE_VIDEO, {
+    NativeAd.createForAdRequest(TestIds.GAM_NATIVE, {
       aspectRatio: NativeMediaAspectRatio.LANDSCAPE,
     })
       .then(setNativeAd)

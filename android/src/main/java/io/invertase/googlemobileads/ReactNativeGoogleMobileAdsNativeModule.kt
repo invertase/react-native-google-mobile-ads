@@ -20,7 +20,9 @@ package io.invertase.googlemobileads
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.module.annotations.ReactModule
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.MediaAspectRatio
@@ -29,6 +31,7 @@ import com.google.android.gms.ads.VideoOptions
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdOptions
 
+@ReactModule(ReactNativeGoogleMobileAdsNativeModule.NAME)
 class ReactNativeGoogleMobileAdsNativeModule(
   reactContext: ReactApplicationContext
 ) : NativeGoogleMobileAdsNativeModuleSpec(reactContext) {
@@ -36,6 +39,7 @@ class ReactNativeGoogleMobileAdsNativeModule(
 
   override fun getName() = NAME
 
+  @ReactMethod
   override fun load(adUnitId: String, requestOptions: ReadableMap, promise: Promise) {
     val holder = NativeAdHolder(adUnitId, requestOptions)
     holder.loadAd { nativeAd ->
@@ -75,9 +79,18 @@ class ReactNativeGoogleMobileAdsNativeModule(
     }
   }
 
+  @ReactMethod
   override fun destroy(responseId: String) {
     adHolders[responseId]?.destroy()
     adHolders.remove(responseId)
+  }
+
+  override fun invalidate() {
+    super.invalidate()
+    adHolders.values.forEach {
+      it.destroy()
+    }
+    adHolders.clear()
   }
 
   fun getNativeAd(responseId: String): NativeAd? {

@@ -19,6 +19,7 @@ package io.invertase.googlemobileads
 
 import android.view.View
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewGroupManager
@@ -53,12 +54,13 @@ class ReactNativeGoogleMobileAdsNativeAdViewManager(
   }
 
   @ReactProp(name = "responseId")
-  override fun setResponseId(adView: ReactNativeGoogleMobileAdsNativeAdView, responseId: String?) {
-    adView.setResponseId(responseId)
+  override fun setResponseId(view: ReactNativeGoogleMobileAdsNativeAdView, responseId: String?) {
+    view.setResponseId(responseId)
   }
 
-  override fun registerAsset(adView: ReactNativeGoogleMobileAdsNativeAdView, assetKey: String, reactTag: Int) {
-    adView.registerAsset(assetKey, reactTag)
+  @ReactMethod
+  override fun registerAsset(view: ReactNativeGoogleMobileAdsNativeAdView, assetKey: String, reactTag: Int) {
+    view.registerAsset(assetKey, reactTag)
   }
 
   override fun addView(parent: ReactNativeGoogleMobileAdsNativeAdView, child: View, index: Int) {

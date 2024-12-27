@@ -70,7 +70,7 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
           false,
           false,
           false,
-          isTurboModule,
+          false,
         )
       moduleInfos[ReactNativeGoogleMobileAdsConsentModule.NAME] =
         ReactModuleInfo(

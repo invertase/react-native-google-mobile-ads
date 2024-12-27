@@ -40,13 +40,13 @@ class ReactNativeGoogleMobileAdsMediaViewManager(
   override fun createViewInstance(context: ThemedReactContext): ReactNativeGoogleMobileAdsMediaView = ReactNativeGoogleMobileAdsMediaView(context)
 
   @ReactProp(name = "responseId")
-  override fun setResponseId(mediaView: ReactNativeGoogleMobileAdsMediaView, responseId: String?) {
-    mediaView.setResponseId(responseId)
+  override fun setResponseId(view: ReactNativeGoogleMobileAdsMediaView, responseId: String?) {
+    view.setResponseId(responseId)
   }
 
   @ReactProp(name = "resizeMode")
-  override fun setResizeMode(mediaView: ReactNativeGoogleMobileAdsMediaView, resizeMode: String?) {
-    mediaView.setResizeMode(resizeMode)
+  override fun setResizeMode(view: ReactNativeGoogleMobileAdsMediaView, resizeMode: String?) {
+    view.setResizeMode(resizeMode)
   }
 
   companion object {

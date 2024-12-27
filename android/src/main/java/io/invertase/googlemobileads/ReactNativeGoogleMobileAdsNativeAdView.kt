@@ -48,7 +48,7 @@ class ReactNativeGoogleMobileAdsNativeAdView(
   }
 
   fun setResponseId(responseId: String?) {
-    val nativeModule = context.getNativeModule(ReactNativeGoogleMobileAdsNativeModule.NAME) as ReactNativeGoogleMobileAdsNativeModule?
+    val nativeModule = context.getNativeModule(ReactNativeGoogleMobileAdsNativeModule::class.java)
     nativeModule?.getNativeAd(responseId ?: "")?.let {
       if (nativeAd == it) {
         return
@@ -59,7 +59,7 @@ class ReactNativeGoogleMobileAdsNativeAdView(
   }
 
   fun registerAsset(assetType: String, reactTag: Int) {
-    val uiManager = UIManagerHelper.getUIManager(context, UIManagerType.FABRIC)
+    val uiManager = UIManagerHelper.getUIManagerForReactTag(context, reactTag)
     val assetView = uiManager?.resolveView(reactTag) ?: return
     when (assetType) {
       "advertiser" -> nativeAdView.advertiserView = assetView

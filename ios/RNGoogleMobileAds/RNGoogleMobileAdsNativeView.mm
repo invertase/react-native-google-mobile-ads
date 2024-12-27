@@ -92,8 +92,7 @@ using namespace facebook::react;
 
   if (oldViewProps.responseId != newViewProps.responseId) {
     NSString *responseId = [[NSString alloc] initWithUTF8String:newViewProps.responseId.c_str()];
-    _nativeAd = [_nativeModule nativeAdForResponseId:responseId];
-    [self reloadAd];
+    [self setResponseId:responseId];
   }
 
   [super updateProps:props oldProps:oldProps];
@@ -118,6 +117,12 @@ using namespace facebook::react;
 #endif  // RCT_NEW_ARCH_ENABLED
 
 #pragma mark - Common logics
+
+- (void)setResponseId:(NSString *)responseId {
+  _responseId = responseId;
+  _nativeAd = [_nativeModule nativeAdForResponseId:responseId];
+  [self reloadAd];
+}
 
 - (void)registerAsset:(NSString *)assetType reactTag:(NSInteger)reactTag {
   RCTExecuteOnMainQueue(^{
@@ -186,6 +191,21 @@ RCT_EXPORT_VIEW_PROPERTY(responseId, NSString)
 #ifndef RCT_NEW_ARCH_ENABLED
 - (UIView *)view {
   return [[RNGoogleMobileAdsNativeView alloc] initWithBridge:self.bridge];
+}
+
+RCT_EXPORT_METHOD(registerAsset
+                  : (nonnull NSNumber *)reactTag commandID
+                  : (NSInteger)commandID commandArgs
+                  : (NSArray<id> *)commandArgs) {
+  [self.bridge.uiManager
+      addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
+        RNGoogleMobileAdsNativeView *view = viewRegistry[reactTag];
+        if (!view || ![view isKindOfClass:[RNGoogleMobileAdsNativeView class]]) {
+          RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
+          return;
+        }
+        [view registerAsset:commandArgs[0] reactTag:((NSNumber *)commandArgs[1]).intValue];
+      }];
 }
 #endif
 

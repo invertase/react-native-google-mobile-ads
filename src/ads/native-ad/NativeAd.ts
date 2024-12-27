@@ -15,7 +15,7 @@
  *
  */
 
-import { EventSubscription } from 'react-native';
+import { EventSubscription, NativeEventEmitter } from 'react-native';
 import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
 
 import { NativeAdEventType } from '../../NativeAdEventType';
@@ -65,9 +65,16 @@ export class NativeAd {
     this.mediaContent = props.mediaContent;
     this.extras = props.extras as Record<string, unknown>;
 
-    this.nativeEventSubscription = NativeGoogleMobileAdsNativeModule.onAdEvent(
-      this.onNativeAdEvent.bind(this),
-    );
+    if ('onAdEvent' in NativeGoogleMobileAdsNativeModule) {
+      this.nativeEventSubscription = NativeGoogleMobileAdsNativeModule.onAdEvent(
+        this.onNativeAdEvent.bind(this),
+      );
+    } else {
+      this.nativeEventSubscription = new NativeEventEmitter().addListener(
+        'RNGMANativeAdEvent',
+        this.onNativeAdEvent.bind(this),
+      );
+    }
     this.eventEmitter = new EventEmitter();
   }
 
