@@ -50,7 +50,7 @@ RCT_EXPORT_MODULE();
 
 #ifdef RCT_NEW_ARCH_ENABLED
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
-(const facebook::react::ObjCTurboModule::InitParams &)params {
+    (const facebook::react::ObjCTurboModule::InitParams &)params {
   return std::make_shared<facebook::react::NativeGoogleMobileAdsNativeModuleSpecJSI>(params);
 }
 #else
@@ -67,51 +67,51 @@ RCT_EXPORT_MODULE();
 }
 
 RCT_EXPORT_METHOD(
-                  load
-                  : (NSString *)adUnitId requestOptions
-                  : (NSDictionary *)requestOptions resolve
-                  : (RCTPromiseResolveBlock)resolve reject
-                  : (RCTPromiseRejectBlock)reject {
-                    RNGMANativeAdHolder *adHolder =
-                    [[RNGMANativeAdHolder alloc] initWithNativeModule:self
-                                                             adUnitId:adUnitId
-                                                       requestOptions:requestOptions];
-                    
-                    [adHolder loadWithCompletionHandler:^(GADNativeAd *nativeAd, NSError *error) {
-                      if (error != nil) {
-                        reject(@"ERROR_LOAD", error.description, error);
-                        return;
-                      }
-                      
-                      NSString *responseId = nativeAd.responseInfo.responseIdentifier;
-                      [_adHolders setValue:adHolder forKey:responseId];
-                      
-                      resolve(@{
-                        @"responseId" : responseId,
-                        @"advertiser" : nativeAd.advertiser ?: [NSNull null],
-                        @"body" : nativeAd.body ?: [NSNull null],
-                        @"callToAction" : nativeAd.callToAction ?: [NSNull null],
-                        @"headline" : nativeAd.headline ?: [NSNull null],
-                        @"price" : nativeAd.price ?: [NSNull null],
-                        @"store" : nativeAd.store ?: [NSNull null],
-                        @"starRating" : nativeAd.starRating ?: [NSNull null],
-                        @"icon" : nativeAd.icon != nil
-                        ? @{@"scale" : @(nativeAd.icon.scale), @"url" : nativeAd.icon.imageURL.absoluteString}
-                        : [NSNull null],
-                        @"mediaContent" : @{
-                          @"aspectRatio" : @(nativeAd.mediaContent.aspectRatio),
-                          @"hasVideoContent" : @(nativeAd.mediaContent.hasVideoContent),
-                          @"duration" : @(nativeAd.mediaContent.duration)
-                        }
-                      });
-                    }];
-                  })
+    load
+    : (NSString *)adUnitId requestOptions
+    : (NSDictionary *)requestOptions resolve
+    : (RCTPromiseResolveBlock)resolve reject
+    : (RCTPromiseRejectBlock)reject {
+      RNGMANativeAdHolder *adHolder =
+          [[RNGMANativeAdHolder alloc] initWithNativeModule:self
+                                                   adUnitId:adUnitId
+                                             requestOptions:requestOptions];
+
+      [adHolder loadWithCompletionHandler:^(GADNativeAd *nativeAd, NSError *error) {
+        if (error != nil) {
+          reject(@"ERROR_LOAD", error.description, error);
+          return;
+        }
+
+        NSString *responseId = nativeAd.responseInfo.responseIdentifier;
+        [_adHolders setValue:adHolder forKey:responseId];
+
+        resolve(@{
+          @"responseId" : responseId,
+          @"advertiser" : nativeAd.advertiser ?: [NSNull null],
+          @"body" : nativeAd.body ?: [NSNull null],
+          @"callToAction" : nativeAd.callToAction ?: [NSNull null],
+          @"headline" : nativeAd.headline ?: [NSNull null],
+          @"price" : nativeAd.price ?: [NSNull null],
+          @"store" : nativeAd.store ?: [NSNull null],
+          @"starRating" : nativeAd.starRating ?: [NSNull null],
+          @"icon" : nativeAd.icon != nil
+              ? @{@"scale" : @(nativeAd.icon.scale), @"url" : nativeAd.icon.imageURL.absoluteString}
+              : [NSNull null],
+          @"mediaContent" : @{
+            @"aspectRatio" : @(nativeAd.mediaContent.aspectRatio),
+            @"hasVideoContent" : @(nativeAd.mediaContent.hasVideoContent),
+            @"duration" : @(nativeAd.mediaContent.duration)
+          }
+        });
+      }];
+    })
 
 RCT_EXPORT_METHOD(destroy
                   : (NSString *)responseId {
-  [[_adHolders valueForKey:responseId] dispose];
-  [_adHolders removeObjectForKey:responseId];
-});
+                    [[_adHolders valueForKey:responseId] dispose];
+                    [_adHolders removeObjectForKey:responseId];
+                  });
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId {
   return [_adHolders valueForKey:responseId].nativeAd;
