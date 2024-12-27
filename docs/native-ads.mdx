@@ -155,6 +155,8 @@ const NativeComponent = () => {
 };
 ```
 
+<Warning>Place the asset view(such as `Text`, `Image` component) as a direct child of the `NativeAsset` component. See more in [Caveats: `NativeAsset` placement](/native-ads#nativeasset-placement) section.</Warning>
+
 ### NativeMediaView component
 
 Main image and video assets are displayed to users via `NativeMediaView`. It should be placed within the view hierarchy of a `NativeAdView`, as with any other asset view.
@@ -252,3 +254,43 @@ const NativeComponent = () => {
   );
 };
 ```
+
+## Caveats / Limitations
+
+### `NativeAsset` placement
+
+Place the asset view(such as `Text`, `Image` component) as a direct child of the `NativeAsset` component,
+and do not wrap the asset view with another view.
+The SDK automatically handles tasks such as recording / handling clicks on the asset view.
+Wrapping the asset view with another view can interfere with these tasks.
+
+Do:
+```tsx
+<NativeAsset assetType={NativeAssetType.CTA}>
+  <Text style={{ padding: 8 }}>{nativeAd.cta}</Text>
+</NativeAsset>
+<NativeAsset assetType={NativeAssetType.ICON}>
+  <Image source={{uri: nativeAd.icon.url}} width={24} height={24} style={{ borderRadius: 8 }} />
+</NativeAsset>
+```
+Don't:
+```tsx
+<NativeAsset assetType={NativeAssetType.CTA}>
+  <TouchableOpacity style={{ padding: 8 }}>
+    <Text>{nativeAd.cta}</Text>
+  </TouchableOpacity>
+</NativeAsset>
+<NativeAsset assetType={NativeAssetType.ICON}>
+  <View style={{ borderRadius: 8, overflow: 'hidden' }}>
+    <Image source={{uri: nativeAd.icon.url}} width={24} height={24} />
+  </View>
+</NativeAsset>
+```
+
+### Not implemented features
+
+These features are not implemented in the current version:
+  - Custom Ad Choices view
+  - Custom video playback controls
+  - Custom click gestures
+  - [Custom native ad formats](https://support.google.com/admanager/answer/6366911)
