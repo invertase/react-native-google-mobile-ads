@@ -29,7 +29,12 @@ export const NativeAdView = (props: NativeAdViewProps) => {
   const { nativeAd, children, ...viewProps } = props;
   const ref = useRef<React.ElementRef<typeof GoogleMobileAdsNativeView>>(null);
   return (
-    <GoogleMobileAdsNativeView {...viewProps} ref={ref} responseId={nativeAd.responseId}>
+    <GoogleMobileAdsNativeView
+      {...viewProps}
+      ref={ref}
+      responseId={nativeAd.responseId}
+      removeClippedSubviews={false}
+    >
       <NativeAdContext.Provider value={{ nativeAd, viewRef: ref }}>
         {children}
       </NativeAdContext.Provider>

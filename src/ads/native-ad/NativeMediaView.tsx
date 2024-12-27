@@ -34,7 +34,6 @@ export const NativeMediaView = (props: NativeMediaViewProps) => {
       <GoogleMobileAdsMediaView
         {...viewProps}
         responseId={responseId}
-        removeClippedSubviews={false}
         style={[{ aspectRatio: mediaContent?.aspectRatio }, style]}
       />
     </NativeAsset>
