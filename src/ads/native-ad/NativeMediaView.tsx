@@ -21,10 +21,12 @@ import GoogleMobileAdsMediaView from '../../specs/components/GoogleMobileAdsMedi
 import { NativeAsset } from './NativeAsset';
 import { NativeAdContext } from './NativeAdContext';
 
-export type NativeMediaViewProps = ViewProps;
+export type NativeMediaViewProps = ViewProps & {
+  resizeMode?: 'cover' | 'contain' | 'stretch';
+};
 
 export const NativeMediaView = (props: NativeMediaViewProps) => {
-  const { style, ...viewProps } = props;
+  const { resizeMode, style, ...viewProps } = props;
   const { nativeAd } = useContext(NativeAdContext);
   const { responseId, mediaContent } = nativeAd;
 
@@ -34,6 +36,7 @@ export const NativeMediaView = (props: NativeMediaViewProps) => {
       <GoogleMobileAdsMediaView
         {...viewProps}
         responseId={responseId}
+        resizeMode={resizeMode}
         style={[{ aspectRatio: mediaContent?.aspectRatio }, style]}
       />
     </NativeAsset>

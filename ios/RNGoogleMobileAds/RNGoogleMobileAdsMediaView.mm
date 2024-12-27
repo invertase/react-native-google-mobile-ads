@@ -42,6 +42,7 @@ using namespace facebook::react;
   __weak RCTBridge *_bridge;
   __weak RNGoogleMobileAdsNativeModule *_nativeModule;
   GADMediaView *_mediaView;
+  UIViewContentMode _contentMode;
 }
 
 #ifdef RCT_NEW_ARCH_ENABLED
@@ -55,6 +56,7 @@ using namespace facebook::react;
     _bridge = [RCTBridge currentBridge];
     _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
     _mediaView = [[GADMediaView alloc] init];
+    _contentMode = UIViewContentModeScaleAspectFill;
     self.contentView = _mediaView;
   }
 
@@ -81,6 +83,19 @@ using namespace facebook::react;
     NSString *responseId = [[NSString alloc] initWithUTF8String:newViewProps.responseId.c_str()];
     GADNativeAd *nativeAd = [_nativeModule nativeAdForResponseId:responseId];
     _mediaView.mediaContent = nativeAd.mediaContent;
+    _mediaView.contentMode = _contentMode;
+  }
+  
+  if (oldViewProps.resizeMode != newViewProps.resizeMode) {
+    NSString *resizeMode = [[NSString alloc] initWithUTF8String:newViewProps.resizeMode.c_str()];
+    if ([resizeMode isEqualToString:@"cover"]) {
+      _contentMode = UIViewContentModeScaleAspectFill;
+    } else if ([resizeMode isEqualToString:@"contain"]) {
+      _contentMode = UIViewContentModeScaleAspectFit;
+    } else if ([resizeMode isEqualToString:@"stretch"]) {
+      _contentMode = UIViewContentModeScaleToFill;
+    }
+    _mediaView.contentMode = _contentMode;
   }
 
   [super updateProps:props oldProps:oldProps];

@@ -44,6 +44,11 @@ class ReactNativeGoogleMobileAdsMediaViewManager(
     mediaView.setResponseId(responseId)
   }
 
+  @ReactProp(name = "resizeMode")
+  override fun setResizeMode(mediaView: ReactNativeGoogleMobileAdsMediaView, resizeMode: String?) {
+    mediaView.setResizeMode(resizeMode)
+  }
+
   companion object {
     const val NAME = "RNGoogleMobileAdsMediaView"
   }

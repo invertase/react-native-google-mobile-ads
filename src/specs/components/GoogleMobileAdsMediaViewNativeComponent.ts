@@ -20,6 +20,7 @@ import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNati
 
 export interface NativeProps extends ViewProps {
   responseId: string;
+  resizeMode?: string;
 }
 
 type NativeViewComponentType = HostComponent<NativeProps>;

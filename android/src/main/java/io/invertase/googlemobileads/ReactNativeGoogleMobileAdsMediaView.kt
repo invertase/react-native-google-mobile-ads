@@ -18,6 +18,7 @@ package io.invertase.googlemobileads
  */
 
 import android.annotation.SuppressLint
+import android.widget.ImageView
 import com.facebook.react.bridge.ReactContext
 import com.google.android.gms.ads.nativead.MediaView
 
@@ -30,6 +31,14 @@ class ReactNativeGoogleMobileAdsMediaView(
     nativeModule?.getNativeAd(responseId ?: "")?.let {
       this.mediaContent = it.mediaContent
       requestLayout()
+    }
+  }
+
+  fun setResizeMode(resizeMode: String?) {
+    when (resizeMode) {
+      "cover" -> setImageScaleType(ImageView.ScaleType.CENTER_CROP)
+      "contain" -> setImageScaleType(ImageView.ScaleType.CENTER_INSIDE)
+      "stretch" -> setImageScaleType(ImageView.ScaleType.FIT_XY)
     }
   }
 
