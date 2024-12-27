@@ -212,11 +212,11 @@ Learn more in [policy guidelines](https://support.google.com/admob/answer/632963
 
 These are the steps for displaying a native ad:
 
-1. Place the NativeAdView, register it by setting the nativeAd prop to the NativeAd object.
+1. Place the `NativeAdView`, register it by setting the `nativeAd` prop to the NativeAd object.
 2. For each ad asset to be displayed:
-  a. Populate the asset view with the asset in the NativeAd object.
-  b. Register the asset view by wrapping it with the NativeAsset component.
-3. Place the NativeMediaView inside your native ad layout to display media asset.
+    - Populate the asset view with the asset in the `NativeAd` object.
+    - Register the asset view by wrapping it with the `NativeAsset` component.
+3. Place the `NativeMediaView` inside your native ad layout to display media asset.
 
 ```tsx
 const NativeComponent = () => {
