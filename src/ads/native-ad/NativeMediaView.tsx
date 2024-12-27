@@ -30,7 +30,7 @@ export const NativeMediaView = (props: NativeMediaViewProps) => {
 
   return (
     // @ts-ignore
-    <NativeAsset assetKey={'media'}>
+    <NativeAsset assetType={'media'}>
       <GoogleMobileAdsMediaView
         {...viewProps}
         responseId={responseId}

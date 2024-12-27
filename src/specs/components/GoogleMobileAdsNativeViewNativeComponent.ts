@@ -30,7 +30,7 @@ type NativeViewComponentType = HostComponent<NativeProps>;
 interface NativeCommands {
   registerAsset: (
     viewRef: React.ElementRef<NativeViewComponentType>,
-    assetKey: string,
+    assetType: string,
     reactTag: Int32,
   ) => void;
 }

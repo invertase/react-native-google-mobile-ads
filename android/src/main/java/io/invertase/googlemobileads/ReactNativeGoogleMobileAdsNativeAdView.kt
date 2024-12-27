@@ -58,10 +58,10 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     }
   }
 
-  fun registerAsset(assetKey: String, reactTag: Int) {
+  fun registerAsset(assetType: String, reactTag: Int) {
     val uiManager = UIManagerHelper.getUIManager(context, UIManagerType.FABRIC)
     val assetView = uiManager?.resolveView(reactTag) ?: return
-    when (assetKey) {
+    when (assetType) {
       "advertiser" -> nativeAdView.advertiserView = assetView
       "body" -> nativeAdView.bodyView = assetView
       "callToAction" -> nativeAdView.callToActionView = assetView

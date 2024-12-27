@@ -27,9 +27,9 @@ import type {
 export type NativeAdProps = {
   responseId: string;
   advertiser: string | null;
-  body: string | null;
-  callToAction: string | null;
-  headline: string | null;
+  body: string;
+  callToAction: string;
+  headline: string;
   price: string | null;
   store: string | null;
   starRating: Double | null;

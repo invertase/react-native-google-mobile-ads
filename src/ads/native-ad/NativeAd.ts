@@ -36,9 +36,9 @@ export class NativeAd {
   readonly adUnitId: string;
   readonly responseId: string;
   readonly advertiser: string | null;
-  readonly body: string | null;
-  readonly callToAction: string | null;
-  readonly headline: string | null;
+  readonly body: string;
+  readonly callToAction: string;
+  readonly headline: string;
   readonly price: string | null;
   readonly store: string | null;
   readonly starRating: number | null;

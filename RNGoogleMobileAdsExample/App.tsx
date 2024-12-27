@@ -511,11 +511,11 @@ const NativeComponent = () => {
       <View style={{padding: 16, gap: 8}}>
         <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
           {nativeAd.icon && (
-            <NativeAsset assetKey={NativeAssetType.ICON}>
+            <NativeAsset assetType={NativeAssetType.ICON}>
               <Image source={{uri: nativeAd.icon.url}} width={24} height={24} />
             </NativeAsset>
           )}
-          <NativeAsset assetKey={NativeAssetType.HEADLINE}>
+          <NativeAsset assetType={NativeAssetType.HEADLINE}>
             <Text style={{fontSize: 18, fontWeight: 'bold'}}>
               {nativeAd.headline}
             </Text>
@@ -534,16 +534,16 @@ const NativeComponent = () => {
           </Text>
         </View>
         {nativeAd.advertiser && (
-          <NativeAsset assetKey={NativeAssetType.ADVERTISER}>
+          <NativeAsset assetType={NativeAssetType.ADVERTISER}>
             <Text>{nativeAd.advertiser}</Text>
           </NativeAsset>
         )}
-        <NativeAsset assetKey={NativeAssetType.BODY}>
+        <NativeAsset assetType={NativeAssetType.BODY}>
           <Text>{nativeAd.body}</Text>
         </NativeAsset>
       </View>
       <NativeMediaView />
-      <NativeAsset assetKey={NativeAssetType.CALL_TO_ACTION}>
+      <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
         <Text
           style={{
             color: 'white',

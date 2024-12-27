@@ -119,11 +119,11 @@ using namespace facebook::react;
 
 #pragma mark - Common logics
 
-- (void)registerAsset:(NSString *)assetKey reactTag:(NSInteger)reactTag {
+- (void)registerAsset:(NSString *)assetType reactTag:(NSInteger)reactTag {
   RCTExecuteOnMainQueue(^{
     UIView *view = [_bridge.uiManager viewForReactTag:@(reactTag)];
 
-    if ([assetKey isEqual:@"media"] && [view isKindOfClass:RNGoogleMobileAdsMediaView.class]) {
+    if ([assetType isEqual:@"media"] && [view isKindOfClass:RNGoogleMobileAdsMediaView.class]) {
 #ifdef RCT_NEW_ARCH_ENABLED
       GADMediaView *mediaView = ((RNGoogleMobileAdsMediaView *)view).contentView;
 #else
@@ -145,7 +145,7 @@ using namespace facebook::react;
       @"icon" : @"iconView",
       @"image" : @"imageView",
     };
-    NSString *property = viewMappings[assetKey];
+    NSString *property = viewMappings[assetType];
     if (property) {
       view.userInteractionEnabled = NO;
       [_nativeAdView setValue:view forKey:property];
