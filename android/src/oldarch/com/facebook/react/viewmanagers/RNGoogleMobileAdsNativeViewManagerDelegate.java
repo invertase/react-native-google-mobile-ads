@@ -1,15 +1,16 @@
 package com.facebook.react.viewmanagers;
 
 import android.view.View;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.uimanager.BaseViewManagerDelegate;
 import com.facebook.react.uimanager.BaseViewManagerInterface;
 
-public class RNGoogleMobileAdsNativeViewManagerDelegate<T extends View, U extends BaseViewManagerInterface<T> & RNGoogleMobileAdsNativeViewManagerInterface<T>> extends BaseViewManagerDelegate<T, U> {
+public class RNGoogleMobileAdsNativeViewManagerDelegate<
+        T extends View,
+        U extends BaseViewManagerInterface<T> & RNGoogleMobileAdsNativeViewManagerInterface<T>>
+    extends BaseViewManagerDelegate<T, U> {
   public RNGoogleMobileAdsNativeViewManagerDelegate(U viewManager) {
     super(viewManager);
   }
