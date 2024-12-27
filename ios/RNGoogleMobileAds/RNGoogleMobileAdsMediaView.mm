@@ -85,7 +85,7 @@ using namespace facebook::react;
     _mediaView.mediaContent = nativeAd.mediaContent;
     _mediaView.contentMode = _contentMode;
   }
-  
+
   if (oldViewProps.resizeMode != newViewProps.resizeMode) {
     NSString *resizeMode = [[NSString alloc] initWithUTF8String:newViewProps.resizeMode.c_str()];
     if ([resizeMode isEqualToString:@"cover"]) {

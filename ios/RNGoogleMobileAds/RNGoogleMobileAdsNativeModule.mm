@@ -23,7 +23,8 @@
 typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable nativeAd,
                                                    NSError *_Nullable error);
 
-@interface RNGMANativeAdHolder : NSObject <GADNativeAdLoaderDelegate, GADNativeAdDelegate, GADVideoControllerDelegate>
+@interface RNGMANativeAdHolder
+    : NSObject <GADNativeAdLoaderDelegate, GADNativeAdDelegate, GADVideoControllerDelegate>
 
 @property GADNativeAd *nativeAd;
 
@@ -164,11 +165,11 @@ RCT_EXPORT_MODULE();
       videoOptions.startMuted = [requestOptions[@"startVideoMuted"] boolValue];
     }
 
-    _adLoader =
-        [[GADAdLoader alloc] initWithAdUnitID:adUnitId
-                           rootViewController:[RNGoogleMobileAdsCommon currentViewController]
-                                      adTypes:@[ GADAdLoaderAdTypeNative ]
-                                      options:@[ imageOptions, mediaOptions, adViewOptions, videoOptions ]];
+    _adLoader = [[GADAdLoader alloc]
+          initWithAdUnitID:adUnitId
+        rootViewController:[RNGoogleMobileAdsCommon currentViewController]
+                   adTypes:@[ GADAdLoaderAdTypeNative ]
+                   options:@[ imageOptions, mediaOptions, adViewOptions, videoOptions ]];
     _adLoader.delegate = self;
     _adRequest = [RNGoogleMobileAdsCommon buildAdRequest:requestOptions];
   }
@@ -223,36 +224,29 @@ RCT_EXPORT_MODULE();
   // Not in use
 }
 
-- (void)videoControllerDidPlayVideo:
-(nonnull GADVideoController *)videoController {
+- (void)videoControllerDidPlayVideo:(nonnull GADVideoController *)videoController {
   [self emitAdEvent:@"video_played"];
 }
 
-- (void)videoControllerDidPauseVideo:
-(nonnull GADVideoController *)videoController {
+- (void)videoControllerDidPauseVideo:(nonnull GADVideoController *)videoController {
   [self emitAdEvent:@"video_paused"];
 }
 
-- (void)videoControllerDidEndVideoPlayback:
-(nonnull GADVideoController *)videoController {
+- (void)videoControllerDidEndVideoPlayback:(nonnull GADVideoController *)videoController {
   [self emitAdEvent:@"video_ended"];
 }
 
-- (void)videoControllerDidMuteVideo:
-(nonnull GADVideoController *)videoController {
+- (void)videoControllerDidMuteVideo:(nonnull GADVideoController *)videoController {
   [self emitAdEvent:@"video_muted"];
 }
 
-- (void)videoControllerDidUnmuteVideo:
-(nonnull GADVideoController *)videoController {
+- (void)videoControllerDidUnmuteVideo:(nonnull GADVideoController *)videoController {
   [self emitAdEvent:@"video_unmuted"];
 }
 
 - (void)emitAdEvent:(NSString *)type {
-  [_nativeModule emitOnAdEvent:@{
-    @"responseId" : _nativeAd.responseInfo.responseIdentifier,
-    @"type" : type
-  }];
+  [_nativeModule
+      emitOnAdEvent:@{@"responseId" : _nativeAd.responseInfo.responseIdentifier, @"type" : type}];
 }
 
 @end
