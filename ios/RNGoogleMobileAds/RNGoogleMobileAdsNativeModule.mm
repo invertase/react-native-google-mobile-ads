@@ -23,11 +23,13 @@
 typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable nativeAd,
                                                    NSError *_Nullable error);
 
-@interface RNGMANativeAdHolder : NSObject <GADNativeAdLoaderDelegate, GADNativeAdDelegate>
+@interface RNGMANativeAdHolder : NSObject <GADNativeAdLoaderDelegate, GADNativeAdDelegate, GADVideoControllerDelegate>
 
 @property GADNativeAd *nativeAd;
 
-- (instancetype)initWithAdUnitId:(NSString *)adUnitId requestOptions:(NSDictionary *)requestOptions;
+- (instancetype)initWithNativeModule:(RNGoogleMobileAdsNativeModule *)nativeModule
+                            adUnitId:(NSString *)adUnitId
+                      requestOptions:(NSDictionary *)requestOptions;
 
 - (void)loadWithCompletionHandler:(RNGMANativeAdLoadCompletionHandler)completionHandler;
 
@@ -63,8 +65,9 @@ RCT_EXPORT_MODULE();
     requestOptions:(NSDictionary *)requestOptions
            resolve:(RCTPromiseResolveBlock)resolve
             reject:(RCTPromiseRejectBlock)reject {
-  RNGMANativeAdHolder *adHolder = [[RNGMANativeAdHolder alloc] initWithAdUnitId:adUnitId
-                                                                 requestOptions:requestOptions];
+  RNGMANativeAdHolder *adHolder = [[RNGMANativeAdHolder alloc] initWithNativeModule:self
+                                                                           adUnitId:adUnitId
+                                                                     requestOptions:requestOptions];
   [_requestedAds addObject:adHolder];
 
   [adHolder loadWithCompletionHandler:^(GADNativeAd *nativeAd, NSError *error) {
@@ -108,14 +111,18 @@ RCT_EXPORT_MODULE();
 #pragma mark - RNGMANativeAdHolder
 
 @implementation RNGMANativeAdHolder {
+  RNGoogleMobileAdsNativeModule *_nativeModule;
   GADAdLoader *_adLoader;
   GAMRequest *_adRequest;
   RNGMANativeAdLoadCompletionHandler _completionHandler;
 }
 
-- (instancetype)initWithAdUnitId:(NSString *)adUnitId
-                  requestOptions:(NSDictionary *)requestOptions {
+- (instancetype)initWithNativeModule:(RNGoogleMobileAdsNativeModule *)nativeModule
+                            adUnitId:(NSString *)adUnitId
+                      requestOptions:(NSDictionary *)requestOptions {
   if (self = [super init]) {
+    _nativeModule = nativeModule;
+
     GADNativeAdImageAdLoaderOptions *imageOptions = [[GADNativeAdImageAdLoaderOptions alloc] init];
     //    imageOptions.disableImageLoading = YES;
     GADNativeAdMediaAdLoaderOptions *mediaOptions = [[GADNativeAdMediaAdLoaderOptions alloc] init];
@@ -135,12 +142,33 @@ RCT_EXPORT_MODULE();
           break;
       }
     }
+    GADNativeAdViewAdOptions *adViewOptions = [[GADNativeAdViewAdOptions alloc] init];
+    if (requestOptions[@"aspectRatio"]) {
+      switch ([requestOptions[@"aspectRatio"] intValue]) {
+        case 0:
+          adViewOptions.preferredAdChoicesPosition = GADAdChoicesPositionTopLeftCorner;
+          break;
+        case 1:
+          adViewOptions.preferredAdChoicesPosition = GADAdChoicesPositionTopRightCorner;
+          break;
+        case 2:
+          adViewOptions.preferredAdChoicesPosition = GADAdChoicesPositionBottomRightCorner;
+          break;
+        case 3:
+          adViewOptions.preferredAdChoicesPosition = GADAdChoicesPositionBottomLeftCorner;
+          break;
+      }
+    }
+    GADVideoOptions *videoOptions = [[GADVideoOptions alloc] init];
+    if (requestOptions[@"startVideoMuted"]) {
+      videoOptions.startMuted = [requestOptions[@"startVideoMuted"] boolValue];
+    }
 
     _adLoader =
         [[GADAdLoader alloc] initWithAdUnitID:adUnitId
                            rootViewController:[RNGoogleMobileAdsCommon currentViewController]
                                       adTypes:@[ GADAdLoaderAdTypeNative ]
-                                      options:@[ imageOptions, mediaOptions ]];
+                                      options:@[ imageOptions, mediaOptions, adViewOptions, videoOptions ]];
     _adLoader.delegate = self;
     _adRequest = [RNGoogleMobileAdsCommon buildAdRequest:requestOptions];
   }
@@ -158,6 +186,9 @@ RCT_EXPORT_MODULE();
     didReceiveNativeAd:(nonnull GADNativeAd *)nativeAd {
   _nativeAd = nativeAd;
   _nativeAd.delegate = self;
+  if (nativeAd.mediaContent.hasVideoContent) {
+    nativeAd.mediaContent.videoController.delegate = self;
+  }
   _completionHandler(nativeAd, nil);
 }
 
@@ -169,28 +200,59 @@ RCT_EXPORT_MODULE();
 #pragma mark - GADNativeAdDelegate
 
 - (void)nativeAdDidRecordImpression:(GADNativeAd *)nativeAd {
-  // The native ad was shown.
+  [self emitAdEvent:@"impression"];
 }
 
 - (void)nativeAdDidRecordClick:(GADNativeAd *)nativeAd {
-  // The native ad was clicked on.
+  [self emitAdEvent:@"clicked"];
 }
 
 - (void)nativeAdWillPresentScreen:(GADNativeAd *)nativeAd {
-  // The native ad will present a full screen view.
+  [self emitAdEvent:@"opened"];
 }
 
 - (void)nativeAdWillDismissScreen:(GADNativeAd *)nativeAd {
-  // The native ad will dismiss a full screen view.
+  // Not in use
 }
 
 - (void)nativeAdDidDismissScreen:(GADNativeAd *)nativeAd {
-  // The native ad did dismiss a full screen view.
+  [self emitAdEvent:@"closed"];
 }
 
 - (void)nativeAdWillLeaveApplication:(GADNativeAd *)nativeAd {
-  // The native ad will cause the app to become inactive and
-  // open a new app.
+  // Not in use
+}
+
+- (void)videoControllerDidPlayVideo:
+(nonnull GADVideoController *)videoController {
+  [self emitAdEvent:@"video_played"];
+}
+
+- (void)videoControllerDidPauseVideo:
+(nonnull GADVideoController *)videoController {
+  [self emitAdEvent:@"video_paused"];
+}
+
+- (void)videoControllerDidEndVideoPlayback:
+(nonnull GADVideoController *)videoController {
+  [self emitAdEvent:@"video_ended"];
+}
+
+- (void)videoControllerDidMuteVideo:
+(nonnull GADVideoController *)videoController {
+  [self emitAdEvent:@"video_muted"];
+}
+
+- (void)videoControllerDidUnmuteVideo:
+(nonnull GADVideoController *)videoController {
+  [self emitAdEvent:@"video_unmuted"];
+}
+
+- (void)emitAdEvent:(NSString *)type {
+  [_nativeModule emitOnAdEvent:@{
+    @"responseId" : _nativeAd.responseInfo.responseIdentifier,
+    @"type" : type
+  }];
 }
 
 @end

@@ -21,7 +21,8 @@
 #ifdef RCT_NEW_ARCH_ENABLED
 #import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
 
-@interface RNGoogleMobileAdsNativeModule : NSObject <NativeGoogleMobileAdsNativeModuleSpec>
+@interface RNGoogleMobileAdsNativeModule
+    : NativeGoogleMobileAdsNativeModuleSpecBase <NativeGoogleMobileAdsNativeModuleSpec>
 #else
 #import <React/RCTBridgeModule.h>
 

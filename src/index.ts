@@ -37,6 +37,7 @@ export { TestIds } from './TestIds';
 export { AdEventType } from './AdEventType';
 export { BannerAdSize, GAMBannerAdSize } from './BannerAdSize';
 export { GAMAdEventType } from './GAMAdEventType';
+export { NativeAdEventType } from './NativeAdEventType';
 export { RewardedAdEventType } from './RewardedAdEventType';
 export { AdsConsent } from './AdsConsent';
 export { AppOpenAd } from './ads/AppOpenAd';

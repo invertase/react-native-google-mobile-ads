@@ -17,7 +17,12 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { Double, Float, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import type {
+  Double,
+  Float,
+  UnsafeObject,
+  EventEmitter,
+} from 'react-native/Libraries/Types/CodegenTypes';
 
 export type NativeAdProps = {
   responseId: string;
@@ -45,8 +50,14 @@ export type NativeMediaContent = {
   duration: Float;
 };
 
+export type NativeAdEventPayload = {
+  responseId: string;
+  type: string;
+};
+
 export interface Spec extends TurboModule {
   load(adUnitId: string, requestOptions: UnsafeObject): Promise<NativeAdProps>;
+  readonly onAdEvent: EventEmitter<NativeAdEventPayload>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsNativeModule');

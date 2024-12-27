@@ -15,36 +15,87 @@
  *
  */
 
-import { isString } from '../../common';
-import { validateAdRequestOptions } from '../../validateAdRequestOptions';
-import { NativeAdRequestOptions } from '../../types';
+import { EventSubscription } from 'react-native';
+import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
+
+import { NativeAdEventType } from '../../NativeAdEventType';
+import { isFunction, isOneOf, isString } from '../../common';
 import NativeGoogleMobileAdsNativeModule, {
+  NativeAdEventPayload,
   NativeAdImage,
   NativeAdProps,
   NativeMediaContent,
 } from '../../specs/modules/NativeGoogleMobileAdsNativeModule';
+import { NativeAdRequestOptions } from '../../types';
+import { validateAdRequestOptions } from '../../validateAdRequestOptions';
 
 /**
  * A class for loading Native Ads.
  */
 export class NativeAd {
-  adUnitId: string;
-  responseId!: string;
-  advertiser!: string | null;
-  body!: string | null;
-  callToAction!: string | null;
-  headline!: string | null;
-  price!: string | null;
-  store!: string | null;
-  starRating!: number | null;
-  icon!: NativeAdImage | null;
-  images!: Array<NativeAdImage> | null;
-  mediaContent!: NativeMediaContent | null;
-  extras!: Record<string, unknown> | null;
+  readonly adUnitId: string;
+  readonly responseId: string;
+  readonly advertiser: string | null;
+  readonly body: string | null;
+  readonly callToAction: string | null;
+  readonly headline: string | null;
+  readonly price: string | null;
+  readonly store: string | null;
+  readonly starRating: number | null;
+  readonly icon: NativeAdImage | null;
+  readonly images: Array<NativeAdImage> | null;
+  readonly mediaContent: NativeMediaContent | null;
+  readonly extras: Record<string, unknown> | null;
 
-  constructor(adUnitId: string, props: NativeAdProps) {
+  private nativeEventSubscription: EventSubscription;
+  private eventEmitter: EventEmitter;
+
+  private constructor(adUnitId: string, props: NativeAdProps) {
     this.adUnitId = adUnitId;
-    Object.assign(this, props);
+    this.responseId = props.responseId;
+    this.advertiser = props.advertiser;
+    this.body = props.body;
+    this.callToAction = props.callToAction;
+    this.headline = props.headline;
+    this.price = props.price;
+    this.store = props.store;
+    this.starRating = props.starRating;
+    this.icon = props.icon;
+    this.images = props.images;
+    this.mediaContent = props.mediaContent;
+    this.extras = props.extras as Record<string, unknown>;
+
+    this.nativeEventSubscription = NativeGoogleMobileAdsNativeModule.onAdEvent(
+      this.onNativeAdEvent.bind(this),
+    );
+    this.eventEmitter = new EventEmitter();
+  }
+
+  private onNativeAdEvent({ responseId, type }: NativeAdEventPayload) {
+    if (this.responseId !== responseId) {
+      return;
+    }
+    this.eventEmitter.emit(type);
+  }
+
+  addAdEventListener(type: NativeAdEventType, listener: () => void) {
+    if (!isOneOf(type, Object.values(NativeAdEventType))) {
+      throw new Error(`NativeAd.addAdEventListener(*) 'type' expected a valid event type value.`);
+    }
+    if (!isFunction(listener)) {
+      throw new Error(`NativeAd.addAdEventListener(_, *) 'listener' expected a function.`);
+    }
+
+    return this.eventEmitter.addListener(type, listener);
+  }
+
+  removeAllAdEventListeners() {
+    this.eventEmitter.removeAllListeners();
+  }
+
+  destroy() {
+    this.nativeEventSubscription.remove();
+    this.removeAllAdEventListeners();
   }
 
   /**

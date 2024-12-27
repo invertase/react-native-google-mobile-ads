@@ -24,6 +24,32 @@ export enum NativeMediaAspectRatio {
   SQUARE = 4,
 }
 
+export enum NativeAdChoicesPlacement {
+  TOP_LEFT = 0,
+  TOP_RIGHT = 1,
+  BOTTOM_RIGHT = 2,
+  BOTTOM_LEFT = 3,
+}
+
 export interface NativeAdRequestOptions extends RequestOptions {
+  /**
+   * Specifies a preference for the aspect ratio of ad creatives.
+   * Setting this option does not guarantee that all ad creatives will meet the preference specified.
+   * - When unset, the returned ad can have any media aspect ratio.
+   * - When set, you will be able to improve the user experience by specifying the preferred type of aspect ratio.
+   */
   aspectRatio?: NativeMediaAspectRatio;
+  /**
+   * Chooses which corner to render the AdChoices icon.
+   * - If unset, the AdChoices icon position is set to the top right.
+   * - If set, AdChoices is placed at the custom position as requested.
+   */
+  adChoicesPlacement?: NativeAdChoicesPlacement;
+  /**
+   * Disables or enables a video's starting audio.
+   * - The start muted behavior is enabled by default.
+   * - When disabled, your app requests the video should begin with audio.
+   * - When enabled, your app requests that the video should begin with audio muted.
+   */
+  startVideoMuted?: boolean;
 }
