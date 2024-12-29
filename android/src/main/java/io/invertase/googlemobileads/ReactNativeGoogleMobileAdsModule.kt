@@ -127,10 +127,10 @@ class ReactNativeGoogleMobileAdsModule(
 
   @ReactMethod
   fun setRequestConfiguration(
-    requestConfiguration: ReadableMap?,
+    requestConfiguration: ReadableMap,
     promise: Promise
   ) {
-    MobileAds.setRequestConfiguration(buildRequestConfiguration(requestConfiguration ?: Arguments.createMap()))
+    MobileAds.setRequestConfiguration(buildRequestConfiguration(requestConfiguration))
     promise.resolve(null)
   }
 
@@ -170,8 +170,8 @@ class ReactNativeGoogleMobileAdsModule(
   }
 
   @ReactMethod
-  fun setAppVolume(volume: Double) {
-    MobileAds.setAppVolume(volume.toFloat())
+  fun setAppVolume(volume: Float) {
+    MobileAds.setAppVolume(volume)
   }
 
   @ReactMethod
