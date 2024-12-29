@@ -86,7 +86,7 @@ You decide how and where they're placed, so the layout is more consistent your a
 
 <img width="300" src="https://developers.google.com/static/admob/images/format-native.svg" alt="Native">
 
-[Work In Progress](https://docs.page/invertase/react-native-google-mobile-ads/native-ads)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/native-ads)
 
 ### Interstitial
 

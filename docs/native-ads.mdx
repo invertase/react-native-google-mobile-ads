@@ -255,6 +255,75 @@ const NativeComponent = () => {
 };
 ```
 
+## Receiving ad events
+
+The `NativeAd` object emits events that you can listen to.
+
+Use the `addAdEventListener` method to listen to ad events emitted by the `NativeAd`. Pass one of the `NativeAdEventType` enum values to specify the event type.
+
+Check the [NativeAdEventType](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/NativeAdEventType.ts) source code to see the full range of events available.
+
+```tsx
+const NativeComponent = () => {
+  const [nativeAd, setNativeAd] = useState<NativeAd>();
+
+  useEffect(() => {
+    NativeAd.createForAdRequest(TestIds.NATIVE)
+      .then(setNativeAd)
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (!nativeAd) return;
+    const listener = nativeAd.addAdEventListener(NativeAdEventType.CLICKED, () => {
+      console.log('Native ad clicked');
+    });
+    return () => {
+      listener.remove();
+      // or
+      nativeAd.destroy();
+    };
+  }, [nativeAd]);
+
+  return (
+    <NativeAdView nativeAd={nativeAd}>
+      // Components to display assets must be placed here
+    </NativeAdView>
+  );
+};
+```
+
+## Destroying ads
+
+Always destroy the `NativeAd` object when it is no longer needed to free up resources.
+
+Calling the `destroy` method also removes all event listeners registered on the `NativeAd` object.
+
+```tsx
+const NativeComponent = () => {
+  const [nativeAd, setNativeAd] = useState<NativeAd>();
+
+  useEffect(() => {
+    NativeAd.createForAdRequest(TestIds.NATIVE)
+      .then(setNativeAd)
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (!nativeAd) return;
+    return () => {
+      nativeAd.destroy();
+    };
+  }, [nativeAd]);
+
+  return (
+    <NativeAdView nativeAd={nativeAd}>
+      // Components to display assets must be placed here
+    </NativeAdView>
+  );
+};
+```
+
 ## Caveats / Limitations
 
 ### `NativeAsset` placement
