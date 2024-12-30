@@ -3,7 +3,7 @@
 Native ads are ad assets that are presented to users through UI components that are native to the platform.
 They're shown using the same types of views with which you're already building your layouts, and can be formatted to match your app's visual design.
 
-When a native ad loads, your app receives an ad object that contains its assets, and the app—rather than the Google Mobile Ads SDK—is then responsible for displaying them.
+When a native ad loads, your app receives an ad object that contains its assets, and the app — rather than the Google Mobile Ads SDK — is responsible for displaying them.
 
 Broadly speaking, there are two parts to successfully implementing native ads: Loading an ad using the SDK and then displaying the ad content in your app.
 
@@ -21,7 +21,7 @@ NativeAd.createForAdRequest(TestIds.NATIVE)
 
 ### Native ad Options
 
-Native ads have many advanced features that allow you to make additional customizations and make the best possible ad experience.
+Native ads have many advanced features that allow you to make additional customizations to create the best possible ad experience.
 
 You can pass an optional `NativeAdRequestOptions` object as the second argument to `NativeAd.createForAdRequest` to customize the ad request:
 
@@ -88,13 +88,13 @@ NativeAd.createForAdRequest(TestIds.NATIVE, {
 ```
 
 #### Other Ad Request Options
-You can specify other request options to be sent whilst loading an advert, such as keywords & location.
+You can specify other request options to be sent while loading an advert, such as keywords and location.
 Setting additional request options helps AdMob choose better tailored ads from the network.
 View the [RequestOptions](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/types/RequestOptions.ts) source code to see the full range of options available.
 
 ## Display ads
 
-When a native ad loads, your app is then responsible for displaying the ad(though it doesn't necessarily have to do so immediately).
+When a native ad loads, your app is then responsible for displaying the ad (though it doesn't necessarily have to do so immediately).
 To make displaying system-defined ad formats easier, the SDK offers some useful resources, as described below.
 
 ### NativeAdView component
@@ -102,7 +102,7 @@ To make displaying system-defined ad formats easier, the SDK offers some useful 
 For the NativeAd format, there is the corresponding `NativeAdView` component.
 This component is a wrapper component that publishers should use as the root for the NativeAd.
 A single `NativeAdView` corresponds to a single native ad.
-Each view used to display that ad's assets should be placed within the view hierarchy of the `NativeAdView` component.
+Each view used to display that ads assets should be placed within the view hierarchy of the `NativeAdView` component.
 Pass the `NativeAd` object to the `nativeAd` prop of the `NativeAdView` component to register the ad view:
 
 ```tsx
@@ -176,14 +176,14 @@ const NativeComponent = () => {
 
 #### Resize Mode
 
-The `NativeMediaView` component respects `resizeMode` property when displaying images. Defaults to `cover`.
+The `NativeMediaView` component respects the `resizeMode` property when displaying images. The `resizeMode` defaults to `cover`.
 
 Supports the following values:
 - `cover`: Scale the image uniformly (maintain the image's aspect ratio) so that:
   - Both dimensions (width and height) of the image will be equal to or larger than the corresponding dimension of the view (minus padding)
   - At least one dimension of the scaled image will be equal to the corresponding dimension of the view (minus padding)
 - `contain`: Scale the image uniformly (maintain the image's aspect ratio) so that both dimensions (width and height) of the image will be equal to or less than the corresponding dimension of the view (minus padding).
-- `stretch`: Scale width and height independently, This may change the aspect ratio of the src.
+- `stretch`: Scale width and height independently, This may change the aspect ratio of the source image.
 
 <Info>NativeMediaView's `aspectRatio` style property is set to `nativeAd.mediaContent.aspectRatio` by default.</Info>
 
