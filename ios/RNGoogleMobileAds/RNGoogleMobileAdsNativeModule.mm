@@ -55,7 +55,7 @@ RCT_EXPORT_MODULE();
 }
 #else
 - (NSArray<NSString *> *)supportedEvents {
-  return @[ @"onAdEvent" ];
+  return @[ @"RNGMANativeAdEvent" ];
 }
 #endif
 
