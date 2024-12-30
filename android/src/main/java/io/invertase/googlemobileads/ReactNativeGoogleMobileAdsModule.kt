@@ -26,13 +26,11 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdValue;
 import com.google.android.gms.ads.OnAdInspectorClosedListener
 
-private const val SERVICE = "RNGoogleMobileAdsModule";
-
 class ReactNativeGoogleMobileAdsModule(
   reactContext: ReactApplicationContext
 ) : ReactContextBaseJavaModule(reactContext) {
 
-  override fun getName() = SERVICE
+  override fun getName() = NAME
 
   override fun getConstants(): Map<String, Any> {
     return mapOf(
@@ -164,7 +162,6 @@ class ReactNativeGoogleMobileAdsModule(
     }
   }
 
-
   @ReactMethod
   fun openDebugMenu(adUnit: String) {
     currentActivity?.runOnUiThread {
@@ -180,5 +177,9 @@ class ReactNativeGoogleMobileAdsModule(
   @ReactMethod
   fun setAppMuted(muted: Boolean) {
     MobileAds.setAppMuted(muted)
+  }
+
+  companion object {
+    const val NAME = "RNGoogleMobileAdsModule"
   }
 }

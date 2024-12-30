@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import type { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
 import { AdapterStatus } from '../../types';
 

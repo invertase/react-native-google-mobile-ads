@@ -86,7 +86,7 @@ You decide how and where they're placed, so the layout is more consistent your a
 
 <img width="300" src="https://developers.google.com/static/admob/images/format-native.svg" alt="Native">
 
-[Work In Progress](https://github.com/invertase/react-native-google-mobile-ads/pull/650)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/native-ads)
 
 ### Interstitial
 
@@ -119,16 +119,18 @@ This package can be used in both The Old and [The New Architecture](https://reac
 When using The New Architecture, some legacy code will still be used though. See status below:
 
 | Platform | Feature                                                                                                                                                        | Status      |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| -------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------| ----------- |
 | iOS      | Mobile Ads SDK Methods (Turbo Native Module)                                                                                                                   | ✅ Complete |
 | iOS      | Banners (Fabric Native Component)                                                                                                                              | ✅ Complete |
 | iOS      | Full Screen Ads (Turbo Native Module)                                                                                                                          | ✅ Complete |
+| iOS      | Native Ads (Turbo Native Module, Fabric Native Component)                                                                                                      | ✅ Complete |
 | iOS      | User Messaging Platform (Turbo Native Module)                                                                                                                  | ✅ Complete |
 | iOS      | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do    |
 | iOS      | Revenue Precision Constants (Turbo Native Module)                                                                                                              | ✅ Complete |
 | Android  | Mobile Ads SDK Methods (Turbo Native Module)                                                                                                                   | ⏳ To-Do    |
 | Android  | Banners (Fabric Native Component)                                                                                                                              | ⏳ To-Do    |
 | Android  | Full Screen Ads (Turbo Native Module)                                                                                                                          | ⏳ To-Do    |
+| Android  | Native Ads (Turbo Native Module, Fabric Native Component)                                                                                                      | ✅ Complete |
 | Android  | User Messaging Platform (Turbo Native Module)                                                                                                                  | ⏳ To-Do    |
 | Android  | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do    |
 | Android  | Revenue Precision Constants (Turbo Native Module)                                                                                                              | ⏳ To-Do    |
