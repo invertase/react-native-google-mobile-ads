@@ -20,6 +20,7 @@ else
   cp RNGoogleMobileAdsExample/.detoxrc.json TEMP/    # Custom detox settings
   cp RNGoogleMobileAdsExample/app.json TEMP/         # Our custom configuration settings / mobile ads app id etc
   cp RNGoogleMobileAdsExample/App.tsx TEMP/          # Our sample app
+  cp -r RNGoogleMobileAdsExample/patches TEMP/       # Our patches
 
   # Our Android DetoxTest integration itself is obviously custom
   mkdir -p TEMP/android/app/src/androidTest/java/com/rngooglemobileadsexample
