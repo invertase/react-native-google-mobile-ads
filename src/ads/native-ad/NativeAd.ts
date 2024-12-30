@@ -15,7 +15,7 @@
  *
  */
 
-import { EventSubscription, NativeEventEmitter } from 'react-native';
+import { EventSubscription, NativeEventEmitter, Platform } from 'react-native';
 import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
 
 import { NativeAdEventType } from '../../NativeAdEventType';
@@ -70,7 +70,13 @@ export class NativeAd {
         this.onNativeAdEvent.bind(this),
       );
     } else {
-      this.nativeEventSubscription = new NativeEventEmitter().addListener(
+      let eventEmitter;
+      if (Platform.OS === 'ios') {
+        eventEmitter = new NativeEventEmitter(NativeGoogleMobileAdsNativeModule);
+      } else {
+        eventEmitter = new NativeEventEmitter();
+      }
+      this.nativeEventSubscription = eventEmitter.addListener(
         'RNGMANativeAdEvent',
         this.onNativeAdEvent.bind(this),
       );
