@@ -108,6 +108,16 @@ android {
       appJSONGoogleMobileAdsOptimizeAdLoading      : appJSONGoogleMobileAdsOptimizeAdLoadingBool
     ]
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+
+    sourceSets {
+      main {
+        if (isNewArchitectureEnabled()) {
+          java.srcDirs += ['src/newarch']
+        } else {
+          java.srcDirs += ['src/oldarch']
+        }
+      }
+    }
   }
   lintOptions {
     disable 'GradleCompatible'

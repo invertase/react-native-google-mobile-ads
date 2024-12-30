@@ -17,26 +17,115 @@ package io.invertase.googlemobileads
  *
  */
 
-import com.facebook.react.ReactPackage
+import com.facebook.react.TurboReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.module.model.ReactModuleInfo
+import com.facebook.react.module.model.ReactModuleInfoProvider
 import com.facebook.react.uimanager.ViewManager
 
 @SuppressWarnings("unused")
-class ReactNativeGoogleMobileAdsPackage : ReactPackage {
-  override fun createNativeModules(reactContext: ReactApplicationContext) = listOf(
-    ReactNativeAppModule(reactContext),
-    ReactNativeGoogleMobileAdsModule(reactContext),
-    ReactNativeGoogleMobileAdsConsentModule(reactContext),
-    ReactNativeGoogleMobileAdsAppOpenModule(reactContext),
-    ReactNativeGoogleMobileAdsInterstitialModule(reactContext),
-    ReactNativeGoogleMobileAdsRewardedModule(reactContext),
-    ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext)
-  )
-
+class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
   override fun createViewManagers(
     reactContext: ReactApplicationContext
   ): List<ViewManager<*, *>> {
-    return listOf(ReactNativeGoogleMobileAdsBannerAdViewManager())
+    return listOf(
+      ReactNativeGoogleMobileAdsBannerAdViewManager(),
+      ReactNativeGoogleMobileAdsNativeAdViewManager(reactContext),
+      ReactNativeGoogleMobileAdsMediaViewManager(reactContext)
+    )
   }
+
+  override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
+    when (name) {
+      ReactNativeAppModule.NAME -> return ReactNativeAppModule(reactContext)
+      ReactNativeGoogleMobileAdsModule.NAME -> return ReactNativeGoogleMobileAdsModule(reactContext)
+      ReactNativeGoogleMobileAdsConsentModule.NAME -> return ReactNativeGoogleMobileAdsConsentModule(reactContext)
+      ReactNativeGoogleMobileAdsAppOpenModule.NAME -> return ReactNativeGoogleMobileAdsAppOpenModule(reactContext)
+      ReactNativeGoogleMobileAdsInterstitialModule.NAME -> return ReactNativeGoogleMobileAdsInterstitialModule(reactContext)
+      ReactNativeGoogleMobileAdsRewardedModule.NAME -> return ReactNativeGoogleMobileAdsRewardedModule(reactContext)
+      ReactNativeGoogleMobileAdsRewardedInterstitialModule.NAME -> return ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext)
+      ReactNativeGoogleMobileAdsNativeModule.NAME -> return ReactNativeGoogleMobileAdsNativeModule(reactContext)
+    }
+    return null
+  }
+
+  override fun getReactModuleInfoProvider(): ReactModuleInfoProvider =
+    ReactModuleInfoProvider {
+      val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
+      val isTurboModule = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
+      moduleInfos[ReactNativeAppModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeAppModule.NAME,
+          ReactNativeAppModule.NAME,
+          false, // canOverrideExistingModule
+          false, // needsEagerInit
+          false, // isCxxModule
+          false,  // isTurboModule
+        )
+      moduleInfos[ReactNativeGoogleMobileAdsModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeGoogleMobileAdsModule.NAME,
+          ReactNativeGoogleMobileAdsModule.NAME,
+          false,
+          false,
+          false,
+          false,
+        )
+      moduleInfos[ReactNativeGoogleMobileAdsConsentModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeGoogleMobileAdsConsentModule.NAME,
+          ReactNativeGoogleMobileAdsConsentModule.NAME,
+          false,
+          false,
+          false,
+          false,
+        )
+      moduleInfos[ReactNativeGoogleMobileAdsAppOpenModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeGoogleMobileAdsAppOpenModule.NAME,
+          ReactNativeGoogleMobileAdsAppOpenModule.NAME,
+          false,
+          false,
+          false,
+          false,
+        )
+      moduleInfos[ReactNativeGoogleMobileAdsInterstitialModule.NAME] =
+      ReactModuleInfo(
+        ReactNativeGoogleMobileAdsInterstitialModule.NAME,
+        ReactNativeGoogleMobileAdsInterstitialModule.NAME,
+        false,
+        false,
+        false,
+        false,
+      )
+      moduleInfos[ReactNativeGoogleMobileAdsRewardedModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeGoogleMobileAdsRewardedModule.NAME,
+          ReactNativeGoogleMobileAdsRewardedModule.NAME,
+          false,
+          false,
+          false,
+          false,
+        )
+      moduleInfos[ReactNativeGoogleMobileAdsRewardedInterstitialModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeGoogleMobileAdsRewardedInterstitialModule.NAME,
+          ReactNativeGoogleMobileAdsRewardedInterstitialModule.NAME,
+          false,
+          false,
+          false,
+          false,
+        )
+      moduleInfos[ReactNativeGoogleMobileAdsNativeModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeGoogleMobileAdsNativeModule.NAME,
+          ReactNativeGoogleMobileAdsNativeModule.NAME,
+          false,
+          false,
+          false,
+          isTurboModule,
+        )
+      moduleInfos
+    }
 }

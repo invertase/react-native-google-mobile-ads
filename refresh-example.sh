@@ -20,6 +20,7 @@ else
   cp RNGoogleMobileAdsExample/.detoxrc.json TEMP/    # Custom detox settings
   cp RNGoogleMobileAdsExample/app.json TEMP/         # Our custom configuration settings / mobile ads app id etc
   cp RNGoogleMobileAdsExample/App.tsx TEMP/          # Our sample app
+  cp -r RNGoogleMobileAdsExample/patches TEMP/       # Our patches
 
   # Our Android DetoxTest integration itself is obviously custom
   mkdir -p TEMP/android/app/src/androidTest/java/com/rngooglemobileadsexample
@@ -34,11 +35,11 @@ fi
 \rm -fr RNGoogleMobileAdsExample
 
 # Make the new RNGoogleMobileAdsExample
-npm_config_yes=true npx react-native init RNGoogleMobileAdsExample --skip-install
+npm_config_yes=true npx @react-native-community/cli init RNGoogleMobileAdsExample --skip-install --skip-git-init
 pushd RNGoogleMobileAdsExample
 rm -rf .ruby-version Gemfile Gemfile.lock _ruby-version _bundle .bundle
 yarn add 'link:../'
-yarn add detox mocha jest-circus jest-environment-node @babel/preset-env typescript --dev
+yarn add detox mocha jest-circus jest-environment-node @babel/preset-env typescript patch-package --dev
 #yarn add 'link:../../jet/'
 yarn add https://github.com/invertase/jet#@mikehardy/jet-next --dev
 
@@ -47,8 +48,7 @@ yarn add https://github.com/invertase/jet#@mikehardy/jet-next --dev
 # echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> android/gradle.properties
 
 # Detox + Android
-echo "Integrating Detox for Android (maven repo, dependency, build config items, kotlin...)"
-sed -i -e $'s/ext {/ext {\\\n        kotlinVersion = "1.7.10"/' android/build.gradle
+echo "Integrating Detox for Android (maven repo, dependency, build config items)"
 sed -i -e $'s/dependencies {/dependencies {\\\n        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"/' android/build.gradle
 rm -f android/build.gradle??
 sed -i -e $'s/dependencies {/dependencies {\\\n    androidTestImplementation(project(path: ":detox"))/' android/app/build.gradle
@@ -58,7 +58,7 @@ sed -i -e $'s/rootProject.name = \'RNGoogleMobileAdsExample\'/rootProject.name =
 rm -f android/settings.gradle??
 
 # React-native builds on iOS are very noisy with warnings in other packages that drown our warnings out. Reduce warnings to just our packages.
-sed -i -e $'s/__apply_Xcode_12_5_M1_post_install_workaround(installer)/__apply_Xcode_12_5_M1_post_install_workaround(installer)\\\n\\\n    # quiet non-module warnings - only interested in google-mobile-ads warnings\\\n    installer.pods_project.targets.each do |target|\\\n      if !target.name.include? "react-native-google-mobile-ads"\\\n        target.build_configurations.each do |config|\\\n          config.build_settings["GCC_WARN_INHIBIT_ALL_WARNINGS"] = "YES"\\\n        end\\\n      end\\\n    end/' ios/Podfile
+sed -i -e $'s/# https/# quiet non-module warnings - only interested in google-mobile-ads warnings\\\n    installer.pods_project.targets.each do |target|\\\n      if !target.name.include? "react-native-google-mobile-ads"\\\n        target.build_configurations.each do |config|\\\n          config.build_settings["GCC_WARN_INHIBIT_ALL_WARNINGS"] = "YES"\\\n        end\\\n      end\\\n    end\\\n\\\n    # https/' ios/Podfile
 rm -f ios/Podfile??
 
 # We want to easily test normal android release build setup, which is with proguard on
@@ -67,14 +67,9 @@ rm -f android/app/build.gradle??
 sed -i -e $'s/proguardFiles/proguardFile "${rootProject.projectDir}\/..\/node_modules\/detox\/android\/detox\/proguard-rules-app.pro"\\\n            proguardFiles/' android/app/build.gradle
 rm -f android/app/build.gradle??
 
-# This is just a speed optimization, very optional, but asks xcodebuild to use clang and clang++ without the fully-qualified path
-# That means that you can then make a symlink in your path with clang or clang++ and have it use a different binary
-# In that way you can install ccache or buildcache and get much faster compiles...
-sed -i -e $'s/__apply_Xcode_12_5_M1_post_install_workaround(installer)/__apply_Xcode_12_5_M1_post_install_workaround(installer)\\\n\\\n    installer.pods_project.targets.each do |target|\\\n      target.build_configurations.each do |config|\\\n        config.build_settings["CC"] = "clang"\\\n        config.build_settings["LD"] = "clang"\\\n        config.build_settings["CXX"] = "clang++"\\\n        config.build_settings["LDPLUSPLUS"] = "clang++"\\\n      end\\\n    end/' ios/Podfile
+# Use ccache get much faster compiles...
+sed -i -e $'s/# :ccache_enabled/:ccache_enabled/' ios/Podfile
 rm -f ios/Podfile??
-
-# run pod install after installing our module
-npm_config_yes=true npx pod-install
 
 # Copy the important files back in
 popd
@@ -83,6 +78,16 @@ cp -frv TEMP/.detox* RNGoogleMobileAdsExample/
 cp -frv TEMP/.mocha* RNGoogleMobileAdsExample/
 rm -f RNGoogleMobileAdsExample/App.js
 cp -frv TEMP/* RNGoogleMobileAdsExample/
-
 # Clean up after ourselves
 \rm -fr TEMP
+
+# Final install commands
+
+pushd RNGoogleMobileAdsExample
+
+# Set ourselves up to run patch-package on post-install
+npm_config_yes=true npx json -I -f package.json -e 'this.scripts.postinstall = "yarn patch-package"'
+yarn patch-package
+
+# run pod install after installing our module
+npm_config_yes=true npx pod-install
