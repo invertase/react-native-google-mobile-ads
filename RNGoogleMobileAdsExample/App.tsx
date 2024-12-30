@@ -520,10 +520,10 @@ const NativeComponent = () => {
             style={{
               backgroundColor: '#FBBC04',
               color: 'white',
-              paddingHorizontal: 4,
-              paddingVertical: 2,
+              paddingHorizontal: 2,
+              paddingVertical: 1,
               fontWeight: 'bold',
-              fontSize: 11,
+              fontSize: 12,
               borderRadius: 4,
             }}>
             AD
