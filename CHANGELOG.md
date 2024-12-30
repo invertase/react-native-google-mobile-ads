@@ -1,3 +1,10 @@
+## [14.8.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.7.2...v14.8.0) (2024-12-30)
+
+
+### Features
+
+* Initial Native Ad Support ([f68d987](https://github.com/invertase/react-native-google-mobile-ads/commit/f68d987bcf2ae2fee1abe133efd096095b514f31))
+
 ### [14.7.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.7.1...v14.7.2) (2024-12-18)
 
 
