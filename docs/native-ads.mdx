@@ -115,6 +115,10 @@ const NativeComponent = () => {
       .catch(console.error);
   }, []);
 
+  if (!nativeAd) {
+    return null;
+  }
+
   return (
     <NativeAdView nativeAd={nativeAd}>
       // Components to display assets must be placed here
@@ -144,6 +148,10 @@ const NativeComponent = () => {
       .then(setNativeAd)
       .catch(console.error);
   }, []);
+
+  if (!nativeAd) {
+    return null;
+  }
 
   return (
     <NativeAdView nativeAd={nativeAd}>
@@ -230,6 +238,10 @@ const NativeComponent = () => {
       .catch(console.error);
   }, []);
 
+  if (!nativeAd) {
+    return null;
+  }
+
   return (
     // Wrap all the ad assets in the NativeAdView component, and register the view with the nativeAd prop
     <NativeAdView nativeAd={nativeAd}>
@@ -285,6 +297,10 @@ const NativeComponent = () => {
     };
   }, [nativeAd]);
 
+  if (!nativeAd) {
+    return null;
+  }
+
   return (
     <NativeAdView nativeAd={nativeAd}>
       // Components to display assets must be placed here
@@ -315,6 +331,10 @@ const NativeComponent = () => {
       nativeAd.destroy();
     };
   }, [nativeAd]);
+
+  if (!nativeAd) {
+    return null;
+  }
 
   return (
     <NativeAdView nativeAd={nativeAd}>
