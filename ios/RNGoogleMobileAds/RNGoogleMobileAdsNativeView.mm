@@ -127,6 +127,11 @@ using namespace facebook::react;
 - (void)registerAsset:(NSString *)assetType reactTag:(NSInteger)reactTag {
   RCTExecuteOnMainQueue(^{
     UIView *view = [_bridge.uiManager viewForReactTag:@(reactTag)];
+    if (!view) {
+      RCTLogError(@"Cannot find NativeAssetView with tag #%zd while registering asset type %@",
+                  reactTag, assetType);
+      return;
+    }
 
     if ([assetType isEqual:@"media"] && [view isKindOfClass:RNGoogleMobileAdsMediaView.class]) {
 #ifdef RCT_NEW_ARCH_ENABLED
@@ -194,9 +199,9 @@ RCT_EXPORT_VIEW_PROPERTY(responseId, NSString)
 }
 
 RCT_EXPORT_METHOD(registerAsset
-                  : (nonnull NSNumber *)reactTag commandID
-                  : (NSInteger)commandID commandArgs
-                  : (NSArray<id> *)commandArgs) {
+                  : (nonnull NSNumber *)reactTag assetType
+                  : (nonnull NSString *)assetType assetReactTag
+                  : (nonnull NSNumber *)assetReactTag) {
   [self.bridge.uiManager
       addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
         RNGoogleMobileAdsNativeView *view = viewRegistry[reactTag];
@@ -204,7 +209,7 @@ RCT_EXPORT_METHOD(registerAsset
           RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
           return;
         }
-        [view registerAsset:commandArgs[0] reactTag:((NSNumber *)commandArgs[1]).intValue];
+        [view registerAsset:assetType reactTag:assetReactTag.intValue];
       }];
 }
 #endif
