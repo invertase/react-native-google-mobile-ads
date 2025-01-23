@@ -31,8 +31,8 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
   ): List<ViewManager<*, *>> {
     return listOf(
       ReactNativeGoogleMobileAdsBannerAdViewManager(),
-      ReactNativeGoogleMobileAdsNativeAdViewManager(reactContext),
-      ReactNativeGoogleMobileAdsMediaViewManager(reactContext)
+      ReactNativeGoogleMobileAdsNativeAdViewManager(),
+      ReactNativeGoogleMobileAdsMediaViewManager()
     )
   }
 

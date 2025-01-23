@@ -18,7 +18,6 @@ package io.invertase.googlemobileads
  */
 
 import android.view.View
-import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.ThemedReactContext
@@ -29,9 +28,7 @@ import com.facebook.react.viewmanagers.RNGoogleMobileAdsNativeViewManagerDelegat
 import com.facebook.react.viewmanagers.RNGoogleMobileAdsNativeViewManagerInterface
 
 @ReactModule(name = ReactNativeGoogleMobileAdsNativeAdViewManager.NAME)
-class ReactNativeGoogleMobileAdsNativeAdViewManager(
-  reactContext: ReactApplicationContext
-) : ViewGroupManager<ReactNativeGoogleMobileAdsNativeAdView>(reactContext),
+class ReactNativeGoogleMobileAdsNativeAdViewManager : ViewGroupManager<ReactNativeGoogleMobileAdsNativeAdView>(),
   RNGoogleMobileAdsNativeViewManagerInterface<ReactNativeGoogleMobileAdsNativeAdView> {
   private val delegate: ViewManagerDelegate<ReactNativeGoogleMobileAdsNativeAdView> = RNGoogleMobileAdsNativeViewManagerDelegate(this)
 
