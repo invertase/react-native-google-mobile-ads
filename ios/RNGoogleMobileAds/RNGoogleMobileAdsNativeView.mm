@@ -132,7 +132,7 @@ using namespace facebook::react;
                   reactTag, assetType);
       return;
     }
-    
+
     if ([assetType isEqual:@"media"] && [view isKindOfClass:RNGoogleMobileAdsMediaView.class]) {
 #ifdef RCT_NEW_ARCH_ENABLED
       GADMediaView *mediaView = ((RNGoogleMobileAdsMediaView *)view).contentView;
