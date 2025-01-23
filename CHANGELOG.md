@@ -1,3 +1,10 @@
+### [14.8.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.8.0...v14.8.1) (2025-01-23)
+
+
+### Bug Fixes
+
+* **ios:** register asset view properly in old arch ([b1ea6c1](https://github.com/invertase/react-native-google-mobile-ads/commit/b1ea6c1046546508c90238b2c61cf4251d2c07db))
+
 ## [14.8.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.7.2...v14.8.0) (2024-12-30)
 
 
