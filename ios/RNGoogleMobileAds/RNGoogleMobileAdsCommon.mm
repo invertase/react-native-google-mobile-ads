@@ -118,10 +118,8 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     code = @"internal-error";
   } else if (error.code == GADErrorInvalidArgument) {
     code = @"invalid-argument";
-  } else if (error.code == GADErrorReceivedInvalidResponse) {
-    code = @"received-invalid-response";
-  } else if (error.code == GADErrorMediationNoFill) {
-    code = @"mediation-no-fill";
+  } else if (error.code == GADErrorReceivedInvalidAdString) {
+    code = @"received-invalid-ad-string";
   } else if (error.code == GADErrorAdAlreadyUsed) {
     code = @"ad-already-used";
   } else if (error.code == GADErrorApplicationIdentifierMissing) {
