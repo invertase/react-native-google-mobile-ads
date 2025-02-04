@@ -146,11 +146,7 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
   if (requestConfiguration[@"testDeviceIdentifiers"]) {
     NSMutableArray *devices = [@[] mutableCopy];
     for (NSString *key in requestConfiguration[@"testDeviceIdentifiers"]) {
-      if ([key isEqualToString:@"EMULATOR"]) {
-        [devices addObject:GADSimulatorID];
-      } else {
-        [devices addObject:key];
-      }
+      [devices addObject:key];
     }
     GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = devices;
   }
