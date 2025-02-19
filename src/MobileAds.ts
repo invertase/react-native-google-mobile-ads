@@ -25,9 +25,12 @@ class MobileAdsModule implements MobileAdsModuleInterface {
 
   subscribeToNativeModuleEvent(eventName: string) {
     if (!NATIVE_MODULE_EVENT_SUBSCRIPTIONS[eventName]) {
-      GoogleMobileAdsNativeEventEmitter.addListener(eventName, event => {
-        SharedEventEmitter.emit(`${eventName}:${event.adUnitId}:${event.requestId}`, event);
-      });
+      GoogleMobileAdsNativeEventEmitter.addListener<{ adUnitId: string; requestId: number }>(
+        eventName,
+        event => {
+          SharedEventEmitter.emit(`${eventName}:${event.adUnitId}:${event.requestId}`, event);
+        },
+      );
 
       NATIVE_MODULE_EVENT_SUBSCRIPTIONS[eventName] = true;
     }

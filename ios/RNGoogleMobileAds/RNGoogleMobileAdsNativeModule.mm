@@ -19,6 +19,7 @@
 
 #import "RNGoogleMobileAdsNativeModule.h"
 #import "RNGoogleMobileAdsCommon.h"
+#import "common/RNRCTEventEmitter.h"
 
 typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable nativeAd,
                                                    NSError *_Nullable error);
@@ -52,10 +53,6 @@ RCT_EXPORT_MODULE();
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params {
   return std::make_shared<facebook::react::NativeGoogleMobileAdsNativeModuleSpecJSI>(params);
-}
-#else
-- (NSArray<NSString *> *)supportedEvents {
-  return @[ @"RNGMANativeAdEvent" ];
 }
 #endif
 
@@ -278,11 +275,7 @@ RCT_EXPORT_METHOD(destroy
   }
   NSDictionary *payload =
       @{@"responseId" : _nativeAd.responseInfo.responseIdentifier, @"type" : type};
-#ifdef RCT_NEW_ARCH_ENABLED
-  [_nativeModule emitOnAdEvent:payload];
-#else
-  [_nativeModule sendEventWithName:@"RNGMANativeAdEvent" body:payload];
-#endif
+  [[RNRCTEventEmitter shared] sendEventWithName:@"RNGMANativeAdEvent" body:payload];
 }
 
 @end
