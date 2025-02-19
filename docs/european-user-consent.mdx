@@ -198,27 +198,26 @@ The UMP SDK uses the consent status from the previous session.
 ```js
 import mobileAds, { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
 
-let isMobileAdsStartCalled = false;
+const isMobileAdsStartCalledRef = useRef(false);
 
-// Request consent information and load/present a consent form if necessary.
-AdsConsent.gatherConsent()
-  .then(({canRequestAds}) => {
-    if (canRequestAds) {
-      startGoogleMobileAdsSDK()
-    }
-  })
-  .catch((error) => console.error('Consent gathering failed:', error))
+useEffect(() => {
+  // Request consent information and load/present a consent form if necessary.
+  AdsConsent.gatherConsent()
+    .then(startGoogleMobileAdsSDK)
+    .catch((error) => console.error('Consent gathering failed:', error));
 
-// Check if you can initialize the Google Mobile Ads SDK in parallel 
-// using consent obtained in the previous session.
-const {canRequestAds} = await AdsConsent.getConsentInfo()
-if (canRequestAds) {
-  startGoogleMobileAdsSDK()
-}
+  // This sample attempts to load ads using consent obtained in the previous session.
+  // We intentionally use .then() chaining (instead of await) to ensure parallel execution.
+  startGoogleMobileAdsSDK();
+}, []);
 
 async function startGoogleMobileAdsSDK() {
-  if (isMobileAdsStartCalled) return;
-  isMobileAdsStartCalled = true;
+  const {canRequestAds} = await AdsConsent.getConsentInfo();
+  if (!canRequestAds || isMobileAdsStartCalledRef.current) {
+    return;
+  }
+
+  isMobileAdsStartCalledRef.current = true;
 
   // (Optional, iOS) Handle Apple's App Tracking Transparency manually.
   const gdprApplies = await AdsConsent.getGdprApplies();
