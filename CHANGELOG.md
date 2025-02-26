@@ -1,3 +1,10 @@
+### [14.9.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.9.0...v14.9.1) (2025-02-26)
+
+
+### Bug Fixes
+
+* **android:** fix for android build on RN77 ([39e3f7d](https://github.com/invertase/react-native-google-mobile-ads/commit/39e3f7d0d67ed866a8e56bfa6a846d7fa86c1f9f))
+
 ## [14.9.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.8.1...v14.9.0) (2025-02-04)
 
 
