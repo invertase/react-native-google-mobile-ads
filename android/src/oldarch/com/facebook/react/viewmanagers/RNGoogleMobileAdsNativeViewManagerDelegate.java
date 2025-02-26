@@ -10,7 +10,9 @@ import com.facebook.react.uimanager.LayoutShadowNode;
 
 public class RNGoogleMobileAdsNativeViewManagerDelegate<
         T extends View,
-        U extends BaseViewManager<T, ? extends LayoutShadowNode> & RNGoogleMobileAdsNativeViewManagerInterface<T>>
+        U extends
+            BaseViewManager<T, ? extends LayoutShadowNode>
+                & RNGoogleMobileAdsNativeViewManagerInterface<T>>
     extends BaseViewManagerDelegate<T, U> {
   public RNGoogleMobileAdsNativeViewManagerDelegate(U viewManager) {
     super(viewManager);
