@@ -4,12 +4,15 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.uimanager.BaseViewManager;
 import com.facebook.react.uimanager.BaseViewManagerDelegate;
-import com.facebook.react.uimanager.BaseViewManagerInterface;
+import com.facebook.react.uimanager.LayoutShadowNode;
 
 public class RNGoogleMobileAdsNativeViewManagerDelegate<
         T extends View,
-        U extends BaseViewManagerInterface<T> & RNGoogleMobileAdsNativeViewManagerInterface<T>>
+        U extends
+            BaseViewManager<T, ? extends LayoutShadowNode>
+                & RNGoogleMobileAdsNativeViewManagerInterface<T>>
     extends BaseViewManagerDelegate<T, U> {
   public RNGoogleMobileAdsNativeViewManagerDelegate(U viewManager) {
     super(viewManager);
