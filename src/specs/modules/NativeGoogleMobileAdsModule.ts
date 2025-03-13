@@ -35,6 +35,7 @@ export interface Spec extends TurboModule {
   openDebugMenu(adUnit: string): void;
   setAppVolume(volume: number): void;
   setAppMuted(muted: boolean): void;
+  isTestDevice(): Promise<boolean>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsModule');

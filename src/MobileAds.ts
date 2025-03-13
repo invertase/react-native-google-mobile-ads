@@ -68,6 +68,10 @@ class MobileAdsModule implements MobileAdsModuleInterface {
   setAppMuted(muted: boolean) {
     RNGoogleMobileAdsModule.setAppMuted(muted);
   }
+
+  isTestDevice(): Promise<boolean> {
+    return RNGoogleMobileAdsModule.isTestDevice();
+  }
 }
 
 const MobileAdsInstance = new MobileAdsModule();

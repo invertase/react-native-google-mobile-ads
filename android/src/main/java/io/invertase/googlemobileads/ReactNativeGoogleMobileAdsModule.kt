@@ -179,6 +179,17 @@ class ReactNativeGoogleMobileAdsModule(
     MobileAds.setAppMuted(muted)
   }
 
+  @ReactMethod
+  fun isTestDevice(promise: Promise) {
+      try {
+          val adRequest = AdRequest.Builder().build()
+          val isTest = adRequest.isTestDevice(reactApplicationContext)
+          promise.resolve(isTest)
+      } catch (e: Exception) {
+          promise.reject("ERROR_CHECKING_TEST_DEVICE", e.message)
+      }
+  }
+
   companion object {
     const val NAME = "RNGoogleMobileAdsModule"
   }
