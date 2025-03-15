@@ -8,6 +8,24 @@
 
 ### Bug Fixes
 
+* **docs:** typos ([5989fbf](https://github.com/invertase/react-native-google-mobile-ads/commit/5989fbf3059efef35521179595ffa8cba59776ec))
+* in sdk 24.0.0 OPTIMIZE_INITIALIZATION and OPTIMIZE_AD_LOADING are set to true by default ([b6be994](https://github.com/invertase/react-native-google-mobile-ads/commit/b6be994620fe73d924cffc6ab816d17515280535))
+
+
+### Reverts
+
+* Revert "fix: resolve AndroidManifest conflict for AD_SERVICES_CONFIG (#660)" ([ebe1d1d](https://github.com/invertase/react-native-google-mobile-ads/commit/ebe1d1d2fb94867638d88cd2e721ddb7cff75632)), closes [#660](https://github.com/invertase/react-native-google-mobile-ads/issues/660)
+
+## [14.10.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.9.1...v14.10.0) (2025-03-15)
+
+
+### Features
+
+* **deps:** update mobile ads sdk - ios 12.2.0 android 24.1.0 ([9287eaa](https://github.com/invertase/react-native-google-mobile-ads/commit/9287eaadbedd454d43a2594cdc7ac049ce1e9403))
+
+
+### Bug Fixes
+
 * in sdk 24.0.0 OPTIMIZE_INITIALIZATION and OPTIMIZE_AD_LOADING are set to true by default ([b6be994](https://github.com/invertase/react-native-google-mobile-ads/commit/b6be994620fe73d924cffc6ab816d17515280535))
 
 
