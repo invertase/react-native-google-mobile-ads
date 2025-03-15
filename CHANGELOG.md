@@ -1,3 +1,17 @@
+### [14.10.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.10.0...v14.10.1) (2025-03-15)
+
+
+### Bug Fixes
+
+* **docs:** small grammar fixes ([234a6bb](https://github.com/invertase/react-native-google-mobile-ads/commit/234a6bbdfcdd603f3b545dcce0c5a8a701c022fe))
+* **docs:** typos ([5989fbf](https://github.com/invertase/react-native-google-mobile-ads/commit/5989fbf3059efef35521179595ffa8cba59776ec))
+* in sdk 24.0.0 OPTIMIZE_INITIALIZATION and OPTIMIZE_AD_LOADING are set to true by default ([b6be994](https://github.com/invertase/react-native-google-mobile-ads/commit/b6be994620fe73d924cffc6ab816d17515280535))
+
+
+### Reverts
+
+* Revert "fix: resolve AndroidManifest conflict for AD_SERVICES_CONFIG (#660)" ([ebe1d1d](https://github.com/invertase/react-native-google-mobile-ads/commit/ebe1d1d2fb94867638d88cd2e721ddb7cff75632)), closes [#660](https://github.com/invertase/react-native-google-mobile-ads/issues/660)
+
 ## [14.10.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.9.1...v14.10.0) (2025-03-15)
 
 
