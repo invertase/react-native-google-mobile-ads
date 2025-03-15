@@ -22,6 +22,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
@@ -30,8 +31,10 @@ import com.google.android.gms.ads.VideoController.VideoLifecycleCallbacks
 import com.google.android.gms.ads.VideoOptions
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdOptions
+import io.invertase.googlemobileads.common.ReactNativeEventEmitter
+import io.invertase.googlemobileads.interfaces.NativeEvent
 
-@ReactModule(ReactNativeGoogleMobileAdsNativeModule.NAME)
+@ReactModule(name = ReactNativeGoogleMobileAdsNativeModule.NAME)
 class ReactNativeGoogleMobileAdsNativeModule(
   reactContext: ReactApplicationContext
 ) : NativeGoogleMobileAdsNativeModuleSpec(reactContext) {
@@ -201,7 +204,12 @@ class ReactNativeGoogleMobileAdsNativeModule(
       val payload = Arguments.createMap()
       payload.putString("responseId", nativeAd.responseInfo?.responseId)
       payload.putString("type", type)
-      this@ReactNativeGoogleMobileAdsNativeModule.emitOnAdEvent(payload)
+
+      val emitter = ReactNativeEventEmitter.getSharedInstance()
+      emitter.sendEvent(object : NativeEvent {
+        override fun getEventName() = "RNGMANativeAdEvent"
+        override fun getEventBody() = payload
+      })
     }
   }
 
