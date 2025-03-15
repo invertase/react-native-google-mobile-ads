@@ -10,7 +10,7 @@ App open ads can be closed by your users at any time. App open ads can be shown 
 App open ads are shown when your application launches or when users bring your application to the foreground.
 To make sure you have an ad ready to display when a user opens your app, you'll want to have a reference to an ad ready to use.
 
-That means you must preload a app open ad before you need to show the ad. That way, your app open ad is ready to show the next time the app is opened.
+That means you must preload an app open ad before you need to show the ad. That way, your app open ad is ready to show the next time the app is opened.
 
 To create a new app open ad, call the `createForAdRequest` method from the `AppOpenAd` class. The first argument
 of the method is the "Ad Unit ID". For testing, we can use a Test ID, however for production the ID from the
@@ -61,7 +61,7 @@ Google built app open ads to help you monetize your app's loading screen, but it
 
 ## Interstitial Ads
 
-Interstitials are full-screen ads that cover the interface of an app until closed by the user. These type of ads are
+Interstitials are full-screen ads that cover the interface of an app until closed by the user. These types of ads are
 programmatically loaded and then shown at a suitable point during your application flow (e.g. after a level on a gaming
 app has been completed, or game over). The ads can be preloaded in the background to ensure they're ready to go when needed.
 
@@ -111,13 +111,13 @@ function App() {
     const unsubscribeOpened = interstitial.addAdEventListener(AdEventType.OPENED, () => {
       if (Platform.OS === 'ios') {
         // Prevent the close button from being unreachable by hiding the status bar on iOS
-        StatusBar.setHidden(true)
+        StatusBar.setHidden(true);
       }
     });
 
     const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
       if (Platform.OS === 'ios') {
-        StatusBar.setHidden(false)
+        StatusBar.setHidden(false);
       }
     });
 
@@ -423,13 +423,13 @@ import { BannerAd, BannerAdSize, TestIds, useForeground } from 'react-native-goo
 const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 function App() {
-  const bannerRef = useRef<BannerAd>(null);
+  const bannerRef = useRef < BannerAd > null;
 
   // (iOS) WKWebView can terminate if app is in a "suspended state", resulting in an empty banner when app returns to foreground.
   // Therefore it's advised to "manually" request a new ad when the app is foregrounded (https://groups.google.com/g/google-admob-ads-sdk/c/rwBpqOUr8m8).
   useForeground(() => {
     Platform.OS === 'ios' && bannerRef.current?.load();
-  })
+  });
 
   return (
     <BannerAd ref={bannerRef} unitId={adUnitId} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />
@@ -441,7 +441,8 @@ The `size` prop takes a [`BannerAdSize`](https://github.com/invertase/react-nati
 fill the space for the chosen size.
 
 <Info>
-If no inventory for the size specified is available, an error will be thrown via `onAdFailedToLoad`!
+  If no inventory for the size specified is available, an error will be thrown via
+  `onAdFailedToLoad`!
 </Info>
 
 The `requestOptions` prop is additional optional request options object to be sent whilst loading an advert, such as keywords & location.
