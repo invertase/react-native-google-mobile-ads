@@ -1,3 +1,16 @@
+## [14.11.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.10.1...v14.11.0) (2025-03-23)
+
+
+### Features
+
+* **deps:** update mobile ads sdk - ios 12.2.0 ([c88d8c0](https://github.com/invertase/react-native-google-mobile-ads/commit/c88d8c00901f555187cf15eb6dea50f3cc1167a6))
+
+
+### Bug Fixes
+
+* Revert "feat(deps): update mobile ads sdk - ios 12.2.0 android 24.1.0" ([f26a903](https://github.com/invertase/react-native-google-mobile-ads/commit/f26a903985ae61384dff780a41cb1d08c4bf31e9))
+* Revert "Revert "fix: resolve AndroidManifest conflict for AD_SERVICES_CONFIG ([#660](https://github.com/invertase/react-native-google-mobile-ads/issues/660))"" ([972f432](https://github.com/invertase/react-native-google-mobile-ads/commit/972f432e33a8b3643e3636bb9b29d41d274f7a16))
+
 ### [14.10.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.10.0...v14.10.1) (2025-03-15)
 
 
