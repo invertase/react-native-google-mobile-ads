@@ -1,3 +1,14 @@
+## [15.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.11.0...v15.0.0) (2025-03-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** requires kotlin 2.1.0
+
+### Features
+
+* **deps:** update mobile ads sdk - android 24.1.0 ([52a4e67](https://github.com/invertase/react-native-google-mobile-ads/commit/52a4e671e6daf72c55aca90b1a8c7370ca3aa437))
+
 ## [14.11.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v14.10.1...v14.11.0) (2025-03-23)
 
 
