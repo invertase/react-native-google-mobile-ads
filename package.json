@@ -51,7 +51,7 @@
       "targetSdk": 34,
       "compileSdk": 34,
       "buildTools": "34.0.0",
-      "googleMobileAds": "24.1.0",
+      "googleMobileAds": "24.2.0",
       "googleUmp": "3.1.0"
     }
   },
