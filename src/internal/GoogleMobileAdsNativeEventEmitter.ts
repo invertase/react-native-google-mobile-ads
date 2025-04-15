@@ -27,9 +27,9 @@ class GANativeEventEmitter extends NativeEventEmitter {
     this.ready = false;
   }
 
-  addListener(
+  addListener<T>(
     eventType: string,
-    listener: (event: { adUnitId: string; requestId: number }) => void,
+    listener: (event: T) => void,
     context?: Record<string, unknown>,
   ) {
     if (!this.ready) {
