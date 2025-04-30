@@ -162,7 +162,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
   [[RNRCTEventEmitter shared] sendEventWithName:event body:payload];
 }
 
-+ (GADAdSize)stringToAdSize:(NSString *)value withMaxHeight:(CGFloat)maxHeight {
++ (GADAdSize)stringToAdSize:(NSString *)value withMaxHeight:(CGFloat)maxHeight andMaxWidth:(CGFloat)maxWidth {
   NSError *error = nil;
   NSRegularExpression *regex =
       [NSRegularExpression regularExpressionWithPattern:@"([0-9]+)x([0-9]+)"
@@ -204,7 +204,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
       frame =
           UIEdgeInsetsInsetRect(frame, [UIApplication sharedApplication].keyWindow.safeAreaInsets);
     }
-    CGFloat viewWidth = frame.size.width;
+    CGFloat viewWidth = MIN(frame.size.width, maxWidth);
     if ([value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
       if (maxHeight > 0) {
         return GADInlineAdaptiveBannerAdSizeWithWidthAndMaxHeight(viewWidth, MAX(maxHeight, 32.0));

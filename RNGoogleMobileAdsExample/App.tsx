@@ -185,10 +185,12 @@ class InterstitialTest implements Test {
 class BannerTest implements Test {
   bannerAdSize: BannerAdSize | string;
   maxHeight: number | undefined;
-  constructor(bannerAdSize, maxHeight: number | undefined = undefined) {
+  width: number | undefined;
+  constructor(bannerAdSize: BannerAdSize | string, maxHeight?: number, width?: number) {
     this.bannerAdSize = bannerAdSize;
     this.bannerRef = React.createRef();
     this.maxHeight = maxHeight;
+    this.width = width;
   }
 
   getPath(): string {
@@ -197,7 +199,9 @@ class BannerTest implements Test {
       .map(
         s => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1),
       )
-      .join('').concat(this.maxHeight ? `MaxHeight${this.maxHeight}` : '');
+      .join('')
+      .concat(this.maxHeight ? `MaxHeight${this.maxHeight}` : '')
+      .concat(this.width ? `Width${this.width}` : '');
   }
 
   getTestType(): TestType {
@@ -216,6 +220,7 @@ class BannerTest implements Test {
           }
           size={this.bannerAdSize}
           maxHeight={this.maxHeight}
+          width={this.width}
           onPaid={(event: PaidEvent) => {
             console.log(
               `Paid: ${event.value} ${event.currency} (precision ${
@@ -998,6 +1003,7 @@ class DebugMenuTest implements Test {
 Object.keys(BannerAdSize).forEach(bannerAdSize => {
   if (bannerAdSize === "INLINE_ADAPTIVE_BANNER") {
     TestRegistry.registerTest(new BannerTest(bannerAdSize, 100))
+    TestRegistry.registerTest(new BannerTest(bannerAdSize, 200, 200))
   }
   TestRegistry.registerTest(new BannerTest(bannerAdSize));
 });

@@ -55,22 +55,28 @@ using namespace facebook::react;
     propsChanged = true;
   }
 
-  if (oldViewProps.sizes != newViewProps.sizes || oldViewProps.maxAdHeight != newViewProps.maxAdHeight) {
-    NSMutableArray *adSizes = [NSMutableArray arrayWithCapacity:newViewProps.sizes.size()];
+  if (oldViewProps.sizeConfig.sizes != newViewProps.sizeConfig.sizes ||
+      oldViewProps.sizeConfig.maxHeight != newViewProps.sizeConfig.maxHeight ||
+      oldViewProps.sizeConfig.width != newViewProps.sizeConfig.width) {
+    NSMutableArray *adSizes = [NSMutableArray arrayWithCapacity:newViewProps.sizeConfig.sizes.size()];
     CGFloat maxAdHeight = -1;
-    if (newViewProps.maxAdHeight > 0) {
-      maxAdHeight = newViewProps.maxAdHeight;
+    CGFloat maxAdWidth = 10000; // bigger than any screen width, which will cap it
+    if (newViewProps.sizeConfig.maxHeight > 0) {
+      maxAdHeight = newViewProps.sizeConfig.maxHeight;
     }
-    for (auto i = 0; i < newViewProps.sizes.size(); i++) {
-      NSString *jsonValue = [[NSString alloc] initWithUTF8String:newViewProps.sizes[i].c_str()];
-      GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue withMaxHeight: maxAdHeight];
+    if (newViewProps.sizeConfig.width > 0) {
+      maxAdWidth = newViewProps.sizeConfig.width;
+    }
+    for (auto i = 0; i < newViewProps.sizeConfig.sizes.size(); i++) {
+      NSString *jsonValue = [[NSString alloc] initWithUTF8String:newViewProps.sizeConfig.sizes[i].c_str()];
+      GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue withMaxHeight: maxAdHeight andMaxWidth: maxAdWidth];
       if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
         RCTLogWarn(@"Invalid adSize %@", jsonValue);
       } else {
         [adSizes addObject:NSValueFromGADAdSize(adSize)];
       }
     }
-    _sizes = adSizes;
+    _sizeConfig = @{ @"sizes": adSizes, @"maxHeight": [NSNumber numberWithFloat: maxAdHeight], @"width": [NSNumber numberWithFloat: maxAdWidth] };
     propsChanged = true;
   }
 
@@ -119,7 +125,7 @@ using namespace facebook::react;
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
 
-    ((GAMBannerView *)_banner).validAdSizes = _sizes;
+    ((GAMBannerView *)_banner).validAdSizes = _sizeConfig[@"sizes"];
     ((GAMBannerView *)_banner).appEventDelegate = self;
     ((GAMBannerView *)_banner).enableManualImpressions = [_manualImpressionsEnabled boolValue];
   } else {
@@ -142,11 +148,11 @@ using namespace facebook::react;
   return;  // prevent crash on 32bit
 #endif
 
-  if (_unitId == nil || _sizes == nil || _request == nil || _manualImpressionsEnabled == nil) {
+  if (_unitId == nil || _sizeConfig == nil || _request == nil || _manualImpressionsEnabled == nil) {
     [self setRequested:NO];
     return;
   } else {
-    [self initBanner:GADAdSizeFromNSValue(_sizes[0])];
+    [self initBanner:GADAdSizeFromNSValue(_sizeConfig[@"sizes"][0])];
     [self addSubview:_banner];
     _banner.adUnitID = _unitId;
     [self setRequested:YES];

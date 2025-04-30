@@ -31,9 +31,7 @@
 
 RCT_EXPORT_MODULE(RNGoogleMobileAdsBannerView);
 
-RCT_EXPORT_VIEW_PROPERTY(sizes, NSArray);
-
-RCT_EXPORT_VIEW_PROPERTY(maxAdHeight, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(sizeConfig, NSDictionary);
 
 RCT_EXPORT_VIEW_PROPERTY(unitId, NSString);
 

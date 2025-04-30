@@ -27,9 +27,7 @@
 @property GADBannerView *banner;
 @property(nonatomic, assign) BOOL requested;
 
-@property(nonatomic, copy) NSArray *sizeStrings;
-@property(nonatomic, copy) NSArray *sizes;
-@property(nonatomic, assign) CGFloat maxAdHeight;
+@property(nonatomic, copy) NSDictionary *sizeConfig;
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
 @property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
