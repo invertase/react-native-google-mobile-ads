@@ -38,6 +38,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
+import android.util.Log;
 
 public class ReactNativeGoogleMobileAdsCommon {
 
@@ -51,15 +52,21 @@ public class ReactNativeGoogleMobileAdsCommon {
 
       DisplayMetrics outMetrics = new DisplayMetrics();
       display.getMetrics(outMetrics);
-      int adWidth = (int) (outMetrics.widthPixels / outMetrics.density);
+      
+      // Get custom width if set, otherwise use device width
+      float customWidth = ((ReactNativeAdView)reactViewGroup).getAdWidth();
+      int adWidth = customWidth > 0 
+          ? Math.round(customWidth) 
+          : (int) (outMetrics.widthPixels / outMetrics.density);
+      
       float maxAdHeight = ((ReactNativeAdView)reactViewGroup).getMaxAdHeight();
-
+      Log.d("maxAdHeight", String.valueOf(maxAdHeight));
+      Log.d("adWidth", String.valueOf(adWidth));
       if ("INLINE_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
-    if (maxAdHeight > 0) {
-        return AdSize.getInlineAdaptiveBannerAdSize(adWidth, Math.round(Math.max(maxAdHeight, 32)));
-    }
-    return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
-        reactViewGroup.getContext(), adWidth);
+        if (maxAdHeight > 0) {
+          Log.d("inline with height", "got here");
+          return AdSize.getInlineAdaptiveBannerAdSize(adWidth, Math.round(Math.max(maxAdHeight, 32)));
+        }
         return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
             reactViewGroup.getContext(), adWidth);
       }

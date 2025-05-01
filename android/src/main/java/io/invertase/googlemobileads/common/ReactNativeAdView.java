@@ -19,8 +19,8 @@ import java.util.List;
 public class ReactNativeAdView extends FrameLayout {
   private AdRequest request;
   private List<AdSize> sizes;
-  private ReadableArray sizesArray;
   private float maxAdHeight;
+  private float adWidth;
   private String unitId;
   private boolean manualImpressionsEnabled;
   private boolean propsChanged;
@@ -77,20 +77,20 @@ public class ReactNativeAdView extends FrameLayout {
     return this.sizes;
   }
 
-  public void setSizesArray(ReadableArray sizesArray) {
-    this.sizesArray = sizesArray;
-  }
-
-  public ReadableArray getSizesArray() {
-    return this.sizesArray;
-  }
-
   public void setMaxAdHeight(float maxAdHeight) {
     this.maxAdHeight = maxAdHeight;
   }
 
   public float getMaxAdHeight() {
     return this.maxAdHeight;
+  }
+
+  public void setAdWidth(float adWidth) {
+    this.adWidth = adWidth;
+  }
+
+  public float getAdWidth() {
+    return this.adWidth;
   }
 
   public void setUnitId(String unitId) {
