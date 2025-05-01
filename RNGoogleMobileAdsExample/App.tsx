@@ -184,8 +184,8 @@ class InterstitialTest implements Test {
 
 class BannerTest implements Test {
   bannerAdSize: BannerAdSize | string;
-  maxHeight: number | undefined;
-  width: number | undefined;
+  maxHeight?: number;
+  width?: number;
   constructor(bannerAdSize: BannerAdSize | string, maxHeight?: number, width?: number) {
     this.bannerAdSize = bannerAdSize;
     this.bannerRef = React.createRef();

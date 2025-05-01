@@ -148,7 +148,6 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
             if (sizesArray.getType(i) == ReadableType.String) {
               String sizeString = sizesArray.getString(i);
               AdSize adSize = ReactNativeGoogleMobileAdsCommon.getAdSize(sizeString, reactViewGroup);
-              Log.d("adSize", adSize.toString());
               sizeList.add(adSize);
             }
           }
