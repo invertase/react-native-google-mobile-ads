@@ -1,0 +1,58 @@
+diff --git a/node_modules/jet/dist/TestListView.js b/node_modules/jet/dist/TestListView.js
+index 7433547..9539bee 100644
+--- a/node_modules/jet/dist/TestListView.js
++++ b/node_modules/jet/dist/TestListView.js
+@@ -46,6 +46,7 @@ var testListViewStyles = ReactNative.StyleSheet.create({
+     button: {
+         flex: 0,
+         margin: 8,
++        padding: 4,
+         height: 28,
+         backgroundColor: CommonStyles.buttonBackgroundColor,
+         borderRadius: CommonStyles.buttonBorderRadius,
+@@ -132,33 +133,30 @@ var TestListView = /** @class */ (function (_super) {
+             var testType = test.getTestType();
+             var result = TestRegistry_1.default.getResult(testPath);
+             var resultText;
++            var resultTextStyle;
+             if (!result) {
+-                resultText = (<ReactNative.Text style={testListViewStyles.notRunText} numberOfLines={1}>
+-            not run
+-          </ReactNative.Text>);
++                resultTextStyle = testListViewStyles.notRunText
++                resultText = "not run"
+             }
+             else if (result.errors.length > 0) {
+-                resultText = (<ReactNative.Text style={testListViewStyles.errorText} numberOfLines={1}>
+-            {result.errors.length + (result.errors.length > 1 ? ' errors' : ' error')}
+-          </ReactNative.Text>);
++                resultTextStyle = testListViewStyles.errorText
++                resultText = result.errors.length + (result.errors.length > 1 ? ' errors' : ' error')
+             }
+             else if (testType === Test_1.TestType.Interactive && !result.userValidated) {
+-                resultText = (<ReactNative.Text style={testListViewStyles.warningText} numberOfLines={1}>
+-            needs validation
+-          </ReactNative.Text>);
++                resultTextStyle = testListViewStyles.warningText
++                resultText = "needs validation"
+             }
+             else {
+-                resultText = (<ReactNative.Text style={testListViewStyles.successText} numberOfLines={1}>
+-            {testType === Test_1.TestType.Interactive ? 'validated' : 'success'}
+-          </ReactNative.Text>);
++                resultTextStyle = testListViewStyles.successText
++                resultText = testType === Test_1.TestType.Interactive ? 'validated' : 'success'
+             }
+-            return (<ReactNative.View style={testListViewStyles.itemContainer} key={testPath} onTouchStart={function () { return _this._onPressItem(testPath); }}>
++            return (<ReactNative.View style={testListViewStyles.itemContainer} key={testPath}>
+           <ReactNative.View style={testListViewStyles.itemTextContainer}>
+             <ReactNative.Text style={testListViewStyles.itemText} numberOfLines={1}>
+               {TestRegistry_1.default.formatPath(test.getPath())}
+             </ReactNative.Text>
+-            <ReactNative.View style={testListViewStyles.resultContainer}>
+-              {resultText}
++            <ReactNative.View style={{paddingTop: 1}}>
++                <ReactNative.Button style={[testListViewStyles.button, resultTextStyle]} title={resultText} onPress={function () { return _this._onPressItem(testPath); }} />
+             </ReactNative.View>
+           </ReactNative.View>
+         </ReactNative.View>);

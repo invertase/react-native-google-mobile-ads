@@ -8,6 +8,7 @@
       [
         ["Getting Started", "/"],
         ["Displaying Ads", "/displaying-ads"],
+        ["Native Ads", "/native-ads"],
         ["Common Reasons For Ads Not Showing", "/common-reasons-for-ads-not-showing"]
       ]
     ],
@@ -26,7 +27,8 @@
       "Migration Guides",
       [
         ["Migrating to v5", "/migrating-to-v5"],
-        ["Migrating to v6", "/migrating-to-v6"]
+        ["Migrating to v6", "/migrating-to-v6"],
+        ["Migrating to v15", "/migrating-to-v15"]
       ]
     ]
   ]

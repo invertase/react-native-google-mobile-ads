@@ -23,15 +23,26 @@ import com.google.android.gms.ads.initialization.OnInitializationCompleteListene
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.ads.AdInspectorError
 import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdValue;
 import com.google.android.gms.ads.OnAdInspectorClosedListener
-
-private const val SERVICE = "RNGoogleMobileAdsModule";
 
 class ReactNativeGoogleMobileAdsModule(
   reactContext: ReactApplicationContext
 ) : ReactContextBaseJavaModule(reactContext) {
 
-  override fun getName() = SERVICE
+  override fun getName() = NAME
+
+  override fun getConstants(): Map<String, Any> {
+    return mapOf(
+        // Precision types in ad revenue events.
+        // See:
+        // https://developers.google.com/android/reference/com/google/android/gms/ads/AdValue.PrecisionType
+        "REVENUE_PRECISION_UNKNOWN" to AdValue.PrecisionType.UNKNOWN,
+        "REVENUE_PRECISION_ESTIMATED" to AdValue.PrecisionType.ESTIMATED,
+        "REVENUE_PRECISION_PUBLISHER_PROVIDED" to AdValue.PrecisionType.PUBLISHER_PROVIDED,
+        "REVENUE_PRECISION_PRECISE" to AdValue.PrecisionType.PRECISE
+    )
+  }
 
   private fun buildRequestConfiguration(
     requestConfiguration: ReadableMap
@@ -95,7 +106,12 @@ class ReactNativeGoogleMobileAdsModule(
   @ReactMethod
   fun initialize(promise: Promise) {
     MobileAds.initialize(
-      reactApplicationContext,
+      // in react-native, the Activity instance *may* go away, becoming null after initialize
+      // it is not clear if that can happen here without an initialize necessarily following the Activity lifecycle
+      // it is not clear if that will cause problems even if it happens, but users that have widely deployed this
+      // with the use of currentActivity have not seen problems
+      // reference if it needs attention: https://github.com/invertase/react-native-google-mobile-ads/pull/664
+      currentActivity ?: reactApplicationContext,
       OnInitializationCompleteListener { initializationStatus ->
         val result = Arguments.createArray()
         for ((key, value) in initializationStatus.adapterStatusMap) {
@@ -146,7 +162,6 @@ class ReactNativeGoogleMobileAdsModule(
     }
   }
 
-
   @ReactMethod
   fun openDebugMenu(adUnit: String) {
     currentActivity?.runOnUiThread {
@@ -162,5 +177,9 @@ class ReactNativeGoogleMobileAdsModule(
   @ReactMethod
   fun setAppMuted(muted: Boolean) {
     MobileAds.setAppMuted(muted)
+  }
+
+  companion object {
+    const val NAME = "RNGoogleMobileAdsModule"
   }
 }

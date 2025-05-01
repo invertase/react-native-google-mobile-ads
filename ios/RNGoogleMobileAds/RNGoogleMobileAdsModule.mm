@@ -36,6 +36,10 @@ RCT_EXPORT_MODULE();
   return dispatch_get_main_queue();
 }
 
++ (BOOL)requiresMainQueueSetup {
+  return YES;
+}
+
 #pragma mark -
 #pragma mark Google Mobile Ads Methods
 
@@ -142,11 +146,7 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
   if (requestConfiguration[@"testDeviceIdentifiers"]) {
     NSMutableArray *devices = [@[] mutableCopy];
     for (NSString *key in requestConfiguration[@"testDeviceIdentifiers"]) {
-      if ([key isEqualToString:@"EMULATOR"]) {
-        [devices addObject:GADSimulatorID];
-      } else {
-        [devices addObject:key];
-      }
+      [devices addObject:key];
     }
     GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = devices;
   }
@@ -173,6 +173,23 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
                            }
                          }];
 #endif
+}
+
+- (NSDictionary *)constantsToExport {
+  return @{
+  // Precision types in ad revenue events.
+  // See: https://developers.google.com/admob/ios/impression-level-ad-revenue#objective-c
+#if !TARGET_OS_MACCATALYST
+    @"REVENUE_PRECISION_UNKNOWN" : @(GADAdValuePrecisionUnknown),
+    @"REVENUE_PRECISION_ESTIMATED" : @(GADAdValuePrecisionEstimated),
+    @"REVENUE_PRECISION_PUBLISHER_PROVIDED" : @(GADAdValuePrecisionPublisherProvided),
+    @"REVENUE_PRECISION_PRECISE" : @(GADAdValuePrecisionPrecise)
+  };
+#endif
+}
+
+- (NSDictionary *)getConstants {
+  return [self constantsToExport];
 }
 
 @end

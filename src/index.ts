@@ -21,16 +21,23 @@ import { version } from './version';
 export const SDK_VERSION = version;
 
 export { default, MobileAds } from './MobileAds';
-export { AdsConsentDebugGeography } from './AdsConsentDebugGeography';
+export {
+  AdsConsentDebugGeography,
+  AdsConsentInfo,
+  AdsConsentInfoOptions,
+  AdsConsentInterface,
+  AdsConsentPrivacyOptionsRequirementStatus,
+  AdsConsentStatus,
+  AdsConsentUserChoices,
+} from './specs/modules/NativeConsentModule';
 export { AdsConsentPurposes } from './AdsConsentPurposes';
 export { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
-export { AdsConsentStatus } from './AdsConsentStatus';
-export { AdsConsentPrivacyOptionsRequirementStatus } from './AdsConsentPrivacyOptionsRequirementStatus';
 export { MaxAdContentRating } from './MaxAdContentRating';
 export { TestIds } from './TestIds';
 export { AdEventType } from './AdEventType';
 export { BannerAdSize, GAMBannerAdSize } from './BannerAdSize';
 export { GAMAdEventType } from './GAMAdEventType';
+export { NativeAdEventType } from './NativeAdEventType';
 export { RewardedAdEventType } from './RewardedAdEventType';
 export { AdsConsent } from './AdsConsent';
 export { AppOpenAd } from './ads/AppOpenAd';
@@ -38,6 +45,10 @@ export { InterstitialAd } from './ads/InterstitialAd';
 export { RewardedAd } from './ads/RewardedAd';
 export { RewardedInterstitialAd } from './ads/RewardedInterstitialAd';
 export { BannerAd } from './ads/BannerAd';
+export { NativeAd } from './ads/native-ad/NativeAd';
+export { NativeAdView } from './ads/native-ad/NativeAdView';
+export { NativeMediaView } from './ads/native-ad/NativeMediaView';
+export { NativeAsset, NativeAssetType } from './ads/native-ad/NativeAsset';
 export { GAMBannerAd } from './ads/GAMBannerAd';
 export { GAMInterstitialAd } from './ads/GAMInterstitialAd';
 export { useAppOpenAd } from './hooks/useAppOpenAd';

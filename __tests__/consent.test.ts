@@ -12,7 +12,7 @@ describe('Google Mobile Ads AdsConsent', function () {
     it('throws if options.debugGeography is not a valid value.', function () {
       // @ts-ignore
       expect(() => AdsConsent.requestInfoUpdate({ debugGeography: -1 })).toThrowError(
-        "AdsConsent.requestInfoUpdate(*) 'options.debugGeography' expected one of AdsConsentDebugGeography.DISABLED, AdsConsentDebugGeography.EEA or AdsConsentDebugGeography.NOT_EEA.",
+        "AdsConsent.requestInfoUpdate(*) 'options.debugGeography' expected one of AdsConsentDebugGeography.DISABLED, AdsConsentDebugGeography.EEA, AdsConsentDebugGeography.NOT_EEA, AdsConsentDebugGeography.REGULATED_US_STATE or AdsConsentDebugGeography.OTHER.",
       );
     });
 
