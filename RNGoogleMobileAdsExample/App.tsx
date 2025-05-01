@@ -1189,7 +1189,7 @@ TestRegistry.registerTest(new DebugMenuTest());
 const App = () => {
   return (
     <SafeAreaView>
-      <ScrollView contentContainerStyle={{ paddingRight: 15 }} contentInsetAdjustmentBehavior="automatic">
+      <ScrollView contentInsetAdjustmentBehavior="automatic">
         <TestRunner />
       </ScrollView>
     </SafeAreaView>
