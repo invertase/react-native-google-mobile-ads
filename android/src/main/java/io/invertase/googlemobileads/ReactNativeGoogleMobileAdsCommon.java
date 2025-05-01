@@ -55,9 +55,10 @@ public class ReactNativeGoogleMobileAdsCommon {
       
       // Get custom width if set, otherwise use device width
       float customWidth = ((ReactNativeAdView)reactViewGroup).getAdWidth();
+      int screenWidth = (int) (outMetrics.widthPixels / outMetrics.density);
       int adWidth = customWidth > 0 
-          ? Math.round(customWidth) 
-          : (int) (outMetrics.widthPixels / outMetrics.density);
+          ? Math.min(Math.round(customWidth), screenWidth)
+          : screenWidth;
       
       float maxAdHeight = ((ReactNativeAdView)reactViewGroup).getMaxAdHeight();
       if ("INLINE_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {

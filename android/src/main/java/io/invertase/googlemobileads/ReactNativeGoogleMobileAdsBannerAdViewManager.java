@@ -52,7 +52,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
-import android.util.Log;
+
 public class ReactNativeGoogleMobileAdsBannerAdViewManager
     extends SimpleViewManager<ReactNativeAdView> {
   private static final String REACT_CLASS = "RNGoogleMobileAdsBannerView";
