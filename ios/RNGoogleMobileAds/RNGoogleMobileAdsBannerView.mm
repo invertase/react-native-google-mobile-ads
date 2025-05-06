@@ -61,24 +61,18 @@ using namespace facebook::react;
       oldViewProps.sizeConfig.maxHeight != newViewProps.sizeConfig.maxHeight ||
       oldViewProps.sizeConfig.width != newViewProps.sizeConfig.width) {
     NSMutableArray *adSizes = [NSMutableArray arrayWithCapacity:newViewProps.sizeConfig.sizes.size()];
-    CGFloat maxAdHeight = -1;
-    CGFloat maxAdWidth = 10000; // bigger than any screen width, which will cap it
-    if (newViewProps.sizeConfig.maxHeight > 0) {
-      maxAdHeight = newViewProps.sizeConfig.maxHeight;
-    }
-    if (newViewProps.sizeConfig.width > 0) {
-      maxAdWidth = newViewProps.sizeConfig.width;
-    }
+    CGFloat maxAdHeight = newViewProps.sizeConfig.maxHeight > 0 ? newViewProps.sizeConfig.maxHeight : -1;
+    CGFloat width = newViewProps.sizeConfig.width > 0 ? newViewProps.sizeConfig.width : -1;
     for (auto i = 0; i < newViewProps.sizeConfig.sizes.size(); i++) {
       NSString *jsonValue = [[NSString alloc] initWithUTF8String:newViewProps.sizeConfig.sizes[i].c_str()];
-      GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue withMaxHeight: maxAdHeight andMaxWidth: maxAdWidth];
+      GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue withMaxHeight: maxAdHeight andWidth: width];
       if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
         RCTLogWarn(@"Invalid adSize %@", jsonValue);
       } else {
         [adSizes addObject:NSValueFromGADAdSize(adSize)];
       }
     }
-    _sizeConfig = @{ @"sizes": adSizes, @"maxHeight": [NSNumber numberWithFloat: maxAdHeight], @"width": [NSNumber numberWithFloat: maxAdWidth] };
+    _sizeConfig = @{ @"sizes": adSizes, @"maxHeight": [NSNumber numberWithFloat: maxAdHeight], @"width": [NSNumber numberWithFloat: width] };
     propsChanged = true;
   }
 

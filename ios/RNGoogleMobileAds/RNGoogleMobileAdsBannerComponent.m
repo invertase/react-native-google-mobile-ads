@@ -67,25 +67,17 @@
 - (void)setSizeConfig:(NSDictionary *)sizeConfig {
   NSArray *sizes = sizeConfig[@"sizes"];
   __block NSMutableArray *adSizes = [[NSMutableArray alloc] initWithCapacity:sizes.count];
-  id heightWrapper = sizeConfig[@"maxHeight"];
-  id widthWrapper = sizeConfig[@"width"];
-  CGFloat maxHeight = -1;
-  CGFloat maxWidth = 10000;
-  if (heightWrapper != nil) {
-    maxHeight = [heightWrapper doubleValue];
-  }
-  if (widthWrapper != nil) {
-    maxWidth = [widthWrapper doubleValue];
-  }
+  CGFloat maxHeight = sizeConfig[@"maxHeight"] ? [sizeConfig[@"maxHeight"] doubleValue] : -1;
+  CGFloat width = sizeConfig[@"width"] ? [sizeConfig[@"width"] doubleValue] : -1;
   [sizes enumerateObjectsUsingBlock:^(id jsonValue, NSUInteger idx, __unused BOOL *stop) {
-    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue withMaxHeight:maxHeight andMaxWidth:maxWidth];
+    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue withMaxHeight:maxHeight andWidth:width];
     if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
       RCTLogWarn(@"Invalid adSize %@", jsonValue);
     } else {
       [adSizes addObject:NSValueFromGADAdSize(adSize)];
     }
   }];
-  _sizeConfig = @{ @"sizes": adSizes, @"maxHeight": [NSNumber numberWithFloat: maxHeight], @"width": [NSNumber numberWithFloat: maxWidth] };
+  _sizeConfig = @{ @"sizes": adSizes, @"maxHeight": [NSNumber numberWithFloat: maxHeight], @"width": [NSNumber numberWithFloat: width] };
   _propsChanged = true;
 }
 
