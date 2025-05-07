@@ -55,8 +55,8 @@ export interface BannerAdProps {
   maxHeight?: number;
 
   /**
-   * Fix inline adaptive banner width.
-   * By default, inline adaptive banners instantiated without a width value have a width equal to the device width.
+   * Sets the width for adaptive banners (inline and anchored).
+   * If not specified, the width defaults to the full device width.
    */
   width?: number;
 
