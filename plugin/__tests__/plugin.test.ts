@@ -90,7 +90,23 @@ describe.each(['app.json', 'app.config.js', 'app.config.ts'])('Expo Config Plugi
     expect(androidManifest).toMatchSnapshot();
   });
 
+  it('Should modify AndroidManifest.xml idempotently', async () => {
+    await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
+    await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
+
+    const androidManifest = await fs.readFile(androidManifestPath, 'utf8');
+    expect(androidManifest).toMatchSnapshot();
+  });
+
   it('Should modify Info.plist', async () => {
+    await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
+
+    const infoPlist = await fs.readFile(infoPlistPath, 'utf8');
+    expect(infoPlist).toMatchSnapshot();
+  });
+
+  it('Should modify Info.plist idempotently', async () => {
+    await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
     await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
 
     const infoPlist = await fs.readFile(infoPlistPath, 'utf8');
