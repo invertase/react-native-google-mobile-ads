@@ -33,7 +33,18 @@ function addReplacingMainApplicationMetaDataItem(
 
   const mainApplication = AndroidConfig.Manifest.getMainApplicationOrThrow(manifest);
   mainApplication['meta-data'] = mainApplication['meta-data'] ?? [];
-  mainApplication['meta-data'].push(newItem);
+
+  const existingItem = mainApplication['meta-data'].find(
+    item => item.$['android:name'] === itemName,
+  );
+
+  if (existingItem) {
+    existingItem.$['android:value'] = itemValue;
+    existingItem.$['tools:replace' as keyof AndroidConfig.Manifest.ManifestMetaData['$']] =
+      'android:value';
+  } else {
+    mainApplication['meta-data'].push(newItem);
+  }
 
   return manifest;
 }
