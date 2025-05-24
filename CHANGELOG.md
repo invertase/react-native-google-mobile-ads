@@ -1,3 +1,10 @@
+### [15.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.3.0...v15.3.1) (2025-05-24)
+
+
+### Bug Fixes
+
+* **expo:** make the config plugin idempotent ([67b30da](https://github.com/invertase/react-native-google-mobile-ads/commit/67b30da31d0b1f22a6c8ceab5cb996894ef7f2ef))
+
 ## [15.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.2.0...v15.3.0) (2025-05-23)
 
 
