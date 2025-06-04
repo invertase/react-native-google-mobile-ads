@@ -38,7 +38,6 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
-import android.util.Log;
 
 public class ReactNativeGoogleMobileAdsCommon {
 

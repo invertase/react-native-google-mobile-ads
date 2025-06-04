@@ -70,14 +70,20 @@
   CGFloat maxHeight = sizeConfig[@"maxHeight"] ? [sizeConfig[@"maxHeight"] doubleValue] : -1;
   CGFloat width = sizeConfig[@"width"] ? [sizeConfig[@"width"] doubleValue] : -1;
   [sizes enumerateObjectsUsingBlock:^(id jsonValue, NSUInteger idx, __unused BOOL *stop) {
-    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue withMaxHeight:maxHeight andWidth:width];
+    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue
+                                                 withMaxHeight:maxHeight
+                                                      andWidth:width];
     if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
       RCTLogWarn(@"Invalid adSize %@", jsonValue);
     } else {
       [adSizes addObject:NSValueFromGADAdSize(adSize)];
     }
   }];
-  _sizeConfig = @{ @"sizes": adSizes, @"maxHeight": [NSNumber numberWithFloat: maxHeight], @"width": [NSNumber numberWithFloat: width] };
+  _sizeConfig = @{
+    @"sizes" : adSizes,
+    @"maxHeight" : [NSNumber numberWithFloat:maxHeight],
+    @"width" : [NSNumber numberWithFloat:width]
+  };
   _propsChanged = true;
 }
 

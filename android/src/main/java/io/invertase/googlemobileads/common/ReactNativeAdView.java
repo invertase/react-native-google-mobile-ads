@@ -2,7 +2,6 @@ package io.invertase.googlemobileads.common;
 
 import android.content.Context;
 import android.widget.FrameLayout;
-import com.facebook.react.bridge.ReadableArray;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import java.util.List;
