@@ -1,3 +1,17 @@
+### [15.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.3.0...v15.3.1) (2025-05-24)
+
+
+### Bug Fixes
+
+* **expo:** make the config plugin idempotent ([67b30da](https://github.com/invertase/react-native-google-mobile-ads/commit/67b30da31d0b1f22a6c8ceab5cb996894ef7f2ef))
+
+## [15.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.2.0...v15.3.0) (2025-05-23)
+
+
+### Features
+
+* **deps:** update mobile ads sdk - ios 12.4.0 android 24.3.0 ([57a91ce](https://github.com/invertase/react-native-google-mobile-ads/commit/57a91ce966927531befea3f8a34f56130e6345ed))
+
 ## [15.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.1.0...v15.2.0) (2025-04-30)
 
 
