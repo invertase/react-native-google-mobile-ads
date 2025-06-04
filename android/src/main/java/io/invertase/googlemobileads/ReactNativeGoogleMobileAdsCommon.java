@@ -51,18 +51,17 @@ public class ReactNativeGoogleMobileAdsCommon {
 
       DisplayMetrics outMetrics = new DisplayMetrics();
       display.getMetrics(outMetrics);
-      
+
       // Get custom width if set, otherwise use device width
-      float customWidth = ((ReactNativeAdView)reactViewGroup).getAdWidth();
+      float customWidth = ((ReactNativeAdView) reactViewGroup).getAdWidth();
       int screenWidth = (int) (outMetrics.widthPixels / outMetrics.density);
-      int adWidth = customWidth > 0 
-          ? Math.min(Math.round(customWidth), screenWidth)
-          : screenWidth;
-      
-      float maxAdHeight = ((ReactNativeAdView)reactViewGroup).getMaxAdHeight();
+      int adWidth = customWidth > 0 ? Math.min(Math.round(customWidth), screenWidth) : screenWidth;
+
+      float maxAdHeight = ((ReactNativeAdView) reactViewGroup).getMaxAdHeight();
       if ("INLINE_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
         if (maxAdHeight > 0) {
-          return AdSize.getInlineAdaptiveBannerAdSize(adWidth, Math.round(Math.max(maxAdHeight, 32)));
+          return AdSize.getInlineAdaptiveBannerAdSize(
+              adWidth, Math.round(Math.max(maxAdHeight, 32)));
         }
         return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
             reactViewGroup.getContext(), adWidth);

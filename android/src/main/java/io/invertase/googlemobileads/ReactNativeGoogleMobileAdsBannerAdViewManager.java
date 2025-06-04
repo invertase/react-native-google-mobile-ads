@@ -130,7 +130,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
       } else {
         reactViewGroup.setMaxAdHeight(0);
       }
-      
+
       // Handle width
       if (sizeConfig.hasKey("width") && !sizeConfig.isNull("width")) {
         float width = (float) sizeConfig.getDouble("width");
@@ -147,11 +147,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           for (int i = 0; i < sizesArray.size(); i++) {
             if (sizesArray.getType(i) == ReadableType.String) {
               String sizeString = sizesArray.getString(i);
-              AdSize adSize = ReactNativeGoogleMobileAdsCommon.getAdSize(sizeString, reactViewGroup);
+              AdSize adSize =
+                  ReactNativeGoogleMobileAdsCommon.getAdSize(sizeString, reactViewGroup);
               sizeList.add(adSize);
             }
           }
-          
+
           // Update the view with sizes and trigger size change event if needed
           if (sizeList.size() > 0 && !sizeList.contains(AdSize.FLUID)) {
             AdSize adSize = sizeList.get(0);
@@ -160,11 +161,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
             payload.putDouble("height", adSize.getHeight());
             sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
           }
-          
+
           reactViewGroup.setSizes(sizeList);
         }
       }
-      
+
       reactViewGroup.setPropsChanged(true);
     }
   }
