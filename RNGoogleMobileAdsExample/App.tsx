@@ -199,12 +199,15 @@ class InterstitialTest implements AutoExecutableTest {
 }
 
 class BannerTest implements AutoExecutableTest {
-  bannerAdSize: BannerAdSize | string;
   bannerRef: RefObject<BannerAd>;
-
-  constructor(bannerAdSize: BannerAdSize) {
+  bannerAdSize: BannerAdSize | string;
+  maxHeight?: number;
+  width?: number;
+  constructor(bannerAdSize: BannerAdSize | string, maxHeight?: number, width?: number) {
     this.bannerAdSize = bannerAdSize;
     this.bannerRef = React.createRef();
+    this.maxHeight = maxHeight;
+    this.width = width;
   }
 
   getPath(): string {
@@ -213,7 +216,9 @@ class BannerTest implements AutoExecutableTest {
       .map(
         s => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1),
       )
-      .join('');
+      .join('')
+      .concat(this.maxHeight ? `MaxHeight${this.maxHeight}` : '')
+      .concat(this.width ? `Width${this.width}` : '');
   }
 
   getTestType(): TestType {
@@ -231,6 +236,8 @@ class BannerTest implements AutoExecutableTest {
               : TestIds.BANNER
           }
           size={this.bannerAdSize}
+          maxHeight={this.maxHeight}
+          width={this.width}
           onPaid={(event: PaidEvent) => {
             console.log(
               `Paid: ${event.value} ${event.currency} (precision ${
@@ -1145,7 +1152,11 @@ class DebugMenuTest implements AutoExecutableTest {
 }
 
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
-Object.values(BannerAdSize).forEach(bannerAdSize => {
+Object.keys(BannerAdSize).forEach(bannerAdSize => {
+  if (bannerAdSize === "INLINE_ADAPTIVE_BANNER") {
+    TestRegistry.registerTest(new BannerTest(bannerAdSize, 100))
+    TestRegistry.registerTest(new BannerTest(bannerAdSize, 200, 200))
+  }
   TestRegistry.registerTest(new BannerTest(bannerAdSize));
 });
 TestRegistry.registerTest(new CollapsibleBannerTest());

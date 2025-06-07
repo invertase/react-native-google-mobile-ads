@@ -35,7 +35,7 @@ export type NativeEvent = {
 };
 
 export interface NativeProps extends ViewProps {
-  sizes: string[];
+  sizeConfig: { sizes: string[]; maxHeight?: Float; width?: Float };
   unitId: string;
   request: string;
   manualImpressionsEnabled: boolean;

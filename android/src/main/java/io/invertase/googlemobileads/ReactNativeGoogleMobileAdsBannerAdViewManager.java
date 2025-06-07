@@ -23,6 +23,8 @@ import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.PixelUtil;
@@ -118,26 +120,54 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     }
   }
 
-  @ReactProp(name = "sizes")
-  public void setSizes(ReactNativeAdView reactViewGroup, ReadableArray value) {
-    List<AdSize> sizeList = new ArrayList<>();
-    for (Object size : value.toArrayList()) {
-      if (size instanceof String) {
-        String sizeString = (String) size;
-        sizeList.add(ReactNativeGoogleMobileAdsCommon.getAdSize(sizeString, reactViewGroup));
+  @ReactProp(name = "sizeConfig")
+  public void setSizeConfig(ReactNativeAdView reactViewGroup, ReadableMap sizeConfig) {
+    if (sizeConfig != null) {
+      // Handle maxHeight
+      if (sizeConfig.hasKey("maxHeight") && !sizeConfig.isNull("maxHeight")) {
+        float maxHeight = (float) sizeConfig.getDouble("maxHeight");
+        reactViewGroup.setMaxAdHeight(maxHeight);
+      } else {
+        reactViewGroup.setMaxAdHeight(0);
       }
-    }
 
-    if (sizeList.size() > 0 && !sizeList.contains(AdSize.FLUID)) {
-      AdSize adSize = sizeList.get(0);
-      WritableMap payload = Arguments.createMap();
-      payload.putDouble("width", adSize.getWidth());
-      payload.putDouble("height", adSize.getHeight());
-      sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
-    }
+      // Handle width
+      if (sizeConfig.hasKey("width") && !sizeConfig.isNull("width")) {
+        float width = (float) sizeConfig.getDouble("width");
+        reactViewGroup.setAdWidth(width);
+      } else {
+        reactViewGroup.setAdWidth(0);
+      }
+      // Handle the sizes array
+      if (sizeConfig.hasKey("sizes") && !sizeConfig.isNull("sizes")) {
+        ReadableArray sizesArray = sizeConfig.getArray("sizes");
+        if (sizesArray != null) {
+          // Process the sizes array and convert to AdSize objects
+          List<AdSize> sizeList = new ArrayList<>();
+          for (int i = 0; i < sizesArray.size(); i++) {
+            if (sizesArray.getType(i) == ReadableType.String) {
+              String sizeString = sizesArray.getString(i);
+              AdSize adSize =
+                  ReactNativeGoogleMobileAdsCommon.getAdSize(sizeString, reactViewGroup);
+              sizeList.add(adSize);
+            }
+          }
 
-    reactViewGroup.setSizes(sizeList);
-    reactViewGroup.setPropsChanged(true);
+          // Update the view with sizes and trigger size change event if needed
+          if (sizeList.size() > 0 && !sizeList.contains(AdSize.FLUID)) {
+            AdSize adSize = sizeList.get(0);
+            WritableMap payload = Arguments.createMap();
+            payload.putDouble("width", adSize.getWidth());
+            payload.putDouble("height", adSize.getHeight());
+            sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
+          }
+
+          reactViewGroup.setSizes(sizeList);
+        }
+      }
+
+      reactViewGroup.setPropsChanged(true);
+    }
   }
 
   @ReactProp(name = "manualImpressionsEnabled")
