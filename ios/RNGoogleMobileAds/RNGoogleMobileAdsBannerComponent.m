@@ -49,7 +49,7 @@
       _banner.autoresizingMask = (UIViewAutoresizingFlexibleWidth);
     }
 
-    ((GAMBannerView *)_banner).validAdSizes = _sizes;
+    ((GAMBannerView *)_banner).validAdSizes = _sizeConfig[@"sizes"];
     ((GAMBannerView *)_banner).appEventDelegate = self;
     ((GAMBannerView *)_banner).enableManualImpressions = [_manualImpressionsEnabled boolValue];
   } else {
@@ -64,17 +64,26 @@
   _propsChanged = true;
 }
 
-- (void)setSizes:(NSArray *)sizes {
+- (void)setSizeConfig:(NSDictionary *)sizeConfig {
+  NSArray *sizes = sizeConfig[@"sizes"];
   __block NSMutableArray *adSizes = [[NSMutableArray alloc] initWithCapacity:sizes.count];
+  CGFloat maxHeight = sizeConfig[@"maxHeight"] ? [sizeConfig[@"maxHeight"] doubleValue] : -1;
+  CGFloat width = sizeConfig[@"width"] ? [sizeConfig[@"width"] doubleValue] : -1;
   [sizes enumerateObjectsUsingBlock:^(id jsonValue, NSUInteger idx, __unused BOOL *stop) {
-    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue];
+    GADAdSize adSize = [RNGoogleMobileAdsCommon stringToAdSize:jsonValue
+                                                 withMaxHeight:maxHeight
+                                                      andWidth:width];
     if (GADAdSizeEqualToSize(adSize, GADAdSizeInvalid)) {
       RCTLogWarn(@"Invalid adSize %@", jsonValue);
     } else {
       [adSizes addObject:NSValueFromGADAdSize(adSize)];
     }
   }];
-  _sizes = adSizes;
+  _sizeConfig = @{
+    @"sizes" : adSizes,
+    @"maxHeight" : [NSNumber numberWithFloat:maxHeight],
+    @"width" : [NSNumber numberWithFloat:width]
+  };
   _propsChanged = true;
 }
 
@@ -94,13 +103,14 @@
 }
 
 - (GADAdSize)getInitialAdSize {
-  for (NSValue *sizeValue in _sizes) {
+  NSArray *sizes = _sizeConfig[@"sizes"];
+  for (NSValue *sizeValue in sizes) {
     GADAdSize adSize = GADAdSizeFromNSValue(sizeValue);
     if (GADAdSizeEqualToSize(adSize, GADAdSizeFluid)) {
       return GADAdSizeFluid;
     }
   }
-  return GADAdSizeFromNSValue(_sizes[0]);
+  return GADAdSizeFromNSValue(sizes[0]);
 }
 
 - (void)requestAd {
@@ -108,7 +118,7 @@
   return;  // prevent crash on 32bit
 #endif
 
-  if (_unitId == nil || _sizes == nil || _request == nil || _manualImpressionsEnabled == nil) {
+  if (_unitId == nil || _sizeConfig == nil || _request == nil || _manualImpressionsEnabled == nil) {
     [self setRequested:NO];
     return;
   }

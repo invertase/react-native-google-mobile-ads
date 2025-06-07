@@ -27,7 +27,7 @@
 @property GADBannerView *banner;
 @property(nonatomic, assign) BOOL requested;
 
-@property(nonatomic, copy) NSArray *sizes;
+@property(nonatomic, copy) NSDictionary *sizeConfig;
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
 @property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
