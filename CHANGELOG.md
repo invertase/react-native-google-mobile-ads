@@ -1,3 +1,10 @@
+## [15.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.3.1...v15.4.0) (2025-06-07)
+
+
+### Features
+
+* **banner:** Support maximum height for Inline Adaptive banners ([017ffbf](https://github.com/invertase/react-native-google-mobile-ads/commit/017ffbff9ec2f4f6e0e9f0eb260b09e2232f4a54))
+
 ### [15.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.3.0...v15.3.1) (2025-05-24)
 
 
