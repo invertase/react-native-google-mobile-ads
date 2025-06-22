@@ -15,7 +15,7 @@
  *
  */
 
-import { EventSubscription, NativeEventEmitter, Platform } from 'react-native';
+import { EventSubscription } from 'react-native';
 import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
 
 import { NativeAdEventType } from '../../NativeAdEventType';
@@ -28,6 +28,7 @@ import NativeGoogleMobileAdsNativeModule, {
 } from '../../specs/modules/NativeGoogleMobileAdsNativeModule';
 import { NativeAdRequestOptions } from '../../types';
 import { validateAdRequestOptions } from '../../validateAdRequestOptions';
+import { GoogleMobileAdsNativeEventEmitter } from '../../internal/GoogleMobileAdsNativeEventEmitter';
 
 /**
  * A class for loading Native Ads.
@@ -65,22 +66,17 @@ export class NativeAd {
     this.mediaContent = props.mediaContent;
     this.extras = props.extras as Record<string, unknown>;
 
-    if ('onAdEvent' in NativeGoogleMobileAdsNativeModule) {
-      this.nativeEventSubscription = NativeGoogleMobileAdsNativeModule.onAdEvent(
-        this.onNativeAdEvent.bind(this),
-      );
-    } else {
-      let eventEmitter;
-      if (Platform.OS === 'ios') {
-        eventEmitter = new NativeEventEmitter(NativeGoogleMobileAdsNativeModule);
-      } else {
-        eventEmitter = new NativeEventEmitter();
-      }
-      this.nativeEventSubscription = eventEmitter.addListener(
-        'RNGMANativeAdEvent',
-        this.onNativeAdEvent.bind(this),
-      );
-    }
+    // Codegen EventEmitter was introduced in RN 0.76.2, so we can't apply it for now, due to backward compatibility.
+    // if ('onAdEvent' in NativeGoogleMobileAdsNativeModule) {
+    //   this.nativeEventSubscription = NativeGoogleMobileAdsNativeModule.onAdEvent(
+    //     this.onNativeAdEvent.bind(this),
+    //   );
+    // }
+
+    this.nativeEventSubscription = GoogleMobileAdsNativeEventEmitter.addListener(
+      'RNGMANativeAdEvent',
+      this.onNativeAdEvent.bind(this),
+    );
     this.eventEmitter = new EventEmitter();
   }
 

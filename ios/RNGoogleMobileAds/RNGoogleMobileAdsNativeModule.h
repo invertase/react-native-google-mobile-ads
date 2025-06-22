@@ -25,9 +25,8 @@
     : NativeGoogleMobileAdsNativeModuleSpecBase <NativeGoogleMobileAdsNativeModuleSpec>
 #else
 #import <React/RCTBridgeModule.h>
-#import <React/RCTEventEmitter.h>
 
-@interface RNGoogleMobileAdsNativeModule : RCTEventEmitter <RCTBridgeModule>
+@interface RNGoogleMobileAdsNativeModule : NSObject <RCTBridgeModule>
 #endif
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId;
