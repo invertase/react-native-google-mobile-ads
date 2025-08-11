@@ -162,8 +162,8 @@ RCT_EXPORT_METHOD(destroy
       }
     }
     GADNativeAdViewAdOptions *adViewOptions = [[GADNativeAdViewAdOptions alloc] init];
-    if (requestOptions[@"aspectRatio"]) {
-      switch ([requestOptions[@"aspectRatio"] intValue]) {
+    if (requestOptions[@"adChoicesPlacement"]) {
+      switch ([requestOptions[@"adChoicesPlacement"] intValue]) {
         case 0:
           adViewOptions.preferredAdChoicesPosition = GADAdChoicesPositionTopLeftCorner;
           break;
@@ -181,6 +181,9 @@ RCT_EXPORT_METHOD(destroy
     GADVideoOptions *videoOptions = [[GADVideoOptions alloc] init];
     if (requestOptions[@"startVideoMuted"]) {
       videoOptions.startMuted = [requestOptions[@"startVideoMuted"] boolValue];
+    }
+    if (requestOptions[@"customControlsRequested"]) {
+      videoOptions.customControlsRequested = [requestOptions[@"customControlsRequested"] boolValue];
     }
 
     _adLoader = [[GADAdLoader alloc]
