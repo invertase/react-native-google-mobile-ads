@@ -111,7 +111,7 @@ class ReactNativeGoogleMobileAdsModule(
       // it is not clear if that will cause problems even if it happens, but users that have widely deployed this
       // with the use of currentActivity have not seen problems
       // reference if it needs attention: https://github.com/invertase/react-native-google-mobile-ads/pull/664
-      currentActivity ?: reactApplicationContext,
+      reactApplicationContext.currentActivity ?: reactApplicationContext,
       OnInitializationCompleteListener { initializationStatus ->
         val result = Arguments.createArray()
         for ((key, value) in initializationStatus.adapterStatusMap) {
@@ -136,7 +136,7 @@ class ReactNativeGoogleMobileAdsModule(
 
   @ReactMethod
   fun openAdInspector(promise: Promise) {
-    val activity = currentActivity
+    val activity = reactApplicationContext.currentActivity
     if (activity == null) {
       promise.reject("null-activity", "Ad Inspector attempted to open but the current Activity was null.")
       return
@@ -164,8 +164,8 @@ class ReactNativeGoogleMobileAdsModule(
 
   @ReactMethod
   fun openDebugMenu(adUnit: String) {
-    currentActivity?.runOnUiThread {
-      MobileAds.openDebugMenu(currentActivity!!, adUnit)
+    reactApplicationContext.currentActivity?.runOnUiThread {
+      MobileAds.openDebugMenu(reactApplicationContext.currentActivity!!, adUnit)
     }
   }
 
