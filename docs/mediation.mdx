@@ -37,7 +37,7 @@ A third-party mediation adapter might have specific native methods that aren't e
 
 This involves writing native code in both the iOS and Android layer.
 
-## Android native code
+### Android native code
 
 On Android, create a **Module** class to contain your native logic and a **Package** class to register that module with your application.
 
@@ -109,7 +109,7 @@ override fun getPackages(): List<ReactPackage> =
 }
 ```
 
-## iOS native code
+### iOS native code
 
 On iOS, create a header (`.h`) and an implementation (`.m`) file. The following example creates an `AdMobMediation` class:
 
@@ -143,7 +143,7 @@ RCT_EXPORT_METHOD(doSomething)
 @end
 ```
 
-## Import native modules
+### Import native modules
 
 In the JavaScript file where you want to call the native method, import `NativeModules` from the `react-native` library:
 
