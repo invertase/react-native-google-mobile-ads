@@ -41,7 +41,7 @@ On Android, create a **Module** class to contain your native logic and a **Packa
 
 Example file: `android/app/src/main/java/com/your-app-name/`
 
-The following example creates a **Module** class to use with `AppLovin`:
+The following example creates a **Module** class to use with the Google Mobile Ads mediation adapter for AppLovin:
 
 ```
 package com.your-app-name
@@ -53,10 +53,10 @@ import com.facebook.react.bridge.ReactMethod
 // Import the necessary third-party SDKs.
 import com.applovin.sdk.AppLovinPrivacySettings
 
-class AppLovinMediationModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+class GoogleMobileAdsMediationAppLovinModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
   // The React layer interfaces with the value of this API. 
-  override fun getName() = "AppLovinMediation"
+  override fun getName() = "GoogleMobileAdsMediationAppLovin"
 
   // This exposes the method to the React layer.
   @ReactMethod
@@ -81,9 +81,9 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.uimanager.ViewManager
 import java.util.Collections
 
-class AppLovinMediationPackage : ReactPackage {
+class GoogleMobileAdsMediationAppLovinPackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-    return listOf(AppLovinMediationModule(reactContext))
+    return listOf(GoogleMobileAdsMediationAppLovinModule(reactContext))
   }
 
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
@@ -100,34 +100,34 @@ Add your new package in your `MainApplication` file:
 override fun getPackages(): List<ReactPackage> =
   PackageList(this).packages.apply {
     // Add your custom package here.
-    add(AppLovinMediationPackage())
+    add(GoogleMobileAdsMediationAppLovinPackage())
 }
 ```
 
 ### iOS native code
 
-On iOS, create a header (`.h`) and an implementation (`.m`) file. The following example creates an `AppLovinMediation` class:
+On iOS, create a header (`.h`) and an implementation (`.m`) file. The following example creates an `GoogleMobileAdsMediationAppLovin` class:
 
-Example file: `ios/AppLovinMediation.h`
+Example file: `ios/GoogleMobileAdsMediationAppLovin.h`
 
 ```
 #import <React/RCTBridgeModule.h>
 
-@interface AppLovinMediation : NSObject <RCTBridgeModule>
+@interface GoogleMobileAdsMediationAppLovin : NSObject <RCTBridgeModule>
 @end
 ```
 
-Example file: `ios/AppLovinMediation.m`
+Example file: `ios/GoogleMobileAdsMediationAppLovin.m`
 
 ```
-#import "AppLovinMediation.h"
+#import "GoogleMobileAdsMediationAppLovin.h"
 #import <Foundation/Foundation.h>
 // Import the necessary third-party SDKs.
 #import <AppLovinSDK/AppLovinSDK.h>
 
-@implementation AdppLovinMediation
+@implementation GoogleMobileAdsMediationAppLovin
 
-// The React layer interfaces with the class name, e.g. AppLovinMediation, by default. 
+// The React layer interfaces with the class name, e.g. GoogleMobileAdsMediationAppLovin, by default. 
 RCT_EXPORT_MODULE();
 
 // This exports the method to the React layer.
@@ -150,14 +150,14 @@ import { NativeModules } from 'react-native'
 You can then access your module directly from the `NativeModules` object. The name you use here must exactly match the name
 exposed by your native code.
 
-The following example uses the `AppLovinMediation` sample class:
+The following example uses the `GoogleMobileAdsMediationAppLovin` sample class:
 
 ```
-const { AppLovinMediation } = NativeModules
+const { GoogleMobileAdsMediationAppLovin } = NativeModules
 ```
 
 Once you have the module object, you can work with your object just as you would in Javascript.
 
 ```
-AppLovinMediation.setHasUserConsent(true)
+GoogleMobileAdsMediationAppLovin.setHasUserConsent(true)
 ```
