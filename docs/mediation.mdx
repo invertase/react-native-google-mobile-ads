@@ -83,13 +83,13 @@ import com.facebook.react.uimanager.ViewManager
 import java.util.Collections
 
 class AppLovinMediationPackage : ReactPackage {
-    override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        return listOf(AppLovinMediationModule(reactContext))
-    }
+  override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+    return listOf(AppLovinMediationModule(reactContext))
+  }
 
-    override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
-        return Collections.emptyList()
-    }
+  override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
+    return Collections.emptyList()
+  }
 }
 ```
 
