@@ -19,29 +19,11 @@ adapter must be integrated in the Android and iOS layer of your application.
 
 ## Install mediation adapters for Android
 
-To add an adapter on Android, you need to modify your app-level Gradle file:
-
-- Open the `android/app/build.gradle` file.
-
-- In the dependencies section, add an implementation line for each third-party ad network you wish to integrate. You can find the latest version of each
-adapter on Google's official documentation for the respective network.
-
-- Sync your Gradle project to download the new dependencies.
+To add an adapter on Android, follow Google's official documentation for the respective network.
 
 ## Install mediation adapters for iOS
 
-To add an adapter on iOS, you need to modify your `Podfile`:
-
-- Open the `ios/Podfile` file.
-
-- In your main target section, add a pod line for each third-party ad network you wish to integrate. You can find the name of the pod at
-Google's official documentation for the respective network. 
-
-- After editing the Podfile, navigate to your ios directory in the terminal and run the pod installer:
-
-  ```
-  cd ios && pod install --repo-update
-  ```
+To add an adapter on iOS, follow Google's official documentation for the respective network. 
 
 ## Verify your setup with ad inspector
 
