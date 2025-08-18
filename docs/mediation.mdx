@@ -30,3 +30,152 @@ To add an adapter on iOS, follow Google's official documentation for the respect
 To verify your adapter are installed correctly, you can use ad inspector ([Android](https://developers.google.com/admob/android/ad-inspector) | [iOS](https://developers.google.com/admob/ios/ad-inspector))
 in your react native application. To open the ad inspector from your React Native application, see [Ad inspector](https://docs.page/invertase/react-native-google-mobile-ads/ad-inspector) in the
 `react-native-google-mobile-ads` documentation.
+
+## Call native-specific methods from React
+
+A third-party mediation adapter might have specific native methods that aren't exposed by default. In these cases, you can create a custom "bridge" to expose that native functionality to your React Native code.
+
+This involves writing native code in both the iOS and Android layer.
+
+### Matching module names
+
+For your cross-platform code to work seamlessly, the name of the module must be identical on both iOS and Android.
+
+- On Android, the name is determined by the `String` you return in the `getName()` method.
+
+- On iOS, the name is determined by the class name itself when you use the `RCT_EXPORT_MODULE()` macro.
+
+## Android native code
+
+On Android, create a **Module** class to contain your native logic and a **Package** class to register that module with your application.
+
+1. Create the Native Module
+  
+    This class contains the methods you want to call from JavaScript.
+
+Example file: `android/app/src/main/java/com/your-app-name/`
+
+The following example creates a `MediationModule` class:
+
+```
+package com.your-app-name
+
+import android.util.Log
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
+import com.facebook.react.bridge.ReactMethod
+// Import the necessary third-party SDKs.
+
+class MediationModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+
+  // This name MUST match the one used on iOS.
+  override fun getName() = "AdMobMediation"
+
+  // This exposes the method to the React layer.
+  @ReactMethod
+  fun doSomething() {
+    Log.d("Module", "Did something!")
+  }
+}
+```
+
+2. Create the Package
+
+    This class registers your module so React Native can find it.
+
+Example file: `android/app/src/main/java/com/your-app-name/`
+
+```
+package com.your-app-name
+
+import com.facebook.react.ReactPackage
+import com.facebook.react.bridge.NativeModule
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.uimanager.ViewManager
+import java.util.Collections
+
+class MediationPackage : ReactPackage {
+    override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+        return listOf(MediationModule(reactContext))
+    }
+
+    override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
+        return Collections.emptyList()
+    }
+}
+```
+
+3. Register the Package
+
+Add your new package in your `MainApplication` file:
+
+```
+override fun getPackages(): List<ReactPackage> =
+  PackageList(this).packages.apply {
+    // Add your custom package here.
+    add(MediationPackage())
+}
+```
+
+## iOS native code
+
+On iOS, create a header (`.h`) and an implementation (`.m`) file. The following example creates an `AdMobMediation` class:
+
+Example file: `ios/AdMobMediation.h`
+
+```
+#import <React/RCTBridgeModule.h>
+
+@interface AdMobMediation : NSObject <RCTBridgeModule>
+@end
+```
+
+Example file: `ios/AdMobMediation.m`
+
+```
+#import "AdMobMediation.h"
+#import <Foundation/Foundation.h>
+// Import the necessary third-party SDKs.
+
+@implementation AdMobMediation
+
+// This exports the module with the name "AdMobMediation" by default.
+RCT_EXPORT_MODULE();
+
+// This exports the method to the React layer.
+RCT_EXPORT_METHOD(doSomething)
+{
+  NSLog(@"[AdMobMediation] Did something!);
+}
+
+@end
+```
+
+## Import native modules
+
+In the JavaScript file where you want to call the native method, import `NativeModules` from the `react-native` library:
+
+```
+import { NativeModules } from 'react-native'
+```
+
+You can then access your module directly from the `NativeModules` object. The name you use here must exactly match the name
+exposed by your native code.
+
+The following example uses the `AdMobMediation` sample class:
+
+```
+const { AdMobMediation } = NativeModules
+```
+
+Once you have the module object, you can work with your object just as you would in Javascript.
+
+```
+mobileAds()
+  .initialize()
+  .then(adapterStatuses => {
+    console.log('Adapter statuses:', adapterStatuses)
+      // Work with your module object.
+      AdMobMediation.doSomething()
+  })
+```
