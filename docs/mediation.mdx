@@ -1,0 +1,53 @@
+# Mediation
+
+AdMob Mediation is a feature lets you serve ads to your apps from multiple sources, including the AdMob Network and third-party ad sources, in one place. 
+AdMob Mediation helps maximize your fill rate and increase your monetization by sending ad requests to multiple networks to verify you find the best 
+available network to serve ads.
+
+This guide walks you through configuring mediation using the `react-native-google-mobile-ads library`.
+
+## Prerequisites 
+
+- Choose networks ([Android](https://developers.google.com/admob/android/choose-networks)) | ([iOS](https://developers.google.com/admob/android/choose-networks)) for your mediation setup.
+- Configure your network configurations in the adapter's UI.
+- Set up your network's demand in the AdMob UI.
+
+## Install mediation adapters
+
+For the Google Mobile Ads SDK to communicate with third-party ad networks, you need to include a mediation adapter for each network in your app. Each
+adapter must be integrated in the iOS and Android layer of your application.
+
+## Install mediation adapters for Android
+
+To add an adapter on Android, you need to modify your app-level Gradle file:
+
+- Open the `android/app/build.gradle` file.
+
+- In the dependencies section, add an implementation line for each third-party ad network you wish to integrate. You can find the latest version of each
+adapter on Google's official documentation for the respective network.
+
+- Sync your Gradle project to download the new dependencies.
+
+## Install mediation adapters for iOS
+
+To add an adapter on iOS, you need to modify your `Podfile`:
+
+- Open the `ios/Podfile` file.
+
+- In your main target section, add a pod line for each third-party ad network you wish to integrate. You can find the name of the pod at
+Google's official documentation for the respective network. 
+
+- After editing the Podfile, navigate to your ios directory in the terminal and run the pod installer:
+
+  ```
+  cd ios && pod install --repo-update
+  ```
+
+## Verify your setup with ad inspector
+
+To verify your adapter are installed correctly, you can use ad inspector ([Android](https://developers.google.com/admob/android/ad-inspector) | [iOS](https://developers.google.com/admob/ios/ad-inspector))
+in your react native application. To open the ad inspector from your React Native application, see [Ad inspector](https://docs.page/invertase/react-native-google-mobile-ads/ad-inspector) in the
+`react-native-google-mobile-ads` documentation.
+
+
+
