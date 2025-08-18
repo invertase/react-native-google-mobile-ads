@@ -4,26 +4,21 @@ AdMob Mediation is a feature lets you serve ads to your apps from multiple sourc
 AdMob Mediation helps maximize your fill rate and increase your monetization by sending ad requests to multiple networks to verify you find the best 
 available network to serve ads.
 
-This guide walks you through configuring mediation using the `react-native-google-mobile-ads library`.
+This guide walks you through configuring mediation using the `react-native-google-mobile-ads` library.
 
-## Prerequisites 
+## Configure mediation in the AdMob UI
 
-- Choose networks ([Android](https://developers.google.com/admob/android/choose-networks)) | ([iOS](https://developers.google.com/admob/android/choose-networks)) for your mediation setup.
-- Configure your network configurations in the adapter's UI.
-- Set up your network's demand in the AdMob UI.
+To configure mediation in the AdMob UI, complete the following steps:
+
+1. Choose an ad source from the network details table ([Android](https://developers.google.com/admob/ios/choose-networks#network_details) | [iOS](https://developers.google.com/admob/android/choose-networks#network_details)).
+2. Follow steps 1-2 of that ad source's integration guide.
 
 ## Install mediation adapters
 
 For the Google Mobile Ads SDK to communicate with third-party ad networks, you need to include a mediation adapter for each network in your app. Each
-adapter must be integrated in the Android and iOS layer of your application.
-
-### Install mediation adapters for Android
-
-To add an adapter on Android, follow Google's official documentation for the respective network.
-
-### Install mediation adapters for iOS
-
-To add an adapter on iOS, follow Google's official documentation for the respective network. 
+adapter must be integrated in the Android and iOS layer of your application. To choose the adapters you want to install, see integrate open source and versioned adapters
+([Android](https://developers.google.com/admob/android/choose-networks#integrate_open-source_and_versioned_adapters) | [iOS](https://developers.google.com/admob/ios/choose-networks#integrate_open-source_and_versioned_adapters)) copy the dependency into
+your `build.gradle` file on Android and `Podfile` on iOS.
 
 ## Verify your setup with ad inspector
 
@@ -33,7 +28,7 @@ in your react native application. To open the ad inspector from your React Nativ
 
 ## Call native-specific methods from React
 
-A third-party mediation adapter might have specific native methods that aren't exposed by default. In these cases, you can create a custom "bridge" to expose that native functionality to your React Native code.
+A third-party mediation adapter might have specific Android or iOS APIs that aren't exposed to your Reach Native code. In these cases, you can create a custom "bridge" to expose that native functionality.
 
 This involves writing native code in both the iOS and Android layer.
 
@@ -41,13 +36,11 @@ This involves writing native code in both the iOS and Android layer.
 
 On Android, create a **Module** class to contain your native logic and a **Package** class to register that module with your application.
 
-1. Create the Native Module
-  
-    This class contains the methods you want to call from JavaScript.
+1. Create the native module. This class contains the methods you want to call from JavaScript.
 
 Example file: `android/app/src/main/java/com/your-app-name/`
 
-The following example creates a `MediationModule` class:
+The following example creates a **Module** class to use with `AppLovin`:
 
 ```
 package com.your-app-name
@@ -57,21 +50,22 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 // Import the necessary third-party SDKs.
+import com.applovin.sdk.AppLovinPrivacySettings
 
-class MediationModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+class AppLovinMediationModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
   // The React layer interfaces with the value of this API. 
-  override fun getName() = "AdMobMediation"
+  override fun getName() = "AppLovinMediation"
 
   // This exposes the method to the React layer.
   @ReactMethod
-  fun doSomething() {
-    Log.d("MediationModule", "Did something!")
+  fun setHasUserConsent(hasUserConsent: Boolean) {
+    AppLovinPrivacySettings.setHasUserConsent(hasUserConsent)
   }
 }
 ```
 
-2. Create the Package
+2. Create the package
 
     This class registers your module so React Native can find it.
 
@@ -86,9 +80,9 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.uimanager.ViewManager
 import java.util.Collections
 
-class MediationPackage : ReactPackage {
+class AppLovinMediationPackage : ReactPackage {
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        return listOf(MediationModule(reactContext))
+        return listOf(AppLovinMediationModule(reactContext))
     }
 
     override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
@@ -97,7 +91,7 @@ class MediationPackage : ReactPackage {
 }
 ```
 
-3. Register the Package
+3. Register the package
 
 Add your new package in your `MainApplication` file:
 
@@ -105,39 +99,40 @@ Add your new package in your `MainApplication` file:
 override fun getPackages(): List<ReactPackage> =
   PackageList(this).packages.apply {
     // Add your custom package here.
-    add(MediationPackage())
+    add(AppLovinMediationPackage())
 }
 ```
 
 ### iOS native code
 
-On iOS, create a header (`.h`) and an implementation (`.m`) file. The following example creates an `AdMobMediation` class:
+On iOS, create a header (`.h`) and an implementation (`.m`) file. The following example creates an `AppLovinMediation` class:
 
-Example file: `ios/AdMobMediation.h`
+Example file: `ios/AppLovinMediation.h`
 
 ```
 #import <React/RCTBridgeModule.h>
 
-@interface AdMobMediation : NSObject <RCTBridgeModule>
+@interface AppLovinMediation : NSObject <RCTBridgeModule>
 @end
 ```
 
-Example file: `ios/AdMobMediation.m`
+Example file: `ios/AppLovinMediation.m`
 
 ```
-#import "AdMobMediation.h"
+#import "AppLovinMediation.h"
 #import <Foundation/Foundation.h>
 // Import the necessary third-party SDKs.
+#import <AppLovinSDK/AppLovinSDK.h>
 
-@implementation AdMobMediation
+@implementation AdppLovinMediation
 
-// The React layer interfaces with the class name, e.g. AdMobMediation, by default. 
+// The React layer interfaces with the class name, e.g. AppLovinMediation, by default. 
 RCT_EXPORT_MODULE();
 
 // This exports the method to the React layer.
-RCT_EXPORT_METHOD(doSomething)
+RCT_EXPORT_METHOD(setHasUserConsent:(BOOL)hasUserConsent)
 {
-  NSLog(@"[AdMobMediation] Did something!);
+  [ALPrivacySettings setHasUserConsent:hasUserConsent];
 }
 
 @end
@@ -154,20 +149,14 @@ import { NativeModules } from 'react-native'
 You can then access your module directly from the `NativeModules` object. The name you use here must exactly match the name
 exposed by your native code.
 
-The following example uses the `AdMobMediation` sample class:
+The following example uses the `AppLovinMediation` sample class:
 
 ```
-const { AdMobMediation } = NativeModules
+const { AppLovinMediation } = NativeModules
 ```
 
 Once you have the module object, you can work with your object just as you would in Javascript.
 
 ```
-mobileAds()
-  .initialize()
-  .then(adapterStatuses => {
-    console.log('Adapter statuses:', adapterStatuses)
-      // Work with your module object.
-      AdMobMediation.doSomething()
-  })
+AppLovinMediation.setHasUserConsent(false)
 ```
