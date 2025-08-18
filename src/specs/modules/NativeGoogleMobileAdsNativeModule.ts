@@ -17,12 +17,7 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type {
-  Double,
-  Float,
-  UnsafeObject,
-  EventEmitter,
-} from 'react-native/Libraries/Types/CodegenTypes';
+import type { Double, Float, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
 export type NativeAdProps = {
   responseId: string;
@@ -58,7 +53,8 @@ export type NativeAdEventPayload = {
 export interface Spec extends TurboModule {
   load(adUnitId: string, requestOptions: UnsafeObject): Promise<NativeAdProps>;
   destroy(responseId: string): void;
-  readonly onAdEvent: EventEmitter<NativeAdEventPayload>;
+  // Codegen EventEmitter was introduced in RN 0.76.2, so we can't apply it for now, due to backward compatibility.
+  // readonly onAdEvent: EventEmitter<NativeAdEventPayload>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsNativeModule');
