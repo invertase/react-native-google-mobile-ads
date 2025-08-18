@@ -10,7 +10,7 @@ This guide walks you through configuring mediation using the `react-native-googl
 
 To configure mediation in the AdMob UI, complete the following steps:
 
-1. Choose an ad source from the network details table ([Android](https://developers.google.com/admob/ios/choose-networks#network_details) | [iOS](https://developers.google.com/admob/android/choose-networks#network_details)).
+1. Choose an ad source from the network details table ([Android](https://developers.google.com/admob/android/choose-networks#network_details) | [iOS](https://developers.google.com/admob/ios/choose-networks#network_details)).
 2. Follow steps 1-2 of that ad source's integration guide.
 
 ## Install mediation adapters
@@ -24,8 +24,7 @@ and copy the dependency/maven output into your `build.gradle` file on Android an
 
 ## Verify your setup with ad inspector
 
-To verify your adapter are installed correctly, you can use ad inspector ([Android](https://developers.google.com/admob/android/ad-inspector) | [iOS](https://developers.google.com/admob/ios/ad-inspector))
-in your react native application. To open the ad inspector from your React Native application, see [Ad inspector](https://docs.page/invertase/react-native-google-mobile-ads/ad-inspector) in the
+To open the ad inspector from your React Native application, see [Ad inspector](https://docs.page/invertase/react-native-google-mobile-ads/ad-inspector) in the
 `react-native-google-mobile-ads` documentation.
 
 ## Call Android / iOS code from React Native
@@ -160,5 +159,5 @@ const { AppLovinMediation } = NativeModules
 Once you have the module object, you can work with your object just as you would in Javascript.
 
 ```
-AppLovinMediation.setHasUserConsent(false)
+AppLovinMediation.setHasUserConsent(true)
 ```
