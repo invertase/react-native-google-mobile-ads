@@ -1,3 +1,10 @@
+### [15.4.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.4.0...v15.4.1) (2025-08-18)
+
+
+### Bug Fixes
+
+* support of react-native 0.81 for Android ([db8d098](https://github.com/invertase/react-native-google-mobile-ads/commit/db8d0989bbdb2cfc78c3d56421d76332c8fc5ca9))
+
 ## [15.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.3.1...v15.4.0) (2025-06-07)
 
 
