@@ -37,14 +37,6 @@ A third-party mediation adapter might have specific native methods that aren't e
 
 This involves writing native code in both the iOS and Android layer.
 
-### Matching module names
-
-For your cross-platform code to work seamlessly, the name of the module must be identical on both iOS and Android.
-
-- On Android, the name is determined by the `String` you return in the `getName()` method.
-
-- On iOS, the name is determined by the class name itself when you use the `RCT_EXPORT_MODULE()` macro.
-
 ## Android native code
 
 On Android, create a **Module** class to contain your native logic and a **Package** class to register that module with your application.
@@ -68,7 +60,7 @@ import com.facebook.react.bridge.ReactMethod
 
 class MediationModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
-  // This name MUST match the one used on iOS.
+  // The React layer interfaces with the value of this API. 
   override fun getName() = "AdMobMediation"
 
   // This exposes the method to the React layer.
@@ -139,7 +131,7 @@ Example file: `ios/AdMobMediation.m`
 
 @implementation AdMobMediation
 
-// This exports the module with the name "AdMobMediation" by default.
+// The React layer interfaces with the class name, e.g. AdMobMediation, by default. 
 RCT_EXPORT_MODULE();
 
 // This exports the method to the React layer.
