@@ -18,9 +18,9 @@ To configure mediation in the AdMob UI, complete the following steps:
 For the Google Mobile Ads SDK to communicate with third-party ad networks, you need to include a mediation adapter for each network in your app. Each
 adapter must be integrated in the Android and iOS layer of your application. 
 
-To choose the adapters you want to install, see integrate open source and versioned adapters
-([Android](https://developers.google.com/admob/android/choose-networks#integrate_open-source_and_versioned_adapters) | [iOS](https://developers.google.com/admob/ios/choose-networks#integrate_open-source_and_versioned_adapters)) copy the dependency into
-your `build.gradle` file on Android and `Podfile` on iOS.
+To choose the adapters you want to install, see Integrate open source and versioned adapters
+([Android](https://developers.google.com/admob/android/choose-networks#integrate_open-source_and_versioned_adapters) | [iOS](https://developers.google.com/admob/ios/choose-networks#integrate_open-source_and_versioned_adapters)), 
+and copy the dependency/maven output into your `build.gradle` file on Android and `Podfile` on iOS.
 
 ## Verify your setup with ad inspector
 
@@ -32,7 +32,7 @@ in your react native application. To open the ad inspector from your React Nativ
 
 A third-party mediation adapter might have specific Android or iOS APIs that aren't exposed to your Reach Native code. In these cases, you can create a custom "bridge" to expose that native functionality.
 
-This involves writing native code in both the iOS and Android layer.
+This involves writing native code in both the Android and iOS layer.
 
 ### Android native code
 
