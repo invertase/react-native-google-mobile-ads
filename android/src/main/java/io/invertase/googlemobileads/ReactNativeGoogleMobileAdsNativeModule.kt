@@ -186,7 +186,7 @@ class ReactNativeGoogleMobileAdsNativeModule(
           nativeAd.mediaContent?.videoController?.videoLifecycleCallbacks = videoLifecycleCallbacks
           nativeAd.setOnPaidEventListener { adValue ->
             val revenueData = Arguments.createMap()
-            revenueData.putDouble("valueMicros", adValue.valueMicros)
+            revenueData.putDouble("valueMicros", adValue.valueMicros.toDouble())
             revenueData.putString("currencyCode", adValue.currencyCode)
             revenueData.putInt("precisionType", adValue.precisionType)
             emitAdEvent("paid", revenueData)
