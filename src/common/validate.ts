@@ -105,3 +105,12 @@ export function isOneOf(value: unknown, oneOf: unknown[] = []) {
   }
   return oneOf.includes(value);
 }
+
+/**
+ * Simple is number check
+ * @param value
+ * @return {boolean}
+ */
+export function isNumber(value: unknown) {
+  return typeof value === 'number';
+}
