@@ -60,9 +60,8 @@ Add the plugin to your `app.json` or `app.config.js` file, specifying the Androi
           "ios": {
             "pods": [
               {
-                // Example: Add the AppLovin mediation adapter for iOS. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
-                "name": "GoogleMobileAdsMediationAppLovin",
-                "version": "~> {X.Y.Z.A}"
+                // Example: Add the AppLovin mediation adapter for iOS.
+                "name": "GoogleMobileAdsMediationAppLovin"
               }
             ]
           }
@@ -274,7 +273,7 @@ File: `modules/google-mobile-ads-mediation-applovin/android/build.gradle`
 
 dependencies {
   // Add the third-party SDK dependency. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
-  implementation 'com.applovin:applovin-sdk:{X.Y.Z.A}'
+  implementation 'com.google.ads.mediation:applovin:{X.Y.Z.A}'
 }
 ```
 
@@ -306,7 +305,7 @@ File: `modules/google-mobile-ads-mediation-applovin/google-mobile-ads-mediation-
 
 ```
 # Add the third-party pod dependency. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
-s.dependency 'AppLovinSDK', '~> {X.Y.Z.A}'
+s.dependency 'GoogleMobileAdsMediationAppLovin'
 ```
 
 3. **Install and rebuild**. After creating the module and adding the code, install it in your project and rebuild your development client.
