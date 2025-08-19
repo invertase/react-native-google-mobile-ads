@@ -52,4 +52,12 @@ export interface NativeAdRequestOptions extends RequestOptions {
    * - When enabled, your app requests that the video should begin with audio muted.
    */
   startVideoMuted?: boolean;
+
+  /**
+   * Disables or enables the custom controls for the video.
+   * - The custom controls are enabled by default.
+   * - When disabled, your app requests that the video should not have custom controls.
+   * - When enabled, your app requests that the video should have custom controls.
+   */
+  customControlsRequested?: boolean;
 }

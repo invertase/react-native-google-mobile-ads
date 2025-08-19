@@ -169,8 +169,14 @@ class ReactNativeGoogleMobileAdsNativeModule(
       } else {
         true
       }
+      val customControlsRequested = if (requestOptions.hasKey("customControlsRequested")) {
+        requestOptions.getBoolean("customControlsRequested")
+      } else {
+        false
+      }
       val videoOptions = VideoOptions.Builder()
         .setStartMuted(startVideoMuted)
+        .setCustomControlsRequested(customControlsRequested)
         .build()
       val nativeAdOptions = NativeAdOptions.Builder()
 //      .setReturnUrlsForImageAssets(true)

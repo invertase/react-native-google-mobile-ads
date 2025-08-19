@@ -105,3 +105,7 @@ export function isOneOf(value: unknown, oneOf: unknown[] = []) {
   }
   return oneOf.includes(value);
 }
+
+export function isNumber(value: unknown) {
+  return typeof value === 'number';
+}

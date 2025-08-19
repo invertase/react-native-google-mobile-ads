@@ -23,12 +23,14 @@ import {
   isString,
   isUndefined,
   isValidUrl,
+  isNumber,
 } from './common';
 import { version } from './version';
 import { RequestOptions } from './types/RequestOptions';
+import { NativeAdRequestOptions } from './types/NativeAdRequestOptions';
 
-export function validateAdRequestOptions(options?: RequestOptions) {
-  const out: RequestOptions = {
+export function validateAdRequestOptions(options?: RequestOptions & NativeAdRequestOptions) {
+  const out: RequestOptions & NativeAdRequestOptions = {
     requestAgent: `rn-invertase-${version}`,
   };
 
@@ -134,6 +136,34 @@ export function validateAdRequestOptions(options?: RequestOptions) {
       throw new Error("'options.publisherProvidedId' expected a string value");
     }
     out.publisherProvidedId = options.publisherProvidedId;
+  }
+
+  if (!isUndefined(options?.adChoicesPlacement)) {
+    if (!isNumber(options.adChoicesPlacement)) {
+      throw new Error("'options.adChoicesPlacement' expected a number value");
+    }
+    out.adChoicesPlacement = options.adChoicesPlacement;
+  }
+
+  if (!isUndefined(options?.aspectRatio)) {
+    if (!isNumber(options.aspectRatio)) {
+      throw new Error("'options.aspectRatio' expected a number value");
+    }
+    out.aspectRatio = options.aspectRatio;
+  }
+
+  if (!isUndefined(options?.startVideoMuted)) {
+    if (!isBoolean(options.startVideoMuted)) {
+      throw new Error("'options.startVideoMuted' expected a boolean value");
+    }
+    out.startVideoMuted = options.startVideoMuted;
+  }
+
+  if (!isUndefined(options?.customControlsRequested)) {
+    if (!isBoolean(options.customControlsRequested)) {
+      throw new Error("'options.customControlsRequested' expected a boolean value");
+    }
+    out.customControlsRequested = options.customControlsRequested;
   }
 
   return out;

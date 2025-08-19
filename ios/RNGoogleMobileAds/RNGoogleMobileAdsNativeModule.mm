@@ -182,6 +182,9 @@ RCT_EXPORT_METHOD(destroy
     if (requestOptions[@"startVideoMuted"]) {
       videoOptions.startMuted = [requestOptions[@"startVideoMuted"] boolValue];
     }
+    if (requestOptions[@"customControlsRequested"]) {
+      videoOptions.customControlsRequested = [requestOptions[@"customControlsRequested"] boolValue];
+    }
 
     _adLoader = [[GADAdLoader alloc]
           initWithAdUnitID:adUnitId
