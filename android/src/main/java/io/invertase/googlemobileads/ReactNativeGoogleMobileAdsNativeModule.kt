@@ -145,8 +145,8 @@ class ReactNativeGoogleMobileAdsNativeModule(
       val mediaAspectRatio = if (requestOptions.hasKey("aspectRatio")) {
         when (requestOptions.getInt("aspectRatio")) {
           1 -> MediaAspectRatio.ANY
-          2 -> MediaAspectRatio.PORTRAIT
-          3 -> MediaAspectRatio.LANDSCAPE
+          2 -> MediaAspectRatio.LANDSCAPE
+          3 -> MediaAspectRatio.PORTRAIT
           4 -> MediaAspectRatio.SQUARE
           else -> MediaAspectRatio.UNKNOWN
         }
@@ -155,8 +155,8 @@ class ReactNativeGoogleMobileAdsNativeModule(
       }
       val adChoicesPlacement = if (requestOptions.hasKey("adChoicesPlacement")) {
         when (requestOptions.getInt("adChoicesPlacement")) {
-          0 -> NativeAdOptions.ADCHOICES_TOP_RIGHT
-          1 -> NativeAdOptions.ADCHOICES_TOP_LEFT
+          0 -> NativeAdOptions.ADCHOICES_TOP_LEFT
+          1 -> NativeAdOptions.ADCHOICES_TOP_RIGHT
           2 -> NativeAdOptions.ADCHOICES_BOTTOM_RIGHT
           3 -> NativeAdOptions.ADCHOICES_BOTTOM_LEFT
           else -> NativeAdOptions.ADCHOICES_TOP_RIGHT
