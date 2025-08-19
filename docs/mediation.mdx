@@ -24,7 +24,11 @@ To choose the adapters you want to install, see Integrate open source and versio
 <Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
 <TabItem value="bare">
 
-Add the adapter's dependency to your app-level `android/app/build.gradle` file and the adapter's pod to your app-level `ios/Podfile`.
+Android
+- Add the adapter's dependency to your app-level `android/app/build.gradle` file.
+
+iOS
+- Add the adapter's pod to your `ios/Podfile`.
 
 </TabItem>
 <TabItem value="expo">
@@ -57,7 +61,7 @@ Add the plugin to your `app.json` or `app.config.js` file, specifying the Androi
             "pods": [
               {
                 // Example: Add the AppLovin mediation adapter for iOS. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
-                "name": "Google-Mobile-Ads-Mediation-AppLovin",
+                "name": "GoogleMobileAdsMediationAppLovin",
                 "version": "~> {X.Y.Z.A}"
               }
             ]
@@ -87,6 +91,9 @@ To open the ad inspector from your React Native application, see [Ad inspector](
 ## Call Android / iOS code from React Native
 
 A third-party mediation adapter might have specific Android or iOS APIs that aren't exposed to your Reach Native code. In these cases, you can create a custom "bridge" to expose that native functionality.
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
 
 This involves writing native code in both the Android and iOS layer.
 
@@ -218,3 +225,11 @@ Once you have the module object, you can work with your object just as you would
 ```
 GoogleMobileAdsMediationAppLovin.setHasUserConsent(true)
 ```
+
+</TabItem>
+<TabItem value="expo">
+
+Lorem ispum
+
+</TabItem>
+</Tabs>
