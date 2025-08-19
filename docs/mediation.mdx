@@ -229,7 +229,86 @@ GoogleMobileAdsMediationAppLovin.setHasUserConsent(true)
 </TabItem>
 <TabItem value="expo">
 
-Lorem ispum
+Create an [Expo module](https://docs.expo.dev/modules/get-started/) with the `create-expo-module` tool.
+
+Run the following command from your project's root directory:
+
+```
+npx create-expo-module --local
+```
+
+When prompted, give your module a name. This will scaffold a new module in a modules/ directory at your project root. The following example creates a module to use with the
+Google Mobile Ads mediation adapter for AppLovin:
+
+Android
+
+Open the generated Kotlin file for your module and add your custom method. The module and package are already set up for you.
+
+File: `modules/google-mobile-ads-mediation-applovin/android/src/main/java/.../GoogleMobileAdsMediationApplovinModule.kt`
+
+```
+// ... existing imports
+import com.applovin.sdk.AppLovinPrivacySettings
+
+class GoogleMobileAdsMediationApplovinModule : Module() {
+  override fun definition() = ModuleDefinition {
+    // ... existing definition
+
+    // Add your custom method here.
+    Function("setHasUserConsent") { hasUserConsent: Boolean ->
+      AppLovinPrivacySettings.setHasUserConsent(hasUserConsent)
+    }
+  }
+}
+```
+
+Then, add the dependency in your module's `build.gradle` file.
+
+File: `modules/google-mobile-ads-mediation-applovin/android/build.gradle`
+
+```
+// Groovy
+
+dependencies {
+  // Add the third-party SDK dependency. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
+  implementation 'com.applovin:applovin-sdk:{X.Y.Z.A}'
+}
+```
+
+iOS
+
+Open the generated Swift file for your module and add your custom method.
+
+File: `modules/google-mobile-ads-mediation-applovin/ios/GoogleMobileAdsMediationApplovinModule.swift`
+
+```
+// ... existing imports
+import AppLovinSDK
+
+public class GoogleMobileAdsMediationApplovinModule: Module {
+  public func definition() -> ModuleDefinition {
+    // ... existing definition
+
+    // Add your custom method here
+    Function("setHasUserConsent") { (hasUserConsent: Bool) in
+      ALPrivacySettings.setHasUserConsent(hasUserConsent)
+    }
+  }
+}
+```
+
+Next, add the dependency in your module's `.podspec` file.
+
+File: `modules/google-mobile-ads-mediation-applovin/google-mobile-ads-mediation-applovin.podspec`
+
+```
+# Add the third-party pod dependency. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
+s.dependency 'AppLovinSDK', '~> {X.Y.Z.A}'
+```
+
+Install and rebuild.
+
+After creating the module and adding the code, install it in your project and rebuild your development client.
 
 </TabItem>
 </Tabs>
