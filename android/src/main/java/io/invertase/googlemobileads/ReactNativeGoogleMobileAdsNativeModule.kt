@@ -184,6 +184,13 @@ class ReactNativeGoogleMobileAdsNativeModule(
         .forNativeAd { nativeAd ->
           this.nativeAd = nativeAd
           nativeAd.mediaContent?.videoController?.videoLifecycleCallbacks = videoLifecycleCallbacks
+          nativeAd.setOnPaidEventListener { adValue ->
+            val revenueData = Arguments.createMap()
+            revenueData.putDouble("valueMicros", adValue.valueMicros)
+            revenueData.putString("currencyCode", adValue.currencyCode)
+            revenueData.putInt("precisionType", adValue.precisionType)
+            emitAdEvent("paid", revenueData)
+          }
           loadedListener.onNativeAdLoaded(nativeAd)
         }
         .build()
@@ -196,9 +203,13 @@ class ReactNativeGoogleMobileAdsNativeModule(
       nativeAd = null
     }
 
-    private fun emitAdEvent(type: String) {
+    private fun emitAdEvent(type: String, eventData: ReadableMap? = null) {
       val nativeAd = this.nativeAd ?: return
       val payload = Arguments.createMap()
+      // Merge the extra data if it exists.
+      if (eventData != null) {
+        payload.merge(eventData)
+      }
       payload.putString("responseId", nativeAd.responseInfo?.responseId)
       payload.putString("type", type)
       this@ReactNativeGoogleMobileAdsNativeModule.emitOnAdEvent(payload)
