@@ -1,3 +1,12 @@
+### [15.4.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.4.1...v15.4.2) (2025-08-19)
+
+
+### Bug Fixes
+
+* **android:** native ad enum bindings (split from [#782](https://github.com/invertase/react-native-google-mobile-ads/issues/782)) ([574c479](https://github.com/invertase/react-native-google-mobile-ads/commit/574c479b0f4626b0b77ecd92f51274efabffca75))
+* **iOS:** wrong property being extracted in native ad (split from [#782](https://github.com/invertase/react-native-google-mobile-ads/issues/782)) ([8a6a13d](https://github.com/invertase/react-native-google-mobile-ads/commit/8a6a13d3c075626520acd151d80f4dcecabd3e97))
+* passing native ad request options to native side (split from [#782](https://github.com/invertase/react-native-google-mobile-ads/issues/782)) ([d6ef5e2](https://github.com/invertase/react-native-google-mobile-ads/commit/d6ef5e24013272757f84672b671641e032b5fcf7))
+
 ### [15.4.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.4.0...v15.4.1) (2025-08-18)
 
 
