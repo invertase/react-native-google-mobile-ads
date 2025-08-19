@@ -487,6 +487,9 @@ const NativeComponent = () => {
     nativeAd.addAdEventListener(NativeAdEventType.CLICKED, () => {
       console.debug('Native ad clicked');
     });
+    nativeAd.addAdEventListener(NativeAdEventType.PAID, (payload) => {
+      console.debug('Paid', payload);
+    });
     nativeAd.addAdEventListener(NativeAdEventType.VIDEO_PLAYED, () => {
       console.debug('Native ad video played');
     });
