@@ -27,7 +27,7 @@ import NativeGoogleMobileAdsNativeModule, {
   NativeMediaContent,
 } from '../../specs/modules/NativeGoogleMobileAdsNativeModule';
 import { NativeAdRequestOptions } from '../../types';
-import { validateAdRequestOptions } from '../../validateAdRequestOptions';
+import { validateNativeAdRequestOptions } from '../../validateNativeAdRequestOptions';
 
 /**
  * A class for loading Native Ads.
@@ -138,7 +138,7 @@ export class NativeAd {
 
     let options = {};
     try {
-      options = validateAdRequestOptions(requestOptions);
+      options = validateNativeAdRequestOptions(requestOptions);
     } catch (e) {
       if (e instanceof Error) {
         throw new Error(`NativeAd.createForAdRequest(_, *) ${e.message}.`);
