@@ -229,7 +229,7 @@ GoogleMobileAdsMediationAppLovin.setHasUserConsent(true)
 </TabItem>
 <TabItem value="expo">
 
-Create an [Expo module](https://docs.expo.dev/modules/get-started/) with the `create-expo-module` tool.
+1. Create an [Expo module](https://docs.expo.dev/modules/get-started/) with the `create-expo-module` tool.
 
 Run the following command from your project's root directory:
 
@@ -237,7 +237,9 @@ Run the following command from your project's root directory:
 npx create-expo-module --local
 ```
 
-When prompted, give your module a name. This will scaffold a new module in a modules/ directory at your project root. The following example creates a module to use with the
+When prompted, give your module a name. This will scaffold a new module in a modules/ directory at your project root. 
+
+2. Add your native Android and iOS code. The following example creates a module to use with the
 Google Mobile Ads mediation adapter for AppLovin:
 
 Android
@@ -306,9 +308,18 @@ File: `modules/google-mobile-ads-mediation-applovin/google-mobile-ads-mediation-
 s.dependency 'AppLovinSDK', '~> {X.Y.Z.A}'
 ```
 
-Install and rebuild.
+3. Install and rebuild.
 
 After creating the module and adding the code, install it in your project and rebuild your development client.
+
+4. **Call the code from JavaScript**. You can now import and use the module directly in your code.
+
+```
+import { setHasUserConsent } from 'google-mobile-ads-mediation-applovin'
+
+// Call your custom native method.
+setHasUserConsent(true)
+```
 
 </TabItem>
 </Tabs>
