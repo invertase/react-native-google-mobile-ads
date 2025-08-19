@@ -22,7 +22,7 @@ export enum NativeAdEventType {
   /**
    * Called when an ad is estimated to have earned money.
    */
-  PAID = 'paid'
+  PAID = 'paid',
   
   /**
    * Called when the video controller has begun or resumed playing a video
