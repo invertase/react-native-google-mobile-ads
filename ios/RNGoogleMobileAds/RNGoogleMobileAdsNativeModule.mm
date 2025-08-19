@@ -162,8 +162,8 @@ RCT_EXPORT_METHOD(destroy
       }
     }
     GADNativeAdViewAdOptions *adViewOptions = [[GADNativeAdViewAdOptions alloc] init];
-    if (requestOptions[@"aspectRatio"]) {
-      switch ([requestOptions[@"aspectRatio"] intValue]) {
+    if (requestOptions[@"adChoicesPlacement"]) {
+      switch ([requestOptions[@"adChoicesPlacement"] intValue]) {
         case 0:
           adViewOptions.preferredAdChoicesPosition = GADAdChoicesPositionTopLeftCorner;
           break;
