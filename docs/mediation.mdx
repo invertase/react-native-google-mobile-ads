@@ -18,9 +18,62 @@ To configure mediation in the AdMob UI, complete the following steps:
 For the Google Mobile Ads SDK to communicate with third-party ad networks, you need to include a mediation adapter for each network in your app. Each
 adapter must be integrated in the Android and iOS layer of your application. 
 
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
 To choose the adapters you want to install, see Integrate open source and versioned adapters
 ([Android](https://developers.google.com/admob/android/choose-networks#integrate_open-source_and_versioned_adapters) | [iOS](https://developers.google.com/admob/ios/choose-networks#integrate_open-source_and_versioned_adapters)), 
 and copy the dependency/maven output into your `build.gradle` file on Android and `Podfile` on iOS.
+
+</TabItem>
+<TabItem value="expo">
+
+Add native dependencies using the [`expo-build-properties`](https://docs.expo.dev/versions/latest/sdk/build-properties) plugin.
+
+Install the plugin if you haven't already:
+
+```bash
+npx expo install expo-build-properties
+```
+
+Add the plugin to your `app.json` or `app.config.js` file, specifying the Android dependency or iOS pod for the adapter.
+
+```json
+// app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "dependencies": [
+              // Example: Add the AppLovin mediation adapter for Android. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
+              "com.google.ads.mediation:applovin:{X.Y.Z.A}"
+            ]
+          },
+          "ios": {
+            "pods": [
+              {
+                // Example: Add the AppLovin mediation adapter for iOS. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
+                "name": "Google-Mobile-Ads-Mediation-AppLovin",
+                "version": "~> {X.Y.Z.A}"
+              }
+            ]
+          }
+        }
+      ]
+    ]
+  }
+}
+```
+
+Rebuild your development client to include the new native dependencies:
+
+```bash
+npx expo run:android
+npx expo run:ios
+```
 
 ## Verify your setup with ad inspector
 
