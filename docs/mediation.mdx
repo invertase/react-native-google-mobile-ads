@@ -97,9 +97,9 @@ A third-party mediation adapter might have specific Android or iOS APIs that are
 
 This involves writing native code in both the Android and iOS layer.
 
-### Android native code
+**Android**
 
-On Android, create a **Module** class to contain your native logic and a **Package** class to register that module with your application.
+Create a `Module` class to contain your native logic and a `Package` class to register that module with your application.
 
 1. Create the native module. This class contains the methods you want to call from JavaScript.
 
@@ -168,9 +168,9 @@ override fun getPackages(): List<ReactPackage> =
 }
 ```
 
-### iOS native code
+**iOS**
 
-On iOS, create a header (`.h`) and an implementation (`.m`) file. The following example creates an `GoogleMobileAdsMediationAppLovin` class:
+Create a header (`.h`) and an implementation (`.m`) file. The following example creates an `GoogleMobileAdsMediationAppLovin` class:
 
 Example file: `ios/GoogleMobileAdsMediationAppLovin.h`
 
@@ -203,7 +203,7 @@ RCT_EXPORT_METHOD(setHasUserConsent:(BOOL)hasUserConsent)
 @end
 ```
 
-### Import native modules
+**Import native modules**
 
 In the JavaScript file where you want to call the native method, import `NativeModules` from the `react-native` library:
 
@@ -229,7 +229,7 @@ GoogleMobileAdsMediationAppLovin.setHasUserConsent(true)
 </TabItem>
 <TabItem value="expo">
 
-1. Create an [Expo module](https://docs.expo.dev/modules/get-started/) with the `create-expo-module` tool.
+1. **Create an [Expo module](https://docs.expo.dev/modules/get-started/)** with the `create-expo-module` tool.
 
 Run the following command from your project's root directory:
 
@@ -239,7 +239,7 @@ npx create-expo-module --local
 
 When prompted, give your module a name. This will scaffold a new module in a modules/ directory at your project root. 
 
-2. Add your native Android and iOS code. The following example creates a module to use with the
+2. **Add your native Android and iOS code**. The following example creates a module to use with the
 Google Mobile Ads mediation adapter for AppLovin:
 
 Android
@@ -308,9 +308,7 @@ File: `modules/google-mobile-ads-mediation-applovin/google-mobile-ads-mediation-
 s.dependency 'AppLovinSDK', '~> {X.Y.Z.A}'
 ```
 
-3. Install and rebuild.
-
-After creating the module and adding the code, install it in your project and rebuild your development client.
+3. **Install and rebuild**. After creating the module and adding the code, install it in your project and rebuild your development client.
 
 4. **Call the code from JavaScript**. You can now import and use the module directly in your code.
 
