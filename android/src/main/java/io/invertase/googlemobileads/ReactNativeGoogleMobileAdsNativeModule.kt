@@ -187,8 +187,8 @@ class ReactNativeGoogleMobileAdsNativeModule(
           nativeAd.setOnPaidEventListener { adValue ->
             val revenueData = Arguments.createMap()
             revenueData.putDouble("value", adValue.valueMicros.toDouble())
-            revenueData.putString("currencyCode", adValue.currencyCode)
             revenueData.putInt("precision", adValue.precisionType)
+            revenueData.putString("currencyCode", adValue.currencyCode)
             emitAdEvent("paid", revenueData)
           }
           loadedListener.onNativeAdLoaded(nativeAd)
