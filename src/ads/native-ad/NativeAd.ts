@@ -30,7 +30,8 @@ import NativeGoogleMobileAdsNativeModule, {
 import { NativeAdRequestOptions } from '../../types';
 import { validateNativeAdRequestOptions } from '../../validateNativeAdRequestOptions';
 
-type NativeAdListenerPayload<EventType extends NativeAdEventType> = EventType extends NativeAdEventType.PAID ? NativeAdPaidEventPayload : never;
+type NativeAdListenerPayload<EventType extends NativeAdEventType> = 
+  EventType extends NativeAdEventType.PAID ? NativeAdPaidEventPayload : never;
 
 /**
  * A class for loading Native Ads.
@@ -94,7 +95,10 @@ export class NativeAd {
     this.eventEmitter.emit(type, data);
   }
 
-  addAdEventListener<EventType extends NativeAdEventType>(type: EventType, listener: (payload: NativeAdListenerPayload<EventType>) => void) {
+  addAdEventListener<EventType extends NativeAdEventType>(
+    type: EventType, 
+    listener: (payload: NativeAdListenerPayload<EventType>) => void)
+  {
     if (!isOneOf(type, Object.values(NativeAdEventType))) {
       throw new Error(`NativeAd.addAdEventListener(*) 'type' expected a valid event type value.`);
     }
