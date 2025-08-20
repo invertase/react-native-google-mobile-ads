@@ -97,8 +97,8 @@ export class NativeAd {
 
   addAdEventListener<EventType extends NativeAdEventType>(
     type: EventType,
-    listener: (payload: NativeAdListenerPayload<EventType>) => void)
-  {
+    listener: (payload: NativeAdListenerPayload<EventType>) => void,
+  ) {
     if (!isOneOf(type, Object.values(NativeAdEventType))) {
       throw new Error(`NativeAd.addAdEventListener(*) 'type' expected a valid event type value.`);
     }
