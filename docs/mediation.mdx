@@ -1,0 +1,323 @@
+# Mediation
+
+AdMob Mediation is a feature lets you serve ads to your apps from multiple sources, including the AdMob Network and third-party ad sources, in one place. 
+AdMob Mediation helps maximize your fill rate and increase your monetization by sending ad requests to multiple networks to verify you find the best 
+available network to serve ads.
+
+This guide walks you through configuring mediation using the `react-native-google-mobile-ads` library.
+
+## Configure mediation in the AdMob UI
+
+To configure mediation in the AdMob UI, complete the following steps:
+
+1. Choose an ad source from the network details table ([Android](https://developers.google.com/admob/android/choose-networks#network_details) | [iOS](https://developers.google.com/admob/ios/choose-networks#network_details)).
+2. Follow steps 1-2 of that ad source's integration guide.
+
+## Install mediation adapters
+
+For the Google Mobile Ads SDK to communicate with third-party ad networks, you need to include a mediation adapter for each network in your app. Each
+adapter must be integrated in the Android and iOS layer of your application. 
+
+To choose the adapters you want to install, see Integrate open source and versioned adapters
+([Android](https://developers.google.com/admob/android/choose-networks#integrate_open-source_and_versioned_adapters) | [iOS](https://developers.google.com/admob/ios/choose-networks#integrate_open-source_and_versioned_adapters)).
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+Android
+- Add the adapter's dependency to your app-level `android/app/build.gradle` file.
+
+iOS
+- Add the adapter's pod to your `ios/Podfile`.
+
+</TabItem>
+<TabItem value="expo">
+
+Add native dependencies using the [`expo-build-properties`](https://docs.expo.dev/versions/latest/sdk/build-properties) plugin.
+
+Install the plugin if you haven't already:
+
+```bash
+npx expo install expo-build-properties
+```
+
+Add the plugin to your `app.json` or `app.config.js` file, specifying the Android dependency or iOS pod for the adapter.
+
+```json
+// app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "dependencies": [
+              // Example: Add the AppLovin mediation adapter for Android. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
+              "com.google.ads.mediation:applovin:{X.Y.Z.A}"
+            ]
+          },
+          "ios": {
+            "pods": [
+              {
+                // Example: Add the AppLovin mediation adapter for iOS.
+                "name": "GoogleMobileAdsMediationAppLovin"
+              }
+            ]
+          }
+        }
+      ]
+    ]
+  }
+}
+```
+
+Rebuild your development client to include the new native dependencies:
+
+```bash
+npx expo prebuild --clean
+npx expo run:android
+npx expo run:ios
+```
+
+</TabItem>
+</Tabs>
+
+## Verify your setup with ad inspector
+
+To open the ad inspector from your React Native application, see [Ad inspector](https://docs.page/invertase/react-native-google-mobile-ads/ad-inspector) in the
+`react-native-google-mobile-ads` documentation.
+
+## Call Android / iOS code from React Native
+
+A third-party mediation adapter might have specific Android or iOS APIs that aren't exposed to your Reach Native code. In these cases, you can create a custom "bridge" to expose that native functionality.
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+This involves writing native code in both the Android and iOS layer.
+
+**Android**
+
+Create a `Module` class to contain your native logic and a `Package` class to register that module with your application.
+
+1. Create the native module. This class contains the methods you want to call from JavaScript.
+
+Example file: `android/app/src/main/java/com/your-app-name/`
+
+The following example creates a **Module** class to use with the Google Mobile Ads mediation adapter for AppLovin:
+
+```
+package com.your-app-name
+
+import android.util.Log
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
+import com.facebook.react.bridge.ReactMethod
+// Import the necessary third-party SDKs.
+import com.applovin.sdk.AppLovinPrivacySettings
+
+class GoogleMobileAdsMediationAppLovinModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+
+  // The React layer interfaces with the value of this API. 
+  override fun getName() = "GoogleMobileAdsMediationAppLovin"
+
+  // This exposes the method to the React layer.
+  @ReactMethod
+  fun setHasUserConsent(hasUserConsent: Boolean) {
+    AppLovinPrivacySettings.setHasUserConsent(hasUserConsent)
+  }
+}
+```
+
+2. Create the package
+
+    This class registers your module so React Native can find it.
+
+Example file: `android/app/src/main/java/com/your-app-name/`
+
+```
+package com.your-app-name
+
+import com.facebook.react.ReactPackage
+import com.facebook.react.bridge.NativeModule
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.uimanager.ViewManager
+import java.util.Collections
+
+class GoogleMobileAdsMediationAppLovinPackage : ReactPackage {
+  override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+    return listOf(GoogleMobileAdsMediationAppLovinModule(reactContext))
+  }
+
+  override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
+    return Collections.emptyList()
+  }
+}
+```
+
+3. Register the package
+
+Add your new package in your `MainApplication` file:
+
+```
+override fun getPackages(): List<ReactPackage> =
+  PackageList(this).packages.apply {
+    // Add your custom package here.
+    add(GoogleMobileAdsMediationAppLovinPackage())
+}
+```
+
+**iOS**
+
+Create a header (`.h`) and an implementation (`.m`) file. The following example creates an `GoogleMobileAdsMediationAppLovin` class:
+
+Example file: `ios/GoogleMobileAdsMediationAppLovin.h`
+
+```
+#import <React/RCTBridgeModule.h>
+
+@interface GoogleMobileAdsMediationAppLovin : NSObject <RCTBridgeModule>
+@end
+```
+
+Example file: `ios/GoogleMobileAdsMediationAppLovin.m`
+
+```
+#import "GoogleMobileAdsMediationAppLovin.h"
+#import <Foundation/Foundation.h>
+// Import the necessary third-party SDKs.
+#import <AppLovinSDK/AppLovinSDK.h>
+
+@implementation GoogleMobileAdsMediationAppLovin
+
+// The React layer interfaces with the class name, e.g. GoogleMobileAdsMediationAppLovin, by default. 
+RCT_EXPORT_MODULE();
+
+// This exports the method to the React layer.
+RCT_EXPORT_METHOD(setHasUserConsent:(BOOL)hasUserConsent)
+{
+  [ALPrivacySettings setHasUserConsent:hasUserConsent];
+}
+
+@end
+```
+
+**Import native modules**
+
+In the JavaScript file where you want to call the native method, import `NativeModules` from the `react-native` library:
+
+```
+import { NativeModules } from 'react-native'
+```
+
+You can then access your module directly from the `NativeModules` object. The name you use here must exactly match the name
+exposed by your native code.
+
+The following example uses the `GoogleMobileAdsMediationAppLovin` sample class:
+
+```
+const { GoogleMobileAdsMediationAppLovin } = NativeModules
+```
+
+Once you have the module object, you can work with your object just as you would in Javascript.
+
+```
+GoogleMobileAdsMediationAppLovin.setHasUserConsent(true)
+```
+
+</TabItem>
+<TabItem value="expo">
+
+1. **Create an [Expo module](https://docs.expo.dev/modules/get-started/)** with the `create-expo-module` tool.
+
+Run the following command from your project's root directory:
+
+```
+npx create-expo-module --local
+```
+
+When prompted, give your module a name. This will scaffold a new module in a modules/ directory at your project root. 
+
+2. **Add your native Android and iOS code**. The following example creates a module to use with the
+Google Mobile Ads mediation adapter for AppLovin:
+
+Android
+
+Open the generated Kotlin file for your module and add your custom method. The module and package are already set up for you.
+
+File: `modules/google-mobile-ads-mediation-applovin/android/src/main/java/.../GoogleMobileAdsMediationApplovinModule.kt`
+
+```
+// ... existing imports
+import com.applovin.sdk.AppLovinPrivacySettings
+
+class GoogleMobileAdsMediationApplovinModule : Module() {
+  override fun definition() = ModuleDefinition {
+    // ... existing definition
+
+    // Add your custom method here.
+    Function("setHasUserConsent") { hasUserConsent: Boolean ->
+      AppLovinPrivacySettings.setHasUserConsent(hasUserConsent)
+    }
+  }
+}
+```
+
+Then, add the dependency in your module's `build.gradle` file.
+
+File: `modules/google-mobile-ads-mediation-applovin/android/build.gradle`
+
+```
+// Groovy
+
+dependencies {
+  // Add the third-party SDK dependency. Replace {X.Y.Z.A} with the specific adapter version you are integrating.
+  implementation 'com.google.ads.mediation:applovin:{X.Y.Z.A}'
+}
+```
+
+iOS
+
+Open the generated Swift file for your module and add your custom method.
+
+File: `modules/google-mobile-ads-mediation-applovin/ios/GoogleMobileAdsMediationApplovinModule.swift`
+
+```
+// ... existing imports
+import AppLovinSDK
+
+public class GoogleMobileAdsMediationApplovinModule: Module {
+  public func definition() -> ModuleDefinition {
+    // ... existing definition
+
+    // Add your custom method here
+    Function("setHasUserConsent") { (hasUserConsent: Bool) in
+      ALPrivacySettings.setHasUserConsent(hasUserConsent)
+    }
+  }
+}
+```
+
+Next, add the dependency in your module's `.podspec` file.
+
+File: `modules/google-mobile-ads-mediation-applovin/google-mobile-ads-mediation-applovin.podspec`
+
+```
+# Add the third-party pod dependency.
+s.dependency 'GoogleMobileAdsMediationAppLovin'
+```
+
+3. **Install and rebuild**. After creating the module and adding the code, install it in your project and rebuild your development client.
+
+4. **Call the code from JavaScript**. You can now import and use the module directly in your code.
+
+```
+import { setHasUserConsent } from 'google-mobile-ads-mediation-applovin'
+
+// Call your custom native method.
+setHasUserConsent(true)
+```
+
+</TabItem>
+</Tabs>
