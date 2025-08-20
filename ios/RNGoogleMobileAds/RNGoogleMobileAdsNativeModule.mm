@@ -215,7 +215,7 @@ RCT_EXPORT_METHOD(destroy
   _nativeAd.delegate = self;
   _nativeAd.paidEventHandler = ^(GADAdValue *_Nonnull adValue) {
     NSDictionary *revenueData = @{
-      @"value" : @([adValue.value doubleValue]),
+      @"value" : adValue.value,
       @"precision" : @(adValue.precision),
       @"currency" : adValue.currencyCode ?: @""
     };
