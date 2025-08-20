@@ -217,7 +217,7 @@ RCT_EXPORT_METHOD(destroy
     NSDictionary *revenueData = @{
       @"value" : [adValue.value doubleValue],
       @"precision" : @(adValue.precision)
-      @"currencyCode" : adValue.currencyCode,
+      @"currency" : adValue.currencyCode,
     };
     [self emitAdEvent:@"paid" withData:revenueData];
   };
