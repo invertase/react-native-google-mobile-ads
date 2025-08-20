@@ -16,6 +16,7 @@
       "Advanced Usage",
       [
         ["Displaying Ads via Hook", "/displaying-ads-hook"],
+        ["Mediation", "/mediation"],
         ["European User Consent", "/european-user-consent"],
         ["Ad Inspector", "/ad-inspector"],
         ["Impression-level ad revenue", "/impression-level-ad-revenue"],
