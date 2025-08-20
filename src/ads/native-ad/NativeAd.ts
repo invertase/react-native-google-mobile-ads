@@ -30,7 +30,7 @@ import NativeGoogleMobileAdsNativeModule, {
 import { NativeAdRequestOptions } from '../../types';
 import { validateNativeAdRequestOptions } from '../../validateNativeAdRequestOptions';
 
-type NativeAdListenerPayload<EventType extends NativeAdEventType> = 
+type NativeAdListenerPayload<EventType extends NativeAdEventType> =
   EventType extends NativeAdEventType.PAID ? NativeAdPaidEventPayload : never;
 
 /**
@@ -96,7 +96,7 @@ export class NativeAd {
   }
 
   addAdEventListener<EventType extends NativeAdEventType>(
-    type: EventType, 
+    type: EventType,
     listener: (payload: NativeAdListenerPayload<EventType>) => void)
   {
     if (!isOneOf(type, Object.values(NativeAdEventType))) {
