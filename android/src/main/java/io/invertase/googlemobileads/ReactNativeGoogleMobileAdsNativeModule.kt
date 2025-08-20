@@ -206,7 +206,6 @@ class ReactNativeGoogleMobileAdsNativeModule(
     private fun emitAdEvent(type: String, eventData: ReadableMap? = null) {
       val nativeAd = this.nativeAd ?: return
       val payload = Arguments.createMap()
-      // Merge the extra data if it exists.
       if (eventData != null) {
         payload.merge(eventData)
       }
