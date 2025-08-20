@@ -284,12 +284,12 @@ RCT_EXPORT_METHOD(destroy
   if (_nativeModule == nil || _nativeAd == nil) {
     return;
   }
-  
+
   NSMutableDictionary *payload = [NSMutableDictionary dictionary];
   if (data != nil) {
     [payload addEntriesFromDictionary:data];
   }
-  
+
   payload[@"responseId"] = _nativeAd.responseInfo.responseIdentifier;
   payload[@"type"] = type;
 
