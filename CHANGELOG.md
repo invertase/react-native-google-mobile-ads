@@ -1,3 +1,15 @@
+## [15.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.4.2...v15.5.0) (2025-08-21)
+
+
+### Features
+
+* **native ads:** Add support for onPaidEvents on Android/iOS ([5ba40a2](https://github.com/invertase/react-native-google-mobile-ads/commit/5ba40a295cc13f46e327b03381b5cf36b3047f31))
+
+
+### Bug Fixes
+
+* **native ads, ios:** wrong native ad prop type ([17adfa8](https://github.com/invertase/react-native-google-mobile-ads/commit/17adfa8c8823a5c3ac15d784fb76e9b2f28afcd2))
+
 ### [15.4.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.4.1...v15.4.2) (2025-08-19)
 
 
