@@ -55,6 +55,12 @@ export type NativeAdEventPayload = {
   type: string;
 };
 
+export type NativeAdPaidEventPayload = {
+  value: number;
+  precision: number;
+  currencyCode: string;
+};
+
 export interface Spec extends TurboModule {
   load(adUnitId: string, requestOptions: UnsafeObject): Promise<NativeAdProps>;
   destroy(responseId: string): void;

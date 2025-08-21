@@ -213,6 +213,14 @@ RCT_EXPORT_METHOD(destroy
     didReceiveNativeAd:(nonnull GADNativeAd *)nativeAd {
   _nativeAd = nativeAd;
   _nativeAd.delegate = self;
+  _nativeAd.paidEventHandler = ^(GADAdValue *_Nonnull adValue) {
+    NSDictionary *revenueData = @{
+      @"value" : adValue.value,
+      @"precision" : @(adValue.precision),
+      @"currency" : adValue.currencyCode ?: @""
+    };
+    [self emitAdEvent:@"paid" withData:revenueData];
+  };
   if (nativeAd.mediaContent.hasVideoContent) {
     nativeAd.mediaContent.videoController.delegate = self;
   }
@@ -272,17 +280,28 @@ RCT_EXPORT_METHOD(destroy
   [self emitAdEvent:@"video_unmuted"];
 }
 
-- (void)emitAdEvent:(NSString *)type {
+- (void)emitAdEvent:(NSString *)type withData:(NSDictionary *)data {
   if (_nativeModule == nil || _nativeAd == nil) {
     return;
   }
-  NSDictionary *payload =
-      @{@"responseId" : _nativeAd.responseInfo.responseIdentifier, @"type" : type};
+
+  NSMutableDictionary *payload = [NSMutableDictionary dictionary];
+  if (data != nil) {
+    [payload addEntriesFromDictionary:data];
+  }
+
+  payload[@"responseId"] = _nativeAd.responseInfo.responseIdentifier;
+  payload[@"type"] = type;
+
 #ifdef RCT_NEW_ARCH_ENABLED
   [_nativeModule emitOnAdEvent:payload];
 #else
   [_nativeModule sendEventWithName:@"RNGMANativeAdEvent" body:payload];
 #endif
+}
+
+- (void)emitAdEvent:(NSString *)type {
+  [self emitAdEvent:type withData:nil];
 }
 
 @end

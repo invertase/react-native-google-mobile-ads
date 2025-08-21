@@ -20,6 +20,11 @@ export enum NativeAdEventType {
   CLOSED = 'closed',
 
   /**
+   * Called when an ad is estimated to have earned money.
+   */
+  PAID = 'paid',
+
+  /**
    * Called when the video controller has begun or resumed playing a video
    */
   VIDEO_PLAYED = 'video_played',
