@@ -129,21 +129,22 @@ using namespace facebook::react;
 
 @end
 
+#ifndef RCT_NEW_ARCH_ENABLED
+
 @implementation RNGoogleMobileAdsMediaViewManager
 
 RCT_EXPORT_MODULE(RNGoogleMobileAdsMediaView)
 
 RCT_EXPORT_VIEW_PROPERTY(responseId, NSString)
-
 RCT_EXPORT_VIEW_PROPERTY(resizeMode, NSString)
 
-#ifndef RCT_NEW_ARCH_ENABLED
 - (UIView *)view {
   return [[RNGoogleMobileAdsMediaView alloc] initWithBridge:self.bridge];
 }
-#endif
 
 @end
+
+#endif
 
 #ifdef RCT_NEW_ARCH_ENABLED
 Class<RCTComponentViewProtocol> RNGoogleMobileAdsMediaViewCls(void) {
