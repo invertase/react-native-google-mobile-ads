@@ -169,6 +169,12 @@
     "name": "RNGoogleMobileAdsSpec",
     "type": "all",
     "jsSrcsDir": "./src/specs",
+    "ios": {
+      "componentProvider": {
+        "RNGoogleMobileAdsNativeView": "RNGoogleMobileAdsNativeView",
+        "RNGoogleMobileAdsMediaView": "RNGoogleMobileAdsMediaView"
+      }
+    },
     "android": {
       "javaPackageName": "io.invertase.googlemobileads"
     }

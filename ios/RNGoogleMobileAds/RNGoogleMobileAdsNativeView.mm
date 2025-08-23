@@ -187,13 +187,17 @@ using namespace facebook::react;
 
 @end
 
+#ifndef RCT_NEW_ARCH_ENABLED
+
+@interface RNGoogleMobileAdsNativeViewManager : RCTViewManager
+@end
+
 @implementation RNGoogleMobileAdsNativeViewManager
 
 RCT_EXPORT_MODULE(RNGoogleMobileAdsNativeView)
 
 RCT_EXPORT_VIEW_PROPERTY(responseId, NSString)
 
-#ifndef RCT_NEW_ARCH_ENABLED
 - (UIView *)view {
   return [[RNGoogleMobileAdsNativeView alloc] initWithBridge:self.bridge];
 }
@@ -212,9 +216,10 @@ RCT_EXPORT_METHOD(registerAsset
         [view registerAsset:assetType reactTag:assetReactTag.intValue];
       }];
 }
-#endif
 
 @end
+
+#endif
 
 #ifdef RCT_NEW_ARCH_ENABLED
 Class<RCTComponentViewProtocol> RNGoogleMobileAdsNativeViewCls(void) {
