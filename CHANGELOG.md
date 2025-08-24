@@ -1,3 +1,12 @@
+### [15.5.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.5.0...v15.5.1) (2025-08-24)
+
+
+### Bug Fixes
+
+* Fabric codegen support for new arch ([196ec16](https://github.com/invertase/react-native-google-mobile-ads/commit/196ec1642e1f169132b2db37e7423dbc28e95d34))
+* **ios:** guard manager declarations for old arch in header files ([f2ad7a6](https://github.com/invertase/react-native-google-mobile-ads/commit/f2ad7a630feddd9ad70493ab24bceef707c4e611))
+* remove duplicate RNGoogleMobileAdsNativeViewManager interface ([fb8949c](https://github.com/invertase/react-native-google-mobile-ads/commit/fb8949c3971a0a593f8e5d810f284aac9f2e9729))
+
 ## [15.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.4.2...v15.5.0) (2025-08-21)
 
 
