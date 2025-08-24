@@ -41,8 +41,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+#ifndef RCT_NEW_ARCH_ENABLED
 @interface RNGoogleMobileAdsNativeViewManager : RCTViewManager
 
 @end
+#endif
 
 NS_ASSUME_NONNULL_END
