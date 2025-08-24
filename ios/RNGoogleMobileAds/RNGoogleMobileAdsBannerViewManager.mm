@@ -16,13 +16,11 @@
  *
  */
 
+#ifndef RCT_NEW_ARCH_ENABLED
 #import <React/RCTUIManager.h>
 #import <React/RCTViewManager.h>
-#ifdef RCT_NEW_ARCH_ENABLE
 
-#else
 #import "RNGoogleMobileAdsBannerComponent.h"
-#endif
 
 @interface RNGoogleMobileAdsBannerViewManager : RCTViewManager
 @end
@@ -69,9 +67,6 @@ RCT_EXPORT_METHOD(load : (nonnull NSNumber *)reactTag) {
 #endif
 }
 
-#ifdef RCT_NEW_ARCH_ENABLE
-
-#else
 @synthesize bridge = _bridge;
 
 - (UIView *)view {
@@ -86,6 +81,7 @@ RCT_EXPORT_METHOD(load : (nonnull NSNumber *)reactTag) {
 - (dispatch_queue_t)methodQueue {
   return dispatch_get_main_queue();
 }
-#endif
 
 @end
+
+#endif
