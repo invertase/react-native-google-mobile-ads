@@ -171,6 +171,7 @@
     "jsSrcsDir": "./src/specs",
     "ios": {
       "componentProvider": {
+        "RNGoogleMobileAdsBannerView": "RNGoogleMobileAdsBannerView",
         "RNGoogleMobileAdsNativeView": "RNGoogleMobileAdsNativeView",
         "RNGoogleMobileAdsMediaView": "RNGoogleMobileAdsMediaView"
       }
