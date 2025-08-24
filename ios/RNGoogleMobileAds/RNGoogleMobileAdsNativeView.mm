@@ -189,9 +189,6 @@ using namespace facebook::react;
 
 #ifndef RCT_NEW_ARCH_ENABLED
 
-@interface RNGoogleMobileAdsNativeViewManager : RCTViewManager
-@end
-
 @implementation RNGoogleMobileAdsNativeViewManager
 
 RCT_EXPORT_MODULE(RNGoogleMobileAdsNativeView)
