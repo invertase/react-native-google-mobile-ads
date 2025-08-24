@@ -1,3 +1,15 @@
+## [15.6.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.5.1...v15.6.0) (2025-08-24)
+
+
+### Features
+
+* **deps:** bump Google Mobile Ads SDK (iOS 12.9.0, Android 24.5.0) ([e85791e](https://github.com/invertase/react-native-google-mobile-ads/commit/e85791ed71b22bd0cd8be9bfc72cb8c368f519d0))
+
+
+### Bug Fixes
+
+* **iOS:** banner ad was still rendered in paper(old arch), when fabric active ([3c30cdd](https://github.com/invertase/react-native-google-mobile-ads/commit/3c30cddd1bf0370e360ec08bc9484ef9174599c9))
+
 ### [15.5.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.5.0...v15.5.1) (2025-08-24)
 
 
