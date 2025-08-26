@@ -79,7 +79,7 @@ export const BaseAd = React.forwardRef<
             width: number;
             height: number;
           }
-        | { type: 'onAdOpened' | 'onAdClosed' }
+        | { type: 'onAdOpened' | 'onAdClosed' | 'onAdImpression' | 'onAdClicked' }
         | {
             type: 'onAdFailedToLoad';
             code: string;
