@@ -243,7 +243,6 @@ using namespace facebook::react;
   }
 }
 
-
 - (void)bannerViewWillDismissScreen:(GADBannerView *)bannerView {
   // not in use
 }
