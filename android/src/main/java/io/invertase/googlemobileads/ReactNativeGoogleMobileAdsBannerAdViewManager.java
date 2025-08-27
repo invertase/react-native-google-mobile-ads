@@ -287,7 +287,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           }
 
           @Override
-          public void onAdImpression {
+          public void onAdImpression() {
             sendEvent(reactViewGroup, EVENT_AD_IMPRESSION, null);
           }
 
