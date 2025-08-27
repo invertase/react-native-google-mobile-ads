@@ -184,6 +184,14 @@
   [self sendEvent:@"onAdOpened" payload:nil];
 }
 
+- (void)bannerViewDidRecordImpression:(GADBannerView *)bannerView {
+  [self sendEvent:@"onAdImpression" payload:nil];
+}
+
+- (void)bannerViewDidRecordClick:(GADBannerView *)bannerView {
+  [self sendEvent:@"onAdClicked" payload:nil];
+}
+
 - (void)bannerViewWillDismissScreen:(GADBannerView *)bannerView {
   // not in use
 }
