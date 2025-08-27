@@ -1,3 +1,10 @@
+## [15.7.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.6.0...v15.7.0) (2025-08-27)
+
+
+### Features
+
+* **banner:** Add onAdImpression and onAdClicked event listeners ([7889a23](https://github.com/invertase/react-native-google-mobile-ads/commit/7889a23422faaf9bccf987f0e14b8b033e7caf08))
+
 ## [15.6.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.5.1...v15.6.0) (2025-08-24)
 
 
