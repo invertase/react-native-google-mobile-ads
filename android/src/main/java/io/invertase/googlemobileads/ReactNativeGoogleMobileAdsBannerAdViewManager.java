@@ -292,7 +292,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           }
 
           @Override
-          public void onAdClicked {
+          public void onAdClicked() {
             sendEvent(reactViewGroup, EVENT_AD_CLICKED, null);
           }
         });
