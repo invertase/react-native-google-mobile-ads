@@ -225,6 +225,24 @@ using namespace facebook::react;
   }
 }
 
+- (void)bannerViewDidRecordImpression:(GADBannerView *)bannerView {
+  if (_eventEmitter != nullptr) {
+    std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
+        _eventEmitter)
+        ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
+            .type = "onAdImpression"});
+  }
+}
+
+- (void)bannerViewDidRecordClick:(GADBannerView *)bannerView {
+  if (_eventEmitter != nullptr) {
+    std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
+        _eventEmitter)
+        ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
+            .type = "onAdClicked"});
+  }
+}
+
 - (void)bannerViewWillDismissScreen:(GADBannerView *)bannerView {
   // not in use
 }

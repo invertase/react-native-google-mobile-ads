@@ -57,6 +57,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     extends SimpleViewManager<ReactNativeAdView> {
   private static final String REACT_CLASS = "RNGoogleMobileAdsBannerView";
   private final String EVENT_AD_LOADED = "onAdLoaded";
+  private final String EVENT_AD_IMPRESSION = "onAdImpression";
+  private final String EVENT_AD_CLICKED = "onAdClicked";
   private final String EVENT_AD_FAILED_TO_LOAD = "onAdFailedToLoad";
   private final String EVENT_AD_OPENED = "onAdOpened";
   private final String EVENT_AD_CLOSED = "onAdClosed";
@@ -282,6 +284,16 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           @Override
           public void onAdClosed() {
             sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
+          }
+
+          @Override
+          public void onAdImpression() {
+            sendEvent(reactViewGroup, EVENT_AD_IMPRESSION, null);
+          }
+
+          @Override
+          public void onAdClicked() {
+            sendEvent(reactViewGroup, EVENT_AD_CLICKED, null);
           }
         });
     if (adView instanceof AdManagerAdView) {

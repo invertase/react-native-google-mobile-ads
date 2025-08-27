@@ -81,6 +81,16 @@ export interface BannerAdProps {
   onAdOpened?: () => void;
 
   /**
+   * Called when an impression is recorded for an ad.
+   */
+  onAdImpression?: () => void;
+
+  /**
+   * Called when a click is recorded for an ad
+   */
+  onAdClicked?: () => void;
+
+  /**
    * Called when the user is about to return to the app after tapping on an ad.
    */
   onAdClosed?: () => void;
