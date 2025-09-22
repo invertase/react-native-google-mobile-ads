@@ -11,8 +11,8 @@ Android & iOS, and provides a single JavaScript interface for both platforms.
 
 ## Understanding AdMob Ads
 
-Ads served by Google can be categorized as personalized or non-personalized, both requiring consent from users in the EEA. By default,
-ad requests to Google serve personalized ads, with ad selection based on the user's previously collected data. Users outside of the EEA do not require consent.
+Ads served by Google can be categorized as personalized, non-personalized, Limited ads and technical ads. To understand more about what ads can be served based on a
+user's consent choices, see Ad serving modes ([Android](https://developers.google.com/admob/android/privacy/ad-serving-modes) / [iOS](https://developers.google.com/admob/ios/privacy/ad-serving-modes)). 
 
 <Info>
 The `AdsConsent` helper only provides you with the tools for requesting consent, it is up to the developer to ensure the consent status is reflected throughout the app.
@@ -191,9 +191,12 @@ The completion handler is called after the form is dismissed. If consent is not 
 
 To make it easier we added a helper method `gatherConsent` that combines requesting consent information and loading/presenting a consent form if necessary.
 
-Before requesting ads in your app, check if you have obtained consent from the user using `canRequestAds`.
+Before requesting ads in your app, check if you have gathered consent aligned with your app's configured messages using `canRequestAds`.
 If an error occurs during the consent gathering process, you should still attempt to request ads.
 The UMP SDK uses the consent status from the previous session.
+
+**Note:** For more information on when `canRequestAds` is `true` or `false`, see the reference documentation for [Android](https://developers.google.com/admob/android/reference/privacy/com/google/android/ump/ConsentInformation#canRequestAds()) /
+[iOS](https://developers.google.com/admob/ios/privacy/api/reference/Classes/UMPConsentInformation#canrequestads).
 
 ```js
 import mobileAds, { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
@@ -237,9 +240,8 @@ async function startGoogleMobileAdsSDK() {
 
 ### Inspecting consent choices
 
-The AdsConsentStatus tells you if you should show the modal to a user or not. Often times you want to run logic based on the user's choices though.
-Especially since the Google Mobile Ads SDK won't show any ads if the user didn't give consent to store and/or access information on the device.
-This library exports a method that returns some of the most relevant consent flags to handle common use cases.
+The AdsConsentStatus tells you if you should show the modal to a user or not. Often times you want to run logic based on the user's choices. This library exports a
+method that returns some of the most relevant consent flags to handle common use cases.
 
 ```js
 import { AdsConsent } from 'react-native-google-mobile-ads';
@@ -260,10 +262,7 @@ const {
 } = await AdsConsent.getUserChoices();
 
 if (storeAndAccessInformationOnDevice === false) {
-  /**
-   * The user declined consent for purpose 1,
-   * the Google Mobile Ads SDK won't serve ads.
-   */
+  // The user declined consent for purpose 1.
 }
 ```
 
@@ -310,6 +309,7 @@ AdsConsent.reset();
 
 ### Troubleshooting
 
-In case of troubles, double-check the original documentation for underlying
-UMP SDK for [Android](https://developers.google.com/admob/ump/android/quick-start) /
+In case of troubles, double-check the following artifacts:
+* Original documentation for underlying UMP SDK for [Android](https://developers.google.com/admob/ump/android/quick-start) /
 [iOS](https://developers.google.com/admob/ump/ios/quick-start).
+* Google Help Center [European regulations](https://support.google.com/admob/topic/10115026) articles.
