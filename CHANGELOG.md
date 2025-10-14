@@ -1,3 +1,10 @@
+### [15.8.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.8.0...v15.8.1) (2025-10-14)
+
+
+### Bug Fixes
+
+* **native ad, ios:** fixed ios crash ([571b226](https://github.com/invertase/react-native-google-mobile-ads/commit/571b2268b6c6bdae62ff28ea974f4e4f3cd4c4be))
+
 ## [15.8.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.7.0...v15.8.0) (2025-09-30)
 
 
