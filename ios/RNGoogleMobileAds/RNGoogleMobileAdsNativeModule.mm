@@ -95,9 +95,9 @@ RCT_EXPORT_METHOD(
           @"price" : nativeAd.price ?: [NSNull null],
           @"store" : nativeAd.store ?: [NSNull null],
           @"starRating" : nativeAd.starRating ?: [NSNull null],
-          @"icon" : nativeAd.icon != nil
-              ? @{@"scale" : @(nativeAd.icon.scale), @"url" : nativeAd.icon.imageURL.absoluteString}
-              : [NSNull null],
+          @"icon" : (nativeAd.icon && nativeAd.icon.imageURL != nil)
+            ? @{@"scale": @(nativeAd.icon.scale), @"url": nativeAd.icon.imageURL.absoluteString}
+            : [NSNull null],
           @"mediaContent" : @{
             @"aspectRatio" : @(nativeAd.mediaContent.aspectRatio),
             @"hasVideoContent" : @(nativeAd.mediaContent.hasVideoContent),
