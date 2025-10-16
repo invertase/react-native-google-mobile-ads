@@ -88,7 +88,7 @@ RCT_EXPORT_METHOD(
           reject(@"ERROR_LOAD", @"Failed to get a valid response ID from the loaded ad.", nil);
           return;
         }
-        
+
         [_adHolders setValue:adHolder forKey:responseId];
 
         resolve(@{
