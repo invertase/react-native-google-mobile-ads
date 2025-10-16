@@ -287,7 +287,7 @@ RCT_EXPORT_METHOD(destroy
   [self emitAdEvent:@"video_unmuted"];
 }
 
-- (void)emitAdEvent:(NSString *)type withData:(NSDictionary *)data {
+- (void)emitAdEvent:(nonnull NSString *)type withData:(NSDictionary *)data {
   if (_nativeModule == nil || _nativeAd == nil) {
     return;
   }
@@ -299,7 +299,7 @@ RCT_EXPORT_METHOD(destroy
 
   NSString *responseId = _nativeAd.responseInfo.responseIdentifier;
   payload[@"responseId"] = responseId ?: [NSNull null];
-  payload[@"type"] = type ?: [NSNull null];
+  payload[@"type"] = type;
 
 #ifdef RCT_NEW_ARCH_ENABLED
   [_nativeModule emitOnAdEvent:payload];
