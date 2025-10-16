@@ -84,6 +84,11 @@ RCT_EXPORT_METHOD(
         }
 
         NSString *responseId = nativeAd.responseInfo.responseIdentifier;
+        if (responseId == nil) {
+          reject(@"ERROR_LOAD", @"Failed to get a valid response ID from the loaded ad.", nil);
+          return;
+        }
+        
         [_adHolders setValue:adHolder forKey:responseId];
 
         resolve(@{
@@ -109,8 +114,10 @@ RCT_EXPORT_METHOD(
 
 RCT_EXPORT_METHOD(destroy
                   : (NSString *)responseId {
-                    [[_adHolders valueForKey:responseId] dispose];
-                    [_adHolders removeObjectForKey:responseId];
+                    if (responseId) {
+                      [[_adHolders valueForKey:responseId] dispose];
+                      [_adHolders removeObjectForKey:responseId];
+                    }
                   });
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId {
@@ -290,8 +297,9 @@ RCT_EXPORT_METHOD(destroy
     [payload addEntriesFromDictionary:data];
   }
 
-  payload[@"responseId"] = _nativeAd.responseInfo.responseIdentifier;
-  payload[@"type"] = type;
+  NSString *responseId = _nativeAd.responseInfo.responseIdentifier;
+  payload[@"responseId"] = responseId ?: [NSNull null];
+  payload[@"type"] = type ?: [NSNull null];
 
 #ifdef RCT_NEW_ARCH_ENABLED
   [_nativeModule emitOnAdEvent:payload];
