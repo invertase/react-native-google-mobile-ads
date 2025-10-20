@@ -26,15 +26,11 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Nonnull;
 
-public class ReactNativeModule extends ReactContextBaseJavaModule implements ContextProvider {
-  private final TaskExecutorService executorService;
+public class ReactNativeModule implements ContextProvider {
+  private ReactApplicationContext context;
 
-  private String moduleName;
-
-  public ReactNativeModule(ReactApplicationContext reactContext, String moduleName) {
-    super(reactContext);
-    this.moduleName = moduleName;
-    this.executorService = new TaskExecutorService(getName());
+  public ReactNativeModule(ReactApplicationContext reactContext) {
+    this.context = reactContext;
   }
 
   public static void rejectPromiseWithCodeAndMessage(Promise promise, String code, String message) {
@@ -44,53 +40,17 @@ public class ReactNativeModule extends ReactContextBaseJavaModule implements Con
     promise.reject(code, message, userInfoMap);
   }
 
-  @Override
-  public void initialize() {
-    super.initialize();
-  }
-
   public ReactContext getContext() {
-    return getReactApplicationContext();
+    return context;
   }
 
-  public ExecutorService getExecutor() {
-    return executorService.getExecutor();
-  }
 
-  public ExecutorService getTransactionalExecutor() {
-    return executorService.getTransactionalExecutor();
-  }
-
-  public ExecutorService getTransactionalExecutor(String identifier) {
-    return executorService.getTransactionalExecutor(identifier);
-  }
-
-  @Override
-  public void invalidate() {
-    executorService.shutdown();
-  }
-
-  public void removeEventListeningExecutor(String identifier) {
-    String executorName = executorService.getExecutorName(true, identifier);
-    executorService.removeExecutor(executorName);
-  }
 
   public Context getApplicationContext() {
-    return getReactApplicationContext().getApplicationContext();
+    return context.getApplicationContext();
   }
 
   public Activity getActivity() {
-    return getCurrentActivity();
-  }
-
-  @Nonnull
-  @Override
-  public String getName() {
-    return moduleName;
-  }
-
-  @Override
-  public Map<String, Object> getConstants() {
-    return new HashMap<>();
+    return context.getCurrentActivity();
   }
 }

@@ -30,16 +30,15 @@ import com.google.android.ump.ConsentDebugSettings;
 import com.google.android.ump.ConsentInformation;
 import com.google.android.ump.ConsentRequestParameters;
 import com.google.android.ump.UserMessagingPlatform;
-import io.invertase.googlemobileads.common.ReactNativeModule;
 import javax.annotation.Nonnull;
 
-public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
-
-  static final String NAME = "RNGoogleMobileAdsConsentModule";
+public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModuleSpec {
   private ConsentInformation consentInformation;
+  private ReactApplicationContext context;
 
   public ReactNativeGoogleMobileAdsConsentModule(ReactApplicationContext reactContext) {
-    super(reactContext, NAME);
+    super(reactContext);
+    context = reactContext;
     consentInformation = UserMessagingPlatform.getConsentInformation(reactContext);
   }
 
@@ -89,7 +88,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
     try {
       ConsentRequestParameters.Builder paramsBuilder = new ConsentRequestParameters.Builder();
       ConsentDebugSettings.Builder debugSettingsBuilder =
-          new ConsentDebugSettings.Builder(getApplicationContext());
+          new ConsentDebugSettings.Builder(context.getApplicationContext());
 
       if (options.hasKey("testDeviceIdentifiers")) {
         ReadableArray devices = options.getArray("testDeviceIdentifiers");
@@ -289,5 +288,12 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
     } catch (Exception e) {
       rejectPromiseWithCodeAndMessage(promise, "consent-string-error", e.toString());
     }
+  }
+
+  public static void rejectPromiseWithCodeAndMessage(Promise promise, String code, String message) {
+    WritableMap userInfoMap = Arguments.createMap();
+    userInfoMap.putString("code", code);
+    userInfoMap.putString("message", message);
+    promise.reject(code, message, userInfoMap);
   }
 }

@@ -17,8 +17,11 @@ package io.invertase.googlemobileads;
  *
  */
 
+import androidx.annotation.NonNull;
+
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import io.invertase.googlemobileads.common.RCTConvert;
@@ -26,20 +29,27 @@ import io.invertase.googlemobileads.common.ReactNativeEvent;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
 import io.invertase.googlemobileads.common.ReactNativeJSON;
 import io.invertase.googlemobileads.common.ReactNativeMeta;
-import io.invertase.googlemobileads.common.ReactNativeModule;
 import io.invertase.googlemobileads.common.ReactNativePreferences;
 
-public class ReactNativeAppModule extends ReactNativeModule {
+public class ReactNativeAppModule extends ReactContextBaseJavaModule {
   static final String NAME = "RNAppModule";
+  ReactApplicationContext context;
 
   ReactNativeAppModule(ReactApplicationContext reactContext) {
-    super(reactContext, NAME);
+    super(reactContext);
+    context=reactContext;
+  }
+
+  @NonNull
+  @Override
+  public String getName() {
+    return NAME;
   }
 
   @Override
   public void initialize() {
     super.initialize();
-    ReactNativeEventEmitter.getSharedInstance().attachReactContext(getContext());
+    ReactNativeEventEmitter.getSharedInstance().attachReactContext(context);
   }
 
   @ReactMethod
