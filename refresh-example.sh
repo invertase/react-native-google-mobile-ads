@@ -86,7 +86,7 @@ cp -frv TEMP/* RNGoogleMobileAdsExample/
 pushd RNGoogleMobileAdsExample
 
 # Set ourselves up to run patch-package on post-install
-npm_config_yes=true npx json -I -f package.json -e 'this.scripts.postinstall = "yarn patch-package"'
+npm_config_yes=true npx json -I -f package.json -e 'this.scripts.postinstallDev = "yarn patch-package"'
 yarn patch-package
 
 # run pod install after installing our module

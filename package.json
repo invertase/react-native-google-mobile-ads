@@ -65,6 +65,7 @@
     ]
   },
   "scripts": {
+    "postinstallDev": "yarn prepare",
     "prepare": "yarn build && yarn build:plugin",
     "build": "genversion --es6 --semi src/version.ts && bob build",
     "build:clean": "rimraf android/build && rimraf ios/build && rimraf lib && rimraf plugin/build",
@@ -83,7 +84,7 @@
     "tests:jest": "jest",
     "tests:jest-watch": "jest --watch",
     "tests:jest-coverage": "jest --coverage",
-    "tests:install": "cd RNGoogleMobileAdsExample && yarn",
+    "tests:install": "cd RNGoogleMobileAdsExample && yarn && yarn postinstallDev",
     "tests:packager": "cd RNGoogleMobileAdsExample && yarn react-native start",
     "tests:packager:reset-cache": "cd RNGoogleMobileAdsExample && yarn react-native start --reset-cache",
     "tests:android:build": "cd RNGoogleMobileAdsExample && yarn detox build --configuration android.emu.debug",
@@ -108,7 +109,7 @@
     "tests:ios:test-cover": "cd RNGoogleMobileAdsExample && ./node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug",
     "tests:ios:test-cover-reuse": "cd RNGoogleMobileAdsExample && node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
     "tests:ios:pod:install": "cd RNGoogleMobileAdsExample && cd ios && rm -rf RNGoogleMobileAdsExample.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd ..",
-    "package:update": "yarn upgrade --latest"
+    "package:update": "yarn upgrade-interactive"
   },
   "dependencies": {
     "@iabtcf/core": "^1.5.3",
@@ -179,5 +180,6 @@
     "android": {
       "javaPackageName": "io.invertase.googlemobileads"
     }
-  }
+  },
+  "packageManager": "yarn@4.10.3"
 }
