@@ -30,12 +30,12 @@ jobs:
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 50
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
@@ -56,6 +56,6 @@ jobs:
           command: yarn --no-audit --prefer-offline
       - name: Jest
         run: yarn tests:jest-coverage
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           verbose: true
