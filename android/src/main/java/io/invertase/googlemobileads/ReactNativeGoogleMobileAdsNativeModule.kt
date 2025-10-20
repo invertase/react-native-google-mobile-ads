@@ -216,6 +216,6 @@ class ReactNativeGoogleMobileAdsNativeModule(
   }
 
   companion object {
-    const val NAME = "RNGoogleMobileAdsNativeModule"
+    const val NAME = NativeGoogleMobileAdsNativeModuleSpec.NAME
   }
 }
