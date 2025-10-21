@@ -108,7 +108,7 @@
     "tests:ios:test-reuse": "cd RNGoogleMobileAdsExample && yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
     "tests:ios:test-cover": "cd RNGoogleMobileAdsExample && ./node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug",
     "tests:ios:test-cover-reuse": "cd RNGoogleMobileAdsExample && node_modules/.bin/nyc yarn detox test --configuration ios.sim.debug --reuse --loglevel warn",
-    "tests:ios:pod:install": "cd RNGoogleMobileAdsExample && cd ios && rm -rf RNGoogleMobileAdsExample.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd ..",
+    "tests:ios:pod:install": "cd RNGoogleMobileAdsExample && bundle install && cd ios && rm -rf RNGoogleMobileAdsExample.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd ..",
     "package:update": "yarn upgrade-interactive"
   },
   "dependencies": {
@@ -150,6 +150,7 @@
     "react": "^19.2.0",
     "react-native": "^0.82.1",
     "react-native-builder-bob": "^0.40.13",
+    "react-native-test-app": "^4.4.12",
     "react-test-renderer": "^19.2.0",
     "rimraf": "^6.0.1",
     "semantic-release": "^25.0.1",
