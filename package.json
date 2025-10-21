@@ -134,6 +134,7 @@
     "babel-jest": "^29.2.2",
     "clang-format": "1.8.0",
     "conventional-changelog": "^7.1.1",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
     "eslint": "^8.26.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-jest": "^27.1.3",

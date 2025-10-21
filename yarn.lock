@@ -6545,6 +6545,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"conventional-changelog-conventionalcommits@npm:^9.1.0":
+  version: 9.1.0
+  resolution: "conventional-changelog-conventionalcommits@npm:9.1.0"
+  dependencies:
+    compare-func: "npm:^2.0.0"
+  checksum: 10/932522a9eb2f19f8b6efc05f1de0b8d4775842e2156c2c58358d25069bfc43ca1a6198fb07666d7abc83695a10591787c23b7ff2e1e2d73ac484cfb2f57f5f7f
+  languageName: node
+  linkType: hard
+
 "conventional-changelog-preset-loader@npm:^5.0.0":
   version: 5.0.0
   resolution: "conventional-changelog-preset-loader@npm:5.0.0"
@@ -14511,6 +14520,7 @@ __metadata:
     babel-jest: "npm:^29.2.2"
     clang-format: "npm:1.8.0"
     conventional-changelog: "npm:^7.1.1"
+    conventional-changelog-conventionalcommits: "npm:^9.1.0"
     eslint: "npm:^8.26.0"
     eslint-config-prettier: "npm:^8.5.0"
     eslint-plugin-jest: "npm:^27.1.3"
