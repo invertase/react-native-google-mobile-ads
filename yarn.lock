@@ -3415,7 +3415,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint/js@npm:9.38.0":
+"@eslint/js@npm:9.38.0, @eslint/js@npm:^9.38.0":
   version: 9.38.0
   resolution: "@eslint/js@npm:9.38.0"
   checksum: 10/08ba53e3e631e2815ff33e0f48dccf87daf3841eb5605fa5980d18b88cd6dd4cd63b5829ac015e97eeb85807bf91efe7d4e1d4eaf6beb586bc01549b7660c4a2
@@ -10630,7 +10630,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globals@npm:^16.0.0":
+"globals@npm:^16.0.0, globals@npm:^16.4.0":
   version: 16.4.0
   resolution: "globals@npm:16.4.0"
   checksum: 10/1627a9f42fb4c82d7af6a0c8b6cd616e00110908304d5f1ddcdf325998f3aed45a4b29d8a1e47870f328817805263e31e4f1673f00022b9c2b210552767921cf
@@ -16493,6 +16493,8 @@ __metadata:
   dependencies:
     "@babel/core": "npm:^7.28.4"
     "@babel/plugin-proposal-private-property-in-object": "npm:^7.21.11"
+    "@eslint/eslintrc": "npm:^3.3.1"
+    "@eslint/js": "npm:^9.38.0"
     "@iabtcf/core": "npm:^1.5.6"
     "@react-native/babel-preset": "npm:^0.82.1"
     "@semantic-release/changelog": "npm:^6.0.3"
@@ -16520,6 +16522,7 @@ __metadata:
     expo: "npm:^54.0.18"
     expo-module-scripts: "npm:^5.0.7"
     genversion: "npm:^3.2.0"
+    globals: "npm:^16.4.0"
     google-java-format: "npm:^2.0.1"
     jest: "npm:^30.2.0"
     prettier: "npm:^3.6.2"
