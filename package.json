@@ -118,6 +118,8 @@
   "devDependencies": {
     "@babel/core": "^7.28.4",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.38.0",
     "@react-native/babel-preset": "^0.82.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
@@ -144,6 +146,7 @@
     "expo": "^54.0.18",
     "expo-module-scripts": "^5.0.7",
     "genversion": "^3.2.0",
+    "globals": "^16.4.0",
     "google-java-format": "^2.0.1",
     "jest": "^30.2.0",
     "prettier": "^3.6.2",
