@@ -1,31 +1,34 @@
 package io.invertase.googlemobileads
 
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
-import com.google.android.gms.ads.appopen.AppOpenAd
 
 class ReactNativeGoogleMobileAdsAppOpenModule(reactContext: ReactApplicationContext?) :
   NativeAppOpenModuleSpec(reactContext) {
 
-    private var instance: ReactNativeGoogleMobileAdsAppOpenModuleImpl = ReactNativeGoogleMobileAdsAppOpenModuleImpl(reactContext)
+  private var instance: ReactNativeGoogleMobileAdsAppOpenModuleImpl =
+    ReactNativeGoogleMobileAdsAppOpenModuleImpl(reactContext)
+
   override fun appOpenLoad(
     requestId: Double,
-    adUnitId: String?,
+    adUnitId: String,
     requestOptions: ReadableMap?
   ) {
-//    instance.appOpenLoad()
+    instance.appOpenLoad(requestId.toInt(), adUnitId, requestOptions ?: Arguments.createMap())
   }
 
   override fun appOpenShow(
     requestId: Double,
-    adUnitId: String?,
+    adUnitId: String,
     showOptions: ReadableMap?,
-    promise: Promise?
+    promise: Promise
   ) {
-//    instance.appOpenShow()
+    instance.appOpenShow(requestId.toInt(), adUnitId, showOptions ?: Arguments.createMap(), promise)
   }
-  companion object{
-  const val NAME = NativeAppOpenModuleSpec.NAME
+
+  companion object {
+    const val NAME = NativeAppOpenModuleSpec.NAME
   }
 }

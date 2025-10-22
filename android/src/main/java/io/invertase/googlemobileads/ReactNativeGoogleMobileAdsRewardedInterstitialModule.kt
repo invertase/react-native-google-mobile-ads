@@ -1,5 +1,6 @@
 package io.invertase.googlemobileads
 
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
@@ -11,19 +12,19 @@ class ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext: ReactAp
   private val instance: ReactNativeGoogleMobileAdsRewardedInterstitialModuleImpl = ReactNativeGoogleMobileAdsRewardedInterstitialModuleImpl(reactContext)
   override fun rewardedInterstitialLoad(
     requestId: Double,
-    adUnitId: String?,
+    adUnitId: String,
     requestOptions: ReadableMap?
   ) {
-//    instance.rewardedInterstitialLoad()
+    instance.rewardedInterstitialLoad(requestId.toInt(),adUnitId,requestOptions?: Arguments.createMap())
   }
 
   override fun rewardedInterstitialShow(
     requestId: Double,
-    adUnitId: String?,
+    adUnitId: String,
     showOptions: ReadableMap?,
-    promise: Promise?
+    promise: Promise
   ) {
-//    instance.rewardedInterstitialShow()
+    instance.rewardedInterstitialShow(requestId.toInt(), adUnitId, showOptions?:Arguments.createMap(),promise)
   }
   companion object {
     const val NAME = NativeRewardedInterstitialModuleSpec.NAME
