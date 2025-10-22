@@ -24,10 +24,12 @@ export function getElementRef(element: React.ReactElement): PossibleRef<unknown>
   getter = Object.getOwnPropertyDescriptor(element, 'ref')?.get;
   mayWarn = getter && 'isReactWarning' in getter && getter.isReactWarning;
   if (mayWarn) {
+    // @ts-ignore
     return element.props.ref;
   }
 
   // Not DEV
+  // @ts-ignore
   return element.props.ref || (element as ElementWithRef).ref;
 }
 
