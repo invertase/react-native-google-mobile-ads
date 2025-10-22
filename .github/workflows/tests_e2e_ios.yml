@@ -60,13 +60,6 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: ${{ runner.os }}-yarn-v1
 
-      - uses: actions/cache@v4
-        name: Detox Framework Cache
-        id: detox-cache
-        with:
-          path: ~/Library/Detox/ios
-          key: ${{ runner.os }}-detox-framework-cache-${{ steps.workflow-variables.outputs.xcode-version }}-v1
-
       # Detox is compiled during yarn install, using Xcode, set up cache first
       - uses: hendrikmuhs/ccache-action@v1
         name: Xcode Compile Cache
@@ -102,7 +95,7 @@ jobs:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
-          command: yarn && DETOX_DISABLE_POSTINSTALL=1 yarn tests:install
+          command: yarn && yarn tests:install
 
       - name: Pod Install
         uses: nick-fields/retry@v3
@@ -111,14 +104,6 @@ jobs:
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn tests:ios:pod:install
-
-      - name: Build Detox Framework Cache
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 10
-          retry_wait_seconds: 60
-          max_attempts: 3
-          command: cd RNGoogleMobileAdsExample && yarn detox build-framework-cache
 
       - name: Install applesimutils
         uses: nick-fields/retry@v3
