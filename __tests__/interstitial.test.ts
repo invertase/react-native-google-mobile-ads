@@ -5,14 +5,14 @@ describe('Google Mobile Ads Interstitial', function () {
   describe('createForAdRequest', function () {
     it('throws if adUnitId is invalid', function () {
       // @ts-ignore
-      expect(() => InterstitialAd.createForAdRequest(123)).toThrowError(
+      expect(() => InterstitialAd.createForAdRequest(123)).toThrow(
         "'adUnitId' expected an string value",
       );
     });
 
     it('throws if requestOptions are invalid', function () {
       // @ts-ignore
-      expect(() => InterstitialAd.createForAdRequest('123', 123)).toThrowError(
+      expect(() => InterstitialAd.createForAdRequest('123', 123)).toThrow(
         "InterstitialAd.createForAdRequest(_, *) 'options' expected an object value.",
       );
     });
@@ -34,17 +34,17 @@ describe('Google Mobile Ads Interstitial', function () {
         const ad = InterstitialAd.createForAdRequest('abc');
 
         ad.load();
-        expect(NativeInterstitialModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeInterstitialModule.interstitialLoad).toHaveBeenCalledTimes(1);
       });
 
       it('does nothing if ad currently loading', () => {
         const ad = InterstitialAd.createForAdRequest('abc');
 
         ad.load();
-        expect(NativeInterstitialModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeInterstitialModule.interstitialLoad).toHaveBeenCalledTimes(1);
 
         ad.load();
-        expect(NativeInterstitialModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeInterstitialModule.interstitialLoad).toHaveBeenCalledTimes(1);
       });
 
       it('does nothing if ad is already loaded', () => {
@@ -54,33 +54,33 @@ describe('Google Mobile Ads Interstitial', function () {
         ad._handleAdEvent({ body: { type: AdEventType.LOADED } });
 
         ad.load();
-        expect(NativeInterstitialModule.interstitialLoad).not.toBeCalled();
+        expect(NativeInterstitialModule.interstitialLoad).not.toHaveBeenCalled();
       });
 
       it('can be called again after ad was closed', () => {
         const ad = InterstitialAd.createForAdRequest('abc');
 
         ad.load();
-        expect(NativeInterstitialModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeInterstitialModule.interstitialLoad).toHaveBeenCalledTimes(1);
 
         // @ts-ignore
         ad._handleAdEvent({ body: { type: AdEventType.CLOSED } });
 
         ad.load();
-        expect(NativeInterstitialModule.interstitialLoad).toBeCalledTimes(2);
+        expect(NativeInterstitialModule.interstitialLoad).toHaveBeenCalledTimes(2);
       });
 
       it('can be called again after ad failed to load', () => {
         const ad = InterstitialAd.createForAdRequest('abc');
 
         ad.load();
-        expect(NativeInterstitialModule.interstitialLoad).toBeCalledTimes(1);
+        expect(NativeInterstitialModule.interstitialLoad).toHaveBeenCalledTimes(1);
 
         // @ts-ignore
         ad._handleAdEvent({ body: { type: AdEventType.ERROR } });
 
         ad.load();
-        expect(NativeInterstitialModule.interstitialLoad).toBeCalledTimes(2);
+        expect(NativeInterstitialModule.interstitialLoad).toHaveBeenCalledTimes(2);
       });
     });
 
@@ -88,7 +88,7 @@ describe('Google Mobile Ads Interstitial', function () {
       it('throws if showing before loaded', function () {
         const i = InterstitialAd.createForAdRequest('abc');
 
-        expect(() => i.show()).toThrowError(
+        expect(() => i.show()).toThrow(
           'The requested InterstitialAd has not loaded and could not be shown',
         );
       });
@@ -99,7 +99,7 @@ describe('Google Mobile Ads Interstitial', function () {
         const i = InterstitialAd.createForAdRequest('abc');
 
         // @ts-ignore
-        expect(() => i.addAdEventsListener('foo')).toThrowError("'listener' expected a function");
+        expect(() => i.addAdEventsListener('foo')).toThrow("'listener' expected a function");
       });
 
       it('returns an unsubscriber function', function () {
@@ -115,7 +115,7 @@ describe('Google Mobile Ads Interstitial', function () {
         const i = InterstitialAd.createForAdRequest('abc');
 
         // @ts-ignore
-        expect(() => i.addAdEventListener('foo')).toThrowError(
+        expect(() => i.addAdEventListener('foo')).toThrow(
           "'type' expected a valid event type value.",
         );
       });
@@ -124,7 +124,7 @@ describe('Google Mobile Ads Interstitial', function () {
         const i = InterstitialAd.createForAdRequest('abc');
 
         // @ts-ignore
-        expect(() => i.addAdEventListener(AdEventType.LOADED, 'foo')).toThrowError(
+        expect(() => i.addAdEventListener(AdEventType.LOADED, 'foo')).toThrow(
           "'listener' expected a function",
         );
       });
