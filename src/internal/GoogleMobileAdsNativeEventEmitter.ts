@@ -15,9 +15,15 @@
  *
  */
 
-import { NativeEventEmitter, NativeModules, EmitterSubscription } from 'react-native';
+import { NativeEventEmitter, NativeModules, EmitterSubscription, NativeModule } from 'react-native';
 
-const { RNAppModule } = NativeModules;
+type RNAppNativeModule = {
+  eventsNotifyReady: (ready: boolean) => void;
+  eventsAddListener: (eventType: string) => void;
+  eventsRemoveListener: (eventType: string, FIXME: boolean) => void;
+} & NativeModule;
+
+const RNAppModule = NativeModules.RNAppModule as RNAppNativeModule;
 
 class GANativeEventEmitter extends NativeEventEmitter {
   ready: boolean;
