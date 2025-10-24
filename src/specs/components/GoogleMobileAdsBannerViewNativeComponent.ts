@@ -45,7 +45,9 @@ export interface NativeProps extends ViewProps {
 export type ComponentType = HostComponent<NativeProps>;
 
 interface NativeCommands {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- https://github.com/facebook/react-native/issues/54272
   recordManualImpression: (viewRef: React.ElementRef<ComponentType>) => void;
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- https://github.com/facebook/react-native/issues/54272
   load: (viewRef: React.ElementRef<ComponentType>) => void;
 }
 

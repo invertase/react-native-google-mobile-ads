@@ -23,7 +23,7 @@ import GoogleMobileAdsBannerView, {
 } from '../specs/components/GoogleMobileAdsBannerViewNativeComponent';
 
 export class GAMBannerAd extends React.Component<GAMBannerAdProps> {
-  private ref = createRef<React.ElementRef<typeof GoogleMobileAdsBannerView>>();
+  private ref = createRef<React.ComponentRef<typeof GoogleMobileAdsBannerView>>();
 
   recordManualImpression() {
     if (this.ref.current) {
