@@ -27,14 +27,9 @@ export function validateAdRequestConfiguration(requestConfiguration: RequestConf
   }
 
   if (requestConfiguration.maxAdContentRating) {
-    if (
-      requestConfiguration.maxAdContentRating !== MaxAdContentRating.G &&
-      requestConfiguration.maxAdContentRating !== MaxAdContentRating.PG &&
-      requestConfiguration.maxAdContentRating !== MaxAdContentRating.T &&
-      requestConfiguration.maxAdContentRating !== MaxAdContentRating.MA
-    ) {
+    if (!Object.values(MaxAdContentRating).includes(requestConfiguration.maxAdContentRating)) {
       throw new Error(
-        "'requestConfiguration.maxAdContentRating' expected on of MaxAdContentRating.G, MaxAdContentRating.PG, MaxAdContentRating.T or MaxAdContentRating.MA",
+        `'requestConfiguration.maxAdContentRating' expected one of ${Object.values(MaxAdContentRating).join(', ')}`,
       );
     }
 
