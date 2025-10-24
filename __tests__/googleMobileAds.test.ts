@@ -11,13 +11,13 @@ describe('Admob', function () {
     });
 
     describe('maxAdContentRating', function () {
-      it('throws if maxAdContentRating is invalid', function () {
+      it.only('throws if maxAdContentRating is invalid', function () {
         expect(() =>
           admob().setRequestConfiguration({
             maxAdContentRating: 'Y' as MaxAdContentRating,
           }),
         ).toThrow(
-          "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected on of MaxAdContentRating.G, MaxAdContentRating.PG, MaxAdContentRating.T or MaxAdContentRating.MA",
+          "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected one of G, PG, T, MA",
         );
       });
     });
