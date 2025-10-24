@@ -32,13 +32,10 @@ export const AdsConsent: AdsConsentInterface = {
       throw new Error("AdsConsent.requestInfoUpdate(*) 'options' expected an object value.");
     }
 
+    const debugGeography = options.debugGeography;
     if (
-      isPropertySet(options, 'debugGeography') &&
-      options.debugGeography !== AdsConsentDebugGeography.DISABLED &&
-      options.debugGeography !== AdsConsentDebugGeography.EEA &&
-      options.debugGeography !== AdsConsentDebugGeography.NOT_EEA &&
-      options.debugGeography !== AdsConsentDebugGeography.REGULATED_US_STATE &&
-      options.debugGeography !== AdsConsentDebugGeography.OTHER
+      debugGeography !== undefined &&
+      !Object.values(AdsConsentDebugGeography).includes(debugGeography)
     ) {
       throw new Error(
         "AdsConsent.requestInfoUpdate(*) 'options.debugGeography' expected one of AdsConsentDebugGeography.DISABLED, AdsConsentDebugGeography.EEA, AdsConsentDebugGeography.NOT_EEA, AdsConsentDebugGeography.REGULATED_US_STATE or AdsConsentDebugGeography.OTHER.",

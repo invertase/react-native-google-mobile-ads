@@ -17,7 +17,7 @@ describe('Admob', function () {
             maxAdContentRating: 'Y' as MaxAdContentRating,
           }),
         ).toThrow(
-          "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected on of MaxAdContentRating.G, MaxAdContentRating.PG, MaxAdContentRating.T or MaxAdContentRating.MA",
+          "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected one of G, PG, T, MA",
         );
       });
     });
