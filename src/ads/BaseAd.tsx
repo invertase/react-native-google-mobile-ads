@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 /*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
@@ -31,7 +30,7 @@ import { debounce } from '../common/debounce';
 const sizeRegex = /([0-9]+)x([0-9]+)/;
 
 export const BaseAd = React.forwardRef<
-  React.ElementRef<typeof GoogleMobileAdsBannerView>,
+  React.ComponentRef<typeof GoogleMobileAdsBannerView>,
   GAMBannerAdProps
 >(
   (

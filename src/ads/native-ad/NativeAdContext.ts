@@ -21,6 +21,6 @@ import type GoogleMobileAdsNativeView from '../../specs/components/GoogleMobileA
 
 type NativeAdContextType = {
   nativeAd: NativeAd;
-  viewRef: RefObject<React.ElementRef<typeof GoogleMobileAdsNativeView>>;
+  viewRef: RefObject<React.ComponentRef<typeof GoogleMobileAdsNativeView> | null>;
 };
 export const NativeAdContext = createContext<NativeAdContextType>({} as NativeAdContextType);

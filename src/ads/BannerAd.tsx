@@ -23,7 +23,7 @@ import GoogleMobileAdsBannerView, {
 } from '../specs/components/GoogleMobileAdsBannerViewNativeComponent';
 
 export class BannerAd extends React.Component<BannerAdProps> {
-  private ref = createRef<React.ElementRef<typeof GoogleMobileAdsBannerView>>();
+  private ref = createRef<React.ComponentRef<typeof GoogleMobileAdsBannerView>>();
 
   load() {
     if (this.ref.current) {

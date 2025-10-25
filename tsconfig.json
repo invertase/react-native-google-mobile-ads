@@ -4,7 +4,7 @@
     "target": "esnext",
     "module": "commonjs",
     "declaration": true,
-    "importHelpers": true,
+    // "importHelpers": true,
     "jsx": "react",
     "sourceMap": true,
     "strict": true,

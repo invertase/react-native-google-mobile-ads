@@ -46,8 +46,8 @@ export class AppOpenAd extends MobileAd {
       'app_open',
       requestId,
       adUnitId,
-      NativeAppOpenModule.appOpenLoad,
-      NativeAppOpenModule.appOpenShow,
+      NativeAppOpenModule.appOpenLoad.bind(this),
+      NativeAppOpenModule.appOpenShow.bind(this),
       options,
     );
   }

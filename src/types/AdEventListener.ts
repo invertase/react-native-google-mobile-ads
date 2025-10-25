@@ -25,10 +25,10 @@ export type AdEventPayload<T extends AdEventType | RewardedAdEventType | GAMAdEv
   T extends AdEventType.ERROR
     ? Error
     : T extends RewardedAdEventType
-    ? RewardedAdReward
-    : T extends GAMAdEventType
-    ? AppEvent
-    : undefined;
+      ? RewardedAdReward
+      : T extends GAMAdEventType
+        ? AppEvent
+        : undefined;
 
 export type AdEventListener<T extends AdEventType | RewardedAdEventType | GAMAdEventType = never> =
   (payload: AdEventPayload<T>) => void;

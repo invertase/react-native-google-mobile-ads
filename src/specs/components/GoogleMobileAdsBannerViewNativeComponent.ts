@@ -45,6 +45,7 @@ export interface NativeProps extends ViewProps {
 export type ComponentType = HostComponent<NativeProps>;
 
 interface NativeCommands {
+  // cannot use React.ComponentRef - https://github.com/facebook/react-native/issues/54272
   recordManualImpression: (viewRef: React.ElementRef<ComponentType>) => void;
   load: (viewRef: React.ElementRef<ComponentType>) => void;
 }

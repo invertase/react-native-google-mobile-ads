@@ -116,8 +116,8 @@ export class RewardedAd extends MobileAd {
       'rewarded',
       requestId,
       adUnitId,
-      NativeRewardedModule.rewardedLoad,
-      NativeRewardedModule.rewardedShow,
+      NativeRewardedModule.rewardedLoad.bind(this),
+      NativeRewardedModule.rewardedShow.bind(this),
       options,
     );
   }

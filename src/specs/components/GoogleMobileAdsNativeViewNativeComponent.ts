@@ -29,6 +29,7 @@ type NativeViewComponentType = HostComponent<NativeProps>;
 
 interface NativeCommands {
   registerAsset: (
+    // Cannot use React.ComponentRef yet -- https://github.com/facebook/react-native/issues/54272
     viewRef: React.ElementRef<NativeViewComponentType>,
     assetType: string,
     reactTag: Int32,
