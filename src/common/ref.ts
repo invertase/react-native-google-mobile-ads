@@ -25,12 +25,12 @@ export function getElementRef(element: React.ReactElement): PossibleRef<unknown>
   mayWarn = getter && 'isReactWarning' in getter && getter.isReactWarning;
   if (mayWarn) {
     // @ts-ignore
-    return element.props.ref;
+    return element.props.ref; // eslint-disable-line
   }
 
   // Not DEV
   // @ts-ignore
-  return element.props.ref || (element as ElementWithRef).ref;
+  return element.props.ref || (element as ElementWithRef).ref; // eslint-disable-line
 }
 
 export function composeRefs<T>(...refs: PossibleRef<T>[]) {
