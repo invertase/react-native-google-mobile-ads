@@ -57,7 +57,9 @@ export function useFullScreenAd<
   const show = useCallback(
     (showOptions?: AdShowOptions) => {
       if (ad) {
-        ad.show(showOptions);
+        // ad.show returns a promise but we don't await
+        // errors handled by library-consumer-provided functions
+        void ad.show(showOptions);
       }
     },
     [ad],
