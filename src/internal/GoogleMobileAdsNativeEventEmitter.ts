@@ -15,7 +15,7 @@
  *
  */
 
-import { NativeEventEmitter, NativeModules, EmitterSubscription, NativeModule } from 'react-native';
+import { NativeEventEmitter, NativeModules, NativeModule } from 'react-native';
 
 type RNAppNativeModule = {
   eventsNotifyReady: (ready: boolean) => void;
@@ -46,48 +46,17 @@ class GANativeEventEmitter extends NativeEventEmitter {
 
     const subscription = super.addListener(`rnapp_${eventType}`, listener, context);
 
-    // React Native 0.65+ altered EventEmitter:
-    // - removeSubscription is gone
-    // - addListener returns an unsubscriber instead of a more complex object with eventType etc
-
-    // make sure eventType for backwards compatibility just in case
-    subscription.eventType = `rnapp_${eventType}`;
-
-    // New style is to return a remove function on the object, just in csae people call that,
-    // we will modify it to do our native unsubscription then call the original
-    const originalRemove = subscription.remove;
-    const newRemove = () => {
+    // override the default remove to unsubscribe our native listener, then call super
+    subscription.remove = () => {
       RNAppModule.eventsRemoveListener(eventType, false);
-      // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
-      // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
-      if (super.removeSubscription != null) {
-        // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
-        // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
-        super.removeSubscription(subscription);
-      } else if (originalRemove != null) {
-        // This is for RN >= 0.65
-        originalRemove();
-      }
+      subscription.remove();
     };
-    subscription.remove = newRemove;
     return subscription;
   }
 
   removeAllListeners(eventType: string) {
     RNAppModule.eventsRemoveListener(eventType, true);
     super.removeAllListeners(`rnapp_${eventType}`);
-  }
-
-  // This is likely no longer ever called, but it is here for backwards compatibility with RN <= 0.64
-  removeSubscription(subscription: EmitterSubscription) {
-    RNAppModule.eventsRemoveListener(subscription.eventType.replace('rnapp_', ''), false);
-    // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
-    // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
-    if (super.removeSubscription != null) {
-      // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
-      // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
-      super.removeSubscription(subscription);
-    }
   }
 }
 
