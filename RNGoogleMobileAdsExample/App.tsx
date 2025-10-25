@@ -52,6 +52,7 @@ import MobileAds, {
   useRewardedAd,
   useRewardedInterstitialAd,
 } from 'react-native-google-mobile-ads';
+import { MobileAd } from '../lib/typescript/ads/MobileAd';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -88,58 +89,65 @@ const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
   requestNonPersonalizedAdsOnly: true,
 });
 
-class AppOpenTest implements AutoExecutableTest {
-  adListener: () => void;
-  adLoaded = false;
+const LoadableAdTestComponent = (props: { mobileAd: MobileAd; type: string }) => {
+  const [adLoaded, setAdLoaded] = useState(false);
 
-  constructor() {
-    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = appOpen.addAdEventsListener(({ type, payload }) => {
-      console.log(`${Platform.OS} app open ad event: ${type}`);
+  useEffect(() => {
+    const adListener = props.mobileAd.addAdEventsListener(({ type, payload }) => {
+      console.log(`${Platform.OS} ${props.type} ad event: ${type}`);
       if (type === AdEventType.PAID) {
         console.log(payload);
       }
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} app open error: ${payload?.message}`);
+        console.log(`${Platform.OS} ${props.type} error: ${(payload as Error)?.message}`);
       }
-      if (type === AdEventType.LOADED) {
-        this.adLoaded = true;
+      if (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) {
+        setAdLoaded(true);
       }
     });
-  }
+    return () => adListener();
+  }, []);
 
-  getPath(): string {
-    return 'AppOpen';
-  }
+  return (
+    <View style={styles.testSpacing}>
+      <Button
+        title={`Load ${props.type} Ad`}
+        onPress={() => {
+          try {
+            props.mobileAd.load();
+          } catch (e) {
+            console.log(`${Platform.OS} ${props.type} load error: ${e}`);
+          }
+        }}
+      />
+      <Text>Loaded? {adLoaded ? 'true' : 'false'}</Text>
+      <Button
+        title={`Show ${props.type} Ad`}
+        onPress={() => {
+          try {
+            props.mobileAd.show();
+          } catch (e) {
+            console.log(`${Platform.OS} ${props.type} show error: ${e}`);
+          }
+        }}
+      />
+    </View>
+  );
+};
+
+abstract class LoadableAdTest implements AutoExecutableTest {
+  testComponent: MobileAd | undefined = undefined;
+  abstract getPath(): string;
 
   getTestType(): TestType {
     return TestType.Interactive;
   }
 
   render(onMount: (component: any) => void): React.ReactNode {
+    if (!this.testComponent) return;
     return (
-      <View style={styles.testSpacing} ref={onMount}>
-        <Button
-          title="Load App Open Ad"
-          onPress={() => {
-            try {
-              appOpen.load();
-            } catch (e) {
-              console.log(`${Platform.OS} app open load error: ${e}`);
-            }
-          }}
-        />
-        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
-        <Button
-          title="Show App Open Ad"
-          onPress={() => {
-            try {
-              appOpen.show();
-            } catch (e) {
-              console.log(`${Platform.OS} app open show error: ${e}`);
-            }
-          }}
-        />
+      <View ref={onMount}>
+        <LoadableAdTestComponent mobileAd={this.testComponent} type={this.getPath()} />
       </View>
     );
   }
@@ -152,8 +160,17 @@ class AppOpenTest implements AutoExecutableTest {
       results.errors.push('Received unexpected error...');
     } finally {
       complete(results);
-      this.adListener();
     }
+  }
+}
+
+class AppOpenTest extends LoadableAdTest {
+  constructor() {
+    super();
+    this.testComponent = appOpen;
+  }
+  getPath(): string {
+    return 'App Open';
   }
 }
 
@@ -163,72 +180,13 @@ const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
 });
 
 // To implement a test you must make a new object implementing a specific interface.
-class InterstitialTest implements AutoExecutableTest {
-  adListener: () => void;
-  adLoaded = false;
-
+class InterstitialTest extends LoadableAdTest {
   constructor() {
-    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = interstitial.addAdEventsListener(({ type, payload }) => {
-      console.log(`${Platform.OS} interstitial ad event: ${type}`);
-      if (type === AdEventType.PAID) {
-        console.log('Paid', payload);
-      }
-      if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} interstitial error: ${payload?.message}`);
-      }
-      if (type === AdEventType.LOADED) {
-        this.adLoaded = true;
-      }
-    });
+    super();
+    this.testComponent = interstitial;
   }
-
   getPath(): string {
     return 'Interstitial';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount}>
-        <Button
-          title="Load Interstitial"
-          onPress={() => {
-            try {
-              interstitial.load();
-            } catch (e) {
-              console.log(`${Platform.OS} interstitial load error: ${e}`);
-            }
-          }}
-        />
-        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
-        <Button
-          title="Show Interstitial"
-          onPress={() => {
-            try {
-              interstitial.show();
-            } catch (e) {
-              console.log(`${Platform.OS} app open show error: ${e}`);
-            }
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-      this.adListener();
-    }
   }
 }
 
@@ -339,73 +297,13 @@ const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
   requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
-class RewardedTest implements AutoExecutableTest {
-  adListener: () => void;
-  adLoaded = false;
-
+class RewardedTest extends LoadableAdTest {
   constructor() {
-    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = rewarded.addAdEventsListener(({ type, payload }) => {
-      console.log(`${Platform.OS} rewarded ad event: ${type}`);
-      if (type === AdEventType.PAID) {
-        console.log(payload);
-      }
-      if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} rewarded error: ${(payload as Error).message}`);
-      }
-      if (type === RewardedAdEventType.LOADED) {
-        console.log(`${Platform.OS} reward: ${JSON.stringify(payload)})`);
-        this.adLoaded = true;
-      }
-    });
+    super();
+    this.testComponent = rewarded;
   }
-
   getPath(): string {
     return 'Rewarded';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount}>
-        <Button
-          title="Load Rewarded"
-          onPress={() => {
-            try {
-              rewarded.load();
-            } catch (e) {
-              console.log(`${Platform.OS} rewarded load error: ${e}`);
-            }
-          }}
-        />
-        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
-        <Button
-          title="Show Rewarded"
-          onPress={() => {
-            try {
-              rewarded.show();
-            } catch (e) {
-              console.log(`${Platform.OS} app open show error: ${e}`);
-            }
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-      this.adListener();
-    }
   }
 }
 
@@ -416,73 +314,13 @@ const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
     keywords: ['fashion', 'clothing'],
   },
 );
-class RewardedInterstitialTest implements AutoExecutableTest {
-  adListener: () => void;
-  adLoaded = false;
-
+class RewardedInterstitialTest extends LoadableAdTest {
   constructor() {
-    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = rewardedInterstitial.addAdEventsListener(({ type, payload }) => {
-      console.log(`${Platform.OS} rewarded interstitial ad event: ${type}`);
-      if (type === AdEventType.PAID) {
-        console.log(payload);
-      }
-      if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} rewarded interstitial error: ${(payload as Error).message}`);
-      }
-      if (type === RewardedAdEventType.LOADED) {
-        console.log(`${Platform.OS} reward: ${JSON.stringify(payload)})`);
-        this.adLoaded = true;
-      }
-    });
+    super();
+    this.testComponent = rewardedInterstitial;
   }
-
   getPath(): string {
-    return 'RewardedInterstitial';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount}>
-        <Button
-          title="Load Rewarded Interstitial"
-          onPress={() => {
-            try {
-              rewardedInterstitial.load();
-            } catch (e) {
-              console.log(`${Platform.OS} rewarded interstitial load error: ${e}`);
-            }
-          }}
-        />
-        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
-        <Button
-          title="Show Rewarded Interstitial"
-          onPress={() => {
-            try {
-              rewardedInterstitial.show();
-            } catch (e) {
-              console.log(`${Platform.OS} app open show error: ${e}`);
-            }
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-      this.adListener();
-    }
+    return 'Rewarded Interstitial';
   }
 }
 
