@@ -11,7 +11,7 @@ describe('Admob', function () {
     });
 
     describe('maxAdContentRating', function () {
-      it.only('throws if maxAdContentRating is invalid', function () {
+      it('throws if maxAdContentRating is invalid', function () {
         expect(() =>
           admob().setRequestConfiguration({
             maxAdContentRating: 'Y' as MaxAdContentRating,
