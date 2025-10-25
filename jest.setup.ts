@@ -57,3 +57,13 @@ jest.doMock('./src/specs/components/GoogleMobileAdsNativeViewNativeComponent', (
     default: ReactNative.View,
   };
 });
+jest.doMock('./src/specs/modules/NativeInterstitialModule', () => {
+  return {
+    __esModule: true,
+    Commands: {},
+    default: {
+      interstitialLoad: jest.fn(),
+      interstitialShow: jest.fn(),
+    },
+  };
+});
