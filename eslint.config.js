@@ -23,8 +23,10 @@ module.exports = defineConfig([{
         parser: tsParser,
         ecmaVersion: 2018,
         sourceType: "module",
-        parserOptions: {},
-
+        parserOptions: {
+            projectService: true,
+            tsconfigRootDir: __dirname,
+        },
         globals: {
             ...jest.environments.globals.globals,
             ...globals.node,
@@ -38,7 +40,7 @@ module.exports = defineConfig([{
 
     extends: compat.extends(
         "plugin:react/recommended",
-        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/strict-type-checked",
         "prettier",
         "plugin:prettier/recommended",
     ),
@@ -49,7 +51,7 @@ module.exports = defineConfig([{
 
     settings: {
         react: {
-            version: "16.1.0",
+            version: "19.1.0",
         },
     },
 
@@ -84,6 +86,7 @@ module.exports = defineConfig([{
         "@typescript-eslint/camelcase": "off",
         "@typescript-eslint/no-empty-function": "off",
         "@typescript-eslint/ban-ts-ignore": "off",
+        "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true}],
         "mocha/no-skipped-tests": "off",
         "mocha/no-top-level-hooks": "off",
         "mocha/no-hooks-for-single-case": "off",
