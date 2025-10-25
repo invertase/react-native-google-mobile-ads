@@ -14,14 +14,14 @@ interface ElementWithRef extends React.ReactElement {
  */
 export function getElementRef(element: React.ReactElement): PossibleRef<unknown> {
   // React <=18 in DEV
-  let getter = Object.getOwnPropertyDescriptor(element.props, 'ref')?.get;
+  let getter = Object.getOwnPropertyDescriptor(element.props, 'ref')?.get?.bind(element.props);
   let mayWarn = getter && 'isReactWarning' in getter && getter.isReactWarning;
   if (mayWarn) {
     return (element as ElementWithRef).ref;
   }
 
   // React 19 in DEV
-  getter = Object.getOwnPropertyDescriptor(element, 'ref')?.get;
+  getter = Object.getOwnPropertyDescriptor(element, 'ref')?.get?.bind(element);
   mayWarn = getter && 'isReactWarning' in getter && getter.isReactWarning;
   if (mayWarn) {
     // @ts-ignore
