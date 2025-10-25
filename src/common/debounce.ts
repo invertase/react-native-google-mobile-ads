@@ -1,5 +1,5 @@
-export const debounce = <Arguments extends unknown[], Result>(
-  func: (...args: Arguments) => Result,
+export const debounce = <Arguments extends unknown[]>(
+  func: (...args: Arguments) => unknown,
   waitFor: number,
 ): ((...args: Arguments) => void) => {
   let timeout: ReturnType<typeof setTimeout> | null = null;
