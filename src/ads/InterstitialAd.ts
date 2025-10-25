@@ -106,8 +106,8 @@ export class InterstitialAd extends MobileAd {
       'interstitial',
       requestId,
       adUnitId,
-      NativeInterstitialModule.interstitialLoad,
-      NativeInterstitialModule.interstitialShow,
+      NativeInterstitialModule.interstitialLoad.bind(this),
+      NativeInterstitialModule.interstitialShow.bind(this),
       options,
     );
   }

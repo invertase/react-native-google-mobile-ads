@@ -23,8 +23,10 @@ module.exports = defineConfig([{
         parser: tsParser,
         ecmaVersion: 2018,
         sourceType: "module",
-        parserOptions: {},
-
+        parserOptions: {
+            projectService: true,
+            tsconfigRootDir: __dirname,
+        },
         globals: {
             ...jest.environments.globals.globals,
             ...globals.node,
@@ -38,7 +40,7 @@ module.exports = defineConfig([{
 
     extends: compat.extends(
         "plugin:react/recommended",
-        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/strict-type-checked",
         "prettier",
         "plugin:prettier/recommended",
     ),
@@ -77,6 +79,7 @@ module.exports = defineConfig([{
         "import/no-unresolved": 0,
         "no-empty-description": "off",
         "@typescript-eslint/ban-ts-comment": "off",
+        "@typescript-eslint/no-deprecated": "warn",
         "@typescript-eslint/no-use-before-define": "off",
         "@typescript-eslint/no-var-requires": "off",
         "@typescript-eslint/explicit-function-return-type": "off",

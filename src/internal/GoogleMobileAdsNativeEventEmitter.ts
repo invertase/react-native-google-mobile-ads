@@ -53,9 +53,9 @@ class GANativeEventEmitter extends NativeEventEmitter {
     // make sure eventType for backwards compatibility just in case
     subscription.eventType = `rnapp_${eventType}`;
 
-    // New style is to return a remove function on the object, just in csae people call that,
+    // New style is to return a remove function on the object, just in case people call that,
     // we will modify it to do our native unsubscription then call the original
-    const originalRemove = subscription.remove;
+    const originalRemove = subscription.remove.bind(subscription);
     const newRemove = () => {
       RNAppModule.eventsRemoveListener(eventType, false);
       // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
@@ -63,7 +63,9 @@ class GANativeEventEmitter extends NativeEventEmitter {
       if (super.removeSubscription != null) {
         // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
         // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         super.removeSubscription(subscription);
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       } else if (originalRemove != null) {
         // This is for RN >= 0.65
         originalRemove();
@@ -86,6 +88,7 @@ class GANativeEventEmitter extends NativeEventEmitter {
     if (super.removeSubscription != null) {
       // This is for RN <= 0.64 - 65 and greater no longer have removeSubscription
       // @ts-expect-error - "Property 'removeSubscription' does not exist on type 'NativeEventEmitter"
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       super.removeSubscription(subscription);
     }
   }

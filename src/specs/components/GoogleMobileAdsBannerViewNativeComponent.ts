@@ -45,8 +45,9 @@ export interface NativeProps extends ViewProps {
 export type ComponentType = HostComponent<NativeProps>;
 
 interface NativeCommands {
-  recordManualImpression: (viewRef: React.ComponentRef<ComponentType>) => void;
-  load: (viewRef: React.ComponentRef<ComponentType>) => void;
+  // cannot use React.ComponentRef - https://github.com/facebook/react-native/issues/54272
+  recordManualImpression: (viewRef: React.ElementRef<ComponentType>) => void;
+  load: (viewRef: React.ElementRef<ComponentType>) => void;
 }
 
 // SyntaxError "'Commands' is a reserved export and may only be used to export the result of codegenNativeCommands"
