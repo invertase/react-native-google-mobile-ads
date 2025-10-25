@@ -92,7 +92,7 @@ export const AdsConsent: AdsConsentInterface = {
   },
 
   reset() {
-    return native.reset();
+    native.reset();
   },
 
   getTCString() {
