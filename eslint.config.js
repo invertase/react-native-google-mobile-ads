@@ -23,8 +23,10 @@ module.exports = defineConfig([{
         parser: tsParser,
         ecmaVersion: 2018,
         sourceType: "module",
-        parserOptions: {},
-
+        parserOptions: {
+            projectService: true,
+            tsconfigRootDir: __dirname,
+        },
         globals: {
             ...jest.environments.globals.globals,
             ...globals.node,
@@ -38,7 +40,7 @@ module.exports = defineConfig([{
 
     extends: compat.extends(
         "plugin:react/recommended",
-        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/strict-type-checked",
         "prettier",
         "plugin:prettier/recommended",
     ),
