@@ -42,7 +42,7 @@ export function useFullScreenAd(
   ad: AppOpenAd | InterstitialAd | RewardedAd | RewardedInterstitialAd | null,
 ): AdHookReturns {
   const [state, dispatch] = useReducer(
-    (prevState, newState) => ({ ...prevState, ...newState }),
+    (prevState, newState) => ({ ...prevState, ...newState }) as AdStates,
     initialState,
   );
   const isShowing = state.isOpened && !state.isClosed;
