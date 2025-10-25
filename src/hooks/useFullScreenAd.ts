@@ -38,9 +38,9 @@ const initialState: AdStates = {
   isEarnedReward: false,
 };
 
-export function useFullScreenAd<
-  T extends AppOpenAd | InterstitialAd | RewardedAd | RewardedInterstitialAd | null,
->(ad: T): AdHookReturns {
+export function useFullScreenAd(
+  ad: AppOpenAd | InterstitialAd | RewardedAd | RewardedInterstitialAd | null,
+): AdHookReturns {
   const [state, dispatch] = useReducer(
     (prevState, newState) => ({ ...prevState, ...newState }),
     initialState,
