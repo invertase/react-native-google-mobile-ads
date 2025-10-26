@@ -50,6 +50,8 @@ using namespace facebook::react;
 #ifdef RCT_NEW_ARCH_ENABLED
 #pragma mark - Fabric specific
 
+@dynamic contentView;  // provided by superclass, but we narrow the type in our declaration
+
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
     static const auto defaultProps = std::make_shared<const RNGoogleMobileAdsNativeViewProps>();
