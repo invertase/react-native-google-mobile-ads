@@ -30,6 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 #ifdef RCT_NEW_ARCH_ENABLED
 @interface RNGoogleMobileAdsMediaView : RCTViewComponentView
 
+// this setters/getters here are provided by RCTViewComponentView super, we just narrow the type.
 @property(nonatomic, strong, nullable) GADMediaView *contentView;
 #else
 @interface RNGoogleMobileAdsMediaView : GADMediaView
