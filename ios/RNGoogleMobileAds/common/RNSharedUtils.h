@@ -36,8 +36,7 @@
 #pragma mark -
 #pragma mark Methods
 
-+ (void)rejectPromiseWithUserInfo:(RCTPromiseRejectBlock)reject
-                         userInfo:(NSMutableDictionary *)userInfo;
++ (void)rejectPromiseWithUserInfo:(RCTPromiseRejectBlock)reject userInfo:(NSDictionary *)userInfo;
 
 @end
 
