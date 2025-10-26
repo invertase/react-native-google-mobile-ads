@@ -145,7 +145,7 @@ RCT_EXPORT_METHOD(destroy
 
 - (instancetype)initWithNativeModule:(RNGoogleMobileAdsNativeModule *)nativeModule
                             adUnitId:(NSString *)adUnitId
-                      requestOptions:(NSDictionary *)requestOptions {
+                      requestOptions:(NSDictionary *_Nonnull)requestOptions {
   if (self = [super init]) {
     _nativeModule = nativeModule;
 

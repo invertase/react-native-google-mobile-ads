@@ -23,50 +23,50 @@
 
 @interface RNGoogleMobileAdsCommon : NSObject
 
-+ (GAMRequest *)buildAdRequest:(NSDictionary *)adRequestOptions;
++ (GAMRequest *_Nonnull)buildAdRequest:(NSDictionary *_Nonnull)adRequestOptions;
 
-+ (NSDictionary *)getCodeAndMessageFromAdError:(NSError *)error;
++ (NSDictionary *_Nonnull)getCodeAndMessageFromAdError:(NSError *_Nonnull)error;
 
-+ (void)sendAdEvent:(NSString *)event
-          requestId:(NSNumber *)requestId
-               type:(NSString *)type
-           adUnitId:(NSString *)adUnitId
++ (void)sendAdEvent:(NSString *_Nonnull)event
+          requestId:(NSNumber *_Nonnull)requestId
+               type:(NSString *_Nonnull)type
+           adUnitId:(NSString *_Nonnull)adUnitId
               error:(nullable NSDictionary *)error
                data:(nullable NSDictionary *)data;
 
-+ (GADAdSize)stringToAdSize:(NSString *)value
++ (GADAdSize)stringToAdSize:(NSString *_Nonnull)value
               withMaxHeight:(CGFloat)maxHeight
                    andWidth:(CGFloat)adWidth;
 
-+ (BOOL)isAdManagerUnit:(NSString *)unitId;
++ (BOOL)isAdManagerUnit:(NSString *_Nonnull)unitId;
 
 + (nullable UIViewController *)currentViewController;
 
 @end
 
 @interface RNGADInterstitial : GADInterstitialAd
-@property(nonatomic) NSNumber *requestId;
-- (void)setRequestId:(NSNumber *)requestId;
+@property(nonatomic) NSNumber *_Nonnull requestId;
+- (void)setRequestId:(NSNumber *_Nonnull)requestId;
 @end
 
 @interface RNGADRewarded : GADRewardedAd
-@property(nonatomic) NSNumber *requestId;
-- (void)setRequestId:(NSNumber *)requestId;
+@property(nonatomic) NSNumber *_Nonnull requestId;
+- (void)setRequestId:(NSNumber *_Nonnull)requestId;
 @end
 
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_APP_OPEN;
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL;
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED;
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_INTERSTITIAL;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_APP_OPEN;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_REWARDED;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_REWARDED_INTERSTITIAL;
 
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_LOADED;
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_ERROR;
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_OPENED;
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_CLICKED;
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_CLOSED;
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_APP_EVENT;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_LOADED;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_ERROR;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_OPENED;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_CLICKED;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_CLOSED;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_APP_EVENT;
 
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED;
-extern NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD;
 
 #endif
