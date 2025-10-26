@@ -26,8 +26,7 @@ static NSString *const RNErrorDomain = @"RNErrorDomain";
 #pragma mark -
 #pragma mark Methods
 
-+ (void)rejectPromiseWithUserInfo:(RCTPromiseRejectBlock)reject
-                         userInfo:(NSMutableDictionary *)userInfo {
++ (void)rejectPromiseWithUserInfo:(RCTPromiseRejectBlock)reject userInfo:(NSDictionary *)userInfo {
   NSError *error = [NSError errorWithDomain:RNErrorDomain code:666 userInfo:userInfo];
   reject(userInfo[@"code"], userInfo[@"message"], error);
 }
