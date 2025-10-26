@@ -71,13 +71,13 @@ RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnit) {
 #endif
 }
 
-RCT_EXPORT_METHOD(setAppVolume : (float)volume) {
+RCT_EXPORT_METHOD(setAppVolume : (double)volume) {
 #if !TARGET_OS_MACCATALYST
   GADMobileAds.sharedInstance.applicationVolume = volume;
 #endif
 }
 
-RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
+RCT_EXPORT_METHOD(setAppMuted : (BOOL)muted) {
 #if !TARGET_OS_MACCATALYST
   GADMobileAds.sharedInstance.applicationMuted = muted;
 #endif
@@ -165,7 +165,9 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
                                  rejectPromiseWithUserInfo:reject
                                                   userInfo:[@{
                                                     @"code" : [NSString
-                                                        stringWithFormat:@"CODE_%d", error.code],
+                                                        stringWithFormat:@"CODE_%ld",
+                                                                         static_cast<long>(
+                                                                             error.code)],
                                                     @"message" : error.description,
                                                   } mutableCopy]];
                            } else {
