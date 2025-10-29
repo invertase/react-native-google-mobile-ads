@@ -29,6 +29,7 @@ type NativeViewComponentType = HostComponent<NativeProps>;
 
 interface NativeCommands {
   registerAsset: (
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- https://github.com/facebook/react-native/issues/54272
     viewRef: React.ElementRef<NativeViewComponentType>,
     assetType: string,
     reactTag: Int32,

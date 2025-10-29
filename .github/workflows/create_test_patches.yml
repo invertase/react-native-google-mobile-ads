@@ -24,23 +24,20 @@ jobs:
     name: Create patch-package Patches
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Future ideas:
       # - make into an action, parameterize directories to pack, and package names to install
       # - name patches w/PR as "semver prerelease" and SHA as "semver build info". Needs patch-package enhancement.
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+          node-version: 24
       - uses: actions/cache/restore@v4
         name: Yarn Cache
         id: yarn-cache
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
+          path: .yarn/cache
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
@@ -50,7 +47,7 @@ jobs:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
-          command: DETOX_DISABLE_POSTINSTALL=1 yarn --no-audit --prefer-offline
+          command: DETOX_DISABLE_POSTINSTALL=1 yarn
 
       - name: Create Patches
         env:
@@ -62,7 +59,8 @@ jobs:
           mkdir $HOME/scratch
           echo "Packing PR version of $CLEAN_PACKAGE_NAME"
           yarn pack
-          mv *tgz $HOME/scratch
+          pwd
+          mv package.tgz $HOME/scratch/$CLEAN_PACKAGE_NAME.tgz
           ls -la $HOME/scratch/*$CLEAN_PACKAGE_NAME*
           cd $HOME
           npx @react-native-community/cli init template --skip-install --skip-git-init
@@ -73,18 +71,12 @@ jobs:
           echo "Installing $CLEAN_PACKAGE_NAME into fresh template app, then clobbering with PR version"
           yarn add $PACKAGE_NAME
           pushd node_modules/
-          tar -zxf $HOME/scratch/*$CLEAN_PACKAGE_NAME*-v*
+          tar -zxf $HOME/scratch/*$CLEAN_PACKAGE_NAME*
           mv react-native-google-mobile-ads/package.json package/
           \rm -fr react-native-google-mobile-ads
           mv package react-native-google-mobile-ads
           # do some cleaning so the patch is minimal - TODO fix .npmignore/package.json files block
           rm react-native-google-mobile-ads/CHANGELOG.md
-          rm react-native-google-mobile-ads/android/.npmignore
-          rm react-native-google-mobile-ads/ios/.npmignore
-          rm react-native-google-mobile-ads/ios/RNGoogleMobileAds.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
-          rm react-native-google-mobile-ads/ios/RNGoogleMobileAds.xcodeproj/project.xcworkspace/contents.xcworkspacedata
-          rm react-native-google-mobile-ads/ios/RNGoogleMobileAds.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
-          rm react-native-google-mobile-ads/RNGoogleMobileAdsExample/android/gradle/wrapper/gradle-wrapper.jar
           popd
           npx patch-package $PACKAGE_NAME || true
           ls -la $HOME/template/patches
@@ -100,7 +92,7 @@ jobs:
         name: Yarn Cache Save
         if: "${{ github.ref == 'refs/heads/main' }}"
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
+          path: .yarn/cache
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
 
       # create a comment on the PR and any related issues with a direct link to the archive,

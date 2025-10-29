@@ -30,6 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 #ifdef RCT_NEW_ARCH_ENABLED
 @interface RNGoogleMobileAdsNativeView : RCTViewComponentView
 
+// provided by superclass, but we narrow the type in our declaration
 @property(nonatomic, strong, nullable) GADNativeAdView *contentView;
 #else
 @interface RNGoogleMobileAdsNativeView : GADNativeAdView

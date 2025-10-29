@@ -48,8 +48,8 @@ _PLIST_ENTRY_TYPES=()
 _PLIST_ENTRY_VALUES=()
 
 function setPlistValue {
-  echo "info:      setting plist entry '$1' of type '$2' in file '$4'"
-  ${_PLIST_BUDDY} -c "Add :$1 $2 '$3'" $4 || echo "info:      '$1' already exists"
+  echo "note:      setting plist entry '$1' of type '$2' in file '$4'"
+  ${_PLIST_BUDDY} -c "Add :$1 $2 '$3'" $4 || echo "note:      '$1' already exists"
 }
 
 function getJsonKeyValue () {
@@ -69,8 +69,8 @@ function jsonBoolToYesNo () {
   fi
 }
 
-echo "info: -> ${_PROJECT_ABBREVIATION} build script started"
-echo "info: 1) Locating ${_JSON_FILE_NAME} file:"
+echo "note: -> ${_PROJECT_ABBREVIATION} build script started"
+echo "note: 1) Locating ${_JSON_FILE_NAME} file:"
 
 if [[ -z ${_CURRENT_SEARCH_DIR} ]]; then
   _CURRENT_SEARCH_DIR=$(pwd)
@@ -78,11 +78,12 @@ fi;
 
 while true; do
   _CURRENT_SEARCH_DIR=$(dirname "$_CURRENT_SEARCH_DIR")
+  if [[ "$_CURRENT_SEARCH_DIR" == *.generated ]]; then continue; fi
   if [[ "$_CURRENT_SEARCH_DIR" == "/" ]] || [[ ${_CURRENT_LOOKUPS} -gt ${_MAX_LOOKUPS} ]]; then break; fi;
-  echo "info:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME} file."
+  echo "note:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME} file."
   _SEARCH_RESULT=$(find "$_CURRENT_SEARCH_DIR" -maxdepth 2 -name ${_JSON_FILE_NAME} -print | /usr/bin/head -n 1)
   if [[ ${_SEARCH_RESULT} ]]; then
-    echo "info:      ${_JSON_FILE_NAME} found at $_SEARCH_RESULT"
+    echo "note:      ${_JSON_FILE_NAME} found at $_SEARCH_RESULT"
     break;
   fi;
   _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))
@@ -93,7 +94,7 @@ if [[ ${_SEARCH_RESULT} ]]; then
   _RN_ROOT_EXISTS=$(ruby -KU -e "require 'rubygems';require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output[$_JSON_ROOT]" || echo '')
 
   if [[ ${_RN_ROOT_EXISTS} ]]; then
-    if ! python3 --version >/dev/null 2>&1; then echo "python3 not found, app.json file processing error." && exit 1; fi
+    if ! python3 --version >/dev/null 2>&1; then echo "error: python3 not found, app.json file processing error." && exit 1; fi
     _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64;print(base64.b64encode(bytes(json.dumps(json.loads(open('"'${_SEARCH_RESULT}'"', '"'rb'"').read())['${_JSON_ROOT}']), '"'utf-8'"')).decode())' || echo "e30=")
   fi
 
@@ -147,10 +148,10 @@ else
   _PLIST_ENTRY_KEYS+=("google_mobile_ads_json_raw")
   _PLIST_ENTRY_TYPES+=("string")
   _PLIST_ENTRY_VALUES+=("$_JSON_OUTPUT_BASE64")
-  echo "warning:   A ${_JSON_FILE_NAME} file was not found, whilst this file is optional it is recommended to include it to auto-configure services."
+  echo "note:   An ${_JSON_FILE_NAME} file was not found, whilst this file is optional it is recommended to include it to auto-configure services."
 fi;
 
-echo "info: 2) Injecting Info.plist entries: "
+echo "note: 2) Injecting Info.plist entries: "
 
 # Log out the keys we're adding
 for i in "${!_PLIST_ENTRY_KEYS[@]}"; do
@@ -163,8 +164,7 @@ if ! [[ -f "${_TARGET_PLIST}" ]]; then
 fi
 
 if ! [[ $_IOS_APP_ID ]]; then
-  echo "warning: ios_app_id key not found in react-native-google-mobile-ads key in app.json. App will crash without it."
-  echo "         You can safely ignore this warning if you are using our Expo config plugin."
+  echo "warning:  ios_app_id key not found in react-native-google-mobile-ads key in app.json. App will crash without it. You may safely ignore this warning if you are using our Expo config plugin."
   exit 0
 fi
 
@@ -189,4 +189,4 @@ for plist in "${_TARGET_PLIST}" "${_DSYM_PLIST}" ; do
   fi
 done
 
-echo "info: <- ${_PROJECT_ABBREVIATION} build script finished"
+echo "note: <- ${_PROJECT_ABBREVIATION} build script finished"

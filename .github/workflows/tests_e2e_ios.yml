@@ -33,15 +33,15 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       # Set up tool versions
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
 
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 50
 
@@ -50,23 +50,15 @@ jobs:
         id: workflow-variables
         run: |
           echo "metro-cache=$HOME/.metro" >> $GITHUB_OUTPUT
-          echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
           echo "xcode-version=$(xcodebuild -version|tail -1|cut -f3 -d' ')" >> $GITHUB_OUTPUT
 
       - uses: actions/cache@v4
         name: Yarn Cache
         id: yarn-cache
         with:
-          path: ${{ steps.workflow-variables.outputs.yarn-cache-dir }}
+          path: .yarn/cache
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: ${{ runner.os }}-yarn-v1
-
-      - uses: actions/cache@v4
-        name: Detox Framework Cache
-        id: detox-cache
-        with:
-          path: ~/Library/Detox/ios
-          key: ${{ runner.os }}-detox-framework-cache-${{ steps.workflow-variables.outputs.xcode-version }}-v1
 
       # Detox is compiled during yarn install, using Xcode, set up cache first
       - uses: hendrikmuhs/ccache-action@v1
@@ -103,7 +95,7 @@ jobs:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
-          command: yarn && DETOX_DISABLE_POSTINSTALL=1 yarn tests:install
+          command: yarn && yarn tests:install
 
       - name: Pod Install
         uses: nick-fields/retry@v3
@@ -112,14 +104,6 @@ jobs:
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn tests:ios:pod:install
-
-      - name: Build Detox Framework Cache
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 10
-          retry_wait_seconds: 60
-          max_attempts: 3
-          command: cd RNGoogleMobileAdsExample && yarn detox build-framework-cache
 
       - name: Install applesimutils
         uses: nick-fields/retry@v3
@@ -166,6 +150,6 @@ jobs:
           name: simulator_log
           path: simulator.log
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           verbose: true

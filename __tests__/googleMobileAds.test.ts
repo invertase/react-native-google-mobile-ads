@@ -5,7 +5,7 @@ describe('Admob', function () {
   describe('setRequestConfiguration()', function () {
     it('throws if config is not an object', function () {
       // @ts-ignore
-      expect(() => admob().setRequestConfiguration('123')).toThrowError(
+      expect(() => admob().setRequestConfiguration('123')).toThrow(
         "setRequestConfiguration(*) 'requestConfiguration' expected an object value",
       );
     });
@@ -16,8 +16,8 @@ describe('Admob', function () {
           admob().setRequestConfiguration({
             maxAdContentRating: 'Y' as MaxAdContentRating,
           }),
-        ).toThrowError(
-          "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected on of MaxAdContentRating.G, MaxAdContentRating.PG, MaxAdContentRating.T or MaxAdContentRating.MA",
+        ).toThrow(
+          "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected one of G, PG, T, MA",
         );
       });
     });
@@ -29,7 +29,7 @@ describe('Admob', function () {
             // @ts-ignore
             tagForChildDirectedTreatment: 'true',
           }),
-        ).toThrowError(
+        ).toThrow(
           "setRequestConfiguration(*) 'requestConfiguration.tagForChildDirectedTreatment' expected a boolean value",
         );
       });
@@ -42,7 +42,7 @@ describe('Admob', function () {
             // @ts-ignore
             tagForUnderAgeOfConsent: 'false',
           }),
-        ).toThrowError(
+        ).toThrow(
           "setRequestConfiguration(*) 'requestConfiguration.tagForUnderAgeOfConsent' expected a boolean value",
         );
       });
@@ -55,7 +55,7 @@ describe('Admob', function () {
             // @ts-ignore
             testDeviceIdentifiers: 'EMULATOR',
           }),
-        ).toThrowError(
+        ).toThrow(
           "setRequestConfiguration(*) 'requestConfiguration.testDeviceIdentifiers' expected an array value",
         );
       });
@@ -64,44 +64,44 @@ describe('Admob', function () {
     describe('testDebugMenu', function () {
       it('does call native initialize method', () => {
         admob().initialize();
-        expect(RNGoogleMobileAdsModule.initialize).toBeCalledTimes(1);
+        expect(RNGoogleMobileAdsModule.initialize).toHaveBeenCalledTimes(1);
       });
 
       it('does call native setRequestConfiguration method', () => {
         admob().setRequestConfiguration({ tagForChildDirectedTreatment: true });
-        expect(RNGoogleMobileAdsModule.setRequestConfiguration).toBeCalledTimes(1);
+        expect(RNGoogleMobileAdsModule.setRequestConfiguration).toHaveBeenCalledTimes(1);
       });
 
       it('does call native openAdInspector method', () => {
         admob().openAdInspector();
-        expect(RNGoogleMobileAdsModule.openAdInspector).toBeCalledTimes(1);
+        expect(RNGoogleMobileAdsModule.openAdInspector).toHaveBeenCalledTimes(1);
       });
 
       it('does call native openDebugMenu method', () => {
         admob().openDebugMenu('12345');
-        expect(RNGoogleMobileAdsModule.openDebugMenu).toBeCalledTimes(1);
+        expect(RNGoogleMobileAdsModule.openDebugMenu).toHaveBeenCalledTimes(1);
       });
 
       it('throws if adUnit is empty', function () {
         expect(() => {
           admob().openDebugMenu('');
-        }).toThrowError('openDebugMenu expected a non-empty string value');
+        }).toThrow('openDebugMenu expected a non-empty string value');
       });
 
       it('does call native setAppVolume method', () => {
         admob().setAppVolume(0.5);
-        expect(RNGoogleMobileAdsModule.setAppVolume).toBeCalledTimes(1);
+        expect(RNGoogleMobileAdsModule.setAppVolume).toHaveBeenCalledTimes(1);
       });
 
       it('throws if setAppVolume is greater than 1', function () {
         expect(() => {
           admob().setAppVolume(2);
-        }).toThrowError('The app volume must be a value between 0 and 1 inclusive.');
+        }).toThrow('The app volume must be a value between 0 and 1 inclusive.');
       });
 
       it('does call native setAppMuted method', () => {
         admob().setAppMuted(true);
-        expect(RNGoogleMobileAdsModule.setAppMuted).toBeCalledTimes(1);
+        expect(RNGoogleMobileAdsModule.setAppMuted).toHaveBeenCalledTimes(1);
       });
     });
   });

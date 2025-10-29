@@ -18,20 +18,17 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 1
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+          node-version: 24
       - uses: actions/cache@v4
         name: Yarn Cache
         id: yarn-cache
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
+          path: .yarn/cache
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
@@ -41,7 +38,7 @@ jobs:
           timeout_minutes: 3
           retry_wait_seconds: 30
           max_attempts: 3
-          command: yarn --no-audit --prefer-offline
+          command: yarn
       - name: Lint
         run: yarn lint:code
       - name: Save Code Linting Report JSON
@@ -64,20 +61,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 1
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+          node-version: 24
       - uses: actions/cache@v4
         name: Yarn Cache
         id: yarn-cache
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
+          path: .yarn/cache
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
@@ -87,7 +81,7 @@ jobs:
           timeout_minutes: 3
           retry_wait_seconds: 30
           max_attempts: 3
-          command: yarn --no-audit --prefer-offline
+          command: yarn
       - name: Lint
         run: yarn tsc:compile
 
@@ -102,14 +96,11 @@ jobs:
   #     - uses: actions/setup-node@v4
   #       with:
   #         node-version: 18
-  #     - name: Get yarn cache directory path
-  #       id: yarn-cache-dir-path
-  #       run: echo "yarn-cache-dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
   #     - uses: actions/cache@v4
   #       name: Yarn Cache
   #       id: yarn-cache
   #       with:
-  #         path: ${{ steps.yarn-cache-dir-path.outputs.yarn-cache-dir }}
+  #         path: .yarn/cache
   #         key: ${{ runner.os }}-yarn-${{ hashFiles('**/package.json') }}-with-website
   #         restore-keys: |
   #           ${{ runner.os }}-yarn-
@@ -119,13 +110,13 @@ jobs:
   #         timeout_minutes: 3
   #         retry_wait_seconds: 30
   #         max_attempts: 3
-  #         command: yarn --no-audit --prefer-offline
+  #         command: yarn
   #     - name: Yarn Install (Website)
   #       uses: nick-fields/retry@v3
   #       with:
   #         timeout_minutes: 3
   #         retry_wait_seconds: 30
   #         max_attempts: 3
-  #         command: cd website && yarn --no-audit --prefer-offline
+  #         command: cd website && yarn
   #     - name: Generate TypeDoc
   #       run: node -e "require('./website/scripts/generate-typedoc').generateTypedoc()"

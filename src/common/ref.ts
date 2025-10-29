@@ -14,21 +14,23 @@ interface ElementWithRef extends React.ReactElement {
  */
 export function getElementRef(element: React.ReactElement): PossibleRef<unknown> {
   // React <=18 in DEV
-  let getter = Object.getOwnPropertyDescriptor(element.props, 'ref')?.get;
+  let getter = Object.getOwnPropertyDescriptor(element.props, 'ref')?.get?.bind(element.props);
   let mayWarn = getter && 'isReactWarning' in getter && getter.isReactWarning;
   if (mayWarn) {
     return (element as ElementWithRef).ref;
   }
 
   // React 19 in DEV
-  getter = Object.getOwnPropertyDescriptor(element, 'ref')?.get;
+  getter = Object.getOwnPropertyDescriptor(element, 'ref')?.get?.bind(element);
   mayWarn = getter && 'isReactWarning' in getter && getter.isReactWarning;
   if (mayWarn) {
-    return element.props.ref;
+    // @ts-ignore
+    return element.props.ref; // eslint-disable-line
   }
 
   // Not DEV
-  return element.props.ref || (element as ElementWithRef).ref;
+  // @ts-ignore
+  return element.props.ref || (element as ElementWithRef).ref; // eslint-disable-line
 }
 
 export function composeRefs<T>(...refs: PossibleRef<T>[]) {
@@ -37,7 +39,7 @@ export function composeRefs<T>(...refs: PossibleRef<T>[]) {
       if (typeof ref === 'function') {
         ref(value);
       } else if (ref !== null && ref !== undefined) {
-        (ref as React.MutableRefObject<T>).current = value;
+        ref.current = value;
       }
     });
   };

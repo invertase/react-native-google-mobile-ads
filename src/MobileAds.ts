@@ -16,10 +16,8 @@ const nativeEvents = [
 
 class MobileAdsModule implements MobileAdsModuleInterface {
   constructor() {
-    if (nativeEvents && nativeEvents.length) {
-      for (let i = 0, len = nativeEvents.length; i < len; i++) {
-        this.subscribeToNativeModuleEvent(nativeEvents[i]);
-      }
+    for (let i = 0, len = nativeEvents.length; i < len; i++) {
+      this.subscribeToNativeModuleEvent(nativeEvents[i]);
     }
   }
 

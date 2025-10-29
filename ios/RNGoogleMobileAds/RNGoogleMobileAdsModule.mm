@@ -71,13 +71,13 @@ RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnit) {
 #endif
 }
 
-RCT_EXPORT_METHOD(setAppVolume : (float)volume) {
+RCT_EXPORT_METHOD(setAppVolume : (double)volume) {
 #if !TARGET_OS_MACCATALYST
   GADMobileAds.sharedInstance.applicationVolume = volume;
 #endif
 }
 
-RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
+RCT_EXPORT_METHOD(setAppMuted : (BOOL)muted) {
 #if !TARGET_OS_MACCATALYST
   GADMobileAds.sharedInstance.applicationMuted = muted;
 #endif
@@ -165,7 +165,9 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
                                  rejectPromiseWithUserInfo:reject
                                                   userInfo:[@{
                                                     @"code" : [NSString
-                                                        stringWithFormat:@"CODE_%d", error.code],
+                                                        stringWithFormat:@"CODE_%ld",
+                                                                         static_cast<long>(
+                                                                             error.code)],
                                                     @"message" : error.description,
                                                   } mutableCopy]];
                            } else {
@@ -173,23 +175,6 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL *)muted) {
                            }
                          }];
 #endif
-}
-
-- (NSDictionary *)constantsToExport {
-  return @{
-  // Precision types in ad revenue events.
-  // See: https://developers.google.com/admob/ios/impression-level-ad-revenue#objective-c
-#if !TARGET_OS_MACCATALYST
-    @"REVENUE_PRECISION_UNKNOWN" : @(GADAdValuePrecisionUnknown),
-    @"REVENUE_PRECISION_ESTIMATED" : @(GADAdValuePrecisionEstimated),
-    @"REVENUE_PRECISION_PUBLISHER_PROVIDED" : @(GADAdValuePrecisionPublisherProvided),
-    @"REVENUE_PRECISION_PRECISE" : @(GADAdValuePrecisionPrecise)
-  };
-#endif
-}
-
-- (NSDictionary *)getConstants {
-  return [self constantsToExport];
 }
 
 @end

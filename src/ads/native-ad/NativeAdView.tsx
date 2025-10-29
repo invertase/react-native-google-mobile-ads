@@ -27,7 +27,7 @@ export type NativeAdViewProps = ViewProps & {
 
 export const NativeAdView = (props: NativeAdViewProps) => {
   const { nativeAd, children, ...viewProps } = props;
-  const ref = useRef<React.ElementRef<typeof GoogleMobileAdsNativeView>>(null);
+  const ref = useRef<React.ComponentRef<typeof GoogleMobileAdsNativeView>>(null);
   return (
     <GoogleMobileAdsNativeView
       {...viewProps}

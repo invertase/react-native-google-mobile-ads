@@ -15,7 +15,7 @@
  *
  */
 
-import { Reducer, useCallback, useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 
 import { AdEventType } from '../AdEventType';
 import { AppOpenAd } from '../ads/AppOpenAd';
@@ -38,18 +38,18 @@ const initialState: AdStates = {
   isEarnedReward: false,
 };
 
-export function useFullScreenAd<
-  T extends AppOpenAd | InterstitialAd | RewardedAd | RewardedInterstitialAd | null,
->(ad: T): AdHookReturns {
-  const [state, setState] = useReducer<Reducer<AdStates, Partial<AdStates>>>(
-    (prevState, newState) => ({ ...prevState, ...newState }),
+export function useFullScreenAd(
+  ad: AppOpenAd | InterstitialAd | RewardedAd | RewardedInterstitialAd | null,
+): AdHookReturns {
+  const [state, dispatch] = useReducer(
+    (prevState, newState) => ({ ...prevState, ...newState }) as AdStates,
     initialState,
   );
   const isShowing = state.isOpened && !state.isClosed;
 
   const load = useCallback(() => {
     if (ad) {
-      setState(initialState);
+      dispatch(initialState);
       ad.load();
     }
   }, [ad]);
@@ -57,42 +57,44 @@ export function useFullScreenAd<
   const show = useCallback(
     (showOptions?: AdShowOptions) => {
       if (ad) {
-        ad.show(showOptions);
+        // ad.show returns a promise but we don't await
+        // errors handled by library-consumer-provided functions
+        void ad.show(showOptions);
       }
     },
     [ad],
   );
 
   useEffect(() => {
-    setState(initialState);
+    dispatch(initialState);
     if (!ad) {
       return;
     }
     const unsubscribe = (ad as RewardedAd).addAdEventsListener(({ type, payload }) => {
       switch (type) {
         case AdEventType.LOADED:
-          setState({ isLoaded: true });
+          dispatch({ isLoaded: true });
           break;
         case AdEventType.OPENED:
-          setState({ isOpened: true });
+          dispatch({ isOpened: true });
           break;
         case AdEventType.PAID:
-          setState({ revenue: payload as unknown as PaidEvent });
+          dispatch({ revenue: payload as unknown as PaidEvent });
           break;
         case AdEventType.CLOSED:
-          setState({ isClosed: true, isLoaded: false });
+          dispatch({ isClosed: true, isLoaded: false });
           break;
         case AdEventType.CLICKED:
-          setState({ isClicked: true });
+          dispatch({ isClicked: true });
           break;
         case AdEventType.ERROR:
-          setState({ error: payload as Error });
+          dispatch({ error: payload as Error });
           break;
         case RewardedAdEventType.LOADED:
-          setState({ isLoaded: true, reward: payload as RewardedAdReward });
+          dispatch({ isLoaded: true, reward: payload as RewardedAdReward });
           break;
         case RewardedAdEventType.EARNED_REWARD:
-          setState({ isEarnedReward: true, reward: payload as RewardedAdReward });
+          dispatch({ isEarnedReward: true, reward: payload as RewardedAdReward });
           break;
       }
     });

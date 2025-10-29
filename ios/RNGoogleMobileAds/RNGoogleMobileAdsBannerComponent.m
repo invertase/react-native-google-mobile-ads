@@ -51,7 +51,7 @@
 
     ((GAMBannerView *)_banner).validAdSizes = _sizeConfig[@"sizes"];
     ((GAMBannerView *)_banner).appEventDelegate = self;
-    ((GAMBannerView *)_banner).enableManualImpressions = [_manualImpressionsEnabled boolValue];
+    ((GAMBannerView *)_banner).enableManualImpressions = _manualImpressionsEnabled;
   } else {
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
   }
@@ -97,8 +97,8 @@
   _propsChanged = true;
 }
 
-- (void)setManualImpressionsEnabled:(BOOL *)manualImpressionsEnabled {
-  _manualImpressionsEnabled = [NSNumber numberWithBool:manualImpressionsEnabled];
+- (void)setManualImpressionsEnabled:(BOOL)manualImpressionsEnabled {
+  _manualImpressionsEnabled = manualImpressionsEnabled;
   _propsChanged = true;
 }
 

@@ -1,23 +1,26 @@
+/**
+ * Sample React Native App
+ * https://github.com/facebook/react-native
+ *
+ * @format
+ */
+
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
-import React, {RefObject, useEffect, useRef, useState} from 'react';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { RefObject, useEffect, useRef, useState } from 'react';
 import {
   Button,
   Image,
   Platform,
-  SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
+  useColorScheme,
 } from 'react-native';
-import {
-  AutoExecutableTest,
-  TestRegistry,
-  TestResult,
-  TestRunner,
-  TestType,
-} from 'jet';
+import { AutoExecutableTest, TestRegistry, TestResult, TestRunner, TestType } from 'jet';
 
 import MobileAds, {
   AdEventType,
@@ -49,63 +52,102 @@ import MobileAds, {
   useRewardedAd,
   useRewardedInterstitialAd,
 } from 'react-native-google-mobile-ads';
+import { MobileAd } from '../lib/typescript/ads/MobileAd';
+
+function App() {
+  const isDarkMode = useColorScheme() === 'dark';
+
+  return (
+    <SafeAreaProvider>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <AppContent />
+    </SafeAreaProvider>
+  );
+}
+
+function AppContent() {
+  const safeAreaInsets = useSafeAreaInsets();
+
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={{
+          marginTop: safeAreaInsets.top,
+          marginBottom: safeAreaInsets.bottom,
+          marginLeft: safeAreaInsets.left,
+          marginRight: safeAreaInsets.right,
+        }}
+      >
+        <TestRunner />
+      </ScrollView>
+    </View>
+  );
+}
 
 const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
   requestNonPersonalizedAdsOnly: true,
 });
 
-class AppOpenTest implements AutoExecutableTest {
-  adListener: () => void;
-  adLoaded = false;
+const LoadableAdTestComponent = (props: { mobileAd: MobileAd; type: string }) => {
+  const [adLoaded, setAdLoaded] = useState(false);
 
-  constructor() {
-    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = appOpen.addAdEventsListener(({type, payload}) => {
-      console.log(`${Platform.OS} app open ad event: ${type}`);
+  useEffect(() => {
+    const adListener = props.mobileAd.addAdEventsListener(({ type, payload }) => {
+      console.log(`${Platform.OS} ${props.type} ad event: ${type}`);
       if (type === AdEventType.PAID) {
         console.log(payload);
       }
       if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} app open error: ${payload?.message}`);
+        console.log(`${Platform.OS} ${props.type} error: ${(payload as Error)?.message}`);
       }
-      if (type === AdEventType.LOADED) {
-        this.adLoaded = true;
+      if (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) {
+        setAdLoaded(true);
       }
     });
-  }
+    return () => adListener();
+  }, []);
 
-  getPath(): string {
-    return 'AppOpen';
-  }
+  return (
+    <View style={styles.testSpacing}>
+      <Button
+        title={`Load ${props.type} Ad`}
+        onPress={() => {
+          try {
+            props.mobileAd.load();
+          } catch (e) {
+            console.log(`${Platform.OS} ${props.type} load error: ${e}`);
+          }
+        }}
+      />
+      <Text>Loaded? {adLoaded ? 'true' : 'false'}</Text>
+      <Button
+        title={`Show ${props.type} Ad`}
+        onPress={() => {
+          try {
+            props.mobileAd.show();
+          } catch (e) {
+            console.log(`${Platform.OS} ${props.type} show error: ${e}`);
+          }
+        }}
+      />
+    </View>
+  );
+};
+
+abstract class LoadableAdTest implements AutoExecutableTest {
+  testComponent: MobileAd | undefined = undefined;
+  abstract getPath(): string;
 
   getTestType(): TestType {
     return TestType.Interactive;
   }
 
   render(onMount: (component: any) => void): React.ReactNode {
+    if (!this.testComponent) return;
     return (
-      <View style={styles.testSpacing} ref={onMount}>
-        <Button
-          title="Load App Open Ad"
-          onPress={() => {
-            try {
-              appOpen.load();
-            } catch (e) {
-              console.log(`${Platform.OS} app open load error: ${e}`);
-            }
-          }}
-        />
-        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
-        <Button
-          title="Show App Open Ad"
-          onPress={() => {
-            try {
-              appOpen.show();
-            } catch (e) {
-              console.log(`${Platform.OS} app open show error: ${e}`);
-            }
-          }}
-        />
+      <View ref={onMount}>
+        <LoadableAdTestComponent mobileAd={this.testComponent} type={this.getPath()} />
       </View>
     );
   }
@@ -118,8 +160,17 @@ class AppOpenTest implements AutoExecutableTest {
       results.errors.push('Received unexpected error...');
     } finally {
       complete(results);
-      this.adListener();
     }
+  }
+}
+
+class AppOpenTest extends LoadableAdTest {
+  constructor() {
+    super();
+    this.testComponent = appOpen;
+  }
+  getPath(): string {
+    return 'App Open';
   }
 }
 
@@ -129,77 +180,18 @@ const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
 });
 
 // To implement a test you must make a new object implementing a specific interface.
-class InterstitialTest implements AutoExecutableTest {
-  adListener: () => void;
-  adLoaded = false;
-
+class InterstitialTest extends LoadableAdTest {
   constructor() {
-    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = interstitial.addAdEventsListener(({type, payload}) => {
-      console.log(`${Platform.OS} interstitial ad event: ${type}`);
-      if (type === AdEventType.PAID) {
-        console.log('Paid', payload);
-      }
-      if (type === AdEventType.ERROR) {
-        console.log(`${Platform.OS} interstitial error: ${payload?.message}`);
-      }
-      if (type === AdEventType.LOADED) {
-        this.adLoaded = true;
-      }
-    });
+    super();
+    this.testComponent = interstitial;
   }
-
   getPath(): string {
     return 'Interstitial';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount}>
-        <Button
-          title="Load Interstitial"
-          onPress={() => {
-            try {
-              interstitial.load();
-            } catch (e) {
-              console.log(`${Platform.OS} interstitial load error: ${e}`);
-            }
-          }}
-        />
-        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
-        <Button
-          title="Show Interstitial"
-          onPress={() => {
-            try {
-              interstitial.show();
-            } catch (e) {
-              console.log(`${Platform.OS} app open show error: ${e}`);
-            }
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-      this.adListener();
-    }
   }
 }
 
 class BannerTest implements AutoExecutableTest {
-  bannerRef: RefObject<BannerAd>;
+  bannerRef: RefObject<BannerAd | null>;
   bannerAdSize: BannerAdSize | string;
   maxHeight?: number;
   width?: number;
@@ -213,9 +205,7 @@ class BannerTest implements AutoExecutableTest {
   getPath(): string {
     return this.bannerAdSize
       .split('_')
-      .map(
-        s => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1),
-      )
+      .map(s => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1))
       .join('')
       .concat(this.maxHeight ? `MaxHeight${this.maxHeight}` : '')
       .concat(this.width ? `Width${this.width}` : '');
@@ -231,9 +221,7 @@ class BannerTest implements AutoExecutableTest {
         <BannerAd
           ref={this.bannerRef}
           unitId={
-            this.bannerAdSize.includes('ADAPTIVE_BANNER')
-              ? TestIds.ADAPTIVE_BANNER
-              : TestIds.BANNER
+            this.bannerAdSize.includes('ADAPTIVE_BANNER') ? TestIds.ADAPTIVE_BANNER : TestIds.BANNER
           }
           size={this.bannerAdSize}
           maxHeight={this.maxHeight}
@@ -309,75 +297,13 @@ const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
   requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
-class RewardedTest implements AutoExecutableTest {
-  adListener: () => void;
-  adLoaded = false;
-
+class RewardedTest extends LoadableAdTest {
   constructor() {
-    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = rewarded.addAdEventsListener(({type, payload}) => {
-      console.log(`${Platform.OS} rewarded ad event: ${type}`);
-      if (type === AdEventType.PAID) {
-        console.log(payload);
-      }
-      if (type === AdEventType.ERROR) {
-        console.log(
-          `${Platform.OS} rewarded error: ${(payload as Error).message}`,
-        );
-      }
-      if (type === RewardedAdEventType.LOADED) {
-        console.log(`${Platform.OS} reward: ${JSON.stringify(payload)})`);
-        this.adLoaded = true;
-      }
-    });
+    super();
+    this.testComponent = rewarded;
   }
-
   getPath(): string {
     return 'Rewarded';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount}>
-        <Button
-          title="Load Rewarded"
-          onPress={() => {
-            try {
-              rewarded.load();
-            } catch (e) {
-              console.log(`${Platform.OS} rewarded load error: ${e}`);
-            }
-          }}
-        />
-        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
-        <Button
-          title="Show Rewarded"
-          onPress={() => {
-            try {
-              rewarded.show();
-            } catch (e) {
-              console.log(`${Platform.OS} app open show error: ${e}`);
-            }
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-      this.adListener();
-    }
   }
 }
 
@@ -388,81 +314,13 @@ const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
     keywords: ['fashion', 'clothing'],
   },
 );
-class RewardedInterstitialTest implements AutoExecutableTest {
-  adListener: () => void;
-  adLoaded = false;
-
+class RewardedInterstitialTest extends LoadableAdTest {
   constructor() {
-    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = rewardedInterstitial.addAdEventsListener(
-      ({type, payload}) => {
-        console.log(`${Platform.OS} rewarded interstitial ad event: ${type}`);
-        if (type === AdEventType.PAID) {
-          console.log(payload);
-        }
-        if (type === AdEventType.ERROR) {
-          console.log(
-            `${Platform.OS} rewarded interstitial error: ${
-              (payload as Error).message
-            }`,
-          );
-        }
-        if (type === RewardedAdEventType.LOADED) {
-          console.log(`${Platform.OS} reward: ${JSON.stringify(payload)})`);
-          this.adLoaded = true;
-        }
-      },
-    );
+    super();
+    this.testComponent = rewardedInterstitial;
   }
-
   getPath(): string {
-    return 'RewardedInterstitial';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount}>
-        <Button
-          title="Load Rewarded Interstitial"
-          onPress={() => {
-            try {
-              rewardedInterstitial.load();
-            } catch (e) {
-              console.log(
-                `${Platform.OS} rewarded interstitial load error: ${e}`,
-              );
-            }
-          }}
-        />
-        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
-        <Button
-          title="Show Rewarded Interstitial"
-          onPress={() => {
-            try {
-              rewardedInterstitial.show();
-            } catch (e) {
-              console.log(`${Platform.OS} app open show error: ${e}`);
-            }
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-      this.adListener();
-    }
+    return 'Rewarded Interstitial';
   }
 }
 
@@ -487,7 +345,7 @@ const NativeComponent = () => {
     nativeAd.addAdEventListener(NativeAdEventType.CLICKED, () => {
       console.debug('Native ad clicked');
     });
-    nativeAd.addAdEventListener(NativeAdEventType.PAID, (payload) => {
+    nativeAd.addAdEventListener(NativeAdEventType.PAID, payload => {
       console.debug('Paid', payload);
     });
     nativeAd.addAdEventListener(NativeAdEventType.VIDEO_PLAYED, () => {
@@ -514,17 +372,15 @@ const NativeComponent = () => {
 
   return (
     <NativeAdView nativeAd={nativeAd}>
-      <View style={{padding: 16, gap: 8}}>
-        <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+      <View style={{ padding: 16, gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {nativeAd.icon && (
             <NativeAsset assetType={NativeAssetType.ICON}>
-              <Image source={{uri: nativeAd.icon.url}} width={24} height={24} />
+              <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} />
             </NativeAsset>
           )}
           <NativeAsset assetType={NativeAssetType.HEADLINE}>
-            <Text style={{fontSize: 18, fontWeight: 'bold'}}>
-              {nativeAd.headline}
-            </Text>
+            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
           </NativeAsset>
           <Text
             style={{
@@ -535,7 +391,8 @@ const NativeComponent = () => {
               fontWeight: 'bold',
               fontSize: 12,
               borderRadius: 4,
-            }}>
+            }}
+          >
             AD
           </Text>
         </View>
@@ -557,7 +414,8 @@ const NativeComponent = () => {
             backgroundColor: '#4285F4',
             paddingHorizontal: 16,
             paddingVertical: 12,
-          }}>
+          }}
+        >
           {nativeAd.callToAction}
         </Text>
       </NativeAsset>
@@ -627,11 +485,10 @@ class AdConsentTest implements AutoExecutableTest {
         />
 
         <Text>
-          This test case will not work with the test App ID. You must configure
-          your real App ID in app.json and the Consent Form in AdMob/Ad Manager.
-          If you are running this test on a device instead of an emulator and if
-          you are currently not located in EEA, you have to add your Decive ID
-          to the testDeviceIdentifiers of this test case as well.
+          This test case will not work with the test App ID. You must configure your real App ID in
+          app.json and the Consent Form in AdMob/Ad Manager. If you are running this test on a
+          device instead of an emulator and if you are currently not located in EEA, you have to add
+          your Decive ID to the testDeviceIdentifiers of this test case as well.
         </Text>
       </View>
     );
@@ -650,8 +507,9 @@ class AdConsentTest implements AutoExecutableTest {
 }
 
 const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
-  const {load, show, error, isLoaded, isClicked, isClosed, isOpened, revenue} =
-    useInterstitialAd(TestIds.INTERSTITIAL);
+  const { load, show, error, isLoaded, isClicked, isClosed, isOpened, revenue } = useInterstitialAd(
+    TestIds.INTERSTITIAL,
+  );
   useEffect(() => {
     load();
   }, [load]);
@@ -712,17 +570,8 @@ class InterstitialHookTest implements AutoExecutableTest {
 }
 
 const RewardedHookComponent = React.forwardRef<View>((_, ref) => {
-  const {
-    load,
-    show,
-    isLoaded,
-    error,
-    reward,
-    isEarnedReward,
-    isOpened,
-    isClosed,
-    isClicked,
-  } = useRewardedAd(TestIds.REWARDED);
+  const { load, show, isLoaded, error, reward, isEarnedReward, isOpened, isClosed, isClicked } =
+    useRewardedAd(TestIds.REWARDED);
   useEffect(() => {
     load();
   }, [load]);
@@ -733,9 +582,7 @@ const RewardedHookComponent = React.forwardRef<View>((_, ref) => {
   }, [error]);
   useEffect(() => {
     if (reward !== undefined) {
-      console.log(
-        `${Platform.OS} rewarded hook reward: ${JSON.stringify(reward)}`,
-      );
+      console.log(`${Platform.OS} rewarded hook reward: ${JSON.stringify(reward)}`);
     }
   }, [reward]);
   useEffect(() => {
@@ -786,34 +633,19 @@ class RewardedHookTest implements AutoExecutableTest {
 }
 
 const RewardedInterstitialHookComponent = React.forwardRef<View>((_, ref) => {
-  const {
-    load,
-    show,
-    isLoaded,
-    error,
-    reward,
-    isEarnedReward,
-    isOpened,
-    isClosed,
-    isClicked,
-  } = useRewardedInterstitialAd(TestIds.REWARDED_INTERSTITIAL);
+  const { load, show, isLoaded, error, reward, isEarnedReward, isOpened, isClosed, isClicked } =
+    useRewardedInterstitialAd(TestIds.REWARDED_INTERSTITIAL);
   useEffect(() => {
     load();
   }, [load]);
   useEffect(() => {
     if (error !== undefined) {
-      console.log(
-        `${Platform.OS} rewarded interstitial hook error: ${error.message}`,
-      );
+      console.log(`${Platform.OS} rewarded interstitial hook error: ${error.message}`);
     }
   }, [error]);
   useEffect(() => {
     if (reward !== undefined) {
-      console.log(
-        `${Platform.OS} rewarded interstitial hook reward: ${JSON.stringify(
-          reward,
-        )}`,
-      );
+      console.log(`${Platform.OS} rewarded interstitial hook reward: ${JSON.stringify(reward)}`);
     }
   }, [reward]);
   useEffect(() => {
@@ -836,8 +668,7 @@ const RewardedInterstitialHookComponent = React.forwardRef<View>((_, ref) => {
     </View>
   );
 });
-RewardedInterstitialHookComponent.displayName =
-  'RewardedInterstitialHookComponent';
+RewardedInterstitialHookComponent.displayName = 'RewardedInterstitialHookComponent';
 
 class RewardedInterstitialHookTest implements AutoExecutableTest {
   getPath(): string {
@@ -865,8 +696,9 @@ class RewardedInterstitialHookTest implements AutoExecutableTest {
 }
 
 const AppOpenHookComponent = React.forwardRef<View>((_, ref) => {
-  const {load, show, error, isLoaded, isClicked, isClosed, isOpened} =
-    useAppOpenAd(TestIds.APP_OPEN);
+  const { load, show, error, isLoaded, isClicked, isClosed, isOpened } = useAppOpenAd(
+    TestIds.APP_OPEN,
+  );
   useEffect(() => {
     load();
   }, [load]);
@@ -962,7 +794,7 @@ const GAMBannerComponent = React.forwardRef<
     unitId: string;
     sizes: (keyof typeof GAMBannerAdSize)[];
   }
->(({unitId, sizes}, ref) => {
+>(({ unitId, sizes }, ref) => {
   const bannerRef = useRef<GAMBannerAd>(null);
   const recordManualImpression = () => {
     bannerRef.current?.recordManualImpression();
@@ -1003,11 +835,7 @@ class GAMBannerTest implements AutoExecutableTest {
         .map(size =>
           size
             .split('_')
-            .map(
-              (s: string) =>
-                s.toLowerCase().charAt(0).toUpperCase() +
-                s.toLowerCase().slice(1),
-            )
+            .map((s: string) => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1))
             .join(''),
         )
         .join('_')
@@ -1034,13 +862,10 @@ class GAMBannerTest implements AutoExecutableTest {
   }
 }
 
-const gamInterstitial = GAMInterstitialAd.createForAdRequest(
-  TestIds.GAM_INTERSTITIAL,
-  {
-    // requestNonPersonalizedAdsOnly: true,
-    // keywords: ['fashion', 'clothing'],
-  },
-);
+const gamInterstitial = GAMInterstitialAd.createForAdRequest(TestIds.GAM_INTERSTITIAL, {
+  // requestNonPersonalizedAdsOnly: true,
+  // keywords: ['fashion', 'clothing'],
+});
 
 class GAMInterstitialTest implements AutoExecutableTest {
   adListener: () => void;
@@ -1048,24 +873,16 @@ class GAMInterstitialTest implements AutoExecutableTest {
 
   constructor() {
     // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = gamInterstitial.addAdEventsListener(({type, payload}) => {
+    this.adListener = gamInterstitial.addAdEventsListener(({ type, payload }) => {
       console.log(`${Platform.OS} GAM interstitial ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        console.log(
-          `${Platform.OS} GAM interstitial error: ${
-            (payload as Error).message
-          }`,
-        );
+        console.log(`${Platform.OS} GAM interstitial error: ${(payload as Error).message}`);
       }
       if (type === AdEventType.LOADED) {
         this.adLoaded = true;
       }
       if (type === GAMAdEventType.APP_EVENT) {
-        console.log(
-          `${Platform.OS} GAM interstitial app event: ${JSON.stringify(
-            payload,
-          )}`,
-        );
+        console.log(`${Platform.OS} GAM interstitial app event: ${JSON.stringify(payload)}`);
       }
     });
   }
@@ -1156,9 +973,9 @@ class DebugMenuTest implements AutoExecutableTest {
 
 // All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
 Object.keys(BannerAdSize).forEach(bannerAdSize => {
-  if (bannerAdSize === "INLINE_ADAPTIVE_BANNER") {
-    TestRegistry.registerTest(new BannerTest(bannerAdSize, 100))
-    TestRegistry.registerTest(new BannerTest(bannerAdSize, 200, 200))
+  if (bannerAdSize === 'INLINE_ADAPTIVE_BANNER') {
+    TestRegistry.registerTest(new BannerTest(bannerAdSize, 100));
+    TestRegistry.registerTest(new BannerTest(bannerAdSize, 200, 200));
   }
   TestRegistry.registerTest(new BannerTest(bannerAdSize));
 });
@@ -1189,20 +1006,13 @@ TestRegistry.registerTest(
 TestRegistry.registerTest(new GAMInterstitialTest());
 TestRegistry.registerTest(new DebugMenuTest());
 
-const App = () => {
-  return (
-    <SafeAreaView>
-      <ScrollView contentInsetAdjustmentBehavior="automatic">
-        <TestRunner />
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
-
 const styles = StyleSheet.create({
   testSpacing: {
     margin: 10,
     padding: 10,
+  },
+  container: {
+    flex: 1,
   },
 });
 

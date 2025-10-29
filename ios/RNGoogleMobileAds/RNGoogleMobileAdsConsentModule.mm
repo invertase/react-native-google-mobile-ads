@@ -190,7 +190,7 @@ RCT_EXPORT_METHOD(getPurposeLegitimateInterests
       ? ^{
           NSMutableArray *array = [[NSMutableArray alloc] init];
           FB::LazyVector<NSString *, id> identifiers = options.testDeviceIdentifiers().value();
-          for (NSUInteger i = 0; i < identifiers.size(); i++) {
+          for (int i = 0; i < identifiers.size(); i++) {
               [array addObject:identifiers[i]];  // Direct access by index
           }
           return array;
