@@ -1,3 +1,20 @@
+## [16.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.8.3...v16.0.0) (2025-10-30)
+
+### ⚠ BREAKING CHANGES
+
+* **events:** remove compatibility code for react-native < 0.65
+* **deps:** the ref in some ads *may* be null, a slight type change from stricter checks
+
+This is from upgrading all our deps with newer versions of react, react-native, and typescript
+Apparently they have stricter type checking as this ref was always possibly null, but it was
+not reflected in the inferred type passed to consuming code. Now it is
+
+### Bug Fixes
+
+* **deps:** updated all deps - stricter typing forces a null type in NativeAds ([94515a1](https://github.com/invertase/react-native-google-mobile-ads/commit/94515a130d87eb59400e1dbea2a2011b8502d165))
+* **events:** remove compatibility code for react-native < 0.65 ([7a1ba81](https://github.com/invertase/react-native-google-mobile-ads/commit/7a1ba812b767a22ac9bf4dcdf07063cd2403e4f3))
+* **ios:** use 'note' for info messages in Xcode build script ([69a84b4](https://github.com/invertase/react-native-google-mobile-ads/commit/69a84b4e4377851435e1ce8283ffa04aa4c8a62c))
+
 ## [15.8.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.8.2...v15.8.3) (2025-10-21)
 
 ### Bug Fixes
