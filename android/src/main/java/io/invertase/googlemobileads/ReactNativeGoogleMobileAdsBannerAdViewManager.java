@@ -31,8 +31,11 @@ import com.facebook.react.uimanager.PixelUtil;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIManagerHelper;
+import com.facebook.react.uimanager.ViewManagerDelegate;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.events.EventDispatcher;
+import com.facebook.react.viewmanagers.RNGoogleMobileAdsBannerViewManagerInterface;
+import com.facebook.react.viewmanagers.RNGoogleMobileAdsBannerViewManagerDelegate;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
@@ -54,7 +57,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ReactNativeGoogleMobileAdsBannerAdViewManager
-    extends SimpleViewManager<ReactNativeAdView> {
+    extends SimpleViewManager<ReactNativeAdView> implements RNGoogleMobileAdsBannerViewManagerInterface<ReactNativeAdView> {
   private static final String REACT_CLASS = "RNGoogleMobileAdsBannerView";
   private final String EVENT_AD_LOADED = "onAdLoaded";
   private final String EVENT_AD_IMPRESSION = "onAdImpression";
@@ -65,13 +68,17 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   private final String EVENT_PAID = "onPaid";
   private final String EVENT_SIZE_CHANGE = "onSizeChange";
   private final String EVENT_APP_EVENT = "onAppEvent";
-  private final String COMMAND_ID_RECORD_MANUAL_IMPRESSION = "recordManualImpression";
-  private final String COMMAND_ID_LOAD = "load";
-
+  private final ViewManagerDelegate<ReactNativeAdView> delegate  = new RNGoogleMobileAdsBannerViewManagerDelegate<>(this);
   @Nonnull
   @Override
   public String getName() {
     return REACT_CLASS;
+  }
+
+  @androidx.annotation.Nullable
+  @Override
+  protected ViewManagerDelegate<ReactNativeAdView> getDelegate() {
+    return delegate;
   }
 
   @Nonnull
@@ -85,23 +92,6 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     MapBuilder.Builder<String, Object> builder = MapBuilder.builder();
     builder.put(OnNativeEvent.EVENT_NAME, MapBuilder.of("registrationName", "onNativeEvent"));
     return builder.build();
-  }
-
-  @Override
-  public void receiveCommand(
-      @NonNull ReactNativeAdView reactViewGroup, String commandId, @Nullable ReadableArray args) {
-    super.receiveCommand(reactViewGroup, commandId, args);
-
-    if (commandId.equals(COMMAND_ID_RECORD_MANUAL_IMPRESSION)) {
-      BaseAdView adView = getAdView(reactViewGroup);
-      if (adView instanceof AdManagerAdView) {
-        ((AdManagerAdView) adView).recordManualImpression();
-      }
-    } else if (commandId.equals(COMMAND_ID_LOAD)) {
-      BaseAdView adView = getAdView(reactViewGroup);
-      AdRequest request = reactViewGroup.getRequest();
-      adView.loadAd(request);
-    }
   }
 
   @ReactProp(name = "unitId")
@@ -176,6 +166,23 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   public void setManualImpressionsEnabled(ReactNativeAdView reactViewGroup, boolean value) {
     reactViewGroup.setManualImpressionsEnabled(value);
     reactViewGroup.setPropsChanged(true);
+  }
+
+  @Override
+  public void recordManualImpression(ReactNativeAdView view) {
+    BaseAdView adView = getAdView(view);
+    if (adView instanceof AdManagerAdView) {
+      ((AdManagerAdView) adView).recordManualImpression();
+    }
+  }
+
+  @Override
+  public void load(ReactNativeAdView view) {
+    BaseAdView adView = getAdView(view);
+    AdRequest request = view.getRequest();
+    if(adView !=null) {
+      adView.loadAd(request);
+    }
   }
 
   @Override
