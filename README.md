@@ -133,7 +133,7 @@ When using The New Architecture, some legacy code will still be used though. See
 | Android  | Native Ads (Turbo Native Module, Fabric Native Component)                                                                                                      | ✅ Complete |
 | Android  | User Messaging Platform (Turbo Native Module)                                                                                                                  | ⏳ To-Do    |
 | Android  | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do    |
-| Android  | Revenue Precision Constants (Turbo Native Module)                                                                                                              | ⏳ To-Do    |
+| Android  | Revenue Precision Constants (Turbo Native Module)                                                                                                              | ⏳ To-Do    | 
 
 ## Documentation
 
