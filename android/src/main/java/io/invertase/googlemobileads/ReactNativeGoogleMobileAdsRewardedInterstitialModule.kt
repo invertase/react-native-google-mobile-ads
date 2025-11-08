@@ -9,13 +9,19 @@ import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
 class ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext: ReactApplicationContext?) :
   NativeRewardedInterstitialModuleSpec(reactContext) {
 
-  private val instance: ReactNativeGoogleMobileAdsRewardedInterstitialModuleImpl = ReactNativeGoogleMobileAdsRewardedInterstitialModuleImpl(reactContext)
+  private val instance: ReactNativeGoogleMobileAdsRewardedInterstitialModuleImpl =
+    ReactNativeGoogleMobileAdsRewardedInterstitialModuleImpl(reactContext)
+
   override fun rewardedInterstitialLoad(
     requestId: Double,
     adUnitId: String,
     requestOptions: ReadableMap?
   ) {
-    instance.rewardedInterstitialLoad(requestId.toInt(),adUnitId,requestOptions?: Arguments.createMap())
+    instance.rewardedInterstitialLoad(
+      requestId.toInt(),
+      adUnitId,
+      requestOptions ?: Arguments.createMap()
+    )
   }
 
   override fun rewardedInterstitialShow(
@@ -24,8 +30,14 @@ class ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext: ReactAp
     showOptions: ReadableMap?,
     promise: Promise
   ) {
-    instance.rewardedInterstitialShow(requestId.toInt(), adUnitId, showOptions?:Arguments.createMap(),promise)
+    instance.rewardedInterstitialShow(
+      requestId.toInt(),
+      adUnitId,
+      showOptions ?: Arguments.createMap(),
+      promise
+    )
   }
+
   companion object {
     const val NAME = NativeRewardedInterstitialModuleSpec.NAME
   }

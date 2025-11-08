@@ -250,8 +250,8 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
           data
         )
       } catch (e: Exception) {
-          Log.w("RNGoogleMobileAds", "Unknown error on load")
-          Log.w("RNGoogleMobileAds", e)
+        Log.w("RNGoogleMobileAds", "Unknown error on load")
+        Log.w("RNGoogleMobileAds", e)
         val error = Arguments.createMap()
         error.putString("code", "internal")
         error.putString("message", e.message)

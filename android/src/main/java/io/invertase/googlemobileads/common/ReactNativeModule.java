@@ -19,11 +19,15 @@ package io.invertase.googlemobileads.common;
 
 import android.app.Activity;
 import android.content.Context;
+
 import com.facebook.react.bridge.*;
+
 import io.invertase.googlemobileads.interfaces.ContextProvider;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+
 import javax.annotation.Nonnull;
 
 public class ReactNativeModule implements ContextProvider {
@@ -43,7 +47,6 @@ public class ReactNativeModule implements ContextProvider {
   public ReactContext getContext() {
     return context;
   }
-
 
 
   public Context getApplicationContext() {

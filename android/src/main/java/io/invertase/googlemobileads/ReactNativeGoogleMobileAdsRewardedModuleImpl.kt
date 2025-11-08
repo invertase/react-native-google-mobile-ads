@@ -60,6 +60,7 @@ class ReactNativeGoogleMobileAdsRewardedModuleImpl(reactContext: ReactApplicatio
         override fun onAdLoaded(ad: RewardedAd) {
           adLoadCallback.onAdLoaded(ad)
         }
+
         override fun onAdFailedToLoad(error: LoadAdError) {
           adLoadCallback.onAdFailedToLoad(error)
         }

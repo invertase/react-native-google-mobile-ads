@@ -16,9 +16,11 @@ package io.invertase.googlemobileads;
  * limitations under the License.
  *
  */
+
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -30,6 +32,7 @@ import com.google.android.ump.ConsentDebugSettings;
 import com.google.android.ump.ConsentInformation;
 import com.google.android.ump.ConsentRequestParameters;
 import com.google.android.ump.UserMessagingPlatform;
+
 import javax.annotation.Nonnull;
 
 public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModuleSpec {
@@ -57,7 +60,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
   }
 
   private String getPrivacyOptionsRequirementStatusString(
-      ConsentInformation.PrivacyOptionsRequirementStatus privacyOptionsRequirementStatus) {
+    ConsentInformation.PrivacyOptionsRequirementStatus privacyOptionsRequirementStatus) {
     switch (privacyOptionsRequirementStatus) {
       case REQUIRED:
         return "REQUIRED";
@@ -72,14 +75,14 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
   private WritableMap getConsentInformation() {
     WritableMap consentStatusMap = Arguments.createMap();
     consentStatusMap.putString(
-        "status", getConsentStatusString(consentInformation.getConsentStatus()));
+      "status", getConsentStatusString(consentInformation.getConsentStatus()));
     consentStatusMap.putBoolean("canRequestAds", consentInformation.canRequestAds());
     consentStatusMap.putString(
-        "privacyOptionsRequirementStatus",
-        getPrivacyOptionsRequirementStatusString(
-            consentInformation.getPrivacyOptionsRequirementStatus()));
+      "privacyOptionsRequirementStatus",
+      getPrivacyOptionsRequirementStatusString(
+        consentInformation.getPrivacyOptionsRequirementStatus()));
     consentStatusMap.putBoolean(
-        "isConsentFormAvailable", consentInformation.isConsentFormAvailable());
+      "isConsentFormAvailable", consentInformation.isConsentFormAvailable());
     return consentStatusMap;
   }
 
@@ -88,7 +91,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
     try {
       ConsentRequestParameters.Builder paramsBuilder = new ConsentRequestParameters.Builder();
       ConsentDebugSettings.Builder debugSettingsBuilder =
-          new ConsentDebugSettings.Builder(context.getApplicationContext());
+        new ConsentDebugSettings.Builder(context.getApplicationContext());
 
       if (options.hasKey("testDeviceIdentifiers")) {
         ReadableArray devices = options.getArray("testDeviceIdentifiers");
@@ -114,21 +117,21 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
 
       if (currentActivity == null) {
         rejectPromiseWithCodeAndMessage(
-            promise,
-            "null-activity",
-            "Attempted to request a consent info update but the current Activity was null.");
+          promise,
+          "null-activity",
+          "Attempted to request a consent info update but the current Activity was null.");
         return;
       }
 
       consentInformation.requestConsentInfoUpdate(
-          currentActivity,
-          consentRequestParameters,
-          () -> {
-            promise.resolve(getConsentInformation());
-          },
-          formError ->
-              rejectPromiseWithCodeAndMessage(
-                  promise, "consent-update-failed", formError.getMessage()));
+        currentActivity,
+        consentRequestParameters,
+        () -> {
+          promise.resolve(getConsentInformation());
+        },
+        formError ->
+          rejectPromiseWithCodeAndMessage(
+            promise, "consent-update-failed", formError.getMessage()));
     } catch (Exception e) {
       rejectPromiseWithCodeAndMessage(promise, "consent-update-failed", e.toString());
     }
@@ -141,30 +144,30 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
 
       if (currentActivity == null) {
         rejectPromiseWithCodeAndMessage(
-            promise,
-            "null-activity",
-            "Consent form attempted to show but the current Activity was null.");
+          promise,
+          "null-activity",
+          "Consent form attempted to show but the current Activity was null.");
         return;
       }
 
       currentActivity.runOnUiThread(
-          () ->
-              UserMessagingPlatform.loadConsentForm(
-                  getReactApplicationContext(),
-                  consentForm ->
-                      consentForm.show(
-                          currentActivity,
-                          formError -> {
-                            if (formError != null) {
-                              rejectPromiseWithCodeAndMessage(
-                                  promise, "consent-form-error", formError.getMessage());
-                            } else {
-                              promise.resolve(getConsentInformation());
-                            }
-                          }),
-                  formError ->
-                      rejectPromiseWithCodeAndMessage(
-                          promise, "consent-form-error", formError.getMessage())));
+        () ->
+          UserMessagingPlatform.loadConsentForm(
+            getReactApplicationContext(),
+            consentForm ->
+              consentForm.show(
+                currentActivity,
+                formError -> {
+                  if (formError != null) {
+                    rejectPromiseWithCodeAndMessage(
+                      promise, "consent-form-error", formError.getMessage());
+                  } else {
+                    promise.resolve(getConsentInformation());
+                  }
+                }),
+            formError ->
+              rejectPromiseWithCodeAndMessage(
+                promise, "consent-form-error", formError.getMessage())));
     } catch (Exception e) {
       rejectPromiseWithCodeAndMessage(promise, "consent-form-error", e.toString());
     }
@@ -177,24 +180,24 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
 
       if (currentActivity == null) {
         rejectPromiseWithCodeAndMessage(
-            promise,
-            "null-activity",
-            "Privacy options form attempted to show but the current Activity was null.");
+          promise,
+          "null-activity",
+          "Privacy options form attempted to show but the current Activity was null.");
         return;
       }
 
       currentActivity.runOnUiThread(
-          () ->
-              UserMessagingPlatform.showPrivacyOptionsForm(
-                  currentActivity,
-                  formError -> {
-                    if (formError != null) {
-                      rejectPromiseWithCodeAndMessage(
-                          promise, "privacy-options-form-error", formError.getMessage());
-                    } else {
-                      promise.resolve(getConsentInformation());
-                    }
-                  }));
+        () ->
+          UserMessagingPlatform.showPrivacyOptionsForm(
+            currentActivity,
+            formError -> {
+              if (formError != null) {
+                rejectPromiseWithCodeAndMessage(
+                  promise, "privacy-options-form-error", formError.getMessage());
+              } else {
+                promise.resolve(getConsentInformation());
+              }
+            }));
     } catch (Exception e) {
       rejectPromiseWithCodeAndMessage(promise, "consent-form-error", e.toString());
     }
@@ -207,25 +210,25 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
 
       if (currentActivity == null) {
         rejectPromiseWithCodeAndMessage(
-            promise,
-            "null-activity",
-            "Consent form attempted to load and show if required but the current Activity was"
-                + " null.");
+          promise,
+          "null-activity",
+          "Consent form attempted to load and show if required but the current Activity was"
+            + " null.");
         return;
       }
 
       currentActivity.runOnUiThread(
-          () ->
-              UserMessagingPlatform.loadAndShowConsentFormIfRequired(
-                  currentActivity,
-                  formError -> {
-                    if (formError != null) {
-                      rejectPromiseWithCodeAndMessage(
-                          promise, "consent-form-error", formError.getMessage());
-                    } else {
-                      promise.resolve(getConsentInformation());
-                    }
-                  }));
+        () ->
+          UserMessagingPlatform.loadAndShowConsentFormIfRequired(
+            currentActivity,
+            formError -> {
+              if (formError != null) {
+                rejectPromiseWithCodeAndMessage(
+                  promise, "consent-form-error", formError.getMessage());
+              } else {
+                promise.resolve(getConsentInformation());
+              }
+            }));
     } catch (Exception e) {
       rejectPromiseWithCodeAndMessage(promise, "consent-form-error", e.toString());
     }
@@ -245,7 +248,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
   public void getTCString(Promise promise) {
     try {
       SharedPreferences prefs =
-          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+        PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
       // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
       String tcString = prefs.getString("IABTCF_TCString", null);
       promise.resolve(tcString);
@@ -258,7 +261,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
   public void getGdprApplies(Promise promise) {
     try {
       SharedPreferences prefs =
-          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+        PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
       int gdprApplies = prefs.getInt("IABTCF_gdprApplies", 0);
       promise.resolve(gdprApplies == 1);
     } catch (Exception e) {
@@ -270,7 +273,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
   public void getPurposeConsents(Promise promise) {
     try {
       SharedPreferences prefs =
-          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+        PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
       String purposeConsents = prefs.getString("IABTCF_PurposeConsents", "");
       promise.resolve(purposeConsents);
     } catch (Exception e) {
@@ -282,7 +285,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
   public void getPurposeLegitimateInterests(Promise promise) {
     try {
       SharedPreferences prefs =
-          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+        PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
       String purposeLegitimateInterests = prefs.getString("IABTCF_PurposeLegitimateInterests", "");
       promise.resolve(purposeLegitimateInterests);
     } catch (Exception e) {

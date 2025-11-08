@@ -38,7 +38,8 @@ class ReactNativeGoogleMobileAdsModule(
     val builder = RequestConfiguration.Builder()
 
     if (requestConfiguration.hasKey("testDeviceIdentifiers")) {
-      val devices = checkNotNull(requestConfiguration.getArray("testDeviceIdentifiers")).toArrayList()
+      val devices =
+        checkNotNull(requestConfiguration.getArray("testDeviceIdentifiers")).toArrayList()
       val testDeviceIds = devices.map {
         val id = it as String;
         if (id == "EMULATOR") {
@@ -63,7 +64,8 @@ class ReactNativeGoogleMobileAdsModule(
     }
 
     if (requestConfiguration.hasKey("tagForChildDirectedTreatment")) {
-      val tagForChildDirectedTreatment = requestConfiguration.getBoolean("tagForChildDirectedTreatment")
+      val tagForChildDirectedTreatment =
+        requestConfiguration.getBoolean("tagForChildDirectedTreatment")
       builder.setTagForChildDirectedTreatment(
         if (tagForChildDirectedTreatment) {
           RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE
@@ -116,14 +118,21 @@ class ReactNativeGoogleMobileAdsModule(
     requestConfiguration: ReadableMap?,
     promise: Promise
   ) {
-    MobileAds.setRequestConfiguration(buildRequestConfiguration(requestConfiguration?: Arguments.createMap()))
+    MobileAds.setRequestConfiguration(
+      buildRequestConfiguration(
+        requestConfiguration ?: Arguments.createMap()
+      )
+    )
     promise.resolve(null)
   }
 
   override fun openAdInspector(promise: Promise) {
     val activity = reactApplicationContext.currentActivity
     if (activity == null) {
-      promise.reject("null-activity", "Ad Inspector attempted to open but the current Activity was null.")
+      promise.reject(
+        "null-activity",
+        "Ad Inspector attempted to open but the current Activity was null."
+      )
       return
     }
     activity.runOnUiThread {

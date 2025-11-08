@@ -58,6 +58,7 @@ class ReactNativeGoogleMobileAdsAppOpenModuleImpl(reactContext: ReactApplication
         override fun onAdLoaded(ad: AppOpenAd) {
           adLoadCallback.onAdLoaded(ad)
         }
+
         override fun onAdFailedToLoad(error: LoadAdError) {
           adLoadCallback.onAdFailedToLoad(error)
         }

@@ -59,6 +59,7 @@ class ReactNativeGoogleMobileAdsRewardedInterstitialModuleImpl(reactContext: Rea
         override fun onAdLoaded(ad: RewardedInterstitialAd) {
           adLoadCallback.onAdLoaded(ad)
         }
+
         override fun onAdFailedToLoad(error: LoadAdError) {
           adLoadCallback.onAdFailedToLoad(error)
         }
