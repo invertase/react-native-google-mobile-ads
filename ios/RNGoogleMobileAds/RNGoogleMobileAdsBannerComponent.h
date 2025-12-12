@@ -30,7 +30,7 @@
 @property(nonatomic, copy) NSDictionary *sizeConfig;
 @property(nonatomic, copy) NSString *unitId;
 @property(nonatomic, copy) NSDictionary *request;
-@property(nonatomic, assign) BOOL manualImpressionsEnabled;
+@property(nonatomic, copy) NSNumber *manualImpressionsEnabled;
 @property(nonatomic, assign) BOOL propsChanged;
 
 @property(nonatomic, copy) RCTBubblingEventBlock onNativeEvent;
