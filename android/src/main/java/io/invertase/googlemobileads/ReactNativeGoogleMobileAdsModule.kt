@@ -28,7 +28,7 @@ import com.google.android.gms.ads.OnAdInspectorClosedListener
 
 class ReactNativeGoogleMobileAdsModule(
   reactContext: ReactApplicationContext
-) : ReactContextBaseJavaModule(reactContext) {
+) : NativeGoogleMobileAdsModuleSpec(reactContext) {
 
   override fun getName() = NAME
 
@@ -38,7 +38,8 @@ class ReactNativeGoogleMobileAdsModule(
     val builder = RequestConfiguration.Builder()
 
     if (requestConfiguration.hasKey("testDeviceIdentifiers")) {
-      val devices = checkNotNull(requestConfiguration.getArray("testDeviceIdentifiers")).toArrayList()
+      val devices =
+        checkNotNull(requestConfiguration.getArray("testDeviceIdentifiers")).toArrayList()
       val testDeviceIds = devices.map {
         val id = it as String;
         if (id == "EMULATOR") {
@@ -63,7 +64,8 @@ class ReactNativeGoogleMobileAdsModule(
     }
 
     if (requestConfiguration.hasKey("tagForChildDirectedTreatment")) {
-      val tagForChildDirectedTreatment = requestConfiguration.getBoolean("tagForChildDirectedTreatment")
+      val tagForChildDirectedTreatment =
+        requestConfiguration.getBoolean("tagForChildDirectedTreatment")
       builder.setTagForChildDirectedTreatment(
         if (tagForChildDirectedTreatment) {
           RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE
@@ -91,8 +93,7 @@ class ReactNativeGoogleMobileAdsModule(
     return builder.build()
   }
 
-  @ReactMethod
-  fun initialize(promise: Promise) {
+  override fun initialize(promise: Promise) {
     MobileAds.initialize(
       // in react-native, the Activity instance *may* go away, becoming null after initialize
       // it is not clear if that can happen here without an initialize necessarily following the Activity lifecycle
@@ -113,20 +114,25 @@ class ReactNativeGoogleMobileAdsModule(
       });
   }
 
-  @ReactMethod
-  fun setRequestConfiguration(
-    requestConfiguration: ReadableMap,
+  override fun setRequestConfiguration(
+    requestConfiguration: ReadableMap?,
     promise: Promise
   ) {
-    MobileAds.setRequestConfiguration(buildRequestConfiguration(requestConfiguration))
+    MobileAds.setRequestConfiguration(
+      buildRequestConfiguration(
+        requestConfiguration ?: Arguments.createMap()
+      )
+    )
     promise.resolve(null)
   }
 
-  @ReactMethod
-  fun openAdInspector(promise: Promise) {
+  override fun openAdInspector(promise: Promise) {
     val activity = reactApplicationContext.currentActivity
     if (activity == null) {
-      promise.reject("null-activity", "Ad Inspector attempted to open but the current Activity was null.")
+      promise.reject(
+        "null-activity",
+        "Ad Inspector attempted to open but the current Activity was null."
+      )
       return
     }
     activity.runOnUiThread {
@@ -150,24 +156,21 @@ class ReactNativeGoogleMobileAdsModule(
     }
   }
 
-  @ReactMethod
-  fun openDebugMenu(adUnit: String) {
+  override fun openDebugMenu(adUnit: String) {
     reactApplicationContext.currentActivity?.runOnUiThread {
       MobileAds.openDebugMenu(reactApplicationContext.currentActivity!!, adUnit)
     }
   }
 
-  @ReactMethod
-  fun setAppVolume(volume: Float) {
-    MobileAds.setAppVolume(volume)
+  override fun setAppVolume(volume: Double) {
+    MobileAds.setAppVolume(volume.toFloat())
   }
 
-  @ReactMethod
-  fun setAppMuted(muted: Boolean) {
+  override fun setAppMuted(muted: Boolean) {
     MobileAds.setAppMuted(muted)
   }
 
   companion object {
-    const val NAME = "RNGoogleMobileAdsModule"
+    const val NAME = NativeGoogleMobileAdsModuleSpec.NAME
   }
 }
