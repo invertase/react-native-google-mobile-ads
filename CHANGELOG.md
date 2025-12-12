@@ -1,3 +1,9 @@
+## [16.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.0.0...v16.0.1) (2025-12-12)
+
+### Bug Fixes
+
+* Revert "style(lint): clean up manualImpressionsEnabled typing - always BOOL" ([6ac5623](https://github.com/invertase/react-native-google-mobile-ads/commit/6ac56230e83517efcd5a8f2b0abcc8d630876bed))
+
 ## [16.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v15.8.3...v16.0.0) (2025-10-30)
 
 ### ⚠ BREAKING CHANGES
