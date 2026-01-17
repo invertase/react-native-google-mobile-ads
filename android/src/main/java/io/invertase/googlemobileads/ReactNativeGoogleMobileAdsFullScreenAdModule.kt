@@ -36,8 +36,7 @@ import io.invertase.googlemobileads.common.ReactNativeModule
 
 abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
   reactContext: ReactApplicationContext?,
-  moduleName: String
-) : ReactNativeModule(reactContext, moduleName) {
+) : ReactNativeModule(reactContext) {
   private val adArray = SparseArray<T>()
 
   abstract fun getAdEventName(): String
@@ -69,7 +68,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
   fun load(
     requestId: Int, adUnitId: String, adRequestOptions: ReadableMap
   ) {
-    val activity = currentActivity
+    val activity = activity
     if (activity == null) {
       val error = Arguments.createMap()
       error.putString("code", "null-activity")
@@ -105,7 +104,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
   fun show(
     requestId: Int, adUnitId: String, showOptions: ReadableMap, promise: Promise
   ) {
-    val activity = currentActivity
+    val activity = activity
     if (activity == null) {
       rejectPromiseWithCodeAndMessage(
         promise,
@@ -251,8 +250,8 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
           data
         )
       } catch (e: Exception) {
-          Log.w("RNGoogleMobileAds", "Unknown error on load")
-          Log.w("RNGoogleMobileAds", e)
+        Log.w("RNGoogleMobileAds", "Unknown error on load")
+        Log.w("RNGoogleMobileAds", e)
         val error = Arguments.createMap()
         error.putString("code", "internal")
         error.putString("message", e.message)

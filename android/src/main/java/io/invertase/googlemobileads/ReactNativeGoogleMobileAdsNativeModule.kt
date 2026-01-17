@@ -97,7 +97,10 @@ class ReactNativeGoogleMobileAdsNativeModule(
     return adHolders[responseId]?.nativeAd
   }
 
-  private inner class NativeAdHolder(private val adUnitId: String, private val requestOptions: ReadableMap) {
+  private inner class NativeAdHolder(
+    private val adUnitId: String,
+    private val requestOptions: ReadableMap
+  ) {
     var nativeAd: NativeAd? = null
       private set
 
@@ -119,27 +122,30 @@ class ReactNativeGoogleMobileAdsNativeModule(
       }
     }
 
-    private val videoLifecycleCallbacks: VideoLifecycleCallbacks = object : VideoLifecycleCallbacks() {
-      override fun onVideoPlay() {
-        emitAdEvent("video_played")
-      }
+    private val videoLifecycleCallbacks: VideoLifecycleCallbacks =
+      object : VideoLifecycleCallbacks() {
+        override fun onVideoPlay() {
+          emitAdEvent("video_played")
+        }
 
-      override fun onVideoPause() {
-        emitAdEvent("video_paused")
-      }
+        override fun onVideoPause() {
+          emitAdEvent("video_paused")
+        }
 
-      override fun onVideoEnd() {
-        emitAdEvent("video_ended")
-      }
+        override fun onVideoEnd() {
+          emitAdEvent("video_ended")
+        }
 
-      override fun onVideoMute(isMuted: Boolean) {
-        emitAdEvent(if (isMuted) {
-          "video_muted"
-        } else {
-          "video_unmuted"
-        })
+        override fun onVideoMute(isMuted: Boolean) {
+          emitAdEvent(
+            if (isMuted) {
+              "video_muted"
+            } else {
+              "video_unmuted"
+            }
+          )
+        }
       }
-    }
 
     fun loadAd(loadedListener: NativeAd.OnNativeAdLoadedListener) {
       val mediaAspectRatio = if (requestOptions.hasKey("aspectRatio")) {
@@ -216,6 +222,6 @@ class ReactNativeGoogleMobileAdsNativeModule(
   }
 
   companion object {
-    const val NAME = "RNGoogleMobileAdsNativeModule"
+    const val NAME = NativeGoogleMobileAdsNativeModuleSpec.NAME
   }
 }
