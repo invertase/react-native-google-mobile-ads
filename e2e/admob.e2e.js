@@ -16,6 +16,15 @@
  */
 
 describe('googleAds', function () {
+  describe('module initialization', function () {
+    it('should initialize without TurboModule errors', async function () {
+      // This test verifies that the app initializes correctly with TurboModule support
+      // for RNAppModule (fixes RN 0.83+ compatibility)
+      await expect(element(by.text('Select test to run'))).toBeVisible();
+      // If we reach this point, RNAppModule TurboModule loaded successfully
+    });
+  });
+
   describe('setRequestConfiguration()', function () {
     it('should match text in the basic app element', async function () {
       await expect(element(by.text('Select test to run'))).toBeVisible();

@@ -67,3 +67,26 @@ jest.doMock('./src/specs/modules/NativeInterstitialModule', () => {
     },
   };
 });
+jest.doMock('./src/specs/modules/NativeAppModule', () => {
+  return {
+    __esModule: true,
+    default: {
+      addListener: jest.fn(),
+      removeListeners: jest.fn(),
+      eventsAddListener: jest.fn(),
+      eventsRemoveListener: jest.fn(),
+      eventsNotifyReady: jest.fn(),
+      initializeApp: jest.fn(),
+      setAutomaticDataCollectionEnabled: jest.fn(),
+      deleteApp: jest.fn(),
+      eventsGetListeners: jest.fn(),
+      eventsPing: jest.fn(),
+      metaGetAll: jest.fn(),
+      jsonGetAll: jest.fn(),
+      preferencesSetBool: jest.fn(),
+      preferencesSetString: jest.fn(),
+      preferencesGetAll: jest.fn(),
+      preferencesClearAll: jest.fn(),
+    },
+  };
+});
