@@ -16,7 +16,7 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import type { UnsafeObject } from 'react-native';
 
 export interface Spec extends TurboModule {
   // App initialization
