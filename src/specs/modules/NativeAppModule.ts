@@ -16,18 +16,24 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { UnsafeObject } from 'react-native';
+import type { CodegenTypes } from 'react-native';
 
 export interface Spec extends TurboModule {
   // App initialization
-  initializeApp(options: UnsafeObject, appConfig: UnsafeObject): Promise<UnsafeObject>;
+  initializeApp(
+    options: CodegenTypes.UnsafeObject,
+    appConfig: CodegenTypes.UnsafeObject,
+  ): Promise<CodegenTypes.UnsafeObject>;
   setAutomaticDataCollectionEnabled(appName: string, enabled: boolean): void;
   deleteApp(appName: string): Promise<void>;
 
   // Events
   eventsNotifyReady(ready: boolean): void;
-  eventsGetListeners(): Promise<UnsafeObject>;
-  eventsPing(eventName: string, eventBody: UnsafeObject): Promise<UnsafeObject>;
+  eventsGetListeners(): Promise<CodegenTypes.UnsafeObject>;
+  eventsPing(
+    eventName: string,
+    eventBody: CodegenTypes.UnsafeObject,
+  ): Promise<CodegenTypes.UnsafeObject>;
   eventsAddListener(eventName: string): void;
   eventsRemoveListener(eventName: string, all: boolean): void;
 
@@ -36,15 +42,15 @@ export interface Spec extends TurboModule {
   removeListeners(count: number): void;
 
   // Meta
-  metaGetAll(): Promise<UnsafeObject>;
+  metaGetAll(): Promise<CodegenTypes.UnsafeObject>;
 
   // JSON
-  jsonGetAll(): Promise<UnsafeObject>;
+  jsonGetAll(): Promise<CodegenTypes.UnsafeObject>;
 
   // Preferences
   preferencesSetBool(key: string, value: boolean): Promise<void>;
   preferencesSetString(key: string, value: string): Promise<void>;
-  preferencesGetAll(): Promise<UnsafeObject>;
+  preferencesGetAll(): Promise<CodegenTypes.UnsafeObject>;
   preferencesClearAll(): Promise<void>;
 }
 
