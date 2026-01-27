@@ -32,6 +32,11 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
+      - name: Configure JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
       - name: Yarn Install
         uses: nick-fields/retry@v3
         with:

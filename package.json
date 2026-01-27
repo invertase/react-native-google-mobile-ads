@@ -132,7 +132,7 @@
     "expo-module-scripts": "^5.0.7",
     "genversion": "^3.2.0",
     "globals": "^16.4.0",
-    "google-java-format": "^2.0.1",
+    "google-java-format": "^2.0.4",
     "jest": "^30.2.0",
     "prettier": "^3.6.2",
     "react": "^19.2.0",
