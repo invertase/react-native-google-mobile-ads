@@ -16,11 +16,19 @@
  */
 
 import { TurboModule, TurboModuleRegistry } from 'react-native';
-import { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import { CodegenTypes } from 'react-native';
 
 export interface Spec extends TurboModule {
-  interstitialLoad(requestId: number, adUnitId: string, requestOptions: UnsafeObject): void;
-  interstitialShow(requestId: number, adUnitId: string, showOptions?: UnsafeObject): Promise<void>;
+  interstitialLoad(
+    requestId: number,
+    adUnitId: string,
+    requestOptions: CodegenTypes.UnsafeObject,
+  ): void;
+  interstitialShow(
+    requestId: number,
+    adUnitId: string,
+    showOptions?: CodegenTypes.UnsafeObject,
+  ): Promise<void>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsInterstitialModule');

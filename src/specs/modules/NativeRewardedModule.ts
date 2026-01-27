@@ -16,11 +16,19 @@
  */
 
 import { TurboModule, TurboModuleRegistry } from 'react-native';
-import { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import { CodegenTypes } from 'react-native';
 
 export interface Spec extends TurboModule {
-  rewardedLoad(requestId: number, adUnitId: string, requestOptions: UnsafeObject): void;
-  rewardedShow(requestId: number, adUnitId: string, showOptions?: UnsafeObject): Promise<void>;
+  rewardedLoad(
+    requestId: number,
+    adUnitId: string,
+    requestOptions: CodegenTypes.UnsafeObject,
+  ): void;
+  rewardedShow(
+    requestId: number,
+    adUnitId: string,
+    showOptions?: CodegenTypes.UnsafeObject,
+  ): Promise<void>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsRewardedModule');

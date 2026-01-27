@@ -17,29 +17,27 @@
 
 import type * as React from 'react';
 import type { HostComponent, ViewProps } from 'react-native';
-import type { BubblingEventHandler, Float } from 'react-native/Libraries/Types/CodegenTypes';
-import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
-import codegenNativeCommands from 'react-native/Libraries/Utilities/codegenNativeCommands';
+import { codegenNativeCommands, codegenNativeComponent, CodegenTypes } from 'react-native';
 
 export type NativeEvent = {
   type: string;
-  width?: Float;
-  height?: Float;
+  width?: CodegenTypes.Float;
+  height?: CodegenTypes.Float;
   code?: string;
   message?: string;
   name?: string;
   data?: string;
   currency?: string;
-  precision?: Float;
-  value?: Float;
+  precision?: CodegenTypes.Float;
+  value?: CodegenTypes.Float;
 };
 
 export interface NativeProps extends ViewProps {
-  sizeConfig: { sizes: string[]; maxHeight?: Float; width?: Float };
+  sizeConfig: { sizes: string[]; maxHeight?: CodegenTypes.Float; width?: CodegenTypes.Float };
   unitId: string;
   request: string;
   manualImpressionsEnabled: boolean;
-  onNativeEvent: BubblingEventHandler<NativeEvent>;
+  onNativeEvent: CodegenTypes.BubblingEventHandler<NativeEvent>;
 }
 
 export type ComponentType = HostComponent<NativeProps>;
