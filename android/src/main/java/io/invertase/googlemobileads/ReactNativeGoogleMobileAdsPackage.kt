@@ -57,11 +57,11 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
       moduleInfos[ReactNativeAppModule.NAME] =
         ReactModuleInfo(
           ReactNativeAppModule.NAME,
-          ReactNativeAppModule.NAME,
+          ReactNativeAppModule::class.java.name,
           false, // canOverrideExistingModule
           false, // needsEagerInit
           false, // isCxxModule
-          false,  // isTurboModule
+          isTurboModule,
         )
       moduleInfos[ReactNativeGoogleMobileAdsModule.NAME] =
         ReactModuleInfo(
