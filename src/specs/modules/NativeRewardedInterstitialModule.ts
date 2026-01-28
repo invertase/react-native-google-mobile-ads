@@ -16,14 +16,18 @@
  */
 
 import { TurboModule, TurboModuleRegistry } from 'react-native';
-import { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import { CodegenTypes } from 'react-native';
 
 export interface Spec extends TurboModule {
-  rewardedInterstitialLoad(requestId: number, adUnitId: string, requestOptions: UnsafeObject): void;
+  rewardedInterstitialLoad(
+    requestId: number,
+    adUnitId: string,
+    requestOptions: CodegenTypes.UnsafeObject,
+  ): void;
   rewardedInterstitialShow(
     requestId: number,
     adUnitId: string,
-    showOptions?: UnsafeObject,
+    showOptions?: CodegenTypes.UnsafeObject,
   ): Promise<void>;
 }
 

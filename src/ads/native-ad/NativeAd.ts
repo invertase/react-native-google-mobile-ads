@@ -16,7 +16,6 @@
  */
 
 import { EventSubscription, NativeEventEmitter, Platform } from 'react-native';
-import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
 
 import { NativeAdEventType } from '../../NativeAdEventType';
 import { isFunction, isOneOf, isString } from '../../common';
@@ -52,7 +51,8 @@ export class NativeAd {
   readonly extras: Record<string, unknown> | null;
 
   private nativeEventSubscription: EventSubscription;
-  private eventEmitter: EventEmitter;
+  private eventEmitter: NativeEventEmitter;
+  private readonly eventEmitterTypes: string[];
 
   private constructor(adUnitId: string, props: NativeAdProps) {
     this.adUnitId = adUnitId;
@@ -68,6 +68,7 @@ export class NativeAd {
     this.images = props.images;
     this.mediaContent = props.mediaContent;
     this.extras = props.extras as Record<string, unknown>;
+    this.eventEmitterTypes = [];
 
     if ('onAdEvent' in NativeGoogleMobileAdsNativeModule) {
       this.nativeEventSubscription = NativeGoogleMobileAdsNativeModule.onAdEvent(
@@ -84,8 +85,9 @@ export class NativeAd {
         'RNGMANativeAdEvent',
         this.onNativeAdEvent.bind(this),
       );
+      this.eventEmitterTypes.push('RNGMANativeAdEvent');
     }
-    this.eventEmitter = new EventEmitter();
+    this.eventEmitter = new NativeEventEmitter();
   }
 
   private onNativeAdEvent({ responseId, type, ...data }: NativeAdEventPayload) {
@@ -106,11 +108,16 @@ export class NativeAd {
       throw new Error(`NativeAd.addAdEventListener(_, *) 'listener' expected a function.`);
     }
 
+    this.eventEmitterTypes.push(type);
     return this.eventEmitter.addListener(type, listener);
   }
 
   removeAllAdEventListeners() {
-    this.eventEmitter.removeAllListeners();
+    this.eventEmitterTypes.forEach(type => {
+      this.eventEmitter.removeAllListeners(type);
+    });
+    // we want the array to be read-only, but also want to clear it.
+    this.eventEmitterTypes.splice(0, this.eventEmitterTypes.length);
   }
 
   destroy() {
