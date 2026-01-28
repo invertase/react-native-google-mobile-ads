@@ -1,3 +1,10 @@
+## [16.0.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.0.2...v16.0.3) (2026-01-28)
+
+### Bug Fixes
+
+* **deps:** adopt latest native SDKs, bump test Pod lock ([0df56a7](https://github.com/invertase/react-native-google-mobile-ads/commit/0df56a7ea1e4bb7a6b9d5c7740b85739eb5afcdc))
+* **deps:** adopt new current stable UMP native libraries ([65959fa](https://github.com/invertase/react-native-google-mobile-ads/commit/65959fa90e5efffb32f65cc0bdc111677fe6044e))
+
 ## [16.0.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.0.1...v16.0.2) (2026-01-28)
 
 ### Bug Fixes
