@@ -1,3 +1,9 @@
+## [16.0.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.0.1...v16.0.2) (2026-01-28)
+
+### Bug Fixes
+
+* **android:** add TurboModule support for RNAppModule on RN 0.83+ ([ee11ab1](https://github.com/invertase/react-native-google-mobile-ads/commit/ee11ab162006e418191558bbb11963e073b2e52c))
+
 ## [16.0.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.0.0...v16.0.1) (2025-12-12)
 
 ### Bug Fixes
