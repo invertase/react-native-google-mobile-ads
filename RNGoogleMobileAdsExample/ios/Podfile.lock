@@ -7,7 +7,7 @@ PODS:
   - glog (0.3.5)
   - Google-Mobile-Ads-SDK (12.14.0):
     - GoogleUserMessagingPlatform (>= 1.1)
-  - GoogleUserMessagingPlatform (3.0.0)
+  - GoogleUserMessagingPlatform (3.1.0)
   - hermes-engine (0.14.0):
     - hermes-engine/Pre-built (= 0.14.0)
   - hermes-engine/Pre-built (0.14.0)
@@ -2575,14 +2575,14 @@ PODS:
     - React-Core
     - React-jsi
   - ReactTestApp-Resources (1.0.0-dev)
-  - RNGoogleMobileAds (16.0.1):
+  - RNGoogleMobileAds (16.0.2):
     - boost
     - DoubleConversion
     - fast_float
     - fmt
     - glog
     - Google-Mobile-Ads-SDK (= 12.14.0)
-    - GoogleUserMessagingPlatform (= 3.0.0)
+    - GoogleUserMessagingPlatform (= 3.1.0)
     - hermes-engine
     - RCT-Folly
     - RCT-Folly/Fabric
@@ -2878,7 +2878,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   Google-Mobile-Ads-SDK: 4534fd2dfcd3f705c5485a6633c5188d03d4eed2
-  GoogleUserMessagingPlatform: f8d0cdad3ca835406755d0a69aa634f00e76d576
+  GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
   hermes-engine: e3792d44392734ceb7ac0d741b5cfc3c379259a0
   Jet: 423274a1def279114bb142cb18e7ebd11977bc89
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
@@ -2954,7 +2954,7 @@ SPEC CHECKSUMS:
   ReactNativeHost: 40e374201201cc54f9ef41458f2e412fbdde0d62
   ReactTestApp-DevSupport: 963986104f003af978562535682fec417b4aadfa
   ReactTestApp-Resources: 1bd9ff10e4c24f2ad87101a32023721ae923bccf
-  RNGoogleMobileAds: 3766fc445f937eb0f14008636be4744827f2456b
+  RNGoogleMobileAds: 771ad896f3e14c818033365e8227f71977847371
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 5456bb010373068fc92221140921b09d126b116e
 
