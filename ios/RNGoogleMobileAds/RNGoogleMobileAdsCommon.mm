@@ -212,8 +212,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     if ([value isEqualToString:@"LARGE_ANCHORED_ADAPTIVE_BANNER"]) {
       return GADLargeAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
     }
-    return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(reactViewGroup.getContext(),
-                                                                    adWidth);
+    return GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
   } else {
     return GADAdSizeBanner;
   }
