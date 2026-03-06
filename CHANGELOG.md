@@ -1,3 +1,9 @@
+## [16.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.2.0...v16.2.1) (2026-03-06)
+
+### Bug Fixes
+
+* **ios:** incorrect GADAdSize ([daee7cb](https://github.com/invertase/react-native-google-mobile-ads/commit/daee7cbe1ab2da1b9c5a8309bc30ac8be480b5f5))
+
 ## [16.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.1.0...v16.2.0) (2026-03-06)
 
 ### Features
