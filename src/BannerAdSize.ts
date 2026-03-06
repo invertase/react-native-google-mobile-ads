@@ -48,9 +48,15 @@ export enum BannerAdSize {
   ADAPTIVE_BANNER = 'ADAPTIVE_BANNER',
 
   /**
-   * A (next generation) dynamically sized banner that is full-width and auto-height.
+   * Anchored to the top or bottom of the screen, anchored adaptive banners set an optimal ad slot size for any device.
    */
   ANCHORED_ADAPTIVE_BANNER = 'ANCHORED_ADAPTIVE_BANNER',
+
+  /**
+   * Anchored to the top or bottom of the screen. Larger ads are designed to
+   * increase engagement and revenue potential for publishers.
+   */
+  LARGE_ANCHORED_ADAPTIVE_BANNER = 'LARGE_ANCHORED_ADAPTIVE_BANNER',
 
   /**
    * Inline adaptive banners are larger, taller banners compared to anchored adaptive banners. They are of variable height, and can be as tall as the device screen.

@@ -66,7 +66,11 @@ public class ReactNativeGoogleMobileAdsCommon {
         return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
             reactViewGroup.getContext(), adWidth);
       }
-      return AdSize.getLargeAnchoredAdaptiveBannerAdSize(reactViewGroup.getContext(), adWidth);
+      if ("LARGE_ANCHORED_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
+        return AdSize.getLargeAnchoredAdaptiveBannerAdSize(reactViewGroup.getContext(), adWidth);
+      }
+      return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+          reactViewGroup.getContext(), adWidth);
     } catch (Exception e) {
       return AdSize.BANNER;
     }
