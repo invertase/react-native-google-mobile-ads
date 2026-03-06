@@ -1,3 +1,9 @@
+## [16.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.1.0...v16.2.0) (2026-03-06)
+
+### Features
+
+* large anchored adaptive banners ([0a77360](https://github.com/invertase/react-native-google-mobile-ads/commit/0a7736019b108af9fa50261af0b4020af19f8d61))
+
 ## [16.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.0.3...v16.1.0) (2026-03-06)
 
 ### Features
