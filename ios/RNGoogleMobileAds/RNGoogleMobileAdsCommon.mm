@@ -104,8 +104,6 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     code = @"network-error";
   } else if (error.code == GADErrorServerError) {
     code = @"server-error";
-  } else if (error.code == GADErrorOSVersionTooLow) {
-    code = @"os-version-too-low";
   } else if (error.code == GADErrorTimeout) {
     code = @"timeout";
   } else if (error.code == GADErrorMediationDataError) {
@@ -211,7 +209,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
       }
       return GADCurrentOrientationInlineAdaptiveBannerAdSizeWithWidth(viewWidth);
     }
-    return GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
+    return GADLargeAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
   } else {
     return GADAdSizeBanner;
   }
