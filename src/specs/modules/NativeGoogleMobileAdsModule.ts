@@ -17,13 +17,13 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import type { CodegenTypes } from 'react-native';
 
 import { AdapterStatus } from '../../types';
 
 export interface Spec extends TurboModule {
   initialize(): Promise<AdapterStatus[]>;
-  setRequestConfiguration(requestConfiguration?: UnsafeObject): Promise<void>;
+  setRequestConfiguration(requestConfiguration?: CodegenTypes.UnsafeObject): Promise<void>;
   openAdInspector(): Promise<void>;
   openDebugMenu(adUnit: string): void;
   setAppVolume(volume: number): void;
