@@ -432,7 +432,7 @@ function App() {
   });
 
   return (
-    <BannerAd ref={bannerRef} unitId={adUnitId} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />
+    <BannerAd ref={bannerRef} unitId={adUnitId} size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER} />
   );
 }
 ```
@@ -479,7 +479,7 @@ function App() {
   return (
     <BannerAd
       unitId={adUnitId}
-      size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+      size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
       requestOptions={{
         networkExtras: {
           collapsible: 'bottom',

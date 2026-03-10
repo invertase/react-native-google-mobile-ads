@@ -270,7 +270,7 @@ class CollapsibleBannerTest implements AutoExecutableTest {
       <View ref={onMount}>
         <BannerAd
           unitId={TestIds.ADAPTIVE_BANNER}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
           requestOptions={{
             networkExtras: {
               collapsible: 'top',
