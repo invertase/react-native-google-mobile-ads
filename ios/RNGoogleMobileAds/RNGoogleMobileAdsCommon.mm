@@ -194,8 +194,8 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     return GADAdSizeFullBanner;
   } else if ([value isEqualToString:@"LEADERBOARD"]) {
     return GADAdSizeLeaderboard;
-  } else if ([value isEqualToString:@"ADAPTIVE_BANNER"] ||
-             [value isEqualToString:@"ANCHORED_ADAPTIVE_BANNER"] ||
+  } else if ([value isEqualToString:@"ANCHORED_ADAPTIVE_BANNER"] ||
+             [value isEqualToString:@"LARGE_ANCHORED_ADAPTIVE_BANNER"] ||
              [value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
     CGRect frame = [[UIScreen mainScreen] bounds];
     if (@available(iOS 11.0, *)) {

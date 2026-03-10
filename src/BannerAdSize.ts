@@ -43,11 +43,9 @@ export enum BannerAdSize {
   MEDIUM_RECTANGLE = 'MEDIUM_RECTANGLE',
 
   /**
-   * @deprecated Use `ANCHORED_ADAPTIVE_BANNER` instead.
-   */
-  ADAPTIVE_BANNER = 'ADAPTIVE_BANNER',
-
-  /**
+   * @deprecated Use `LARGE_ANCHORED_ADAPTIVE_BANNER` instead.
+   * See: https://ads-developers.googleblog.com/2026/02/announcing-android-google-mobile-ads.html
+   *
    * Anchored to the top or bottom of the screen, anchored adaptive banners set an optimal ad slot size for any device.
    */
   ANCHORED_ADAPTIVE_BANNER = 'ANCHORED_ADAPTIVE_BANNER',

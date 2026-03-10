@@ -78,7 +78,7 @@ public class ReactNativeGoogleMobileAdsCommon {
 
   static AdSize getAdSize(String preDefinedAdSize, ViewGroup reactViewGroup) {
     if (preDefinedAdSize.matches(
-        "ADAPTIVE_BANNER|ANCHORED_ADAPTIVE_BANNER|INLINE_ADAPTIVE_BANNER")) {
+        "ANCHORED_ADAPTIVE_BANNER|LARGE_ANCHORED_ADAPTIVE_BANNER|INLINE_ADAPTIVE_BANNER")) {
       return ReactNativeGoogleMobileAdsCommon.getAdSizeForAdaptiveBanner(
           preDefinedAdSize, reactViewGroup);
     } else {

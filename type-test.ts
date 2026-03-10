@@ -116,7 +116,7 @@ console.log(AdEventType.OPENED);
 console.log(AdEventType.PAID);
 
 // BannerAdSize
-console.log(BannerAdSize.ANCHORED_ADAPTIVE_BANNER);
+console.log(BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER);
 console.log(BannerAdSize.BANNER);
 console.log(BannerAdSize.FULL_BANNER);
 console.log(BannerAdSize.INLINE_ADAPTIVE_BANNER);
@@ -124,10 +124,9 @@ console.log(BannerAdSize.LARGE_BANNER);
 console.log(BannerAdSize.LEADERBOARD);
 console.log(BannerAdSize.MEDIUM_RECTANGLE);
 console.log(BannerAdSize.WIDE_SKYSCRAPER);
-console.log(BannerAdSize.ADAPTIVE_BANNER);
 
 // GAMBannerAdSize
-console.log(GAMBannerAdSize.ANCHORED_ADAPTIVE_BANNER);
+console.log(GAMBannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER);
 console.log(GAMBannerAdSize.BANNER);
 console.log(GAMBannerAdSize.FLUID);
 console.log(GAMBannerAdSize.FULL_BANNER);
@@ -136,7 +135,6 @@ console.log(GAMBannerAdSize.LARGE_BANNER);
 console.log(GAMBannerAdSize.LEADERBOARD);
 console.log(GAMBannerAdSize.MEDIUM_RECTANGLE);
 console.log(GAMBannerAdSize.WIDE_SKYSCRAPER);
-console.log(GAMBannerAdSize.ADAPTIVE_BANNER);
 
 // GAMAdEventType
 console.log(GAMAdEventType.APP_EVENT);
