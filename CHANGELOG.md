@@ -1,3 +1,9 @@
+## [16.2.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.2.1...v16.2.2) (2026-03-10)
+
+### Bug Fixes
+
+* add deprecation note for anchored adaptive banner sizing ([394fe44](https://github.com/invertase/react-native-google-mobile-ads/commit/394fe4454109fc93002ba9291dc1f9c3221ffd7c))
+
 ## [16.2.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.2.0...v16.2.1) (2026-03-06)
 
 ### Bug Fixes
