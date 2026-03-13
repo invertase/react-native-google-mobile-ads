@@ -206,7 +206,7 @@
   [self sendEvent:@"onAppEvent"
           payload:@{
             @"name" : name,
-            @"data" : info,
+            @"data" : info ?: @"",
           }];
 }
 
