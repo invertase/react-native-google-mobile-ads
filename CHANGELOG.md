@@ -1,3 +1,9 @@
+## [16.2.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.2.2...v16.2.3) (2026-03-13)
+
+### Bug Fixes
+
+* **banner:** guard nullable app event data to prevent crash ([6a62d69](https://github.com/invertase/react-native-google-mobile-ads/commit/6a62d69629061c128af658d84ee0f90f13c8144c))
+
 ## [16.2.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.2.1...v16.2.2) (2026-03-10)
 
 ### Bug Fixes
