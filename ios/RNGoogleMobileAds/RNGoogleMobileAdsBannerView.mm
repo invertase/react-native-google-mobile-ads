@@ -265,7 +265,7 @@ using namespace facebook::react;
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
             .type = "onAppEvent",
             .name = std::string([name UTF8String]),
-            .data = std::string([info UTF8String])});
+            .data = std::string(info ? [info UTF8String] : "")});
   }
 }
 
