@@ -106,4 +106,32 @@ export interface RequestOptions {
    * See [this article](https://support.google.com/admanager/answer/2880055) for more information.
    */
   publisherProvidedId?: string;
+
+  /**
+   * Publisher Provided Signals (PPS) for Google Ad Manager.
+   *
+   * PPS allows publishers to send IAB taxonomy signals to help ad buyers
+   * evaluate and bid on inventory more effectively.
+   *
+   * Keys are IAB taxonomy names (e.g. `IAB_CONTENT_2_2`, `IAB_AUDIENCE_1_1`).
+   * Values are arrays of taxonomy IDs as integers.
+   *
+   * On Android, values are passed as `putIntegerArrayList` in the extras Bundle.
+   * On iOS, values are passed as `NSArray<NSNumber>` in GADExtras.
+   *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/targeting#publisher_provided_signals
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/ios/targeting#publisher_provided_signals
+   *
+   * #### Example
+   *
+   * ```js
+   * await Interstitial.createForAdRequest('/12345/ad-unit', {
+   *   publisherProvidedSignals: {
+   *     IAB_CONTENT_2_2: [533, 483],    // Soccer, Sports
+   *     IAB_AUDIENCE_1_1: [6, 284],     // Sports & Fitness, Soccer
+   *   },
+   * });
+   * ```
+   */
+  publisherProvidedSignals?: { [key: string]: number[] };
 }

@@ -65,6 +65,13 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     }
   }
 
+  if (adRequestOptions[@"publisherProvidedSignals"]) {
+    NSDictionary *pps = adRequestOptions[@"publisherProvidedSignals"];
+    for (NSString *key in pps) {
+      extras[key] = pps[key];
+    }
+  }
+
   GADExtras *networkExtras = [[GADExtras alloc] init];
   networkExtras.additionalParameters = extras;
   [request registerAdNetworkExtras:networkExtras];
