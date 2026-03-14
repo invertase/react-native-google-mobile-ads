@@ -23,7 +23,9 @@ import android.view.Display;
 import android.view.ViewGroup;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.WritableMap;
 import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdError;
@@ -164,6 +166,20 @@ public class ReactNativeGoogleMobileAdsCommon {
         String key = entry.getKey();
         String value = (String) entry.getValue();
         extras.putString(key, value);
+      }
+    }
+
+    if (adRequestOptions.hasKey("publisherProvidedSignals")) {
+      ReadableMap ppsMap = adRequestOptions.getMap("publisherProvidedSignals");
+      ReadableMapKeySetIterator iterator = ppsMap.keySetIterator();
+      while (iterator.hasNextKey()) {
+        String key = iterator.nextKey();
+        ReadableArray values = ppsMap.getArray(key);
+        ArrayList<Integer> intValues = new ArrayList<>();
+        for (int i = 0; i < values.size(); i++) {
+          intValues.add(values.getInt(i));
+        }
+        extras.putIntegerArrayList(key, intValues);
       }
     }
 
