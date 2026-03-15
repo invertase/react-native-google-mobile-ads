@@ -104,6 +104,23 @@ using namespace facebook::react;
   RCTRNGoogleMobileAdsNativeViewHandleCommand(self, commandName, args);
 }
 
+- (UIView *)findViewByTag:(NSInteger)targetTag inView:(UIView *)parentView {
+  for (UIView *subview in parentView.subviews) {
+    if (subview.tag == targetTag) {
+      return subview;
+    }
+    if ([subview isKindOfClass:[RCTViewComponentView class]]) {
+      UIView *contentView = ((RCTViewComponentView *)subview).contentView;
+      if (contentView && contentView.tag == targetTag) {
+        return contentView;
+      }
+    }
+    UIView *found = [self findViewByTag:targetTag inView:subview];
+    if (found) return found;
+  }
+  return nil;
+}
+
 #else
 #pragma mark - Paper specific
 
@@ -128,7 +145,14 @@ using namespace facebook::react;
 
 - (void)registerAsset:(NSString *)assetType reactTag:(NSInteger)reactTag {
   RCTExecuteOnMainQueue(^{
+#ifdef RCT_NEW_ARCH_ENABLED
+    UIView *view = [self findViewByTag:reactTag inView:_nativeAdView];
+    if (!view) {
+      view = [self findViewByTag:reactTag inView:self];
+    }
+#else
     UIView *view = [_bridge.uiManager viewForReactTag:@(reactTag)];
+#endif
     if (!view) {
       RCTLogError(@"Cannot find NativeAssetView with tag #%zd while registering asset type %@",
                   reactTag, assetType);
