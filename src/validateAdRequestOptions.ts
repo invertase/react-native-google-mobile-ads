@@ -136,5 +136,19 @@ export function validateAdRequestOptions(options?: RequestOptions) {
     out.publisherProvidedId = options.publisherProvidedId;
   }
 
+  if (options.publisherProvidedSignals) {
+    if (!isObject(options.publisherProvidedSignals)) {
+      throw new Error("'options.publisherProvidedSignals' expected an object of key/value pairs");
+    }
+
+    Object.entries(options.publisherProvidedSignals).forEach(([key, value]) => {
+      if (!isArray(value)) {
+        throw new Error(`'options.publisherProvidedSignals.${key}' expected an array of numbers`);
+      }
+    });
+
+    out.publisherProvidedSignals = options.publisherProvidedSignals;
+  }
+
   return out;
 }
