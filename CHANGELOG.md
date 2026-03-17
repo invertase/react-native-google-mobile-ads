@@ -1,3 +1,9 @@
+## [16.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.2.3...v16.3.0) (2026-03-17)
+
+### Features
+
+* add publisherProvidedSignals for Google Ad Manager PPS ([5d8f7c2](https://github.com/invertase/react-native-google-mobile-ads/commit/5d8f7c25f7c754abf130221231c92bc30b388747))
+
 ## [16.2.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.2.2...v16.2.3) (2026-03-13)
 
 ### Bug Fixes
