@@ -138,16 +138,12 @@ export function validateAdRequestOptions(options?: RequestOptions) {
 
   if (options.publisherProvidedSignals) {
     if (!isObject(options.publisherProvidedSignals)) {
-      throw new Error(
-        "'options.publisherProvidedSignals' expected an object of key/value pairs",
-      );
+      throw new Error("'options.publisherProvidedSignals' expected an object of key/value pairs");
     }
 
     Object.entries(options.publisherProvidedSignals).forEach(([key, value]) => {
       if (!isArray(value)) {
-        throw new Error(
-          `'options.publisherProvidedSignals.${key}' expected an array of numbers`,
-        );
+        throw new Error(`'options.publisherProvidedSignals.${key}' expected an array of numbers`);
       }
     });
 
