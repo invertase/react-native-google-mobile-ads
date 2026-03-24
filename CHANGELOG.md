@@ -1,3 +1,9 @@
+## [16.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.0...v16.3.1) (2026-03-24)
+
+### Bug Fixes
+
+* **ios:** resolve native asset registration issues in New Architecture ([1d93455](https://github.com/invertase/react-native-google-mobile-ads/commit/1d934550a7ff0cd2823585afaa62d7329ae530a9))
+
 ## [16.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.2.3...v16.3.0) (2026-03-17)
 
 ### Features
