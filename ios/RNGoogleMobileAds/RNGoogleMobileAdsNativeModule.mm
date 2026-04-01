@@ -59,9 +59,16 @@ RCT_EXPORT_MODULE();
 }
 #endif
 
+static __weak RNGoogleMobileAdsNativeModule *_sharedInstance = nil;
+
++ (instancetype)sharedInstance {
+  return _sharedInstance;
+}
+
 - (instancetype)init {
   if (self = [super init]) {
     _adHolders = [NSMutableDictionary dictionary];
+    _sharedInstance = self;
   }
   return self;
 }
