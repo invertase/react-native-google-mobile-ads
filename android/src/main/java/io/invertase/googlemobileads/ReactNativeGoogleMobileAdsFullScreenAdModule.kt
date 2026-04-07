@@ -69,7 +69,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
   fun load(
     requestId: Int, adUnitId: String, adRequestOptions: ReadableMap
   ) {
-    val activity = currentActivity
+    val activity = reactApplicationContext.currentActivity
     if (activity == null) {
       val error = Arguments.createMap()
       error.putString("code", "null-activity")
@@ -105,7 +105,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
   fun show(
     requestId: Int, adUnitId: String, showOptions: ReadableMap, promise: Promise
   ) {
-    val activity = currentActivity
+    val activity = reactApplicationContext.currentActivity
     if (activity == null) {
       rejectPromiseWithCodeAndMessage(
         promise,
