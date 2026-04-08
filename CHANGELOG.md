@@ -1,3 +1,9 @@
+## [16.3.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.1...v16.3.2) (2026-04-08)
+
+### Bug Fixes
+
+* **android:** use reactApplicationContext.currentActivity for fullscreen ads ([bc11944](https://github.com/invertase/react-native-google-mobile-ads/commit/bc11944ea48436589b6f453cce9ee2c52a8068d4))
+
 ## [16.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.0...v16.3.1) (2026-03-24)
 
 ### Bug Fixes
