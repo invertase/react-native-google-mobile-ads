@@ -17,9 +17,7 @@
 
 import type * as React from 'react';
 import type { HostComponent, ViewProps } from 'react-native';
-import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
-import codegenNativeCommands from 'react-native/Libraries/Utilities/codegenNativeCommands';
-import type { Int32 } from 'react-native/Libraries/Types/CodegenTypes';
+import { codegenNativeComponent, codegenNativeCommands, CodegenTypes } from 'react-native';
 
 export interface NativeProps extends ViewProps {
   responseId: string;
@@ -29,10 +27,11 @@ type NativeViewComponentType = HostComponent<NativeProps>;
 
 interface NativeCommands {
   registerAsset: (
+    // TODO - we may remove this deprecation and shift to React.ComponentRef when RN0.84 is our minimum
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- https://github.com/facebook/react-native/issues/54272
     viewRef: React.ElementRef<NativeViewComponentType>,
     assetType: string,
-    reactTag: Int32,
+    reactTag: CodegenTypes.Int32,
   ) => void;
 }
 

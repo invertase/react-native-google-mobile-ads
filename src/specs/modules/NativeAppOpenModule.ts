@@ -16,11 +16,19 @@
  */
 
 import { TurboModule, TurboModuleRegistry } from 'react-native';
-import { Double, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import { CodegenTypes } from 'react-native';
 
 export interface Spec extends TurboModule {
-  appOpenLoad(requestId: Double, adUnitId: string, requestOptions: UnsafeObject): void;
-  appOpenShow(requestId: Double, adUnitId: string, showOptions?: UnsafeObject): Promise<void>;
+  appOpenLoad(
+    requestId: CodegenTypes.Double,
+    adUnitId: string,
+    requestOptions: CodegenTypes.UnsafeObject,
+  ): void;
+  appOpenShow(
+    requestId: CodegenTypes.Double,
+    adUnitId: string,
+    showOptions?: CodegenTypes.UnsafeObject,
+  ): Promise<void>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsAppOpenModule');
