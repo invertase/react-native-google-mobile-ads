@@ -48,6 +48,10 @@ RCT_EXPORT_MODULE();
   return dispatch_get_main_queue();
 }
 
++ (BOOL)requiresMainQueueSetup {
+  return YES;
+}
+
 #ifdef RCT_NEW_ARCH_ENABLED
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params {
