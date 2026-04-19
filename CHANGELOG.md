@@ -1,3 +1,9 @@
+## [16.3.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.2...v16.3.3) (2026-04-19)
+
+### Bug Fixes
+
+* add requiresMainQueueSetup for RN compatibility ([2bb115a](https://github.com/invertase/react-native-google-mobile-ads/commit/2bb115ab313d6cbf2f600f9d3f565c8e2680ea38))
+
 ## [16.3.2](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.1...v16.3.2) (2026-04-08)
 
 ### Bug Fixes
