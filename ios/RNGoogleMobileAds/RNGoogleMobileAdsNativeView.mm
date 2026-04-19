@@ -57,8 +57,6 @@ using namespace facebook::react;
     static const auto defaultProps = std::make_shared<const RNGoogleMobileAdsNativeViewProps>();
     _props = defaultProps;
 
-    _bridge = [RCTBridge currentBridge];
-    _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
     _nativeAdView = [[GADNativeAdView alloc] init];
     self.contentView = _nativeAdView;
   }
@@ -137,9 +135,17 @@ using namespace facebook::react;
 
 #pragma mark - Common logics
 
+- (RNGoogleMobileAdsNativeModule *)resolveNativeModule {
+  RCTBridge *bridge = [RCTBridge currentBridge];
+  if (bridge) {
+    return [bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
+  }
+  return [RNGoogleMobileAdsNativeModule sharedInstance];
+}
+
 - (void)setResponseId:(NSString *)responseId {
   _responseId = responseId;
-  _nativeAd = [_nativeModule nativeAdForResponseId:responseId];
+  _nativeAd = [[self resolveNativeModule] nativeAdForResponseId:responseId];
   [self reloadAd];
 }
 
