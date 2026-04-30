@@ -145,7 +145,7 @@ When using The New Architecture, some legacy code will still be used though. See
 - [Issues](https://github.com/invertase/react-native-google-mobile-ads/issues)
 - [PRs](https://github.com/invertase/react-native-google-mobile-ads/pulls)
 - [Guidelines](https://github.com/invertase/react-native-google-mobile-ads/blob/main/CONTRIBUTING.md)
-- [Code of Conduct](https://github.com/invertase/meta/blob/main/CODE_OF_CONDUCT.md)
+- [Code of Conduct](https://github.com/invertase/.github/blob/main/CODE_OF_CONDUCT.md)
 
 ## License
 
