@@ -32,4 +32,10 @@
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId;
 
+// Bridgeless-mode escape hatch: under React Native bridgeless mode
+// [RCTBridge currentBridge] returns nil, so views that fetch this module via
+// `moduleForClass:` get a nil reference. The Fabric views fall back to this
+// singleton, which captures the module instance on init.
++ (instancetype)sharedInstance;
+
 @end

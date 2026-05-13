@@ -38,11 +38,17 @@ typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable native
 
 @end
 
+static __weak RNGoogleMobileAdsNativeModule *_RNGMASharedInstance = nil;
+
 @implementation RNGoogleMobileAdsNativeModule {
   NSMutableDictionary<NSString *, RNGMANativeAdHolder *> *_adHolders;
 }
 
 RCT_EXPORT_MODULE();
+
++ (instancetype)sharedInstance {
+  return _RNGMASharedInstance;
+}
 
 - (dispatch_queue_t)methodQueue {
   return dispatch_get_main_queue();
@@ -66,6 +72,7 @@ RCT_EXPORT_MODULE();
 - (instancetype)init {
   if (self = [super init]) {
     _adHolders = [NSMutableDictionary dictionary];
+    _RNGMASharedInstance = self;
   }
   return self;
 }
