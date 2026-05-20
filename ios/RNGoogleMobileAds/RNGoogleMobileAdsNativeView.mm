@@ -58,7 +58,7 @@ using namespace facebook::react;
     _props = defaultProps;
 
     _bridge = [RCTBridge currentBridge];
-    _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
+    _nativeModule = [self nativeModule];
     _nativeAdView = [[GADNativeAdView alloc] init];
     self.contentView = _nativeAdView;
   }
@@ -127,7 +127,7 @@ using namespace facebook::react;
 - (instancetype)initWithBridge:(RCTBridge *)bridge {
   if (self = [super init]) {
     _bridge = bridge;
-    _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
+    _nativeModule = [self nativeModule];
     _nativeAdView = self;
   }
   return self;
@@ -137,9 +137,25 @@ using namespace facebook::react;
 
 #pragma mark - Common logics
 
+- (RNGoogleMobileAdsNativeModule *)nativeModule {
+  if (_nativeModule != nil) {
+    return _nativeModule;
+  }
+
+  if (_bridge != nil) {
+    _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
+  }
+
+  if (_nativeModule == nil) {
+    _nativeModule = [RNGoogleMobileAdsNativeModule sharedInstance];
+  }
+
+  return _nativeModule;
+}
+
 - (void)setResponseId:(NSString *)responseId {
   _responseId = responseId;
-  _nativeAd = [_nativeModule nativeAdForResponseId:responseId];
+  _nativeAd = [[self nativeModule] nativeAdForResponseId:responseId];
   [self reloadAd];
 }
 

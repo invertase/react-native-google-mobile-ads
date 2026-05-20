@@ -67,6 +67,16 @@ class ReactNativeGoogleMobileAdsNativeModule(
       } ?: run {
         data.putNull("icon")
       }
+      val imagesArray = Arguments.createArray()
+      nativeAd.images.forEach { image ->
+        image.uri?.let { uri ->
+          val imageMap = Arguments.createMap()
+          imageMap.putString("url", uri.toString())
+          imageMap.putDouble("scale", image.scale)
+          imagesArray.pushMap(imageMap)
+        }
+      }
+      data.putArray("images", imagesArray)
       val mediaContent = Arguments.createMap()
       nativeAd.mediaContent?.let {
         mediaContent.putDouble("aspectRatio", it.aspectRatio.toDouble())
