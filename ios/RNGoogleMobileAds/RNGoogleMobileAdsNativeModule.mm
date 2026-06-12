@@ -42,6 +42,8 @@ typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable native
   NSMutableDictionary<NSString *, RNGMANativeAdHolder *> *_adHolders;
 }
 
+static __weak RNGoogleMobileAdsNativeModule *_sharedInstance = nil;
+
 RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue {
@@ -66,8 +68,13 @@ RCT_EXPORT_MODULE();
 - (instancetype)init {
   if (self = [super init]) {
     _adHolders = [NSMutableDictionary dictionary];
+    _sharedInstance = self;
   }
   return self;
+}
+
++ (RNGoogleMobileAdsNativeModule *)sharedInstance {
+  return _sharedInstance;
 }
 
 RCT_EXPORT_METHOD(
@@ -95,6 +102,16 @@ RCT_EXPORT_METHOD(
 
         [_adHolders setValue:adHolder forKey:responseId];
 
+        NSMutableArray *imagesArray = [NSMutableArray array];
+        for (GADNativeAdImage *image in nativeAd.images) {
+          if (image.imageURL != nil) {
+            [imagesArray addObject:(@{
+              @"url" : image.imageURL.absoluteString,
+              @"scale" : @(image.scale)
+            })];
+          }
+        }
+
         resolve(@{
           @"responseId" : responseId,
           @"advertiser" : nativeAd.advertiser ?: [NSNull null],
@@ -107,6 +124,7 @@ RCT_EXPORT_METHOD(
           @"icon" : (nativeAd.icon && nativeAd.icon.imageURL != nil)
               ? @{@"scale" : @(nativeAd.icon.scale), @"url" : nativeAd.icon.imageURL.absoluteString}
               : [NSNull null],
+          @"images" : imagesArray,
           @"mediaContent" : @{
             @"aspectRatio" : @(nativeAd.mediaContent.aspectRatio),
             @"hasVideoContent" : @(nativeAd.mediaContent.hasVideoContent),
@@ -134,6 +152,9 @@ RCT_EXPORT_METHOD(destroy
     [adHolder dispose];
   }
   [_adHolders removeAllObjects];
+  if (_sharedInstance == self) {
+    _sharedInstance = nil;
+  }
 }
 
 @end

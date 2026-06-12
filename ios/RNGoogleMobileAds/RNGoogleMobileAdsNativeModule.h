@@ -32,4 +32,6 @@
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId;
 
++ (RNGoogleMobileAdsNativeModule *)sharedInstance;
+
 @end
