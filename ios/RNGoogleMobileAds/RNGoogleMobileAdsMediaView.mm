@@ -52,11 +52,9 @@ using namespace facebook::react;
 
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
-    static const auto defaultProps = std::make_shared<const RNGoogleMobileAdsBannerViewProps>();
+    static const auto defaultProps = std::make_shared<const RNGoogleMobileAdsMediaViewProps>();
     _props = defaultProps;
 
-    _bridge = [RCTBridge currentBridge];
-    _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
     _mediaView = [[GADMediaView alloc] init];
     _contentMode = UIViewContentModeScaleAspectFill;
     self.contentView = _mediaView;
@@ -110,9 +108,17 @@ using namespace facebook::react;
 
 #pragma mark - Common logics
 
+- (RNGoogleMobileAdsNativeModule *)resolveNativeModule {
+  RCTBridge *bridge = [RCTBridge currentBridge];
+  if (bridge) {
+    return [bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
+  }
+  return [RNGoogleMobileAdsNativeModule sharedInstance];
+}
+
 - (void)setResponseId:(NSString *)responseId {
   _responseId = responseId;
-  GADNativeAd *nativeAd = [_nativeModule nativeAdForResponseId:responseId];
+  GADNativeAd *nativeAd = [[self resolveNativeModule] nativeAdForResponseId:responseId];
   _mediaView.mediaContent = nativeAd.mediaContent;
   _mediaView.contentMode = _contentMode;
 }

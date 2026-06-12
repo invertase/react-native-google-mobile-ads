@@ -30,6 +30,7 @@
 @interface RNGoogleMobileAdsNativeModule : RCTEventEmitter <RCTBridgeModule>
 #endif
 
++ (instancetype)sharedInstance;
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId;
 
 @end
