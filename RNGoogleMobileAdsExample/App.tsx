@@ -994,7 +994,7 @@ TestRegistry.registerTest(new AdInspectorTest());
 TestRegistry.registerTest(
   new GAMBannerTest({
     unitId: TestIds.GAM_BANNER,
-    sizes: [BannerAdSize.ADAPTIVE_BANNER],
+    sizes: [BannerAdSize.ANCHORED_ADAPTIVE_BANNER],
   }),
 );
 TestRegistry.registerTest(
