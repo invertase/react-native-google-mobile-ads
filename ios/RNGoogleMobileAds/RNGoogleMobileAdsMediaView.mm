@@ -16,7 +16,7 @@
  */
 
 #import "RNGoogleMobileAdsMediaView.h"
-#import "RNGoogleMobileAdsNativeModule.h"
+#import "RNGoogleMobileAdsNativeAdRegistry.h"
 
 #ifdef RCT_NEW_ARCH_ENABLED
 #import <react/renderer/components/RNGoogleMobileAdsSpec/ComponentDescriptors.h>
@@ -27,10 +27,6 @@
 #import "RCTFabricComponentsPlugins.h"
 #endif
 
-@interface RCTBridge (Private)
-+ (RCTBridge *)currentBridge;
-@end
-
 #ifdef RCT_NEW_ARCH_ENABLED
 using namespace facebook::react;
 
@@ -39,8 +35,6 @@ using namespace facebook::react;
 #endif
 
 @implementation RNGoogleMobileAdsMediaView {
-  __weak RCTBridge *_bridge;
-  __weak RNGoogleMobileAdsNativeModule *_nativeModule;
   GADMediaView *_mediaView;
   UIViewContentMode _contentMode;
 }
@@ -55,8 +49,6 @@ using namespace facebook::react;
     static const auto defaultProps = std::make_shared<const RNGoogleMobileAdsMediaViewProps>();
     _props = defaultProps;
 
-    _bridge = [RCTBridge currentBridge];
-    _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
     _mediaView = [[GADMediaView alloc] init];
     _contentMode = UIViewContentModeScaleAspectFill;
     self.contentView = _mediaView;
@@ -99,9 +91,8 @@ using namespace facebook::react;
 
 - (instancetype)initWithBridge:(RCTBridge *)bridge {
   if (self = [super init]) {
-    _bridge = bridge;
-    _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
     _mediaView = self;
+    _contentMode = UIViewContentModeScaleAspectFill;
   }
   return self;
 }
@@ -111,8 +102,8 @@ using namespace facebook::react;
 #pragma mark - Common logics
 
 - (void)setResponseId:(NSString *)responseId {
-  _responseId = responseId;
-  GADNativeAd *nativeAd = [_nativeModule nativeAdForResponseId:responseId];
+  _responseId = [responseId copy];
+  GADNativeAd *nativeAd = [RNGoogleMobileAdsNativeAdRegistry nativeAdForResponseId:responseId];
   _mediaView.mediaContent = nativeAd.mediaContent;
   _mediaView.contentMode = _contentMode;
 }
