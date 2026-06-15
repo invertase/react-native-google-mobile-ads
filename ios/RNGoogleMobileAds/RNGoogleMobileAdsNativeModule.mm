@@ -19,6 +19,7 @@
 
 #import "RNGoogleMobileAdsNativeModule.h"
 #import "RNGoogleMobileAdsCommon.h"
+#import "RNGoogleMobileAdsNativeAdRegistry.h"
 
 typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable nativeAd,
                                                    NSError *_Nullable error);
@@ -94,6 +95,7 @@ RCT_EXPORT_METHOD(
         }
 
         [_adHolders setValue:adHolder forKey:responseId];
+        [RNGoogleMobileAdsNativeAdRegistry setNativeAd:nativeAd forResponseId:responseId];
 
         resolve(@{
           @"responseId" : responseId,
@@ -118,14 +120,15 @@ RCT_EXPORT_METHOD(
 
 RCT_EXPORT_METHOD(destroy
                   : (NSString *)responseId {
-                    if (responseId) {
-                      [[_adHolders valueForKey:responseId] dispose];
+                    if (responseId.length > 0) {
+                      [[_adHolders objectForKey:responseId] dispose];
                       [_adHolders removeObjectForKey:responseId];
+                      [RNGoogleMobileAdsNativeAdRegistry removeNativeAdForResponseId:responseId];
                     }
                   });
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId {
-  return [_adHolders valueForKey:responseId].nativeAd;
+  return [RNGoogleMobileAdsNativeAdRegistry nativeAdForResponseId:responseId];
 }
 
 - (void)dealloc {
@@ -134,6 +137,7 @@ RCT_EXPORT_METHOD(destroy
     [adHolder dispose];
   }
   [_adHolders removeAllObjects];
+  [RNGoogleMobileAdsNativeAdRegistry removeAllNativeAds];
 }
 
 @end

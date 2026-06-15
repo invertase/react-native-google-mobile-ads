@@ -17,7 +17,7 @@
 
 #import "RNGoogleMobileAdsNativeView.h"
 #import "RNGoogleMobileAdsMediaView.h"
-#import "RNGoogleMobileAdsNativeModule.h"
+#import "RNGoogleMobileAdsNativeAdRegistry.h"
 
 #ifdef RCT_NEW_ARCH_ENABLED
 #import <react/renderer/components/RNGoogleMobileAdsSpec/ComponentDescriptors.h>
@@ -28,10 +28,6 @@
 #import "RCTFabricComponentsPlugins.h"
 #endif
 
-@interface RCTBridge (Private)
-+ (RCTBridge *)currentBridge;
-@end
-
 #ifdef RCT_NEW_ARCH_ENABLED
 using namespace facebook::react;
 
@@ -40,8 +36,9 @@ using namespace facebook::react;
 #endif
 
 @implementation RNGoogleMobileAdsNativeView {
+#ifndef RCT_NEW_ARCH_ENABLED
   __weak RCTBridge *_bridge;
-  __weak RNGoogleMobileAdsNativeModule *_nativeModule;
+#endif
   __weak GADNativeAd *_nativeAd;
   GADNativeAdView *_nativeAdView;
   dispatch_block_t _debouncedReload;
@@ -57,8 +54,6 @@ using namespace facebook::react;
     static const auto defaultProps = std::make_shared<const RNGoogleMobileAdsNativeViewProps>();
     _props = defaultProps;
 
-    _bridge = [RCTBridge currentBridge];
-    _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
     _nativeAdView = [[GADNativeAdView alloc] init];
     self.contentView = _nativeAdView;
   }
@@ -127,7 +122,6 @@ using namespace facebook::react;
 - (instancetype)initWithBridge:(RCTBridge *)bridge {
   if (self = [super init]) {
     _bridge = bridge;
-    _nativeModule = [_bridge moduleForClass:RNGoogleMobileAdsNativeModule.class];
     _nativeAdView = self;
   }
   return self;
@@ -138,8 +132,8 @@ using namespace facebook::react;
 #pragma mark - Common logics
 
 - (void)setResponseId:(NSString *)responseId {
-  _responseId = responseId;
-  _nativeAd = [_nativeModule nativeAdForResponseId:responseId];
+  _responseId = [responseId copy];
+  _nativeAd = [RNGoogleMobileAdsNativeAdRegistry nativeAdForResponseId:responseId];
   [self reloadAd];
 }
 
