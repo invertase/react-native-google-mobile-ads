@@ -136,8 +136,10 @@ RCT_EXPORT_METHOD(destroy
   for (RNGMANativeAdHolder *adHolder in adHolders) {
     [adHolder dispose];
   }
+  for (NSString *responseId in [_adHolders allKeys]) {
+    [RNGoogleMobileAdsNativeAdRegistry removeNativeAdForResponseId:responseId];
+  }
   [_adHolders removeAllObjects];
-  [RNGoogleMobileAdsNativeAdRegistry removeAllNativeAds];
 }
 
 @end
