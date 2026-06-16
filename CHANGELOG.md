@@ -1,3 +1,11 @@
+## [16.3.4](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.3...v16.3.4) (2026-06-16)
+
+### Bug Fixes
+
+* **ios:** bridgeless mode compatibility for native ads ([8fbd7c5](https://github.com/invertase/react-native-google-mobile-ads/commit/8fbd7c5f342102a6fd688d70af32c03c4e14fa0a))
+* **ios:** incorrect props type ([77383b7](https://github.com/invertase/react-native-google-mobile-ads/commit/77383b7c150a11169f574a43ed35c7f7b33d1181))
+* **ios:** scoped dealloc, mediaview nil guard ([f7da08b](https://github.com/invertase/react-native-google-mobile-ads/commit/f7da08b39a5ed3d6332ce8a21733399333016ad6))
+
 ## [16.3.3](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.2...v16.3.3) (2026-04-19)
 
 ### Bug Fixes
