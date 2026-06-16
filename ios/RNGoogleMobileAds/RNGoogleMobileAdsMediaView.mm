@@ -104,6 +104,9 @@ using namespace facebook::react;
 - (void)setResponseId:(NSString *)responseId {
   _responseId = [responseId copy];
   GADNativeAd *nativeAd = [RNGoogleMobileAdsNativeAdRegistry nativeAdForResponseId:responseId];
+  if (nativeAd == nil) {
+    return;
+  }
   _mediaView.mediaContent = nativeAd.mediaContent;
   _mediaView.contentMode = _contentMode;
 }

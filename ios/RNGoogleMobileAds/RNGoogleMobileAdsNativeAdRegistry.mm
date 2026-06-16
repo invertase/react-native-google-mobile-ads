@@ -57,10 +57,4 @@ static NSMapTable<NSString *, GADNativeAd *> *_nativeAds;
   }
 }
 
-+ (void)removeAllNativeAds {
-  @synchronized(self) {
-    [_nativeAds removeAllObjects];
-  }
-}
-
 @end

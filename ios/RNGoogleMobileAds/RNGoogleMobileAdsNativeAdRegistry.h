@@ -25,7 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)setNativeAd:(GADNativeAd *)nativeAd forResponseId:(NSString *)responseId;
 + (nullable GADNativeAd *)nativeAdForResponseId:(NSString *)responseId;
 + (void)removeNativeAdForResponseId:(NSString *)responseId;
-+ (void)removeAllNativeAds;
 
 @end
 
