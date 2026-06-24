@@ -1,4 +1,4 @@
-import admob, { MaxAdContentRating } from '../src';
+import admob, { AgeRestrictedTreatment, MaxAdContentRating } from '../src';
 import RNGoogleMobileAdsModule from '../src/specs/modules/NativeGoogleMobileAdsModule';
 
 describe('Admob', function () {
@@ -18,6 +18,18 @@ describe('Admob', function () {
           }),
         ).toThrow(
           "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected one of G, PG, T, MA",
+        );
+      });
+    });
+
+    describe('ageRestrictedTreatment', function () {
+      it('throws if ageRestrictedTreatment is invalid', function () {
+        expect(() =>
+          admob().setRequestConfiguration({
+            ageRestrictedTreatment: 'adult' as AgeRestrictedTreatment,
+          }),
+        ).toThrow(
+          "setRequestConfiguration(*) 'requestConfiguration.ageRestrictedTreatment' expected one of child, teen, unspecified",
         );
       });
     });
