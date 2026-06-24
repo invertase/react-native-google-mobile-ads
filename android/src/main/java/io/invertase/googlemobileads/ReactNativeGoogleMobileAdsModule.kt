@@ -25,6 +25,7 @@ import com.google.android.gms.ads.AdInspectorError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdValue;
 import com.google.android.gms.ads.OnAdInspectorClosedListener
+import com.google.android.gms.ads.AgeRestrictedTreatment
 
 class ReactNativeGoogleMobileAdsModule(
   reactContext: ReactApplicationContext
@@ -59,6 +60,16 @@ class ReactNativeGoogleMobileAdsModule(
         "PG" -> builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_PG)
         "T" -> builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_T)
         "MA" -> builder.setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_MA)
+      }
+    }
+
+    if (requestConfiguration.hasKey("ageRestrictedTreatment")) {
+      val ageRestrictedTreatment = requestConfiguration.getString("ageRestrictedTreatment")
+
+      when (ageRestrictedTreatment) {
+        "CHILD" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.CHILD)
+        "TEEN" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.TEEN)
+        "UNSPECIFIED" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.UNSPECIFIED)
       }
     }
 

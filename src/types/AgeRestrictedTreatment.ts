@@ -15,16 +15,19 @@
  *
  */
 
-export * from './AdapterStatus';
-export * from './AdEventListener';
-export * from './AdEventsListener';
-export * from './AgeRestrictedTreatment';
-export * from './AdShowOptions';
-export * from './AdStates';
-export * from './BannerAdProps';
-export * from './PaidEventListener';
-export * from './RequestConfiguration';
-export * from './RequestOptions';
-export * from './RewardedAdReward';
-export * from './AppEvent';
-export * from './NativeAdRequestOptions';
+export enum AgeRestrictedTreatment {
+  /**
+   * Indicates that ad requests should receive child age treatment.
+   */
+  CHILD = 'child',
+
+  /**
+   * Indicates that ad requests should receive teenage treatment.
+   */
+  TEEN = 'teen',
+
+  /**
+   * Indicates that no specific age treatment signal applies to ad requests.
+   */
+  UNSPECIFIED = 'unspecified',
+}

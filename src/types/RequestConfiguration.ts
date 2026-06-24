@@ -1,4 +1,5 @@
 import { MaxAdContentRating } from '../MaxAdContentRating';
+import { AgeRestrictedTreatment } from './AgeRestrictedTreatment';
 
 /**
  * The `RequestConfiguration` used when setting global ad settings via `setRequestConfiguration`.
@@ -12,6 +13,17 @@ export interface RequestConfiguration {
   maxAdContentRating?: MaxAdContentRating;
 
   /**
+   * The age treatment to apply to ad requests.
+   * Consult your own legal counsel to determine the age treatment settings for your users based on your legal and regulatory requirements.
+   * For more information on this setting, review https://developers.google.com/admob/ios/targeting#set_the_age_treatment
+   *
+   * By setting this property, you certify that this notification is accurate and you are authorized to act on behalf of the owner of the app.
+   * You understand that abuse of this setting may result in termination of your Google account.
+   */
+  ageRestrictedTreatment?: AgeRestrictedTreatment;
+
+  /**
+   * @deprecated Use `ageRestrictedTreatment` instead.
    * If `true`, indicates that you want your content treated as child-directed for purposes of COPPA.
    *
    * For purposes of the [Children's Online Privacy Protection Act (COPPA)](http://business.ftc.gov/privacy-and-security/children%27s-privacy),
@@ -22,6 +34,7 @@ export interface RequestConfiguration {
   tagForChildDirectedTreatment?: boolean;
 
   /**
+   * @deprecated Use `ageRestrictedTreatment` instead.
    * If `true`, indicates that you want the ad request to be handled in a manner suitable for users under the age of consent.
    *
    * You can mark your ad requests to receive treatment for users in the European Economic Area (EEA) under the age of consent.

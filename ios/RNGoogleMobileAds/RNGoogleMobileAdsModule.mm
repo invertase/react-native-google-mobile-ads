@@ -131,6 +131,20 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL)muted) {
     }
   }
 
+  if (requestConfiguration[@"ageRestrictedTreatment"]) {
+    NSString *ageRestrictedTreatment = requestConfiguration[@"ageRestrictedTreatment"];
+    if ([ageRestrictedTreatment isEqualToString:@"child"]) {
+      GADMobileAds.sharedInstance.requestConfiguration.ageRestrictedTreatment =
+          GADAgeRestrictedTreatmentChild;
+    } else if ([ageRestrictedTreatment isEqualToString:@"teen"]) {
+      GADMobileAds.sharedInstance.requestConfiguration.ageRestrictedTreatment =
+          GADAgeRestrictedTreatmentTeen;
+    } else if ([ageRestrictedTreatment isEqualToString:@"unspecified"]) {
+      GADMobileAds.sharedInstance.requestConfiguration.ageRestrictedTreatment =
+          GADAgeRestrictedTreatmentUnspecified;
+    }
+  }
+
   if (requestConfiguration[@"tagForChildDirectedTreatment"]) {
     BOOL tag = [requestConfiguration[@"tagForChildDirectedTreatment"] boolValue];
     GADMobileAds.sharedInstance.requestConfiguration.tagForChildDirectedTreatment =

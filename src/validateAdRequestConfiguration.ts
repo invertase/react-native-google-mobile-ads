@@ -17,6 +17,7 @@
 
 import { isPropertySet, isArray, isBoolean, isObject } from './common';
 import { MaxAdContentRating } from './MaxAdContentRating';
+import { AgeRestrictedTreatment } from './types/AgeRestrictedTreatment';
 import { RequestConfiguration } from './types/RequestConfiguration';
 
 export function validateAdRequestConfiguration(requestConfiguration: RequestConfiguration) {
@@ -36,21 +37,41 @@ export function validateAdRequestConfiguration(requestConfiguration: RequestConf
     out.maxAdContentRating = requestConfiguration.maxAdContentRating;
   }
 
+  if (requestConfiguration.ageRestrictedTreatment) {
+    if (
+      !Object.values(AgeRestrictedTreatment).includes(requestConfiguration.ageRestrictedTreatment)
+    ) {
+      throw new Error(
+        `'requestConfiguration.ageRestrictedTreatment' expected one of ${Object.values(AgeRestrictedTreatment).join(', ')}`,
+      );
+    }
+
+    out.ageRestrictedTreatment = requestConfiguration.ageRestrictedTreatment;
+  }
+
   if (isPropertySet(requestConfiguration, 'tagForChildDirectedTreatment')) {
-    if (!isBoolean(requestConfiguration.tagForChildDirectedTreatment)) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    const tagForChildDirectedTreatment = requestConfiguration.tagForChildDirectedTreatment;
+
+    if (!isBoolean(tagForChildDirectedTreatment)) {
       throw new Error(
         "'requestConfiguration.tagForChildDirectedTreatment' expected a boolean value",
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     out.tagForChildDirectedTreatment = requestConfiguration.tagForChildDirectedTreatment;
   }
 
   if (isPropertySet(requestConfiguration, 'tagForUnderAgeOfConsent')) {
-    if (!isBoolean(requestConfiguration.tagForUnderAgeOfConsent)) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    const tagForUnderAgeOfConsent = requestConfiguration.tagForUnderAgeOfConsent;
+
+    if (!isBoolean(tagForUnderAgeOfConsent)) {
       throw new Error("'requestConfiguration.tagForUnderAgeOfConsent' expected a boolean value");
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     out.tagForUnderAgeOfConsent = requestConfiguration.tagForUnderAgeOfConsent;
   }
 
