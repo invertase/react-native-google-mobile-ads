@@ -1,3 +1,9 @@
+## [16.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.4...v16.4.0) (2026-06-25)
+
+### Features
+
+* **deps:** update Google Mobile Ads SDK to iOS 13.5.0 and Android 25.4.0 ([c8b3549](https://github.com/invertase/react-native-google-mobile-ads/commit/c8b3549eb98b63fc4656a972bbc6c6e2f5d8f0df))
+
 ## [16.3.4](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.3...v16.3.4) (2026-06-16)
 
 ### Bug Fixes
