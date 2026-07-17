@@ -28,6 +28,7 @@ import com.google.android.gms.ads.OnPaidEventListener;
 import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.admanager.AdManagerInterstitialAd
 import com.google.android.gms.ads.appopen.AppOpenAd
+import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
@@ -167,6 +168,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
 
         when (ad) {
           is AdManagerInterstitialAd -> ad.onPaidEventListener = paidEventListener
+          is InterstitialAd -> ad.onPaidEventListener = paidEventListener
           is AppOpenAd -> ad.onPaidEventListener = paidEventListener
           is RewardedAd -> ad.onPaidEventListener = paidEventListener
           is RewardedInterstitialAd -> ad.onPaidEventListener = paidEventListener
