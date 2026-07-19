@@ -34,6 +34,11 @@ plugins {
 }
 apply plugin: 'kotlin-android'
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+  // Google Mobile Ads 25.3+ contains Kotlin 2.3 metadata, but this module only consumes its Java API.
+  kotlinOptions.freeCompilerArgs += ["-Xskip-metadata-version-check"]
+}
+
 def packageJson = PackageJson.getForProject(project)
 def googleMobileAdsVersion = packageJson['sdkVersions']['android']['googleMobileAds']
 def googleUmpVersion = packageJson['sdkVersions']['android']['googleUmp']
@@ -143,4 +148,3 @@ ReactNative.shared.applyPackageVersion()
 ReactNative.shared.applyDefaultExcludes()
 ReactNative.module.applyAndroidVersions()
 ReactNative.module.applyReactNativeDependency("api")
-
