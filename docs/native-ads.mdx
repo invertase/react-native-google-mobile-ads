@@ -28,6 +28,15 @@ Rejected errors match the `NativeAdLoadError` interface (`code` and `message`).
 Common codes include `error-code-invalid-request`, `error-code-no-fill`, and `ERROR_LOAD` when the loaded ad has no valid response ID.
 See [NativeAdLoadError](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/types/NativeAdLoadError.ts) for the type definition.
 
+```tsx
+NativeAd.createForAdRequest(TestIds.NATIVE)
+  .then(setNativeAd)
+  .catch((error) => {
+    console.error('Native ad failed to load', error);
+    // error.code e.g. 'error-code-no-fill' | 'error-code-invalid-request' | 'ERROR_LOAD'
+  });
+```
+
 ### Native ad Options
 
 Native ads have many advanced features that allow you to make additional customizations to create the best possible ad experience.
