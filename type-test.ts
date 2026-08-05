@@ -22,6 +22,8 @@ import mobileAds, {
   BannerAd,
   GAMBannerAd,
   GAMInterstitialAd,
+  NativeAd,
+  NativeAdLoadError,
   useAppOpenAd,
   useInterstitialAd,
   useRewardedAd,
@@ -272,6 +274,14 @@ gmaInterstitialAd.addAdEventsListener(({ type, payload }) => {
   }
 });
 gmaInterstitialAd.removeAllListeners();
+
+// NativeAd
+NativeAd.createForAdRequest(TestIds.NATIVE).catch((error: unknown) => {
+  const loadError = error as NativeAdLoadError;
+  console.log(loadError.code);
+  console.log(loadError.message);
+  console.log(loadError.userInfo?.code);
+});
 
 // useAppOpenAd
 console.log(useAppOpenAd);

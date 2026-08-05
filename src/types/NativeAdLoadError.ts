@@ -15,17 +15,17 @@
  *
  */
 
-export * from './AdapterStatus';
-export * from './AdEventListener';
-export * from './AdEventsListener';
-export * from './AgeRestrictedTreatment';
-export * from './AdShowOptions';
-export * from './AdStates';
-export * from './BannerAdProps';
-export * from './PaidEventListener';
-export * from './RequestConfiguration';
-export * from './RequestOptions';
-export * from './RewardedAdReward';
-export * from './AppEvent';
-export * from './NativeAdLoadError';
-export * from './NativeAdRequestOptions';
+/**
+ * Error shape rejected by {@link NativeAd.createForAdRequest} when the native ad request fails.
+ *
+ * Common `code` values include `error-code-no-fill`, `error-code-invalid-request` (Android),
+ * and `ERROR_LOAD` (iOS or when the loaded ad has no valid response ID).
+ */
+export interface NativeAdLoadError {
+  code: string;
+  message: string;
+  userInfo?: {
+    code: string;
+    message: string;
+  };
+}
