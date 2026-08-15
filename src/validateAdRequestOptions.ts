@@ -94,6 +94,40 @@ export function validateAdRequestOptions(options?: RequestOptions) {
     out.contentUrl = options.contentUrl;
   }
 
+  if (options.neighboringContentUrls) {
+    if (!isArray(options.neighboringContentUrls)) {
+      throw new Error(
+        "'options.neighboringContentUrls' expected an array containing string values",
+      );
+    }
+
+    if (options.neighboringContentUrls.length > 4) {
+      throw new Error("'options.neighboringContentUrls' maximum of 4 URLs");
+    }
+
+    for (let i = 0; i < options.neighboringContentUrls.length; i++) {
+      const url = options.neighboringContentUrls[i];
+
+      if (!isString(url)) {
+        throw new Error(
+          "'options.neighboringContentUrls' expected an array containing string values",
+        );
+      }
+
+      if (!isValidUrl(url)) {
+        throw new Error("'options.neighboringContentUrls' expected valid HTTP or HTTPS urls.");
+      }
+
+      if (url.length > 512) {
+        throw new Error(
+          "'options.neighboringContentUrls' maximum length of a content URL is 512 characters.",
+        );
+      }
+    }
+
+    out.neighboringContentUrls = options.neighboringContentUrls;
+  }
+
   if (options.requestAgent) {
     if (!isString(options.requestAgent)) {
       throw new Error("'options.requestAgent' expected a string value");
