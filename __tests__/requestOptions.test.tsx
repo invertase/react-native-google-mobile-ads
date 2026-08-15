@@ -62,6 +62,54 @@ describe('Admob RequestOptions', () => {
     });
   });
 
+  describe('neighboringContentUrls', () => {
+    it('throws if neighboringContentUrls is not an array', () => {
+      expect(() =>
+        validateAdRequestOptions({
+          // @ts-ignore
+          neighboringContentUrls: 'not-an-array',
+        }),
+      ).toThrow("'options.neighboringContentUrls' expected an array containing string values");
+    });
+
+    it('throws if neighboringContentUrls contains a non-string', () => {
+      expect(() =>
+        validateAdRequestOptions({
+          // @ts-ignore
+          neighboringContentUrls: [123],
+        }),
+      ).toThrow("'options.neighboringContentUrls' expected an array containing string values");
+    });
+
+    it('throws if neighboringContentUrls contains an invalid url', () => {
+      expect(() =>
+        validateAdRequestOptions({
+          neighboringContentUrls: ['not-a-url'],
+        }),
+      ).toThrow("'options.neighboringContentUrls' expected valid HTTP or HTTPS urls.");
+    });
+
+    it('throws if neighboringContentUrls has more than 4 urls', () => {
+      expect(() =>
+        validateAdRequestOptions({
+          neighboringContentUrls: [
+            'https://www.example1.com',
+            'https://www.example2.com',
+            'https://www.example3.com',
+            'https://www.example4.com',
+            'https://www.example5.com',
+          ],
+        }),
+      ).toThrow("'options.neighboringContentUrls' maximum of 4 URLs");
+    });
+
+    it('sets neighboringContentUrls if valid', () => {
+      const urls = ['https://www.example1.com', 'https://www.example2.com'];
+      const result = validateAdRequestOptions({ neighboringContentUrls: urls });
+      expect(result.neighboringContentUrls).toEqual(urls);
+    });
+  });
+
   describe('customTargeting', () => {
     it('throws if customTargeting is not an object', () => {
       expect(() =>

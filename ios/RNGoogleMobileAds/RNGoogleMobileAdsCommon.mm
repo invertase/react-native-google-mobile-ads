@@ -84,6 +84,10 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     request.contentURL = adRequestOptions[@"contentUrl"];
   }
 
+  if (adRequestOptions[@"neighboringContentUrls"]) {
+    request.neighboringContentURLStrings = adRequestOptions[@"neighboringContentUrls"];
+  }
+
   if (adRequestOptions[@"requestAgent"]) {
     request.requestAgent = adRequestOptions[@"requestAgent"];
   }

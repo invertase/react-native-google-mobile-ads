@@ -35,6 +35,7 @@ import com.google.android.gms.ads.admanager.AdManagerAdRequest;
 import io.invertase.googlemobileads.common.ReactNativeAdView;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -196,6 +197,16 @@ public class ReactNativeGoogleMobileAdsCommon {
 
     if (adRequestOptions.hasKey("contentUrl")) {
       builder.setContentUrl(Objects.requireNonNull(adRequestOptions.getString("contentUrl")));
+    }
+
+    if (adRequestOptions.hasKey("neighboringContentUrls")) {
+      ReadableArray neighboringContentUrls =
+          Objects.requireNonNull(adRequestOptions.getArray("neighboringContentUrls"));
+      HashSet<String> urlSet = new HashSet<>();
+      for (int i = 0; i < neighboringContentUrls.size(); i++) {
+        urlSet.add(neighboringContentUrls.getString(i));
+      }
+      builder.setNeighboringContentUrls(urlSet);
     }
 
     if (adRequestOptions.hasKey("requestAgent")) {

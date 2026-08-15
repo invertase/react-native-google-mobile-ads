@@ -72,6 +72,27 @@ export interface RequestOptions {
   contentUrl?: string;
 
   /**
+   * URLs representing web content near an ad. Used for brand safety so displayed
+   * ads can have a content rating more appropriate to neighboring content.
+   *
+   * Maximum of 4 URLs. Each URL max length of 512.
+   *
+   * #### Example
+   *
+   * ```js
+   * await Interstitial.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
+   *   neighboringContentUrls: [
+   *     'https://www.example1.com',
+   *     'https://www.example2.com',
+   *   ],
+   * });
+   * ```
+   *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/ios/targeting#brand_safety_beta
+   */
+  neighboringContentUrls?: string[];
+
+  /**
    * key-value pairs used for custom targeting
    *
    * Takes an object of keys with values of string, number, or arrays of strings/numbers.
