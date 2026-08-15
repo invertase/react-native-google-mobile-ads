@@ -58,6 +58,13 @@ public class ReactNativeAdView extends FrameLayout {
 
   public ReactNativeAdView(final Context context) {
     super(context);
+    // Exclude the ad view hierarchy from instance state saving/restoring. Mediation
+    // adapters (e.g. Facebook Audience Network) save view state under small view ids
+    // that collide with React Native view tags, causing a crash
+    // ("Wrong state class, expecting View State but received
+    // com.facebook.ads.internal.util.parcelable.WrappedParcelable") when a fragment
+    // (e.g. react-native-screens) restores its view hierarchy state.
+    setSaveFromParentEnabled(false);
   }
 
   public void setRequest(AdRequest request) {

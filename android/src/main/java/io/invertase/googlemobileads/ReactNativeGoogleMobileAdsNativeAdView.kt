@@ -43,6 +43,13 @@ class ReactNativeGoogleMobileAdsNativeAdView(
   private var reloadJob: Job? = null
 
   init {
+    // Exclude the ad view hierarchy from instance state saving/restoring. Mediation
+    // adapters (e.g. Facebook Audience Network) save view state under small view ids
+    // that collide with React Native view tags, causing a crash
+    // ("Wrong state class, expecting View State but received
+    // com.facebook.ads.internal.util.parcelable.WrappedParcelable") when a fragment
+    // (e.g. react-native-screens) restores its view hierarchy state.
+    isSaveFromParentEnabled = false
     nativeAdView.addView(viewGroup)
     addView(nativeAdView)
   }
