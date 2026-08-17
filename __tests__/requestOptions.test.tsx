@@ -103,6 +103,18 @@ describe('Admob RequestOptions', () => {
       ).toThrow("'options.neighboringContentUrls' maximum of 4 URLs");
     });
 
+    it('throws if neighboringContentUrls contains a url that is too long', () => {
+      const longUrl = `https://example.com?${'a'.repeat(512)}`;
+
+      expect(() =>
+        validateAdRequestOptions({
+          neighboringContentUrls: [longUrl],
+        }),
+      ).toThrow(
+        "'options.neighboringContentUrls' maximum length of a content URL is 512 characters.",
+      );
+    });
+
     it('sets neighboringContentUrls if valid', () => {
       const urls = ['https://www.example1.com', 'https://www.example2.com'];
       const result = validateAdRequestOptions({ neighboringContentUrls: urls });

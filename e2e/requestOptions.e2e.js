@@ -44,6 +44,7 @@ describe('googleAds requestOptions', function () {
       keywords: undefined,
       testDevices: undefined,
       contentUrl: undefined,
+      neighboringContentUrls: undefined,
       location: undefined,
       locationAccuracy: undefined,
       requestAgent: undefined,
@@ -55,6 +56,7 @@ describe('googleAds requestOptions', function () {
     v.keywords.should.eql(undefined);
     v.testDevices.should.eql(undefined);
     v.contentUrl.should.eql(undefined);
+    v.neighboringContentUrls.should.eql(undefined);
     v.location.should.eql(undefined);
     v.locationAccuracy.should.eql(undefined);
     v.requestAgent.should.eql(undefined);
@@ -261,6 +263,96 @@ describe('googleAds requestOptions', function () {
       });
 
       v.contentUrl.should.be.eql('http://invertase.io/privacy-policy');
+    });
+  });
+
+  describe('neighboringContentUrls', function () {
+    it('throws if neighboringContentUrls is not an array', function () {
+      try {
+        validator({
+          neighboringContentUrls: 'not-an-array',
+        });
+        return Promise.reject(new Error('Did not throw Error.'));
+      } catch (e) {
+        e.message.should.containEql(
+          "'options.neighboringContentUrls' expected an array containing string values",
+        );
+        return Promise.resolve();
+      }
+    });
+
+    it('throws if neighboringContentUrls contains a non-string', function () {
+      try {
+        validator({
+          neighboringContentUrls: [123],
+        });
+        return Promise.reject(new Error('Did not throw Error.'));
+      } catch (e) {
+        e.message.should.containEql(
+          "'options.neighboringContentUrls' expected an array containing string values",
+        );
+        return Promise.resolve();
+      }
+    });
+
+    it('throws if neighboringContentUrls contains an invalid url', function () {
+      try {
+        validator({
+          neighboringContentUrls: ['www.invertase.io'],
+        });
+        return Promise.reject(new Error('Did not throw Error.'));
+      } catch (e) {
+        e.message.should.containEql(
+          "'options.neighboringContentUrls' expected valid HTTP or HTTPS urls.",
+        );
+        return Promise.resolve();
+      }
+    });
+
+    it('throws if neighboringContentUrls contains a url that is too long', function () {
+      let str = '';
+      for (let i = 0; i < 530; i++) {
+        str += i.toString();
+      }
+
+      try {
+        validator({
+          neighboringContentUrls: [`https://invertase.io?${str}`],
+        });
+        return Promise.reject(new Error('Did not throw Error.'));
+      } catch (e) {
+        e.message.should.containEql(
+          "'options.neighboringContentUrls' maximum length of a content URL is 512 characters",
+        );
+        return Promise.resolve();
+      }
+    });
+
+    it('throws if neighboringContentUrls has more than 4 urls', function () {
+      try {
+        validator({
+          neighboringContentUrls: [
+            'https://www.example1.com',
+            'https://www.example2.com',
+            'https://www.example3.com',
+            'https://www.example4.com',
+            'https://www.example5.com',
+          ],
+        });
+        return Promise.reject(new Error('Did not throw Error.'));
+      } catch (e) {
+        e.message.should.containEql("'options.neighboringContentUrls' maximum of 4 URLs");
+        return Promise.resolve();
+      }
+    });
+
+    it('accepts neighboringContentUrls', function () {
+      const urls = ['http://invertase.io/article-a', 'https://invertase.io/article-b'];
+      const v = validator({
+        neighboringContentUrls: urls,
+      });
+
+      v.neighboringContentUrls.should.be.eql(urls);
     });
   });
 
