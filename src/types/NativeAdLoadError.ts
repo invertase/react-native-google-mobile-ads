@@ -18,14 +18,13 @@
 /**
  * Error shape rejected by {@link NativeAd.createForAdRequest} when the native ad request fails.
  *
- * Common `code` values include `error-code-no-fill`, `error-code-invalid-request` (Android),
- * and `ERROR_LOAD` (iOS or when the loaded ad has no valid response ID).
+ * Both Android and iOS reject with `code: 'ERROR_LOAD'`. The `message` carries the underlying
+ * SDK / platform failure text (for example no fill, invalid request, or a missing response ID).
+ *
+ * `userInfo` is platform-dependent and may be absent. Do not rely on a fixed nested shape.
  */
 export interface NativeAdLoadError {
-  code: string;
+  code: 'ERROR_LOAD';
   message: string;
-  userInfo?: {
-    code: string;
-    message: string;
-  };
+  userInfo?: Readonly<Record<string, unknown>> | null;
 }

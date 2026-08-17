@@ -280,7 +280,7 @@ NativeAd.createForAdRequest(TestIds.NATIVE).catch((error: unknown) => {
   const loadError = error as NativeAdLoadError;
   console.log(loadError.code);
   console.log(loadError.message);
-  console.log(loadError.userInfo?.code);
+  console.log(loadError.userInfo);
 });
 
 // useAppOpenAd

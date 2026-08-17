@@ -24,8 +24,8 @@ NativeAd.createForAdRequest(TestIds.NATIVE)
 `NativeAd.createForAdRequest` returns a promise that **rejects** when the underlying ad request fails (for example invalid ad unit ID, network error, or no fill).
 On Android this matches the existing iOS behavior: the native module rejects the load promise instead of leaving it pending.
 
-Rejected errors match the `NativeAdLoadError` interface (`code` and `message`).
-Common codes include `error-code-invalid-request`, `error-code-no-fill`, and `ERROR_LOAD` when the loaded ad has no valid response ID.
+Rejected errors match the `NativeAdLoadError` interface. Both platforms use `code: 'ERROR_LOAD'`;
+`message` contains the underlying SDK / platform failure text.
 See [NativeAdLoadError](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/types/NativeAdLoadError.ts) for the type definition.
 
 ```tsx
@@ -33,7 +33,8 @@ NativeAd.createForAdRequest(TestIds.NATIVE)
   .then(setNativeAd)
   .catch((error) => {
     console.error('Native ad failed to load', error);
-    // error.code e.g. 'error-code-no-fill' | 'error-code-invalid-request' | 'ERROR_LOAD'
+    // error.code === 'ERROR_LOAD'
+    // error.message describes the failure (no fill, invalid request, …)
   });
 ```
 

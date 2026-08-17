@@ -134,8 +134,8 @@ export class NativeAd {
    *
    * @param adUnitId The Ad Unit ID for the Native Ad. You can find this on your Google Mobile Ads dashboard.
    * @param requestOptions Optional RequestOptions used to load the ad.
-   * @throws When `adUnitId` or `requestOptions` validation fails before the native request.
-   * @throws Rejects with {@link NativeAdLoadError} when the native ad request fails.
+   * The returned promise rejects when `adUnitId` or `requestOptions` validation fails (Error),
+   * or when the native ad request fails ({@link NativeAdLoadError}).
    */
   static async createForAdRequest(
     adUnitId: string,

@@ -1,5 +1,6 @@
 import { NativeAd } from '../src';
 import NativeGoogleMobileAdsNativeModule from '../src/specs/modules/NativeGoogleMobileAdsNativeModule';
+import { version } from '../src/version';
 
 const nativeAdProps = {
   responseId: 'response-1',
@@ -48,21 +49,22 @@ describe('Google Mobile Ads NativeAd', function () {
       expect(ad.constructor.name).toEqual('NativeAd');
       expect(ad.adUnitId).toEqual('abc');
       expect(ad.headline).toEqual('Headline');
-      expect(NativeGoogleMobileAdsNativeModule.load).toHaveBeenCalledWith('abc', {});
+      expect(NativeGoogleMobileAdsNativeModule.load).toHaveBeenCalledWith('abc', {
+        requestAgent: `rn-invertase-${version}`,
+      });
     });
 
     it('rejects when native load fails', async function () {
-      jest
-        .mocked(NativeGoogleMobileAdsNativeModule.load)
-        .mockRejectedValueOnce(
-          Object.assign(new Error('The ad request was invalid'), {
-            code: 'error-code-invalid-request',
-          }),
-        );
-
-      await expect(NativeAd.createForAdRequest('invalid-unit')).rejects.toThrow(
-        'The ad request was invalid',
+      jest.mocked(NativeGoogleMobileAdsNativeModule.load).mockRejectedValueOnce(
+        Object.assign(new Error('The ad request was invalid'), {
+          code: 'ERROR_LOAD',
+        }),
       );
+
+      await expect(NativeAd.createForAdRequest('invalid-unit')).rejects.toMatchObject({
+        message: 'The ad request was invalid',
+        code: 'ERROR_LOAD',
+      });
     });
 
     it('rejects with ERROR_LOAD when response id is missing', async function () {

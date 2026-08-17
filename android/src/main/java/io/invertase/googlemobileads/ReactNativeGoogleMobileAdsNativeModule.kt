@@ -83,10 +83,8 @@ class ReactNativeGoogleMobileAdsNativeModule(
     private fun rejectLoad(loadAdError: LoadAdError) {
       if (loadSettled) return
       loadSettled = true
-      val errorPayload = ReactNativeGoogleMobileAdsCommon.errorCodeToMap(loadAdError.code)
-      val code = errorPayload.getString("code") ?: "error-code-internal-error"
-      val message = errorPayload.getString("message") ?: loadAdError.message
-      loadPromise.reject(code, message, errorPayload)
+      // Match iOS: always reject with ERROR_LOAD; keep the SDK's own message text.
+      loadPromise.reject("ERROR_LOAD", loadAdError.message, null as Throwable?)
     }
 
     private fun resolveLoad(nativeAd: NativeAd) {
@@ -94,6 +92,7 @@ class ReactNativeGoogleMobileAdsNativeModule(
 
       val responseId = nativeAd.responseInfo?.responseId
       if (responseId == null) {
+        nativeAd.destroy()
         rejectLoad("ERROR_LOAD", "Failed to get a valid response ID from the loaded ad.")
         return
       }
