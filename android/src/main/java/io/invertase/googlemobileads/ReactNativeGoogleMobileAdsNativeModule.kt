@@ -25,6 +25,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MediaAspectRatio
 import com.google.android.gms.ads.VideoController.VideoLifecycleCallbacks
 import com.google.android.gms.ads.VideoOptions
@@ -41,10 +42,64 @@ class ReactNativeGoogleMobileAdsNativeModule(
 
   @ReactMethod
   override fun load(adUnitId: String, requestOptions: ReadableMap, promise: Promise) {
-    val holder = NativeAdHolder(adUnitId, requestOptions)
-    holder.loadAd { nativeAd ->
-      val responseId = nativeAd.responseInfo?.responseId ?: return@loadAd
-      adHolders[responseId] = holder
+    val holder = NativeAdHolder(adUnitId, requestOptions, promise)
+    holder.loadAd()
+  }
+
+  @ReactMethod
+  override fun destroy(responseId: String) {
+    adHolders[responseId]?.destroy()
+    adHolders.remove(responseId)
+  }
+
+  override fun invalidate() {
+    super.invalidate()
+    adHolders.values.forEach {
+      it.destroy()
+    }
+    adHolders.clear()
+  }
+
+  fun getNativeAd(responseId: String): NativeAd? {
+    return adHolders[responseId]?.nativeAd
+  }
+
+  private inner class NativeAdHolder(
+    private val adUnitId: String,
+    private val requestOptions: ReadableMap,
+    private val loadPromise: Promise,
+  ) {
+    var nativeAd: NativeAd? = null
+      private set
+
+    private var loadSettled = false
+
+    private fun rejectLoad(code: String, message: String) {
+      if (loadSettled) return
+      loadSettled = true
+      loadPromise.reject(code, message, null as Throwable?)
+    }
+
+    private fun rejectLoad(loadAdError: LoadAdError) {
+      if (loadSettled) return
+      loadSettled = true
+      // Match iOS: always reject with ERROR_LOAD; keep the SDK's own message text.
+      loadPromise.reject("ERROR_LOAD", loadAdError.message, null as Throwable?)
+    }
+
+    private fun resolveLoad(nativeAd: NativeAd) {
+      if (loadSettled) return
+
+      val responseId = nativeAd.responseInfo?.responseId
+      if (responseId == null) {
+        nativeAd.destroy()
+        rejectLoad("ERROR_LOAD", "Failed to get a valid response ID from the loaded ad.")
+        return
+      }
+
+      loadSettled = true
+      this.nativeAd = nativeAd
+      adHolders[responseId] = this
 
       val data = Arguments.createMap()
       data.putString("responseId", responseId)
@@ -75,33 +130,14 @@ class ReactNativeGoogleMobileAdsNativeModule(
         data.putMap("mediaContent", mediaContent)
       }
 
-      promise.resolve(data)
+      loadPromise.resolve(data)
     }
-  }
-
-  @ReactMethod
-  override fun destroy(responseId: String) {
-    adHolders[responseId]?.destroy()
-    adHolders.remove(responseId)
-  }
-
-  override fun invalidate() {
-    super.invalidate()
-    adHolders.values.forEach {
-      it.destroy()
-    }
-    adHolders.clear()
-  }
-
-  fun getNativeAd(responseId: String): NativeAd? {
-    return adHolders[responseId]?.nativeAd
-  }
-
-  private inner class NativeAdHolder(private val adUnitId: String, private val requestOptions: ReadableMap) {
-    var nativeAd: NativeAd? = null
-      private set
 
     private val adListener: AdListener = object : AdListener() {
+      override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+        rejectLoad(loadAdError)
+      }
+
       override fun onAdImpression() {
         emitAdEvent("impression")
       }
@@ -141,7 +177,7 @@ class ReactNativeGoogleMobileAdsNativeModule(
       }
     }
 
-    fun loadAd(loadedListener: NativeAd.OnNativeAdLoadedListener) {
+    fun loadAd() {
       val mediaAspectRatio = if (requestOptions.hasKey("aspectRatio")) {
         when (requestOptions.getInt("aspectRatio")) {
           1 -> MediaAspectRatio.ANY
@@ -182,7 +218,6 @@ class ReactNativeGoogleMobileAdsNativeModule(
         .withNativeAdOptions(nativeAdOptions)
         .withAdListener(adListener)
         .forNativeAd { nativeAd ->
-          this.nativeAd = nativeAd
           nativeAd.mediaContent?.videoController?.videoLifecycleCallbacks = videoLifecycleCallbacks
           nativeAd.setOnPaidEventListener { adValue ->
             val revenueData = Arguments.createMap()
@@ -191,7 +226,7 @@ class ReactNativeGoogleMobileAdsNativeModule(
             revenueData.putString("currency", adValue.currencyCode)
             emitAdEvent("paid", revenueData)
           }
-          loadedListener.onNativeAdLoaded(nativeAd)
+          resolveLoad(nativeAd)
         }
         .build()
       val adRequest = ReactNativeGoogleMobileAdsCommon.buildAdRequest(requestOptions)

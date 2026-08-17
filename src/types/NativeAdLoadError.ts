@@ -15,17 +15,16 @@
  *
  */
 
-export * from './AdapterStatus';
-export * from './AdEventListener';
-export * from './AdEventsListener';
-export * from './AgeRestrictedTreatment';
-export * from './AdShowOptions';
-export * from './AdStates';
-export * from './BannerAdProps';
-export * from './PaidEventListener';
-export * from './RequestConfiguration';
-export * from './RequestOptions';
-export * from './RewardedAdReward';
-export * from './AppEvent';
-export * from './NativeAdLoadError';
-export * from './NativeAdRequestOptions';
+/**
+ * Error shape rejected by {@link NativeAd.createForAdRequest} when the native ad request fails.
+ *
+ * Both Android and iOS reject with `code: 'ERROR_LOAD'`. The `message` carries the underlying
+ * SDK / platform failure text (for example no fill, invalid request, or a missing response ID).
+ *
+ * `userInfo` is platform-dependent and may be absent. Do not rely on a fixed nested shape.
+ */
+export interface NativeAdLoadError {
+  code: 'ERROR_LOAD';
+  message: string;
+  userInfo?: Readonly<Record<string, unknown>> | null;
+}
