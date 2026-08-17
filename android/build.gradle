@@ -34,9 +34,30 @@ plugins {
 }
 apply plugin: 'kotlin-android'
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-  // Google Mobile Ads 25.3+ contains Kotlin 2.3 metadata, but this module only consumes its Java API.
-  kotlinOptions.freeCompilerArgs += ["-Xskip-metadata-version-check"]
+// Ads 25.3+ ships Kotlin 2.3 metadata. Older compilers reject that unless we skip
+// the metadata version check. Only needed while compiling this module with Kotlin < 2.3.
+def kotlinVersionForCompile = {
+  if (project.rootProject.ext.has('kotlinVersion')) {
+    return project.rootProject.ext.kotlinVersion.toString()
+  }
+  if (project.hasProperty('KOTLIN_VERSION')) {
+    return project.property('KOTLIN_VERSION').toString()
+  }
+  return getExtOrDefault('kotlinVersion', '1.8.22').toString()
+}()
+
+def kotlinNeedsAdsMetadataSkip = {
+  def parts = kotlinVersionForCompile.tokenize('.')*.toInteger()
+  def major = parts.size() > 0 ? parts[0] : 0
+  def minor = parts.size() > 1 ? parts[1] : 0
+  return major < 2 || (major == 2 && minor < 3)
+}()
+
+if (kotlinNeedsAdsMetadataSkip) {
+  tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    // This module only consumes the Ads Java API; skip metadata version checks on Kotlin < 2.3.
+    kotlinOptions.freeCompilerArgs += ["-Xskip-metadata-version-check"]
+  }
 }
 
 def packageJson = PackageJson.getForProject(project)

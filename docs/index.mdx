@@ -77,6 +77,46 @@ To do so [follow the official `expo-build-properties` installation instructions]
 </TabItem>
 </Tabs>
 
+### Android Kotlin compatibility (Google Mobile Ads 25.3+)
+
+Google Mobile Ads Android SDK 25.3+ includes Kotlin **2.3** metadata.
+Apps still compiling with Kotlin **2.1.x** (common on some Expo / React Native setups)
+can fail with:
+
+```text
+Module was compiled with an incompatible version of Kotlin.
+The binary version of its metadata is 2.3.0, expected version is 2.1.0.
+```
+
+For normal use of this library, you should **not** need to change anything:
+`react-native-google-mobile-ads` only consumes the Ads **Java** API and, when
+built with Kotlin &lt; 2.3, configures its own Kotlin compile tasks with
+`-Xskip-metadata-version-check`.
+
+You **do** need an app-side change if:
+
+- your app (or another module) depends on `play-services-ads` with `api` / compiles Ads APIs from Kotlin directly, or
+- you prefer to fix forward by upgrading Kotlin instead of relying on the skip.
+
+**Option A — upgrade Kotlin (preferred long-term)**
+
+- Bare RN: set `kotlinVersion` / `KOTLIN_VERSION` to `2.3.0` (or newer) in your Android Gradle config.
+- Expo: use [`expo-build-properties`](https://docs.expo.dev/versions/latest/sdk/build-properties/) and set `android.kotlinVersion` to `"2.3.0"`.
+
+**Option B — pin an older library release**
+
+If you cannot upgrade yet, pin an exact older package that still used Ads &lt; 25.3, e.g. `"react-native-google-mobile-ads": "16.3.4"`.
+
+**Option C — apply the skip in your app**
+
+Only if *your* `:app` Kotlin compile hits the Ads metadata error:
+
+```groovy
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+  kotlinOptions.freeCompilerArgs += ["-Xskip-metadata-version-check"]
+}
+```
+
 ### Setting up Google AdMob
 
 Before you are able to display ads to your users, you must have a [Google AdMob account](https://apps.admob.com). Under the
