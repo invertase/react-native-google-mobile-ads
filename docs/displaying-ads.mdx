@@ -79,9 +79,32 @@ const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
 });
 ```
 
-The second argument is additional optional request options object to be sent whilst loading an advert, such as keywords & location.
+The second argument is additional optional request options object to be sent whilst loading an advert, such as keywords, location, and content URLs.
 Setting additional request options helps AdMob choose better tailored ads from the network.
 View the [`RequestOptions`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/types/RequestOptions.ts) source code to see the full range of options available.
+
+### Content URL targeting (brand safety)
+
+When an ad sits next to web-like content (for example an article in a feed), you can pass the page URL and nearby URLs so Google can apply a more appropriate content rating.
+
+- `contentUrl`: the URL of the content currently being displayed (max 512 characters, HTTP or HTTPS).
+- `neighboringContentUrls`: up to 4 nearby content URLs (each max 512 characters, HTTP or HTTPS).
+
+These options apply to any ad loaded with `RequestOptions` (`createForAdRequest`, banner `requestOptions`, [hooks](/displaying-ads-hook), [native ads](/native-ads)).
+
+```js
+import { InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+
+const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
+  contentUrl: 'https://www.example.com/article-a',
+  neighboringContentUrls: [
+    'https://www.example.com/article-b',
+    'https://www.example.com/article-c',
+  ],
+});
+```
+
+See Google's [brand safety targeting](https://developers.google.com/ad-manager/mobile-ads-sdk/android/targeting#content_url) docs for platform details.
 
 The call to `createForAdRequest` returns an instance of the [`InterstitialAd`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/ads/InterstitialAd.ts) class,
 which provides a number of utilities for loading and displaying interstitials.
@@ -423,7 +446,7 @@ import { BannerAd, BannerAdSize, TestIds, useForeground } from 'react-native-goo
 const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 function App() {
-  const bannerRef = useRef<BannerAd>(null);
+  const bannerRef = useRef < BannerAd > null;
 
   // (iOS) WKWebView can terminate if app is in a "suspended state", resulting in an empty banner when app returns to foreground.
   // Therefore it's advised to "manually" request a new ad when the app is foregrounded (https://groups.google.com/g/google-admob-ads-sdk/c/rwBpqOUr8m8).
@@ -432,7 +455,11 @@ function App() {
   });
 
   return (
-    <BannerAd ref={bannerRef} unitId={adUnitId} size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER} />
+    <BannerAd
+      ref={bannerRef}
+      unitId={adUnitId}
+      size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
+    />
   );
 }
 ```

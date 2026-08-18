@@ -65,9 +65,24 @@ export interface RequestOptions {
   keywords?: string[];
 
   /**
-   * Sets a content URL for targeting purposes.
+   * URL of the content currently being displayed. Used for brand safety so
+   * displayed ads can have a content rating more appropriate to that page.
    *
-   * Max length of 512.
+   * HTTP or HTTPS only. Max length of 512.
+   *
+   * Pair with {@link RequestOptions.neighboringContentUrls} when the ad sits
+   * next to other web content (for example articles in a feed).
+   *
+   * #### Example
+   *
+   * ```js
+   * await Interstitial.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
+   *   contentUrl: 'https://www.example.com/article-a',
+   * });
+   * ```
+   *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/targeting#content_url
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/ios/targeting#content_url
    */
   contentUrl?: string;
 
@@ -75,19 +90,23 @@ export interface RequestOptions {
    * URLs representing web content near an ad. Used for brand safety so displayed
    * ads can have a content rating more appropriate to neighboring content.
    *
-   * Maximum of 4 URLs. Each URL max length of 512.
+   * HTTP or HTTPS only. Maximum of 4 URLs. Each URL max length of 512.
+   *
+   * Pair with {@link RequestOptions.contentUrl} for the page currently on screen.
    *
    * #### Example
    *
    * ```js
    * await Interstitial.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
+   *   contentUrl: 'https://www.example.com/article-a',
    *   neighboringContentUrls: [
-   *     'https://www.example1.com',
-   *     'https://www.example2.com',
+   *     'https://www.example.com/article-b',
+   *     'https://www.example.com/article-c',
    *   ],
    * });
    * ```
    *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/targeting#content_url
    * @see https://developers.google.com/ad-manager/mobile-ads-sdk/ios/targeting#brand_safety_beta
    */
   neighboringContentUrls?: string[];
