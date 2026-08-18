@@ -1,3 +1,14 @@
+## [16.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.4.0...v16.5.0) (2026-08-18)
+
+### Features
+
+* add neighboringContentUrls request option ([d32799c](https://github.com/invertase/react-native-google-mobile-ads/commit/d32799c9de6ebb0eceb2f6c2d85dc7e6411ffd09))
+
+### Bug Fixes
+
+* **android:** exclude ad views from instance state saving ([2d130c4](https://github.com/invertase/react-native-google-mobile-ads/commit/2d130c4caff6d40231153ce27af31ed86ae53694))
+* **android:** pass List to setNeighboringContentUrls ([2841703](https://github.com/invertase/react-native-google-mobile-ads/commit/2841703925d83508d466c24f85c4c2b231ff8e6d))
+
 ## [16.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.3.4...v16.4.0) (2026-06-25)
 
 ### Features
