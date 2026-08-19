@@ -58,7 +58,7 @@ export type NativeAdEventPayload = {
 export type NativeAdPaidEventPayload = {
   value: number;
   precision: number;
-  currencyCode: string;
+  currency: string;
 };
 
 export interface Spec extends TurboModule {
