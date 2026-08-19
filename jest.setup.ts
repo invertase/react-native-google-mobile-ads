@@ -23,6 +23,14 @@ jest.doMock('react-native', () => {
       TurboModuleRegistry: {
         ...ReactNative.TurboModuleRegistry,
         getEnforcing: moduleName => {
+          if (moduleName === 'RNGoogleMobileAdsNativeModule') {
+            return {
+              load: jest.fn(),
+              destroy: jest.fn(),
+              onAdEvent: jest.fn(),
+            };
+          }
+
           if (moduleName === 'RNGoogleMobileAdsInterstitialModule') {
             return {
               interstitialLoad: jest.fn(),

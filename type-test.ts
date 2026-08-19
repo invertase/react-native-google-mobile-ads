@@ -27,6 +27,8 @@ import mobileAds, {
   useRewardedAd,
   useRewardedInterstitialAd,
   useForeground,
+  NativeAd,
+  NativeAdEventType,
 } from './src';
 
 // static exports
@@ -287,3 +289,15 @@ console.log(useRewardedInterstitialAd);
 
 // useForeground
 console.log(useForeground);
+
+// NativeAd
+async function testNativeAdPaidEvent() {
+  const nativeAd = await NativeAd.createForAdRequest('foo');
+  nativeAd.addAdEventListener(NativeAdEventType.PAID, event => {
+    console.log(event.currency);
+    console.log(event.precision);
+    console.log(event.value);
+  });
+}
+
+testNativeAdPaidEvent();
