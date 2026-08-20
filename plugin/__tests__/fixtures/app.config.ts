@@ -18,6 +18,7 @@ export default {
         optimizeAdLoading: true,
         skAdNetworkItems: ['TestSkAdNetworkItem1', 'TestSkAdNetworkItem2'],
         userTrackingUsageDescription: 'TestUserTrackingUsageDescription',
+        googleMobileAdsSdk: 'next-gen',
       },
     ],
   ],

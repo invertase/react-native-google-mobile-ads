@@ -22,6 +22,14 @@ import type { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 import { AdapterStatus } from '../../types';
 
 export interface Spec extends TurboModule {
+  getConstants(): {
+    /**
+     * Which Android Google Mobile Ads SDK the native module was built against - `'legacy'`
+     * (`com.google.android.gms:play-services-ads`) or `'next-gen'` (`ads-mobile-sdk`). Always
+     * `'legacy'` on iOS, since there is currently no GMA Next-Gen SDK for iOS.
+     */
+    googleMobileAdsSdk: 'legacy' | 'next-gen';
+  };
   initialize(): Promise<AdapterStatus[]>;
   setRequestConfiguration(requestConfiguration?: UnsafeObject): Promise<void>;
   openAdInspector(): Promise<void>;

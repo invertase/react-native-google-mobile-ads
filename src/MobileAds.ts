@@ -21,6 +21,10 @@ class MobileAdsModule implements MobileAdsModuleInterface {
     }
   }
 
+  get googleMobileAdsSdk() {
+    return RNGoogleMobileAdsModule.getConstants().googleMobileAdsSdk;
+  }
+
   subscribeToNativeModuleEvent(eventName: string) {
     if (!NATIVE_MODULE_EVENT_SUBSCRIPTIONS[eventName]) {
       GoogleMobileAdsNativeEventEmitter.addListener(eventName, event => {

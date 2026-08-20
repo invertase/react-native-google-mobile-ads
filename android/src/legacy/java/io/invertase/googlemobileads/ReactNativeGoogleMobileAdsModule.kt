@@ -178,6 +178,10 @@ class ReactNativeGoogleMobileAdsModule(
     MobileAds.setAppMuted(muted)
   }
 
+  override fun getConstants(): MutableMap<String, Any> {
+    return hashMapOf("googleMobileAdsSdk" to "legacy")
+  }
+
   companion object {
     const val NAME = "RNGoogleMobileAdsModule"
   }

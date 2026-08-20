@@ -328,7 +328,11 @@ const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.GAM_NATIVE, {
+    // GMA Next-Gen SDK has no Google Ad Manager equivalent, so Ad Manager (GAM) ad unit IDs
+    // always fail to load under it - see /next-gen-sdk docs.
+    const nativeAdUnitId =
+      MobileAds().googleMobileAdsSdk === 'next-gen' ? TestIds.NATIVE : TestIds.GAM_NATIVE;
+    NativeAd.createForAdRequest(nativeAdUnitId, {
       aspectRatio: NativeMediaAspectRatio.LANDSCAPE,
     })
       .then(setNativeAd)
@@ -991,19 +995,24 @@ TestRegistry.registerTest(new AppOpenHookTest());
 TestRegistry.registerTest(new RewardedInterstitialHookTest());
 TestRegistry.registerTest(new NativeTest());
 TestRegistry.registerTest(new AdInspectorTest());
-TestRegistry.registerTest(
-  new GAMBannerTest({
-    unitId: TestIds.GAM_BANNER,
-    sizes: [BannerAdSize.ANCHORED_ADAPTIVE_BANNER],
-  }),
-);
-TestRegistry.registerTest(
-  new GAMBannerTest({
-    unitId: TestIds.GAM_NATIVE,
-    sizes: [GAMBannerAdSize.FLUID],
-  }),
-);
-TestRegistry.registerTest(new GAMInterstitialTest());
+// GMA Next-Gen SDK has no Google Ad Manager equivalent, so any Ad Manager (GAM) ad unit ID
+// (those starting with "/") always fails to load under it - see /next-gen-sdk docs. Hide these
+// demos entirely rather than let every tap surface the same expected error.
+if (MobileAds().googleMobileAdsSdk !== 'next-gen') {
+  TestRegistry.registerTest(
+    new GAMBannerTest({
+      unitId: TestIds.GAM_BANNER,
+      sizes: [BannerAdSize.ANCHORED_ADAPTIVE_BANNER],
+    }),
+  );
+  TestRegistry.registerTest(
+    new GAMBannerTest({
+      unitId: TestIds.GAM_NATIVE,
+      sizes: [GAMBannerAdSize.FLUID],
+    }),
+  );
+  TestRegistry.registerTest(new GAMInterstitialTest());
+}
 TestRegistry.registerTest(new DebugMenuTest());
 
 const styles = StyleSheet.create({

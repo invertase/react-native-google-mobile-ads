@@ -17,7 +17,8 @@
         "optimizeInitialization": true,
         "optimizeAdLoading": true,
         "skAdNetworkItems": ["TestSkAdNetworkItem1", "TestSkAdNetworkItem2"],
-        "userTrackingUsageDescription": "TestUserTrackingUsageDescription"
+        "userTrackingUsageDescription": "TestUserTrackingUsageDescription",
+        "googleMobileAdsSdk": "next-gen"
       }
     ]
   ]

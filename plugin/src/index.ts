@@ -2,6 +2,7 @@ import {
   AndroidConfig,
   ConfigPlugin,
   withAndroidManifest,
+  withGradleProperties,
   withPlugins,
   withInfoPlist,
 } from '@expo/config-plugins';
@@ -14,6 +15,12 @@ type PluginParameters = {
   optimizeAdLoading?: boolean;
   skAdNetworkItems?: string[];
   userTrackingUsageDescription?: string;
+  /**
+   * Which Android Google Mobile Ads SDK to build against: the default `'legacy'`
+   * (`com.google.android.gms:play-services-ads`) or `'next-gen'` (`ads-mobile-sdk`).
+   * `'next-gen'` does not support Google Ad Manager ad unit IDs. Android only.
+   */
+  googleMobileAdsSdk?: 'legacy' | 'next-gen';
 };
 
 function addReplacingMainApplicationMetaDataItem(
@@ -108,6 +115,31 @@ const withAndroidAdLoadingOptimized: ConfigPlugin<PluginParameters['optimizeAdLo
   });
 };
 
+const withAndroidGoogleMobileAdsSdk: ConfigPlugin<PluginParameters['googleMobileAdsSdk']> = (
+  config,
+  googleMobileAdsSdk,
+) => {
+  if (googleMobileAdsSdk === undefined) return config;
+
+  return withGradleProperties(config, config => {
+    const existingItem = config.modResults.find(
+      item => item.type === 'property' && item.key === 'googleMobileAdsSdk',
+    );
+
+    if (existingItem && existingItem.type === 'property') {
+      existingItem.value = googleMobileAdsSdk;
+    } else {
+      config.modResults.push({
+        type: 'property',
+        key: 'googleMobileAdsSdk',
+        value: googleMobileAdsSdk,
+      });
+    }
+
+    return config;
+  });
+};
+
 const withIosAppId: ConfigPlugin<PluginParameters['iosAppId']> = (config, iosAppId) => {
   if (iosAppId === undefined) return config;
 
@@ -174,6 +206,7 @@ const withReactNativeGoogleMobileAds: ConfigPlugin<PluginParameters> = (
     iosAppId,
     skAdNetworkItems,
     userTrackingUsageDescription,
+    googleMobileAdsSdk,
   } = {},
 ) => {
   if (androidAppId === undefined) {
@@ -194,6 +227,7 @@ const withReactNativeGoogleMobileAds: ConfigPlugin<PluginParameters> = (
     [withAndroidAppMeasurementInitDelayed, delayAppMeasurementInit],
     [withAndroidInitializationOptimized, optimizeInitialization],
     [withAndroidAdLoadingOptimized, optimizeAdLoading],
+    [withAndroidGoogleMobileAdsSdk, googleMobileAdsSdk],
     // iOS
     [withIosAppId, iosAppId],
     [withIosAppMeasurementInitDelayed, delayAppMeasurementInit],
