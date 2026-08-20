@@ -1,0 +1,98 @@
+# GMA Next-Gen SDK (Android, opt-in)
+
+Google publishes a rewritten Google Mobile Ads SDK for Android, [GMA Next-Gen SDK](https://developers.google.com/admob/android/next-gen/quick-start), as a replacement for the classic `com.google.android.gms:play-services-ads` SDK ("Google Mobile Ads SDK (Legacy)"). `react-native-google-mobile-ads` supports building against either SDK on Android, selected at native build time.
+
+<Warning>
+  This is opt-in and Android-only. By default the library still builds against the legacy SDK, so
+  existing apps are unaffected. There is currently no GMA Next-Gen SDK for iOS.
+</Warning>
+
+## Why you might switch
+
+GMA Next-Gen SDK is a from-scratch rewrite with a different underlying architecture, published by Google as the eventual successor to the legacy SDK. There is no functional advantage for most apps today, but Google may deprecate the legacy SDK in the future.
+
+## Limitation: no Google Ad Manager support
+
+GMA Next-Gen SDK has no equivalent of Google Ad Manager (`AdManagerAdRequest` / `AdManagerAdView` / app events / custom targeting via publisher ad units). If your app uses Ad Manager ad unit IDs (these start with `/`, e.g. `/6499/example/native-advanced`), **do not switch** - loading one under GMA Next-Gen SDK is rejected with an `invalid-request` error rather than falling back to any legacy behaviour.
+
+Third-party mediation networks (Meta Audience Network, AppLovin, Unity Ads, ironSource, etc.) are unaffected - both SDKs serve them the same way, through AdMob Mediation.
+
+## Enabling it
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+```json
+// <project-root>/app.json
+{
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "google_mobile_ads_sdk": "next-gen"
+  }
+}
+```
+
+</TabItem>
+<TabItem value="expo">
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "googleMobileAdsSdk": "next-gen"
+        }
+      ]
+    ]
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+Rebuild your Android app's native code after changing this setting (`npx expo prebuild --clean` for Expo, or a fresh `cd android && ./gradlew clean` + rebuild for bare React Native).
+
+The flag can also be set for one build without editing `app.json`, e.g. for local testing: `cd android && ./gradlew assembleDebug -PgoogleMobileAdsSdk=next-gen`.
+
+## What doesn't change
+
+Your JavaScript/TypeScript code is unaffected either way - every export, type, and event from `react-native-google-mobile-ads` behaves identically regardless of which SDK the native build was compiled against, with one exception: `mobileAds().googleMobileAdsSdk` (see below).
+
+## Detecting which SDK is active at runtime
+
+```js
+import mobileAds from 'react-native-google-mobile-ads';
+
+mobileAds().googleMobileAdsSdk; // 'legacy' | 'next-gen'
+```
+
+This reflects a native, build-time choice - it cannot change while your app is running, so read it once (e.g. at module scope, alongside your ad unit ID constants) rather than in a hook or on every render. It is always `'legacy'` on iOS.
+
+Use it to skip or hide anything that depends on Google Ad Manager support, which `next-gen` doesn't have:
+
+```js
+import mobileAds from 'react-native-google-mobile-ads';
+import { GAMBannerAd, TestIds } from 'react-native-google-mobile-ads';
+
+const isNextGen = mobileAds().googleMobileAdsSdk === 'next-gen';
+
+function AdBanner() {
+  if (isNextGen) {
+    // Fall back to a regular AdMob ad unit ID, or render nothing.
+    return null;
+  }
+
+  return <GAMBannerAd unitId={TestIds.GAM_BANNER} sizes={['BANNER']} />;
+}
+```
+
+## Requirements
+
+GMA Next-Gen SDK requires `minSdkVersion` 24+ and `compileSdkVersion` 35+, both already the library's defaults. It also documents Kotlin 1.9+ as a minimum; the library bumps its own build-time Kotlin compiler version automatically when `next-gen` is selected, so no action is required on your end for this specific requirement.

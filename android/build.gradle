@@ -5,6 +5,12 @@ buildscript {
     return rootProject.ext.has(name) ? rootProject.ext.get(name) : version
   }
 
+  // GMA Next-Gen SDK (ads-mobile-sdk) documents Kotlin 1.9+ as a minimum requirement, so the
+  // default here is unconditionally at least that, regardless of which SDK is selected - a newer
+  // Kotlin compiler is backwards compatible for the legacy SDK too, and this avoids needing to
+  // read the googleMobileAdsSdk flag this early (before app-json.gradle runs, further down).
+  def defaultKotlinVersion = '2.1.20'
+
   // The Android Gradle plugin is only required when opening the android folder stand-alone.
   // This avoids unnecessary downloads and potential conflicts when the library is included as a
   // module dependency in an application project.
@@ -16,7 +22,7 @@ buildscript {
 
     dependencies {
       classpath("com.android.tools.build:gradle:7.0.4")
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.8.22')}"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', defaultKotlinVersion)}"
     }
   } else {
     repositories {
@@ -24,7 +30,7 @@ buildscript {
     }
 
     dependencies {
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.8.22')}"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', defaultKotlinVersion)}"
     }
   }
 }
@@ -36,6 +42,7 @@ apply plugin: 'kotlin-android'
 
 def packageJson = PackageJson.getForProject(project)
 def googleMobileAdsVersion = packageJson['sdkVersions']['android']['googleMobileAds']
+def googleMobileAdsNextGenVersion = packageJson['sdkVersions']['android']['googleMobileAdsNextGen']
 def googleUmpVersion = packageJson['sdkVersions']['android']['googleUmp']
 def jsonMinSdk = packageJson['sdkVersions']['android']['minSdk']
 def jsonTargetSdk = packageJson['sdkVersions']['android']['targetSdk']
@@ -79,11 +86,40 @@ def appJSONGoogleMobileAdsDelayAppMeasurementInitBool = false
 def appJSONGoogleMobileAdsOptimizeInitializationBool = true
 def appJSONGoogleMobileAdsOptimizeAdLoadingBool = true
 
+def appJSONGoogleMobileAdsSdkString = "legacy"
+
 if (rootProject.ext.has("googleMobileAdsJson") && rootProject.ext.googleMobileAdsJson) {
   appJSONGoogleMobileAdsAppIDString = rootProject.ext.googleMobileAdsJson.getStringValue("android_app_id", "")
   appJSONGoogleMobileAdsDelayAppMeasurementInitBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("delay_app_measurement_init", false)
   appJSONGoogleMobileAdsOptimizeInitializationBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("optimize_initialization", true)
   appJSONGoogleMobileAdsOptimizeAdLoadingBool = rootProject.ext.googleMobileAdsJson.isFlagEnabled("optimize_ad_loading", true)
+  appJSONGoogleMobileAdsSdkString = rootProject.ext.googleMobileAdsJson.getStringValue("google_mobile_ads_sdk", "legacy")
+}
+
+// A gradle.properties override (googleMobileAdsSdk=next-gen) takes precedence over app.json,
+// mirroring how newArchEnabled is read, for convenience when testing locally.
+if (project.hasProperty("googleMobileAdsSdk")) {
+  appJSONGoogleMobileAdsSdkString = project.googleMobileAdsSdk
+}
+
+def isNextGenSdkEnabled = appJSONGoogleMobileAdsSdkString == "next-gen"
+
+if (!["legacy", "next-gen"].contains(appJSONGoogleMobileAdsSdkString)) {
+  throw new GradleException(
+    "react-native-google-mobile-ads: invalid 'google_mobile_ads_sdk' value " +
+      "'${appJSONGoogleMobileAdsSdkString}' in app.json. Expected 'legacy' or 'next-gen'."
+  )
+}
+
+// GMA Next-Gen SDK (ads-mobile-sdk) ships classes in the same com.google.android.gms.ads.*
+// package as Google Mobile Ads SDK (Legacy) (play-services-ads) and cannot be present in the
+// same classpath at the same time - see
+// https://developers.google.com/ad-manager/mobile-ads-sdk/android/early-access/nextgen/migration
+if (isNextGenSdkEnabled) {
+  configurations.configureEach {
+    exclude group: "com.google.android.gms", module: "play-services-ads"
+    exclude group: "com.google.android.gms", module: "play-services-ads-lite"
+  }
 }
 
 if (!appJSONGoogleMobileAdsAppIDString) {
@@ -108,6 +144,7 @@ android {
       appJSONGoogleMobileAdsOptimizeAdLoading      : appJSONGoogleMobileAdsOptimizeAdLoadingBool
     ]
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+    buildConfigField "boolean", "IS_NEXT_GEN_ADS_SDK_ENABLED", isNextGenSdkEnabled.toString()
 
     sourceSets {
       main {
@@ -115,6 +152,11 @@ android {
           java.srcDirs += ['src/newarch']
         } else {
           java.srcDirs += ['src/oldarch']
+        }
+        if (isNextGenSdkEnabled) {
+          java.srcDirs += ['src/nextgen']
+        } else {
+          java.srcDirs += ['src/legacy']
         }
       }
     }
@@ -135,7 +177,11 @@ repositories {
 }
 
 dependencies {
-  implementation("com.google.android.gms:play-services-ads:${googleMobileAdsVersion}")
+  if (isNextGenSdkEnabled) {
+    implementation("com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk:${googleMobileAdsNextGenVersion}")
+  } else {
+    implementation("com.google.android.gms:play-services-ads:${googleMobileAdsVersion}")
+  }
   api "com.google.android.ump:user-messaging-platform:${googleUmpVersion}"
 }
 
