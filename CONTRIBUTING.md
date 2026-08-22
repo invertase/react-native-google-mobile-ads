@@ -8,7 +8,7 @@ We welcome any type of contribution, not just code. You can help with;
 - **Docs**: improve reference coverage, add more examples, fix typos or anything else you can spot.
   - At the bottom of every page on our docs site you can click the `Edit this page` button to go to that pages markdown file or view the [documents](https://github.com/invertase/react-native-google-mobile-ads/tree/main/docs) directly
 - **Community**: presenting the project at meetups, organizing a dedicated meetup for the local community, ...
-- **Code**: take a look at the [open issues](issues). Even if you can't write code, commenting on them, showing that you care about a given issue matters.
+- **Code**: take a look at the [open issues](https://github.com/invertase/react-native-google-mobile-ads/issues). Even if you can't write code, commenting on them, showing that you care about a given issue matters.
 
 ## Project Guidelines
 
@@ -38,7 +38,7 @@ To quote [@alloy](https://github.com/alloy) from [this issue](https://github.com
 
 We want contributors to provide ideas, keep the ship shipping and to take some of the load from others. It is non-obligatory; we’re here to get things done in an enjoyable way. :trophy:
 
-We do ask though that you follow the conduct guidelines set out in our [Code of Conduct](/CODE_OF_CONDUCT.md) throughout your contribution journey.
+We do ask though that you follow the conduct guidelines set out in our [Code of Conduct](CODE_OF_CONDUCT.md) throughout your contribution journey.
 
 ### What about if you have problems that cannot be discussed in a public issue?
 
@@ -88,8 +88,7 @@ To aid review we also ask that you fill out the PR template as much as possible.
 
 ### Your PR title
 
-We use the [Conventional Commits](https://www.conventionalcommits.org/) format throughout the project. Your Pull Request title should be
-in this format; however your commits themselves do not need to follow this format as all PRs are eventually squash merged.
+Commit subjects and Pull Request titles use [Conventional Commits](https://www.conventionalcommits.org/). Full rules (single-commit title equals that commit's subject; multi-commit PRs use a summary title; squash/amend is a **fix** for a non-conforming subject, not a skip): [OKF documentation policy § pull requests](okf-bundle/documentation-policy.md#pull-requests).
 
 #### Examples
 
@@ -117,7 +116,7 @@ Reviews of Pull Requests are based on the following acceptance criteria:
   - Other tests through Jest.
 - Do all CI checks pass.
 
-Once a PR is merged into the `main` branch; new versions of the changed packages are automatically created and published to NPM.
+Once a PR is merged into the `main` branch, a new version of the package is automatically created and published to NPM.
 
 ## [No Brown M&M's](http://en.wikipedia.org/wiki/Van_Halen#Contract_riders)
 
