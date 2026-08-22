@@ -48,7 +48,7 @@ Open `review` = unverified.
 
 | Gate | Evidence |
 |------|----------|
-| `implementation` | prepare/tsc/jest exits; lint if `src/` native plugin; e2e counts + log if native/codegen/plugin |
+| `implementation` | prepare/tsc/jest exits; lint if `src/` native plugin; [plugin tests](validation-checklist.md#expo-plugin) if `plugin/`; e2e counts + log if native/codegen/plugin |
 | `review` | Frozen re-run; [coverage evidence](coverage-design.md#coverage-evidence-package) when required |
 | `commit` | Prior evidence; no `.only` staged |
 | Publication | `review` closed on **those** commits; no product edits since |
@@ -75,15 +75,15 @@ No edits to product trees or bundle-affecting OKF during `independent-review` (e
 
 ## Host rule
 
-One e2e at a time. [Pre-flight](running-e2e.md#pre-flight) each run. Canonical e2e only.
+One e2e at a time. [Pre-flight](running-e2e.md#pre-flight) each run (prepare finished, Metro is this checkout). Canonical e2e only.
 
 ## Implementation
 
-Pre-flight → edit → `yarn prepare` if `src/`/`plugin/` → Jest → e2e if native → lint.
+Pre-flight → edit → `yarn prepare` if `src/`/`plugin/` → Jest → e2e if native → lint. Plugin/codegen: [GMA-AD-1](../architecture-decisions.md#gma-ad-1).
 
 Native GMA/UMP calls: read each platform’s official API; don’t copy Android fixes to iOS without checking; record citations in the queue.
 
-`.only` in `e2e/` allowed for `unit-focused` only; never commit.
+`.only` or a single e2e file is allowed for `unit-focused` diagnosis only. Revert before `area-focused` / `full`. Never commit `.only`. Diagnosis steps: [running e2e § diagnosis](running-e2e.md#e2e-diagnosis).
 
 ## Commit
 
