@@ -1,0 +1,65 @@
+---
+type: Reference
+title: Agent command policy
+description: Allowlisted agent shell commands.
+tags: [testing, validation, agents, yarn]
+timestamp: 2026-08-22T00:00:00Z
+---
+
+# Agent command policy
+
+If a command is not listed (or linked) here, **do not run it**. E2e: [local e2e commands](running-e2e.md#local-e2e-commands).
+
+1. Registry only, repo root unless noted.
+2. When this pass runs tsc/Jest/lint/Metro/native: `yarn` then `yarn prepare` exit 0 first — [§ prepare](#prepare-must-finish-first).
+3. On lint check failure: [lint-and-formatting](validation-checklist.md#lint-and-formatting) (check vs `:fix`/`--replace` by work type). For other failures: [§ frozen tree](change-authoring-workflow.md#frozen-tree) — on `independent-review`, record a finding and do not edit (except revert `.only`); apply per that heading (product/lint → `implementation`; `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` → `documentation?`), then re-run the **same** command.
+4. [Constraints block](#constraints-block).
+
+<a id="canonical-registry"></a>
+
+## Canonical registry
+
+| Intent | Command | Never |
+|--------|---------|-------|
+| Install | `yarn` | `npm install`; example-only install first |
+| Example deps | `yarn tests:install` | `npm install` in example |
+| `src/` → `lib/` + plugin | `yarn prepare` | ad-hoc bob/babel/tsc |
+| TS check | `yarn tsc:compile` | invented `tsc` configs |
+| Jest | `yarn tests:jest`, `yarn tests:jest-coverage` | `npx jest` random cwd |
+| Lint (local) | [lint-by-tree](validation-checklist.md#lint-and-formatting) (`yarn lint:js` / `yarn lint:android` / `yarn lint:ios:check`; check vs `:fix`/`--replace` by work type) | ad-hoc eslint; `npx google-java-format`; invented `clang-format` / prettier |
+| Lint CI combo | `yarn lint:code` locally only if this diff includes `src/` **and** `android/` **and** `ios/` — [lint-and-formatting](validation-checklist.md#lint-and-formatting) | do not use **this** command as the local default; do not use it on a single- or two-tree diff; do not use it on frozen `independent-review` |
+| Lint + tsc | `yarn lint` (`lint:code` + `tsc:compile`) locally only if this diff includes `src/` **and** `android/` **and** `ios/` — [lint-and-formatting](validation-checklist.md#lint-and-formatting) | do not treat as the same as `yarn lint:code`; do not use **this** command as the local default on a narrower diff; do not use it on frozen `independent-review` |
+| Docs | `yarn lint:markdown:check`, `yarn lint:spellcheck` when `docs/**` — [lint-and-formatting](validation-checklist.md#lint-and-formatting) | ad-hoc prettier as gate; markdown check on an OKF/`AGENTS.md`/`CONTRIBUTING.md`-only diff |
+| Packager | `yarn tests:packager`, `yarn tests:packager:reset-cache` | bare Metro |
+| E2e | [local e2e names](running-e2e.md#local-e2e-commands); which to run: [platform coverage](running-e2e.md#platform-coverage-gate-blocking) | `jet`, `npx jet`, `detox test`; globs; running every named e2e script unless that table requires it |
+| `.only` scan | `rg '\.only\(' src/ e2e/ plugin/ __tests__/` | other grep as the gate |
+
+Redirect/`tee` of the **same** listed yarn script is allowed. Do not add other wrappers.
+
+<a id="prepare-must-finish-first"></a>
+
+## Prepare must finish first
+
+`yarn` / `yarn prepare` only when this pass will run tsc, Jest, lint, Metro, or native. `yarn lint:markdown:check` and `yarn lint:spellcheck` **are** lint — they require `yarn` then `yarn prepare`.
+
+- Skip both when this pass will not run tsc/Jest/lint (including markdown/spellcheck)/Metro/native (for example `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` with no `docs/**`). A `documentation` pass on `docs/**` is **not** a skip.
+- When this pass will run them, run prepare first even if the [evidence prepare row](validation-checklist.md#validation-evidence-package) is `n/a` (for example android-only lint: run prepare; do not record it in that row).
+
+`yarn` / `yarn prepare` are blocking (genversion → bob → plugin). Metro reads `lib/`. Do not parallelize with Jest/tsc/Gradle/pods.
+
+Sandbox with no exit status on e2e/packager/Gradle/pods: retry the **same** command unrestricted.
+
+Traps: `genversion` via `yarn prepare` only. Example is `portal:../` — prepare before Metro. CI lint = `yarn lint:code`; CI tsc = `yarn tsc:compile`; docs CI = `yarn lint:spellcheck`.
+
+<a id="constraints-block"></a>
+
+## Constraints block
+
+```text
+RNGMA: okf-bundle/testing/agent-command-policy.md ONLY.
+Lint: validation-checklist.md#lint-and-formatting only (lint:js / lint:android / lint:ios:check by tree; check vs :fix/--replace by work type; yarn lint:code only if src AND android AND ios AND not frozen independent-review; yarn lint is lint:code plus tsc).
+E2e names: running-e2e.md#local-e2e-commands (tee of those same named scripts OK). Which to run: running-e2e.md#platform-coverage-gate-blocking. Do not glob yarn tests:android:* (Windows/release names) or yarn tests:ios:*. Do not run every named e2e script unless that table requires it. Jest and packager stay Canonical registry names.
+Never jet/npx jet/detox/npm install/ad-hoc gradlew/`npx google-java-format` (Java gate is yarn lint:android).
+yarn then yarn prepare when this pass runs tsc/Jest/lint (including markdown/spellcheck)/Metro/native (agent-command-policy.md#prepare-must-finish-first). Same command on retry except lint hops #lint-and-formatting; other failures hop #frozen-tree.
+Gates: validation-checklist.md#validation-evidence-package (+ coverage-design.md#coverage-evidence-package if src/ or android/ or ios/ or plugin/ TS).
+```

@@ -8,7 +8,7 @@ We welcome any type of contribution, not just code. You can help with;
 - **Docs**: improve reference coverage, add more examples, fix typos or anything else you can spot.
   - At the bottom of every page on our docs site you can click the `Edit this page` button to go to that pages markdown file or view the [documents](https://github.com/invertase/react-native-google-mobile-ads/tree/main/docs) directly
 - **Community**: presenting the project at meetups, organizing a dedicated meetup for the local community, ...
-- **Code**: take a look at the [open issues](issues). Even if you can't write code, commenting on them, showing that you care about a given issue matters.
+- **Code**: take a look at the [open issues](https://github.com/invertase/react-native-google-mobile-ads/issues). Even if you can't write code, commenting on them, showing that you care about a given issue matters.
 
 ## Project Guidelines
 
@@ -26,9 +26,9 @@ We aim to keep all project discussion inside GitHub issues. This is to make sure
 
 This is normal don't worry - not everyone can develop native code for Obj-C and Java, we understand that.
 
-Although we won't merge Pull Requests unless they support all applicable platforms, we do however recommend that you still submit a PR
+Although we won't merge product features that ship on both OS unless they support all applicable platforms, we do however recommend that you still submit a PR
 for the Platform that you do know and then label it as either `Help: iOS` or `Help: Android` (or post a comment requesting it to be labeled).
-This will allow other contributors to help add the missing platform support by making changes to your existing PR.
+This will allow other contributors to help add the missing platform support by making changes to your existing PR. Test and platform expectations: [platform coverage](okf-bundle/testing/running-e2e.md#platform-coverage-gate-blocking).
 
 ### Our expectations on you as a contributor
 
@@ -38,7 +38,7 @@ To quote [@alloy](https://github.com/alloy) from [this issue](https://github.com
 
 We want contributors to provide ideas, keep the ship shipping and to take some of the load from others. It is non-obligatory; we’re here to get things done in an enjoyable way. :trophy:
 
-We do ask though that you follow the conduct guidelines set out in our [Code of Conduct](/CODE_OF_CONDUCT.md) throughout your contribution journey.
+We do ask though that you follow the conduct guidelines set out in our [Code of Conduct](CODE_OF_CONDUCT.md) throughout your contribution journey.
 
 ### What about if you have problems that cannot be discussed in a public issue?
 
@@ -88,14 +88,13 @@ To aid review we also ask that you fill out the PR template as much as possible.
 
 ### Your PR title
 
-We use the [Conventional Commits](https://www.conventionalcommits.org/) format throughout the project. Your Pull Request title should be
-in this format; however your commits themselves do not need to follow this format as all PRs are eventually squash merged.
+Commit subjects and Pull Request titles use [Conventional Commits](https://www.conventionalcommits.org/). Full rules (single-commit title equals that commit's subject; multi-commit PRs use a summary title; squash/amend is a **fix** for a non-conforming subject, not a skip): [OKF documentation policy § pull requests](okf-bundle/documentation-policy.md#pull-requests).
 
 #### Examples
 
 - `docs(consent, ios): added extra example for GDPR flow on iOS`
 - `tests(perf): should throw invalid arg error`
-- `fix(insterstial, android): fixed NPE crash`
+- `fix(interstitial, android): fixed NPE crash`
 - `feat(video): add support for video load timeouts`
 
 See the [Conventional Commits](https://www.conventionalcommits.org/) specification for more information.
@@ -107,17 +106,16 @@ Pull Requests to the `main` branch require one or more peer-review approvals and
 Reviews of Pull Requests are based on the following acceptance criteria:
 
 - Does the PR provide cross-platform support?
-  - i.e. if adding a new feature then does the implementation provide iOS and Android support.
-  - Pull Requests should not be merged unless both platforms are supported (unless the feature is specific to one platform only)
+  - Product features that ship on both platforms need both.
+  - Which platforms and which tests: [platform coverage](okf-bundle/testing/running-e2e.md#platform-coverage-gate-blocking). Lint/evidence: [work types](okf-bundle/testing/validation-checklist.md#work-types) / [gates](okf-bundle/testing/change-authoring-workflow.md#gates). Frozen review: [§ frozen tree](okf-bundle/testing/change-authoring-workflow.md#frozen-tree).
 - If APIs have changed;
   - Has the documentation been updated?
   - Have the TypeScript types been added?
 - Have the tests been updated or new tests been added to test newly implemented or changed functionality.
-  - E2E tests.
-  - Other tests through Jest.
-- Do all CI checks pass.
+  - E2E and Jest when [platform coverage](okf-bundle/testing/running-e2e.md#platform-coverage-gate-blocking) requires them.
+- Do all CI checks pass. A green e2e GitHub Actions job is not an e2e pass — [continue-on-error](okf-bundle/ci-workflows/index.md#e2e-continue-on-error).
 
-Once a PR is merged into the `main` branch; new versions of the changed packages are automatically created and published to NPM.
+Once a PR is merged into the `main` branch, maintainers publish with `workflow_dispatch` — [CI publish](okf-bundle/ci-workflows/index.md#workflows). Push to `main` does not publish.
 
 ## [No Brown M&M's](http://en.wikipedia.org/wiki/Van_Halen#Contract_riders)
 
