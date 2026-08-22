@@ -30,15 +30,6 @@ Add rows when a refactor choice lands (module boundaries, codegen, plugin behavi
 
 ## GMA-AD-1 — Expo config plugin is a separate validation path — **Accepted**
 
-The Expo config plugin under `plugin/` is not covered by native e2e alone.
+The Expo config plugin under `plugin/` is a **separate validation path**: Metro/Expo consume compiled plugin output, not `plugin/src/`. Native e2e does not cover plugin JS/config by itself.
 
-**When `plugin/` or `app.plugin.js` changes:**
-
-| Check | Why |
-|-------|-----|
-| `yarn prepare` exit 0 | Root `prepare` runs `build` then `build:plugin` (`tsc --build plugin`). Metro/Expo consume compiled plugin output, not `plugin/src/` |
-| `yarn tests:jest plugin/__tests__/` exit 0 | Plugin fixture tests (`plugin/__tests__/plugin.test.ts`) match the root Jest regex; do not invent a second test runner |
-
-Do not invent attw, `yarn attw:check`, or a consumer-matrix type gate. Those tools are not in this repo.
-
-Handoff: [validation checklist § Expo plugin](testing/validation-checklist.md#expo-plugin).
+Commands: [validation checklist § Expo plugin](testing/validation-checklist.md#expo-plugin) (root Jest is the gate). When to run e2e vs plugin Jest: [running e2e § platform coverage](testing/running-e2e.md#platform-coverage-gate-blocking).

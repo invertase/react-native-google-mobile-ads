@@ -4,8 +4,8 @@ okf_version: '0.1'
 
 # React Native Google Mobile Ads knowledge bundle
 
-- [Documentation/commit policy](documentation-policy.md#durable-vs-ephemeral) — Public: GitHub-public **reference** docs under `okf-bundle/` (not work-queue files). Ephemeral: fields such as gates / `commit_subject` / `next_work_type` in work-queue **files** (default `.agents/work-queues/`, gitignored). Private: internal tracker/docs — not ephemeral; off GitHub, including off any queue file. [Efficiency](documentation-policy.md#efficiency); OKF consistency
-- [Documentation site maintenance](documentation-site-maintenance.md) — docs.page `docs.json` + `docs/`
-- [Architecture decisions](architecture-decisions.md) — `GMA-AD-*` (what + why)
-- [CI workflows](ci-workflows/index.md) — GitHub Actions jobs and artifacts
-- [Testing](testing/index.md)
+- [Documentation/commit policy](documentation-policy.md#durable-vs-ephemeral) — three kinds; [work queues](documentation-policy.md#work-queues) (do not add queues here); [commits as documentation](documentation-policy.md#commits-as-documentation); [Efficiency](documentation-policy.md#efficiency); [OKF update contract](documentation-policy.md#okf-update-contract); [pull requests](documentation-policy.md#pull-requests)
+- [Documentation site maintenance](documentation-site-maintenance.md) — docs.page [`docs.json`](documentation-site-maintenance.md#docsjson) + `docs/`
+- [Architecture decisions](architecture-decisions.md) — `GMA-AD-*` (what + why); [GMA-AD-1](architecture-decisions.md#gma-ad-1)
+- [CI workflows](ci-workflows/index.md) — [§ workflows](ci-workflows/index.md#workflows); [e2e continue-on-error](ci-workflows/index.md#e2e-continue-on-error); [§ triage](ci-workflows/index.md#triage)
+- [Testing](testing/index.md) — all testing files; [platform coverage](testing/running-e2e.md#platform-coverage-gate-blocking), [Expo plugin](testing/validation-checklist.md#expo-plugin), [coverage evidence](testing/coverage-design.md#coverage-evidence-package)
