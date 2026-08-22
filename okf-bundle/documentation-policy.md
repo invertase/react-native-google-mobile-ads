@@ -18,19 +18,21 @@ Single source of truth for OKF knowledge and commit wording. Other OKF docs/work
 |------|----------------|------------------|
 | **Public (durable)** | GitHub-**public** reference docs and indexes under `okf-bundle/` (not work-queue files) | Stable API names, registry IDs, SDK versions, classifications, verification **methods**, architecture, canonical commands |
 | **Ephemeral** | Work-queue **files** (default `.agents/work-queues/`, gitignored) | Session phase/probe IDs, **planned commit subjects** (`commit_subject`), gate state, `next_work_type`, snapshot labels, dated banners, run counts |
-| **Private** | Linear, internal docs | Issue IDs, discussion, non-public commercial terms. Not GitHub-public; not the same as ephemeral |
+| **Private** | Internal tracker and internal docs (not named here) | Tracker identifiers, discussion, non-public commercial terms. Not GitHub-public; not the same as ephemeral |
 
-GitHub-public **reference** docs, `AGENTS.md`, commits, and PR titles must **not** contain ephemeral fields (for example work-queue gates) or private items (for example Linear identifiers, internal docs).
+GitHub-public **reference** docs, `AGENTS.md`, commits, and PR titles must **not** contain ephemeral **state/values** (for example probe IDs, dated banners, run counts) or private **items** (for example tracker identifiers, internal docs). Gate **names** and close rules: [change authoring § gates](testing/change-authoring-workflow.md#gates).
 
-Work-queue **files** may hold ephemeral fields. Default queues are `.agents/work-queues/` (gitignored; do not stage or commit). This repo does not commit queues under `okf-bundle/`. Do not add them.
+Work-queue **files** may hold ephemeral fields. Default queues are `.agents/work-queues/` (gitignored; do not stage or commit). Coverage evidence lives under `.agents/reports/` (also gitignored; do not stage). This repo does not commit queues under `okf-bundle/`. Do not add them.
 
-Private items stay off GitHub, including off any queue file.
+Private items stay off GitHub, including off `AGENTS.md`, commits, PR titles, reference docs, and any queue file.
 
 **Rules**
 
-1. General OKF docs get **public/durable only** updates. Ephemeral fields and private items stay out of those docs (this section).
-2. Ephemeral state lives **only** in work queues. Private tracker state lives in Linear. When an item closes, **public** outcomes move to reference docs; leave session state in the queue and tracker state in Linear. Queue rows may archive/delete.
+1. General OKF docs get **public/durable only** updates. Ephemeral fields and private items stay out of all GitHub-public **reference** docs (this heading defines the kinds; it is not the only file the restriction covers).
+2. Ephemeral state lives **only** in work queues. Private tracker state lives in the internal tracker. When an item closes, **public** outcomes move to reference docs; leave session state in the queue and tracker state in the internal tracker. Queue rows may archive/delete.
 3. GitHub-public **reference** docs must not link to gitignored queue files (they are not on GitHub). Do not copy queue rows into reference docs. Local queues stay under `.agents/work-queues/`.
+
+<a id="commits-as-documentation"></a>
 
 ## Commits as documentation
 
@@ -38,15 +40,19 @@ We treat **git commits** as durable documentation: they are the canonical record
 
 Commit messages use [Conventional Commits](https://www.conventionalcommits.org/) and describe durable product/process deliverables: what changed and why, not probe IDs, gates, e2e counts, or “phase X complete”.
 
+<a id="pull-requests"></a>
+
 ## Pull requests
 
 Commit subjects and PR titles use [Conventional Commits](https://www.conventionalcommits.org/). When a PR contains **exactly one commit**, the **PR title must match that commit's subject line exactly** (character-for-character). Multi-commit PRs use a summary title that describes the overall change set.
 
 PRs are squash-merged. Maintainers or agents may amend or squash to **fix** a non-conforming subject so the published commit is Conventional Commits. That is an exception flow to repair a violation, not permission to skip the format on commits.
 
+<a id="okf-update-contract"></a>
+
 ## OKF update contract
 
-OKF markdown edits require an **independent bundle consistency pass**. Use a fresh context with:
+OKF markdown edits require an **independent bundle consistency pass**:
 
 1. A short summary of what changed and which files were touched.
 2. Instruction to scan the **entire** `okf-bundle/` tree.
@@ -59,9 +65,11 @@ Confirm:
 | **DRY** | No duplicated procedures, policy paragraphs, or ephemeral snapshots outside work queues |
 | **Efficiency** | Shortest text that stays **complete and true** ([§ Efficiency](#efficiency)). Completeness wins over brevity |
 | **Link hygiene** | Cross-links resolve; indexes list canonical entry points |
-| **Durability** | No ephemeral or private fields in GitHub-public **reference** docs, commits, or PR titles. Work-queue **files** may hold ephemeral fields. Private items stay off GitHub. Default queues are gitignored under `.agents/work-queues/`. Do not add new queue files under `okf-bundle/` |
+| **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, or PR titles. Work-queue **files** may hold ephemeral fields. Private items stay off GitHub. Default queues and coverage reports are gitignored under `.agents/work-queues/` and `.agents/reports/`. Do not add new queue files under `okf-bundle/` |
 
-Fix violations before handoff/merge. Work-queue edits still follow this split. Handoff entry: [validation-checklist § OKF bundle review](testing/validation-checklist.md#okf-bundle-review).
+**Blocking on `commit`.** Fix violations before `git commit` ([change authoring § commit](testing/change-authoring-workflow.md#commit)). Gate close is not a later escape hatch. Frozen `independent-review` **reports only**; `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings apply in `documentation?` then another frozen scan — product/lint findings are not this dump ([§ frozen tree](testing/change-authoring-workflow.md#frozen-tree)). Commands: [validation-checklist § OKF bundle review](testing/validation-checklist.md#okf-bundle-review). Loop: [change authoring](testing/change-authoring-workflow.md#loop). Work-queue edits still follow this split.
+
+<a id="efficiency"></a>
 
 ## Efficiency
 
@@ -86,10 +94,10 @@ If shortening would change how an agent acts, keep the longer text.
 
 ## Work-queue documents
 
-Work queues are **intentionally ephemeral**: phases, **commit subjects**, gates, active coordination. They are not policy or finalized registry/design homes.
+Work queues are **intentionally ephemeral**: phases, **commit subjects**, gates. They are not policy or finalized registry/design homes.
 
 Default location and gitignore: [§ public vs ephemeral vs private](#durable-vs-ephemeral). Field names: [iteration vocabulary](testing/iteration-vocabulary.md). Gate semantics, workflow rules, and `commit_subject` staging: [change authoring workflow](testing/change-authoring-workflow.md) (including [§ commit](testing/change-authoring-workflow.md#commit)).
 
-They do **not** name agent roles, dispatch instructions, or session choreography — those are out of scope for the public repo.
+Who executes is out of scope.
 
 New work queues link here in frontmatter/opening section; do not copy policy inline.

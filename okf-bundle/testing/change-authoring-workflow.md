@@ -3,7 +3,7 @@ type: Reference
 title: Change authoring workflow
 description: Verified product-change loop, gates, frozen tree, quality bar.
 tags: [testing, validation, workflow]
-timestamp: 2026-08-19T00:00:00Z
+timestamp: 2026-08-22T00:00:00Z
 ---
 
 # Change authoring workflow
@@ -14,48 +14,51 @@ How to author a product change. Queues hold gate state; they do not restate this
 
 **Product trees:** `src/`, `android/`, `ios/`, `plugin/`, `e2e/`, `docs/`, `RNGoogleMobileAdsExample/` (not `node_modules`). `lib/` and `src/version.ts` from `yarn prepare`.
 
+<a id="loop"></a>
+
 ## Loop
 
-`gap-analysis?` → `baseline-capture?` → `implementation` (`unit-focused`) → `independent-review` (`area-focused`, frozen) → `documentation?` → `commit` → `pre-merge-validation` (`full`) if merging.
+`gap-analysis?` → `baseline-capture?` → `implementation` (`unit-focused`) → `documentation?` → `independent-review` (`area-focused`, frozen) → `commit` → `pre-merge-validation` (`full`) if merging.
+
+OKF, `AGENTS.md`, and `CONTRIBUTING.md` edits belong in `documentation?` **on the same change set** as the product work they describe. `independent-review` of that frozen tree **is** the [OKF bundle scan](validation-checklist.md#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` (including a `CONTRIBUTING.md`-only tree). Do not add OKF after a frozen review without another `independent-review`. Close `commit` only after that scan (when OKF/`AGENTS.md`/`CONTRIBUTING.md` changed).
 
 | Work type | Tier | Edits | Commit |
 |-----------|------|-------|--------|
 | `gap-analysis` | none | read-only | no |
-| `baseline-capture` | `area-focused` | local `.only` OK | no |
+| `baseline-capture` | `area-focused` | no `.only` | no |
 | `implementation` | `unit-focused` | yes | no |
+| `documentation` | none | docs/OKF/`AGENTS.md`/`CONTRIBUTING.md` | no |
 | `independent-review` | `area-focused` | frozen — [§ frozen tree](#frozen-tree) | no |
-| `documentation` | none | docs/OKF | no |
 | `commit` | none | stage | yes |
 | `pre-merge-validation` | `full` | revert `.only` | no |
 
-Tiers: `unit-focused` = Jest + optional narrow e2e, `.only` local only. `area-focused` = full area, no `.only`, frozen for review. `full` = CI-equivalent.
+Tiers: `unit-focused` = Jest + optional `.only`/narrow e2e for **diagnosis only**; closing `implementation` still follows [platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](validation-checklist.md#lint-and-formatting). `area-focused` = full area, no `.only`, frozen for review. `full` / `pre-merge-validation` = [platform coverage](running-e2e.md#platform-coverage-gate-blocking) **and** the lint-by-tree / evidence rows that already apply for this diff; not automatically both platforms; CI e2e jobs are not the pass signal.
+
+<a id="gates"></a>
 
 ## Gates
 
 | Gate | Closes when |
 |------|-------------|
-| `implementation` | Unit-focused green; native/plugin/codegen → [platform e2e](running-e2e.md#platform-coverage-gate-blocking); [lint](validation-checklist.md#lint-and-formatting) |
-| `review` | Area-focused green on frozen tree; **all** findings fixed ([§ quality](#quality-standards)) |
-| `commit` | Prior gates closed with [evidence package](validation-checklist.md#validation-evidence-package) |
+| `implementation` (`implementation_gate`) | Unit-focused green; [platform coverage](running-e2e.md#platform-coverage-gate-blocking); [lint](validation-checklist.md#lint-and-formatting) |
+| `independent-review` (`review_gate`) | `documentation?` already done when OKF/`AGENTS.md`/`CONTRIBUTING.md`/user docs changed; area-focused green on frozen tree; **all** findings fixed ([§ quality](#quality-standards)); apply per [§ frozen tree](#frozen-tree) (not every finding → `documentation?`); OKF scan when `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` is in the frozen tree |
+| `coverage_evidence_gate` | Closes per [coverage evidence](coverage-design.md#coverage-evidence-package) (`n/a` unless the diff includes `src/` **or** `android/` **or** `ios/` **or** `plugin/` TS; `app.plugin.js`-only is `n/a` unless `plugin/` TS changed — plugin Jest still follows [§ Expo plugin](validation-checklist.md#expo-plugin)) |
+| `commit` (`commit_gate`) | Prior gates closed with [evidence package](validation-checklist.md#validation-evidence-package) |
+| `pre-merge-validation` | [Validation-checklist work types](validation-checklist.md#work-types) pre-merge row recorded (platform coverage + lint/evidence); CI e2e is not the pass |
 
-Open `review` = unverified.
+Open `review_gate` = unverified.
 
 <a id="validation-evidence-blocking"></a>
 
 ### Validation evidence
 
-**Blocking.** Gates close only when recorded evidence shows the required validation ran and passed. Record using the [validation evidence package](validation-checklist.md#validation-evidence-package). No exit codes / log paths → gate stays open.
+**Blocking.** Record the [validation evidence package](validation-checklist.md#validation-evidence-package). No exit codes / log paths → gate stays open.
 
-| Gate | Evidence |
-|------|----------|
-| `implementation` | prepare/tsc/jest exits; lint if `src/` native plugin; [plugin tests](validation-checklist.md#expo-plugin) if `plugin/`; e2e counts + log if native/codegen/plugin |
-| `review` | Frozen re-run; [coverage evidence](coverage-design.md#coverage-evidence-package) when required |
-| `commit` | Prior evidence; no `.only` staged |
-| Publication | `review` closed on **those** commits; no product edits since |
-
-Forbidden: commit/push without evidence; rewrite history without re-validation; self-accepted coverage gaps.
+<a id="quality-standards"></a>
 
 ## Quality standards
+
+Finding severity and close-rule: [§ review findings](#review-findings). Exceptions: [§ acceptable exceptions](#acceptable-exceptions).
 
 <a id="acceptable-exceptions"></a>
 
@@ -63,34 +66,38 @@ Forbidden: commit/push without evidence; rewrite history without re-validation; 
 
 Only with **user confirmation**: (1) intractable platform/SDK/toolchain limit + evidence, or (2) user deferral + rationale. Testable code gets a test or is deleted.
 
-<a id="review-findings--resolve-do-not-defer"></a>
+<a id="review-findings"></a>
 
 ### Review findings
 
-Findings `critical`/`serious`/`minor`/`nit`. Review gate closes only when all are fixed or an [exception](#acceptable-exceptions) applies.
+Findings `critical`/`serious`/`minor`/`nit`. `review_gate` closes only when all are fixed or an [exception](#acceptable-exceptions) applies. Where to apply: [§ frozen tree](#frozen-tree) — split by **what failed**, not every frozen finding → `documentation?`.
+
+<a id="frozen-tree"></a>
 
 ## Frozen tree
 
-No edits to product trees or bundle-affecting OKF during `independent-review` (except revert `.only`). Separate implementation and review passes.
+No edits during `independent-review` except revert `.only`: product trees (above); `okf-bundle/`; `AGENTS.md`; `CONTRIBUTING.md`. This pass is report-only ([lint-and-formatting](validation-checklist.md#lint-and-formatting), [OKF bundle review](validation-checklist.md#okf-bundle-review)). Follow-up owner is **what failed**: findings in `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` → new `documentation?`, then another frozen scan; findings in product / tests / lint (including iOS `:fix` after check failure, and Android format) → `implementation`. Do not send every frozen-review finding to `documentation?`. Separate implementation/`documentation` and review passes.
+
+<a id="host-rule"></a>
 
 ## Host rule
 
-One e2e at a time. [Pre-flight](running-e2e.md#pre-flight) each run (prepare finished, Metro is this checkout). Canonical e2e only.
+[Pre-flight](running-e2e.md#pre-flight) each run (prepare finished, Metro is this checkout). Canonical e2e: [local e2e commands](running-e2e.md#local-e2e-commands) only.
+
+<a id="implementation"></a>
 
 ## Implementation
 
-Pre-flight → edit → `yarn prepare` if `src/`/`plugin/` → Jest → e2e if native → lint. Plugin/codegen: [GMA-AD-1](../architecture-decisions.md#gma-ad-1).
+[Pre-flight](running-e2e.md#pre-flight) → edit → [platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](validation-checklist.md#lint-and-formatting) for this diff (Jest only if that table or [evidence](validation-checklist.md#validation-evidence-package) requires it).
 
 Native GMA/UMP calls: read each platform’s official API; don’t copy Android fixes to iOS without checking; record citations in the queue.
 
 `.only` or a single e2e file is allowed for `unit-focused` diagnosis only. Revert before `area-focused` / `full`. Never commit `.only`. Diagnosis steps: [running e2e § diagnosis](running-e2e.md#e2e-diagnosis).
 
+<a id="commit"></a>
+
 ## Commit
 
-One focused commit when gates close. Never stage `.only`, `.agents/work-queues/`, or new work-queue files under `okf-bundle/`. Before `git commit`, set the queue row's `commit_subject` to the commit's subject line and close `commit_gate`. Do not record SHAs. After commit, the git subject and the queue `commit_subject` must match character-for-character. Single-commit PR titles: [documentation-policy § pull requests](../documentation-policy.md#pull-requests). Queue location and gitignore: [documentation policy § public vs ephemeral vs private](../documentation-policy.md#durable-vs-ephemeral).
+One focused commit when `commit_gate` closes. Before `git commit`, scan for `.only` with the [registry](agent-command-policy.md#canonical-registry) `.only` scan command. Never stage `.only`. Do not stage `.agents/work-queues/`, `.agents/reports/`, or new queue files under `okf-bundle/` — [documentation policy](../documentation-policy.md#durable-vs-ephemeral). Before `git commit`, set the queue row's `commit_subject` to the commit's subject line and close `commit_gate`. Do not record SHAs. After commit, the git subject and the queue `commit_subject` must match character-for-character. Single-commit PR titles: [documentation-policy § pull requests](../documentation-policy.md#pull-requests).
 
-```bash
-rg '\.only\(' src/ e2e/ plugin/
-```
-
-Gate rows, `next_work_type`, and `commit_subject` live in work queues only — do not paste gate rows into this file. Staging, SHA ban, and character-match for `commit_subject` are this section. Do not commit `.agents/work-queues/`. Do not add queue files under `okf-bundle/`.
+Gate rows, `next_work_type`, and `commit_subject` live in work queues only. Staging, SHA ban, and character-match for `commit_subject` are this section.

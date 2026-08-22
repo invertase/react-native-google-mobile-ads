@@ -26,9 +26,9 @@ We aim to keep all project discussion inside GitHub issues. This is to make sure
 
 This is normal don't worry - not everyone can develop native code for Obj-C and Java, we understand that.
 
-Although we won't merge Pull Requests unless they support all applicable platforms, we do however recommend that you still submit a PR
+Although we won't merge product features that ship on both OS unless they support all applicable platforms, we do however recommend that you still submit a PR
 for the Platform that you do know and then label it as either `Help: iOS` or `Help: Android` (or post a comment requesting it to be labeled).
-This will allow other contributors to help add the missing platform support by making changes to your existing PR.
+This will allow other contributors to help add the missing platform support by making changes to your existing PR. Test and platform expectations: [platform coverage](okf-bundle/testing/running-e2e.md#platform-coverage-gate-blocking).
 
 ### Our expectations on you as a contributor
 
@@ -94,7 +94,7 @@ Commit subjects and Pull Request titles use [Conventional Commits](https://www.c
 
 - `docs(consent, ios): added extra example for GDPR flow on iOS`
 - `tests(perf): should throw invalid arg error`
-- `fix(insterstial, android): fixed NPE crash`
+- `fix(interstitial, android): fixed NPE crash`
 - `feat(video): add support for video load timeouts`
 
 See the [Conventional Commits](https://www.conventionalcommits.org/) specification for more information.
@@ -106,17 +106,16 @@ Pull Requests to the `main` branch require one or more peer-review approvals and
 Reviews of Pull Requests are based on the following acceptance criteria:
 
 - Does the PR provide cross-platform support?
-  - i.e. if adding a new feature then does the implementation provide iOS and Android support.
-  - Pull Requests should not be merged unless both platforms are supported (unless the feature is specific to one platform only)
+  - Product features that ship on both platforms need both.
+  - Which platforms and which tests: [platform coverage](okf-bundle/testing/running-e2e.md#platform-coverage-gate-blocking). Lint/evidence: [work types](okf-bundle/testing/validation-checklist.md#work-types) / [gates](okf-bundle/testing/change-authoring-workflow.md#gates). Frozen review: [§ frozen tree](okf-bundle/testing/change-authoring-workflow.md#frozen-tree).
 - If APIs have changed;
   - Has the documentation been updated?
   - Have the TypeScript types been added?
 - Have the tests been updated or new tests been added to test newly implemented or changed functionality.
-  - E2E tests.
-  - Other tests through Jest.
-- Do all CI checks pass.
+  - E2E and Jest when [platform coverage](okf-bundle/testing/running-e2e.md#platform-coverage-gate-blocking) requires them.
+- Do all CI checks pass. A green e2e GitHub Actions job is not an e2e pass — [continue-on-error](okf-bundle/ci-workflows/index.md#e2e-continue-on-error).
 
-Once a PR is merged into the `main` branch, a new version of the package is automatically created and published to NPM.
+Once a PR is merged into the `main` branch, maintainers publish with `workflow_dispatch` — [CI publish](okf-bundle/ci-workflows/index.md#workflows). Push to `main` does not publish.
 
 ## [No Brown M&M's](http://en.wikipedia.org/wiki/Van_Halen#Contract_riders)
 
