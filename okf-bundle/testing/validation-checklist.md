@@ -33,7 +33,13 @@ yarn lint:markdown:check && yarn lint:spellcheck   # docs/**
 
 ## Lint and formatting
 
-**Blocking before `implementation` handoff and on the frozen tree for `independent-review`.** Run the lint rows in the sequence above (`yarn lint:js`, `yarn lint:android`, `yarn lint:ios:check`, `yarn lint:code` / `yarn lint`). Docs: `yarn lint:markdown:check` and `yarn lint:spellcheck` when `docs/**`. Allowlist: [agent command policy](agent-command-policy.md).
+**Blocking before `implementation` handoff and on the frozen tree for `independent-review`.** Run the lint rows in the sequence above (`yarn lint:js`, `yarn lint:android`, `yarn lint:ios:check`, `yarn lint:code` / `yarn lint`). Docs: `yarn lint:markdown:check` and `yarn lint:spellcheck` when `docs/**`. Allowlist: [agent command policy](agent-command-policy.md). User-docs sidebar: [documentation site maintenance](../documentation-site-maintenance.md).
+
+<a id="expo-plugin"></a>
+
+## Expo plugin
+
+**Blocking when the diff touches `plugin/` or `app.plugin.js`.** [GMA-AD-1](../architecture-decisions.md#gma-ad-1): `yarn prepare` (includes `build:plugin`) then `yarn tests:jest plugin/__tests__/`. Do not invent attw or a second test runner.
 
 E2e: [running e2e](running-e2e.md).
 
@@ -63,4 +69,5 @@ Goal: each iteration improves OKF and removes conflicting guidance. The contract
 | e2e iOS / Android | `yarn tests:ios:run` / `tests:android:run` | 0 | counts + `/tmp/rngma-e2e-*.log` |
 | lint | `yarn lint:code` | 0 | — |
 | docs | `yarn lint:spellcheck` | 0 | if `docs/**` |
+| plugin | `yarn tests:jest plugin/__tests__/` | 0 | if `plugin/` — [§ Expo plugin](#expo-plugin) |
 | coverage | `yarn tests:jest-coverage` | — | [evidence package](coverage-design.md#coverage-evidence-package) |
