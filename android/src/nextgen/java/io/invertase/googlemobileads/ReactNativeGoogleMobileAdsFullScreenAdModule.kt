@@ -79,17 +79,6 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Ad>(
   }
 
   fun load(requestId: Int, adUnitId: String, adRequestOptions: ReadableMap) {
-    if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(adUnitId)) {
-      val error = Arguments.createMap()
-      error.putString("code", "invalid-request")
-      error.putString(
-        "message",
-        "Ad Manager ad unit IDs are not supported when using GMA Next-Gen SDK."
-      )
-      sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR, requestId, adUnitId, error, null)
-      return
-    }
-
     val adRequest = ReactNativeGoogleMobileAdsCommon.buildAdRequest(adUnitId, adRequestOptions)
     loadAd(adRequest, SharedAdLoadCallback(requestId, adUnitId, adRequestOptions))
   }
