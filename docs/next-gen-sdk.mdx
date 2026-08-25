@@ -11,11 +11,11 @@ Google publishes a rewritten Google Mobile Ads SDK for Android, [GMA Next-Gen SD
 
 GMA Next-Gen SDK is a from-scratch rewrite with a different underlying architecture, published by Google as the eventual successor to the legacy SDK. There is no functional advantage for most apps today, but Google may deprecate the legacy SDK in the future.
 
-## Limitation: no Google Ad Manager support
+## Limitation: mediation
 
-GMA Next-Gen SDK has no equivalent of Google Ad Manager (`AdManagerAdRequest` / `AdManagerAdView` / app events / custom targeting via publisher ad units). If your app uses Ad Manager ad unit IDs (these start with `/`, e.g. `/6499/example/native-advanced`), **do not switch** - loading one under GMA Next-Gen SDK is rejected with an `invalid-request` error rather than falling back to any legacy behaviour.
+GMA Next-Gen SDK works either with no mediation at all or with AdMob as the mediation platform - it is not compatible with other mediation platforms. If your app relies on a non-AdMob mediation platform, do not switch.
 
-Third-party mediation networks (Meta Audience Network, AppLovin, Unity Ads, ironSource, etc.) are unaffected - both SDKs serve them the same way, through AdMob Mediation.
+Google Ad Manager itself is fully supported: Ad Manager ad unit IDs (those starting with `/`, e.g. `/6499/example/native-advanced`) load through the same request builders as AdMob unit IDs under GMA Next-Gen SDK, including custom targeting, publisher-provided ID, and app events.
 
 ## Enabling it
 
@@ -74,24 +74,6 @@ mobileAds().googleMobileAdsSdk; // 'legacy' | 'next-gen'
 ```
 
 This reflects a native, build-time choice - it cannot change while your app is running, so read it once (e.g. at module scope, alongside your ad unit ID constants) rather than in a hook or on every render. It is always `'legacy'` on iOS.
-
-Use it to skip or hide anything that depends on Google Ad Manager support, which `next-gen` doesn't have:
-
-```js
-import mobileAds from 'react-native-google-mobile-ads';
-import { GAMBannerAd, TestIds } from 'react-native-google-mobile-ads';
-
-const isNextGen = mobileAds().googleMobileAdsSdk === 'next-gen';
-
-function AdBanner() {
-  if (isNextGen) {
-    // Fall back to a regular AdMob ad unit ID, or render nothing.
-    return null;
-  }
-
-  return <GAMBannerAd unitId={TestIds.GAM_BANNER} sizes={['BANNER']} />;
-}
-```
 
 ## Requirements
 
