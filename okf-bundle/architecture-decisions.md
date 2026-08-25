@@ -8,7 +8,7 @@ timestamp: 2026-08-22T00:00:00Z
 
 # Architecture decisions (ADR)
 
-**Canonical owner** of durable “what + why” decisions for this repo. Procedures and commands live in [testing](testing/index.md). Do not duplicate these decisions in work queues. Queues stay under `.agents/work-queues/` (gitignored).
+**Canonical owner** of durable “what + why” decisions for this repo. Procedures and commands live in [testing](testing/index.md). Do not duplicate these decisions into ephemeral session trackers.
 
 **Policy:** [OKF documentation policy](documentation-policy.md).
 
