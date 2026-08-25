@@ -46,9 +46,8 @@ import org.json.JSONObject
 
 /**
  * GMA Next-Gen SDK backed equivalent of the legacy `ReactNativeGoogleMobileAdsBannerAdViewManager`.
- * GMA Next-Gen SDK has no Google Ad Manager equivalent, so Ad Manager unit IDs (starting with
- * "/") are rejected instead of silently degrading, and there is a single `AdView` class instead
- * of a `AdView`/`AdManagerAdView` split.
+ * There is a single `AdView` class covering both AdMob and Ad Manager unit IDs, unlike legacy's
+ * `AdView`/`AdManagerAdView` split.
  */
 class ReactNativeGoogleMobileAdsBannerAdViewManager : SimpleViewManager<ReactNativeAdView>() {
   private val REACT_CLASS = "RNGoogleMobileAdsBannerView"
@@ -274,14 +273,6 @@ class ReactNativeGoogleMobileAdsBannerAdViewManager : SimpleViewManager<ReactNat
     val requestOptions = reactViewGroup.pendingRequestOptions
 
     if (unitId == null || sizes == null || sizes.isEmpty() || requestOptions == null) {
-      return
-    }
-
-    if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(unitId)) {
-      val payload = Arguments.createMap()
-      payload.putString("code", "invalid-request")
-      payload.putString("message", "Ad Manager ad unit IDs are not supported when using GMA Next-Gen SDK.")
-      sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload)
       return
     }
 
