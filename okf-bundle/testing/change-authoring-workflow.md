@@ -8,7 +8,7 @@ timestamp: 2026-08-22T00:00:00Z
 
 # Change authoring workflow
 
-How to author a product change. Queues hold gate state; they do not restate this loop.
+How to author a product change. Gate state is maintained outside this repo per [documentation policy](../documentation-policy.md#durable-vs-ephemeral); this doc restates only the verified product-change loop.
 
 **Policy:** [documentation policy](../documentation-policy.md). **Terms:** [iteration vocabulary](iteration-vocabulary.md). **Commands:** [validation checklist](validation-checklist.md), [agent command policy](agent-command-policy.md).
 
@@ -90,7 +90,7 @@ No edits during `independent-review` except revert `.only`: product trees (above
 
 [Pre-flight](running-e2e.md#pre-flight) → edit → [platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](validation-checklist.md#lint-and-formatting) for this diff (Jest only if that table or [evidence](validation-checklist.md#validation-evidence-package) requires it).
 
-Native GMA/UMP calls: read each platform’s official API; don’t copy Android fixes to iOS without checking; record citations in the queue.
+Native GMA/UMP calls: read each platform’s official API; don’t copy Android fixes to iOS without checking; record citations in ephemeral session scratch under `.agents/`.
 
 `.only` or a single e2e file is allowed for `unit-focused` diagnosis only. Revert before `area-focused` / `full`. Never commit `.only`. Diagnosis steps: [running e2e § diagnosis](running-e2e.md#e2e-diagnosis).
 
@@ -98,6 +98,6 @@ Native GMA/UMP calls: read each platform’s official API; don’t copy Android 
 
 ## Commit
 
-One focused commit when `commit_gate` closes. Before `git commit`, scan for `.only` with the [registry](agent-command-policy.md#canonical-registry) `.only` scan command. Never stage `.only`. Do not stage `.agents/work-queues/`, `.agents/reports/`, or new queue files under `okf-bundle/` — [documentation policy](../documentation-policy.md#durable-vs-ephemeral). Before `git commit`, set the queue row's `commit_subject` to the commit's subject line and close `commit_gate`. Do not record SHAs. After commit, the git subject and the queue `commit_subject` must match character-for-character. Single-commit PR titles: [documentation-policy § pull requests](../documentation-policy.md#pull-requests).
+One focused commit when `commit_gate` closes. Before `git commit`, scan for `.only` with the [registry](agent-command-policy.md#canonical-registry) `.only` scan command. Never stage `.only`. Do not stage anything under `.agents/` (gitignored ephemeral working files), and do not add ephemeral files under `okf-bundle/` — [documentation policy](../documentation-policy.md#durable-vs-ephemeral). Before `git commit`, stage `commit_subject` in ephemeral gate state in the internal tracker (not under `.agents/`) to the commit's subject line and close `commit_gate`. Do not record SHAs. After commit, the git subject and staged `commit_subject` must match character-for-character. Single-commit PR titles: [documentation-policy § pull requests](../documentation-policy.md#pull-requests).
 
-Gate rows, `next_work_type`, and `commit_subject` live in work queues only. Staging, SHA ban, and character-match for `commit_subject` are this section.
+Gate-state fields (`next_work_type`, `commit_subject`, and related fields per [iteration vocabulary](iteration-vocabulary.md)) are ephemeral and never live in GitHub-public docs. Gate state lives in the internal tracker per [documentation policy](../documentation-policy.md#efficiency). Staging, SHA ban, and character-match for `commit_subject` are this section.

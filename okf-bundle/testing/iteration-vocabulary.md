@@ -1,8 +1,8 @@
 ---
 type: Reference
 title: Iteration vocabulary
-description: Work-type, tier, and work-queue field identifiers — not procedures.
-tags: [testing, validation, workflow, work-queue]
+description: Work-type, tier, and gate-state field identifiers — not procedures.
+tags: [testing, validation, workflow]
 timestamp: 2026-08-22T00:00:00Z
 ---
 
@@ -28,6 +28,6 @@ Order is **not** implied by this table; sequence: [change authoring § loop](cha
 | `area-focused` | Full area spec |
 | `full` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) **and** lint-by-tree / evidence for this diff; not automatically both platforms; CI e2e jobs are not the pass signal |
 
-Queue fields (`open`\|`closed` unless noted): `next_work_type`, `validation_tier`, `platform`, `implementation_gate`, `review_gate`, `commit_gate`, `coverage_evidence_gate` (`open`\|`closed`\|`n/a`), `commit_subject` (planned or landed Conventional Commits first line), `blocked`.
+Gate-state fields (`open`\|`closed` unless noted): `next_work_type`, `validation_tier`, `platform`, `implementation_gate`, `review_gate`, `commit_gate`, `coverage_evidence_gate` (`open`\|`closed`\|`n/a`), `commit_subject` (planned or landed Conventional Commits first line), `blocked`.
 
 State only — not who executes. Gate close rules: [change authoring § gates](change-authoring-workflow.md#gates). `commit_subject` match and staging: [change authoring § commit](change-authoring-workflow.md#commit).
