@@ -2,13 +2,13 @@
 type: Reference
 title: OKF documentation and commit policy
 description: Canonical rules for public vs ephemeral vs private knowledge, commit messages, and post-update bundle consistency.
-tags: [okf, documentation, policy, commits, work-queue]
+tags: [okf, documentation, policy, commits]
 timestamp: 2026-08-22T00:00:00Z
 ---
 
 # OKF documentation and commit policy
 
-Single source of truth for OKF knowledge and commit wording. Other OKF docs/work queues link here; do not restate.
+Single source of truth for OKF knowledge and commit wording. Other OKF docs link here; do not restate.
 
 <a id="durable-vs-ephemeral"></a>
 
@@ -16,21 +16,21 @@ Single source of truth for OKF knowledge and commit wording. Other OKF docs/work
 
 | Kind | Where it lives | What it contains |
 |------|----------------|------------------|
-| **Public (durable)** | GitHub-**public** reference docs and indexes under `okf-bundle/` (not work-queue files) | Stable API names, registry IDs, SDK versions, classifications, verification **methods**, architecture, canonical commands |
-| **Ephemeral** | Work-queue **files** (default `.agents/work-queues/`, gitignored) | Session phase/probe IDs, **planned commit subjects** (`commit_subject`), gate state, `next_work_type`, snapshot labels, dated banners, run counts |
+| **Public (durable)** | GitHub-**public** reference docs and indexes under `okf-bundle/` | Stable API names, registry IDs, SDK versions, classifications, verification **methods**, architecture, canonical commands |
+| **Ephemeral** | **Gitignored** working files in the checkout, all under `.agents/` | Session scratch only: run counts, snapshot labels, dated banners, interim report copies, coverage evidence paths (`.agents/reports/<change-id>/`), probe notes — never staged |
 | **Private** | Internal tracker and internal docs (not named here) | Tracker identifiers, discussion, non-public commercial terms. Not GitHub-public; not the same as ephemeral |
 
 GitHub-public **reference** docs, `AGENTS.md`, commits, and PR titles must **not** contain ephemeral **state/values** (for example probe IDs, dated banners, run counts) or private **items** (for example tracker identifiers, internal docs). Gate **names** and close rules: [change authoring § gates](testing/change-authoring-workflow.md#gates).
 
-Work-queue **files** may hold ephemeral fields. Default queues are `.agents/work-queues/` (gitignored; do not stage or commit). Coverage evidence lives under `.agents/reports/` (also gitignored; do not stage). This repo does not commit queues under `okf-bundle/`. Do not add them.
+Ephemeral working files are **gitignored and never staged**. In this checkout that means everything under `.agents/`. Do not add ephemeral files under `okf-bundle/`.
 
-Private items stay off GitHub, including off `AGENTS.md`, commits, PR titles, reference docs, and any queue file.
+Private items stay off GitHub, including off `AGENTS.md`, commits, PR titles, and reference docs.
 
 **Rules**
 
 1. General OKF docs get **public/durable only** updates. Ephemeral fields and private items stay out of all GitHub-public **reference** docs (this heading defines the kinds; it is not the only file the restriction covers).
-2. Ephemeral state lives **only** in work queues. Private tracker state lives in the internal tracker. When an item closes, **public** outcomes move to reference docs; leave session state in the queue and tracker state in the internal tracker. Queue rows may archive/delete.
-3. GitHub-public **reference** docs must not link to gitignored queue files (they are not on GitHub). Do not copy queue rows into reference docs. Local queues stay under `.agents/work-queues/`.
+2. Ephemeral state has two layers: **session scratch** lives only in gitignored `.agents/`; **gate state** lives only in the internal tracker (ephemeral for durability purposes). When an item closes, **public** outcomes move to reference docs; session scratch stays under `.agents/` and gate state stays in the tracker.
+3. GitHub-public **reference** docs must not link to gitignored files — they are not on GitHub.
 
 <a id="commits-as-documentation"></a>
 
@@ -62,12 +62,12 @@ Confirm:
 | Check | Requirement |
 |-------|-------------|
 | **Canonical location** | Each topic has one owning doc; others link to it. Bundle owners: [index.md](index.md). Testing owners: [testing/index.md](testing/index.md) (file **and** section links). |
-| **DRY** | No duplicated procedures, policy paragraphs, or ephemeral snapshots outside work queues |
+| **DRY** | No duplicated procedures, policy paragraphs, or ephemeral snapshots in GitHub-public docs |
 | **Efficiency** | Shortest text that stays **complete and true** ([§ Efficiency](#efficiency)). Completeness wins over brevity |
 | **Link hygiene** | Cross-links resolve; indexes list canonical entry points |
-| **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, or PR titles. Work-queue **files** may hold ephemeral fields. Private items stay off GitHub. Default queues and coverage reports are gitignored under `.agents/work-queues/` and `.agents/reports/`. Do not add new queue files under `okf-bundle/` |
+| **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, or PR titles. Private items stay off GitHub. Ephemeral working files are gitignored under `.agents/` and never staged. Do not add ephemeral files under `okf-bundle/` |
 
-**Blocking on `commit`.** Fix violations before `git commit` ([change authoring § commit](testing/change-authoring-workflow.md#commit)). Gate close is not a later escape hatch. Frozen `independent-review` **reports only**; `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings apply in `documentation?` then another frozen scan — product/lint findings are not this dump ([§ frozen tree](testing/change-authoring-workflow.md#frozen-tree)). Commands: [validation-checklist § OKF bundle review](testing/validation-checklist.md#okf-bundle-review). Loop: [change authoring](testing/change-authoring-workflow.md#loop). Work-queue edits still follow this split.
+**Blocking on `commit`.** Fix violations before `git commit` ([change authoring § commit](testing/change-authoring-workflow.md#commit)). Gate close is not a later escape hatch. Frozen `independent-review` **reports only**; `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings apply in `documentation?` then another frozen scan — product/lint findings are not this dump ([§ frozen tree](testing/change-authoring-workflow.md#frozen-tree)). Commands: [validation-checklist § OKF bundle review](testing/validation-checklist.md#okf-bundle-review). Loop: [change authoring](testing/change-authoring-workflow.md#loop).
 
 <a id="efficiency"></a>
 
@@ -90,14 +90,6 @@ Efficiency is **information-preserving brevity**, not a token budget.
 
 If shortening would change how an agent acts, keep the longer text.
 
-<a id="work-queues"></a>
+**`.agents/`** files are gitignored and never staged — session scratch only ([table above](#durable-vs-ephemeral)).
 
-## Work-queue documents
-
-Work queues are **intentionally ephemeral**: phases, **commit subjects**, gates. They are not policy or finalized registry/design homes.
-
-Default location and gitignore: [§ public vs ephemeral vs private](#durable-vs-ephemeral). Field names: [iteration vocabulary](testing/iteration-vocabulary.md). Gate semantics, workflow rules, and `commit_subject` staging: [change authoring workflow](testing/change-authoring-workflow.md) (including [§ commit](testing/change-authoring-workflow.md#commit)).
-
-Who executes is out of scope.
-
-New work queues link here in frontmatter/opening section; do not copy policy inline.
+Gate state (`next_work_type`, gates, `commit_subject`, and related fields) lives in the **internal tracker** (session trackers outside this repo). It is ephemeral for durability purposes but is not maintained under `.agents/` and is not described here. Field names: [iteration vocabulary](testing/iteration-vocabulary.md). Gate semantics and `commit_subject` staging: [change authoring workflow](testing/change-authoring-workflow.md#commit).
