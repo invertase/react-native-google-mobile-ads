@@ -35,10 +35,10 @@ import io.invertase.googlemobileads.common.ReactNativeEventEmitter
 import java.util.regex.Pattern
 
 /**
- * GMA Next-Gen SDK backed equivalent of the legacy `ReactNativeGoogleMobileAdsCommon`. GMA
- * Next-Gen SDK has no equivalent of Google Ad Manager (AdManagerAdRequest/AdManagerAdView), so
- * Ad Manager unit IDs (those starting with "/") are explicitly rejected instead of silently
- * degrading - see isAdManagerUnit().
+ * GMA Next-Gen SDK backed equivalent of the legacy `ReactNativeGoogleMobileAdsCommon`. Unlike
+ * legacy, there is no separate AdManagerAdRequest/AdManagerAdView - Ad Manager and AdMob unit IDs
+ * both load through the same request builders, with Ad Manager-only fields (customTargeting,
+ * publisherProvidedId) applied unconditionally below.
  */
 object ReactNativeGoogleMobileAdsCommon {
 
@@ -229,12 +229,6 @@ object ReactNativeGoogleMobileAdsCommon {
       "WIDE_SKYSCRAPER" -> AdSize(160, 600)
       else -> AdSize.BANNER
     }
-  }
-
-  /** GMA Next-Gen SDK has no Google Ad Manager equivalent - Ad Manager unit IDs (starting with
-   * "/") can never be loaded and calling code should reject them up front. */
-  fun isAdManagerUnit(unitId: String?): Boolean {
-    return unitId != null && unitId.startsWith("/")
   }
 
   fun sendAdEvent(
