@@ -36,9 +36,7 @@ import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdLoader
 import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdLoaderCallback
 
 /**
- * GMA Next-Gen SDK backed equivalent of the legacy `ReactNativeGoogleMobileAdsNativeModule`. Ad
- * Manager unit IDs (starting with "/") are rejected up front since GMA Next-Gen SDK has no Ad
- * Manager equivalent - see [ReactNativeGoogleMobileAdsCommon.isAdManagerUnit].
+ * GMA Next-Gen SDK backed equivalent of the legacy `ReactNativeGoogleMobileAdsNativeModule`.
  */
 @ReactModule(ReactNativeGoogleMobileAdsNativeModule.NAME)
 class ReactNativeGoogleMobileAdsNativeModule(
@@ -50,14 +48,6 @@ class ReactNativeGoogleMobileAdsNativeModule(
 
   @ReactMethod
   override fun load(adUnitId: String, requestOptions: ReadableMap, promise: Promise) {
-    if (ReactNativeGoogleMobileAdsCommon.isAdManagerUnit(adUnitId)) {
-      promise.reject(
-        "invalid-request",
-        "Ad Manager ad unit IDs are not supported when using GMA Next-Gen SDK."
-      )
-      return
-    }
-
     val holder = NativeAdHolder(adUnitId, requestOptions)
     holder.loadAd { nativeAd ->
       val responseId = nativeAd.getResponseInfo()?.responseId ?: return@loadAd
