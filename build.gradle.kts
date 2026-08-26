@@ -19,6 +19,7 @@ kotlin {
           listOf(
             "packages/core/android/src/main/java",
             "packages/core/android/src/oldarch",
+            "packages/core/android/src/test/java",
           ),
         )
       }

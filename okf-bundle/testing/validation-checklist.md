@@ -64,6 +64,8 @@ Goal: each iteration improves OKF and removes conflicting guidance. The contract
 | prepare | `yarn prepare` | 0 | if `packages/core/src/` or `packages/core/plugin/` or `packages/core/app.plugin.js` (or `packages/core/lib/` is stale) |
 | tsc | `yarn tsc:compile` | 0 | if `packages/core/src/` or `packages/core/plugin/` or `packages/core/app.plugin.js` |
 | jest | `yarn tests:jest <paths>` | 0 | N/N — if `packages/core/src/`, `packages/core/plugin/`, or `packages/core/__tests__/` |
+| android JVM unit | `yarn tests:android:unit` | 0 | if `packages/core/android/src/test/` or Robolectric wiring in `packages/core/android/build.gradle` — [platform coverage harness-only](running-e2e.md#platform-coverage-gate-blocking) |
+| ios XCTest unit | `yarn tests:ios:unit` | 0 | if `packages/core/ios/Tests/` or `RNGoogleMobileAdsUnitTests.xcodeproj` / podspec `UnitTests` wiring — [platform coverage harness-only](running-e2e.md#platform-coverage-gate-blocking) |
 | e2e iOS / Android | Android/iOS named-script trios on [platform coverage](running-e2e.md#platform-coverage-gate-blocking); [names + tee](running-e2e.md#local-e2e-commands) | 0 | counts + `/tmp/rngma-e2e-*.log` — only if that table requires e2e |
 | lint | [§ lint](#lint-and-formatting) for this diff (`lint:js` only if `packages/core/src/`; not plugin; not `packages/core/__tests__/`). `yarn lint:code` / `yarn lint` only when this diff includes `packages/core/src/` **and** `packages/core/android/` **and** `packages/core/ios/` and the work type may `--replace` | 0 | matching linters |
 | docs | `yarn lint:markdown:check` and `yarn lint:spellcheck` | 0 | if `docs/**` — [§ lint](#lint-and-formatting) |
