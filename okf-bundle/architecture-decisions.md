@@ -42,4 +42,6 @@ This repo is a **Yarn 4 workspaces** monorepo. The publishable npm package `reac
 
 Root `yarn prepare` runs `yarn lerna:prepare` (Lerna 9 + Nx cache, `neverConnectToCloud`). Per-package `prepare` performs genversion, bob (`lib/`), and the Expo plugin build. Do not invent a second task runner.
 
+Package TypeScript extends root `tsconfig.packages.base.json`. Root `eslint.config.js` is the shared flat ESLint config for workspace packages (future `tooling/*` should reuse it). Core publishes explicit `exports` where `react-native`, `source`, `import`, and `require` each nest `types` (`react-native` / `source` / `import` → `./lib/typescript/module/index.d.ts`; `require` → `./lib/typescript/commonjs/index.d.ts`); `react-native` and `source` `default` → `./src/index.ts`; `import`/`require` `default` → dual Bob JS; bare `default` → CJS. Bob `esm` dual build under `lib/commonjs`, `lib/module`, and `lib/typescript/{commonjs,module}`.
+
 Commands: [agent command policy](testing/agent-command-policy.md). Product trees: [change authoring](testing/change-authoring-workflow.md).

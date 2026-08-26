@@ -23,11 +23,13 @@ export const SDK_VERSION = version;
 export { default, MobileAds } from './MobileAds';
 export {
   AdsConsentDebugGeography,
+  AdsConsentPrivacyOptionsRequirementStatus,
+  AdsConsentStatus,
+} from './specs/modules/NativeConsentModule';
+export type {
   AdsConsentInfo,
   AdsConsentInfoOptions,
   AdsConsentInterface,
-  AdsConsentPrivacyOptionsRequirementStatus,
-  AdsConsentStatus,
   AdsConsentUserChoices,
 } from './specs/modules/NativeConsentModule';
 export { AdsConsentPurposes } from './AdsConsentPurposes';
@@ -45,6 +47,7 @@ export { InterstitialAd } from './ads/InterstitialAd';
 export { RewardedAd } from './ads/RewardedAd';
 export { RewardedInterstitialAd } from './ads/RewardedInterstitialAd';
 export { BannerAd } from './ads/BannerAd';
+export type { MobileAd } from './ads/MobileAd';
 export { NativeAd } from './ads/native-ad/NativeAd';
 export { NativeAdView } from './ads/native-ad/NativeAdView';
 export { NativeMediaView } from './ads/native-ad/NativeMediaView';
