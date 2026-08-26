@@ -1,10 +1,13 @@
 import type { Options } from '@wdio/types';
+import { EXAMPLE_IOS_BUNDLE_ID, iosAppPath } from './src/formats.ts';
 import { config as shared } from './wdio.shared.conf.ts';
 
+const iosApp = iosAppPath();
+
 /**
- * iOS Appium smoke config (XCUITest).
- * Requires: installed drivers (`yarn drivers:install`), simulator, built example app.
- * Full format smoke specs are not in this scaffold — placeholder specs are skipped.
+ * iOS Appium smoke (XCUITest).
+ * Prerequisites: `yarn tests:appium:drivers:install`, simulator, Metro on :8081,
+ * built example (`yarn tests:ios:pod:install` + install via `yarn tests:ios:run` or set RNGMA_IOS_APP).
  */
 export const config: Options.Testrunner = {
   ...shared,
@@ -13,9 +16,12 @@ export const config: Options.Testrunner = {
     {
       platformName: 'iOS',
       'appium:automationName': 'XCUITest',
-      'appium:deviceName': 'iPhone 16',
+      'appium:deviceName': process.env.RNGMA_IOS_DEVICE || 'iPhone 16',
+      'appium:platformVersion': process.env.RNGMA_IOS_VERSION,
+      'appium:bundleId': EXAMPLE_IOS_BUNDLE_ID,
+      ...(iosApp ? { 'appium:app': iosApp } : {}),
       'appium:newCommandTimeout': 240,
-      // Later: set appium:app / bundleId against the example build.
+      'appium:noReset': false,
     },
   ],
 };

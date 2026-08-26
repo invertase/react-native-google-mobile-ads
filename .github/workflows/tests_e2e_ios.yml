@@ -60,7 +60,7 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'yarn.lock', 'packages/core/package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: ${{ runner.os }}-yarn-v1
 
-      # Detox is compiled during yarn install, using Xcode, set up cache first
+      # Native iOS deps compile during yarn/pod install; set up Xcode compile cache first
       - uses: hendrikmuhs/ccache-action@v1
         name: Xcode Compile Cache
         with:
@@ -105,14 +105,6 @@ jobs:
           max_attempts: 3
           command: yarn tests:ios:pod:install
 
-      - name: Install applesimutils
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 5
-          retry_wait_seconds: 60
-          max_attempts: 3
-          command: HOMEBREW_NO_AUTO_UPDATE=1 brew tap wix/brew && HOMEBREW_NO_AUTO_UPDATE=1 brew install applesimutils
-
       - name: Metro Bundler Cache
         uses: actions/cache@v4
         with:
@@ -133,15 +125,21 @@ jobs:
           echo "...javascript bundle ready"
 
       - name: Create Simulator Log
-        # With a little delay so the detox test below has time to spawn it, missing the first part of boot is fine
-        # If you boot the simulator separately from detox, some other race fails and detox testee never sends ready to proxy
         continue-on-error: true
         run: nohup sh -c "sleep 30 && xcrun simctl spawn booted log stream --level debug --style compact > simulator.log 2>&1 &"
 
-      - name: Build and Run e2e app
+      - name: Install example on simulator
         timeout-minutes: 20
         continue-on-error: true
         run: yarn tests:ios:run
+
+      - name: Build and Run Appium e2e
+        timeout-minutes: 30
+        continue-on-error: true
+        run: |
+          yarn tests:appium:drivers:install
+          yarn tests:appium:drivers:verify
+          yarn tests:appium:ios
 
       - name: Upload Simulator Log
         uses: actions/upload-artifact@v4

@@ -1,5 +1,5 @@
 /**
- * Stable testID / accessibility IDs for Appium (and Jet gallery containers).
+ * Stable testID / accessibility IDs for Appium format gallery.
  * Keep string values in sync with tooling/appium/src/testIds.ts.
  *
  * Banner / GAM banner containers use `bannerVariant` / `gamBannerVariant` (size-specific).
@@ -7,7 +7,15 @@
  */
 export const AppiumTestIds = {
   root: 'gma.app.root',
-  jetRunner: 'gma.jet.runner',
+  gallery: 'gma.gallery',
+  galleryBack: 'gma.gallery.back',
+  /** Home-screen section filter chips (short lists for Appium reachability). */
+  section: {
+    all: 'gma.gallery.section.all',
+    formats: 'gma.gallery.section.formats',
+    hooks: 'gma.gallery.section.hooks',
+    debug: 'gma.gallery.section.debug',
+  },
   format: {
     banner: 'gma.format.banner',
     collapsibleBanner: 'gma.format.collapsible-banner',
@@ -33,6 +41,10 @@ export const AppiumTestIds = {
     loaded: (formatId: string) => `${formatId}.loaded`,
     recordImpression: (formatId: string) => `${formatId}.record-impression`,
   },
-  bannerVariant: (jetPath: string) => `gma.format.banner.${jetPath}`,
+  /** Open a format from the gallery home list. */
+  openFormat: (formatId: string) => `gma.gallery.open.${formatId}`,
+  /** Banner size variants use `gma.format.banner.<VariantKey>` (e.g. Banner, LargeBanner). */
+  bannerVariant: (variantKey: string) => `gma.format.banner.${variantKey}`,
+  /** GAM banner size variants use `gma.format.gam-banner.<sizesJoined>`. */
   gamBannerVariant: (sizesKey: string) => `gma.format.gam-banner.${sizesKey}`,
 } as const;

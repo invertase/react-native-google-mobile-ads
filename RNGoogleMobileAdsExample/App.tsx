@@ -1,5 +1,5 @@
 /**
- * Sample React Native App
+ * Sample React Native App — format gallery for manual QA and Appium smoke.
  * https://github.com/facebook/react-native
  *
  * @format
@@ -8,7 +8,7 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import React, { RefObject, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Image,
@@ -20,7 +20,6 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { AutoExecutableTest, TestRegistry, TestResult, TestRunner, TestType } from 'jet';
 
 import { AppiumTestIds } from './src/appiumTestIds';
 import MobileAds, {
@@ -55,6 +54,46 @@ import MobileAds, {
   useRewardedInterstitialAd,
 } from 'react-native-google-mobile-ads';
 
+type GallerySection = 'all' | 'formats' | 'hooks' | 'debug';
+
+type GalleryEntry = {
+  id: string;
+  title: string;
+  section: Exclude<GallerySection, 'all'>;
+  render: () => React.ReactNode;
+};
+
+const GALLERY_SECTION_CHIPS: Array<{ id: GallerySection; title: string }> = [
+  { id: 'all', title: 'All' },
+  { id: 'formats', title: 'Formats' },
+  { id: 'hooks', title: 'Hooks' },
+  { id: 'debug', title: 'Debug' },
+];
+
+function bannerVariantKey(
+  bannerAdSize: BannerAdSize | string,
+  maxHeight?: number,
+  width?: number,
+): string {
+  return bannerAdSize
+    .split('_')
+    .map(s => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1))
+    .join('')
+    .concat(maxHeight ? `MaxHeight${maxHeight}` : '')
+    .concat(width ? `Width${width}` : '');
+}
+
+function gamSizesKey(sizes: (keyof typeof GAMBannerAdSize)[]): string {
+  return sizes
+    .map(size =>
+      size
+        .split('_')
+        .map((s: string) => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1))
+        .join(''),
+    )
+    .join('_');
+}
+
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -68,6 +107,17 @@ function App() {
 
 function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [bannerMenuOpen, setBannerMenuOpen] = useState(false);
+  const [section, setSection] = useState<GallerySection>('all');
+  const entries = useMemo(() => buildGalleryEntries(), []);
+
+  const bannerEntries = entries.filter(e => e.id.startsWith('gma.format.banner.'));
+  const primaryEntries = entries.filter(e => !e.id.startsWith('gma.format.banner.'));
+  const showBanners = section === 'all' || section === 'formats';
+  const visiblePrimary =
+    section === 'all' ? primaryEntries : primaryEntries.filter(e => e.section === section);
+  const selected = entries.find(e => e.id === selectedId) ?? null;
 
   return (
     <View style={styles.container} testID={AppiumTestIds.root}>
@@ -79,9 +129,71 @@ function AppContent() {
           marginLeft: safeAreaInsets.left,
           marginRight: safeAreaInsets.right,
         }}
-        testID={AppiumTestIds.jetRunner}
+        testID={AppiumTestIds.gallery}
       >
-        <TestRunner />
+        {selected ? (
+          <View>
+            <View style={styles.testSpacing}>
+              <Text style={styles.heading}>{selected.title}</Text>
+              <Button
+                title="Back to gallery"
+                testID={AppiumTestIds.galleryBack}
+                onPress={() => setSelectedId(null)}
+              />
+            </View>
+            {selected.render()}
+          </View>
+        ) : (
+          <View style={styles.testSpacing}>
+            <Text style={styles.heading}>GMA format gallery</Text>
+            <Text style={styles.subheading}>
+              Manual QA and Appium smoke — Google demo / TestIds only (no mediation).
+            </Text>
+            <View style={styles.sectionChipRow}>
+              {GALLERY_SECTION_CHIPS.map(chip => (
+                <View key={chip.id} style={styles.sectionChip}>
+                  <Button
+                    title={section === chip.id ? `• ${chip.title}` : chip.title}
+                    testID={AppiumTestIds.section[chip.id]}
+                    onPress={() => {
+                      setSection(chip.id);
+                      setBannerMenuOpen(false);
+                    }}
+                  />
+                </View>
+              ))}
+            </View>
+            {showBanners ? (
+              <View style={styles.galleryRow}>
+                <Button
+                  title={bannerMenuOpen ? 'Hide banner sizes' : 'Banner sizes'}
+                  testID={AppiumTestIds.openFormat(AppiumTestIds.format.banner)}
+                  onPress={() => setBannerMenuOpen(open => !open)}
+                />
+              </View>
+            ) : null}
+            {showBanners && bannerMenuOpen
+              ? bannerEntries.map(entry => (
+                  <View key={entry.id} style={styles.galleryRow}>
+                    <Button
+                      title={entry.title}
+                      testID={AppiumTestIds.openFormat(entry.id)}
+                      onPress={() => setSelectedId(entry.id)}
+                    />
+                  </View>
+                ))
+              : null}
+            {visiblePrimary.map(entry => (
+              <View key={entry.id} style={styles.galleryRow}>
+                <Button
+                  title={entry.title}
+                  testID={AppiumTestIds.openFormat(entry.id)}
+                  onPress={() => setSelectedId(entry.id)}
+                />
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -91,11 +203,21 @@ const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
   requestNonPersonalizedAdsOnly: true,
 });
 
-const LoadableAdTestComponent = (props: {
-  mobileAd: MobileAd;
-  type: string;
-  formatId: string;
-}) => {
+const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
+const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
+  requestNonPersonalizedAdsOnly: true,
+  keywords: ['fashion', 'clothing'],
+});
+const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
+  TestIds.REWARDED_INTERSTITIAL,
+  {
+    requestNonPersonalizedAdsOnly: true,
+    keywords: ['fashion', 'clothing'],
+  },
+);
+const gamInterstitial = GAMInterstitialAd.createForAdRequest(TestIds.GAM_INTERSTITIAL);
+
+function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId: string }) {
   const [adLoaded, setAdLoaded] = useState(false);
 
   useEffect(() => {
@@ -112,10 +234,10 @@ const LoadableAdTestComponent = (props: {
       }
     });
     return () => adListener();
-  }, []);
+  }, [props.mobileAd, props.type]);
 
   return (
-    <View style={styles.testSpacing}>
+    <View style={styles.testSpacing} testID={props.formatId}>
       <Button
         title={`Load ${props.type} Ad`}
         testID={AppiumTestIds.action.load(props.formatId)}
@@ -143,221 +265,65 @@ const LoadableAdTestComponent = (props: {
       />
     </View>
   );
-};
-
-abstract class LoadableAdTest implements AutoExecutableTest {
-  testComponent: MobileAd | undefined = undefined;
-  abstract getPath(): string;
-  abstract getFormatId(): string;
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    if (!this.testComponent) return;
-    return (
-      <View ref={onMount} testID={this.getFormatId()}>
-        <LoadableAdTestComponent
-          mobileAd={this.testComponent}
-          type={this.getPath()}
-          formatId={this.getFormatId()}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
 }
 
-class AppOpenTest extends LoadableAdTest {
-  constructor() {
-    super();
-    this.testComponent = appOpen;
-  }
-  getPath(): string {
-    return 'App Open';
-  }
-  getFormatId(): string {
-    return AppiumTestIds.format.appOpen;
-  }
-}
-
-const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
-  // requestNonPersonalizedAdsOnly: true,
-  // keywords: ['fashion', 'clothing'],
-});
-
-// To implement a test you must make a new object implementing a specific interface.
-class InterstitialTest extends LoadableAdTest {
-  constructor() {
-    super();
-    this.testComponent = interstitial;
-  }
-  getPath(): string {
-    return 'Interstitial';
-  }
-  getFormatId(): string {
-    return AppiumTestIds.format.interstitial;
-  }
-}
-
-class BannerTest implements AutoExecutableTest {
-  bannerRef: RefObject<BannerAd | null>;
+function BannerFormat(props: {
   bannerAdSize: BannerAdSize | string;
   maxHeight?: number;
   width?: number;
-  constructor(bannerAdSize: BannerAdSize | string, maxHeight?: number, width?: number) {
-    this.bannerAdSize = bannerAdSize;
-    this.bannerRef = React.createRef();
-    this.maxHeight = maxHeight;
-    this.width = width;
-  }
+}) {
+  const bannerRef = useRef<BannerAd>(null);
+  const variantKey = bannerVariantKey(props.bannerAdSize, props.maxHeight, props.width);
+  const formatId = AppiumTestIds.bannerVariant(variantKey);
 
-  getPath(): string {
-    return this.bannerAdSize
-      .split('_')
-      .map(s => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1))
-      .join('')
-      .concat(this.maxHeight ? `MaxHeight${this.maxHeight}` : '')
-      .concat(this.width ? `Width${this.width}` : '');
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  getFormatId(): string {
-    return AppiumTestIds.bannerVariant(this.getPath());
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    const formatId = this.getFormatId();
-    return (
-      <View ref={onMount} testID={formatId}>
-        <BannerAd
-          ref={this.bannerRef}
-          unitId={
-            this.bannerAdSize.includes('ADAPTIVE_BANNER') ? TestIds.ADAPTIVE_BANNER : TestIds.BANNER
-          }
-          size={this.bannerAdSize}
-          maxHeight={this.maxHeight}
-          width={this.width}
-          onPaid={(event: PaidEvent) => {
-            console.log(
-              `Paid: ${event.value} ${event.currency} (precision ${
-                RevenuePrecisions[event.precision]
-              }})`,
-            );
-          }}
-        />
-        <Button
-          title="reload"
-          testID={AppiumTestIds.action.reload(formatId)}
-          onPress={() => {
-            this.bannerRef.current?.load();
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
+  return (
+    <View style={styles.testSpacing} testID={formatId}>
+      <BannerAd
+        ref={bannerRef}
+        unitId={
+          String(props.bannerAdSize).includes('ADAPTIVE_BANNER')
+            ? TestIds.ADAPTIVE_BANNER
+            : TestIds.BANNER
+        }
+        size={props.bannerAdSize}
+        maxHeight={props.maxHeight}
+        width={props.width}
+        onPaid={(event: PaidEvent) => {
+          console.log(
+            `Paid: ${event.value} ${event.currency} (precision ${
+              RevenuePrecisions[event.precision]
+            }})`,
+          );
+        }}
+      />
+      <Button
+        title="reload"
+        testID={AppiumTestIds.action.reload(formatId)}
+        onPress={() => {
+          bannerRef.current?.load();
+        }}
+      />
+    </View>
+  );
 }
 
-class CollapsibleBannerTest implements AutoExecutableTest {
-  getPath(): string {
-    return 'CollapsibleBanner';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View ref={onMount} testID={AppiumTestIds.format.collapsibleBanner}>
-        <BannerAd
-          unitId={TestIds.ADAPTIVE_BANNER}
-          size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
-          requestOptions={{
-            networkExtras: {
-              collapsible: 'top',
-            },
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
+function CollapsibleBannerFormat() {
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.collapsibleBanner}>
+      <BannerAd
+        unitId={TestIds.ADAPTIVE_BANNER}
+        size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
+        requestOptions={{
+          networkExtras: {
+            collapsible: 'top',
+          },
+        }}
+      />
+    </View>
+  );
 }
 
-const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
-  requestNonPersonalizedAdsOnly: true,
-  keywords: ['fashion', 'clothing'],
-});
-class RewardedTest extends LoadableAdTest {
-  constructor() {
-    super();
-    this.testComponent = rewarded;
-  }
-  getPath(): string {
-    return 'Rewarded';
-  }
-  getFormatId(): string {
-    return AppiumTestIds.format.rewarded;
-  }
-}
-
-const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
-  TestIds.REWARDED_INTERSTITIAL,
-  {
-    requestNonPersonalizedAdsOnly: true,
-    keywords: ['fashion', 'clothing'],
-  },
-);
-class RewardedInterstitialTest extends LoadableAdTest {
-  constructor() {
-    super();
-    this.testComponent = rewardedInterstitial;
-  }
-  getPath(): string {
-    return 'Rewarded Interstitial';
-  }
-  getFormatId(): string {
-    return AppiumTestIds.format.rewardedInterstitial;
-  }
-}
-
-const NativeComponent = () => {
+function NativeComponent() {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
@@ -400,147 +366,97 @@ const NativeComponent = () => {
   }, [nativeAd]);
 
   if (!nativeAd) {
-    return null;
+    return <Text testID={AppiumTestIds.format.native}>Loading native ad…</Text>;
   }
 
   return (
-    <NativeAdView nativeAd={nativeAd}>
-      <View style={{ padding: 16, gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {nativeAd.icon && (
-            <NativeAsset assetType={NativeAssetType.ICON}>
-              <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} />
+    <View testID={AppiumTestIds.format.native}>
+      <NativeAdView nativeAd={nativeAd}>
+        <View style={{ padding: 16, gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {nativeAd.icon && (
+              <NativeAsset assetType={NativeAssetType.ICON}>
+                <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} />
+              </NativeAsset>
+            )}
+            <NativeAsset assetType={NativeAssetType.HEADLINE}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
+            </NativeAsset>
+            <Text
+              style={{
+                backgroundColor: '#FBBC04',
+                color: 'white',
+                paddingHorizontal: 2,
+                paddingVertical: 1,
+                fontWeight: 'bold',
+                fontSize: 12,
+                borderRadius: 4,
+              }}
+            >
+              AD
+            </Text>
+          </View>
+          {nativeAd.advertiser && (
+            <NativeAsset assetType={NativeAssetType.ADVERTISER}>
+              <Text>{nativeAd.advertiser}</Text>
             </NativeAsset>
           )}
-          <NativeAsset assetType={NativeAssetType.HEADLINE}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
+          <NativeAsset assetType={NativeAssetType.BODY}>
+            <Text>{nativeAd.body}</Text>
           </NativeAsset>
+        </View>
+        <NativeMediaView />
+        <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
           <Text
             style={{
-              backgroundColor: '#FBBC04',
               color: 'white',
-              paddingHorizontal: 2,
-              paddingVertical: 1,
               fontWeight: 'bold',
-              fontSize: 12,
-              borderRadius: 4,
+              backgroundColor: '#4285F4',
+              paddingHorizontal: 16,
+              paddingVertical: 12,
             }}
           >
-            AD
+            {nativeAd.callToAction}
           </Text>
-        </View>
-        {nativeAd.advertiser && (
-          <NativeAsset assetType={NativeAssetType.ADVERTISER}>
-            <Text>{nativeAd.advertiser}</Text>
-          </NativeAsset>
-        )}
-        <NativeAsset assetType={NativeAssetType.BODY}>
-          <Text>{nativeAd.body}</Text>
         </NativeAsset>
-      </View>
-      <NativeMediaView />
-      <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
-        <Text
-          style={{
-            color: 'white',
-            fontWeight: 'bold',
-            backgroundColor: '#4285F4',
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-          }}
-        >
-          {nativeAd.callToAction}
-        </Text>
-      </NativeAsset>
-    </NativeAdView>
+      </NativeAdView>
+    </View>
   );
-};
-
-class NativeTest implements AutoExecutableTest {
-  constructor() {}
-
-  getPath(): string {
-    return 'Native';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View ref={onMount} testID={AppiumTestIds.format.native}>
-        <NativeComponent />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
 }
 
-class AdConsentTest implements AutoExecutableTest {
-  getPath(): string {
-    return 'ConsentForm';
-  }
+function ConsentFormat() {
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.consent}>
+      <Button
+        title="Show Consent Form"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.consent)}
+        onPress={async () => {
+          const consentInfo = await AdsConsent.requestInfoUpdate({
+            debugGeography: AdsConsentDebugGeography.EEA,
+            testDeviceIdentifiers: [],
+          });
 
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
+          if (consentInfo.isConsentFormAvailable) {
+            await AdsConsent.showForm();
 
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount} testID={AppiumTestIds.format.consent}>
-        <Button
-          title="Show Consent Form"
-          testID={AppiumTestIds.action.show(AppiumTestIds.format.consent)}
-          onPress={async () => {
-            const consentInfo = await AdsConsent.requestInfoUpdate({
-              debugGeography: AdsConsentDebugGeography.EEA,
-              testDeviceIdentifiers: [],
-            });
+            const choices = await AdsConsent.getUserChoices();
 
-            if (consentInfo.isConsentFormAvailable) {
-              await AdsConsent.showForm();
+            console.log(JSON.stringify(choices, null, 2));
+          }
+        }}
+      />
 
-              const choices = await AdsConsent.getUserChoices();
-
-              console.log(JSON.stringify(choices, null, 2));
-            }
-          }}
-        />
-
-        <Text>
-          This test case will not work with the test App ID. You must configure your real App ID in
-          app.json and the Consent Form in AdMob/Ad Manager. If you are running this test on a
-          device instead of an emulator and if you are currently not located in EEA, you have to add
-          your Decive ID to the testDeviceIdentifiers of this test case as well.
-        </Text>
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
+      <Text>
+        This test case will not work with the test App ID. You must configure your real App ID in
+        app.json and the Consent Form in AdMob/Ad Manager. If you are running this test on a device
+        instead of an emulator and if you are currently not located in EEA, you have to add your
+        Device ID to the testDeviceIdentifiers of this test case as well.
+      </Text>
+    </View>
+  );
 }
 
-const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
+function InterstitialHookFormat() {
   const { show, error, status, clicked, impression, revenue } = useInterstitialAd({
     adUnitId: TestIds.INTERSTITIAL,
   });
@@ -560,7 +476,7 @@ const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
   }
 
   return (
-    <View style={styles.testSpacing} ref={ref} testID={AppiumTestIds.format.interstitialHook}>
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.interstitialHook}>
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.interstitialHook)}>
         Status: {status}
       </Text>
@@ -575,36 +491,10 @@ const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
       />
     </View>
   );
-});
-InterstitialHookComponent.displayName = 'InterstitialHookComponent';
-
-class InterstitialHookTest implements AutoExecutableTest {
-  getPath(): string {
-    return 'InterstitialHook';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return <InterstitialHookComponent ref={onMount} />;
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
 }
 
-const RewardedHookComponent = React.forwardRef<View>((_, ref) => {
-  const { show, status, error, reward, earnedReward, clicked, impression } = useRewardedAd({
+function RewardedHookFormat() {
+  const { load, show, status, error, reward, earnedReward, clicked, impression } = useRewardedAd({
     adUnitId: TestIds.REWARDED,
   });
   useEffect(() => {
@@ -624,7 +514,14 @@ const RewardedHookComponent = React.forwardRef<View>((_, ref) => {
   }, [clicked, earnedReward, impression, status]);
 
   return (
-    <View style={styles.testSpacing} ref={ref} testID={AppiumTestIds.format.rewardedHook}>
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.rewardedHook}>
+      <Button
+        title="Load Rewarded"
+        testID={AppiumTestIds.action.load(AppiumTestIds.format.rewardedHook)}
+        onPress={() => {
+          load();
+        }}
+      />
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedHook)}>
         Status: {status}
       </Text>
@@ -639,36 +536,10 @@ const RewardedHookComponent = React.forwardRef<View>((_, ref) => {
       />
     </View>
   );
-});
-RewardedHookComponent.displayName = 'RewardedHookComponent';
-
-class RewardedHookTest implements AutoExecutableTest {
-  getPath(): string {
-    return 'RewardedHook';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return <RewardedHookComponent ref={onMount} />;
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
 }
 
-const RewardedInterstitialHookComponent = React.forwardRef<View>((_, ref) => {
-  const { show, status, error, reward, earnedReward, clicked, impression } =
+function RewardedInterstitialHookFormat() {
+  const { load, show, status, error, reward, earnedReward, clicked, impression } =
     useRewardedInterstitialAd({
       adUnitId: TestIds.REWARDED_INTERSTITIAL,
     });
@@ -689,11 +560,14 @@ const RewardedInterstitialHookComponent = React.forwardRef<View>((_, ref) => {
   }, [clicked, earnedReward, impression, status]);
 
   return (
-    <View
-      style={styles.testSpacing}
-      ref={ref}
-      testID={AppiumTestIds.format.rewardedInterstitialHook}
-    >
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.rewardedInterstitialHook}>
+      <Button
+        title="Load Rewarded Interstitial"
+        testID={AppiumTestIds.action.load(AppiumTestIds.format.rewardedInterstitialHook)}
+        onPress={() => {
+          load();
+        }}
+      />
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedInterstitialHook)}>
         Status: {status}
       </Text>
@@ -708,36 +582,10 @@ const RewardedInterstitialHookComponent = React.forwardRef<View>((_, ref) => {
       />
     </View>
   );
-});
-RewardedInterstitialHookComponent.displayName = 'RewardedInterstitialHookComponent';
-
-class RewardedInterstitialHookTest implements AutoExecutableTest {
-  getPath(): string {
-    return 'RewardedInterstitialHook';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return <RewardedInterstitialHookComponent ref={onMount} />;
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
 }
 
-const AppOpenHookComponent = React.forwardRef<View>((_, ref) => {
-  const { show, error, status, clicked, impression } = useAppOpenAd({
+function AppOpenHookFormat() {
+  const { load, show, error, status, clicked, impression } = useAppOpenAd({
     adUnitId: TestIds.APP_OPEN,
   });
   useEffect(() => {
@@ -752,7 +600,14 @@ const AppOpenHookComponent = React.forwardRef<View>((_, ref) => {
   }, [clicked, impression, status]);
 
   return (
-    <View style={styles.testSpacing} ref={ref} testID={AppiumTestIds.format.appOpenHook}>
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.appOpenHook}>
+      <Button
+        title="Load App Open"
+        testID={AppiumTestIds.action.load(AppiumTestIds.format.appOpenHook)}
+        onPress={() => {
+          load();
+        }}
+      />
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.appOpenHook)}>
         Status: {status}
       </Text>
@@ -767,96 +622,34 @@ const AppOpenHookComponent = React.forwardRef<View>((_, ref) => {
       />
     </View>
   );
-});
-AppOpenHookComponent.displayName = 'AppOpenHookComponent';
-
-class AppOpenHookTest implements AutoExecutableTest {
-  getPath(): string {
-    return 'AppOpenHook';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return <AppOpenHookComponent ref={onMount} />;
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
 }
 
-class AdInspectorTest implements AutoExecutableTest {
-  getPath(): string {
-    return 'AdInspectorTest';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount} testID={AppiumTestIds.format.adInspector}>
-        <Button
-          title="Show Ad Inspector"
-          testID={AppiumTestIds.action.show(AppiumTestIds.format.adInspector)}
-          onPress={() => {
-            MobileAds().openAdInspector();
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
-}
-
-const GAMBannerComponent = React.forwardRef<
-  View,
-  {
-    unitId: string;
-    sizes: (keyof typeof GAMBannerAdSize)[];
-  }
->(({ unitId, sizes }, ref) => {
-  const bannerRef = useRef<GAMBannerAd>(null);
-  const sizesKey = sizes
-    .map(size =>
-      size
-        .split('_')
-        .map((s: string) => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1))
-        .join(''),
-    )
-    .join('_');
-  const formatId = AppiumTestIds.gamBannerVariant(sizesKey);
-  const recordManualImpression = () => {
-    bannerRef.current?.recordManualImpression();
-  };
+function AdInspectorFormat() {
   return (
-    <View ref={ref} testID={formatId}>
-      {/* To test FLUID size ad, use `TestIds.GAM_NATIVE` */}
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.adInspector}>
+      <Button
+        title="Show Ad Inspector"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.adInspector)}
+        onPress={() => {
+          MobileAds().openAdInspector();
+        }}
+      />
+    </View>
+  );
+}
+
+function GAMBannerFormat(props: {
+  unitId: string;
+  sizes: (keyof typeof GAMBannerAdSize)[];
+}) {
+  const bannerRef = useRef<GAMBannerAd>(null);
+  const formatId = AppiumTestIds.gamBannerVariant(gamSizesKey(props.sizes));
+  return (
+    <View style={styles.testSpacing} testID={formatId}>
       <GAMBannerAd
         ref={bannerRef}
-        unitId={unitId}
-        sizes={sizes}
+        unitId={props.unitId}
+        sizes={props.sizes}
         requestOptions={{
           requestNonPersonalizedAdsOnly: true,
         }}
@@ -868,208 +661,262 @@ const GAMBannerComponent = React.forwardRef<
       <Button
         title="recordManualImpression"
         testID={AppiumTestIds.action.recordImpression(formatId)}
-        onPress={recordManualImpression}
+        onPress={() => {
+          bannerRef.current?.recordManualImpression();
+        }}
       />
     </View>
   );
-});
-GAMBannerComponent.displayName = 'GAMBannerComponent';
-
-class GAMBannerTest implements AutoExecutableTest {
-  constructor(
-    private readonly props: {
-      unitId: string;
-      sizes: (keyof typeof GAMBannerAdSize)[];
-    },
-  ) {}
-
-  getPath(): string {
-    return (
-      'GAMBanner ' +
-      this.props.sizes
-        .map(size =>
-          size
-            .split('_')
-            .map((s: string) => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1))
-            .join(''),
-        )
-        .join('_')
-    );
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return <GAMBannerComponent ref={onMount} {...this.props} />;
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-    }
-  }
 }
 
-const gamInterstitial = GAMInterstitialAd.createForAdRequest(TestIds.GAM_INTERSTITIAL, {
-  // requestNonPersonalizedAdsOnly: true,
-  // keywords: ['fashion', 'clothing'],
-});
+function GAMInterstitialFormat() {
+  const [adLoaded, setAdLoaded] = useState(false);
 
-class GAMInterstitialTest implements AutoExecutableTest {
-  adListener: () => void;
-  adLoaded = false;
-
-  constructor() {
-    // Current no way in jet-next to re-render on async completion or to delay render? But still can log it
-    this.adListener = gamInterstitial.addAdEventsListener(({ type, payload }) => {
+  useEffect(() => {
+    const adListener = gamInterstitial.addAdEventsListener(({ type, payload }) => {
       console.log(`${Platform.OS} GAM interstitial ad event: ${type}`);
       if (type === AdEventType.ERROR) {
         console.log(`${Platform.OS} GAM interstitial error: ${(payload as Error).message}`);
       }
       if (type === AdEventType.LOADED) {
-        this.adLoaded = true;
+        setAdLoaded(true);
       }
       if (type === GAMAdEventType.APP_EVENT) {
         console.log(`${Platform.OS} GAM interstitial app event: ${JSON.stringify(payload)}`);
       }
     });
-  }
+    return () => adListener();
+  }, []);
 
-  getPath(): string {
-    return 'GAMInterstitial';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount} testID={AppiumTestIds.format.gamInterstitial}>
-        <Button
-          title="Load GAM Interstitial"
-          testID={AppiumTestIds.action.load(AppiumTestIds.format.gamInterstitial)}
-          onPress={() => {
-            try {
-              gamInterstitial.load();
-            } catch (e) {
-              console.log(`${Platform.OS} GAM Interstitial load error: ${e}`);
-            }
-          }}
-        />
-        <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.gamInterstitial)}>
-          Loaded? {this.adLoaded ? 'true' : 'false'}
-        </Text>
-        <Button
-          title="Show GAM Interstitial"
-          testID={AppiumTestIds.action.show(AppiumTestIds.format.gamInterstitial)}
-          onPress={() => {
-            gamInterstitial.show();
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
-      this.adListener();
-    }
-  }
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.gamInterstitial}>
+      <Button
+        title="Load GAM Interstitial"
+        testID={AppiumTestIds.action.load(AppiumTestIds.format.gamInterstitial)}
+        onPress={() => {
+          try {
+            gamInterstitial.load();
+          } catch (e) {
+            console.log(`${Platform.OS} GAM Interstitial load error: ${e}`);
+          }
+        }}
+      />
+      <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.gamInterstitial)}>
+        Loaded? {adLoaded ? 'true' : 'false'}
+      </Text>
+      <Button
+        title="Show GAM Interstitial"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.gamInterstitial)}
+        onPress={() => {
+          gamInterstitial.show();
+        }}
+      />
+    </View>
+  );
 }
 
-class DebugMenuTest implements AutoExecutableTest {
-  constructor() {
+function DebugMenuFormat() {
+  useEffect(() => {
     // Android requires SDK initialization before opening the Debug Menu
-    Platform.OS === 'android' && MobileAds().initialize().catch(console.error);
-  }
-
-  getPath(): string {
-    return 'DebugMenuTest';
-  }
-
-  getTestType(): TestType {
-    return TestType.Interactive;
-  }
-
-  render(onMount: (component: any) => void): React.ReactNode {
-    return (
-      <View style={styles.testSpacing} ref={onMount} testID={AppiumTestIds.format.debugMenu}>
-        <Button
-          title="Show Ad Debug Menu"
-          testID={AppiumTestIds.action.show(AppiumTestIds.format.debugMenu)}
-          onPress={() => {
-            MobileAds().openDebugMenu(TestIds.BANNER);
-          }}
-        />
-      </View>
-    );
-  }
-
-  execute(component: any, complete: (result: TestResult) => void): void {
-    const results = new TestResult();
-    try {
-      // You can do anything here, it will execute on-device + in-app. Results are aggregated + visible in-app.
-    } catch (error) {
-      results.errors.push('Received unexpected error...');
-    } finally {
-      complete(results);
+    if (Platform.OS === 'android') {
+      MobileAds().initialize().catch(console.error);
     }
-  }
+  }, []);
+
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.debugMenu}>
+      <Button
+        title="Show Ad Debug Menu"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.debugMenu)}
+        onPress={() => {
+          MobileAds().openDebugMenu(TestIds.BANNER);
+        }}
+      />
+    </View>
+  );
 }
 
-// All tests must be registered - a future feature will allow auto-bundling of tests via configured path or regex
-Object.keys(BannerAdSize).forEach(bannerAdSize => {
-  if (bannerAdSize === 'INLINE_ADAPTIVE_BANNER') {
-    TestRegistry.registerTest(new BannerTest(bannerAdSize, 100));
-    TestRegistry.registerTest(new BannerTest(bannerAdSize, 200, 200));
-  }
-  TestRegistry.registerTest(new BannerTest(bannerAdSize));
-});
-TestRegistry.registerTest(new CollapsibleBannerTest());
-TestRegistry.registerTest(new AppOpenTest());
-TestRegistry.registerTest(new InterstitialTest());
-TestRegistry.registerTest(new RewardedTest());
-TestRegistry.registerTest(new RewardedInterstitialTest());
-TestRegistry.registerTest(new AdConsentTest());
-TestRegistry.registerTest(new InterstitialHookTest());
-TestRegistry.registerTest(new RewardedHookTest());
-TestRegistry.registerTest(new AppOpenHookTest());
-TestRegistry.registerTest(new RewardedInterstitialHookTest());
-TestRegistry.registerTest(new NativeTest());
-TestRegistry.registerTest(new AdInspectorTest());
-TestRegistry.registerTest(
-  new GAMBannerTest({
-    unitId: TestIds.GAM_BANNER,
-    sizes: [BannerAdSize.ANCHORED_ADAPTIVE_BANNER],
-  }),
-);
-TestRegistry.registerTest(
-  new GAMBannerTest({
-    unitId: TestIds.GAM_NATIVE,
-    sizes: [GAMBannerAdSize.FLUID],
-  }),
-);
-TestRegistry.registerTest(new GAMInterstitialTest());
-TestRegistry.registerTest(new DebugMenuTest());
+function buildGalleryEntries(): GalleryEntry[] {
+  const entries: GalleryEntry[] = [];
+
+  Object.keys(BannerAdSize).forEach(bannerAdSize => {
+    const size = bannerAdSize as BannerAdSize;
+    if (bannerAdSize === 'INLINE_ADAPTIVE_BANNER') {
+      const max100 = bannerVariantKey(size, 100);
+      entries.push({
+        id: AppiumTestIds.bannerVariant(max100),
+        title: `Banner ${max100}`,
+        section: 'formats',
+        render: () => <BannerFormat bannerAdSize={size} maxHeight={100} />,
+      });
+      const max200 = bannerVariantKey(size, 200, 200);
+      entries.push({
+        id: AppiumTestIds.bannerVariant(max200),
+        title: `Banner ${max200}`,
+        section: 'formats',
+        render: () => <BannerFormat bannerAdSize={size} maxHeight={200} width={200} />,
+      });
+    }
+    const key = bannerVariantKey(size);
+    entries.push({
+      id: AppiumTestIds.bannerVariant(key),
+      title: `Banner ${key}`,
+      section: 'formats',
+      render: () => <BannerFormat bannerAdSize={size} />,
+    });
+  });
+
+  entries.push({
+    id: AppiumTestIds.format.collapsibleBanner,
+    title: 'Collapsible Banner',
+    section: 'formats',
+    render: () => <CollapsibleBannerFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.gamInterstitial,
+    title: 'GAM Interstitial',
+    section: 'formats',
+    render: () => <GAMInterstitialFormat />,
+  });
+  const gamAnchoredKey = gamSizesKey([BannerAdSize.ANCHORED_ADAPTIVE_BANNER]);
+  entries.push({
+    id: AppiumTestIds.gamBannerVariant(gamAnchoredKey),
+    title: `GAM Banner ${gamAnchoredKey}`,
+    section: 'formats',
+    render: () => (
+      <GAMBannerFormat
+        unitId={TestIds.GAM_BANNER}
+        sizes={[BannerAdSize.ANCHORED_ADAPTIVE_BANNER]}
+      />
+    ),
+  });
+  const gamFluidKey = gamSizesKey(['FLUID']);
+  entries.push({
+    id: AppiumTestIds.gamBannerVariant(gamFluidKey),
+    title: `GAM Banner ${gamFluidKey}`,
+    section: 'formats',
+    render: () => <GAMBannerFormat unitId={TestIds.GAM_BANNER} sizes={['FLUID']} />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.appOpen,
+    title: 'App Open',
+    section: 'formats',
+    render: () => (
+      <LoadableAdControls mobileAd={appOpen} type="App Open" formatId={AppiumTestIds.format.appOpen} />
+    ),
+  });
+  entries.push({
+    id: AppiumTestIds.format.interstitial,
+    title: 'Interstitial',
+    section: 'formats',
+    render: () => (
+      <LoadableAdControls
+        mobileAd={interstitial}
+        type="Interstitial"
+        formatId={AppiumTestIds.format.interstitial}
+      />
+    ),
+  });
+  entries.push({
+    id: AppiumTestIds.format.rewarded,
+    title: 'Rewarded',
+    section: 'formats',
+    render: () => (
+      <LoadableAdControls
+        mobileAd={rewarded}
+        type="Rewarded"
+        formatId={AppiumTestIds.format.rewarded}
+      />
+    ),
+  });
+  entries.push({
+    id: AppiumTestIds.format.rewardedInterstitial,
+    title: 'Rewarded Interstitial',
+    section: 'formats',
+    render: () => (
+      <LoadableAdControls
+        mobileAd={rewardedInterstitial}
+        type="Rewarded Interstitial"
+        formatId={AppiumTestIds.format.rewardedInterstitial}
+      />
+    ),
+  });
+  entries.push({
+    id: AppiumTestIds.format.native,
+    title: 'Native',
+    section: 'formats',
+    render: () => <NativeComponent />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.adInspector,
+    title: 'Ad Inspector',
+    section: 'debug',
+    render: () => <AdInspectorFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.consent,
+    title: 'Consent',
+    section: 'debug',
+    render: () => <ConsentFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.appOpenHook,
+    title: 'App Open Hook',
+    section: 'hooks',
+    render: () => <AppOpenHookFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.rewardedHook,
+    title: 'RWD Hook',
+    section: 'hooks',
+    render: () => <RewardedHookFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.debugMenu,
+    title: 'Debug Menu',
+    section: 'debug',
+    render: () => <DebugMenuFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.interstitialHook,
+    title: 'INT Hook',
+    section: 'hooks',
+    render: () => <InterstitialHookFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.rewardedInterstitialHook,
+    title: 'RWI Hook',
+    section: 'hooks',
+    render: () => <RewardedInterstitialHookFormat />,
+  });
+
+  return entries;
+}
 
 const styles = StyleSheet.create({
   testSpacing: {
     margin: 10,
     padding: 10,
+  },
+  galleryRow: {
+    marginVertical: 4,
+  },
+  sectionChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 8,
+  },
+  sectionChip: {
+    marginRight: 4,
+    marginBottom: 4,
+  },
+  heading: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  subheading: {
+    marginBottom: 12,
   },
   container: {
     flex: 1,

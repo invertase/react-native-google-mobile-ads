@@ -205,7 +205,9 @@ jobs:
           disable-animations: true
           script: |
             $ANDROID_HOME/platform-tools/adb logcat '*:D' > adb-log.txt &
-            yarn tests:android:run
+            yarn tests:appium:drivers:install
+            yarn tests:appium:drivers:verify
+            yarn tests:appium:android
 
       - uses: codecov/codecov-action@v5
         with:

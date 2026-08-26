@@ -12,7 +12,7 @@ How to author a product change. Gate state is maintained outside this repo per [
 
 **Policy:** [documentation policy](../documentation-policy.md). **Terms:** [iteration vocabulary](iteration-vocabulary.md). **Commands:** [validation checklist](validation-checklist.md), [agent command policy](agent-command-policy.md).
 
-**Product trees:** `packages/core/{src,android,ios,plugin}/`, `e2e/`, `docs/`, `RNGoogleMobileAdsExample/` (not `node_modules`). `packages/core/lib/` and `packages/core/src/version.ts` from `yarn prepare`.
+**Product trees:** `packages/core/{src,android,ios,plugin}/`, `tooling/appium/`, `docs/`, `RNGoogleMobileAdsExample/` (not `node_modules`). `packages/core/lib/` and `packages/core/src/version.ts` from `yarn prepare`.
 
 <a id="loop"></a>
 

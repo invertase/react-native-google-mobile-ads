@@ -1,10 +1,15 @@
 import type { Options } from '@wdio/types';
+import {
+  EXAMPLE_ANDROID_ACTIVITY,
+  EXAMPLE_ANDROID_PACKAGE,
+  androidDebugApkPath,
+} from './src/formats.ts';
 import { config as shared } from './wdio.shared.conf.ts';
 
 /**
- * Android Appium smoke config (UiAutomator2).
- * Requires: installed drivers (`yarn drivers:install`), emulator/device, built example APK.
- * Full format smoke specs are not in this scaffold — placeholder specs are skipped.
+ * Android Appium smoke (UiAutomator2).
+ * Prerequisites: `yarn tests:appium:drivers:install`, emulator/device, Metro on :8081,
+ * `yarn tests:android:build` (or set RNGMA_ANDROID_APK).
  */
 export const config: Options.Testrunner = {
   ...shared,
@@ -13,9 +18,17 @@ export const config: Options.Testrunner = {
     {
       platformName: 'Android',
       'appium:automationName': 'UiAutomator2',
-      'appium:deviceName': 'Android Emulator',
+      'appium:deviceName': process.env.RNGMA_ANDROID_DEVICE || 'Android Emulator',
+      'appium:app': androidDebugApkPath(),
+      'appium:appPackage': EXAMPLE_ANDROID_PACKAGE,
+      'appium:appActivity': EXAMPLE_ANDROID_ACTIVITY,
+      'appium:appWaitActivity': '*',
+      'appium:autoGrantPermissions': true,
       'appium:newCommandTimeout': 240,
-      // Later: set appium:app / appPackage / appActivity against the example build.
+      'appium:noReset': false,
+      'appium:uiautomator2ServerLaunchTimeout': 60000,
+      'appium:adbExecTimeout': 60000,
+      'appium:ignoreHiddenApiPolicyError': true,
     },
   ],
 };
