@@ -34,6 +34,7 @@ import MobileAds, {
   GAMBannerAdSize,
   GAMInterstitialAd,
   InterstitialAd,
+  type MobileAd,
   NativeAd,
   NativeAdEventType,
   NativeAdView,
@@ -52,7 +53,6 @@ import MobileAds, {
   useRewardedAd,
   useRewardedInterstitialAd,
 } from 'react-native-google-mobile-ads';
-import { MobileAd } from '../packages/core/lib/typescript/ads/MobileAd';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';

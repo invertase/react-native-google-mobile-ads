@@ -1,3 +1,4 @@
+// Shared monorepo ESLint flat config. Workspace packages (and future tooling/*) use this root file.
 const { defineConfig, globalIgnores } = require('eslint/config');
 
 const tsParser = require('@typescript-eslint/parser');
@@ -91,7 +92,8 @@ module.exports = defineConfig([
     },
   },
   globalIgnores([
-    'packages/core/lib/**',
+    'packages/**/lib/**',
+    'packages/**/plugin/build/**',
     '**/node_modules/**/*',
     '**/node_modules',
     '**/scripts/',
