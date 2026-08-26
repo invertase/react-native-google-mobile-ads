@@ -1,0 +1,17 @@
+{
+  "$schema": "./drivers.manifest.schema.json",
+  "appiumHome": ".appium-home",
+  "appium": "3.7.0",
+  "drivers": [
+    {
+      "name": "uiautomator2",
+      "package": "appium-uiautomator2-driver",
+      "version": "8.5.0"
+    },
+    {
+      "name": "xcuitest",
+      "package": "appium-xcuitest-driver",
+      "version": "12.8.0"
+    }
+  ]
+}

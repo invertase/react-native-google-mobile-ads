@@ -589,3 +589,6 @@ RNGoogleMobileAdsExample/ios/.xcode.env.local
 
 # Nx local cache
 .nx/
+
+# Appium driver install tree (pins live in tooling/appium/drivers.manifest.json)
+tooling/appium/.appium-home/
