@@ -77,7 +77,7 @@ Specify `requestOptions.startVideoMuted` with a boolean value when calling `Nati
 - When disabled, your app requests the video should begin with audio.
 - When enabled, your app requests that the video should begin with audio muted.
 
-The following example shows how to start the video with un-muted audio.
+The following example shows how to start the video with unmuted audio.
 
 ```tsx
 NativeAd.createForAdRequest(TestIds.NATIVE, {
@@ -89,7 +89,7 @@ NativeAd.createForAdRequest(TestIds.NATIVE, {
 
 You can specify other request options to be sent while loading an advert, such as keywords, location, and [content URLs](/displaying-ads#content-url-targeting-brand-safety).
 Setting additional request options helps AdMob choose better tailored ads from the network.
-View the [RequestOptions](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/types/RequestOptions.ts) source code to see the full range of options available.
+View the [RequestOptions](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestOptions.ts) source code to see the full range of options available.
 
 ## Display ads
 
@@ -272,7 +272,7 @@ The `NativeAd` object emits events that you can listen to.
 
 Use the `addAdEventListener` method to listen to ad events emitted by the `NativeAd`. Pass one of the `NativeAdEventType` enum values to specify the event type.
 
-Check the [NativeAdEventType](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/NativeAdEventType.ts) source code to see the full range of events available.
+Check the [NativeAdEventType](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/NativeAdEventType.ts) source code to see the full range of events available.
 
 ```tsx
 const NativeComponent = () => {

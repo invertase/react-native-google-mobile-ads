@@ -1,0 +1,108 @@
+{
+  "name": "react-native-google-mobile-ads",
+  "version": "16.5.0",
+  "author": "Invertase <oss@invertase.io> (http://invertase.io)",
+  "description": "React Native Google Mobile Ads is an easy way to monetize mobile apps with targeted, in-app advertising.",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "react-native": "src/index.ts",
+  "types": "lib/typescript/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/invertase/react-native-google-mobile-ads",
+    "directory": "packages/core"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "react",
+    "react-native",
+    "admob",
+    "mobile ads",
+    "google ads",
+    "gdpr",
+    "banner ad",
+    "rewarded ad",
+    "interstitial",
+    "ad consent"
+  ],
+  "files": [
+    "/__tests__/",
+    "/android/",
+    "/ios/",
+    "/lib/",
+    "/plugin/",
+    "/src/",
+    "/LICENSE",
+    "/RNGoogleMobileAds.podspec",
+    "/app.plugin.js",
+    "/ios_config.sh",
+    "/react-native.config.js"
+  ],
+  "sdkVersions": {
+    "ios": {
+      "googleMobileAds": "13.5.0",
+      "googleUmp": "3.1.0"
+    },
+    "android": {
+      "minSdk": 23,
+      "targetSdk": 34,
+      "compileSdk": 34,
+      "buildTools": "34.0.0",
+      "googleMobileAds": "25.4.0",
+      "googleUmp": "4.0.0"
+    }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      "typescript"
+    ]
+  },
+  "scripts": {
+    "prepare": "yarn build && yarn build:plugin",
+    "build": "genversion --es6 --semi src/version.ts && bob build",
+    "build:clean": "rimraf android/build && rimraf ios/build && rimraf lib && rimraf plugin/build",
+    "build:plugin": "yarn tsc --build plugin"
+  },
+  "dependencies": {
+    "@iabtcf/core": "^1.5.6",
+    "use-deep-compare-effect": "^1.8.1"
+  },
+  "peerDependencies": {
+    "expo": ">=47.0.0",
+    "react": "*",
+    "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "expo": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "genversion": "^3.2.0",
+    "react-native-builder-bob": "^0.40.13",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "codegenConfig": {
+    "name": "RNGoogleMobileAdsSpec",
+    "type": "all",
+    "jsSrcsDir": "./src/specs",
+    "ios": {
+      "componentProvider": {
+        "RNGoogleMobileAdsBannerView": "RNGoogleMobileAdsBannerView",
+        "RNGoogleMobileAdsNativeView": "RNGoogleMobileAdsNativeView",
+        "RNGoogleMobileAdsMediaView": "RNGoogleMobileAdsMediaView"
+      }
+    },
+    "android": {
+      "javaPackageName": "io.invertase.googlemobileads"
+    }
+  }
+}

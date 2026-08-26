@@ -38,7 +38,7 @@ jobs:
         id: yarn-cache
         with:
           path: .yarn/cache
-          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'yarn.lock', 'packages/core/package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
@@ -54,13 +54,11 @@ jobs:
           # yarn3+ by default disables lockfile alteration in CI. We want it.
           YARN_ENABLE_IMMUTABLE_INSTALLS: false
         run: |
-          export PACKAGE_NAME=`npx json name -f package.json`
+          export PACKAGE_NAME=`npx json name -f packages/core/package.json`
           export CLEAN_PACKAGE_NAME=`echo $PACKAGE_NAME | sed s/@// |sed s,/,-,`
           mkdir $HOME/scratch
           echo "Packing PR version of $CLEAN_PACKAGE_NAME"
-          yarn pack
-          pwd
-          mv package.tgz $HOME/scratch/$CLEAN_PACKAGE_NAME.tgz
+          yarn workspace react-native-google-mobile-ads pack --out $HOME/scratch/$CLEAN_PACKAGE_NAME.tgz
           ls -la $HOME/scratch/*$CLEAN_PACKAGE_NAME*
           cd $HOME
           npx @react-native-community/cli init template --skip-install --skip-git-init
@@ -76,7 +74,7 @@ jobs:
           \rm -fr react-native-google-mobile-ads
           mv package react-native-google-mobile-ads
           # do some cleaning so the patch is minimal - TODO fix .npmignore/package.json files block
-          rm react-native-google-mobile-ads/CHANGELOG.md
+          rm -f react-native-google-mobile-ads/CHANGELOG.md
           popd
           npx patch-package $PACKAGE_NAME || true
           ls -la $HOME/template/patches
@@ -93,7 +91,7 @@ jobs:
         if: "${{ github.ref == 'refs/heads/main' }}"
         with:
           path: .yarn/cache
-          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'yarn.lock', 'packages/core/package.json', 'RNGoogleMobileAdsExample/package.json') }}
 
       # create a comment on the PR and any related issues with a direct link to the archive,
       # a call for testers, and perhaps a paste-able set of commands to install them

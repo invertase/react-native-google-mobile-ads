@@ -6,7 +6,7 @@
 * [Iteration vocabulary](iteration-vocabulary.md) — work types, tiers, gate-state fields
 * [Running e2e](running-e2e.md) — [§ agent rule](running-e2e.md#agent-rule-read-first); [§ local e2e commands](running-e2e.md#local-e2e-commands); [§ platform coverage gate](running-e2e.md#platform-coverage-gate-blocking); [§ pre-flight](running-e2e.md#pre-flight); [§ diagnosis](running-e2e.md#e2e-diagnosis)
 * [Validation checklist](validation-checklist.md) — [§ work types](validation-checklist.md#work-types); [§ lint](validation-checklist.md#lint-and-formatting); [§ Expo plugin](validation-checklist.md#expo-plugin); [§ OKF bundle review](validation-checklist.md#okf-bundle-review); [§ validation evidence package](validation-checklist.md#validation-evidence-package)
-* [Coverage design](coverage-design.md) — [touched-line bar](coverage-design.md#touched-line-bar); [§ evidence package](coverage-design.md#coverage-evidence-package) (`n/a` for `app.plugin.js`-only unless `plugin/` TS changed)
-* [Architecture decisions](../architecture-decisions.md) — `GMA-AD-*`; [GMA-AD-1 plugin path](../architecture-decisions.md#gma-ad-1)
+* [Coverage design](coverage-design.md) — [touched-line bar](coverage-design.md#touched-line-bar); [§ evidence package](coverage-design.md#coverage-evidence-package) (`n/a` for `packages/core/app.plugin.js`-only unless plugin TS changed)
+* [Architecture decisions](../architecture-decisions.md) — `GMA-AD-*`; [GMA-AD-1 plugin path](../architecture-decisions.md#gma-ad-1); [GMA-AD-2 workspaces](../architecture-decisions.md#gma-ad-2)
 * [Documentation site maintenance](../documentation-site-maintenance.md) — user docs.page [`docs.json`](../documentation-site-maintenance.md#docsjson)
 * [CI workflows](../ci-workflows/index.md) — [§ workflows](../ci-workflows/index.md#workflows); [e2e continue-on-error](../ci-workflows/index.md#e2e-continue-on-error); [§ triage](../ci-workflows/index.md#triage)

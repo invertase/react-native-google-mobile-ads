@@ -1,0 +1,16 @@
+{
+  "npmClient": "yarn",
+  "packages": ["packages/*", "RNGoogleMobileAdsExample"],
+  "command": {
+    "version": {
+      "allowBranch": ["main", "release-v*"],
+      "conventionalCommits": true,
+      "exact": true,
+      "gitRemote": "origin",
+      "message": "chore(release): release packages"
+    }
+  },
+  "ignoreChanges": ["**/docs/**", "**/.github/**", "**/e2e/**", "**/RNGoogleMobileAdsExample/**"],
+  "version": "16.5.0",
+  "$schema": "node_modules/lerna/schemas/lerna-schema.json"
+}

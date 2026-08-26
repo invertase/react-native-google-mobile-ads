@@ -88,7 +88,7 @@ jobs:
         id: yarn-cache
         with:
           path: .yarn/cache
-          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'yarn.lock', 'packages/core/package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: ${{ runner.os }}-yarn-v1
 
       - name: Yarn Install
@@ -97,7 +97,7 @@ jobs:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
-          command: yarn && cd RNGoogleMobileAdsExample && DETOX_DISABLE_POSTINSTALL=1 yarn
+          command: yarn
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
