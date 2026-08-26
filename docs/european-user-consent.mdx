@@ -175,7 +175,7 @@ The method returns an `AdsConsentInfo` interface, which provides information abo
 - **isConsentFormAvailable**: A boolean value. If `true` a consent form is available.
 
 **Note:** The return status of this call is the status of _form presentation and response collection_, **not
-the the actual user consent**. It simply indicates if you now have a consent response to decode.
+the actual user consent**. It simply indicates if you now have a consent response to decode.
 (_i.e._ if user consent is **required**, the form has been presented, and user has
 **denied** the consent, the status returned by this method will be `OBTAINED`,
 and not `REQUIRED` as some may expect). To check the actual consent status

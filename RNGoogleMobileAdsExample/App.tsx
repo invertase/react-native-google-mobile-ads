@@ -52,7 +52,7 @@ import MobileAds, {
   useRewardedAd,
   useRewardedInterstitialAd,
 } from 'react-native-google-mobile-ads';
-import { MobileAd } from '../lib/typescript/ads/MobileAd';
+import { MobileAd } from '../packages/core/lib/typescript/ads/MobileAd';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';

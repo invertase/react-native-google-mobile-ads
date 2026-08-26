@@ -29,7 +29,7 @@ This heading owns lint-by-tree, check vs `:fix`/`--replace` by work type, and wh
 
 **Check vs format.** `implementation` and `documentation`: after a check failure, run the allowlisted `:fix` then re-check. `yarn lint:android` already `--replace` (and `--set-exit-if-changed`). `independent-review` is **check-only** on the frozen tree ([§ frozen tree](change-authoring-workflow.md#frozen-tree)): run matching **check** commands; do not run `lint:ios:fix` or `lint:markdown:fix`. Frozen `independent-review` does **not** run `yarn lint:android` because that script is `--replace` only; Android format is not a frozen-pass check — apply it in `implementation`. Do not invent `npx google-java-format` or a check-only yarn name. A check failure is a finding; apply per [§ frozen tree](change-authoring-workflow.md#frozen-tree) (product/lint including iOS `:fix` and Android format → `implementation`; markdown format when `docs/**` → `documentation`).
 
-**Which trees.** `yarn lint:js` only if `src/` (script scope is `src/`). Plugin JS: [Expo plugin](#expo-plugin) Jest, not `lint:js`. Root `__tests__/` is not in `lint:js`. `yarn lint:android` if `android/` **and** the work type may `--replace` (`implementation` / `documentation`). `yarn lint:ios:check` if `ios/`. `yarn lint:code` only when this diff includes `src/` **and** `android/` **and** `ios/` **and** the work type may `--replace`; never as a stand-in for a single-tree lint; never on frozen `independent-review` (it runs `lint:android`). `yarn lint` is `lint:code` plus `tsc:compile` (same three-tree rule). Frozen three-tree: `lint:js` and `lint:ios:check` only.
+**Which trees.** `yarn lint:js` only if `packages/core/src/` (script scope is `packages/core/src/`). Plugin JS: [Expo plugin](#expo-plugin) Jest, not `lint:js`. `packages/core/__tests__/` is not in `lint:js`. `yarn lint:android` if `packages/core/android/` **and** the work type may `--replace` (`implementation` / `documentation`) — formats **Java** only. Android **Kotlin** (`.kt`): repo-root `./gradlew ktlintFormat` when `packages/core/android/` has `.kt` changes and the work type may format (`implementation` / `documentation`; optional `-PinternalKtlintGitFilter`). Frozen `independent-review` runs `./gradlew ktlintCheck` only (not `ktlintFormat`, like `lint:android`). Optional local hook: `./gradlew addKtlintFormatGitPreCommitHook`; Invertase global pre-commit also invokes root `./gradlew ktlintFormat` when present — this repo does not ship an installed hook. `yarn lint:ios:check` if `packages/core/ios/`. `yarn lint:code` only when this diff includes `packages/core/src/` **and** `packages/core/android/` **and** `packages/core/ios/` **and** the work type may `--replace`; never as a stand-in for a single-tree lint; never on frozen `independent-review` (`yarn lint:code` / `yarn lint` include `lint:android`, which is `--replace`-only — see **Check vs format**). `yarn lint` is `lint:code` plus `tsc:compile` (same three-tree rule). Frozen three-tree: `lint:js`, `./gradlew ktlintCheck` (when `.kt` is in scope), and `lint:ios:check` only.
 
 **Docs.** `yarn lint:markdown:check` and `yarn lint:spellcheck` **only** when the diff includes `docs/**`. Independent-review of `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` with **no** `docs/**` does **not** run markdown check or `lint:markdown:fix`. CI docs job is spellcheck only; markdown check is local. Allowlist: [agent command policy](agent-command-policy.md). User-docs sidebar: [documentation site maintenance](../documentation-site-maintenance.md).
 
@@ -37,7 +37,7 @@ This heading owns lint-by-tree, check vs `:fix`/`--replace` by work type, and wh
 
 ## Expo plugin
 
-**Blocking when the diff touches `plugin/` or `app.plugin.js`.** [GMA-AD-1](../architecture-decisions.md#gma-ad-1): `yarn prepare` (includes `build:plugin`) then **root** `yarn tests:jest plugin/__tests__/`. Root Jest is the gate. `plugin/jest.config.js` exists for expo-module-scripts; do not invoke it instead of root Jest, and do not delete it as “invented.”
+**Blocking when the diff touches `packages/core/plugin/` or `packages/core/app.plugin.js`.** [GMA-AD-1](../architecture-decisions.md#gma-ad-1): `yarn prepare` (includes `build:plugin`) then **root** `yarn tests:jest packages/core/plugin/__tests__/`. Root Jest is the gate. `packages/core/plugin/jest.config.js` exists for expo-module-scripts; do not invoke it instead of root Jest, and do not delete it as “invented.”
 
 E2e vs plugin Jest: [platform coverage](running-e2e.md#platform-coverage-gate-blocking).
 
@@ -61,12 +61,12 @@ Goal: each iteration improves OKF and removes conflicting guidance. The contract
 
 | Step | Command | Exit | Evidence |
 |------|---------|------|----------|
-| prepare | `yarn prepare` | 0 | if `src/` or `plugin/` or `app.plugin.js` (or `lib/` is stale) |
-| tsc | `yarn tsc:compile` | 0 | if `src/` or `plugin/` or `app.plugin.js` |
-| jest | `yarn tests:jest <paths>` | 0 | N/N — if `src/`, `plugin/`, or `__tests__/` |
+| prepare | `yarn prepare` | 0 | if `packages/core/src/` or `packages/core/plugin/` or `packages/core/app.plugin.js` (or `packages/core/lib/` is stale) |
+| tsc | `yarn tsc:compile` | 0 | if `packages/core/src/` or `packages/core/plugin/` or `packages/core/app.plugin.js` |
+| jest | `yarn tests:jest <paths>` | 0 | N/N — if `packages/core/src/`, `packages/core/plugin/`, or `packages/core/__tests__/` |
 | e2e iOS / Android | Android/iOS named-script trios on [platform coverage](running-e2e.md#platform-coverage-gate-blocking); [names + tee](running-e2e.md#local-e2e-commands) | 0 | counts + `/tmp/rngma-e2e-*.log` — only if that table requires e2e |
-| lint | [§ lint](#lint-and-formatting) for this diff (`lint:js` only if `src/`; not plugin; not root `__tests__/`). `yarn lint:code` / `yarn lint` only when this diff includes `src/` **and** `android/` **and** `ios/` and the work type may `--replace` | 0 | matching linters |
+| lint | [§ lint](#lint-and-formatting) for this diff (`lint:js` only if `packages/core/src/`; not plugin; not `packages/core/__tests__/`). `yarn lint:code` / `yarn lint` only when this diff includes `packages/core/src/` **and** `packages/core/android/` **and** `packages/core/ios/` and the work type may `--replace` | 0 | matching linters |
 | docs | `yarn lint:markdown:check` and `yarn lint:spellcheck` | 0 | if `docs/**` — [§ lint](#lint-and-formatting) |
-| plugin | `yarn tests:jest plugin/__tests__/` | 0 | if `plugin/` or `app.plugin.js` — [§ Expo plugin](#expo-plugin) |
-| coverage | [evidence package](coverage-design.md#coverage-evidence-package) | — | required when `src/` **or** `android/` **or** `ios/` **or** `plugin/` TS; `app.plugin.js`-only is `n/a` unless `plugin/` TS changed |
+| plugin | `yarn tests:jest packages/core/plugin/__tests__/` | 0 | if `packages/core/plugin/` or `packages/core/app.plugin.js` — [§ Expo plugin](#expo-plugin) |
+| coverage | [evidence package](coverage-design.md#coverage-evidence-package) | — | required when `packages/core/src/` **or** `packages/core/android/` **or** `packages/core/ios/` **or** `packages/core/plugin/` TS; `packages/core/app.plugin.js`-only is `n/a` unless plugin TS changed |
 | OKF scan | [§ OKF bundle review](#okf-bundle-review) | pass | if frozen tree includes `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` — not during `documentation`; gate close is not a skip |

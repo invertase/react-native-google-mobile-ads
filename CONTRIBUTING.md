@@ -70,11 +70,16 @@ git clone https://github.com/invertase/react-native-google-mobile-ads.git
 cd react-native-google-mobile-ads
 ```
 
-### Step 2: Install test project dependencies
+### Step 2: Install dependencies
 
 ```bash
 yarn
+yarn prepare
 ```
+
+Root `yarn` installs all workspaces (library under `packages/core/` and `RNGoogleMobileAdsExample/`). `yarn prepare` builds the library via Lerna/Nx (`yarn lerna:prepare`).
+
+Android **Java** format: `yarn lint:android`. Android **Kotlin** format: repo-root `./gradlew ktlintFormat` (check-only: `./gradlew ktlintCheck`). Optional: `./gradlew addKtlintFormatGitPreCommitHook` to install a local hook; Invertase global pre-commit also invokes root `./gradlew ktlintFormat` when present (this repo does not ship an installed hook). Example app builds remain under `RNGoogleMobileAdsExample/android/`.
 
 ## Submitting code for review
 

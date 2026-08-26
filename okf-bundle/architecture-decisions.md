@@ -30,6 +30,16 @@ Add rows when a refactor choice lands (module boundaries, codegen, plugin behavi
 
 ## GMA-AD-1 — Expo config plugin is a separate validation path — **Accepted**
 
-The Expo config plugin under `plugin/` is a **separate validation path**: Metro/Expo consume compiled plugin output, not `plugin/src/`. Native e2e does not cover plugin JS/config by itself.
+The Expo config plugin under `packages/core/plugin/` is a **separate validation path**: Metro/Expo consume compiled plugin output, not `packages/core/plugin/src/`. Native e2e does not cover plugin JS/config by itself.
 
 Commands: [validation checklist § Expo plugin](testing/validation-checklist.md#expo-plugin) (root Jest is the gate). When to run e2e vs plugin Jest: [running e2e § platform coverage](testing/running-e2e.md#platform-coverage-gate-blocking).
+
+<a id="gma-ad-2"></a>
+
+## GMA-AD-2 — Yarn workspaces + Lerna/Nx prepare — **Accepted**
+
+This repo is a **Yarn 4 workspaces** monorepo. The publishable npm package `react-native-google-mobile-ads` lives in `packages/core/`. The example app stays at `RNGoogleMobileAdsExample/` and depends on the core package via the workspace protocol (not `portal:`).
+
+Root `yarn prepare` runs `yarn lerna:prepare` (Lerna 9 + Nx cache, `neverConnectToCloud`). Per-package `prepare` performs genversion, bob (`lib/`), and the Expo plugin build. Do not invent a second task runner.
+
+Commands: [agent command policy](testing/agent-command-policy.md). Product trees: [change authoring](testing/change-authoring-workflow.md).

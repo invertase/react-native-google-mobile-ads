@@ -57,7 +57,7 @@ jobs:
         id: yarn-cache
         with:
           path: .yarn/cache
-          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'yarn.lock', 'packages/core/package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: ${{ runner.os }}-yarn-v1
 
       # Detox is compiled during yarn install, using Xcode, set up cache first
@@ -95,7 +95,7 @@ jobs:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
-          command: yarn && yarn tests:install
+          command: yarn
 
       - name: Pod Install
         uses: nick-fields/retry@v3

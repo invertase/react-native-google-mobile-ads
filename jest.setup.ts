@@ -43,21 +43,21 @@ jest.doMock('react-native', () => {
     ReactNative,
   );
 });
-jest.doMock('./src/specs/components/GoogleMobileAdsBannerViewNativeComponent', () => {
+jest.doMock('./packages/core/src/specs/components/GoogleMobileAdsBannerViewNativeComponent', () => {
   return {
     __esModule: true,
     Commands: {},
     default: ReactNative.View,
   };
 });
-jest.doMock('./src/specs/components/GoogleMobileAdsNativeViewNativeComponent', () => {
+jest.doMock('./packages/core/src/specs/components/GoogleMobileAdsNativeViewNativeComponent', () => {
   return {
     __esModule: true,
     Commands: {},
     default: ReactNative.View,
   };
 });
-jest.doMock('./src/specs/modules/NativeInterstitialModule', () => {
+jest.doMock('./packages/core/src/specs/modules/NativeInterstitialModule', () => {
   return {
     __esModule: true,
     Commands: {},
@@ -67,7 +67,7 @@ jest.doMock('./src/specs/modules/NativeInterstitialModule', () => {
     },
   };
 });
-jest.doMock('./src/specs/modules/NativeAppModule', () => {
+jest.doMock('./packages/core/src/specs/modules/NativeAppModule', () => {
   return {
     __esModule: true,
     default: {

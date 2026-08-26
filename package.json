@@ -1,104 +1,48 @@
 {
-  "name": "react-native-google-mobile-ads",
-  "version": "16.5.0",
-  "author": "Invertase <oss@invertase.io> (http://invertase.io)",
-  "description": "React Native Google Mobile Ads is an easy way to monetize mobile apps with targeted, in-app advertising.",
-  "main": "lib/commonjs/index.js",
-  "module": "lib/module/index.js",
-  "react-native": "src/index.ts",
-  "types": "lib/typescript/index.d.ts",
+  "name": "react-native-google-mobile-ads-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "React Native Google Mobile Ads monorepo",
   "repository": {
     "type": "git",
     "url": "https://github.com/invertase/react-native-google-mobile-ads"
   },
   "license": "Apache-2.0",
-  "keywords": [
-    "react",
-    "react-native",
-    "admob",
-    "mobile ads",
-    "google ads",
-    "gdpr",
-    "banner ad",
-    "rewarded ad",
-    "interstitial",
-    "ad consent"
+  "workspaces": [
+    "packages/*",
+    "RNGoogleMobileAdsExample"
   ],
-  "files": [
-    "/__tests__/",
-    "/android/",
-    "/docs/",
-    "/ios/",
-    "/lib/",
-    "/plugin/",
-    "/src/",
-    "/docs.json",
-    "/RNGoogleMobileAds.podspec",
-    "/app.plugin.js",
-    "/babel.config.js",
-    "/jest.config.js",
-    "/jest.setup.ts",
-    "/ios_config.sh",
-    "/react-native.config.js"
-  ],
-  "sdkVersions": {
-    "ios": {
-      "googleMobileAds": "13.5.0",
-      "googleUmp": "3.1.0"
-    },
-    "android": {
-      "minSdk": 23,
-      "targetSdk": 34,
-      "compileSdk": 34,
-      "buildTools": "34.0.0",
-      "googleMobileAds": "25.4.0",
-      "googleUmp": "4.0.0"
-    }
-  },
-  "react-native-builder-bob": {
-    "source": "src",
-    "output": "lib",
-    "targets": [
-      "commonjs",
-      "module",
-      "typescript"
-    ]
-  },
   "scripts": {
     "postinstallDev": "yarn prepare",
-    "prepare": "yarn build && yarn build:plugin",
-    "build": "genversion --es6 --semi src/version.ts && bob build",
-    "build:clean": "rimraf android/build && rimraf ios/build && rimraf lib && rimraf plugin/build",
-    "build:plugin": "yarn tsc --build plugin",
+    "prepare": "yarn lerna:prepare",
+    "lerna:prepare": "cross-env NX_NO_CLOUD=true NX_CACHE_DIRECTORY=.nx/cache NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data lerna run prepare",
+    "build:all:clean": "lerna run build:clean",
+    "build:all:build": "lerna run build",
     "lint:code": "yarn lint:js && yarn lint:android && yarn lint:ios:check",
-    "lint:js": "eslint src/ --ext .js,.jsx,.ts,.tsx --max-warnings=0",
-    "lint:android": "google-java-format --set-exit-if-changed --replace --glob=\"android/**/*.java\"",
-    "lint:ios:check": "clang-format --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google -n -Werror",
-    "lint:ios:fix": "clang-format -i --glob=\"ios/**/*.{h,cpp,m,mm}\" --style=Google",
+    "lint:js": "eslint packages/core/src/ --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "lint:android": "google-java-format --set-exit-if-changed --replace --glob=\"packages/core/android/**/*.java\"",
+    "lint:ios:check": "clang-format --glob=\"packages/core/ios/**/*.{h,cpp,m,mm}\" --style=Google -n -Werror",
+    "lint:ios:fix": "clang-format -i --glob=\"packages/core/ios/**/*.{h,cpp,m,mm}\" --style=Google",
     "lint:markdown:check": "prettier --check \"docs/**/*.md[x]\"",
     "lint:markdown:fix": "prettier --write \"docs/**/*.md[x]\"",
-    "lint:report": "eslint --output-file=eslint-report.json --format=json src/ --ext .js,.jsx,.ts,.tsx",
-    "lint:spellcheck": "spellchecker --quiet --files=\"docs/**/*.md\" --dictionaries=\"./.spellcheck.dict.txt\" --reports=\"spelling.json\" --plugins spell indefinite-article repeated-words syntax-mentions syntax-urls frontmatter",
-    "tsc:compile": "tsc --project tsconfig.test.json",
+    "lint:report": "eslint --output-file=eslint-report.json --format=json packages/core/src/ --ext .js,.jsx,.ts,.tsx",
+    "lint:spellcheck": "spellchecker --quiet --files=\"docs/**/*.md[x]\" --dictionaries=\"./.spellcheck.dict.txt\" --reports=\"spelling.json\" --plugins spell indefinite-article repeated-words syntax-mentions syntax-urls frontmatter",
+    "tsc:compile": "tsc --project packages/core/tsconfig.test.json",
     "lint": "yarn lint:code && yarn tsc:compile",
     "tests:jest": "jest",
     "tests:jest-watch": "jest --watch",
     "tests:jest-coverage": "jest --coverage",
-    "tests:install": "cd RNGoogleMobileAdsExample && yarn",
-    "tests:packager": "cd RNGoogleMobileAdsExample && yarn react-native start",
-    "tests:packager:reset-cache": "cd RNGoogleMobileAdsExample && yarn react-native start --reset-cache",
+    "tests:install": "yarn",
+    "tests:packager": "yarn workspace RNGoogleMobileAdsExample react-native start",
+    "tests:packager:reset-cache": "yarn workspace RNGoogleMobileAdsExample react-native start --reset-cache",
     "tests:android:build": "cd RNGoogleMobileAdsExample/android && ./gradlew assembleDebug",
     "tests:android:build:windows": "cd RNGoogleMobileAdsExample/android && ./gradlew.bat assembleDebug",
     "tests:android:build-release": "cd RNGoogleMobileAdsExample/android && ./gradlew.bat assembleRelease",
     "tests:android:build-release:windows": "cd RNGoogleMobileAdsExample/android && ./gradlew.bat assembleRelease",
-    "tests:android:run": "cd RNGoogleMobileAdsExample && yarn android",
-    "tests:ios:run": "cd RNGoogleMobileAdsExample && yarn react-native run-ios",
+    "tests:android:run": "yarn workspace RNGoogleMobileAdsExample android",
+    "tests:ios:run": "yarn workspace RNGoogleMobileAdsExample react-native run-ios",
     "tests:ios:pod:install": "cd RNGoogleMobileAdsExample && cd ios && rm -rf RNGoogleMobileAdsExample.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd ..",
     "package:update": "yarn upgrade-interactive"
-  },
-  "dependencies": {
-    "@iabtcf/core": "^1.5.6",
-    "use-deep-compare-effect": "^1.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",
@@ -122,6 +66,7 @@
     "clang-format": "1.8.0",
     "conventional-changelog": "^7.1.1",
     "conventional-changelog-conventionalcommits": "^9.1.0",
+    "cross-env": "^10.1.0",
     "eslint": "^9.38.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jest": "^29.0.1",
@@ -134,6 +79,8 @@
     "globals": "^16.4.0",
     "google-java-format": "^2.0.4",
     "jest": "^30.2.0",
+    "lerna": "^9.0.7",
+    "nx": "^22.7.6",
     "prettier": "^3.6.2",
     "react": "^19.2.0",
     "react-native": "^0.83.1",
@@ -144,32 +91,6 @@
     "semantic-release": "^25.0.1",
     "spellchecker-cli": "^7.0.0",
     "typescript": "^5.9.3"
-  },
-  "peerDependencies": {
-    "expo": ">=47.0.0"
-  },
-  "peerDependenciesMeta": {
-    "expo": {
-      "optional": true
-    }
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "codegenConfig": {
-    "name": "RNGoogleMobileAdsSpec",
-    "type": "all",
-    "jsSrcsDir": "./src/specs",
-    "ios": {
-      "componentProvider": {
-        "RNGoogleMobileAdsBannerView": "RNGoogleMobileAdsBannerView",
-        "RNGoogleMobileAdsNativeView": "RNGoogleMobileAdsNativeView",
-        "RNGoogleMobileAdsMediaView": "RNGoogleMobileAdsMediaView"
-      }
-    },
-    "android": {
-      "javaPackageName": "io.invertase.googlemobileads"
-    }
   },
   "packageManager": "yarn@4.10.3"
 }

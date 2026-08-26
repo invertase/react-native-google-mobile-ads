@@ -25,7 +25,7 @@ jobs:
         id: yarn-cache
         with:
           path: .yarn/cache
-          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'RNGoogleMobileAdsExample/package.json') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'yarn.lock', 'packages/core/package.json', 'RNGoogleMobileAdsExample/package.json') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
