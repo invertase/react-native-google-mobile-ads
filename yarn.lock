@@ -7009,15 +7009,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sinonjs/commons@npm:^1.6.0, @sinonjs/commons@npm:^1.7.0, @sinonjs/commons@npm:^1.8.3":
-  version: 1.8.6
-  resolution: "@sinonjs/commons@npm:1.8.6"
-  dependencies:
-    type-detect: "npm:4.0.8"
-  checksum: 10/51987338fd8b4d1e135822ad593dd23a3288764aa41d83c695124d512bc38b87eece859078008651ecc7f1df89a7e558a515dc6f02d21a93be4ba50b39a28914
-  languageName: node
-  linkType: hard
-
 "@sinonjs/commons@npm:^3.0.0, @sinonjs/commons@npm:^3.0.1":
   version: 3.0.1
   resolution: "@sinonjs/commons@npm:3.0.1"
@@ -7036,48 +7027,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sinonjs/fake-timers@npm:^11.2.2":
-  version: 11.3.1
-  resolution: "@sinonjs/fake-timers@npm:11.3.1"
-  dependencies:
-    "@sinonjs/commons": "npm:^3.0.1"
-  checksum: 10/f8684eba6ae6f207dd415c360222aff3761dea31dd98ccfd8b10205b264eb8141c592174e91060a77a53479632c3070cc8050c461e2532ef15547caa019f6aa8
-  languageName: node
-  linkType: hard
-
 "@sinonjs/fake-timers@npm:^13.0.0":
   version: 13.0.5
   resolution: "@sinonjs/fake-timers@npm:13.0.5"
   dependencies:
     "@sinonjs/commons": "npm:^3.0.1"
   checksum: 10/11ee417968fc4dce1896ab332ac13f353866075a9d2a88ed1f6258f17cc4f7d93e66031b51fcddb8c203aa4d53fd980b0ae18aba06269f4682164878a992ec3f
-  languageName: node
-  linkType: hard
-
-"@sinonjs/fake-timers@npm:^7.1.2":
-  version: 7.1.2
-  resolution: "@sinonjs/fake-timers@npm:7.1.2"
-  dependencies:
-    "@sinonjs/commons": "npm:^1.7.0"
-  checksum: 10/ea3270c3300eb4c1fa4c126e0295ee75657794465f2ec2ebaa2929c8b178da74d26f65ed284d07b469a0516649a3c164778dfddc7a21f16366013b6c58a653e8
-  languageName: node
-  linkType: hard
-
-"@sinonjs/samsam@npm:^6.0.2":
-  version: 6.1.3
-  resolution: "@sinonjs/samsam@npm:6.1.3"
-  dependencies:
-    "@sinonjs/commons": "npm:^1.6.0"
-    lodash.get: "npm:^4.4.2"
-    type-detect: "npm:^4.0.8"
-  checksum: 10/eb3ebce7bad483584f80b2aab7ff83da64ccc030bd883d9d93ef0500f7db77ec05b4471a16878a3f0f6fd228fffccb494171426a96144dd9e03aedd8b4ba0436
-  languageName: node
-  linkType: hard
-
-"@sinonjs/text-encoding@npm:^0.7.2":
-  version: 0.7.3
-  resolution: "@sinonjs/text-encoding@npm:0.7.3"
-  checksum: 10/f0cc89bae36e7ce159187dece7800b78831288f1913e9ae8cf8a878da5388232d2049740f6f4a43ec4b43b8ad1beb55f919f45eb9a577adb4a2a6eacb27b25fc
   languageName: node
   linkType: hard
 
@@ -8349,7 +8304,6 @@ __metadata:
     "@types/react-test-renderer": "npm:^19.1.0"
     eslint: "npm:^8.19.0"
     jest: "npm:^29.6.3"
-    jet: "https://github.com/invertase/jet#@mikehardy/jet-next"
     prettier: "npm:2.8.8"
     react: "npm:19.2.3"
     react-native: "npm:0.86.0"
@@ -12342,7 +12296,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"error-stack-parser@npm:^2.0.2, error-stack-parser@npm:^2.0.6":
+"error-stack-parser@npm:^2.0.6":
   version: 2.1.4
   resolution: "error-stack-parser@npm:2.1.4"
   dependencies:
@@ -16383,7 +16337,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"istanbul-lib-coverage@npm:^3.0.0, istanbul-lib-coverage@npm:^3.0.1, istanbul-lib-coverage@npm:^3.2.0":
+"istanbul-lib-coverage@npm:^3.0.0, istanbul-lib-coverage@npm:^3.2.0":
   version: 3.2.2
   resolution: "istanbul-lib-coverage@npm:3.2.2"
   checksum: 10/40bbdd1e937dfd8c830fa286d0f665e81b7a78bdabcd4565f6d5667c99828bda3db7fb7ac6b96a3e2e8a2461ddbc5452d9f8bc7d00cb00075fa6a3e99f5b6a81
@@ -17543,26 +17497,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jet@https://github.com/invertase/jet#@mikehardy/jet-next":
-  version: 0.8.0
-  resolution: "jet@https://github.com/invertase/jet.git#commit=ae655d1a7d2545b7221d5e2a4429f4afa4d7eacb"
-  dependencies:
-    chalk: "npm:^4.1.2"
-    error-stack-parser: "npm:^2.0.2"
-    istanbul-lib-coverage: "npm:^3.0.1"
-    should: "npm:^13.2.1"
-    should-sinon: "npm:0.0.6"
-    sinon: "npm:^11.1.2"
-    source-map: "npm:^0.7.3"
-    tinyqueue: "npm:^2.0.3"
-    ws: "npm:^8.2.3"
-  peerDependencies:
-    react: "*"
-    react-native: "*"
-  checksum: 10/7ae3970cf4652980faba92feedfa010700759cffcbc63ff735779adeec3a4212f87ac2422c5132e86e8dca3df187a1aac9b771e950ac77e48f1839a8ac117552
-  languageName: node
-  linkType: hard
-
 "jimp-compact@npm:0.16.1":
   version: 0.16.1
   resolution: "jimp-compact@npm:0.16.1"
@@ -17913,13 +17847,6 @@ __metadata:
   version: 6.0.2
   resolution: "just-diff@npm:6.0.2"
   checksum: 10/4c6b14d6be2a3391b020ea2b3d1a0acf2f4c60fcb16681c7f6f76d4c0f1841fae5b00c1a2e719980992e46320e4b6c55a4713683cb1873dd41a2621f08c9f8e8
-  languageName: node
-  linkType: hard
-
-"just-extend@npm:^6.2.0":
-  version: 6.2.0
-  resolution: "just-extend@npm:6.2.0"
-  checksum: 10/1f487b074b9e5773befdd44dc5d1b446f01f24f7d4f1f255d51c0ef7f686e8eb5f95d983b792b9ca5c8b10cd7e60a924d64103725759eddbd7f18bcb22743f92
   languageName: node
   linkType: hard
 
@@ -18523,13 +18450,6 @@ __metadata:
   version: 4.4.0
   resolution: "lodash.flattendeep@npm:4.4.0"
   checksum: 10/0d0b41d8d86999e8bea94905ac65347404d427aacddbc6654dc2f85905e27cd2b708139671ecea135fa6f0a17ed94b9d4cab8ce12b08eddcbb1ddd83952ee4c2
-  languageName: node
-  linkType: hard
-
-"lodash.get@npm:^4.4.2":
-  version: 4.4.2
-  resolution: "lodash.get@npm:4.4.2"
-  checksum: 10/2a4925f6e89bc2c010a77a802d1ba357e17ed1ea03c2ddf6a146429f2856a216663e694a6aa3549a318cbbba3fd8b7decb392db457e6ac0b83dc745ed0a17380
   languageName: node
   linkType: hard
 
@@ -20340,19 +20260,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nise@npm:^5.1.0":
-  version: 5.1.9
-  resolution: "nise@npm:5.1.9"
-  dependencies:
-    "@sinonjs/commons": "npm:^3.0.0"
-    "@sinonjs/fake-timers": "npm:^11.2.2"
-    "@sinonjs/text-encoding": "npm:^0.7.2"
-    just-extend: "npm:^6.2.0"
-    path-to-regexp: "npm:^6.2.1"
-  checksum: 10/971caf7638d42a0e106eadd63f05adac1217f864b0a7e4519546aea82a0dbfac68586e7ff430704d54a01ff5dbf6cad58f5f67c067e21112a7deacd7789c2172
-  languageName: node
-  linkType: hard
-
 "nlcst-affix-emoticon-modifier@npm:^2.0.0":
   version: 2.1.1
   resolution: "nlcst-affix-emoticon-modifier@npm:2.1.1"
@@ -22023,13 +21930,6 @@ __metadata:
   version: 8.4.2
   resolution: "path-to-regexp@npm:8.4.2"
   checksum: 10/70fd2cbce0b962cbcf4d312af07818bfce2bae11c09cf3bd86be99c0e30168238a1a7b02b18b452e73f075897df04597d30d63e56da7be41eecfc37998693389
-  languageName: node
-  linkType: hard
-
-"path-to-regexp@npm:^6.2.1":
-  version: 6.3.0
-  resolution: "path-to-regexp@npm:6.3.0"
-  checksum: 10/6822f686f01556d99538b350722ef761541ec0ce95ca40ce4c29e20a5b492fe8361961f57993c71b2418de12e604478dcf7c430de34b2c31a688363a7a944d9c
   languageName: node
   linkType: hard
 
@@ -24506,71 +24406,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"should-equal@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "should-equal@npm:2.0.0"
-  dependencies:
-    should-type: "npm:^1.4.0"
-  checksum: 10/700e38f7815937f15e415b29df45ae22929c98c87979eb71e3a1085ba94cd0c601f435272eef3c9399ff74fa2d424df37ff03672f61ceda21630edcc77810744
-  languageName: node
-  linkType: hard
-
-"should-format@npm:^3.0.3":
-  version: 3.0.3
-  resolution: "should-format@npm:3.0.3"
-  dependencies:
-    should-type: "npm:^1.3.0"
-    should-type-adaptors: "npm:^1.0.1"
-  checksum: 10/099157f4f9bf458919bce8e981438e139c21789bb45f8b5cd8cf4bf01c5df498f1a1e666211bfd906b72b77d645a187563554ab38af807f8cd1aaf270e326186
-  languageName: node
-  linkType: hard
-
-"should-sinon@npm:0.0.6":
-  version: 0.0.6
-  resolution: "should-sinon@npm:0.0.6"
-  peerDependencies:
-    should: ">= 8.x"
-  checksum: 10/e8aeb1cbcb4132ab9d698f07c483d454485146bc4ff1fe5800e59b1c1f2bd97ac50497cef362bd56af1a43291e71729d8e6c8eb5e90fa8437402951ed7258303
-  languageName: node
-  linkType: hard
-
-"should-type-adaptors@npm:^1.0.1":
-  version: 1.1.0
-  resolution: "should-type-adaptors@npm:1.1.0"
-  dependencies:
-    should-type: "npm:^1.3.0"
-    should-util: "npm:^1.0.0"
-  checksum: 10/ca0fc7b24b916373e987b46e0c54db4aa824a80090a2fbff201679fd059240f4efabe415ffef9f5cfb99d85bf4241bdc3f212a9939724413203258a7dd73c24e
-  languageName: node
-  linkType: hard
-
-"should-type@npm:^1.3.0, should-type@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "should-type@npm:1.4.0"
-  checksum: 10/3e99a930fd43a47b0967fb5e8d0be31d9e2339c49267d3eabae014717012f4bd7cd942686fc49675114982240dcbfedba94ef49d0811b8f491c7cd74343bf97f
-  languageName: node
-  linkType: hard
-
-"should-util@npm:^1.0.0":
-  version: 1.0.1
-  resolution: "should-util@npm:1.0.1"
-  checksum: 10/c3be15e0fdc851f8338676b3f8b590d330bbea94ec41c1343cc9983dea295915073f69a215795454b6adda6579ec8927c7c0ab178b83f9f11a0247ccdba53381
-  languageName: node
-  linkType: hard
-
-"should@npm:^13.2.1":
-  version: 13.2.3
-  resolution: "should@npm:13.2.3"
-  dependencies:
-    should-equal: "npm:^2.0.0"
-    should-format: "npm:^3.0.3"
-    should-type: "npm:^1.4.0"
-    should-type-adaptors: "npm:^1.0.1"
-    should-util: "npm:^1.0.0"
-  checksum: 10/4d3da94f11fee3db17be09673a73cd1939b0b75ebde102161eecef5559991deed691071ccab1d9289f4b69a45ef1a9d2362686a5f1ac530a43161d5832f6aa7d
-  languageName: node
-  linkType: hard
-
 "side-channel-list@npm:^1.0.0":
   version: 1.0.0
   resolution: "side-channel-list@npm:1.0.0"
@@ -24689,20 +24524,6 @@ __metadata:
     bplist-parser: "npm:0.3.2"
     plist: "npm:^3.0.5"
   checksum: 10/e03f1619370d8d502543f2f9c6448722456dd2594e34d689eb8706c7c9e328c1ed5bef89280cb9e13426942ec1ab0f5655406ab70550be28b84fcccc304d447b
-  languageName: node
-  linkType: hard
-
-"sinon@npm:^11.1.2":
-  version: 11.1.2
-  resolution: "sinon@npm:11.1.2"
-  dependencies:
-    "@sinonjs/commons": "npm:^1.8.3"
-    "@sinonjs/fake-timers": "npm:^7.1.2"
-    "@sinonjs/samsam": "npm:^6.0.2"
-    diff: "npm:^5.0.0"
-    nise: "npm:^5.1.0"
-    supports-color: "npm:^7.2.0"
-  checksum: 10/e6013a364280dfb5f513212713c685d8445b1709d9ee5f887edb0ef1594ab8271757af1c22b6194aa08a24f3ddc9011cf7273f9e7a9e3cad6883c70d5dd7e024
   languageName: node
   linkType: hard
 
@@ -24841,13 +24662,6 @@ __metadata:
   version: 0.6.1
   resolution: "source-map@npm:0.6.1"
   checksum: 10/59ef7462f1c29d502b3057e822cdbdae0b0e565302c4dd1a95e11e793d8d9d62006cdc10e0fd99163ca33ff2071360cf50ee13f90440806e7ed57d81cba2f7ff
-  languageName: node
-  linkType: hard
-
-"source-map@npm:^0.7.3":
-  version: 0.7.6
-  resolution: "source-map@npm:0.7.6"
-  checksum: 10/c8d2da7c57c14f3fd7568f764b39ad49bbf9dd7632b86df3542b31fed117d4af2fb74a4f886fc06baf7a510fee68e37998efc3080aacdac951c36211dc29a7a3
   languageName: node
   linkType: hard
 
@@ -25495,7 +25309,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"supports-color@npm:7.2.0, supports-color@npm:^7.0.0, supports-color@npm:^7.1.0, supports-color@npm:^7.2.0":
+"supports-color@npm:7.2.0, supports-color@npm:^7.0.0, supports-color@npm:^7.1.0":
   version: 7.2.0
   resolution: "supports-color@npm:7.2.0"
   dependencies:
@@ -25856,13 +25670,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tinyqueue@npm:^2.0.3":
-  version: 2.0.3
-  resolution: "tinyqueue@npm:2.0.3"
-  checksum: 10/b676fdf2050bc9b2b76fe3faa433f3122c623e3f2c32d2a6921487b1e8fb541a85af79ea0eca3618e261b293280db78b02e1f835321783b8c078c507b739017c
-  languageName: node
-  linkType: hard
-
 "tinyrainbow@npm:^1.2.0":
   version: 1.2.0
   resolution: "tinyrainbow@npm:1.2.0"
@@ -26140,13 +25947,6 @@ __metadata:
   version: 4.0.8
   resolution: "type-detect@npm:4.0.8"
   checksum: 10/5179e3b8ebc51fce1b13efb75fdea4595484433f9683bbc2dca6d99789dba4e602ab7922d2656f2ce8383987467f7770131d4a7f06a26287db0615d2f4c4ce7d
-  languageName: node
-  linkType: hard
-
-"type-detect@npm:^4.0.8":
-  version: 4.1.0
-  resolution: "type-detect@npm:4.1.0"
-  checksum: 10/e363bf0352427a79301f26a7795a27718624c49c576965076624eb5495d87515030b207217845f7018093adcbe169b2d119bb9b7f1a31a92bfbb1ab9639ca8dd
   languageName: node
   linkType: hard
 
@@ -27650,7 +27450,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:8.21.3, ws@npm:^8.0.0, ws@npm:^8.13.0, ws@npm:^8.2.3, ws@npm:^8.21.0":
+"ws@npm:8.21.3, ws@npm:^8.0.0, ws@npm:^8.13.0, ws@npm:^8.21.0":
   version: 8.21.3
   resolution: "ws@npm:8.21.3"
   peerDependencies:

@@ -9,6 +9,25 @@ describe('Google Mobile Ads AdsConsent', function () {
       );
     });
 
+    it('accepts undefined properties without failing validation', function () {
+      // Validation runs before the native call; invalid shapes throw synchronously.
+      // Undefined optional fields must not throw in the validator.
+      expect(() => {
+        try {
+          AdsConsent.requestInfoUpdate({
+            debugGeography: undefined,
+            tagForUnderAgeOfConsent: undefined,
+            testDeviceIdentifiers: undefined,
+          });
+        } catch (e) {
+          // Native module may be unmocked in Jest; only validation TypeErrors are failures.
+          if (e instanceof Error && e.message.includes('expected')) {
+            throw e;
+          }
+        }
+      }).not.toThrow();
+    });
+
     it('throws if options.debugGeography is not a valid value.', function () {
       // @ts-ignore
       expect(() => AdsConsent.requestInfoUpdate({ debugGeography: -1 })).toThrow(
@@ -26,6 +45,17 @@ describe('Google Mobile Ads AdsConsent', function () {
     it('throws if options.testDeviceIdentifiers is not an array', function () {
       // @ts-ignore
       expect(() => AdsConsent.requestInfoUpdate({ testDeviceIdentifiers: '123' })).toThrow(
+        "AdsConsent.requestInfoUpdate(*) 'options.testDeviceIdentifiers' expected an array of string values.",
+      );
+    });
+
+    it('throws if options.testDeviceIdentifiers contains a non-string', function () {
+      expect(() =>
+        AdsConsent.requestInfoUpdate({
+          // @ts-ignore
+          testDeviceIdentifiers: ['foo', 123],
+        }),
+      ).toThrow(
         "AdsConsent.requestInfoUpdate(*) 'options.testDeviceIdentifiers' expected an array of string values.",
       );
     });

@@ -20,6 +20,20 @@ describe('Admob', function () {
           "setRequestConfiguration(*) 'requestConfiguration.maxAdContentRating' expected one of G, PG, T, MA",
         );
       });
+
+      it('accepts a valid age rating', function () {
+        expect(() =>
+          admob().setRequestConfiguration({
+            maxAdContentRating: MaxAdContentRating.G,
+          }),
+        ).not.toThrow();
+      });
+
+      it('accepts undefined', function () {
+        expect(() =>
+          admob().setRequestConfiguration({ maxAdContentRating: undefined }),
+        ).not.toThrow();
+      });
     });
 
     describe('ageRestrictedTreatment', function () {
@@ -45,6 +59,20 @@ describe('Admob', function () {
           "setRequestConfiguration(*) 'requestConfiguration.tagForChildDirectedTreatment' expected a boolean value",
         );
       });
+
+      it('sets the value', function () {
+        expect(() =>
+          admob().setRequestConfiguration({
+            tagForChildDirectedTreatment: false,
+          }),
+        ).not.toThrow();
+      });
+
+      it('accepts undefined', function () {
+        expect(() =>
+          admob().setRequestConfiguration({ tagForChildDirectedTreatment: undefined }),
+        ).not.toThrow();
+      });
     });
 
     describe('tagForUnderAgeOfConsent', function () {
@@ -57,6 +85,20 @@ describe('Admob', function () {
         ).toThrow(
           "setRequestConfiguration(*) 'requestConfiguration.tagForUnderAgeOfConsent' expected a boolean value",
         );
+      });
+
+      it('sets the value', function () {
+        expect(() =>
+          admob().setRequestConfiguration({
+            tagForUnderAgeOfConsent: false,
+          }),
+        ).not.toThrow();
+      });
+
+      it('accepts undefined', function () {
+        expect(() =>
+          admob().setRequestConfiguration({ tagForUnderAgeOfConsent: undefined }),
+        ).not.toThrow();
       });
     });
 
@@ -80,6 +122,7 @@ describe('Admob', function () {
       });
 
       it('does call native setRequestConfiguration method', () => {
+        jest.clearAllMocks();
         admob().setRequestConfiguration({ tagForChildDirectedTreatment: true });
         expect(RNGoogleMobileAdsModule.setRequestConfiguration).toHaveBeenCalledTimes(1);
       });

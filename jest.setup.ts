@@ -67,6 +67,16 @@ jest.doMock('./packages/core/src/specs/modules/NativeInterstitialModule', () => 
     },
   };
 });
+jest.doMock('./packages/core/src/specs/modules/NativeRewardedModule', () => {
+  return {
+    __esModule: true,
+    Commands: {},
+    default: {
+      rewardedLoad: jest.fn(),
+      rewardedShow: jest.fn(),
+    },
+  };
+});
 jest.doMock('./packages/core/src/specs/modules/NativeAppModule', () => {
   return {
     __esModule: true,

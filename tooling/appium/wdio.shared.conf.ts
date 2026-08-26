@@ -4,10 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 const appiumHome = path.join(packageRoot, '.appium-home');
+const APPIUM_PORT = Number(process.env.RNGMA_APPIUM_PORT || 4725);
 
 /**
- * Shared WebdriverIO config for Appium 3 smoke.
- * Device suites land later; specs may be empty/skipped until then.
+ * Shared WebdriverIO config for Appium 3 focused smoke against RNGoogleMobileAdsExample.
  */
 export const config: Options.Testrunner = {
   runner: 'local',
@@ -15,27 +15,40 @@ export const config: Options.Testrunner = {
   exclude: [],
   maxInstances: 1,
   logLevel: 'warn',
-  bail: 0,
+  bail: 1,
   waitforTimeout: 15000,
   connectionRetryTimeout: 120000,
   connectionRetryCount: 2,
+  hostname: '127.0.0.1',
+  port: APPIUM_PORT,
+  path: '/',
   framework: 'mocha',
   reporters: ['spec'],
   mochaOpts: {
     ui: 'bdd',
-    timeout: 120000,
+    timeout: 180000,
+    bail: true,
+  },
+  onComplete(exitCode, _config, _capabilities, result) {
+    const failed = result?.failed ?? 0;
+    if (exitCode !== 0 || failed > 0) {
+      // WDIO can report failures while still exiting 0; force a non-zero process status.
+      process.exit(1);
+    }
+  },
+  async onPrepare() {
+    // @wdio/appium-service spawns Appium with process.env only (ignores service `env`).
+    process.env.APPIUM_HOME = appiumHome;
   },
   services: [
     [
       'appium',
       {
-        // Prefer the workspace Appium binary + pinned APPIUM_HOME.
         command: 'appium',
         args: {
+          port: APPIUM_PORT,
           relaxedSecurity: true,
-          // Port chosen per platform config via baseConfig merge.
         },
-        // Ensure drivers come from the checked-in pin install tree.
         env: {
           APPIUM_HOME: appiumHome,
         },

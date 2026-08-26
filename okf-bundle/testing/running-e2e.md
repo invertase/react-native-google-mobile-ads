@@ -12,7 +12,7 @@ timestamp: 2026-08-22T00:00:00Z
 
 ## Agent rule
 
-Use **only** [local e2e commands](#local-e2e-commands). No direct Jet/Metro/Gradle/`pod`. Install: [agent command policy](agent-command-policy.md). When to run e2e vs Jest: [§ platform coverage](#platform-coverage-gate-blocking).
+Use **only** [local e2e commands](#local-e2e-commands). No direct Appium/Metro/Gradle/`pod` outside named scripts. Install: [agent command policy](agent-command-policy.md). When to run e2e vs Jest: [§ platform coverage](#platform-coverage-gate-blocking).
 
 Once: `yarn && yarn prepare` (+ `yarn tests:ios:pod:install` on iOS). `yarn tests:install` is an alias for root `yarn` (workspaces).
 
@@ -22,23 +22,29 @@ Once: `yarn && yarn prepare` (+ `yarn tests:ios:pod:install` on iOS). `yarn test
 
 **Names only.** Which of these to run is [platform coverage](#platform-coverage-gate-blocking). When running e2e, use only these named scripts (no `yarn tests:android:*` / `yarn tests:ios:*` globs). Do **not** run every named script unless that table requires it.
 
-Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`.
+Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:android`, `yarn tests:appium:ios`.
 
-When those named scripts are the e2e gate, `tee` `yarn tests:android:run` to `/tmp/rngma-e2e-android.log` and `yarn tests:ios:run` to `/tmp/rngma-e2e-ios.log`. Redirect/`tee` of the **same** named yarn script is allowed; do not add other wrappers.
+When those named scripts are the e2e gate, `tee` `yarn tests:appium:android` to a unique `/tmp/rngma-e2e-android-*.log` and `yarn tests:appium:ios` to a unique `/tmp/rngma-e2e-ios-*.log`. Redirect/`tee` of the **same** named yarn script is allowed; do not add other wrappers.
 
-Specs: `e2e/*.e2e.js`. App: `RNGoogleMobileAdsExample/`. One e2e at a time (`:8081`). No source edits during a run.
+Device driver: Appium 3 + WebdriverIO in `tooling/appium/` ([§ Appium](#appium-scaffold)). Specs: `tooling/appium/test/specs/**/*.ts`. App: `RNGoogleMobileAdsExample/` (format gallery + stable `testID`s). One e2e at a time (`:8081`). No source edits during a run.
 
-There is no separate macOS-app e2e target. iOS e2e is `yarn tests:ios:pod:install` / `yarn tests:ios:run` (local Mac or CI `macos-15`).
+There is no separate macOS-app e2e target. iOS e2e is `yarn tests:ios:pod:install` / `yarn tests:ios:run` (install) then `yarn tests:appium:ios` (local Mac or CI `macos-15`).
 
 A green GitHub Actions e2e workflow is **not** a pass ([continue-on-error](../ci-workflows/index.md#e2e-continue-on-error)). Use local counts + `/tmp/rngma-e2e-*.log`, or triaged `simulator_log` / `adb_logs`.
 
 <a id="appium-scaffold"></a>
 
-## Appium scaffold
+## Appium
 
-Private workspace `@invertase/rngma-appium` at `tooling/appium/` (Yarn workspace `tooling/*`; not a Lerna publish package). Stack: Appium 3 + WebdriverIO + UiAutomator2 + XCUITest. Jet remains the current device e2e driver until format smoke specs replace it.
+Private workspace `@invertase/rngma-appium` at `tooling/appium/` (Yarn workspace `tooling/*`; not a Lerna publish package). Stack: Appium 3 + WebdriverIO + UiAutomator2 + XCUITest. Focused smoke samples the gallery: representative **Banner** + **Collapsible Banner**, listed GAM banner sizes (**AnchoredAdaptiveBanner**, **Fluid**), plus interstitial / rewarded / rewarded interstitial / app open / native / GAM interstitial, and hooks / consent / inspector / debug seams. Remaining banner size variants stay reachable via the gallery accordion (manual QA); smoke does not open every size. Uses Google `TestIds` only — **no mediation**, no live-fill assertions (open each sample and assert its container; do not wait on auction).
 
-**Pins:** JS deps in `tooling/appium/package.json` + `yarn.lock`. Driver versions are **also** pinned in checked-in `tooling/appium/drivers.manifest.json` (Appium drivers are not fully guaranteed by the lockfile alone). Install into gitignored `tooling/appium/.appium-home/` (`APPIUM_HOME`) with `yarn tests:appium:drivers:install`, then `yarn tests:appium:drivers:verify`. Device-free config check: `yarn tests:appium:validate`. Device runs (when specs exist): `yarn tests:appium:android` / `yarn tests:appium:ios`. Example UI uses stable `testID`s from `RNGoogleMobileAdsExample/src/appiumTestIds.ts` (mirrored in `tooling/appium/src/testIds.ts`).
+**Session split:** Device smoke runs as **three** WDIO sessions (`formats.smoke.a-primary` / `b-secondary` / `c-tertiary`, lists in `tooling/appium/src/formats.ts`). Android UiAutomator2 tends to destabilize after roughly fifteen tests in one session; the split keeps each session shorter. iOS uses the same three-spec layout for parity.
+
+**Pins:** JS deps in `tooling/appium/package.json` + `yarn.lock`. Driver versions are **also** pinned in checked-in `tooling/appium/drivers.manifest.json` (Appium drivers are not fully guaranteed by the lockfile alone). Install into gitignored `tooling/appium/.appium-home/` (`APPIUM_HOME`) with `yarn tests:appium:drivers:install`, then `yarn tests:appium:drivers:verify`. Device-free config check: `yarn tests:appium:validate`. Device runs: `yarn tests:appium:android` / `yarn tests:appium:ios`. Example UI uses stable `testID`s from `RNGoogleMobileAdsExample/src/appiumTestIds.ts` (mirrored in `tooling/appium/src/testIds.ts`).
+
+**Gallery sections:** The example home screen filters with **All | Formats | Hooks | Debug** chips (`gma.gallery.section.*`). Appium helpers select the section that contains a format before opening it so deep `UiScrollable` targets (hooks at the bottom of **All**) are not required. Manual QA still uses **All** (or each section) to reach every format.
+
+**Android app path:** default `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk` after `yarn tests:android:build` (override `RNGMA_ANDROID_APK`). **iOS:** set `RNGMA_IOS_APP` to a built `.app`, or rely on auto-discovery of the example simulator build / DerivedData path (`tooling/appium/src/formats.ts` `iosAppPath`), or install via `yarn tests:ios:run` and use `appium:bundleId` `com.microsoft.ReactTestApp`.
 
 <a id="platform-coverage-gate-blocking"></a>
 
@@ -53,11 +59,11 @@ Private workspace `@invertase/rngma-appium` at `tooling/appium/` (Yarn workspace
 | JS-only `packages/core/src/` excluding `packages/core/src/specs/**` | `yarn prepare` + root Jest. Packager only if you will actually start Metro; JS-only does not require it. **Not** native e2e. |
 | JS/config plugin only (`packages/core/plugin/**`, `packages/core/app.plugin.js`; no native-manifest/plist output) | [GMA-AD-1](../architecture-decisions.md#gma-ad-1) + [Expo plugin](validation-checklist.md#expo-plugin). Not native e2e. |
 | Pure path relocate / workspace layout (no semantic change to native, specs, or plugin output) | Keep named scripts valid; **not** native e2e. **Supersedes** the `RNGoogleMobileAdsExample/**` row when example edits are only path/`workspace:`/import-path updates for that relocate (no runtime or native example behavior change). |
-| Appium scaffold / example `testID`-only (`tooling/appium/**` and/or `RNGoogleMobileAdsExample/**` `testID` / accessibility ID props only; Jet gallery UX kept; no Jet deletion; no format behavior change) | `yarn tests:appium:validate`. **Not** Jet native e2e and **not** device Appium. **Supersedes** the `RNGoogleMobileAdsExample/**` Jet e2e row for those testID-only example edits. |
+| Appium config / drivers / testIDs-only (`tooling/appium/**` drivers/validate/helpers and/or example `testID` props only; no format gallery behavior change; no device specs change) | `yarn tests:appium:validate`. **Not** device Appium. **Supersedes** the example Appium device row for those edits. |
 | Kotlin style-only / ktlint format on `packages/core/android/**` (`.kt` whitespace/style only; no semantic native behavior change) | **Not** native e2e. Same spirit as pure path relocate. **Supersedes** the `packages/core/android/**` clause of the plugin/native row when android edits are ktlint format/style-only. |
-| Touched `e2e/**` | Android: `yarn tests:packager` (or `:reset-cache` when [pre-flight](#pre-flight) says free `:8081`) + `yarn tests:android:build` + `yarn tests:android:run`. iOS: `yarn tests:packager` (same reset) + `yarn tests:ios:pod:install` + `yarn tests:ios:run`. Specs that changed, on the platform(s) those specs exercise. [Tee](#local-e2e-commands). |
-| `RNGoogleMobileAdsExample/**` (example app/config, not `node_modules`) | Android: `yarn tests:packager` (or `:reset-cache` when [pre-flight](#pre-flight) says free `:8081`) + `yarn tests:android:build` + `yarn tests:android:run`. iOS: `yarn tests:packager` (same reset) + `yarn tests:ios:pod:install` + `yarn tests:ios:run`. Each platform the example change can affect. [Tee](#local-e2e-commands). Does **not** apply when the pure path relocate / workspace layout row **or** the Appium scaffold / example `testID`-only row already covers the example edits. |
-| Plugin output that changes native manifests/plists, or touched `packages/core/android/**`, `packages/core/ios/**`, podspec, or `packages/core/src/specs/**` | Android: `yarn tests:packager` (or `:reset-cache` when [pre-flight](#pre-flight) says free `:8081`) + `yarn tests:android:build` + `yarn tests:android:run`. iOS: `yarn tests:packager` (same reset) + `yarn tests:ios:pod:install` + `yarn tests:ios:run`. **Each affected platform.** [Tee](#local-e2e-commands). |
+| Touched `tooling/appium/test/specs/**` or Appium format smoke behavior | Android: `yarn tests:packager` (or `:reset-cache` when [pre-flight](#pre-flight) says free `:8081`) + `yarn tests:android:build` + `yarn tests:appium:android`. iOS: `yarn tests:packager` (same reset) + `yarn tests:ios:pod:install` + `yarn tests:ios:run` + `yarn tests:appium:ios`. Specs that changed, on the platform(s) those specs exercise. [Tee](#local-e2e-commands). |
+| `RNGoogleMobileAdsExample/**` (example app/config, not `node_modules`) | Android: `yarn tests:packager` (or `:reset-cache` when [pre-flight](#pre-flight) says free `:8081`) + `yarn tests:android:build` + `yarn tests:appium:android`. iOS: `yarn tests:packager` (same reset) + `yarn tests:ios:pod:install` + `yarn tests:ios:run` + `yarn tests:appium:ios`. Each platform the example change can affect. [Tee](#local-e2e-commands). Does **not** apply when the pure path relocate / workspace layout row **or** the Appium config / testIDs-only row already covers the example edits. |
+| Plugin output that changes native manifests/plists, or touched `packages/core/android/**`, `packages/core/ios/**`, podspec, or `packages/core/src/specs/**` | Android: `yarn tests:packager` (or `:reset-cache` when [pre-flight](#pre-flight) says free `:8081`) + `yarn tests:android:build` + `yarn tests:appium:android`. iOS: `yarn tests:packager` (same reset) + `yarn tests:ios:pod:install` + `yarn tests:ios:run` + `yarn tests:appium:ios`. **Each affected platform.** [Tee](#local-e2e-commands). |
 
 A green run of **unrelated** e2e files does not close review for the touched area.
 
@@ -81,7 +87,7 @@ Interrupted Shell: log footer `N passing`/`N failing` = complete. An open tee or
 
 1. Confirm [pre-flight](#pre-flight).
 2. Same failure twice on the canonical command → narrow to one file or `.only` (`unit-focused` only).
-3. Read `/tmp/rngma-e2e-ios.log` / `/tmp/rngma-e2e-android.log` (CI: `simulator_log` / `adb_logs` — [CI workflows](../ci-workflows/index.md)).
+3. Read `/tmp/rngma-e2e-ios-*.log` / `/tmp/rngma-e2e-android-*.log` (CI: `simulator_log` / `adb_logs` — [CI workflows](../ci-workflows/index.md)).
 4. Revert `.only` and extra native logging before area-focused review or commit.
 
 Do not invent harness override files or debug flags from other repos.
