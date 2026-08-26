@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { AutoExecutableTest, TestRegistry, TestResult, TestRunner, TestType } from 'jet';
 
+import { AppiumTestIds } from './src/appiumTestIds';
 import MobileAds, {
   AdEventType,
   AdsConsent,
@@ -69,7 +70,7 @@ function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID={AppiumTestIds.root}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={{
@@ -78,6 +79,7 @@ function AppContent() {
           marginLeft: safeAreaInsets.left,
           marginRight: safeAreaInsets.right,
         }}
+        testID={AppiumTestIds.jetRunner}
       >
         <TestRunner />
       </ScrollView>
@@ -89,7 +91,11 @@ const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
   requestNonPersonalizedAdsOnly: true,
 });
 
-const LoadableAdTestComponent = (props: { mobileAd: MobileAd; type: string }) => {
+const LoadableAdTestComponent = (props: {
+  mobileAd: MobileAd;
+  type: string;
+  formatId: string;
+}) => {
   const [adLoaded, setAdLoaded] = useState(false);
 
   useEffect(() => {
@@ -112,6 +118,7 @@ const LoadableAdTestComponent = (props: { mobileAd: MobileAd; type: string }) =>
     <View style={styles.testSpacing}>
       <Button
         title={`Load ${props.type} Ad`}
+        testID={AppiumTestIds.action.load(props.formatId)}
         onPress={() => {
           try {
             props.mobileAd.load();
@@ -120,9 +127,12 @@ const LoadableAdTestComponent = (props: { mobileAd: MobileAd; type: string }) =>
           }
         }}
       />
-      <Text>Loaded? {adLoaded ? 'true' : 'false'}</Text>
+      <Text testID={AppiumTestIds.action.loaded(props.formatId)}>
+        Loaded? {adLoaded ? 'true' : 'false'}
+      </Text>
       <Button
         title={`Show ${props.type} Ad`}
+        testID={AppiumTestIds.action.show(props.formatId)}
         onPress={() => {
           try {
             props.mobileAd.show();
@@ -138,6 +148,7 @@ const LoadableAdTestComponent = (props: { mobileAd: MobileAd; type: string }) =>
 abstract class LoadableAdTest implements AutoExecutableTest {
   testComponent: MobileAd | undefined = undefined;
   abstract getPath(): string;
+  abstract getFormatId(): string;
 
   getTestType(): TestType {
     return TestType.Interactive;
@@ -146,8 +157,12 @@ abstract class LoadableAdTest implements AutoExecutableTest {
   render(onMount: (component: any) => void): React.ReactNode {
     if (!this.testComponent) return;
     return (
-      <View ref={onMount}>
-        <LoadableAdTestComponent mobileAd={this.testComponent} type={this.getPath()} />
+      <View ref={onMount} testID={this.getFormatId()}>
+        <LoadableAdTestComponent
+          mobileAd={this.testComponent}
+          type={this.getPath()}
+          formatId={this.getFormatId()}
+        />
       </View>
     );
   }
@@ -172,6 +187,9 @@ class AppOpenTest extends LoadableAdTest {
   getPath(): string {
     return 'App Open';
   }
+  getFormatId(): string {
+    return AppiumTestIds.format.appOpen;
+  }
 }
 
 const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
@@ -187,6 +205,9 @@ class InterstitialTest extends LoadableAdTest {
   }
   getPath(): string {
     return 'Interstitial';
+  }
+  getFormatId(): string {
+    return AppiumTestIds.format.interstitial;
   }
 }
 
@@ -215,9 +236,14 @@ class BannerTest implements AutoExecutableTest {
     return TestType.Interactive;
   }
 
+  getFormatId(): string {
+    return AppiumTestIds.bannerVariant(this.getPath());
+  }
+
   render(onMount: (component: any) => void): React.ReactNode {
+    const formatId = this.getFormatId();
     return (
-      <View ref={onMount}>
+      <View ref={onMount} testID={formatId}>
         <BannerAd
           ref={this.bannerRef}
           unitId={
@@ -236,6 +262,7 @@ class BannerTest implements AutoExecutableTest {
         />
         <Button
           title="reload"
+          testID={AppiumTestIds.action.reload(formatId)}
           onPress={() => {
             this.bannerRef.current?.load();
           }}
@@ -267,7 +294,7 @@ class CollapsibleBannerTest implements AutoExecutableTest {
 
   render(onMount: (component: any) => void): React.ReactNode {
     return (
-      <View ref={onMount}>
+      <View ref={onMount} testID={AppiumTestIds.format.collapsibleBanner}>
         <BannerAd
           unitId={TestIds.ADAPTIVE_BANNER}
           size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
@@ -305,6 +332,9 @@ class RewardedTest extends LoadableAdTest {
   getPath(): string {
     return 'Rewarded';
   }
+  getFormatId(): string {
+    return AppiumTestIds.format.rewarded;
+  }
 }
 
 const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
@@ -321,6 +351,9 @@ class RewardedInterstitialTest extends LoadableAdTest {
   }
   getPath(): string {
     return 'Rewarded Interstitial';
+  }
+  getFormatId(): string {
+    return AppiumTestIds.format.rewardedInterstitial;
   }
 }
 
@@ -436,7 +469,7 @@ class NativeTest implements AutoExecutableTest {
 
   render(onMount: (component: any) => void): React.ReactNode {
     return (
-      <View ref={onMount}>
+      <View ref={onMount} testID={AppiumTestIds.format.native}>
         <NativeComponent />
       </View>
     );
@@ -465,9 +498,10 @@ class AdConsentTest implements AutoExecutableTest {
 
   render(onMount: (component: any) => void): React.ReactNode {
     return (
-      <View style={styles.testSpacing} ref={onMount}>
+      <View style={styles.testSpacing} ref={onMount} testID={AppiumTestIds.format.consent}>
         <Button
           title="Show Consent Form"
+          testID={AppiumTestIds.action.show(AppiumTestIds.format.consent)}
           onPress={async () => {
             const consentInfo = await AdsConsent.requestInfoUpdate({
               debugGeography: AdsConsentDebugGeography.EEA,
@@ -526,11 +560,14 @@ const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
   }
 
   return (
-    <View style={styles.testSpacing} ref={ref}>
-      <Text>Status: {status}</Text>
+    <View style={styles.testSpacing} ref={ref} testID={AppiumTestIds.format.interstitialHook}>
+      <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.interstitialHook)}>
+        Status: {status}
+      </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Interstitial"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.interstitialHook)}
         disabled={status !== 'loaded'}
         onPress={() => {
           show();
@@ -587,11 +624,14 @@ const RewardedHookComponent = React.forwardRef<View>((_, ref) => {
   }, [clicked, earnedReward, impression, status]);
 
   return (
-    <View style={styles.testSpacing} ref={ref}>
-      <Text>Status: {status}</Text>
+    <View style={styles.testSpacing} ref={ref} testID={AppiumTestIds.format.rewardedHook}>
+      <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedHook)}>
+        Status: {status}
+      </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Rewarded"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.rewardedHook)}
         disabled={status !== 'loaded'}
         onPress={() => {
           show();
@@ -649,11 +689,18 @@ const RewardedInterstitialHookComponent = React.forwardRef<View>((_, ref) => {
   }, [clicked, earnedReward, impression, status]);
 
   return (
-    <View style={styles.testSpacing} ref={ref}>
-      <Text>Status: {status}</Text>
+    <View
+      style={styles.testSpacing}
+      ref={ref}
+      testID={AppiumTestIds.format.rewardedInterstitialHook}
+    >
+      <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedInterstitialHook)}>
+        Status: {status}
+      </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Rewarded Interstitial"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.rewardedInterstitialHook)}
         disabled={status !== 'loaded'}
         onPress={() => {
           show();
@@ -705,11 +752,14 @@ const AppOpenHookComponent = React.forwardRef<View>((_, ref) => {
   }, [clicked, impression, status]);
 
   return (
-    <View style={styles.testSpacing} ref={ref}>
-      <Text>Status: {status}</Text>
+    <View style={styles.testSpacing} ref={ref} testID={AppiumTestIds.format.appOpenHook}>
+      <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.appOpenHook)}>
+        Status: {status}
+      </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show App Open"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.appOpenHook)}
         disabled={status !== 'loaded'}
         onPress={() => {
           show();
@@ -756,9 +806,10 @@ class AdInspectorTest implements AutoExecutableTest {
 
   render(onMount: (component: any) => void): React.ReactNode {
     return (
-      <View style={styles.testSpacing} ref={onMount}>
+      <View style={styles.testSpacing} ref={onMount} testID={AppiumTestIds.format.adInspector}>
         <Button
           title="Show Ad Inspector"
+          testID={AppiumTestIds.action.show(AppiumTestIds.format.adInspector)}
           onPress={() => {
             MobileAds().openAdInspector();
           }}
@@ -787,11 +838,20 @@ const GAMBannerComponent = React.forwardRef<
   }
 >(({ unitId, sizes }, ref) => {
   const bannerRef = useRef<GAMBannerAd>(null);
+  const sizesKey = sizes
+    .map(size =>
+      size
+        .split('_')
+        .map((s: string) => s.toLowerCase().charAt(0).toUpperCase() + s.toLowerCase().slice(1))
+        .join(''),
+    )
+    .join('_');
+  const formatId = AppiumTestIds.gamBannerVariant(sizesKey);
   const recordManualImpression = () => {
     bannerRef.current?.recordManualImpression();
   };
   return (
-    <View ref={ref}>
+    <View ref={ref} testID={formatId}>
       {/* To test FLUID size ad, use `TestIds.GAM_NATIVE` */}
       <GAMBannerAd
         ref={bannerRef}
@@ -805,7 +865,11 @@ const GAMBannerComponent = React.forwardRef<
           console.log(`${Platform.OS} GAM banner error: ${error.message}`);
         }}
       />
-      <Button title="recordManualImpression" onPress={recordManualImpression} />
+      <Button
+        title="recordManualImpression"
+        testID={AppiumTestIds.action.recordImpression(formatId)}
+        onPress={recordManualImpression}
+      />
     </View>
   );
 });
@@ -888,9 +952,10 @@ class GAMInterstitialTest implements AutoExecutableTest {
 
   render(onMount: (component: any) => void): React.ReactNode {
     return (
-      <View style={styles.testSpacing} ref={onMount}>
+      <View style={styles.testSpacing} ref={onMount} testID={AppiumTestIds.format.gamInterstitial}>
         <Button
           title="Load GAM Interstitial"
+          testID={AppiumTestIds.action.load(AppiumTestIds.format.gamInterstitial)}
           onPress={() => {
             try {
               gamInterstitial.load();
@@ -899,9 +964,12 @@ class GAMInterstitialTest implements AutoExecutableTest {
             }
           }}
         />
-        <Text>Loaded? {this.adLoaded ? 'true' : 'false'}</Text>
+        <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.gamInterstitial)}>
+          Loaded? {this.adLoaded ? 'true' : 'false'}
+        </Text>
         <Button
           title="Show GAM Interstitial"
+          testID={AppiumTestIds.action.show(AppiumTestIds.format.gamInterstitial)}
           onPress={() => {
             gamInterstitial.show();
           }}
@@ -939,9 +1007,10 @@ class DebugMenuTest implements AutoExecutableTest {
 
   render(onMount: (component: any) => void): React.ReactNode {
     return (
-      <View style={styles.testSpacing} ref={onMount}>
+      <View style={styles.testSpacing} ref={onMount} testID={AppiumTestIds.format.debugMenu}>
         <Button
           title="Show Ad Debug Menu"
+          testID={AppiumTestIds.action.show(AppiumTestIds.format.debugMenu)}
           onPress={() => {
             MobileAds().openDebugMenu(TestIds.BANNER);
           }}

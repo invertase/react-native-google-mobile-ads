@@ -10,7 +10,8 @@
   "license": "Apache-2.0",
   "workspaces": [
     "packages/*",
-    "RNGoogleMobileAdsExample"
+    "RNGoogleMobileAdsExample",
+    "tooling/*"
   ],
   "scripts": {
     "postinstallDev": "yarn prepare",
@@ -42,6 +43,11 @@
     "tests:android:run": "yarn workspace RNGoogleMobileAdsExample android",
     "tests:ios:run": "yarn workspace RNGoogleMobileAdsExample react-native run-ios",
     "tests:ios:pod:install": "cd RNGoogleMobileAdsExample && cd ios && rm -rf RNGoogleMobileAdsExample.xcworkspace && rm -f Podfile.lock && pod install --repo-update && cd ..",
+    "tests:appium:validate": "yarn workspace @invertase/rngma-appium validate",
+    "tests:appium:drivers:install": "yarn workspace @invertase/rngma-appium drivers:install",
+    "tests:appium:drivers:verify": "yarn workspace @invertase/rngma-appium drivers:verify",
+    "tests:appium:android": "yarn workspace @invertase/rngma-appium appium:android",
+    "tests:appium:ios": "yarn workspace @invertase/rngma-appium appium:ios",
     "package:update": "yarn upgrade-interactive"
   },
   "devDependencies": {

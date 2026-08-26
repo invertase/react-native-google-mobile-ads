@@ -77,7 +77,9 @@ yarn
 yarn prepare
 ```
 
-Root `yarn` installs all workspaces (library under `packages/core/` and `RNGoogleMobileAdsExample/`). `yarn prepare` builds the library via Lerna/Nx (`yarn lerna:prepare`). Package TypeScript extends root `tsconfig.packages.base.json`; ESLint is the root `eslint.config.js`.
+Root `yarn` installs all workspaces (library under `packages/core/`, `RNGoogleMobileAdsExample/`, and `tooling/*`). `yarn prepare` builds the library via Lerna/Nx (`yarn lerna:prepare`). Package TypeScript extends root `tsconfig.packages.base.json`; ESLint is the root `eslint.config.js`.
+
+Appium 3 + WebdriverIO scaffolding lives in `tooling/appium/` (`@invertase/rngma-appium`). Pin contract: `yarn.lock` plus `tooling/appium/drivers.manifest.json`. Device-free check: `yarn tests:appium:validate`. Drivers: `yarn tests:appium:drivers:install` then `yarn tests:appium:drivers:verify`. Details: [Appium scaffold](okf-bundle/testing/running-e2e.md#appium-scaffold). Jet remains the current device e2e harness until Appium format smoke replaces it.
 
 Android **Java** format: `yarn lint:android`. Android **Kotlin** format: repo-root `./gradlew ktlintFormat` (check-only: `./gradlew ktlintCheck`). Optional: `./gradlew addKtlintFormatGitPreCommitHook` to install a local hook; Invertase global pre-commit also invokes root `./gradlew ktlintFormat` when present (this repo does not ship an installed hook). Example app builds remain under `RNGoogleMobileAdsExample/android/`.
 
