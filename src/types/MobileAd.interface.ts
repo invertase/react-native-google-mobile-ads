@@ -18,6 +18,7 @@
 import { AdEventListener } from './AdEventListener';
 import { AdEventsListener } from './AdEventsListener';
 import { AdShowOptions } from './AdShowOptions';
+import type { ResponseInfo } from './ResponseInfo';
 
 /**
  * Base class for InterstitialAd, RewardedAd, NativeAd and BannerAd.
@@ -32,6 +33,11 @@ export interface MobileAdInterface {
    * Whether the advert is loaded and can be shown.
    */
   loaded: boolean;
+
+  /**
+   * Snapshot of the loaded ad's response info, or null before load / after destroy.
+   */
+  responseInfo: ResponseInfo | null;
 
   /**
    * Start loading the advert with the provided RequestOptions.
@@ -110,4 +116,10 @@ export interface MobileAdInterface {
    * Remove all registered event listeners.
    */
   removeAllListeners(): void;
+
+  /**
+   * Release native resources for this ad instance.
+   * Idempotent; safe to call from React effect cleanup.
+   */
+  destroy(): void;
 }

@@ -17,4 +17,6 @@ export type AdapterStatus = {
   name: string;
   description: string;
   state: InitializationState;
+  /** Optional adapter initialization latency in milliseconds. */
+  latencyMillis?: number;
 };

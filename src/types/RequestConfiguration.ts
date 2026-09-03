@@ -50,4 +50,9 @@ export interface RequestConfiguration {
    * If using an emulator, set the device ID to `EMULATOR`.
    */
   testDeviceIdentifiers?: string[];
+
+  /**
+   * Publisher privacy personalization state for ad requests.
+   */
+  publisherPrivacyPersonalizationState?: 'enabled' | 'disabled' | 'unset';
 }

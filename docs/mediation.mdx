@@ -1,7 +1,7 @@
 # Mediation
 
-AdMob Mediation is a feature lets you serve ads to your apps from multiple sources, including the AdMob Network and third-party ad sources, in one place. 
-AdMob Mediation helps maximize your fill rate and increase your monetization by sending ad requests to multiple networks to verify you find the best 
+AdMob Mediation is a feature lets you serve ads to your apps from multiple sources, including the AdMob Network and third-party ad sources, in one place.
+AdMob Mediation helps maximize your fill rate and increase your monetization by sending ad requests to multiple networks to verify you find the best
 available network to serve ads.
 
 This guide walks you through configuring mediation using the `react-native-google-mobile-ads` library.
@@ -16,7 +16,7 @@ To configure mediation in the AdMob UI, complete the following steps:
 ## Install mediation adapters
 
 For the Google Mobile Ads SDK to communicate with third-party ad networks, you need to include a mediation adapter for each network in your app. Each
-adapter must be integrated in the Android and iOS layer of your application. 
+adapter must be integrated in the Android and iOS layer of your application.
 
 To choose the adapters you want to install, see Integrate open source and versioned adapters
 ([Android](https://developers.google.com/admob/android/choose-networks#integrate_open-source_and_versioned_adapters) | [iOS](https://developers.google.com/admob/ios/choose-networks#integrate_open-source_and_versioned_adapters)).
@@ -25,9 +25,11 @@ To choose the adapters you want to install, see Integrate open source and versio
 <TabItem value="bare">
 
 Android
+
 - Add the adapter's dependency to your app-level `android/app/build.gradle` file.
 
 iOS
+
 - Add the adapter's pod to your `ios/Podfile`.
 
 </TabItem>
@@ -119,7 +121,7 @@ import com.applovin.sdk.AppLovinPrivacySettings
 
 class GoogleMobileAdsMediationAppLovinModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
-  // The React layer interfaces with the value of this API. 
+  // The React layer interfaces with the value of this API.
   override fun getName() = "GoogleMobileAdsMediationAppLovin"
 
   // This exposes the method to the React layer.
@@ -132,7 +134,7 @@ class GoogleMobileAdsMediationAppLovinModule(reactContext: ReactApplicationConte
 
 2. Create the package
 
-    This class registers your module so React Native can find it.
+   This class registers your module so React Native can find it.
 
 Example file: `android/app/src/main/java/com/your-app-name/`
 
@@ -191,7 +193,7 @@ Example file: `ios/GoogleMobileAdsMediationAppLovin.m`
 
 @implementation GoogleMobileAdsMediationAppLovin
 
-// The React layer interfaces with the class name, e.g. GoogleMobileAdsMediationAppLovin, by default. 
+// The React layer interfaces with the class name, e.g. GoogleMobileAdsMediationAppLovin, by default.
 RCT_EXPORT_MODULE();
 
 // This exports the method to the React layer.
@@ -237,10 +239,10 @@ Run the following command from your project's root directory:
 npx create-expo-module --local
 ```
 
-When prompted, give your module a name. This will scaffold a new module in a modules/ directory at your project root. 
+When prompted, give your module a name. This will scaffold a new module in a modules/ directory at your project root.
 
 2. **Add your native Android and iOS code**. The following example creates a module to use with the
-Google Mobile Ads mediation adapter for AppLovin:
+   Google Mobile Ads mediation adapter for AppLovin:
 
 Android
 

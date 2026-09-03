@@ -1,6 +1,7 @@
 import { AdShowOptions } from './AdShowOptions';
 import type { PaidEvent } from './PaidEventListener';
 import { RewardedAdReward } from './RewardedAdReward';
+import type { ResponseInfo } from './ResponseInfo';
 
 export interface AdStates {
   /**
@@ -38,6 +39,14 @@ export interface AdStates {
 }
 
 export interface AdHookReturns extends AdStates {
+  /**
+   * Snapshot of the loaded ad's response info, or null before load / after destroy.
+   */
+  responseInfo: ResponseInfo | null;
+  /**
+   * Release native resources for the underlying ad instance.
+   */
+  destroy: () => void;
   /**
    * Whether your ad is showing.
    * The value is equal with `isOpened && !isClosed`.
