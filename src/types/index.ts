@@ -16,15 +16,26 @@
  */
 
 export * from './AdapterStatus';
+export * from './AdBackend';
+export * from './AdCapabilities';
+export * from './AdError';
 export * from './AdEventListener';
 export * from './AdEventsListener';
+export * from './AdExpiry';
+export * from './AdFormat';
+export * from './AdPool';
 export * from './AgeRestrictedTreatment';
 export * from './AdShowOptions';
 export * from './AdStates';
 export * from './BannerAdProps';
+export * from './CapabilitySupport';
+export * from './FullscreenAdFormat';
+export * from './MultiFormatAd';
+export * from './MultiFormatBannerSize';
 export * from './PaidEventListener';
 export * from './RequestConfiguration';
 export * from './RequestOptions';
+export * from './ResponseInfo';
 export * from './RewardedAdReward';
 export * from './AppEvent';
 export * from './NativeAdRequestOptions';

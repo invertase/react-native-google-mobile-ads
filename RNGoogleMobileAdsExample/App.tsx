@@ -507,22 +507,19 @@ class AdConsentTest implements AutoExecutableTest {
 }
 
 const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
-  const { load, show, error, isLoaded, isClicked, isClosed, isOpened, revenue } = useInterstitialAd(
-    TestIds.INTERSTITIAL,
-  );
+  const { show, error, status, clicked, impression, revenue } = useInterstitialAd({
+    adUnitId: TestIds.INTERSTITIAL,
+  });
   useEffect(() => {
-    load();
-  }, [load]);
-  useEffect(() => {
-    if (error !== undefined) {
+    if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} interstitial hook error: ${error.message}`);
     }
-  }, [error]);
+  }, [error, status]);
   useEffect(() => {
     console.log(
-      `${Platform.OS} interstitial hook state - loaded/opened/clicked/closed: ${isLoaded}/${isOpened}/${isClicked}/${isClosed}`,
+      `${Platform.OS} interstitial hook state - status/clicked/impression: ${status}/${clicked}/${impression}`,
     );
-  }, [isLoaded, isOpened, isClicked, isClosed]);
+  }, [clicked, impression, status]);
 
   if (revenue) {
     console.log('Revenue', revenue);
@@ -530,11 +527,11 @@ const InterstitialHookComponent = React.forwardRef<View>((_, ref) => {
 
   return (
     <View style={styles.testSpacing} ref={ref}>
-      <Text>Loaded? {isLoaded ? 'true' : 'false'}</Text>
+      <Text>Status: {status}</Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Interstitial"
-        disabled={!isLoaded}
+        disabled={status !== 'loaded'}
         onPress={() => {
           show();
         }}
@@ -570,34 +567,32 @@ class InterstitialHookTest implements AutoExecutableTest {
 }
 
 const RewardedHookComponent = React.forwardRef<View>((_, ref) => {
-  const { load, show, isLoaded, error, reward, isEarnedReward, isOpened, isClosed, isClicked } =
-    useRewardedAd(TestIds.REWARDED);
+  const { show, status, error, reward, earnedReward, clicked, impression } = useRewardedAd({
+    adUnitId: TestIds.REWARDED,
+  });
   useEffect(() => {
-    load();
-  }, [load]);
-  useEffect(() => {
-    if (error !== undefined) {
+    if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} rewarded hook error: ${error.message}`);
     }
-  }, [error]);
+  }, [error, status]);
   useEffect(() => {
-    if (reward !== undefined) {
+    if (reward !== null) {
       console.log(`${Platform.OS} rewarded hook reward: ${JSON.stringify(reward)}`);
     }
   }, [reward]);
   useEffect(() => {
     console.log(
-      `${Platform.OS} rewarded hook state - loaded/earned/opened/clicked/closed: ${isLoaded}/${isEarnedReward}/${isOpened}/${isClicked}/${isClosed}`,
+      `${Platform.OS} rewarded hook state - status/earned/clicked/impression: ${status}/${earnedReward}/${clicked}/${impression}`,
     );
-  }, [isLoaded, isEarnedReward, isOpened, isClicked, isClosed]);
+  }, [clicked, earnedReward, impression, status]);
 
   return (
     <View style={styles.testSpacing} ref={ref}>
-      <Text>Loaded? {isLoaded ? 'true' : 'false'}</Text>
+      <Text>Status: {status}</Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Rewarded"
-        disabled={!isLoaded}
+        disabled={status !== 'loaded'}
         onPress={() => {
           show();
         }}
@@ -633,34 +628,33 @@ class RewardedHookTest implements AutoExecutableTest {
 }
 
 const RewardedInterstitialHookComponent = React.forwardRef<View>((_, ref) => {
-  const { load, show, isLoaded, error, reward, isEarnedReward, isOpened, isClosed, isClicked } =
-    useRewardedInterstitialAd(TestIds.REWARDED_INTERSTITIAL);
+  const { show, status, error, reward, earnedReward, clicked, impression } =
+    useRewardedInterstitialAd({
+      adUnitId: TestIds.REWARDED_INTERSTITIAL,
+    });
   useEffect(() => {
-    load();
-  }, [load]);
-  useEffect(() => {
-    if (error !== undefined) {
+    if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} rewarded interstitial hook error: ${error.message}`);
     }
-  }, [error]);
+  }, [error, status]);
   useEffect(() => {
-    if (reward !== undefined) {
+    if (reward !== null) {
       console.log(`${Platform.OS} rewarded interstitial hook reward: ${JSON.stringify(reward)}`);
     }
   }, [reward]);
   useEffect(() => {
     console.log(
-      `${Platform.OS} rewarded interstitial hook state - loaded/earned/opened/clicked/closed: ${isLoaded}/${isEarnedReward}/${isOpened}/${isClicked}/${isClosed}`,
+      `${Platform.OS} rewarded interstitial hook state - status/earned/clicked/impression: ${status}/${earnedReward}/${clicked}/${impression}`,
     );
-  }, [isLoaded, isEarnedReward, isOpened, isClicked, isClosed]);
+  }, [clicked, earnedReward, impression, status]);
 
   return (
     <View style={styles.testSpacing} ref={ref}>
-      <Text>Loaded? {isLoaded ? 'true' : 'false'}</Text>
+      <Text>Status: {status}</Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Rewarded Interstitial"
-        disabled={!isLoaded}
+        disabled={status !== 'loaded'}
         onPress={() => {
           show();
         }}
@@ -696,30 +690,27 @@ class RewardedInterstitialHookTest implements AutoExecutableTest {
 }
 
 const AppOpenHookComponent = React.forwardRef<View>((_, ref) => {
-  const { load, show, error, isLoaded, isClicked, isClosed, isOpened } = useAppOpenAd(
-    TestIds.APP_OPEN,
-  );
+  const { show, error, status, clicked, impression } = useAppOpenAd({
+    adUnitId: TestIds.APP_OPEN,
+  });
   useEffect(() => {
-    load();
-  }, [load]);
-  useEffect(() => {
-    if (error !== undefined) {
+    if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} app open hook error: ${error.message}`);
     }
-  }, [error]);
+  }, [error, status]);
   useEffect(() => {
     console.log(
-      `${Platform.OS} app open hook state - loaded/opened/clicked/closed: ${isLoaded}/${isOpened}/${isClicked}/${isClosed}`,
+      `${Platform.OS} app open hook state - status/clicked/impression: ${status}/${clicked}/${impression}`,
     );
-  }, [isLoaded, isOpened, isClicked, isClosed]);
+  }, [clicked, impression, status]);
 
   return (
     <View style={styles.testSpacing} ref={ref}>
-      <Text>Loaded? {isLoaded ? 'true' : 'false'}</Text>
+      <Text>Status: {status}</Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show App Open"
-        disabled={!isLoaded}
+        disabled={status !== 'loaded'}
         onPress={() => {
           show();
         }}

@@ -77,4 +77,32 @@ export interface MobileAdsModuleInterface {
    * @param muted true if the app is muted, false otherwise. Defaults to false.
    */
   setAppMuted(muted: boolean): void;
+
+  /**
+   * Prevents the Google Mobile Ads SDK from initializing mediation adapters.
+   * Stub today: no-op. When native-wired: queued until `initialize()`;
+   * rejected if called after initialization.
+   */
+  disableMediationAdapterInitialization(): void;
+
+  /**
+   * Disables SDK crash reporting.
+   * Stub today: no-op. When native-wired: no-op on classic Android;
+   * queued until `initialize()`; rejected if called after initialization.
+   */
+  disableSdkCrashReporting(): void;
+
+  /**
+   * Enables or disables publisher first-party ID.
+   * Stub today: resolves immediately without applying the flag.
+   * When native-wired: void on both platforms (no iOS boolean parity);
+   * queued until `initialize()`; rejected if called after initialization.
+   */
+  setPublisherFirstPartyIdEnabled(enabled: boolean): Promise<void>;
+
+  /**
+   * Returns a version string for diagnostics.
+   * Stub today: JS package version. When native-wired: linked native SDK version.
+   */
+  getVersion(): string;
 }

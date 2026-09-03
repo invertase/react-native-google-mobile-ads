@@ -67,4 +67,9 @@ export enum AdEventType {
    * The user closed the ad and has returned back to your application.
    */
   CLOSED = 'closed',
+
+  /**
+   * Called when an impression is recorded for an ad. No payload.
+   */
+  IMPRESSION = 'impression',
 }

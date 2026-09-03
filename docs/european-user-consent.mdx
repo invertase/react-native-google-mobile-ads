@@ -12,10 +12,11 @@ Android & iOS, and provides a single JavaScript interface for both platforms.
 ## Understanding AdMob Ads
 
 Ads served by Google can be categorized as personalized, non-personalized, Limited ads and technical ads. To understand more about what ads can be served based on a
-user's consent choices, see Ad serving modes ([Android](https://developers.google.com/admob/android/privacy/ad-serving-modes) / [iOS](https://developers.google.com/admob/ios/privacy/ad-serving-modes)). 
+user's consent choices, see Ad serving modes ([Android](https://developers.google.com/admob/android/privacy/ad-serving-modes) / [iOS](https://developers.google.com/admob/ios/privacy/ad-serving-modes)).
 
 <Info>
-The `AdsConsent` helper only provides you with the tools for requesting consent, it is up to the developer to ensure the consent status is reflected throughout the app.
+  The `AdsConsent` helper only provides you with the tools for requesting consent, it is up to the
+  developer to ensure the consent status is reflected throughout the app.
 </Info>
 
 ## Handling consent
@@ -195,7 +196,7 @@ Before requesting ads in your app, check if you have gathered consent aligned wi
 If an error occurs during the consent gathering process, you should still attempt to request ads.
 The UMP SDK uses the consent status from the previous session.
 
-**Note:** For more information on when `canRequestAds` is `true` or `false`, see the reference documentation for [Android](https://developers.google.com/admob/android/reference/privacy/com/google/android/ump/ConsentInformation#canRequestAds()) /
+**Note:** For more information on when `canRequestAds` is `true` or `false`, see the reference documentation for [Android](<https://developers.google.com/admob/android/reference/privacy/com/google/android/ump/ConsentInformation#canRequestAds()>) /
 [iOS](https://developers.google.com/admob/ios/privacy/api/reference/Classes/UMPConsentInformation#canrequestads).
 
 ```js
@@ -207,7 +208,7 @@ useEffect(() => {
   // Request consent information and load/present a consent form if necessary.
   AdsConsent.gatherConsent()
     .then(startGoogleMobileAdsSDK)
-    .catch((error) => console.error('Consent gathering failed:', error));
+    .catch(error => console.error('Consent gathering failed:', error));
 
   // This sample attempts to load ads using consent obtained in the previous session.
   // We intentionally use .then() chaining (instead of await) to ensure parallel execution.
@@ -215,7 +216,7 @@ useEffect(() => {
 }, []);
 
 async function startGoogleMobileAdsSDK() {
-  const {canRequestAds} = await AdsConsent.getConsentInfo();
+  const { canRequestAds } = await AdsConsent.getConsentInfo();
   if (!canRequestAds || isMobileAdsStartCalledRef.current) {
     return;
   }
@@ -224,13 +225,14 @@ async function startGoogleMobileAdsSDK() {
 
   // (Optional, iOS) Handle Apple's App Tracking Transparency manually.
   const gdprApplies = await AdsConsent.getGdprApplies();
-  const hasConsentForPurposeOne = gdprApplies && (await AdsConsent.getPurposeConsents()).startsWith("1");
+  const hasConsentForPurposeOne =
+    gdprApplies && (await AdsConsent.getPurposeConsents()).startsWith('1');
   if (!gdprApplies || hasConsentForPurposeOne) {
     // Request ATT...
   }
 
   // Initialize the Google Mobile Ads SDK.
-  await mobileAds().initialize()
+  await mobileAds().initialize();
 
   // Request an ad...
 }
@@ -310,6 +312,7 @@ AdsConsent.reset();
 ### Troubleshooting
 
 In case of troubles, double-check the following artifacts:
-* Original documentation for underlying UMP SDK for [Android](https://developers.google.com/admob/ump/android/quick-start) /
-[iOS](https://developers.google.com/admob/ump/ios/quick-start).
-* Google Help Center [European regulations](https://support.google.com/admob/topic/10115026) articles.
+
+- Original documentation for underlying UMP SDK for [Android](https://developers.google.com/admob/ump/android/quick-start) /
+  [iOS](https://developers.google.com/admob/ump/ios/quick-start).
+- Google Help Center [European regulations](https://support.google.com/admob/topic/10115026) articles.

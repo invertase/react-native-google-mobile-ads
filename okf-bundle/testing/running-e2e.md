@@ -58,7 +58,9 @@ A green run of **unrelated** e2e files does not close review for the touched are
 
 **Blocking.** [Prepare must finish first](agent-command-policy.md#prepare-must-finish-first): `yarn` then `yarn prepare` before Metro/e2e (this pass runs Metro/native). Do not parallelize prepare with packager, Jest, Gradle, or pods. What to record stays on the [evidence prepare row](validation-checklist.md#validation-evidence-package).
 
-Metro on `:8081` must be **this** checkout (`RNGoogleMobileAdsExample/`), not another worktree. One e2e at a time. Free `:8081` before `yarn tests:packager:reset-cache`. Revert `.only` before area-focused/full.
+Before taking any e2e slot required by this task, determine whether another task owns it. If the slot is occupied and this task has no explicit ownership transfer, ask the user whether this task may take it. Without authorization, do not stop or otherwise displace the owner. Once ownership is transferred, take the slot and continue.
+
+Port `:8081` is one serialized e2e resource, not the ownership rule itself. Metro used by this task on `:8081` must be **this** checkout (`RNGoogleMobileAdsExample/`), not another worktree, and the port must be free before `yarn tests:packager:reset-cache`. Revert `.only` before area-focused/full.
 
 Interrupted Shell: log footer `N passing`/`N failing` = complete. An open tee or missing footer is **not** success — recover Metro `:8081` and re-run the **same** command.
 

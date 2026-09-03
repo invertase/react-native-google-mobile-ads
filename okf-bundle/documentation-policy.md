@@ -17,12 +17,12 @@ Single source of truth for OKF knowledge and commit wording. Other OKF docs link
 | Kind | Where it lives | What it contains |
 |------|----------------|------------------|
 | **Public (durable)** | GitHub-**public** reference docs and indexes under `okf-bundle/` | Stable API names, registry IDs, SDK versions, classifications, verification **methods**, architecture, canonical commands |
-| **Ephemeral** | **Gitignored** working files in the checkout, all under `.agents/` | Session scratch only: run counts, snapshot labels, dated banners, interim report copies, coverage evidence paths (`.agents/reports/<change-id>/`), probe notes — never staged |
+| **Ephemeral** | **Gitignored** working content under `.agents/` | Session scratch only: run counts, snapshot labels, dated banners, interim report copies, coverage evidence paths (`.agents/reports/<change-id>/`), probe notes, skills, friction logs — never staged |
 | **Private** | Internal tracker and internal docs (not named here) | Tracker identifiers, discussion, non-public commercial terms. Not GitHub-public; not the same as ephemeral |
 
 GitHub-public **reference** docs, `AGENTS.md`, commits, and PR titles must **not** contain ephemeral **state/values** (for example probe IDs, dated banners, run counts) or private **items** (for example tracker identifiers, internal docs). Gate **names** and close rules: [change authoring § gates](testing/change-authoring-workflow.md#gates).
 
-Ephemeral working files are **gitignored and never staged**. In this checkout that means everything under `.agents/`. Do not add ephemeral files under `okf-bundle/`.
+Ephemeral working, report, skill, and friction content under `.agents/` is **gitignored and never staged**. The sole durable exception is tracked `.agents/.gitignore`, which is repository infrastructure and may be staged only when intentionally changing that infrastructure. Do not add ephemeral files under `okf-bundle/`.
 
 Private items stay off GitHub, including off `AGENTS.md`, commits, PR titles, and reference docs.
 
@@ -65,7 +65,7 @@ Confirm:
 | **DRY** | No duplicated procedures, policy paragraphs, or ephemeral snapshots in GitHub-public docs |
 | **Efficiency** | Shortest text that stays **complete and true** ([§ Efficiency](#efficiency)). Completeness wins over brevity |
 | **Link hygiene** | Cross-links resolve; indexes list canonical entry points |
-| **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, or PR titles. Private items stay off GitHub. Ephemeral working files are gitignored under `.agents/` and never staged. Do not add ephemeral files under `okf-bundle/` |
+| **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, or PR titles. Private items stay off GitHub. `.agents/` staging follows the [canonical rule](#durable-vs-ephemeral). Do not add ephemeral files under `okf-bundle/` |
 
 **Blocking on `commit`.** Fix violations before `git commit` ([change authoring § commit](testing/change-authoring-workflow.md#commit)). Gate close is not a later escape hatch. Frozen `independent-review` **reports only**; `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings apply in `documentation?` then another frozen scan — product/lint findings are not this dump ([§ frozen tree](testing/change-authoring-workflow.md#frozen-tree)). Commands: [validation-checklist § OKF bundle review](testing/validation-checklist.md#okf-bundle-review). Loop: [change authoring](testing/change-authoring-workflow.md#loop).
 
@@ -90,6 +90,6 @@ Efficiency is **information-preserving brevity**, not a token budget.
 
 If shortening would change how an agent acts, keep the longer text.
 
-**`.agents/`** files are gitignored and never staged — session scratch only ([table above](#durable-vs-ephemeral)).
+For `.agents/` durability and staging, use the [canonical rule above](#durable-vs-ephemeral).
 
 Gate state (`next_work_type`, gates, `commit_subject`, and related fields) lives in the **internal tracker** (session trackers outside this repo). It is ephemeral for durability purposes but is not maintained under `.agents/` and is not described here. Field names: [iteration vocabulary](testing/iteration-vocabulary.md). Gate semantics and `commit_subject` staging: [change authoring workflow](testing/change-authoring-workflow.md#commit).

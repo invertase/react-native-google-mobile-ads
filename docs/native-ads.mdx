@@ -14,9 +14,7 @@ The first argument of the method is the "Ad Unit ID".
 For testing, we can use a Test ID, however for production the ID from the Google AdMob dashboard under "Ad units" should be used:
 
 ```tsx
-NativeAd.createForAdRequest(TestIds.NATIVE)
-  .then(setNativeAd)
-  .catch(console.error);
+NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
 ```
 
 ### Native ad Options
@@ -36,7 +34,7 @@ NativeAd.createForAdRequest(TestIds.NATIVE, {
 Media Aspect Ratio Controls let you specify a preference for the aspect ratio of ad creatives.
 
 <Info>
-Use of this API does not guarantee that all ad creatives will meet the preference specified.
+  Use of this API does not guarantee that all ad creatives will meet the preference specified.
 </Info>
 
 Specify `requestOptions.aspectRatio` with a `NativeMediaAspectRatio` enum value when calling `NativeAd.createForAdRequest`.
@@ -88,6 +86,7 @@ NativeAd.createForAdRequest(TestIds.NATIVE, {
 ```
 
 #### Other Ad Request Options
+
 You can specify other request options to be sent while loading an advert, such as keywords, location, and [content URLs](/displaying-ads#content-url-targeting-brand-safety).
 Setting additional request options helps AdMob choose better tailored ads from the network.
 View the [RequestOptions](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/types/RequestOptions.ts) source code to see the full range of options available.
@@ -110,9 +109,7 @@ const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE)
-      .then(setNativeAd)
-      .catch(console.error);
+    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
   }, []);
 
   if (!nativeAd) {
@@ -144,9 +141,7 @@ const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE)
-      .then(setNativeAd)
-      .catch(console.error);
+    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
   }, []);
 
   if (!nativeAd) {
@@ -163,7 +158,11 @@ const NativeComponent = () => {
 };
 ```
 
-<Warning>Place the asset view(such as `Text`, `Image` component) as a direct child of the `NativeAsset` component. See more in [Caveats: `NativeAsset` placement](/native-ads#nativeasset-placement) section.</Warning>
+<Warning>
+  Place the asset view(such as `Text`, `Image` component) as a direct child of the `NativeAsset`
+  component. See more in [Caveats: `NativeAsset` placement](/native-ads#nativeasset-placement)
+  section.
+</Warning>
 
 ### NativeMediaView component
 
@@ -187,13 +186,17 @@ const NativeComponent = () => {
 The `NativeMediaView` component respects the `resizeMode` property when displaying images. The `resizeMode` defaults to `cover`.
 
 Supports the following values:
+
 - `cover`: Scale the image uniformly (maintain the image's aspect ratio) so that:
   - Both dimensions (width and height) of the image will be equal to or larger than the corresponding dimension of the view (minus padding)
   - At least one dimension of the scaled image will be equal to the corresponding dimension of the view (minus padding)
 - `contain`: Scale the image uniformly (maintain the image's aspect ratio) so that both dimensions (width and height) of the image will be equal to or less than the corresponding dimension of the view (minus padding).
 - `stretch`: Scale width and height independently, This may change the aspect ratio of the source image.
 
-<Info>NativeMediaView's `aspectRatio` style property is set to `nativeAd.mediaContent.aspectRatio` by default.</Info>
+<Info>
+  NativeMediaView's `aspectRatio` style property is set to `nativeAd.mediaContent.aspectRatio` by
+  default.
+</Info>
 
 ```tsx
 const NativeComponent = () => {
@@ -224,8 +227,8 @@ These are the steps for displaying a native ad:
 
 1. Place the `NativeAdView`, register it by setting the `nativeAd` prop to the NativeAd object.
 2. For each ad asset to be displayed:
-    - Populate the asset view with the asset in the `NativeAd` object.
-    - Register the asset view by wrapping it with the `NativeAsset` component.
+   - Populate the asset view with the asset in the `NativeAd` object.
+   - Register the asset view by wrapping it with the `NativeAsset` component.
 3. Place the `NativeMediaView` inside your native ad layout to display media asset.
 
 ```tsx
@@ -233,9 +236,7 @@ const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE)
-      .then(setNativeAd)
-      .catch(console.error);
+    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
   }, []);
 
   if (!nativeAd) {
@@ -248,14 +249,12 @@ const NativeComponent = () => {
       // Display the icon asset with Image component, and use NativeAsset to register the view
       {nativeAd.icon && (
         <NativeAsset assetType={NativeAssetType.ICON}>
-          <Image source={{uri: nativeAd.icon.url}} width={24} height={24} />
+          <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} />
         </NativeAsset>
       )}
       // Display the headline asset with Text component, and use NativeAsset to register the view
       <NativeAsset assetType={NativeAssetType.HEADLINE}>
-        <Text style={{fontSize: 18, fontWeight: 'bold'}}>
-          {nativeAd.headline}
-        </Text>
+        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
       </NativeAsset>
       // Always display an ad attribution to denote that the view is an advertisement
       <Text>Sponsored</Text>
@@ -280,9 +279,7 @@ const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE)
-      .then(setNativeAd)
-      .catch(console.error);
+    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -320,9 +317,7 @@ const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE)
-      .then(setNativeAd)
-      .catch(console.error);
+    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -354,6 +349,7 @@ The SDK automatically handles tasks such as recording / handling clicks on the a
 Wrapping the asset view with another view can interfere with these tasks.
 
 Do:
+
 ```tsx
 <NativeAsset assetType={NativeAssetType.CTA}>
   <Text style={{ padding: 8 }}>{nativeAd.cta}</Text>
@@ -362,7 +358,9 @@ Do:
   <Image source={{uri: nativeAd.icon.url}} width={24} height={24} style={{ borderRadius: 8 }} />
 </NativeAsset>
 ```
+
 Don't:
+
 ```tsx
 <NativeAsset assetType={NativeAssetType.CTA}>
   <TouchableOpacity style={{ padding: 8 }}>
@@ -379,7 +377,8 @@ Don't:
 ### Not implemented features
 
 These features are not implemented in the current version:
-  - Custom Ad Choices view
-  - Custom video playback controls
-  - Custom click gestures
-  - [Custom native ad formats](https://support.google.com/admanager/answer/6366911)
+
+- Custom Ad Choices view
+- Custom video playback controls
+- Custom click gestures
+- [Custom native ad formats](https://support.google.com/admanager/answer/6366911)

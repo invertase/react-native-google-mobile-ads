@@ -115,8 +115,14 @@ export interface RequestOptions {
    * key-value pairs used for custom targeting
    *
    * Takes an object of keys with values of string, number, or arrays of strings/numbers.
+   * Bridge coerces values to `string | string[]`.
    */
   customTargeting?: Record<string, string | number | (string | number)[]>;
+
+  /**
+   * GAM-only category exclusions for the request.
+   */
+  categoryExclusions?: string[];
 
   /**
    * Sets the request agent string to identify the ad request's origin. Third party libraries that reference the Mobile

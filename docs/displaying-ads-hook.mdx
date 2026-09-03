@@ -4,29 +4,30 @@ The AdMob package provides hooks to help you to display ads in a functional comp
 
 ## Load an ad
 
-You can create a new ad by adding a corresponding ad type's hook to your component.
-
-The first argument of the hook is the "Ad Unit ID".
-For testing, we can use a Test ID, however for production the ID from the
-Google AdMob dashboard under "Ad units" should be used:
+You can create a new ad by adding the corresponding ad type's hook to your component.
+Pass an options object containing the Ad Unit ID. For testing, use a Test ID; for
+production, use the ID from the Google AdMob dashboard under "Ad units":
 
 ```tsx {4-8}
 import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
 export default function App() {
-  const interstitialAd = useInterstitialAd(TestIds.Interstitial);
+  const interstitialAd = useInterstitialAd({
+    adUnitId: TestIds.INTERSTITIAL,
+  });
 
   return <View>{/* ... */}</View>;
 }
 ```
 
 <Info>
-The `adUnitid` parameter can also be used to manage creation and destruction of an ad instance.
-If `adUnitid` is set or changed, new ad instance will be created and previous ad instance will be destroyed if exists.
-If `adUnitid` is set to `null`, no ad instance will be created and previous ad instance will be destroyed if exists.
+  `adUnitId` identifies the placement and manages the ad instance. Changing it creates a new
+  instance and destroys the previous one. Setting it to `null` retires the placement, destroys the
+  previous instance, and resets `status` to `idle`. Use `autoLoad: false` when the placement exists
+  but automatic loading should wait; explicit `load()` and `retry()` still work.
 </Info>
 
-The second argument is an additional optional request options object to be sent whilst loading an advert, such as keywords, location, and [content URLs](/displaying-ads#content-url-targeting-brand-safety).
+The optional `requestOptions` field is sent while loading an advert and supports values such as keywords, location, and [content URLs](/displaying-ads#content-url-targeting-brand-safety).
 Setting additional request options helps AdMob choose better tailored ads from the network.
 View the [`RequestOptions`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/src/types/RequestOptions.ts) source code to see the full range of options available.
 
@@ -38,26 +39,23 @@ The hook returns several states and functions to control ad.
 import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
 export default function App({ navigation }) {
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(TestIds.INTERSTITIAL);
+  const { status, show } = useInterstitialAd({
+    adUnitId: TestIds.INTERSTITIAL,
+  });
 
   useEffect(() => {
-    // Start loading the interstitial straight away
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    if (isClosed) {
+    if (status === 'closed') {
       // Action after the ad is closed
       navigation.navigate('NextScreen');
     }
-  }, [isClosed, navigation]);
+  }, [status, navigation]);
 
   return (
     <View>
       <Button
         title="Navigate to next screen"
         onPress={() => {
-          if (isLoaded) {
+          if (status === 'loaded') {
             show();
           } else {
             // No advert ready to show yet
@@ -70,34 +68,28 @@ export default function App({ navigation }) {
 }
 ```
 
-The code above immediately starts to load a new advert from the network (via `load()`).
-When user presses button, it checks if the ad is loaded via `isLoaded` value,
-then the `show` function is called and the advert is shown over-the-top of your application.
+The options form automatically starts loading the advert. When the user presses the button, the code checks for `status === 'loaded'`, then calls `show()` to present the advert.
 Otherwise, if the ad is not loaded, the `navigation.navigate` method is called to navigate to the next screen without showing the ad.
-After the ad is closed, the `isClosed` value is set to `true` and the `navigation.navigate` method is called to navigate to the next screen.
+After the ad is closed, `status` becomes `'closed'` and the app navigates to the next screen.
 
-If needed, you can reuse the existing hook to load more adverts and show them when required. The states are initialized when the `load` function is called.
+Call `retry()` after an error or no-fill, or call `load()` explicitly when `autoLoad` is false.
 
 Return values of the hook are:
 
-| Name           | Type                               | Description                                                                                                        |
-| :------------- | :--------------------------------- | :----------------------------------------------------------------------------------------------------------------- |
-| isLoaded       | boolean                            | Whether the ad is loaded and ready to to be shown to the user. Automatically set to false when the ad was shown.   |
-| isOpened       | boolean                            | Whether the ad is opened. The value is remained `true` even after the ad is closed unless **new ad is requested**. |
-| isClicked      | boolean                            | Whether the ad is clicked.                                                                                         |
-| isClosed       | boolean                            | Whether your ad is dismissed.                                                                                      |
-| isShowing      | boolean                            | Whether your ad is showing. The value is equal with `isOpened && !isClosed`.                                       |
-| error          | Error \| undefined                 | `Error` object throwed during ad load.                                                                             |
-| revenue        | PaidEvent                          | See [Impression-level ad revenue] |
-| reward         | [RewardedAdReward](#) \| undefined | Loaded reward item of the Rewarded Ad. Available only in RewardedAd.                                               |
-| isEarnedReward | boolean                            | Whether the user earned the reward by Rewarded Ad.                                                                 |
-| load           | Function                           | Start loading the advert with the provided RequestOptions.                                                         |
-| show           | Function                           | Show the loaded advert to the user.                                                                                |
-
-<Info>
-Note that `isOpened` value remains `true` even after the ad is closed.
-The value changes to `false` when ad is initialized via calling `load()`.
-To determine whether the ad is currently showing, use `isShowing` value.
-</Info>
+| Name         | Type                     | Description                                                                         |
+| :----------- | :----------------------- | :---------------------------------------------------------------------------------- |
+| status       | UseFullScreenAdStatus    | Current lifecycle state: idle, loading, loaded, showing, closed, no-fill, or error. |
+| autoLoad     | boolean                  | Resolved automatic-load policy.                                                     |
+| clicked      | boolean                  | Whether the user clicked this ad.                                                   |
+| impression   | boolean                  | Whether this ad recorded an impression.                                             |
+| error        | AdError \| null          | Non-null when status is `no-fill` or `error`.                                       |
+| responseInfo | ResponseInfo \| null     | Response metadata for the current load outcome.                                     |
+| revenue      | PaidEvent \| null        | See [Impression-level ad revenue].                                                  |
+| reward       | RewardedAdReward \| null | Reward item; rewarded hooks only.                                                   |
+| earnedReward | boolean                  | Whether the user earned the reward; rewarded hooks only.                            |
+| load         | Function                 | Explicitly load using the current request options.                                  |
+| retry        | Function                 | Retry after `no-fill` or `error`.                                                   |
+| show         | Function                 | Show the loaded advert.                                                             |
+| destroy      | Function                 | Destroy the current ad instance.                                                    |
 
 [Impression-level ad revenue]: /impression-level-ad-revenue

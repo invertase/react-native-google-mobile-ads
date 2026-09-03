@@ -26,6 +26,7 @@ import { AdEventsListener } from '../types/AdEventsListener';
 import { AdShowOptions } from '../types/AdShowOptions';
 import { RequestOptions } from '../types/RequestOptions';
 import { MobileAdInterface } from '../types/MobileAd.interface';
+import type { ResponseInfo } from '../types/ResponseInfo';
 import { RewardedAdReward } from '../types/RewardedAdReward';
 import { GAMAdEventType } from '../GAMAdEventType';
 import { AppEvent } from '../types/AppEvent';
@@ -54,6 +55,7 @@ export abstract class MobileAd implements MobileAdInterface {
   protected _adEventsListenerId: number;
   protected _adEventListenerId: number;
   protected _nativeListener: EmitterSubscription;
+  protected _responseInfo: ResponseInfo | null;
 
   protected constructor(
     type: AdType,
@@ -72,6 +74,7 @@ export abstract class MobileAd implements MobileAdInterface {
 
     this._loaded = false;
     this._isLoadCalled = false;
+    this._responseInfo = null;
     this._adEventsListeners = new Map();
     this._adEventListenersMap = new Map();
     Object.values({
@@ -116,7 +119,7 @@ export abstract class MobileAd implements MobileAdInterface {
 
     let payload: AdEventPayload<EventType> = data;
     if (error) {
-      payload = NativeError.fromEvent(error, 'googleMobileAds');
+      payload = NativeError.fromEvent(error, 'googleMobileAds') as AdEventPayload<EventType>;
     }
     this._adEventsListeners.forEach(listener => {
       listener({
@@ -223,5 +226,17 @@ export abstract class MobileAd implements MobileAdInterface {
 
   public get loaded() {
     return this._loaded;
+  }
+
+  public get responseInfo(): ResponseInfo | null {
+    return this._responseInfo;
+  }
+
+  public destroy(): void {
+    this._nativeListener.remove();
+    this.removeAllListeners();
+    this._loaded = false;
+    this._isLoadCalled = false;
+    this._responseInfo = null;
   }
 }
