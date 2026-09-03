@@ -4,6 +4,7 @@ import { SharedEventEmitter } from './internal/SharedEventEmitter';
 import { GoogleMobileAdsNativeEventEmitter } from './internal/GoogleMobileAdsNativeEventEmitter';
 import { MobileAdsModuleInterface } from './types/MobileAdsModule.interface';
 import { RequestConfiguration } from './types/RequestConfiguration';
+import { version } from './version';
 
 const NATIVE_MODULE_EVENT_SUBSCRIPTIONS: Record<string, unknown> = {};
 
@@ -65,6 +66,25 @@ class MobileAdsModule implements MobileAdsModuleInterface {
 
   setAppMuted(muted: boolean) {
     RNGoogleMobileAdsModule.setAppMuted(muted);
+  }
+
+  disableMediationAdapterInitialization() {
+    // Stub no-op until native wiring: then queued until initialize / reject after.
+  }
+
+  disableSdkCrashReporting() {
+    // Stub no-op until native wiring (real native: no-op on classic Android).
+  }
+
+  setPublisherFirstPartyIdEnabled(enabled: boolean): Promise<void> {
+    void enabled;
+    // Stub resolves immediately; native wiring later (void on both platforms).
+    return Promise.resolve();
+  }
+
+  getVersion(): string {
+    // Stub: returns the JS package version until native SDK version is wired.
+    return version;
   }
 }
 

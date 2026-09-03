@@ -51,10 +51,59 @@ export { NativeMediaView } from './ads/native-ad/NativeMediaView';
 export { NativeAsset, NativeAssetType } from './ads/native-ad/NativeAsset';
 export { GAMBannerAd } from './ads/GAMBannerAd';
 export { GAMInterstitialAd } from './ads/GAMInterstitialAd';
-export { useAppOpenAd } from './hooks/useAppOpenAd';
-export { useInterstitialAd } from './hooks/useInterstitialAd';
-export { useRewardedAd } from './hooks/useRewardedAd';
-export { useRewardedInterstitialAd } from './hooks/useRewardedInterstitialAd';
+export { MultiFormatAdRequest } from './ads/MultiFormatAdRequest';
+export {
+  MultiFormatBannerAdView,
+  type MultiFormatBannerAdHandle,
+  type MultiFormatBannerAdViewProps,
+} from './ads/MultiFormatBannerAdView';
+export { AdPools } from './AdPools';
+export { getAdCapabilities } from './capabilities/getAdCapabilities';
+export { AdPoolPresets } from './capabilities/AdPoolPresets';
+export { MultiFormatAdPresets } from './capabilities/MultiFormatAdPresets';
+export { NativeError } from './internal/NativeError';
+export {
+  type FullScreenAdHookOptions,
+  type UseFullScreenAdResult,
+  type UseFullScreenAdStatus,
+} from './hooks/useFullScreenAd';
+/*
+ * The four fullscreen hooks carry `@deprecated` on their positional overload
+ * only. Re-exporting the symbol is not a use of that overload, but the rule
+ * cannot see which overload an export refers to, so it is disabled across this
+ * block rather than at four separate call sites.
+ */
+/* eslint-disable @typescript-eslint/no-deprecated */
+export {
+  useAppOpenAd,
+  type UseAppOpenAdOptions,
+  type UseAppOpenAdResult,
+} from './hooks/useAppOpenAd';
+export {
+  useInterstitialAd,
+  type UseInterstitialAdOptions,
+  type UseInterstitialAdResult,
+} from './hooks/useInterstitialAd';
+export {
+  useRewardedAd,
+  type UseRewardedAdOptions,
+  type UseRewardedAdResult,
+} from './hooks/useRewardedAd';
+export {
+  useRewardedInterstitialAd,
+  type UseRewardedInterstitialAdOptions,
+  type UseRewardedInterstitialAdResult,
+} from './hooks/useRewardedInterstitialAd';
+/* eslint-enable @typescript-eslint/no-deprecated */
 export { useForeground } from './hooks/useForeground';
+export { AdPoolProvider, type AdPoolProviderProps } from './hooks/AdPoolProvider';
+export { useAdPool, type UseAdPoolResult, type UseAdPoolStatus } from './hooks/useAdPool';
+export { usePooledAd, type UsePooledAdResult, type UsePooledAdStatus } from './hooks/usePooledAd';
+export {
+  useMultiFormatAd,
+  type UseMultiFormatAdOptions,
+  type UseMultiFormatAdResult,
+  type UseMultiFormatAdStatus,
+} from './hooks/useMultiFormatAd';
 export { RevenuePrecisions } from './common/constants';
 export * from './types';

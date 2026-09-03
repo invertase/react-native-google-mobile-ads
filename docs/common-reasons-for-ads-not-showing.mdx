@@ -34,12 +34,11 @@ If you initiated your project with `react-native init`, the auto-generated `appl
 
 - **Non-unique ApplicationId**: The default `applicationId` may clash with existing apps, especially if you haven't customized it. AdMob requires a unique identifier for each app to correctly manage ad requests and revenue.
 
-- **Improperly Structured ApplicationId**: The `applicationId` should generally follow Java package name conventions, such as `com.companyname.appname`. It must start with a letter, and can only include letters (a-z, A-Z), numbers (0-9), and underscores (_). 
+- **Improperly Structured ApplicationId**: The `applicationId` should generally follow Java package name conventions, such as `com.companyname.appname`. It must start with a letter, and can only include letters (a-z, A-Z), numbers (0-9), and underscores (\_).
 
 Google documentation: [Configure the app module](https://developer.android.com/build/configure-app-module?hl=de)
 
-**Important**:  If you change the application ID of an already published app, Google Play Store treats the upload as a completely different app!
-
+**Important**: If you change the application ID of an already published app, Google Play Store treats the upload as a completely different app!
 
 ### Enable test devices
 

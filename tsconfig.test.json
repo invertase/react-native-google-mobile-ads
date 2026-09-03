@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["type-test.ts"],
+  "include": ["type-test.ts", "type-test.tsx"],
   "compilerOptions": {
     "noEmit": true
   }

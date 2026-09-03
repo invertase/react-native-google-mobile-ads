@@ -1,7 +1,7 @@
 # Video ad volume control
 
 <Info>
-Video volume controls apply only to Google ads and are not forwarded to mediation networks.
+  Video volume controls apply only to Google ads and are not forwarded to mediation networks.
 </Info>
 
 If your app has its own volume controls, such as custom music or sound effect volumes, disclosing app volume to the Google Mobile Ads SDK enables video ads to respect app volume settings. This ensures users receive video ads with the expected audio volume.
@@ -24,7 +24,9 @@ function App() {
 ```
 
 <Error>
-Lowering your app's audio volume reduces video ad eligibility and might reduce your app's ad revenue. You should only utilize this API if your app provides custom volume controls to the user, and the user's volume is properly reflected in the API.
+  Lowering your app's audio volume reduces video ad eligibility and might reduce your app's ad
+  revenue. You should only utilize this API if your app provides custom volume controls to the user,
+  and the user's volume is properly reflected in the API.
 </Error>
 
 For App Open, Banner, Interstitial, Rewarded, and Rewarded Interstitial ad formats, you can inform the Google Mobile Ads SDK that the app volume has been muted by calling the `setAppMuted` function:
@@ -45,5 +47,7 @@ function App() {
 By default, `appVolume` is set to 1 (the current device volume) and `appMuted` is set to `NO`.
 
 <Error>
-Muting your app reduces video ad eligibility and might reduce your app's ad revenue. You should only utilize this API if your app provides a custom mute control to the user, and the user's mute decision is properly reflected in the API.
+  Muting your app reduces video ad eligibility and might reduce your app's ad revenue. You should
+  only utilize this API if your app provides a custom mute control to the user, and the user's mute
+  decision is properly reflected in the API.
 </Error>

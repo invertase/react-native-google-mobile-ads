@@ -28,6 +28,7 @@ import NativeGoogleMobileAdsNativeModule, {
   NativeMediaContent,
 } from '../../specs/modules/NativeGoogleMobileAdsNativeModule';
 import { NativeAdRequestOptions } from '../../types';
+import type { ResponseInfo } from '../../types/ResponseInfo';
 import { validateNativeAdRequestOptions } from '../../validateNativeAdRequestOptions';
 
 type NativeAdListenerPayload<EventType extends NativeAdEventType> =
@@ -39,6 +40,11 @@ type NativeAdListenerPayload<EventType extends NativeAdEventType> =
 export class NativeAd {
   readonly adUnitId: string;
   readonly responseId: string;
+  /**
+   * Snapshot of the loaded ad's response info, or null before load / after destroy.
+   * Additive; top-level `responseId` remains the registry key.
+   */
+  readonly responseInfo: ResponseInfo | null;
   readonly advertiser: string | null;
   readonly body: string;
   readonly callToAction: string;
@@ -57,6 +63,8 @@ export class NativeAd {
   private constructor(adUnitId: string, props: NativeAdProps) {
     this.adUnitId = adUnitId;
     this.responseId = props.responseId;
+    // Native wiring for nested ResponseInfo lands later; additive null until then.
+    this.responseInfo = null;
     this.advertiser = props.advertiser;
     this.body = props.body;
     this.callToAction = props.callToAction;

@@ -1,7 +1,9 @@
 import { BannerAdSize, GAMBannerAdSize } from '../BannerAdSize';
+import type { AdErrorPayload } from './AdError';
 import { AppEvent } from './AppEvent';
 import type { PaidEventListener } from './PaidEventListener';
 import { RequestOptions } from './RequestOptions';
+import type { ResponseInfo } from './ResponseInfo';
 
 /**
  * An interface for a Banner advert component.
@@ -68,12 +70,15 @@ export interface BannerAdProps {
   /**
    * When an ad has finished loading.
    */
-  onAdLoaded?: (dimensions: { width: number; height: number }) => void;
+  onAdLoaded?: (dimensions: { width: number; height: number; responseInfo?: ResponseInfo }) => void;
 
   /**
-   * When an ad has failed to load. Callback contains an Error.
+   * When an ad has failed to load.
+   * Additive `reason` / `phase` / `responseInfo` fields ride on the Error
+   * instance (`Error & Partial<AdErrorPayload>`) so existing
+   * `(error: Error) => void` handlers stay assignable under strictFunctionTypes.
    */
-  onAdFailedToLoad?: (error: Error) => void;
+  onAdFailedToLoad?: (error: Error & Partial<AdErrorPayload>) => void;
 
   /**
    * The ad is now visible to the user.

@@ -47,7 +47,7 @@ Redirect/`tee` of the **same** listed yarn script is allowed. Do not add other w
 
 `yarn` / `yarn prepare` are blocking (genversion → bob → plugin). Metro reads `lib/`. Do not parallelize with Jest/tsc/Gradle/pods.
 
-Sandbox with no exit status on e2e/packager/Gradle/pods: retry the **same** command unrestricted.
+Sandbox with no exit status on e2e/packager/Gradle/pods, or Jest Watchman `fchmod` EPERM: retry the **same** command unrestricted. If Watchman `fchmod` still fails unrestricted, retry that same yarn Jest script with `--watchman=false`.
 
 Traps: `genversion` via `yarn prepare` only. Example is `portal:../` — prepare before Metro. CI lint = `yarn lint:code`; CI tsc = `yarn tsc:compile`; docs CI = `yarn lint:spellcheck`.
 
