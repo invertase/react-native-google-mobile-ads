@@ -21,6 +21,7 @@ import { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 export interface Spec extends TurboModule {
   interstitialLoad(requestId: number, adUnitId: string, requestOptions: UnsafeObject): void;
   interstitialShow(requestId: number, adUnitId: string, showOptions?: UnsafeObject): Promise<void>;
+  interstitialDestroy(requestId: number): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsInterstitialModule');

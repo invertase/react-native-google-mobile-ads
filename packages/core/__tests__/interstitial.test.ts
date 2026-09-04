@@ -1,5 +1,6 @@
 import { AdEventType, InterstitialAd } from '../src';
 import NativeInterstitialModule from '../src/specs/modules/NativeInterstitialModule';
+import * as validateAdShowOptionsModule from '../src/validateAdShowOptions';
 
 describe('Google Mobile Ads Interstitial', function () {
   describe('createForAdRequest', function () {
@@ -191,6 +192,88 @@ describe('Google Mobile Ads Interstitial', function () {
         expect(() => i.show()).toThrow(
           'The requested InterstitialAd has not loaded and could not be shown',
         );
+      });
+
+      it('throws if show is requested twice before close/error', function () {
+        const ad = InterstitialAd.createForAdRequest('abc');
+        // @ts-ignore
+        ad._handleAdEvent({ body: { type: AdEventType.LOADED } });
+        ad.show();
+        expect(() => ad.show()).toThrow('Show has already been requested');
+      });
+
+      it('rethrows non-Error validation failures from show', function () {
+        const ad = InterstitialAd.createForAdRequest('abc');
+        // @ts-ignore
+        ad._handleAdEvent({ body: { type: AdEventType.LOADED } });
+        const spy = jest
+          .spyOn(validateAdShowOptionsModule, 'validateAdShowOptions')
+          .mockImplementation(() => {
+            throw 'not-an-error';
+          });
+        try {
+          expect(() => ad.show()).toThrow('not-an-error');
+        } finally {
+          spy.mockRestore();
+        }
+      });
+
+      it('wraps Error validation failures from show', function () {
+        const ad = InterstitialAd.createForAdRequest('abc');
+        // @ts-ignore
+        ad._handleAdEvent({ body: { type: AdEventType.LOADED } });
+        // @ts-ignore
+        expect(() => ad.show('bad')).toThrow("InterstitialAd.show(*) 'options' expected an object value.");
+      });
+    });
+
+    describe('destroy', function () {
+      afterEach(() => {
+        jest.clearAllMocks();
+      });
+
+      it('releases native holders and is idempotent', function () {
+        const ad = InterstitialAd.createForAdRequest('abc');
+        ad.destroy();
+        expect(NativeInterstitialModule.interstitialDestroy).toHaveBeenCalledTimes(1);
+        ad.destroy();
+        expect(NativeInterstitialModule.interstitialDestroy).toHaveBeenCalledTimes(1);
+      });
+
+      it('ignores late native events after destroy', function () {
+        const ad = InterstitialAd.createForAdRequest('abc');
+        const listener = jest.fn();
+        ad.addAdEventListener(AdEventType.LOADED, listener);
+        ad.destroy();
+        // @ts-ignore
+        ad._handleAdEvent({ body: { type: AdEventType.LOADED } });
+        expect(listener).not.toHaveBeenCalled();
+        expect(ad.loaded).toBe(false);
+      });
+
+      it('blocks load and show after destroy', function () {
+        const ad = InterstitialAd.createForAdRequest('abc');
+        ad.destroy();
+        ad.load();
+        expect(NativeInterstitialModule.interstitialLoad).not.toHaveBeenCalled();
+        expect(() => ad.show()).toThrow('has been destroyed');
+      });
+
+      it('rejects new listeners after destroy', function () {
+        const ad = InterstitialAd.createForAdRequest('abc');
+        ad.destroy();
+        expect(() => ad.addAdEventsListener(() => {})).toThrow('ad has been destroyed');
+        expect(() => ad.addAdEventListener(AdEventType.LOADED, () => {})).toThrow(
+          'ad has been destroyed',
+        );
+      });
+
+      it('swallows native destroy throws', function () {
+        const ad = InterstitialAd.createForAdRequest('abc');
+        (NativeInterstitialModule.interstitialDestroy as jest.Mock).mockImplementationOnce(() => {
+          throw new Error('native destroy failed');
+        });
+        expect(() => ad.destroy()).not.toThrow();
       });
     });
 

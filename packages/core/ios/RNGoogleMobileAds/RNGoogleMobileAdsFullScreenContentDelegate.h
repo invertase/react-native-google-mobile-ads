@@ -26,6 +26,8 @@
 @property(nonatomic, strong, readonly) NSString *adEventName;
 @property(nonatomic, assign, readonly) int requestId;
 @property(nonatomic, strong, readonly) NSString *adUnitId;
+/** Invoked on dismiss / fail-to-present so the holder can evict the slot. */
+@property(nonatomic, copy, nullable) void (^onTerminal)(void);
 
 - (instancetype)initWithAdEventName:(NSString *)adEventName
                           requestId:(int)requestId

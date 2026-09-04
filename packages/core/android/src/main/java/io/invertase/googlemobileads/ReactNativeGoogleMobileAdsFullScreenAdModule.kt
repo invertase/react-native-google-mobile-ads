@@ -19,7 +19,6 @@ package io.invertase.googlemobileads
 
 import android.app.Activity
 import android.util.Log
-import android.util.SparseArray
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -43,7 +42,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
   reactContext: ReactApplicationContext?,
   moduleName: String,
 ) : ReactNativeModule(reactContext, moduleName) {
-  private val adArray = SparseArray<T>()
+  private val slots = FullscreenRequestSlotTracker<T>()
 
   abstract fun getAdEventName(): String
 
@@ -94,9 +93,11 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
       return
     }
     val adRequest = ReactNativeGoogleMobileAdsCommon.buildAdRequest(adRequestOptions)
+    val generation = slots.beginLoad(requestId)
     val adLoadCallback =
       ReactNativeGoogleMobileAdsAdLoadCallback(
         requestId,
+        generation,
         adUnitId,
         adRequestOptions,
       )
@@ -126,7 +127,15 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
       return
     }
     activity.runOnUiThread {
-      val ad = adArray[requestId]
+      val ad = slots.get(requestId)
+      if (ad == null) {
+        rejectPromiseWithCodeAndMessage(
+          promise,
+          "not-ready",
+          "Ad attempted to show but was not ready.",
+        )
+        return@runOnUiThread
+      }
       val adHelper = ReactNativeGoogleMobileAdsAdHelper(ad)
 
       var immersiveModeEnabled = false
@@ -151,13 +160,30 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
     }
   }
 
+  fun destroy(requestId: Int) {
+    // Same thread affinity as beginLoad (module/JS bridge thread): SparseArray
+    // mutations must not race an async UI hop against in-flight loads.
+    slots.destroy(requestId)
+  }
+
+  override fun invalidate() {
+    slots.clear()
+    super.invalidate()
+  }
+
   inner class ReactNativeGoogleMobileAdsAdLoadCallback(
     private val requestId: Int,
+    private val generation: Int,
     private val adUnitId: String,
     private val adRequestOptions: ReadableMap,
   ) : AdLoadCallback<T>() {
     override fun onAdLoaded(ad: T & Any) {
       try {
+        if (!slots.tryCommit(requestId, generation, ad)) {
+          // Destroyed or superseded while loading — drop without emitting LOADED.
+          return
+        }
+
         val adHelper = ReactNativeGoogleMobileAdsAdHelper(ad)
         var eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_LOADED
         var data: WritableMap? = null
@@ -239,6 +265,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
             }
 
             override fun onAdDismissedFullScreenContent() {
+              slots.evict(requestId)
               sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLOSED)
             }
 
@@ -247,10 +274,11 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
             }
 
             override fun onAdImpression() {
-              // Not Implemented Yet
+              sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_IMPRESSION)
             }
 
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+              slots.evict(requestId)
               val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(adError, "show")
               sendAdEvent(
                 ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
@@ -273,10 +301,6 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
           }
         adHelper.setFullScreenContentCallback(fullScreenContentCallback)
 
-        adArray.put(
-          requestId,
-          ad,
-        )
         sendAdEvent(
           eventType,
           requestId,
@@ -287,6 +311,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
       } catch (e: Exception) {
         Log.w("RNGoogleMobileAds", "Unknown error on load")
         Log.w("RNGoogleMobileAds", e)
+        slots.evict(requestId)
         val error =
           ReactNativeGoogleMobileAdsCommon.buildAdErrorMap("internal-error", e.message, "load")
         sendAdEvent(
@@ -300,6 +325,9 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
     }
 
     override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+      if (slots.generation(requestId) != generation) {
+        return
+      }
       val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(loadAdError, "load")
       ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.responseInfo)?.let {
         error.putMap("responseInfo", it)

@@ -39,11 +39,17 @@
 
 - (void)ad:(id<GADFullScreenPresentingAd>)ad
     didFailToPresentFullScreenContentWithError:(NSError *)error {
+  if (self.onTerminal) {
+    self.onTerminal();
+  }
   NSDictionary *errorInfo = [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"show"];
   [self sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_ERROR error:errorInfo data:nil];
 }
 
 - (void)adDidDismissFullScreenContent:(id<GADFullScreenPresentingAd>)ad {
+  if (self.onTerminal) {
+    self.onTerminal();
+  }
   [self sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_CLOSED error:nil data:nil];
 }
 
@@ -52,7 +58,7 @@
 }
 
 - (void)adDidRecordImpression:(id<GADFullScreenPresentingAd>)ad {
-  // Not implemented yet
+  [self sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_IMPRESSION error:nil data:nil];
 }
 
 - (void)interstitialAd:(GADInterstitialAd *)interstitialAd

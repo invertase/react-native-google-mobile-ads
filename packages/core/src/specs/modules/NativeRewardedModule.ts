@@ -21,6 +21,7 @@ import { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 export interface Spec extends TurboModule {
   rewardedLoad(requestId: number, adUnitId: string, requestOptions: UnsafeObject): void;
   rewardedShow(requestId: number, adUnitId: string, showOptions?: UnsafeObject): Promise<void>;
+  rewardedDestroy(requestId: number): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsRewardedModule');

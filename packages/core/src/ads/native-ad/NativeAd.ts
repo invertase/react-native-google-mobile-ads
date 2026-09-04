@@ -60,6 +60,7 @@ export class NativeAd {
 
   private nativeEventSubscription: EventSubscription;
   private eventEmitter: EventEmitter;
+  private destroyed = false;
 
   private constructor(adUnitId: string, props: NativeAdProps) {
     this.adUnitId = adUnitId;
@@ -97,7 +98,7 @@ export class NativeAd {
   }
 
   private onNativeAdEvent({ responseId, type, ...data }: NativeAdEventPayload) {
-    if (this.responseId !== responseId) {
+    if (this.destroyed || this.responseId !== responseId) {
       return;
     }
     this.eventEmitter.emit(type, data);
@@ -107,6 +108,9 @@ export class NativeAd {
     type: EventType,
     listener: (payload: NativeAdListenerPayload<EventType>) => void,
   ) {
+    if (this.destroyed) {
+      throw new Error('NativeAd.addAdEventListener(*) ad has been destroyed.');
+    }
     if (!isOneOf(type, Object.values(NativeAdEventType))) {
       throw new Error(`NativeAd.addAdEventListener(*) 'type' expected a valid event type value.`);
     }
@@ -122,6 +126,10 @@ export class NativeAd {
   }
 
   destroy() {
+    if (this.destroyed) {
+      return;
+    }
+    this.destroyed = true;
     NativeGoogleMobileAdsNativeModule.destroy(this.responseId);
     this.nativeEventSubscription.remove();
     this.removeAllAdEventListeners();

@@ -51,6 +51,11 @@ class ReactNativeGoogleMobileAdsAppOpenModule(
     show(requestId, adUnitId, showOptions, promise)
   }
 
+  @ReactMethod
+  fun appOpenDestroy(requestId: Int) {
+    destroy(requestId)
+  }
+
   override fun loadAd(
     activity: Activity,
     adUnitId: String,
