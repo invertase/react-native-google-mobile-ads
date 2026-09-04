@@ -44,6 +44,8 @@ Private workspace `@invertase/rngma-appium` at `tooling/appium/` (Yarn workspace
 
 **Gallery sections:** The example home screen filters with **All | Formats | Hooks | Debug** chips (`gma.gallery.section.*`). Appium helpers select the section that contains a format before opening it so deep `UiScrollable` targets (hooks at the bottom of **All**) are not required. Manual QA still uses **All** (or each section) to reach every format.
 
+**Native coverage flush:** After each top-level smoke suite, while the Appium session is still alive, WDIO taps home **Flush coverage** (`gma.debug.flushCoverage`) so `react-native-coverage` `flush()` dumps Emma/LLVM (and Istanbul when Metro is instrumented) before process kill. Agent pull/report/assert: [coverage design § native agent collection](coverage-design.md#native-agent-collection).
+
 **Android app path:** default `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk` after `yarn tests:android:build` (override `RNGMA_ANDROID_APK`). **iOS:** set `RNGMA_IOS_APP` to a built `.app`, or rely on auto-discovery of the example simulator build / DerivedData path (`tooling/appium/src/formats.ts` `iosAppPath`), or install via `yarn tests:ios:run` and use `appium:bundleId` `com.microsoft.ReactTestApp`.
 
 <a id="platform-coverage-gate-blocking"></a>

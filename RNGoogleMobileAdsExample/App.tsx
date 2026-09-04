@@ -94,6 +94,19 @@ function gamSizesKey(sizes: (keyof typeof GAMBannerAdSize)[]): string {
     .join('_');
 }
 
+/** Dump Istanbul (when instrumented) + native Emma/LLVM buffers via react-native-coverage. */
+function invokeCoverageFlush(): void {
+  try {
+    // Pattern C: published package TurboModule — do not copy RNFB flush sources.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { flush } = require('react-native-coverage') as { flush: () => void };
+    flush();
+    console.log('[native-coverage] flush invoked');
+  } catch (error) {
+    console.warn('[native-coverage] flush failed', error);
+  }
+}
+
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -192,6 +205,16 @@ function AppContent() {
                 />
               </View>
             ))}
+            {/* Bottom of home list so Appium scrollIntoView does not park early smoke targets on the gesture-nav edge.
+                Extra top margin separates the last format opener (e.g. RWI Hook in Hooks) from Flush so
+                coordinate/element taps do not land on the teardown control. */}
+            <View style={[styles.galleryRow, styles.flushCoverageRow]}>
+              <Button
+                title="Flush coverage"
+                testID={AppiumTestIds.flushCoverage}
+                onPress={invokeCoverageFlush}
+              />
+            </View>
           </View>
         )}
       </ScrollView>
@@ -736,6 +759,33 @@ function DebugMenuFormat() {
   );
 }
 
+function FlushCoverageFormat() {
+  const [status, setStatus] = useState('idle');
+
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.flushCoverage}>
+      <Text style={styles.subheading}>
+        Calls react-native-coverage flush() (Istanbul dump when instrumented, then Emma/LLVM).
+      </Text>
+      <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.flushCoverage)}>
+        Status: {status}
+      </Text>
+      <Button
+        title="Flush coverage now"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.flushCoverage)}
+        onPress={() => {
+          try {
+            invokeCoverageFlush();
+            setStatus('flushed');
+          } catch (error) {
+            setStatus(`error: ${String(error)}`);
+          }
+        }}
+      />
+    </View>
+  );
+}
+
 function buildGalleryEntries(): GalleryEntry[] {
   const entries: GalleryEntry[] = [];
 
@@ -872,12 +922,6 @@ function buildGalleryEntries(): GalleryEntry[] {
     render: () => <RewardedHookFormat />,
   });
   entries.push({
-    id: AppiumTestIds.format.debugMenu,
-    title: 'Debug Menu',
-    section: 'debug',
-    render: () => <DebugMenuFormat />,
-  });
-  entries.push({
     id: AppiumTestIds.format.interstitialHook,
     title: 'INT Hook',
     section: 'hooks',
@@ -888,6 +932,18 @@ function buildGalleryEntries(): GalleryEntry[] {
     title: 'RWI Hook',
     section: 'hooks',
     render: () => <RewardedInterstitialHookFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.debugMenu,
+    title: 'Debug Menu',
+    section: 'debug',
+    render: () => <DebugMenuFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.flushCoverage,
+    title: 'Flush Coverage',
+    section: 'debug',
+    render: () => <FlushCoverageFormat />,
   });
 
   return entries;
@@ -900,6 +956,9 @@ const styles = StyleSheet.create({
   },
   galleryRow: {
     marginVertical: 4,
+  },
+  flushCoverageRow: {
+    marginTop: 28,
   },
   sectionChipRow: {
     flexDirection: 'row',

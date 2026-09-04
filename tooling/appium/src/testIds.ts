@@ -33,7 +33,11 @@ export const AppiumTestIds = {
     consent: 'gma.format.consent',
     adInspector: 'gma.format.ad-inspector',
     debugMenu: 'gma.format.debug-menu',
+    /** Manual QA surface for react-native-coverage flush (Appium uses home-button path). */
+    flushCoverage: 'gma.format.flush-coverage',
   },
+  /** Home-screen flush control — Appium session teardown taps this before pull. */
+  flushCoverage: 'gma.debug.flushCoverage',
   action: {
     load: (formatId: string) => `${formatId}.load`,
     show: (formatId: string) => `${formatId}.show`,

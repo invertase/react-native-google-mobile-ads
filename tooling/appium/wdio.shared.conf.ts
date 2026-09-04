@@ -1,6 +1,7 @@
 import type { Options } from '@wdio/types';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { flushCoverageFromApp } from './src/flushCoverage.ts';
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 const appiumHome = path.join(packageRoot, '.appium-home');
@@ -39,6 +40,19 @@ export const config: Options.Testrunner = {
   async onPrepare() {
     // @wdio/appium-service spawns Appium with process.env only (ignores service `env`).
     process.env.APPIUM_HOME = appiumHome;
+  },
+  /**
+   * After each top-level smoke suite, while the Appium session is still alive:
+   * tap Flush coverage so Emma/LLVM buffers hit disk before process kill.
+   * Idempotent across the three session-split specs.
+   */
+  async afterSuite(suite) {
+    // Mocha top-level describe: parent is the root suite.
+    // Also accept root-less shapes from WDIO wrappers so bail paths still flush.
+    if (suite.parent && !suite.parent.root) {
+      return;
+    }
+    await flushCoverageFromApp();
   },
   services: [
     [

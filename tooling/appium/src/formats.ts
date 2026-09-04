@@ -201,6 +201,7 @@ const DEBUG_FORMAT_IDS = new Set<string>([
   AppiumTestIds.format.adInspector,
   AppiumTestIds.format.consent,
   AppiumTestIds.format.debugMenu,
+  AppiumTestIds.format.flushCoverage,
 ]);
 
 export function gallerySectionForFormat(formatId: string): Exclude<GallerySectionId, 'all'> {
