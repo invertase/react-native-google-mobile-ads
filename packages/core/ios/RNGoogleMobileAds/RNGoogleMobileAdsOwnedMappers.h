@@ -46,6 +46,27 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable NSString *)namedBannerSizeTokenFromString:(NSString *)value;
 
+/**
+ * Empty / whitespace-only strings become nil (JS `null`).
+ */
++ (nullable NSString *)emptyToNull:(nullable NSString *)value;
+
+/**
+ * Allowlist-only ResponseInfo extras. Keys are the JS camelCase names.
+ */
++ (NSDictionary<NSString *, NSString *> *)allowlistedResponseInfoExtras:
+    (nullable NSDictionary *)extras;
+
+/**
+ * Converts iOS GAD latency (seconds) to milliseconds for the JS contract.
+ */
++ (NSNumber *)latencyMillisFromSeconds:(NSTimeInterval)latency;
+
+/**
+ * Compact paid snapshot: copies full ResponseInfo dict without `adapterResponses`.
+ */
++ (NSDictionary *)compactPaidResponseInfoFromFull:(NSDictionary *)full;
+
 @end
 
 NS_ASSUME_NONNULL_END

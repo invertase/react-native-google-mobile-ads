@@ -17,7 +17,10 @@
 
 import { EmitterSubscription } from 'react-native';
 import { isFunction, isOneOf } from '../common';
-import { NativeError } from '../internal/NativeError';
+import {
+  adErrorFromNativeEvent,
+  parseResponseInfoPayload,
+} from '../internal/adErrorFromNativeEvent';
 import { AdEventType } from '../AdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { SharedEventEmitter } from '../internal/SharedEventEmitter';
@@ -31,6 +34,7 @@ import { RewardedAdReward } from '../types/RewardedAdReward';
 import { GAMAdEventType } from '../GAMAdEventType';
 import { AppEvent } from '../types/AppEvent';
 import { validateAdShowOptions } from '../validateAdShowOptions';
+import type { PaidEvent } from '../types/PaidEventListener';
 
 type AdType = 'app_open' | 'interstitial' | 'rewarded' | 'rewarded_interstitial';
 type EventType = AdEventType | RewardedAdEventType | GAMAdEventType;
@@ -97,30 +101,68 @@ export abstract class MobileAd implements MobileAdInterface {
   protected _handleAdEvent(event: {
     body: {
       type: EventType;
-      error?: { code: string; message: string };
-      data?: RewardedAdReward | AppEvent;
+      error?: {
+        code: string;
+        message: string;
+        responseInfo?: ResponseInfo;
+        responseInfoJson?: string;
+        reason?: string;
+        phase?: 'load' | 'show';
+      };
+      data?:
+        | (RewardedAdReward & { responseInfo?: ResponseInfo })
+        | (AppEvent & { responseInfo?: ResponseInfo })
+        | (PaidEvent & { responseInfo?: ResponseInfo })
+        | { responseInfo?: ResponseInfo };
     };
   }) {
     const { type, error, data } = event.body;
 
+    const nestedResponseInfo =
+      parseResponseInfoPayload(data) ?? parseResponseInfoPayload(error) ?? undefined;
+
     if (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) {
       this._loaded = true;
+      if (nestedResponseInfo) {
+        this._responseInfo = nestedResponseInfo;
+      }
     }
 
     if (type === AdEventType.CLOSED) {
       this._loaded = false;
       this._isLoadCalled = false;
+      this._responseInfo = null;
     }
 
     if (type === AdEventType.ERROR) {
       this._loaded = false;
       this._isLoadCalled = false;
+      if (nestedResponseInfo) {
+        this._responseInfo = nestedResponseInfo;
+      }
     }
 
-    let payload: AdEventPayload<EventType> = data;
+    let payload: AdEventPayload<EventType>;
     if (error) {
-      payload = NativeError.fromEvent(error, 'googleMobileAds') as AdEventPayload<EventType>;
+      payload = adErrorFromNativeEvent(
+        error,
+        'googleMobileAds',
+        'load',
+      ) as AdEventPayload<EventType>;
+    } else if (
+      (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) &&
+      data &&
+      typeof data === 'object' &&
+      'responseInfo' in data
+    ) {
+      // ResponseInfo is cached on the ad; strip it from reward / empty load payloads.
+      const rest = { ...(data as Record<string, unknown>) };
+      delete rest.responseInfo;
+      payload = (Object.keys(rest).length > 0 ? rest : undefined) as AdEventPayload<EventType>;
+    } else {
+      payload = data as AdEventPayload<EventType>;
     }
+
     this._adEventsListeners.forEach(listener => {
       listener({
         type,
@@ -185,6 +227,7 @@ export abstract class MobileAd implements MobileAdInterface {
     }
 
     this._isLoadCalled = true;
+    this._responseInfo = null;
     this._adLoadFunction(this._requestId, this._adUnitId, this._requestOptions);
   }
 

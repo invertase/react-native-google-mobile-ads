@@ -20,6 +20,7 @@
 #import "RNGoogleMobileAdsNativeModule.h"
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsNativeAdRegistry.h"
+#import "RNGoogleMobileAdsResponseInfo.h"
 
 typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable nativeAd,
                                                    NSError *_Nullable error);
@@ -97,6 +98,9 @@ RCT_EXPORT_METHOD(
         [_adHolders setValue:adHolder forKey:responseId];
         [RNGoogleMobileAdsNativeAdRegistry setNativeAd:nativeAd forResponseId:responseId];
 
+        NSDictionary *responseInfo =
+            [RNGoogleMobileAdsResponseInfo dictionaryFromResponseInfo:nativeAd.responseInfo
+                                                              compact:NO];
         resolve(@{
           @"responseId" : responseId,
           @"advertiser" : nativeAd.advertiser ?: [NSNull null],
@@ -113,7 +117,8 @@ RCT_EXPORT_METHOD(
             @"aspectRatio" : @(nativeAd.mediaContent.aspectRatio),
             @"hasVideoContent" : @(nativeAd.mediaContent.hasVideoContent),
             @"duration" : @(nativeAd.mediaContent.duration)
-          }
+          },
+          @"responseInfo" : responseInfo ?: [NSNull null]
         });
       }];
     })
@@ -231,11 +236,9 @@ RCT_EXPORT_METHOD(destroy
   _nativeAd = nativeAd;
   _nativeAd.delegate = self;
   _nativeAd.paidEventHandler = ^(GADAdValue *_Nonnull adValue) {
-    NSDictionary *revenueData = @{
-      @"value" : adValue.value,
-      @"precision" : @(adValue.precision),
-      @"currency" : adValue.currencyCode ?: @""
-    };
+    NSDictionary *revenueData =
+        [RNGoogleMobileAdsResponseInfo paidEventPayloadFromAdValue:adValue
+                                                      responseInfo:nativeAd.responseInfo];
     [self emitAdEvent:@"paid" withData:revenueData];
   };
   if (nativeAd.mediaContent.hasVideoContent) {

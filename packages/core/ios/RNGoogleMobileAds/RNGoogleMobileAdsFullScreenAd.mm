@@ -19,6 +19,7 @@
 
 #import "RNGoogleMobileAdsFullScreenAd.h"
 #import "RNGoogleMobileAdsCommon.h"
+#import "RNGoogleMobileAdsResponseInfo.h"
 
 @implementation RNGoogleMobileAdsFullScreenAd
 
@@ -81,8 +82,15 @@
               adRequest:adRequest
       completionHandler:^(id<GADFullScreenPresentingAd> ad, NSError *error) {
         if (error) {
-          NSDictionary *codeAndMessage =
-              [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
+          NSMutableDictionary *codeAndMessage =
+              [[RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error] mutableCopy];
+          NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
+              dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo
+                                             responseInfoFromLoadError:error]
+                                 compact:NO];
+          if (responseInfo != nil) {
+            codeAndMessage[@"responseInfo"] = responseInfo;
+          }
           [weakSelf sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_ERROR
                       requestId:requestId
                        adUnitId:adUnitId
@@ -92,7 +100,18 @@
         }
 
         NSString *eventType = GOOGLE_MOBILE_ADS_EVENT_LOADED;
-        NSDictionary *data = nil;
+        NSMutableDictionary *data = [NSMutableDictionary dictionary];
+
+        GADResponseInfo *gadResponseInfo = nil;
+        if ([ad isKindOfClass:[GADRewardedAd class]]) {
+          gadResponseInfo = [(GADRewardedAd *)ad responseInfo];
+        } else if ([ad isKindOfClass:[GADRewardedInterstitialAd class]]) {
+          gadResponseInfo = [(GADRewardedInterstitialAd *)ad responseInfo];
+        } else if ([ad isKindOfClass:[GADInterstitialAd class]]) {
+          gadResponseInfo = [(GADInterstitialAd *)ad responseInfo];
+        } else if ([ad isKindOfClass:[GADAppOpenAd class]]) {
+          gadResponseInfo = [(GADAppOpenAd *)ad responseInfo];
+        }
 
         // Set up paid event handler
         GADPaidEventHandler paidEventHandler = ^(GADAdValue *value) {
@@ -100,11 +119,9 @@
                       requestId:requestId
                        adUnitId:adUnitId
                           error:nil
-                           data:@{
-                             @"value" : value.value,
-                             @"precision" : @(value.precision),
-                             @"currency" : value.currencyCode
-                           }];
+                           data:[RNGoogleMobileAdsResponseInfo
+                                    paidEventPayloadFromAdValue:value
+                                                   responseInfo:gadResponseInfo]];
         };
 
         if ([ad isKindOfClass:[GADRewardedAd class]]) {
@@ -137,7 +154,14 @@
           eventType = GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED;
           GADAdReward *adReward =
               [(GADRewardedAd *)ad adReward] ?: [(GADRewardedInterstitialAd *)ad adReward];
-          data = @{@"type" : adReward.type, @"amount" : adReward.amount};
+          data[@"type"] = adReward.type;
+          data[@"amount"] = adReward.amount;
+        }
+
+        NSDictionary *responseInfo =
+            [RNGoogleMobileAdsResponseInfo dictionaryFromResponseInfo:gadResponseInfo compact:NO];
+        if (responseInfo != nil) {
+          data[@"responseInfo"] = responseInfo;
         }
 
         if ([ad isKindOfClass:[GAMInterstitialAd class]]) {
@@ -148,7 +172,12 @@
         weakSelf.adMap[@(requestId)] = ad;
         weakSelf.delegateMap[@(requestId)] = delegate;
 
-        [weakSelf sendAdEvent:eventType requestId:requestId adUnitId:adUnitId error:nil data:data];
+        NSDictionary *eventData = data.count > 0 ? data : nil;
+        [weakSelf sendAdEvent:eventType
+                    requestId:requestId
+                     adUnitId:adUnitId
+                        error:nil
+                         data:eventData];
       }];
 }
 

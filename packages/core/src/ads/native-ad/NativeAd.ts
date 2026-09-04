@@ -63,8 +63,7 @@ export class NativeAd {
   private constructor(adUnitId: string, props: NativeAdProps) {
     this.adUnitId = adUnitId;
     this.responseId = props.responseId;
-    // Native wiring for nested ResponseInfo lands later; additive null until then.
-    this.responseInfo = null;
+    this.responseInfo = (props.responseInfo as ResponseInfo | null) ?? null;
     this.advertiser = props.advertiser;
     this.body = props.body;
     this.callToAction = props.callToAction;
