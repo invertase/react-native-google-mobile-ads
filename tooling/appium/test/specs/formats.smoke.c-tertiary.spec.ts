@@ -23,6 +23,8 @@ describe('GMA format gallery smoke (tertiary)', () => {
         containerId: format.containerId,
         actionId: format.actionId,
         galleryTitle: format.title,
+        expectLoadedSubstring: format.expectLoadedSubstring,
+        actionAccessibilityLabel: format.actionAccessibilityLabel,
       });
     });
   }

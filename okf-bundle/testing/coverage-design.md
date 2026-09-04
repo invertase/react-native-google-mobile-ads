@@ -28,6 +28,7 @@ Consume the **published** package — do **not** copy RNFB coverage scripts into
 | Piece | Location / role |
 |-------|-----------------|
 | Dep | `RNGoogleMobileAdsExample` → `react-native-coverage@0.2.0` (TurboModule autolinks; New Arch only) |
+| Probe TurboModule | Example-only `@invertase/rngma-testing` (`portal:./modules/rngma-testing`) → `NativeRNGMATesting` (Pattern C; not product). See [running-e2e § Appium](running-e2e.md#appium-scaffold). |
 | Config | `RNGoogleMobileAdsExample/react-native-coverage.config.js` (app ids, `RNGoogleMobileAds` / `react-native-google-mobile-ads` matchers; excludes Google GMA SDK) |
 | Android | Example `android/build.gradle` applies package `rn-coverage.gradle` + Jacoco report helper on RNTA `:app` |
 | iOS | Example `ios/Podfile` `post_install` → package `cocoapods/coverage_post_install.rb` (CocoaPods-first / static; `force_dynamic_frameworks: false`; `instrument_app: false` + app `OTHER_LDFLAGS` profile link only — avoids RNTA Swift/DevSupport break while resolving Coverage.a `__llvm_profile_*`; library prefixes + Coverage pod still get LLVM flags) |

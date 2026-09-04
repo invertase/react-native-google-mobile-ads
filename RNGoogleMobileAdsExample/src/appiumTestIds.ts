@@ -35,6 +35,8 @@ export const AppiumTestIds = {
     debugMenu: 'gma.format.debug-menu',
     /** Manual QA surface for react-native-coverage flush (Appium uses home-button path). */
     flushCoverage: 'gma.format.flush-coverage',
+    /** Pattern C NativeRNGMATesting probe ping (debug gallery). */
+    nativeRngmaTesting: 'gma.format.native-rngma-testing',
   },
   /** Home-screen flush control — Appium session teardown taps this before pull. */
   flushCoverage: 'gma.debug.flushCoverage',

@@ -167,6 +167,10 @@ export const SMOKE_FORMATS_TERTIARY: Array<{
   title: string;
   containerId: string;
   actionId?: string;
+  /** After action tap, require `action.loaded` text to include this (probe seams). */
+  expectLoadedSubstring?: string;
+  /** Optional a11y label for the action control (Android tap fallback). */
+  actionAccessibilityLabel?: string;
 }> = [
   {
     id: AppiumTestIds.format.interstitialHook,
@@ -177,6 +181,15 @@ export const SMOKE_FORMATS_TERTIARY: Array<{
     id: AppiumTestIds.format.rewardedInterstitialHook,
     title: 'RWI Hook',
     containerId: AppiumTestIds.format.rewardedInterstitialHook,
+  },
+  {
+    id: AppiumTestIds.format.nativeRngmaTesting,
+    title: 'NativeRNGMATesting',
+    containerId: AppiumTestIds.format.nativeRngmaTesting,
+    actionId: AppiumTestIds.action.show(AppiumTestIds.format.nativeRngmaTesting),
+    // Gallery status / accessibilityLabel: `ok ping=ok:android|ok:ios …` after seed probes run.
+    expectLoadedSubstring: 'ok ping=',
+    actionAccessibilityLabel: 'Run NativeRNGMATesting probes',
   },
 ];
 
@@ -202,6 +215,7 @@ const DEBUG_FORMAT_IDS = new Set<string>([
   AppiumTestIds.format.consent,
   AppiumTestIds.format.debugMenu,
   AppiumTestIds.format.flushCoverage,
+  AppiumTestIds.format.nativeRngmaTesting,
 ]);
 
 export function gallerySectionForFormat(formatId: string): Exclude<GallerySectionId, 'all'> {
