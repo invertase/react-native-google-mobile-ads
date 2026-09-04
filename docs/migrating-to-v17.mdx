@@ -1,0 +1,240 @@
+# Migrating to v17
+
+v17 keeps classic create / load / show and `<BannerAd>` / `NativeAd` **source-compatible**.
+Most apps need no rewrite to keep ads loading and showing. New surfaces are **opt-in**:
+structured errors, `ResponseInfo`, `destroy()`, fullscreen hook options, preload pools,
+multi-format requests, and scoped mediation adapter packages.
+
+Use this guide for the deltas publishers hit on upgrade, plus honest troubleshooting.
+Canonical TypeScript shapes live in the
+[v17 API reference](./rngma-v17-api-reference.md).
+
+## What stays the same
+
+| Area                          | Guidance                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| Class names and call shapes   | `InterstitialAd.createForAdRequest`, `load()`, `show()`, event listeners |
+| Banner / native components    | Existing props and load paths keep working                               |
+| Legacy error `code`/`message` | Unchanged string values on existing paths                                |
+| Consent / request config      | Same entry points; a few additive optional fields                        |
+
+You can upgrade, ship, and adopt new APIs later.
+
+## Checklist
+
+1. Upgrade `react-native-google-mobile-ads` and rebuild native apps (pods / Gradle).
+2. Keep using create / load / show until you need a new surface.
+3. Prefer branching on structured `reason` / `phase` (and hook `status`) over legacy `code` strings.
+4. Call `destroy()` (or let hooks / `release()` ownership rules do it) when you finish with an ad.
+5. Optionally adopt telemetry, pools, multi-format, or scoped adapter packages — see below.
+
+## Additive: `ResponseInfo` and paid telemetry
+
+After a successful load, read `responseInfo` on the ad (or hook / multi-format handle).
+Load failures — including clean **no-fill** — may carry the same record on
+`error.responseInfo` (or top-level on multi-format results).
+
+Paid events expose a **compact** snapshot (`PaidResponseInfo`) without the full
+`adapterResponses` list. Public paid field names use `currency` (not native
+`currencyCode`) and optional `valueMicros` as a decimal string.
+
+```ts
+import { AdEventType, InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+
+const ad = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
+
+ad.addAdEventListener(AdEventType.LOADED, () => {
+  console.log(ad.responseInfo?.loadedAdapterResponse?.adSourceName);
+});
+
+ad.addAdEventListener(AdEventType.ERROR, error => {
+  // Routine no-fill still has reason 'no-fill' and may include responseInfo.
+  console.log(error.reason, error.phase, error.responseInfo?.responseId);
+});
+
+ad.load();
+```
+
+Full recipes:
+[Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics).
+
+## Additive: structured errors (`reason` + `phase`)
+
+Every structured failure carries:
+
+| Field           | Role                                                                   |
+| --------------- | ---------------------------------------------------------------------- |
+| `code`          | Legacy string (**deprecated** in v17; prefer `reason`; removed in v18) |
+| `message`       | Human-readable text                                                    |
+| `reason`        | Stable machine reason (`no-fill`, `network-error`, …)                  |
+| `phase`         | `'load'` or `'show'`                                                   |
+| `responseInfo?` | Auction record when the platform attached one                          |
+
+There is **no** `SHOW_FAILED` event. Fail-to-show arrives as `AdEventType.ERROR` with
+`phase: 'show'`. On Android, presentation failures that previously emitted nothing now
+emit that single `ERROR` — filter on `phase` so load and show outcomes stay distinct.
+
+```ts
+ad.addAdEventListener(AdEventType.ERROR, error => {
+  if (error.phase === 'show') {
+    // Presentation failed; do not treat as a load/no-fill.
+    return;
+  }
+  if (error.reason === 'no-fill' || error.reason === 'mediation-no-fill') {
+    // Routine empty response — retry or continue without treating as a crash.
+    return;
+  }
+  console.warn('load failure', error.reason, error.message);
+});
+```
+
+On fullscreen hooks that use the options form, use **`status`** (not `error !== null`) to
+tell routine `'no-fill'` from `'error'`. Details:
+[Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics)
+(section “Distinct no-fill vs failure”).
+
+## Additive: lifecycle — `destroy()`, ownership, impression
+
+Fullscreen and native ads expose idempotent `destroy()`: it releases JS listeners and
+asks native to drop the holder. Destroyed instances ignore late events and further show
+attempts.
+
+```ts
+const unsub = ad.addAdEventListener(AdEventType.CLOSED, () => {
+  unsub();
+  ad.destroy();
+});
+```
+
+**Ownership rules that bite in production**
+
+| Situation                                     | Do this                                                                    |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| Imperative create / load / show               | You own `destroy()` when finished                                          |
+| Options-form fullscreen hook                  | Hook cleans up on unmount / identity change; prefer leaving it alone       |
+| `usePooledAd` / `useMultiFormatAd` still owns | **Do not** call `destroy()` — call `release()` first if you need ownership |
+| After `release()`                             | You own `destroy()` and any staleness check                                |
+| Pool `poll()` filled result                   | Ownership transferred; destroy the held ad when done                       |
+
+`AdEventType.IMPRESSION` is additive (no payload). Hooks also expose an `impression`
+boolean on the options-form result.
+
+Reload after `CLOSED` or fail-to-show reuses the same request id once native holders
+auto-evict — you do not need a new class instance solely because the previous show ended.
+
+## Fullscreen hooks: positional form deprecated
+
+Passing an options object opts into the v17 result (`status`, `autoLoad`, structured
+`error`). The positional form still works, is **deprecated in v17**, and is **removed in
+v18**.
+
+```tsx
+// Before (deprecated)
+const { isLoaded, load, show, error } = useInterstitialAd(unit);
+useEffect(() => {
+  if (consentReady) load();
+}, [consentReady, load]);
+
+// After
+const { status, show, error } = useInterstitialAd({
+  adUnitId: unit,
+  autoLoad: consentReady,
+});
+```
+
+| Positional                  | Options form                                      |
+| --------------------------- | ------------------------------------------------- |
+| `isLoaded`                  | `status === 'loaded'`                             |
+| `isShowing`                 | `status === 'showing'`                            |
+| `isClosed`                  | `status === 'closed'`                             |
+| `error?: Error`             | `error: AdError \| null` + `'no-fill'` status arm |
+| `load` / `show` / `destroy` | Same, plus `retry`                                |
+
+`autoLoad` is a load **policy**, not a second placement identity. Setting it `false`
+stops future automatic loads; it does not cancel an in-flight request (platforms do not
+expose load cancellation). See [Displaying Ads via Hook](/displaying-ads-hook).
+
+Automatic loading does **not** re-fire after `'closed'`. Call `load()` / `retry()` (or
+flip `autoLoad` with a new consent-ready value) when you want the next ad.
+
+## Optional: pools and multi-format
+
+Warm inventory and native-or-banner competitive requests are opt-in. Prefer presets —
+do not hand-roll capability matrices.
+
+| Need                                | Guide                                                                            |
+| ----------------------------------- | -------------------------------------------------------------------------------- |
+| Fullscreen pool + poll at show time | [Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes) |
+| Count-1 native **or** GAM banner    | Same guide · `MultiFormatAdPresets.nativeOrBanner`                               |
+| Types, expiry, ownership            | [v17 API reference](./rngma-v17-api-reference.md#ad-pools-new)                   |
+
+## Optional: scoped mediation adapter packages
+
+Third-party network adapters ship as separate packages under
+`@react-native-google-mobile-ads/<network>` (for example `applovin`, `facebook`,
+`unity`). Install only the networks you mediate; they are **not** required for AdMob-only
+apps. Follow [Mediation](/mediation) for AdMob UI setup and native wiring.
+
+## Troubleshooting
+
+### Ads still load, but analytics / retries look wrong
+
+| Symptom                                        | Likely cause / fix                                                            |
+| ---------------------------------------------- | ----------------------------------------------------------------------------- |
+| Treating every `error !== null` as a hard fail | Options-form hooks populate `error` on `'no-fill'` too — branch on `status`   |
+| Looking for `SHOW_FAILED`                      | Does not exist — use `ERROR` with `phase: 'show'`                             |
+| Android never saw show failures before         | Expected — Android now emits one `ERROR` (`phase: 'show'`) on fail-to-present |
+| Paid payload missing `currencyCode`            | Public field is `currency`                                                    |
+| Full waterfall missing on every paid event     | By design — use load-time `ResponseInfo` for waterfalls; paid is compact      |
+
+### Destroy / ownership surprises
+
+| Symptom                                                | Likely cause / fix                                                                                      |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Hook still reports filled after you called `destroy()` | Destroyed hook-owned inventory — `release()` first, or let the hook destroy                             |
+| Post-show events never fire after pooled show          | Hook-owned show destroys on show-promise settle — `release()` before show if you need `CLOSED` / reward |
+| Late `LOADED` after a newer `load()` / `destroy()`     | Stale generation — ignored by design; do not treat as a second fill                                     |
+
+### Hooks and pools
+
+| Symptom                                               | Likely cause / fix                                                           |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Options-form hook stuck on `'idle'`                   | `autoLoad` is false — confirm echoed `autoLoad` on the result                |
+| Next ad never warms after dismissal                   | Automatic load does not re-fire after `'closed'` — call `load()` / `retry()` |
+| `useAdPool` / `usePooledAd` stuck on `absent` / empty | `poolId` typo or missing `AdPoolProvider` entry                              |
+| Two screens starve a depth-1 pool                     | Two `usePooledAd(sameId)` owners competing                                   |
+| Positional `useInterstitialAd(unit)` struck through   | Deprecated — pass an options object                                          |
+
+### Fill and setup (unchanged)
+
+Account approval, new units, test devices, and `applicationId` issues still dominate
+“no ads” reports. See
+[Common reasons for ads not showing](/common-reasons-for-ads-not-showing) and
+[Ad Inspector](/ad-inspector).
+
+### Diagnostics dump for issue reports
+
+| Kind of bug                    | Include                                                                                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Classic load / show / fill     | Ad Inspector outcome, ad unit, test device, platform SDK version                                                                      |
+| Auction / mediation mix        | Summarized load-time `ResponseInfo` ([Revenue telemetry](/revenue-telemetry-and-auction-diagnostics))                                 |
+| Pools / multi-format / preload | `JSON.stringify(getAdCapabilities(), null, 2)` ([Preload pools diagnostics](/preload-pools-and-multiformat-recipes#diagnostics-dump)) |
+| Structured error handling      | `reason`, `phase`, `code`, `message`, and whether `responseInfo` was present                                                          |
+
+## What this guide does not cover
+
+- Removing shims or dropping deprecated positional hooks (**v18**)
+- Multi-count requests (`numberOfAds` / `requestCount` &gt; 1)
+- Mediation **host** SDKs (MAX, CloudX, …) — out of this package surface
+- Invented eCPM / lift helpers — not part of the public API
+
+## Related guides
+
+- [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics)
+- [Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes)
+- [Displaying Ads](/displaying-ads)
+- [Displaying Ads via Hook](/displaying-ads-hook)
+- [Mediation](/mediation)
+- [Common reasons for ads not showing](/common-reasons-for-ads-not-showing)
+- [Migrating to v15](/migrating-to-v15) — prior Android Kotlin floor note
+- [v17 API reference](./rngma-v17-api-reference.md) — types, migration sketches, first failure modes

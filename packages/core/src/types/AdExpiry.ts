@@ -19,8 +19,9 @@
  * Google's published guidance figures used as **publisher policy defaults**,
  * not as the SDK's cache timeout. The real preload TTL is server-delivered and
  * unreadable; these millis are only the defaults applied when the publisher
- * does not configure a window. See the canonical inventory expiry record
- * published on the internal tracker as `inventory-expiry-canonical.md`.
+ * does not configure a window. Public contract: Option 1 — report and hand over
+ * inventory that already exceeds the window; do not auto-discard on poll
+ * (`isStaleByPolicy` / `onStaleByPolicy` on the held object).
  */
 export const AdStalenessGuidanceMillis = {
   /** App open guides: four hours. */

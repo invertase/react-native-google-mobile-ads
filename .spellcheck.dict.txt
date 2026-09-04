@@ -268,3 +268,12 @@ PooledAd
 refill
 refills
 poll
+stringly
+applovin
+fail-to-show
+fail-to-present
+SHOW_FAILED
+v16
+v18
+npm
+AdMob-only
