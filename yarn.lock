@@ -3407,6 +3407,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@expo/config-plugins@npm:^54.0.4":
+  version: 54.0.5
+  resolution: "@expo/config-plugins@npm:54.0.5"
+  dependencies:
+    "@expo/config-types": "npm:^54.0.10"
+    "@expo/json-file": "npm:~10.0.16"
+    "@expo/plist": "npm:^0.4.9"
+    "@expo/sdk-runtime-versions": "npm:^1.0.0"
+    chalk: "npm:^4.1.2"
+    debug: "npm:^4.3.5"
+    getenv: "npm:^2.0.0"
+    glob: "npm:^13.0.0"
+    resolve-from: "npm:^5.0.0"
+    semver: "npm:^7.5.4"
+    slash: "npm:^3.0.0"
+    slugify: "npm:^1.6.6"
+    xcode: "npm:^3.0.1"
+    xml2js: "npm:0.6.0"
+  checksum: 10/8670d4e73761d2b010a8e390223fb53dd1f36e65262855795583f9bbdb33892ef1f9483bac10f6769b3c17e42d03c3296136cefc496d374b8e343b68c1039297
+  languageName: node
+  linkType: hard
+
 "@expo/config-plugins@npm:~54.0.4":
   version: 54.0.4
   resolution: "@expo/config-plugins@npm:54.0.4"
@@ -3544,6 +3566,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@expo/json-file@npm:~10.0.16":
+  version: 10.0.16
+  resolution: "@expo/json-file@npm:10.0.16"
+  dependencies:
+    "@babel/code-frame": "npm:~7.10.4"
+    json5: "npm:^2.2.3"
+  checksum: 10/1ba48ee886cf9d9129be54ff903c28c27302dbc5fc7b301bce64b7a00d9d08b850f3febffa919860bc53be8e5bc92c1ae7fcf1ef508a9004950bfd7581200a90
+  languageName: node
+  linkType: hard
+
 "@expo/metro-config@npm:54.0.14, @expo/metro-config@npm:~54.0.14":
   version: 54.0.14
   resolution: "@expo/metro-config@npm:54.0.14"
@@ -3642,6 +3674,17 @@ __metadata:
     base64-js: "npm:^1.2.3"
     xmlbuilder: "npm:^15.1.1"
   checksum: 10/48ba4ad5cc3668e8c26c5197bf7915a29745d0ae1cba1c38aad0d797ee1835ac74fb577a9e810594063e5984d9e52b367f4069d0ef1d906ba3013fce1c01a19c
+  languageName: node
+  linkType: hard
+
+"@expo/plist@npm:^0.4.9":
+  version: 0.4.9
+  resolution: "@expo/plist@npm:0.4.9"
+  dependencies:
+    "@xmldom/xmldom": "npm:^0.8.8"
+    base64-js: "npm:^1.2.3"
+    xmlbuilder: "npm:^15.1.1"
+  checksum: 10/8c8d396e1a4cb8bb718fb2e7674395ea9659420fd2c08814933d14620d70e052def311835396036b5b8e60ed204aef6190f335a78b9626bf1812b3e90e04fb86
   languageName: node
   linkType: hard
 
@@ -4326,6 +4369,29 @@ __metadata:
     tsx: "npm:^4.20.5"
     typescript: "npm:^5.9.3"
     webdriverio: "npm:9.31.3"
+  languageName: unknown
+  linkType: soft
+
+"@invertase/rngma-gam-adapter-template@workspace:packages/_template":
+  version: 0.0.0-use.local
+  resolution: "@invertase/rngma-gam-adapter-template@workspace:packages/_template"
+  dependencies:
+    "@expo/config-plugins": "npm:^54.0.4"
+    react-native-builder-bob: "npm:^0.40.13"
+    react-native-google-mobile-ads: "workspace:*"
+    rimraf: "npm:^6.0.1"
+    typescript: "npm:^5.9.3"
+  peerDependencies:
+    "@expo/config-plugins": ">=5.0.0"
+    expo: ">=47.0.0"
+    react: "*"
+    react-native: "*"
+    react-native-google-mobile-ads: "*"
+  peerDependenciesMeta:
+    "@expo/config-plugins":
+      optional: true
+    expo:
+      optional: true
   languageName: unknown
   linkType: soft
 

@@ -1,0 +1,78 @@
+import groovy.json.JsonSlurper
+
+buildscript {
+  ext.getExtOrDefault = { name, fallback ->
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : fallback
+  }
+
+  // AGP is only required when opening this android/ folder stand-alone.
+  if (project == rootProject) {
+    repositories {
+      google()
+      mavenCentral()
+    }
+    dependencies {
+      classpath("com.android.tools.build:gradle:8.1.1")
+    }
+  }
+}
+
+apply plugin: "com.android.library"
+
+def packageJson = new JsonSlurper().parseText(file("${projectDir}/../package.json").text)
+def gamAdapter = packageJson.gamAdapter
+def sdkVersions = packageJson.sdkVersions.android
+def mediationArtifact = "${gamAdapter.androidArtifact}:${sdkVersions.googleMobileAdsMediation}"
+
+android {
+  namespace "io.invertase.googlemobileads.adapters.template"
+
+  compileSdkVersion sdkVersions.compileSdk as Integer
+
+  defaultConfig {
+    minSdkVersion sdkVersions.minSdk as Integer
+    targetSdkVersion sdkVersions.targetSdk as Integer
+    buildConfigField "String", "GAM_ADAPTER_NETWORK", "\"${gamAdapter.network}\""
+    buildConfigField "String", "GAM_ADAPTER_ANDROID_CLASS", "\"${gamAdapter.androidAdapterClassName}\""
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  sourceSets {
+    main {
+      java.srcDirs = ["src/main/java"]
+    }
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+dependencies {
+  // Google-published GAM mediation adapter (same coordinates for classic + Next-Gen).
+  // Replace __ANDROID_ARTIFACT__ / __ANDROID_MEDIATION_VERSION__ when instantiating.
+  // Core GMA is provided by react-native-google-mobile-ads; do not re-pin it here.
+  api mediationArtifact
+}
+
+// Guard: fail fast if this private template is linked without token replacement.
+afterEvaluate {
+  if (gamAdapter.network == "__NETWORK__" ||
+      "${sdkVersions.googleMobileAdsMediation}".contains("__") ||
+      "${gamAdapter.androidArtifact}".contains("__")) {
+    logger.warn(
+      "[rngma-gam-adapter-template] Placeholder tokens remain in package.json. " +
+        "Copy packages/_template → packages/<network>/ and replace __PLACEHOLDER__ values " +
+        "before depending on this package in an app."
+    )
+  }
+}
