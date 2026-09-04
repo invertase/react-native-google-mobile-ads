@@ -26,6 +26,8 @@ jest.doMock('react-native', () => {
           if (moduleName === 'RNGoogleMobileAdsInterstitialModule') {
             return {
               interstitialLoad: jest.fn(),
+              interstitialShow: jest.fn(),
+              interstitialDestroy: jest.fn(),
             };
           }
 
@@ -64,6 +66,7 @@ jest.doMock('./packages/core/src/specs/modules/NativeInterstitialModule', () => 
     default: {
       interstitialLoad: jest.fn(),
       interstitialShow: jest.fn(),
+      interstitialDestroy: jest.fn(),
     },
   };
 });
@@ -74,6 +77,29 @@ jest.doMock('./packages/core/src/specs/modules/NativeRewardedModule', () => {
     default: {
       rewardedLoad: jest.fn(),
       rewardedShow: jest.fn(),
+      rewardedDestroy: jest.fn(),
+    },
+  };
+});
+jest.doMock('./packages/core/src/specs/modules/NativeAppOpenModule', () => {
+  return {
+    __esModule: true,
+    Commands: {},
+    default: {
+      appOpenLoad: jest.fn(),
+      appOpenShow: jest.fn(),
+      appOpenDestroy: jest.fn(),
+    },
+  };
+});
+jest.doMock('./packages/core/src/specs/modules/NativeRewardedInterstitialModule', () => {
+  return {
+    __esModule: true,
+    Commands: {},
+    default: {
+      rewardedInterstitialLoad: jest.fn(),
+      rewardedInterstitialShow: jest.fn(),
+      rewardedInterstitialDestroy: jest.fn(),
     },
   };
 });

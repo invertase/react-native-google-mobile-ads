@@ -52,6 +52,11 @@ class ReactNativeGoogleMobileAdsRewardedModule(
     show(requestId, adUnitId, showOptions, promise)
   }
 
+  @ReactMethod
+  fun rewardedDestroy(requestId: Int) {
+    destroy(requestId)
+  }
+
   override fun loadAd(
     activity: Activity,
     adUnitId: String,

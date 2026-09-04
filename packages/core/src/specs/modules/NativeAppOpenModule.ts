@@ -21,6 +21,7 @@ import { Double, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes'
 export interface Spec extends TurboModule {
   appOpenLoad(requestId: Double, adUnitId: string, requestOptions: UnsafeObject): void;
   appOpenShow(requestId: Double, adUnitId: string, showOptions?: UnsafeObject): Promise<void>;
+  appOpenDestroy(requestId: Double): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsAppOpenModule');

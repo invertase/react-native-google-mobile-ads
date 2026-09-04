@@ -27,6 +27,7 @@
 @property(nonatomic, strong) NSMutableDictionary<NSNumber *, id<GADFullScreenPresentingAd>> *adMap;
 @property(nonatomic, strong)
     NSMutableDictionary<NSNumber *, RNGoogleMobileAdsFullScreenContentDelegate *> *delegateMap;
+@property(nonatomic, strong) NSMutableDictionary<NSNumber *, NSNumber *> *generationMap;
 
 - (instancetype)init;
 - (void)invalidate;
@@ -47,6 +48,7 @@
               showOptions:(NSDictionary *)showOptions
                   resolve:(RCTPromiseResolveBlock)resolve
                    reject:(RCTPromiseRejectBlock)reject;
+- (void)destroyWithRequestId:(int)requestId;
 
 @end
 

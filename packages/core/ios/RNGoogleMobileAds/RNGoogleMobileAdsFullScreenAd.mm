@@ -27,6 +27,7 @@
   if (self = [super init]) {
     _adMap = [NSMutableDictionary new];
     _delegateMap = [NSMutableDictionary new];
+    _generationMap = [NSMutableDictionary new];
   }
   return self;
 }
@@ -38,6 +39,35 @@
 - (void)invalidate {
   [_adMap removeAllObjects];
   [_delegateMap removeAllObjects];
+  [_generationMap removeAllObjects];
+}
+
+- (NSNumber *)beginLoadGenerationForRequestId:(int)requestId {
+  NSNumber *key = @(requestId);
+  NSInteger next = [self.generationMap[key] integerValue] + 1;
+  NSNumber *generation = @(next);
+  self.generationMap[key] = generation;
+  [self.adMap removeObjectForKey:key];
+  [self.delegateMap removeObjectForKey:key];
+  return generation;
+}
+
+- (BOOL)isCurrentGeneration:(NSNumber *)generation forRequestId:(int)requestId {
+  return [self.generationMap[@(requestId)] isEqualToNumber:generation];
+}
+
+- (void)evictRequestId:(int)requestId {
+  NSNumber *key = @(requestId);
+  [self.adMap removeObjectForKey:key];
+  [self.delegateMap removeObjectForKey:key];
+}
+
+- (void)destroyWithRequestId:(int)requestId {
+  NSNumber *key = @(requestId);
+  NSInteger next = [self.generationMap[key] integerValue] + 1;
+  self.generationMap[key] = @(next);
+  [self.adMap removeObjectForKey:key];
+  [self.delegateMap removeObjectForKey:key];
 }
 
 - (NSString *)getAdEventName {
@@ -72,15 +102,36 @@
                  adUnitId:(NSString *)adUnitId
          adRequestOptions:(NSDictionary *)adRequestOptions {
   GAMRequest *adRequest = [RNGoogleMobileAdsCommon buildAdRequest:adRequestOptions];
+  NSNumber *generation = [self beginLoadGenerationForRequestId:requestId];
   RNGoogleMobileAdsFullScreenContentDelegate *delegate =
       [[RNGoogleMobileAdsFullScreenContentDelegate alloc] initWithAdEventName:[self getAdEventName]
                                                                     requestId:requestId
                                                                      adUnitId:adUnitId];
 
   __weak __typeof(self) weakSelf = self;
+  __weak RNGoogleMobileAdsFullScreenContentDelegate *weakDelegate = delegate;
+  delegate.onTerminal = ^{
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (!strongSelf) {
+      return;
+    }
+    [strongSelf evictRequestId:requestId];
+    weakDelegate.onTerminal = nil;
+  };
+
   [self loadAd:adUnitId
               adRequest:adRequest
       completionHandler:^(id<GADFullScreenPresentingAd> ad, NSError *error) {
+        __strong __typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+          return;
+        }
+
+        if (![strongSelf isCurrentGeneration:generation forRequestId:requestId]) {
+          // Destroyed or superseded while loading — drop without emitting.
+          return;
+        }
+
         if (error) {
           NSMutableDictionary *codeAndMessage =
               [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"load"];
@@ -91,11 +142,11 @@
           if (responseInfo != nil) {
             codeAndMessage[@"responseInfo"] = responseInfo;
           }
-          [weakSelf sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_ERROR
-                      requestId:requestId
-                       adUnitId:adUnitId
-                          error:codeAndMessage
-                           data:nil];
+          [strongSelf sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_ERROR
+                        requestId:requestId
+                         adUnitId:adUnitId
+                            error:codeAndMessage
+                             data:nil];
           return;
         }
 
@@ -169,15 +220,15 @@
         }
 
         ad.fullScreenContentDelegate = delegate;
-        weakSelf.adMap[@(requestId)] = ad;
-        weakSelf.delegateMap[@(requestId)] = delegate;
+        strongSelf.adMap[@(requestId)] = ad;
+        strongSelf.delegateMap[@(requestId)] = delegate;
 
         NSDictionary *eventData = data.count > 0 ? data : nil;
-        [weakSelf sendAdEvent:eventType
-                    requestId:requestId
-                     adUnitId:adUnitId
-                        error:nil
-                         data:eventData];
+        [strongSelf sendAdEvent:eventType
+                      requestId:requestId
+                       adUnitId:adUnitId
+                          error:nil
+                           data:eventData];
       }];
 }
 

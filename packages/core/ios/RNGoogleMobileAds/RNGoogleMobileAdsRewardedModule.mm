@@ -78,6 +78,10 @@ RCT_EXPORT_METHOD(rewardedShow
                   reject:reject];
 }
 
+RCT_EXPORT_METHOD(rewardedDestroy : (double)requestId) {
+  [_ad destroyWithRequestId:(int)requestId];
+}
+
 RCT_EXPORT_METHOD(invalidate) { [_ad invalidate]; }
 
 #ifdef RCT_NEW_ARCH_ENABLED

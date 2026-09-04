@@ -25,6 +25,7 @@ export interface Spec extends TurboModule {
     adUnitId: string,
     showOptions?: UnsafeObject,
   ): Promise<void>;
+  rewardedInterstitialDestroy(requestId: number): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>(

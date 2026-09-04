@@ -44,6 +44,7 @@ type AdShowFunction = (
   adUnitId: string,
   showOptions?: AdShowOptions,
 ) => Promise<void>;
+type AdDestroyFunction = (requestId: number) => void;
 
 export abstract class MobileAd implements MobileAdInterface {
   protected _type: AdType;
@@ -51,9 +52,12 @@ export abstract class MobileAd implements MobileAdInterface {
   protected _adUnitId: string;
   protected _adLoadFunction: AdLoadFunction;
   protected _adShowFunction: AdShowFunction;
+  protected _adDestroyFunction: AdDestroyFunction;
   protected _requestOptions: RequestOptions;
   protected _loaded: boolean;
   protected _isLoadCalled: boolean;
+  protected _showRequested: boolean;
+  protected _destroyed: boolean;
   protected _adEventsListeners: Map<number, AdEventsListener<EventType>>;
   protected _adEventListenersMap: Map<EventType, Map<number, AdEventListener<EventType>>>;
   protected _adEventsListenerId: number;
@@ -67,6 +71,7 @@ export abstract class MobileAd implements MobileAdInterface {
     adUnitId: string,
     adLoadFunction: AdLoadFunction,
     adShowFunction: AdShowFunction,
+    adDestroyFunction: AdDestroyFunction,
     requestOptions: RequestOptions,
   ) {
     this._type = type;
@@ -74,10 +79,13 @@ export abstract class MobileAd implements MobileAdInterface {
     this._adUnitId = adUnitId;
     this._adLoadFunction = adLoadFunction;
     this._adShowFunction = adShowFunction;
+    this._adDestroyFunction = adDestroyFunction;
     this._requestOptions = requestOptions;
 
     this._loaded = false;
     this._isLoadCalled = false;
+    this._showRequested = false;
+    this._destroyed = false;
     this._responseInfo = null;
     this._adEventsListeners = new Map();
     this._adEventListenersMap = new Map();
@@ -116,6 +124,10 @@ export abstract class MobileAd implements MobileAdInterface {
         | { responseInfo?: ResponseInfo };
     };
   }) {
+    if (this._destroyed) {
+      return;
+    }
+
     const { type, error, data } = event.body;
 
     const nestedResponseInfo =
@@ -131,12 +143,14 @@ export abstract class MobileAd implements MobileAdInterface {
     if (type === AdEventType.CLOSED) {
       this._loaded = false;
       this._isLoadCalled = false;
+      this._showRequested = false;
       this._responseInfo = null;
     }
 
     if (type === AdEventType.ERROR) {
       this._loaded = false;
       this._isLoadCalled = false;
+      this._showRequested = false;
       if (nestedResponseInfo) {
         this._responseInfo = nestedResponseInfo;
       }
@@ -175,6 +189,9 @@ export abstract class MobileAd implements MobileAdInterface {
   }
 
   protected _addAdEventsListener<T extends EventType>(listener: AdEventsListener<T>) {
+    if (this._destroyed) {
+      throw new Error(`${this._className}.addAdEventsListener(*) ad has been destroyed.`);
+    }
     if (!isFunction(listener)) {
       throw new Error(`${this._className}.addAdEventsListener(*) 'listener' expected a function.`);
     }
@@ -187,6 +204,9 @@ export abstract class MobileAd implements MobileAdInterface {
   }
 
   protected _addAdEventListener<T extends EventType>(type: T, listener: AdEventListener<T>) {
+    if (this._destroyed) {
+      throw new Error(`${this._className}.addAdEventListener(*) ad has been destroyed.`);
+    }
     if (
       !(
         isOneOf(type, Object.values(AdEventType)) ||
@@ -221,20 +241,34 @@ export abstract class MobileAd implements MobileAdInterface {
   }
 
   public load() {
+    if (this._destroyed) {
+      return;
+    }
     // Prevent multiple load calls
     if (this._loaded || this._isLoadCalled) {
       return;
     }
 
     this._isLoadCalled = true;
+    this._showRequested = false;
     this._responseInfo = null;
     this._adLoadFunction(this._requestId, this._adUnitId, this._requestOptions);
   }
 
   public show(showOptions?: AdShowOptions) {
+    if (this._destroyed) {
+      throw new Error(
+        `${this._className}.show() The requested ${this._className} has been destroyed.`,
+      );
+    }
     if (!this._loaded) {
       throw new Error(
         `${this._className}.show() The requested ${this._className} has not loaded and could not be shown.`,
+      );
+    }
+    if (this._showRequested) {
+      throw new Error(
+        `${this._className}.show() Show has already been requested for this ${this._className}.`,
       );
     }
 
@@ -249,6 +283,7 @@ export abstract class MobileAd implements MobileAdInterface {
       }
     }
 
+    this._showRequested = true;
     return this._adShowFunction(this._requestId, this._adUnitId, options);
   }
 
@@ -276,10 +311,20 @@ export abstract class MobileAd implements MobileAdInterface {
   }
 
   public destroy(): void {
+    if (this._destroyed) {
+      return;
+    }
+    this._destroyed = true;
     this._nativeListener.remove();
     this.removeAllListeners();
     this._loaded = false;
     this._isLoadCalled = false;
+    this._showRequested = false;
     this._responseInfo = null;
+    try {
+      this._adDestroyFunction(this._requestId);
+    } catch {
+      // best-effort native release
+    }
   }
 }

@@ -118,8 +118,14 @@ export class RewardedInterstitialAd extends MobileAd {
       'rewarded_interstitial',
       requestId,
       adUnitId,
-      NativeRewardedInterstitialModule.rewardedInterstitialLoad.bind(this),
-      NativeRewardedInterstitialModule.rewardedInterstitialShow.bind(this),
+      (id, unitId, opts) => {
+        NativeRewardedInterstitialModule.rewardedInterstitialLoad(id, unitId, opts);
+      },
+      (id, unitId, opts) =>
+        NativeRewardedInterstitialModule.rewardedInterstitialShow(id, unitId, opts),
+      id => {
+        NativeRewardedInterstitialModule.rewardedInterstitialDestroy(id);
+      },
       options,
     );
   }

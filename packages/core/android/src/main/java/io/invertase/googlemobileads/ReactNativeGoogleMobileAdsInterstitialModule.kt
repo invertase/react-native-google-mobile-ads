@@ -52,6 +52,11 @@ class ReactNativeGoogleMobileAdsInterstitialModule(
     show(requestId, adUnitId, showOptions, promise)
   }
 
+  @ReactMethod
+  fun interstitialDestroy(requestId: Int) {
+    destroy(requestId)
+  }
+
   override fun loadAd(
     activity: Activity,
     adUnitId: String,
