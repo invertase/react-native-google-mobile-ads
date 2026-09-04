@@ -5,7 +5,9 @@ module.exports = {
     '<rootDir>/packages/core/lib/',
     '<rootDir>/packages/_template/lib/',
     '<rootDir>/packages/applovin/lib/',
+    '<rootDir>/packages/facebook/lib/',
   ],
+
   setupFiles: ['./jest.setup.ts'],
   testPathIgnorePatterns: ['<rootDir>/RNGoogleMobileAdsExample'],
   testRegex: '(/__tests__/.*\\.(test|spec))\\.[jt]sx?$',
