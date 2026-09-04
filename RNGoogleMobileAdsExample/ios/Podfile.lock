@@ -1,4 +1,26 @@
 PODS:
+  - Coverage (0.2.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - FBLazyVector (0.86.0)
   - Google-Mobile-Ads-SDK (13.5.0):
     - GoogleUserMessagingPlatform (>= 1.1)
@@ -1950,6 +1972,7 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
+  - Coverage (from `../node_modules/react-native-coverage`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
@@ -2038,6 +2061,8 @@ SPEC REPOS:
     - GoogleUserMessagingPlatform
 
 EXTERNAL SOURCES:
+  Coverage:
+    :path: "../node_modules/react-native-coverage"
   FBLazyVector:
     :path: "../node_modules/react-native/Libraries/FBLazyVector"
   hermes-engine:
@@ -2201,10 +2226,11 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  Coverage: febe395ab731aa9a65ac818451d4c1a5ce641310
   FBLazyVector: b3e7ad108f0d882e30445c5527d774e3fd432f3d
   Google-Mobile-Ads-SDK: 2171620c6497804b57dc88b95644cc82e7dfb5b0
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
-  hermes-engine: 9071c387be86588fc831a5c9a6a96fe253a982e8
+  hermes-engine: a627b71d28f366bb9d7eee892bfaa977b40cfbc4
   RCTDeprecation: 2a74a2c57675e64419bd89078efde81f7c1de90b
   RCTRequired: 30451112e6fef4e6f31b4e7eee0845156e35e4b0
   RCTSwiftUI: 5aaf0b07e747ba749dc6acc94d8bd41eea4b570f
@@ -2281,9 +2307,9 @@ SPEC CHECKSUMS:
   ReactNativeHost: c49183895850a534a9d58049bf02b3c80a3ebb0c
   ReactTestApp-DevSupport: 407a6f0915350eeaabb7e9d51fbe17873d836f36
   ReactTestApp-Resources: 1bd9ff10e4c24f2ad87101a32023721ae923bccf
-  RNGoogleMobileAds: e56168d95ca5ceb58f41169020e21412d02cfda4
+  RNGoogleMobileAds: 5b69457ffb7692fa03fcf64097bc7f9e901b43a5
   Yoga: fe50ab299e578f397fef753cf309c6703a4db29b
 
-PODFILE CHECKSUM: 32522a77be4944a05a096f87ce46b7269b092829
+PODFILE CHECKSUM: a5a967f29d02fbbc5627cd1343d767d808bcd1f4
 
 COCOAPODS: 1.16.2

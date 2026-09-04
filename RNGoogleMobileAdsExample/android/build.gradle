@@ -41,3 +41,33 @@ allprojects {
         google()
     }
 }
+
+// react-native-coverage: root instrumentation (Pattern C — example harness only)
+ext.coverageLibraryProjectMatchers = ['react-native-google-mobile-ads']
+def exampleRoot = rootDir.parentFile
+def rnCoveragePackageJson = ["node", "--print", "require.resolve('react-native-coverage/package.json')"]
+    .execute(null, exampleRoot)
+    .text
+    .trim()
+if (!rnCoveragePackageJson) {
+    throw new GradleException(
+        "react-native-coverage/package.json not resolved from ${exampleRoot}. Run yarn at repo root.",
+    )
+}
+def rnCoverageRoot = new File(rnCoveragePackageJson).parentFile
+apply from: new File(rnCoverageRoot, "android/rn-coverage.gradle")
+
+// RNTA owns android/app/build.gradle in node_modules — enable app coverage + Jacoco report tasks here.
+subprojects { subproject ->
+    subproject.afterEvaluate {
+        if (subproject.name != 'app' || !subproject.plugins.hasPlugin('com.android.application')) {
+            return
+        }
+        subproject.android {
+            buildTypes.debug {
+                testCoverageEnabled true
+            }
+        }
+        subproject.apply from: new File(rnCoverageRoot, "android/rn-coverage-jacoco.gradle")
+    }
+}
