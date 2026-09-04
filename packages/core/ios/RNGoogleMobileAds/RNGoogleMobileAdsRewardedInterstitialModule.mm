@@ -101,6 +101,10 @@ RCT_EXPORT_METHOD(invalidate) { [_ad invalidate]; }
   return self;
 }
 
+- (RNGoogleMobileAdsFullScreenAd *)fullscreenAdHelper {
+  return _ad;
+}
+
 - (void)dealloc {
   [self invalidate];
 }

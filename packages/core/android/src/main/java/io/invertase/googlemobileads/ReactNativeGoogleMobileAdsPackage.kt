@@ -47,6 +47,7 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
       ReactNativeGoogleMobileAdsRewardedModule.NAME -> return ReactNativeGoogleMobileAdsRewardedModule(reactContext)
       ReactNativeGoogleMobileAdsRewardedInterstitialModule.NAME -> return ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext)
       ReactNativeGoogleMobileAdsNativeModule.NAME -> return ReactNativeGoogleMobileAdsNativeModule(reactContext)
+      ReactNativeGoogleMobileAdsPoolModule.NAME -> return ReactNativeGoogleMobileAdsPoolModule(reactContext)
     }
     return null
   }
@@ -122,6 +123,15 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
         ReactModuleInfo(
           ReactNativeGoogleMobileAdsNativeModule.NAME,
           ReactNativeGoogleMobileAdsNativeModule.NAME,
+          false,
+          false,
+          false,
+          isTurboModule,
+        )
+      moduleInfos[ReactNativeGoogleMobileAdsPoolModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeGoogleMobileAdsPoolModule.NAME,
+          ReactNativeGoogleMobileAdsPoolModule::class.java.name,
           false,
           false,
           false,

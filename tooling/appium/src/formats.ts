@@ -187,7 +187,8 @@ export const SMOKE_FORMATS_TERTIARY: Array<{
     title: 'NativeRNGMATesting',
     containerId: AppiumTestIds.format.nativeRngmaTesting,
     actionId: AppiumTestIds.action.show(AppiumTestIds.format.nativeRngmaTesting),
-    // Gallery status / accessibilityLabel: `ok ping=ok:android|ok:ios …` after seed probes run.
+    // Gallery status / accessibilityLabel: `ok ping=ok:android|ok:ios …` after seed probes
+    // (P-expiry TTL + P-reparent-and attach + ResponseInfo fixtures).
     expectLoadedSubstring: 'ok ping=',
     actionAccessibilityLabel: 'Run NativeRNGMATesting probes',
   },

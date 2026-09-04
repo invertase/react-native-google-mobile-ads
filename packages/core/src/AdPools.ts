@@ -16,26 +16,64 @@
  */
 
 import { getAdCapabilities } from './capabilities/getAdCapabilities';
+import {
+  destroyAllAdPools,
+  getRegisteredAdPool,
+  registerAdPool,
+  startNativePool,
+} from './internal/adPoolRegistry';
+import { MobileAds } from './MobileAds';
 import type { AdPool, AdPoolConfig, AdPoolsApi } from './types/AdPool';
+import { createPoolAdError, validateAdPoolConfig } from './validateAdPoolConfig';
 
 /**
  * Factory for managed ad pools.
- * Stub: create/get/destroy are not wired to native yet.
+ *
+ * Classic fullscreen pools wire to the platform SDK preloader (FEAT-05).
+ * Display (banner/native) emulation is FEAT-06.
  */
 export const AdPools: AdPoolsApi = {
   getCapabilities: getAdCapabilities,
 
-  create(config: AdPoolConfig): Promise<AdPool> {
-    void config;
-    return Promise.reject(new Error('AdPools.create is not implemented'));
+  async create(config: AdPoolConfig): Promise<AdPool> {
+    // Ensure native event bridge subscriptions (including pool events) are live.
+    MobileAds();
+
+    let resolved;
+    try {
+      resolved = validateAdPoolConfig(config);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw createPoolAdError(
+        'invalid-request',
+        typeof error === 'object' && error && 'message' in error
+          ? String((error as { message: unknown }).message)
+          : 'Invalid AdPoolConfig',
+      );
+    }
+
+    const existing = getRegisteredAdPool(resolved.poolId);
+    if (existing) {
+      existing.destroy();
+    }
+
+    const pool = await startNativePool(resolved);
+    registerAdPool(pool);
+    if (resolved.degraded) {
+      queueMicrotask(() => {
+        pool.notifyDegraded();
+      });
+    }
+    return pool;
   },
 
   get(poolId: string): AdPool | null {
-    void poolId;
-    return null;
+    return getRegisteredAdPool(poolId);
   },
 
   destroyAll(): void {
-    // no-op stub
+    destroyAllAdPools();
   },
 };

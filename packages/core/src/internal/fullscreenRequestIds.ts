@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,26 +15,18 @@
  *
  */
 
-#if !TARGET_OS_MACCATALYST
+/**
+ * Shared requestId space for classic MobileAd instances and polled pool ads.
+ * Both land in the same native FullScreenAdModule slot maps, so ids must not
+ * collide across createForAdRequest and AdPool.poll.
+ */
+let nextFullscreenRequestId = 0;
 
-#import <Foundation/Foundation.h>
+export function allocateFullscreenRequestId(): number {
+  return nextFullscreenRequestId++;
+}
 
-@class RNGoogleMobileAdsFullScreenAd;
-
-#ifdef RCT_NEW_ARCH_ENABLED
-
-#import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
-@interface RNGoogleMobileAdsAppOpenModule : NSObject <NativeAppOpenModuleSpec>
-- (RNGoogleMobileAdsFullScreenAd *)fullscreenAdHelper;
-
-#else
-
-#import <React/RCTBridgeModule.h>
-@interface RNGoogleMobileAdsAppOpenModule : NSObject <RCTBridgeModule>
-- (RNGoogleMobileAdsFullScreenAd *)fullscreenAdHelper;
-
-#endif
-
-@end
-
-#endif
+/** Test-only reset. */
+export function resetFullscreenRequestIdsForTests(): void {
+  nextFullscreenRequestId = 0;
+}

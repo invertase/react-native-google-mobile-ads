@@ -15,46 +15,58 @@
  *
  */
 
+import { Platform } from 'react-native';
+
 import { AdFormat } from '../types/AdFormat';
 import type { CapabilitySupport } from '../types/CapabilitySupport';
 import type { AdCapabilities } from '../types/AdCapabilities';
 
+const supported: CapabilitySupport = 'supported';
+const experimental: CapabilitySupport = 'experimental';
 const unavailable: CapabilitySupport = 'unavailable';
 
-const STUB_CAPABILITIES: AdCapabilities = {
-  backend: 'android-classic',
-  sdkVersion: '0.0.0-stub',
-  formats: {
-    [AdFormat.APP_OPEN]: unavailable,
-    [AdFormat.INTERSTITIAL]: unavailable,
-    [AdFormat.REWARDED]: unavailable,
-    [AdFormat.REWARDED_INTERSTITIAL]: unavailable,
-    [AdFormat.BANNER]: unavailable,
-    [AdFormat.NATIVE]: unavailable,
-  },
-  multiFormatNativeBanner: unavailable,
-  fullscreenPreload: unavailable,
-  fullscreenPreloadFormats: {
-    [AdFormat.APP_OPEN]: unavailable,
-    [AdFormat.INTERSTITIAL]: unavailable,
-    [AdFormat.REWARDED]: unavailable,
-    [AdFormat.REWARDED_INTERSTITIAL]: unavailable,
-  },
-  displayPreload: unavailable,
-  multiCountNative: unavailable,
-  // Stub backend is android-classic: no peek API on that surface.
-  poolResponseInfoPeek: unavailable,
-  // Server-delivered cap: any concrete number would be a guess.
-  maxManagedPoolAds: null,
-  mediation: 'unknown',
-};
+/** Pinned linked SDK versions from package.json sdkVersions (exact pins). */
+const SDK_VERSION = {
+  ios: '13.5.0',
+  android: '25.4.0',
+} as const;
 
 /**
  * Returns the static capability snapshot for this binary.
- * Stub: placeholder values (`android-classic`, `0.0.0-stub`, all `unavailable`,
- * including `poolResponseInfoPeek`) until native wiring lands, not live
- * capability readings.
+ *
+ * Classic fullscreen preload is experimental (iOS Beta / Android limited-alpha).
+ * Android classic has no rewarded-interstitial preloader and no peek API.
+ * Display preload stays unavailable until emulated pools (FEAT-06).
+ * `maxManagedPoolAds` stays null (server-delivered; documented default is 6).
  */
 export function getAdCapabilities(): AdCapabilities {
-  return STUB_CAPABILITIES;
+  const isIos = Platform.OS === 'ios';
+  const backend = isIos ? 'ios' : 'android-classic';
+
+  return {
+    backend,
+    sdkVersion: isIos ? SDK_VERSION.ios : SDK_VERSION.android,
+    formats: {
+      [AdFormat.APP_OPEN]: supported,
+      [AdFormat.INTERSTITIAL]: supported,
+      [AdFormat.REWARDED]: supported,
+      [AdFormat.REWARDED_INTERSTITIAL]: supported,
+      [AdFormat.BANNER]: supported,
+      [AdFormat.NATIVE]: supported,
+    },
+    multiFormatNativeBanner: supported,
+    fullscreenPreload: experimental,
+    fullscreenPreloadFormats: {
+      [AdFormat.APP_OPEN]: experimental,
+      [AdFormat.INTERSTITIAL]: experimental,
+      [AdFormat.REWARDED]: experimental,
+      // Android classic has no RewardedInterstitialAdPreloader.
+      [AdFormat.REWARDED_INTERSTITIAL]: isIos ? experimental : unavailable,
+    },
+    displayPreload: unavailable,
+    multiCountNative: unavailable,
+    poolResponseInfoPeek: isIos ? supported : unavailable,
+    maxManagedPoolAds: null,
+    mediation: 'unknown',
+  };
 }

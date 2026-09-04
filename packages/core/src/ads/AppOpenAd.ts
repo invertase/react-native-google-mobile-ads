@@ -22,11 +22,10 @@ import { AdEventType } from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
+import { allocateFullscreenRequestId } from '../internal/fullscreenRequestIds';
 import NativeAppOpenModule from '../specs/modules/NativeAppOpenModule';
 
 export class AppOpenAd extends MobileAd {
-  protected static _appOpenRequest = 0;
-
   static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions) {
     if (!isString(adUnitId)) {
       throw new Error("AppOpenAd.createForAdRequest(*) 'adUnitId' expected an string value.");
@@ -41,7 +40,7 @@ export class AppOpenAd extends MobileAd {
       }
     }
 
-    const requestId = AppOpenAd._appOpenRequest++;
+    const requestId = allocateFullscreenRequestId();
     return new AppOpenAd(
       'app_open',
       requestId,

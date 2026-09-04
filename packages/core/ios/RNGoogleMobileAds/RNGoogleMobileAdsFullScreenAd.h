@@ -49,6 +49,13 @@
                   resolve:(RCTPromiseResolveBlock)resolve
                    reject:(RCTPromiseRejectBlock)reject;
 - (void)destroyWithRequestId:(int)requestId;
+/**
+ * Adopt a preloader-polled ad into the requestId map and wire delegates.
+ * Does not emit LOADED — the JS pooled ad is already considered ready.
+ */
+- (void)adoptAd:(id<GADFullScreenPresentingAd>)ad
+      requestId:(int)requestId
+       adUnitId:(NSString *)adUnitId;
 
 @end
 

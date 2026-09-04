@@ -70,6 +70,8 @@ type FullscreenPresetConfigCustomId<
  * Default `bufferSize: 1`. Google recommends 2 per preload ID; pass
  * `{ bufferSize: 2 }` to ask for that depth. The app-wide cap that depth
  * competes for is server-delivered (`maxManagedPoolAds` reports `null`).
+ * The classic documented default for that app-wide cap is **6**
+ * (P-poolcap-ios); do not invent a number on the capability field.
  * Depth 1 stays the default so create succeeds under a tight app-wide cap;
  * publishers that want Google's recommended depth opt in explicitly.
  *

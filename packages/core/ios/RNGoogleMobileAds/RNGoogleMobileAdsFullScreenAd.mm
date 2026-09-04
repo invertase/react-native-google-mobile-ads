@@ -70,6 +70,68 @@
   [self.delegateMap removeObjectForKey:key];
 }
 
+- (void)adoptAd:(id<GADFullScreenPresentingAd>)ad
+      requestId:(int)requestId
+       adUnitId:(NSString *)adUnitId {
+  NSNumber *key = @(requestId);
+  NSInteger next = [self.generationMap[key] integerValue] + 1;
+  self.generationMap[key] = @(next);
+
+  RNGoogleMobileAdsFullScreenContentDelegate *delegate =
+      [[RNGoogleMobileAdsFullScreenContentDelegate alloc] initWithAdEventName:[self getAdEventName]
+                                                                    requestId:requestId
+                                                                     adUnitId:adUnitId];
+  __weak __typeof(self) weakSelf = self;
+  __weak RNGoogleMobileAdsFullScreenContentDelegate *weakDelegate = delegate;
+  delegate.onTerminal = ^{
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (!strongSelf) {
+      return;
+    }
+    [strongSelf evictRequestId:requestId];
+    weakDelegate.onTerminal = nil;
+  };
+
+  GADResponseInfo *gadResponseInfo = nil;
+  if ([ad isKindOfClass:[GADRewardedAd class]]) {
+    gadResponseInfo = [(GADRewardedAd *)ad responseInfo];
+  } else if ([ad isKindOfClass:[GADRewardedInterstitialAd class]]) {
+    gadResponseInfo = [(GADRewardedInterstitialAd *)ad responseInfo];
+  } else if ([ad isKindOfClass:[GADInterstitialAd class]]) {
+    gadResponseInfo = [(GADInterstitialAd *)ad responseInfo];
+  } else if ([ad isKindOfClass:[GADAppOpenAd class]]) {
+    gadResponseInfo = [(GADAppOpenAd *)ad responseInfo];
+  }
+
+  GADPaidEventHandler paidEventHandler = ^(GADAdValue *value) {
+    [weakSelf
+        sendAdEvent:@"paid"
+          requestId:requestId
+           adUnitId:adUnitId
+              error:nil
+               data:[RNGoogleMobileAdsResponseInfo paidEventPayloadFromAdValue:value
+                                                                  responseInfo:gadResponseInfo]];
+  };
+
+  if ([ad isKindOfClass:[GADRewardedAd class]]) {
+    [(GADRewardedAd *)ad setPaidEventHandler:paidEventHandler];
+  } else if ([ad isKindOfClass:[GADRewardedInterstitialAd class]]) {
+    [(GADRewardedInterstitialAd *)ad setPaidEventHandler:paidEventHandler];
+  } else if ([ad isKindOfClass:[GADInterstitialAd class]]) {
+    [(GADInterstitialAd *)ad setPaidEventHandler:paidEventHandler];
+  } else if ([ad isKindOfClass:[GADAppOpenAd class]]) {
+    [(GADAppOpenAd *)ad setPaidEventHandler:paidEventHandler];
+  }
+
+  if ([ad isKindOfClass:[GAMInterstitialAd class]]) {
+    [(GAMInterstitialAd *)ad setAppEventDelegate:delegate];
+  }
+
+  ad.fullScreenContentDelegate = delegate;
+  self.adMap[key] = ad;
+  self.delegateMap[key] = delegate;
+}
+
 - (NSString *)getAdEventName {
   @throw [NSException exceptionWithName:@"MethodNotImplemented"
                                  reason:@"Method `getAdEventName` must be overridden"
@@ -239,13 +301,12 @@
                    reject:(RCTPromiseRejectBlock)reject {
   UIViewController *viewController = [RNGoogleMobileAdsCommon currentViewController];
   if (!viewController) {
-    [RNSharedUtils
-        rejectPromiseWithUserInfo:reject
-                         userInfo:@{
-                           @"code" : @"nil-vc",
-                           @"message" :
-                               @"Ad attempted to show but the current View Controller was nil."
-                         }];
+    [RNSharedUtils rejectPromiseWithUserInfo:reject
+                                    userInfo:@{
+                                      @"code" : @"nil-vc",
+                                      @"message" : @"Ad attempted to show but the current "
+                                                   @"View Controller was nil."
+                                    }];
     return;
   }
 

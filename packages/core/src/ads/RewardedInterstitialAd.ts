@@ -23,6 +23,7 @@ import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
+import { allocateFullscreenRequestId } from '../internal/fullscreenRequestIds';
 import NativeRewardedInterstitialModule from '../specs/modules/NativeRewardedInterstitialModule';
 
 /**
@@ -71,7 +72,6 @@ import NativeRewardedInterstitialModule from '../specs/modules/NativeRewardedInt
  * advert, closing it or completing the action.
  */
 export class RewardedInterstitialAd extends MobileAd {
-  protected static _rewardedInterstitialRequest = 0;
   /**
    * Creates a new RewardedInterstitialAd instance.
    *
@@ -113,7 +113,7 @@ export class RewardedInterstitialAd extends MobileAd {
       }
     }
 
-    const requestId = RewardedInterstitialAd._rewardedInterstitialRequest++;
+    const requestId = allocateFullscreenRequestId();
     return new RewardedInterstitialAd(
       'rewarded_interstitial',
       requestId,

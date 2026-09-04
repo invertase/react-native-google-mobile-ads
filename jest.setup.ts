@@ -146,6 +146,43 @@ jest.doMock('./packages/core/src/specs/modules/NativeRewardedInterstitialModule'
     },
   };
 });
+jest.doMock('./packages/core/src/specs/modules/NativeGoogleMobileAdsPoolModule', () => {
+  const pools = new Map();
+  return {
+    __esModule: true,
+    default: {
+      poolStart: jest.fn(async (preloadId, format, adUnitId, bufferSize) => {
+        pools.set(`${format}::${preloadId}`, { count: Number(bufferSize) > 0 ? 1 : 0, adUnitId });
+        return { started: true, effectiveBufferSize: Number(bufferSize) || 2 };
+      }),
+      poolGetAvailability: jest.fn(async (preloadId, format) => {
+        const entry = pools.get(`${format}::${preloadId}`);
+        const observedCount = entry?.count ?? 0;
+        return { available: observedCount > 0, observedCount };
+      }),
+      poolPeekResponseInfo: jest.fn(async () => null),
+      poolPoll: jest.fn(async (preloadId, format, requestId) => {
+        const key = `${format}::${preloadId}`;
+        const entry = pools.get(key);
+        if (!entry || entry.count <= 0) {
+          return { filled: false };
+        }
+        entry.count -= 1;
+        return {
+          filled: true,
+          requestId,
+          responseId: `resp-${requestId}`,
+          responseInfo: { responseId: `resp-${requestId}` },
+        };
+      }),
+      poolDestroy: jest.fn((preloadId, format) => {
+        pools.delete(`${format}::${preloadId}`);
+      }),
+      addListener: jest.fn(),
+      removeListeners: jest.fn(),
+    },
+  };
+});
 jest.doMock('./packages/core/src/specs/modules/NativeAppModule', () => {
   return {
     __esModule: true,

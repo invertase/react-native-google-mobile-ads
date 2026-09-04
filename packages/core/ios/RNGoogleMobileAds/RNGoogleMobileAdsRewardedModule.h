@@ -19,15 +19,19 @@
 
 #import <Foundation/Foundation.h>
 
+@class RNGoogleMobileAdsFullScreenAd;
+
 #ifdef RCT_NEW_ARCH_ENABLED
 
 #import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
 @interface RNGoogleMobileAdsRewardedModule : NSObject <NativeRewardedModuleSpec>
+- (RNGoogleMobileAdsFullScreenAd *)fullscreenAdHelper;
 
 #else
 
 #import <React/RCTBridgeModule.h>
 @interface RNGoogleMobileAdsRewardedModule : NSObject <RCTBridgeModule>
+- (RNGoogleMobileAdsFullScreenAd *)fullscreenAdHelper;
 
 #endif
 
