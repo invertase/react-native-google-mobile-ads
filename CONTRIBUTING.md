@@ -122,7 +122,7 @@ Reviews of Pull Requests are based on the following acceptance criteria:
   - E2E and Jest when [platform coverage](okf-bundle/testing/running-e2e.md#platform-coverage-gate-blocking) requires them.
 - Do all CI checks pass. A green e2e GitHub Actions job is not an e2e pass — [continue-on-error](okf-bundle/ci-workflows/index.md#e2e-continue-on-error).
 
-Once a PR is merged into the `main` branch, maintainers publish with `workflow_dispatch` — [CI publish](okf-bundle/ci-workflows/index.md#workflows). Push to `main` does not publish.
+Once a PR is merged into the `main` branch, maintainers publish with `workflow_dispatch` — [CI publish](okf-bundle/ci-workflows/index.md#workflows). Push to `main` does not publish. Publish runs on macOS so the release commit refreshes `RNGoogleMobileAdsExample/ios/Podfile.lock` against `packages/core` (pod version + `sdkVersions.ios`) — [publish Podfile.lock](okf-bundle/ci-workflows/index.md#publish-podfile-lock).
 
 ## [No Brown M&M's](http://en.wikipedia.org/wiki/Van_Halen#Contract_riders)
 

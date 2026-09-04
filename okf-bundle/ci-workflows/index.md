@@ -17,10 +17,18 @@ Do not copy other repos’ Detox patch inventories, macOS-app e2e suites, Jacoco
 | Docs | [`.github/workflows/docs.yml`](../../.github/workflows/docs.yml) | `yarn lint:spellcheck` | Job title mentions Markdown; CI is spellcheck only — [§ lint](../testing/validation-checklist.md#lint-and-formatting) |
 | PR title | [`.github/workflows/pr_title.yml`](../../.github/workflows/pr_title.yml) | [documentation-policy § pull requests](../documentation-policy.md#pull-requests) | Conventional Commits; `validateSingleCommit` |
 | Test patches | [`.github/workflows/create_test_patches.yml`](../../.github/workflows/create_test_patches.yml) | Do not invent a local substitute | `workflow_dispatch` + push/PR; patch-package artifacts |
-| Publish | [`.github/workflows/publish.yml`](../../.github/workflows/publish.yml) | Maintainers only | `on.push` exists; the job `if` runs only on `workflow_dispatch`. Push to `main` does not publish. |
+| Publish | [`.github/workflows/publish.yml`](../../.github/workflows/publish.yml) | Maintainers only | `workflow_dispatch` only (`on.push` exists; job `if` ignores push). Runs on **macos-15** with Xcode + CocoaPods so semantic-release prepare can refresh `RNGoogleMobileAdsExample/ios/Podfile.lock` into the release commit ([§ publish Podfile.lock](#publish-podfile-lock)). |
 | Stale | [`.github/workflows/stale.yml`](../../.github/workflows/stale.yml) | n/a | Scheduled issue/PR stale bot |
 
 Jest/e2e/patch workflows `paths-ignore` markdown and `docs/**` (YAML also lists `website/**`; that tree is not in this repo — ignore it). Lint runs on markdown PRs and pushes to `main`. Docs spellcheck is PR-only.
+
+<a id="publish-podfile-lock"></a>
+
+## Publish Podfile.lock refresh
+
+After `@semantic-release/npm` bumps `packages/core/package.json`, the local prepare plugin `scripts/semantic-release-refresh-ios-pod-lockfile.js` runs `yarn release:refresh-ios-pod-lockfile` (Darwin-only): two `yarn tests:ios:pod:install` passes, asserts `RNGoogleMobileAds` / `Google-Mobile-Ads-SDK` / `GoogleUserMessagingPlatform` match `packages/core` version + `sdkVersions.ios`, then requires an idempotent `git diff --exit-code` on `RNGoogleMobileAdsExample/ios/Podfile.lock`. `@semantic-release/git` includes that lockfile in the release commit assets.
+
+Do **not** delete `Podfile.lock` on routine `yarn tests:ios:pod:install` — install updates it in place. Pin-vs-lock drift (for example declared GMA `13.5.0` vs a stale lock) is fixed by that install or by the release refresh, not by wiping the lockfile. Local smoke without CocoaPods churn: `node ./scripts/refresh-ios-pod-lockfile.js --assert-pins-only` or `--self-check`. Commands: [agent command policy](../testing/agent-command-policy.md#canonical-registry).
 
 <a id="e2e-continue-on-error"></a>
 
