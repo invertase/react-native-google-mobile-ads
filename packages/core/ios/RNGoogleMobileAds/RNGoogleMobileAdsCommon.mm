@@ -19,6 +19,7 @@
 #if !TARGET_OS_MACCATALYST
 
 #import "RNGoogleMobileAdsCommon.h"
+#import "RNGoogleMobileAdsOwnedMappers.h"
 #import "common/RNRCTEventEmitter.h"
 
 NSString *const GOOGLE_MOBILE_ADS_EVENT_APP_OPEN = @"google_mobile_ads_app_open_event";
@@ -104,41 +105,8 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
 }
 
 + (NSDictionary *)getCodeAndMessageFromAdError:(NSError *)error {
-  NSString *code = @"unknown";
-  NSString *message = [error localizedDescription];
-
-  if (error.code == GADErrorInvalidRequest) {
-    code = @"invalid-request";
-  } else if (error.code == GADErrorNoFill) {
-    code = @"no-fill";
-  } else if (error.code == GADErrorNetworkError) {
-    code = @"network-error";
-  } else if (error.code == GADErrorServerError) {
-    code = @"server-error";
-  } else if (error.code == GADErrorTimeout) {
-    code = @"timeout";
-  } else if (error.code == GADErrorMediationDataError) {
-    code = @"mediation-data-error";
-  } else if (error.code == GADErrorMediationAdapterError) {
-    code = @"mediation-adapter-error";
-  } else if (error.code == GADErrorMediationInvalidAdSize) {
-    code = @"mediation-invalid-ad-size";
-  } else if (error.code == GADErrorInternalError) {
-    code = @"internal-error";
-  } else if (error.code == GADErrorInvalidArgument) {
-    code = @"invalid-argument";
-  } else if (error.code == GADErrorReceivedInvalidAdString) {
-    code = @"received-invalid-ad-string";
-  } else if (error.code == GADErrorAdAlreadyUsed) {
-    code = @"ad-already-used";
-  } else if (error.code == GADErrorApplicationIdentifierMissing) {
-    code = @"application-identifier-missing";
-  }
-
-  return @{
-    @"code" : code,
-    @"message" : message,
-  };
+  return [RNGoogleMobileAdsOwnedMappers codeAndMessageFromAdErrorCode:error.code
+                                                              message:[error localizedDescription]];
 }
 
 + (void)sendAdEvent:(NSString *)event
@@ -172,55 +140,45 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
 + (GADAdSize)stringToAdSize:(NSString *)value
               withMaxHeight:(CGFloat)maxHeight
                    andWidth:(CGFloat)adWidth {
-  NSError *error = nil;
-  NSRegularExpression *regex =
-      [NSRegularExpression regularExpressionWithPattern:@"([0-9]+)x([0-9]+)"
-                                                options:0
-                                                  error:&error];
-  NSArray *matches = [regex matchesInString:value options:0 range:NSMakeRange(0, [value length])];
-
-  for (NSTextCheckingResult *match in matches) {
-    NSString *matchText = [value substringWithRange:[match range]];
-    if (matchText) {
-      NSArray *values = [matchText componentsSeparatedByString:@"x"];
-      CGFloat width = (CGFloat)[values[0] intValue];
-      CGFloat height = (CGFloat)[values[1] intValue];
-      return GADAdSizeFromCGSize(CGSizeMake(width, height));
-    }
+  CGFloat customWidth = 0;
+  CGFloat customHeight = 0;
+  if ([RNGoogleMobileAdsOwnedMappers customAdSizeFromString:value
+                                                      width:&customWidth
+                                                     height:&customHeight]) {
+    return GADAdSizeFromCGSize(CGSizeMake(customWidth, customHeight));
   }
 
-  value = [value uppercaseString];
-
-  if ([value isEqualToString:@"BANNER"]) {
+  NSString *token = [RNGoogleMobileAdsOwnedMappers namedBannerSizeTokenFromString:value];
+  if ([token isEqualToString:@"BANNER"]) {
     return GADAdSizeBanner;
-  } else if ([value isEqualToString:@"FLUID"]) {
+  } else if ([token isEqualToString:@"FLUID"]) {
     return GADAdSizeFluid;
-  } else if ([value isEqualToString:@"WIDE_SKYSCRAPER"]) {
+  } else if ([token isEqualToString:@"WIDE_SKYSCRAPER"]) {
     return GADAdSizeSkyscraper;
-  } else if ([value isEqualToString:@"LARGE_BANNER"]) {
+  } else if ([token isEqualToString:@"LARGE_BANNER"]) {
     return GADAdSizeLargeBanner;
-  } else if ([value isEqualToString:@"MEDIUM_RECTANGLE"]) {
+  } else if ([token isEqualToString:@"MEDIUM_RECTANGLE"]) {
     return GADAdSizeMediumRectangle;
-  } else if ([value isEqualToString:@"FULL_BANNER"]) {
+  } else if ([token isEqualToString:@"FULL_BANNER"]) {
     return GADAdSizeFullBanner;
-  } else if ([value isEqualToString:@"LEADERBOARD"]) {
+  } else if ([token isEqualToString:@"LEADERBOARD"]) {
     return GADAdSizeLeaderboard;
-  } else if ([value isEqualToString:@"ANCHORED_ADAPTIVE_BANNER"] ||
-             [value isEqualToString:@"LARGE_ANCHORED_ADAPTIVE_BANNER"] ||
-             [value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
+  } else if ([token isEqualToString:@"ANCHORED_ADAPTIVE_BANNER"] ||
+             [token isEqualToString:@"LARGE_ANCHORED_ADAPTIVE_BANNER"] ||
+             [token isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
     CGRect frame = [[UIScreen mainScreen] bounds];
     if (@available(iOS 11.0, *)) {
       frame =
           UIEdgeInsetsInsetRect(frame, [UIApplication sharedApplication].keyWindow.safeAreaInsets);
     }
     CGFloat viewWidth = adWidth > 0 ? MIN(frame.size.width, adWidth) : frame.size.width;
-    if ([value isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
+    if ([token isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
       if (maxHeight > 0) {
         return GADInlineAdaptiveBannerAdSizeWithWidthAndMaxHeight(viewWidth, MAX(maxHeight, 32.0));
       }
       return GADCurrentOrientationInlineAdaptiveBannerAdSizeWithWidth(viewWidth);
     }
-    if ([value isEqualToString:@"LARGE_ANCHORED_ADAPTIVE_BANNER"]) {
+    if ([token isEqualToString:@"LARGE_ANCHORED_ADAPTIVE_BANNER"]) {
       return GADLargeAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
     }
     return GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(viewWidth);
@@ -230,10 +188,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
 }
 
 + (BOOL)isAdManagerUnit:(NSString *)unitId {
-  if (unitId == nil) {
-    return NO;
-  }
-  return [unitId hasPrefix:@"/"];
+  return [RNGoogleMobileAdsOwnedMappers isAdManagerUnit:unitId];
 }
 
 + (UIViewController *)currentViewController {
