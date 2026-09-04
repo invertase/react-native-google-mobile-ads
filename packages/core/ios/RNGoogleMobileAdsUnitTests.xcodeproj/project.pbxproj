@@ -9,12 +9,17 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000001 /* RNGoogleMobileAdsHarnessSmokeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* RNGoogleMobileAdsHarnessSmokeTests.m */; };
 		A10000000000000000000004 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000005 /* XCTest.framework */; };
+		A10000000000000000000006 /* RNGoogleMobileAdsOwnedMappersTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000007 /* RNGoogleMobileAdsOwnedMappersTests.m */; };
+		A10000000000000000000008 /* RNGoogleMobileAdsOwnedMappers.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000009 /* RNGoogleMobileAdsOwnedMappers.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000002 /* RNGoogleMobileAdsHarnessSmokeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsHarnessSmokeTests.m; sourceTree = "<group>"; };
 		A10000000000000000000003 /* RNGoogleMobileAdsUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RNGoogleMobileAdsUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000005 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		A10000000000000000000007 /* RNGoogleMobileAdsOwnedMappersTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsOwnedMappersTests.m; sourceTree = "<group>"; };
+		A10000000000000000000009 /* RNGoogleMobileAdsOwnedMappers.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsOwnedMappers.m; sourceTree = "<group>"; };
+		A1000000000000000000000A /* RNGoogleMobileAdsOwnedMappers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNGoogleMobileAdsOwnedMappers.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -33,6 +38,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000021 /* Tests */,
+				A10000000000000000000023 /* RNGoogleMobileAds */,
 				A10000000000000000000022 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +47,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000002 /* RNGoogleMobileAdsHarnessSmokeTests.m */,
+				A10000000000000000000007 /* RNGoogleMobileAdsOwnedMappersTests.m */,
 			);
 			name = Tests;
 			path = Tests;
@@ -52,6 +59,16 @@
 				A10000000000000000000003 /* RNGoogleMobileAdsUnitTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000023 /* RNGoogleMobileAds */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000000A /* RNGoogleMobileAdsOwnedMappers.h */,
+				A10000000000000000000009 /* RNGoogleMobileAdsOwnedMappers.m */,
+			);
+			name = RNGoogleMobileAds;
+			path = RNGoogleMobileAds;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -111,6 +128,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000001 /* RNGoogleMobileAdsHarnessSmokeTests.m in Sources */,
+				A10000000000000000000006 /* RNGoogleMobileAdsOwnedMappersTests.m in Sources */,
+				A10000000000000000000008 /* RNGoogleMobileAdsOwnedMappers.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,6 +147,10 @@
 				ENABLE_TESTABILITY = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -142,6 +165,10 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
@@ -153,6 +180,10 @@
 			buildSettings = {
 				CODE_SIGNING_ALLOWED = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -172,6 +203,10 @@
 			buildSettings = {
 				CODE_SIGNING_ALLOWED = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
