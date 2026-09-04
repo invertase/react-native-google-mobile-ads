@@ -40,10 +40,12 @@
       [RNGoogleMobileAdsOwnedMappers codeAndMessageFromAdErrorCode:1 message:@"no inventory"];
   XCTAssertEqualObjects(noFill[@"code"], @"no-fill");
   XCTAssertEqualObjects(noFill[@"message"], @"no inventory");
+  XCTAssertEqualObjects(noFill[@"reason"], @"no-fill");
 
   NSDictionary *invalid =
       [RNGoogleMobileAdsOwnedMappers codeAndMessageFromAdErrorCode:0 message:@"bad request"];
   XCTAssertEqualObjects(invalid[@"code"], @"invalid-request");
+  XCTAssertEqualObjects(invalid[@"reason"], @"invalid-request");
 
   NSDictionary *network = [RNGoogleMobileAdsOwnedMappers codeAndMessageFromAdErrorCode:2
                                                                                message:@"offline"];
@@ -84,10 +86,12 @@
   NSDictionary *appId = [RNGoogleMobileAdsOwnedMappers codeAndMessageFromAdErrorCode:20
                                                                              message:@"missing"];
   XCTAssertEqualObjects(appId[@"code"], @"application-identifier-missing");
+  XCTAssertEqualObjects(appId[@"reason"], @"app-id-missing");
 
   NSDictionary *invalidAdString =
       [RNGoogleMobileAdsOwnedMappers codeAndMessageFromAdErrorCode:21 message:@"bad string"];
   XCTAssertEqualObjects(invalidAdString[@"code"], @"received-invalid-ad-string");
+  XCTAssertEqualObjects(invalidAdString[@"reason"], @"invalid-ad-string");
 
   NSString *nilMsg = nil;
   NSDictionary *nilMessage = [RNGoogleMobileAdsOwnedMappers codeAndMessageFromAdErrorCode:1
@@ -99,6 +103,15 @@
                                                                                message:@"mystery"];
   XCTAssertEqualObjects(unknown[@"code"], @"unknown");
   XCTAssertEqualObjects(unknown[@"message"], @"mystery");
+  XCTAssertEqualObjects(unknown[@"reason"], @"unknown");
+
+  NSMutableDictionary *showPayload =
+      [RNGoogleMobileAdsOwnedMappers adErrorPayloadFromAdErrorCode:1
+                                                           message:@"no inventory"
+                                                             phase:@"show"];
+  XCTAssertEqualObjects(showPayload[@"code"], @"no-fill");
+  XCTAssertEqualObjects(showPayload[@"reason"], @"no-fill");
+  XCTAssertEqualObjects(showPayload[@"phase"], @"show");
 }
 
 - (void)testCustomAdSizeFromString {

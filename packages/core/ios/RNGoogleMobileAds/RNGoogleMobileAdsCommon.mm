@@ -109,6 +109,12 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
                                                               message:[error localizedDescription]];
 }
 
++ (NSMutableDictionary *)adErrorPayloadFromAdError:(NSError *)error phase:(NSString *)phase {
+  return [RNGoogleMobileAdsOwnedMappers adErrorPayloadFromAdErrorCode:error.code
+                                                              message:[error localizedDescription]
+                                                                phase:phase];
+}
+
 + (void)sendAdEvent:(NSString *)event
           requestId:(NSNumber *)requestId
                type:(NSString *)type

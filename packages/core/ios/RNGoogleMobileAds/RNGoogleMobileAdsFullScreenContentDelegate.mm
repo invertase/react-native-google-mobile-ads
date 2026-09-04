@@ -39,7 +39,7 @@
 
 - (void)ad:(id<GADFullScreenPresentingAd>)ad
     didFailToPresentFullScreenContentWithError:(NSError *)error {
-  NSDictionary *errorInfo = [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
+  NSDictionary *errorInfo = [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"show"];
   [self sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_ERROR error:errorInfo data:nil];
 }
 

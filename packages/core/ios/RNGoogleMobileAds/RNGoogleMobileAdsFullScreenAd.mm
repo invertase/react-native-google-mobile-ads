@@ -83,7 +83,7 @@
       completionHandler:^(id<GADFullScreenPresentingAd> ad, NSError *error) {
         if (error) {
           NSMutableDictionary *codeAndMessage =
-              [[RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error] mutableCopy];
+              [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"load"];
           NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
               dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo
                                              responseInfoFromLoadError:error]

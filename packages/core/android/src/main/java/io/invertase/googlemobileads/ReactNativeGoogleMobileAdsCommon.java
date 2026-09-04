@@ -119,36 +119,115 @@ public class ReactNativeGoogleMobileAdsCommon {
     }
   }
 
-  /** Convert common Google Mobile Ads errors into a standard format */
-  static WritableMap errorCodeToMap(int errorCode) {
+  /**
+   * Map legacy wire {@code code} values onto the v17 {@code reason} vocabulary. Mirrors JS {@code
+   * reasonFromNativeCode}.
+   */
+  public static String reasonFromLegacyCode(@Nullable String code) {
+    if (code == null || code.isEmpty()) {
+      return "unknown";
+    }
+    if ("no-fill".equals(code) || "error-code-no-fill".equals(code)) {
+      return "no-fill";
+    }
+    if ("mediation-no-fill".equals(code) || "error-code-mediation-no-fill".equals(code)) {
+      return "mediation-no-fill";
+    }
+    if (code.startsWith("error-code-")) {
+      return code.substring("error-code-".length());
+    }
+    if ("application-identifier-missing".equals(code)) {
+      return "app-id-missing";
+    }
+    if ("received-invalid-ad-string".equals(code)) {
+      return "invalid-ad-string";
+    }
+    if ("internal".equals(code)) {
+      return "internal-error";
+    }
+    return code;
+  }
+
+  /**
+   * Build an additive AdErrorPayload map ({@code code}/{@code message} + {@code reason}/{@code
+   * phase}).
+   */
+  public static WritableMap buildAdErrorMap(String code, @Nullable String message, String phase) {
     WritableMap map = Arguments.createMap();
+    map.putString("code", code);
+    map.putString("message", message != null ? message : "");
+    map.putString("reason", reasonFromLegacyCode(code));
+    map.putString("phase", phase);
+    return map;
+  }
+
+  /** Fullscreen / native vocabulary + additive {@code reason}/{@code phase}. */
+  public static WritableMap adErrorToMap(AdError adError, String phase) {
+    String[] codeAndMessage = getCodeAndMessageFromAdError(adError);
+    return buildAdErrorMap(codeAndMessage[0], codeAndMessage[1], phase);
+  }
+
+  /**
+   * Convert common Google Mobile Ads errors into the banner {@code error-code-*} format. Always
+   * includes {@code reason} and {@code phase: "load"}. Fills the previously missing default branch
+   * so app-id / mediation / invalid-ad-string / request-id-mismatch emit codes.
+   */
+  static WritableMap errorCodeToMap(int errorCode) {
+    String[] parts = bannerErrorCodeParts(errorCode);
+    return buildAdErrorMap(parts[0], parts[1], "load");
+  }
+
+  /**
+   * Pure banner code/message mapping (no React Native Arguments). Used by unit tests and {@link
+   * #errorCodeToMap(int)}.
+   */
+  public static String[] bannerErrorCodeParts(int errorCode) {
+    String code;
+    String message;
 
     switch (errorCode) {
       case AdRequest.ERROR_CODE_INTERNAL_ERROR:
-        map.putString("code", "error-code-internal-error");
-        map.putString(
-            "message",
+        code = "error-code-internal-error";
+        message =
             "Something happened internally; for instance, an invalid response was received from the"
-                + " ad server.");
+                + " ad server.";
         break;
       case AdRequest.ERROR_CODE_INVALID_REQUEST:
-        map.putString("code", "error-code-invalid-request");
-        map.putString(
-            "message", "The ad request was invalid; for instance, the ad unit ID was incorrect.");
+        code = "error-code-invalid-request";
+        message = "The ad request was invalid; for instance, the ad unit ID was incorrect.";
         break;
       case AdRequest.ERROR_CODE_NETWORK_ERROR:
-        map.putString("code", "error-code-network-error");
-        map.putString("message", "The ad request was unsuccessful due to network connectivity.");
+        code = "error-code-network-error";
+        message = "The ad request was unsuccessful due to network connectivity.";
         break;
       case AdRequest.ERROR_CODE_NO_FILL:
-        map.putString("code", "error-code-no-fill");
-        map.putString(
-            "message",
-            "The ad request was successful, but no ad was returned due to lack of ad inventory.");
+        code = "error-code-no-fill";
+        message =
+            "The ad request was successful, but no ad was returned due to lack of ad inventory.";
+        break;
+      case AdRequest.ERROR_CODE_APP_ID_MISSING:
+        code = "error-code-app-id-missing";
+        message = "The Android AdMob app ID is missing from AndroidManifest.xml.";
+        break;
+      case AdRequest.ERROR_CODE_MEDIATION_NO_FILL:
+        code = "error-code-mediation-no-fill";
+        message = "The mediation adapter did not fill the ad request.";
+        break;
+      case AdRequest.ERROR_CODE_INVALID_AD_STRING:
+        code = "error-code-invalid-ad-string";
+        message = "The ad string is invalid.";
+        break;
+      case AdRequest.ERROR_CODE_REQUEST_ID_MISMATCH:
+        code = "error-code-request-id-mismatch";
+        message = "The request ID in the ad string does not match the current request.";
+        break;
+      default:
+        code = "error-code-unknown";
+        message = "An unknown error occurred while loading the ad.";
         break;
     }
 
-    return map;
+    return new String[] {code, message};
   }
 
   public static AdManagerAdRequest buildAdRequest(ReadableMap adRequestOptions) {

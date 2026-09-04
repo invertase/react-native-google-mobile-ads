@@ -181,7 +181,7 @@
 
 - (void)bannerView:(GADBannerView *)bannerView didFailToReceiveAdWithError:(NSError *)error {
   NSMutableDictionary *errorAndMessage =
-      [[RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error] mutableCopy];
+      [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"load"];
   NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
       dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo responseInfoFromLoadError:error]
                          compact:NO];

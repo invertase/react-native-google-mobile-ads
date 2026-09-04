@@ -20,6 +20,7 @@ import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
 
 import { NativeAdEventType } from '../../NativeAdEventType';
 import { isFunction, isOneOf, isString } from '../../common';
+import { adErrorFromNativeEvent } from '../../internal/adErrorFromNativeEvent';
 import NativeGoogleMobileAdsNativeModule, {
   NativeAdEventPayload,
   NativeAdImage,
@@ -159,8 +160,49 @@ export class NativeAd {
       }
     }
 
-    const props = await NativeGoogleMobileAdsNativeModule.load(adUnitId, options);
+    const props = await NativeGoogleMobileAdsNativeModule.load(adUnitId, options).catch(
+      (nativeError: unknown) => {
+        throw nativeAdErrorFromRejection(nativeError);
+      },
+    );
 
     return new NativeAd(adUnitId, props);
   }
+}
+
+/**
+ * Normalize a TurboModule / bridge rejection into `Error & AdErrorPayload`.
+ * Native attaches `reason` / `phase` / optional `responseInfo` on the userInfo map;
+ * iOS keeps legacy `ERROR_LOAD` as `code`.
+ */
+function nativeAdErrorFromRejection(nativeError: unknown) {
+  const err = nativeError as {
+    code?: string;
+    message?: string;
+    userInfo?: {
+      code?: string;
+      message?: string;
+      reason?: string;
+      phase?: 'load' | 'show';
+      responseInfo?: ResponseInfo;
+    };
+  };
+  const userInfo = err.userInfo ?? {};
+  let code = userInfo.code ?? err.code ?? 'unknown';
+  // RN may namespace the reject code; strip to the wire token for reason mapping.
+  const slash = code.lastIndexOf('/');
+  if (slash >= 0) {
+    code = code.slice(slash + 1);
+  }
+  return adErrorFromNativeEvent(
+    {
+      code,
+      message: userInfo.message ?? err.message ?? 'Native ad failed to load',
+      reason: userInfo.reason,
+      phase: userInfo.phase,
+      responseInfo: userInfo.responseInfo,
+    },
+    'googleMobileAds',
+    'load',
+  );
 }

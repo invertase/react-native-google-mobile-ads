@@ -25,6 +25,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MediaAspectRatio
 import com.google.android.gms.ads.VideoController.VideoLifecycleCallbacks
 import com.google.android.gms.ads.VideoOptions
@@ -46,44 +47,63 @@ class ReactNativeGoogleMobileAdsNativeModule(
     promise: Promise,
   ) {
     val holder = NativeAdHolder(adUnitId, requestOptions)
-    holder.loadAd { nativeAd ->
-      val responseId = nativeAd.responseInfo?.responseId ?: return@loadAd
-      adHolders[responseId] = holder
+    holder.loadAd(
+      onLoaded = { nativeAd ->
+        val responseId = nativeAd.responseInfo?.responseId
+        if (responseId == null) {
+          val error =
+            ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(
+              "internal-error",
+              "Failed to get a valid response ID from the loaded ad.",
+              "load",
+            )
+          promise.reject(error.getString("code"), error.getString("message"), error)
+          return@loadAd
+        }
+        adHolders[responseId] = holder
 
-      val data = Arguments.createMap()
-      data.putString("responseId", responseId)
-      data.putString("advertiser", nativeAd.advertiser)
-      data.putString("body", nativeAd.body)
-      data.putString("callToAction", nativeAd.callToAction)
-      data.putString("headline", nativeAd.headline)
-      data.putString("price", nativeAd.price)
-      data.putString("store", nativeAd.store)
-      nativeAd.starRating?.let {
-        data.putDouble("starRating", it)
-      } ?: run {
-        data.putNull("starRating")
-      }
-      nativeAd.icon?.let {
-        val icon = Arguments.createMap()
-        icon.putDouble("scale", it.scale)
-        icon.putString("url", it.uri.toString())
-        data.putMap("icon", icon)
-      } ?: run {
-        data.putNull("icon")
-      }
-      val mediaContent = Arguments.createMap()
-      nativeAd.mediaContent?.let {
-        mediaContent.putDouble("aspectRatio", it.aspectRatio.toDouble())
-        mediaContent.putBoolean("hasVideoContent", it.hasVideoContent())
-        mediaContent.putDouble("duration", it.duration.toDouble())
-        data.putMap("mediaContent", mediaContent)
-      }
-      ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(nativeAd.responseInfo)?.let {
-        data.putMap("responseInfo", it)
-      }
+        val data = Arguments.createMap()
+        data.putString("responseId", responseId)
+        data.putString("advertiser", nativeAd.advertiser)
+        data.putString("body", nativeAd.body)
+        data.putString("callToAction", nativeAd.callToAction)
+        data.putString("headline", nativeAd.headline)
+        data.putString("price", nativeAd.price)
+        data.putString("store", nativeAd.store)
+        nativeAd.starRating?.let {
+          data.putDouble("starRating", it)
+        } ?: run {
+          data.putNull("starRating")
+        }
+        nativeAd.icon?.let {
+          val icon = Arguments.createMap()
+          icon.putDouble("scale", it.scale)
+          icon.putString("url", it.uri.toString())
+          data.putMap("icon", icon)
+        } ?: run {
+          data.putNull("icon")
+        }
+        val mediaContent = Arguments.createMap()
+        nativeAd.mediaContent?.let {
+          mediaContent.putDouble("aspectRatio", it.aspectRatio.toDouble())
+          mediaContent.putBoolean("hasVideoContent", it.hasVideoContent())
+          mediaContent.putDouble("duration", it.duration.toDouble())
+          data.putMap("mediaContent", mediaContent)
+        }
+        ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(nativeAd.responseInfo)?.let {
+          data.putMap("responseInfo", it)
+        }
 
-      promise.resolve(data)
-    }
+        promise.resolve(data)
+      },
+      onFailedToLoad = { loadAdError ->
+        val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(loadAdError, "load")
+        ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.responseInfo)?.let {
+          error.putMap("responseInfo", it)
+        }
+        promise.reject(error.getString("code"), error.getString("message"), error)
+      },
+    )
   }
 
   @ReactMethod
@@ -126,7 +146,14 @@ class ReactNativeGoogleMobileAdsNativeModule(
         override fun onAdClosed() {
           emitAdEvent("closed")
         }
+
+        override fun onAdFailedToLoad(error: LoadAdError) {
+          failedToLoadListener?.invoke(error)
+          failedToLoadListener = null
+        }
       }
+
+    private var failedToLoadListener: ((LoadAdError) -> Unit)? = null
 
     private val videoLifecycleCallbacks: VideoLifecycleCallbacks =
       object : VideoLifecycleCallbacks() {
@@ -153,7 +180,11 @@ class ReactNativeGoogleMobileAdsNativeModule(
         }
       }
 
-    fun loadAd(loadedListener: NativeAd.OnNativeAdLoadedListener) {
+    fun loadAd(
+      onLoaded: NativeAd.OnNativeAdLoadedListener,
+      onFailedToLoad: (LoadAdError) -> Unit,
+    ) {
+      failedToLoadListener = onFailedToLoad
       val mediaAspectRatio =
         if (requestOptions.hasKey("aspectRatio")) {
           when (requestOptions.getInt("aspectRatio")) {
@@ -203,6 +234,7 @@ class ReactNativeGoogleMobileAdsNativeModule(
           .withNativeAdOptions(nativeAdOptions)
           .withAdListener(adListener)
           .forNativeAd { nativeAd ->
+            failedToLoadListener = null
             this.nativeAd = nativeAd
             nativeAd.mediaContent?.videoController?.videoLifecycleCallbacks = videoLifecycleCallbacks
             nativeAd.setOnPaidEventListener { adValue ->
@@ -213,7 +245,7 @@ class ReactNativeGoogleMobileAdsNativeModule(
                 )
               emitAdEvent("paid", revenueData)
             }
-            loadedListener.onNativeAdLoaded(nativeAd)
+            onLoaded.onNativeAdLoaded(nativeAd)
           }.build()
       val adRequest = ReactNativeGoogleMobileAdsCommon.buildAdRequest(requestOptions)
       adLoader.loadAd(adRequest)

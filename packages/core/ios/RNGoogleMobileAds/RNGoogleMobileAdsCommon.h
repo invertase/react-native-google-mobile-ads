@@ -27,6 +27,10 @@
 
 + (NSDictionary *_Nonnull)getCodeAndMessageFromAdError:(NSError *_Nonnull)error;
 
+/** Additive AdErrorPayload including `reason` and `phase`. */
++ (NSMutableDictionary *_Nonnull)adErrorPayloadFromAdError:(NSError *_Nonnull)error
+                                                     phase:(NSString *_Nonnull)phase;
+
 + (void)sendAdEvent:(NSString *_Nonnull)event
           requestId:(NSNumber *_Nonnull)requestId
                type:(NSString *_Nonnull)type

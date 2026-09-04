@@ -29,11 +29,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Maps a Google Mobile Ads NSError.code (GADErrorCode) to the JS-facing
- * `{ code, message }` dictionary. Integers mirror GADErrorCode.
+ * `{ code, message, reason }` dictionary. Integers mirror GADErrorCode.
+ * `reason` is the additive v17 vocabulary (`code` stays legacy).
  */
 + (NSDictionary<NSString *, NSString *> *)codeAndMessageFromAdErrorCode:(NSInteger)code
                                                                 message:
                                                                     (nullable NSString *)message;
+
+/**
+ * Same as codeAndMessageFromAdErrorCode plus additive `phase` (`load` | `show`).
+ */
++ (NSMutableDictionary *)adErrorPayloadFromAdErrorCode:(NSInteger)code
+                                               message:(nullable NSString *)message
+                                                 phase:(NSString *)phase;
 
 /**
  * Parses a custom "WxH" size token. Returns YES and writes width/height when matched.
