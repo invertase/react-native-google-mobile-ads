@@ -67,6 +67,16 @@ jest.doMock('./src/specs/modules/NativeInterstitialModule', () => {
     },
   };
 });
+jest.doMock('./src/specs/modules/NativeGoogleMobileAdsNativeModule', () => {
+  return {
+    __esModule: true,
+    default: {
+      load: jest.fn(),
+      destroy: jest.fn(),
+      onAdEvent: jest.fn(),
+    },
+  };
+});
 jest.doMock('./src/specs/modules/NativeAppModule', () => {
   return {
     __esModule: true,
