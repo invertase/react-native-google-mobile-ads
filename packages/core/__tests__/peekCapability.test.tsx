@@ -30,8 +30,8 @@ describe('peekResponseInfo capability gate', () => {
     expect(PEEK_GATE_DOCS).toContain('empty head');
 
     const caps = getAdCapabilities();
-    // Stub backend is android-classic: no peek API on that surface.
-    expect(caps.poolResponseInfoPeek).toBe('unavailable');
-    expect(caps.backend).toBe('android-classic');
+    // Jest RN Platform.OS is ios: peek is supported on classic iOS.
+    expect(caps.poolResponseInfoPeek).toBe('supported');
+    expect(caps.backend).toBe('ios');
   });
 });

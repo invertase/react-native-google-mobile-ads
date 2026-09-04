@@ -22,6 +22,7 @@ import { AdEventType } from '../AdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
+import { allocateFullscreenRequestId } from '../internal/fullscreenRequestIds';
 import NativeInterstitialModule from '../specs/modules/NativeInterstitialModule';
 
 /**
@@ -64,7 +65,6 @@ import NativeInterstitialModule from '../specs/modules/NativeInterstitialModule'
  * advert or closing it.
  */
 export class InterstitialAd extends MobileAd {
-  protected static _interstitialRequest = 0;
   /**
    * Creates a new InterstitialAd instance.
    *
@@ -101,7 +101,7 @@ export class InterstitialAd extends MobileAd {
       }
     }
 
-    const requestId = InterstitialAd._interstitialRequest++;
+    const requestId = allocateFullscreenRequestId();
     return new InterstitialAd(
       'interstitial',
       requestId,

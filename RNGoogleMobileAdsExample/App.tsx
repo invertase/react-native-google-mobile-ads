@@ -823,12 +823,14 @@ function NativeRNGMATestingFormat() {
               await NativeRNGMATesting.setDebugInventoryTtlMs(60_000);
               const ttl = await NativeRNGMATesting.getDebugInventoryTtlMs();
               await NativeRNGMATesting.setDebugInventoryTtlMs(0);
+              const cleared = await NativeRNGMATesting.getDebugInventoryTtlMs();
               const attach = await NativeRNGMATesting.supportsDelayedBannerAttach();
               const loaded = await NativeRNGMATesting.getResponseInfoFixtureJson('loaded');
               const noFill = await NativeRNGMATesting.getResponseInfoFixtureJson('no-fill');
               const paid = await NativeRNGMATesting.getResponseInfoFixtureJson('paid-compact');
+              // Fold P-expiry (TTL seam) + P-reparent-and (delayed attach) into gallery status.
               setStatus(
-                `ok ping=${ping} ttl=${ttl} attach=${attach} fixtures=${[
+                `ok ping=${ping} ttl=${ttl} cleared=${cleared} attach=${attach} fixtures=${[
                   loaded,
                   noFill,
                   paid,

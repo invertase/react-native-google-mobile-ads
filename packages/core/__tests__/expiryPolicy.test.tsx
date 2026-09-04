@@ -21,8 +21,11 @@ describe('expiry policy surface stubs', () => {
   it('reports maxManagedPoolAds as null and exposes per-format preload + peek gates', () => {
     const caps = getAdCapabilities();
     expect(caps.maxManagedPoolAds).toBeNull();
-    expect(caps.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]).toBe('unavailable');
-    expect(caps.poolResponseInfoPeek).toBe('unavailable');
+    expect(caps.fullscreenPreload).toBe('experimental');
+    // Jest RN Platform.OS is ios by default.
+    expect(caps.backend).toBe('ios');
+    expect(caps.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]).toBe('experimental');
+    expect(caps.poolResponseInfoPeek).toBe('supported');
   });
 
   it('builds fullscreen and display pool presets with optional staleness override', () => {
@@ -70,6 +73,7 @@ describe('expiry policy surface stubs', () => {
     render(<Probe />);
     expect(pooled!.status).toBe('idle');
     expect(pooled!.ad).toBeNull();
+    expect(pooled!.poolStatus).toBe('absent');
     expect(multi!.status).toBe('idle');
     expect(multi!.ads).toEqual([]);
     await expect(pooled!.poll()).resolves.toEqual({ status: 'empty' });

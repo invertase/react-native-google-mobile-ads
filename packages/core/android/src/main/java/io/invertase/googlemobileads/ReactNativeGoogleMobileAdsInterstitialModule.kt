@@ -27,10 +27,11 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.admanager.AdManagerInterstitialAd
 import com.google.android.gms.ads.admanager.AdManagerInterstitialAdLoadCallback
+import com.google.android.gms.ads.interstitial.InterstitialAd
 
 class ReactNativeGoogleMobileAdsInterstitialModule(
   reactContext: ReactApplicationContext?,
-) : ReactNativeGoogleMobileAdsFullScreenAdModule<AdManagerInterstitialAd>(reactContext, NAME) {
+) : ReactNativeGoogleMobileAdsFullScreenAdModule<InterstitialAd>(reactContext, NAME) {
   override fun getAdEventName(): String = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL
 
   @ReactMethod
@@ -61,7 +62,7 @@ class ReactNativeGoogleMobileAdsInterstitialModule(
     activity: Activity,
     adUnitId: String,
     adRequest: AdManagerAdRequest,
-    adLoadCallback: AdLoadCallback<AdManagerInterstitialAd>,
+    adLoadCallback: AdLoadCallback<InterstitialAd>,
   ) {
     AdManagerInterstitialAd.load(
       activity,

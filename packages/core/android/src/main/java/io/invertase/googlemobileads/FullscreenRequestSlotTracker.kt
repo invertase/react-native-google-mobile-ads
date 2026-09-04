@@ -53,6 +53,20 @@ internal class FullscreenRequestSlotTracker<T> {
 
   fun get(requestId: Int): T? = ads.get(requestId)
 
+  /**
+   * Commit a already-loaded (e.g. polled) ad under a fresh requestId, bumping
+   * generation so any prior in-flight load for that id is invalidated.
+   */
+  fun adopt(
+    requestId: Int,
+    ad: T,
+  ): Int {
+    val generation = generations.get(requestId, 0) + 1
+    generations.put(requestId, generation)
+    ads.put(requestId, ad)
+    return generation
+  }
+
   /** Explicit JS/native destroy — invalidates in-flight loads and drops the holder. */
   fun destroy(requestId: Int) {
     generations.put(requestId, generations.get(requestId, 0) + 1)

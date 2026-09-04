@@ -32,6 +32,7 @@ import com.google.android.gms.ads.OnPaidEventListener
 import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.admanager.AdManagerInterstitialAd
 import com.google.android.gms.ads.appopen.AppOpenAd
+import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
@@ -164,6 +165,125 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
     // Same thread affinity as beginLoad (module/JS bridge thread): SparseArray
     // mutations must not race an async UI hop against in-flight loads.
     slots.destroy(requestId)
+  }
+
+  /**
+   * Adopt a preloader-polled ad into this module's requestId map and wire
+   * fullscreen / paid callbacks. Does not emit LOADED — the JS pooled ad is
+   * already considered ready.
+   */
+  fun adoptPolledAd(
+    requestId: Int,
+    adUnitId: String,
+    ad: T & Any,
+  ) {
+    slots.adopt(requestId, ad)
+    wirePresentingCallbacks(requestId, adUnitId, ad, Arguments.createMap())
+  }
+
+  private fun wirePresentingCallbacks(
+    requestId: Int,
+    adUnitId: String,
+    ad: T & Any,
+    adRequestOptions: ReadableMap,
+  ) {
+    val adHelper = ReactNativeGoogleMobileAdsAdHelper(ad)
+
+    val paidEventListener =
+      OnPaidEventListener { adValue ->
+        val payload =
+          ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(
+            adValue,
+            adHelper.responseInfo,
+          )
+        sendAdEvent(
+          ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_PAID,
+          requestId,
+          adUnitId,
+          null,
+          payload,
+        )
+      }
+
+    when (ad) {
+      is InterstitialAd -> ad.onPaidEventListener = paidEventListener
+      is AppOpenAd -> ad.onPaidEventListener = paidEventListener
+      is RewardedAd -> ad.onPaidEventListener = paidEventListener
+      is RewardedInterstitialAd -> ad.onPaidEventListener = paidEventListener
+    }
+
+    if (ad is RewardedAd || ad is RewardedInterstitialAd) {
+      adRequestOptions
+        .getMap("serverSideVerificationOptions")
+        ?.let { serverSideVerificationOptions ->
+          val options = ServerSideVerificationOptions.Builder()
+          serverSideVerificationOptions.getString("userId")?.let {
+            options.setUserId(it)
+          }
+          serverSideVerificationOptions.getString("customData")?.let {
+            options.setCustomData(it)
+          }
+          adHelper.setServerSideVerificationOptions(options.build())
+        }
+    }
+
+    if (ad is AdManagerInterstitialAd) {
+      adHelper.setAppEventListener { name, eventData ->
+        val payload = Arguments.createMap()
+        payload.putString("name", name)
+        payload.putString("data", eventData)
+        sendAdEvent(
+          GOOGLE_MOBILE_ADS_EVENT_APP_EVENT,
+          requestId,
+          adUnitId,
+          null,
+          payload,
+        )
+      }
+    }
+
+    val fullScreenContentCallback: FullScreenContentCallback =
+      object : FullScreenContentCallback() {
+        override fun onAdShowedFullScreenContent() {
+          sendLocal(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_OPENED)
+        }
+
+        override fun onAdDismissedFullScreenContent() {
+          slots.evict(requestId)
+          sendLocal(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLOSED)
+        }
+
+        override fun onAdClicked() {
+          sendLocal(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLICKED)
+        }
+
+        override fun onAdImpression() {
+          sendLocal(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_IMPRESSION)
+        }
+
+        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+          slots.evict(requestId)
+          val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(adError, "show")
+          sendAdEvent(
+            ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
+            requestId,
+            adUnitId,
+            error,
+            null,
+          )
+        }
+
+        private fun sendLocal(type: String) {
+          sendAdEvent(
+            type,
+            requestId,
+            adUnitId,
+            null,
+            null,
+          )
+        }
+      }
+    adHelper.setFullScreenContentCallback(fullScreenContentCallback)
   }
 
   override fun invalidate() {

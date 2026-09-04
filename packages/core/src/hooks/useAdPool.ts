@@ -15,8 +15,10 @@
  *
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { AdPools } from '../AdPools';
+import { getRegisteredAdPool, subscribeAdPoolRegistry } from '../internal/adPoolRegistry';
 import type { AdPool } from '../types/AdPool';
 import type { AdError } from '../types/AdError';
 
@@ -74,23 +76,89 @@ export type UseAdPoolResult = UseAdPoolResultBase &
  */
 export type UseAdPoolStatus = UseAdPoolResult['status'];
 
+type LookupState =
+  | { status: 'creating'; pool: null; error: null }
+  | { status: 'ready'; pool: AdPool; error: null }
+  | { status: 'ready-degraded'; pool: AdPool; error: null }
+  | { status: 'error'; pool: null; error: AdError }
+  | { status: 'absent'; pool: null; error: null };
+
+function lookupPool(poolId: string): LookupState {
+  const pool = getRegisteredAdPool(poolId) ?? AdPools.get(poolId);
+  if (!pool) {
+    return { status: 'absent', pool: null, error: null };
+  }
+  if (pool.resolved.degraded) {
+    return { status: 'ready-degraded', pool, error: null };
+  }
+  return { status: 'ready', pool, error: null };
+}
+
 /**
  * Read a pool created by AdPoolProvider or AdPools.create.
- * Stub: always `absent`, since no pool can be created yet. `retry` keeps a
- * stable identity for the life of the hook instance.
+ * `retry` keeps a stable identity for the life of the hook instance.
  */
 export function useAdPool(poolId: string): UseAdPoolResult {
   const poolIdRef = useRef(poolId);
   poolIdRef.current = poolId;
 
+  const [state, setState] = useState<LookupState>(() => lookupPool(poolId));
+  const creatingRef = useRef(false);
+  const lastConfigRef = useRef<AdPool['resolved'] | null>(
+    getRegisteredAdPool(poolId)?.resolved ?? null,
+  );
+
+  useEffect(() => {
+    return subscribeAdPoolRegistry(() => {
+      const next = lookupPool(poolIdRef.current);
+      if (next.status === 'ready' || next.status === 'ready-degraded') {
+        lastConfigRef.current = next.pool.resolved;
+        creatingRef.current = false;
+      }
+      setState(prev => (prev.status === next.status && prev.pool === next.pool ? prev : next));
+    });
+  }, []);
+
+  useEffect(() => {
+    const next = lookupPool(poolId);
+    if (next.status === 'ready' || next.status === 'ready-degraded') {
+      lastConfigRef.current = next.pool.resolved;
+    }
+    setState(prev => (prev.status === next.status && prev.pool === next.pool ? prev : next));
+  }, [poolId]);
+
   const retry = useCallback(() => {
-    void poolIdRef.current;
+    if (creatingRef.current) {
+      return;
+    }
+    const config = lastConfigRef.current;
+    if (!config) {
+      return;
+    }
+    creatingRef.current = true;
+    setState({ status: 'creating', pool: null, error: null });
+    void AdPools.create(config)
+      .then(pool => {
+        creatingRef.current = false;
+        lastConfigRef.current = pool.resolved;
+        setState(
+          pool.resolved.degraded
+            ? { status: 'ready-degraded', pool, error: null }
+            : { status: 'ready', pool, error: null },
+        );
+      })
+      .catch((error: unknown) => {
+        creatingRef.current = false;
+        setState({
+          status: 'error',
+          pool: null,
+          error: error as AdError,
+        });
+      });
   }, []);
 
   return {
-    status: 'absent',
-    pool: null,
-    error: null,
+    ...state,
     retry,
   };
 }

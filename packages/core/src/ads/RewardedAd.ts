@@ -23,6 +23,7 @@ import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventListener } from '../types/AdEventListener';
 import { AdEventsListener } from '../types/AdEventsListener';
 import { RequestOptions } from '../types/RequestOptions';
+import { allocateFullscreenRequestId } from '../internal/fullscreenRequestIds';
 import NativeRewardedModule from '../specs/modules/NativeRewardedModule';
 
 /**
@@ -71,7 +72,6 @@ import NativeRewardedModule from '../specs/modules/NativeRewardedModule';
  * advert, closing it or completing the action.
  */
 export class RewardedAd extends MobileAd {
-  protected static _rewardedRequest = 0;
   /**
    * Creates a new RewardedAd instance.
    *
@@ -111,7 +111,7 @@ export class RewardedAd extends MobileAd {
       }
     }
 
-    const requestId = RewardedAd._rewardedRequest++;
+    const requestId = allocateFullscreenRequestId();
     return new RewardedAd(
       'rewarded',
       requestId,
