@@ -17,9 +17,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { DimensionValue, NativeSyntheticEvent, Platform } from 'react-native';
-import { isFunction } from '../common';
-import { RevenuePrecisions } from '../common/constants';
-import { NativeError } from '../internal/NativeError';
+import { bannerEventPayload } from '../internal/bannerEventPayload';
 import GoogleMobileAdsBannerView from '../specs/components/GoogleMobileAdsBannerViewNativeComponent';
 import type { NativeEvent } from '../specs/components/GoogleMobileAdsBannerViewNativeComponent';
 import { BannerAdSize, GAMBannerAdSize } from '../BannerAdSize';
@@ -72,66 +70,51 @@ export const BaseAd = React.forwardRef<
     }, [requestOptions]);
 
     function onNativeEvent(event: NativeSyntheticEvent<NativeEvent>) {
-      const nativeEvent = event.nativeEvent as
-        | {
-            type: 'onAdLoaded' | 'onSizeChange';
-            width: number;
-            height: number;
-          }
-        | { type: 'onAdOpened' | 'onAdClosed' | 'onAdImpression' | 'onAdClicked' }
-        | {
-            type: 'onAdFailedToLoad';
-            code: string;
-            message: string;
-          }
-        | {
-            type: 'onAppEvent';
-            name: string;
-            data?: string;
-          }
-        | {
-            type: 'onPaid';
-            currency: string;
-            precision: RevenuePrecisions;
-            value: number;
-          };
+      const nativeEvent =
+        event.nativeEvent as import('../internal/bannerEventPayload').BannerNativeEvent;
       const { type } = nativeEvent;
 
-      if (isFunction(props[type])) {
-        let eventHandler, eventPayload;
-        switch (type) {
-          case 'onAdLoaded':
-          case 'onSizeChange':
-            eventPayload = {
-              width: nativeEvent.width,
-              height: nativeEvent.height,
-            };
-            if ((eventHandler = props[type])) eventHandler(eventPayload);
-            break;
-          case 'onAdFailedToLoad':
-            eventPayload = NativeError.fromEvent(nativeEvent, 'googleMobileAds');
-            if ((eventHandler = props[type])) eventHandler(eventPayload);
-            break;
-          case 'onAppEvent':
-            eventPayload = {
-              name: nativeEvent.name,
-              data: nativeEvent.data,
-            };
-            if ((eventHandler = props[type])) eventHandler(eventPayload);
-            break;
-          case 'onPaid':
-            const handler = props[type];
-            if (handler) {
-              handler({
-                currency: nativeEvent.currency,
-                precision: nativeEvent.precision,
-                value: nativeEvent.value,
-              });
-            }
-            break;
-          default:
-            if ((eventHandler = props[type])) eventHandler();
-        }
+      switch (type) {
+        case 'onAdLoaded':
+          props.onAdLoaded?.(
+            bannerEventPayload(nativeEvent) as {
+              width: number;
+              height: number;
+              responseInfo?: import('../types/ResponseInfo').ResponseInfo;
+            },
+          );
+          break;
+        case 'onSizeChange':
+          props.onSizeChange?.(
+            bannerEventPayload(nativeEvent) as { width: number; height: number },
+          );
+          break;
+        case 'onAdFailedToLoad':
+          props.onAdFailedToLoad?.(
+            bannerEventPayload(nativeEvent) as Error &
+              Partial<import('../types/AdError').AdErrorPayload>,
+          );
+          break;
+        case 'onAppEvent':
+          props.onAppEvent?.(bannerEventPayload(nativeEvent) as { name: string; data?: string });
+          break;
+        case 'onPaid':
+          props.onPaid?.(
+            bannerEventPayload(nativeEvent) as import('../types/PaidEventListener').PaidEvent,
+          );
+          break;
+        case 'onAdOpened':
+          props.onAdOpened?.();
+          break;
+        case 'onAdClosed':
+          props.onAdClosed?.();
+          break;
+        case 'onAdImpression':
+          props.onAdImpression?.();
+          break;
+        case 'onAdClicked':
+          props.onAdClicked?.();
+          break;
       }
 
       if (type === 'onAdLoaded' || type === 'onSizeChange') {

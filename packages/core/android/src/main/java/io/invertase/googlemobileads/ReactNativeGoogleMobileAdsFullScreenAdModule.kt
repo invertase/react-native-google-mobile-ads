@@ -161,12 +161,13 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
         var eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_LOADED
         var data: WritableMap? = null
 
-        var paidEventListener =
+        val paidEventListener =
           OnPaidEventListener { adValue ->
-            val payload = Arguments.createMap()
-            payload.putDouble("value", 1e-6 * adValue.getValueMicros())
-            payload.putDouble("precision", 1.0 * adValue.getPrecisionType())
-            payload.putString("currency", adValue.getCurrencyCode())
+            val payload =
+              ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(
+                adValue,
+                adHelper.responseInfo,
+              )
             sendAdEvent(
               ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_PAID,
               requestId,
@@ -183,6 +184,9 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
           is RewardedInterstitialAd -> ad.onPaidEventListener = paidEventListener
         }
 
+        val responseInfoMap =
+          ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(adHelper.responseInfo)
+
         if (ad is RewardedAd || ad is RewardedInterstitialAd) {
           eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED
 
@@ -190,6 +194,9 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
           data = Arguments.createMap()
           data.putString("type", rewardItem.type)
           data.putInt("amount", rewardItem.amount)
+          if (responseInfoMap != null) {
+            data.putMap("responseInfo", responseInfoMap)
+          }
 
           adRequestOptions
             .getMap("serverSideVerificationOptions")
@@ -204,6 +211,9 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
               }
               adHelper.setServerSideVerificationOptions(options.build())
             }
+        } else if (responseInfoMap != null) {
+          data = Arguments.createMap()
+          data.putMap("responseInfo", responseInfoMap)
         }
 
         if (ad is AdManagerInterstitialAd) {
@@ -284,6 +294,9 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
         ReactNativeGoogleMobileAdsCommon.getCodeAndMessageFromAdError(loadAdError)
       error.putString("code", codeAndMessage[0])
       error.putString("message", codeAndMessage[1])
+      ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.responseInfo)?.let {
+        error.putMap("responseInfo", it)
+      }
       sendAdEvent(
         ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
         requestId,

@@ -1,0 +1,17 @@
+{
+  "responseId": "fixture-paid-response",
+  "adapterClassName": "com.google.ads.mediation.admob.AdMobAdapter",
+  "loadedAdapterResponse": {
+    "adapterClassName": "com.google.ads.mediation.admob.AdMobAdapter",
+    "adSourceName": "AdMob Network",
+    "adSourceId": "fixture-source",
+    "adSourceInstanceName": null,
+    "adSourceInstanceId": null,
+    "latencyMillis": 42,
+    "outcome": "success",
+    "adError": null
+  },
+  "extras": {
+    "creativeId": "fixture-creative"
+  }
+}

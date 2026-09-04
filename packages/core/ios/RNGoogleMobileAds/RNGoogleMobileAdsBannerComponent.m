@@ -20,6 +20,7 @@
 #import "RNGoogleMobileAdsBannerComponent.h"
 #import <React/RCTLog.h>
 #import "RNGoogleMobileAdsCommon.h"
+#import "RNGoogleMobileAdsResponseInfo.h"
 
 @implementation RNGoogleMobileAdsBannerComponent
 
@@ -132,11 +133,9 @@
     typeof(self) strongSelf = weakSelf;
     if (strongSelf) {
       [strongSelf sendEvent:@"onPaid"
-                    payload:@{
-                      @"value" : value.value,
-                      @"precision" : @(value.precision),
-                      @"currency" : value.currencyCode,
-                    }];
+                    payload:[RNGoogleMobileAdsResponseInfo
+                                paidEventPayloadFromAdValue:value
+                                               responseInfo:strongSelf->_banner.responseInfo]];
     }
   };
   [self load];
@@ -168,15 +167,27 @@
 }
 
 - (void)bannerViewDidReceiveAd:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdLoaded"
-          payload:@{
-            @"width" : @(bannerView.bounds.size.width),
-            @"height" : @(bannerView.bounds.size.height),
-          }];
+  NSMutableDictionary *payload = [@{
+    @"width" : @(bannerView.bounds.size.width),
+    @"height" : @(bannerView.bounds.size.height),
+  } mutableCopy];
+  NSDictionary *responseInfo =
+      [RNGoogleMobileAdsResponseInfo dictionaryFromResponseInfo:bannerView.responseInfo compact:NO];
+  if (responseInfo != nil) {
+    payload[@"responseInfo"] = responseInfo;
+  }
+  [self sendEvent:@"onAdLoaded" payload:payload];
 }
 
 - (void)bannerView:(GADBannerView *)bannerView didFailToReceiveAdWithError:(NSError *)error {
-  NSDictionary *errorAndMessage = [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
+  NSMutableDictionary *errorAndMessage =
+      [[RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error] mutableCopy];
+  NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
+      dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo responseInfoFromLoadError:error]
+                         compact:NO];
+  if (responseInfo != nil) {
+    errorAndMessage[@"responseInfo"] = responseInfo;
+  }
   [self sendEvent:@"onAdFailedToLoad" payload:errorAndMessage];
 }
 

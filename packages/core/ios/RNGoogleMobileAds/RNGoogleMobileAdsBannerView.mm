@@ -4,6 +4,7 @@
 #ifdef RCT_NEW_ARCH_ENABLED
 #import "RNGoogleMobileAdsBannerView.h"
 #import "RNGoogleMobileAdsCommon.h"
+#import "RNGoogleMobileAdsResponseInfo.h"
 
 #import <react/renderer/components/RNGoogleMobileAdsSpec/ComponentDescriptors.h>
 #import <react/renderer/components/RNGoogleMobileAdsSpec/EventEmitters.h>
@@ -137,11 +138,27 @@ using namespace facebook::react;
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
   }
   _banner.paidEventHandler = ^(GADAdValue *_Nonnull value) {
+    NSDictionary *paid =
+        [RNGoogleMobileAdsResponseInfo paidEventPayloadFromAdValue:value
+                                                      responseInfo:_banner.responseInfo];
+    NSString *responseInfoJson = nil;
+    id compact = paid[@"responseInfo"];
+    if ([compact isKindOfClass:[NSDictionary class]]) {
+      NSData *jsonData = [NSJSONSerialization dataWithJSONObject:compact options:0 error:nil];
+      if (jsonData != nil) {
+        responseInfoJson = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+      }
+    }
+    std::string responseInfoJsonStd =
+        responseInfoJson != nil ? std::string([responseInfoJson UTF8String]) : "";
+    // iOS has no exact micros (see paidEventPayloadFromAdValue → NSNull). Fabric event
+    // strings default to ""; bannerEventPayload maps empty/absent → null for PaidEvent.
     std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
         _eventEmitter)
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent {
           .type = "onPaid", .value = value.value.doubleValue,
-          .precision = @(value.precision).doubleValue, .currency = value.currencyCode.UTF8String
+          .precision = @(value.precision).doubleValue, .currency = value.currencyCode.UTF8String,
+          .responseInfoJson = responseInfoJsonStd,
         });
   };
   _banner.rootViewController = [UIApplication sharedApplication].delegate.window.rootViewController;
@@ -195,24 +212,48 @@ using namespace facebook::react;
 
 - (void)bannerViewDidReceiveAd:(GADBannerView *)bannerView {
   if (_eventEmitter != nullptr) {
+    NSDictionary *responseInfo =
+        [RNGoogleMobileAdsResponseInfo dictionaryFromResponseInfo:bannerView.responseInfo
+                                                          compact:NO];
+    NSString *responseInfoJson = @"";
+    if (responseInfo != nil) {
+      NSData *jsonData = [NSJSONSerialization dataWithJSONObject:responseInfo options:0 error:nil];
+      if (jsonData != nil) {
+        responseInfoJson = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+      }
+    }
     std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
         _eventEmitter)
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
             .type = "onAdLoaded",
             .width = bannerView.bounds.size.width,
-            .height = bannerView.bounds.size.height});
+            .height = bannerView.bounds.size.height,
+            .responseInfoJson = std::string([responseInfoJson UTF8String]),
+        });
   }
 }
 
 - (void)bannerView:(GADBannerView *)bannerView didFailToReceiveAdWithError:(NSError *)error {
   NSDictionary *errorAndMessage = [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
+  NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
+      dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo responseInfoFromLoadError:error]
+                         compact:NO];
+  NSString *responseInfoJson = @"";
+  if (responseInfo != nil) {
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:responseInfo options:0 error:nil];
+    if (jsonData != nil) {
+      responseInfoJson = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    }
+  }
   if (_eventEmitter != nullptr) {
     std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
         _eventEmitter)
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
             .type = "onAdFailedToLoad",
             .code = std::string([[errorAndMessage valueForKey:@"code"] UTF8String]),
-            .message = std::string([[errorAndMessage valueForKey:@"message"] UTF8String])});
+            .message = std::string([[errorAndMessage valueForKey:@"message"] UTF8String]),
+            .responseInfoJson = std::string([responseInfoJson UTF8String]),
+        });
   }
 }
 

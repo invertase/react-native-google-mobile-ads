@@ -138,4 +138,54 @@ static const NSInteger kRNGMAErrorReceivedInvalidAdString = 21;
   return nil;
 }
 
++ (NSString *)emptyToNull:(NSString *)value {
+  if (value == nil) {
+    return nil;
+  }
+  NSString *trimmed =
+      [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  if (trimmed.length == 0) {
+    return nil;
+  }
+  return trimmed;
+}
+
++ (NSDictionary<NSString *, NSString *> *)allowlistedResponseInfoExtras:(NSDictionary *)extras {
+  NSMutableDictionary<NSString *, NSString *> *out = [NSMutableDictionary dictionary];
+  if (extras == nil) {
+    return out;
+  }
+
+  NSDictionary<NSString *, NSString *> *allowlist = @{
+    @"mediation_group_name" : @"mediationGroupName",
+    @"mediation_ab_test_name" : @"mediationAbTestName",
+    @"mediation_ab_test_variant" : @"mediationAbTestVariant",
+    @"creative_id" : @"creativeId",
+    @"line_item_id" : @"lineItemId",
+  };
+
+  for (NSString *nativeKey in allowlist) {
+    id raw = extras[nativeKey];
+    if (raw == nil || raw == [NSNull null]) {
+      continue;
+    }
+    NSString *asString = [self emptyToNull:[NSString stringWithFormat:@"%@", raw]];
+    if (asString == nil) {
+      continue;
+    }
+    out[allowlist[nativeKey]] = asString;
+  }
+  return out;
+}
+
++ (NSNumber *)latencyMillisFromSeconds:(NSTimeInterval)latency {
+  return @(latency * 1000.0);
+}
+
++ (NSDictionary *)compactPaidResponseInfoFromFull:(NSDictionary *)full {
+  NSMutableDictionary *compact = [full mutableCopy] ?: [NSMutableDictionary dictionary];
+  [compact removeObjectForKey:@"adapterResponses"];
+  return compact;
+}
+
 @end

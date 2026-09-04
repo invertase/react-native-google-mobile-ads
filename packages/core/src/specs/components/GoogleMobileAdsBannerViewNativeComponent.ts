@@ -32,6 +32,10 @@ export type NativeEvent = {
   currency?: string;
   precision?: Float;
   value?: Float;
+  /** Fabric-safe ResponseInfo / PaidResponseInfo JSON string. */
+  responseInfoJson?: string;
+  /** Exact micros as a decimal string when the backend supplies them. */
+  valueMicros?: string;
 };
 
 export interface NativeProps extends ViewProps {

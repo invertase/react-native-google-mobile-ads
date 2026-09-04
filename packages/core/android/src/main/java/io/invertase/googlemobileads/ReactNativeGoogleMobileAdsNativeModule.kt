@@ -78,6 +78,9 @@ class ReactNativeGoogleMobileAdsNativeModule(
         mediaContent.putDouble("duration", it.duration.toDouble())
         data.putMap("mediaContent", mediaContent)
       }
+      ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(nativeAd.responseInfo)?.let {
+        data.putMap("responseInfo", it)
+      }
 
       promise.resolve(data)
     }
@@ -203,10 +206,11 @@ class ReactNativeGoogleMobileAdsNativeModule(
             this.nativeAd = nativeAd
             nativeAd.mediaContent?.videoController?.videoLifecycleCallbacks = videoLifecycleCallbacks
             nativeAd.setOnPaidEventListener { adValue ->
-              val revenueData = Arguments.createMap()
-              revenueData.putDouble("value", 1e-6 * adValue.valueMicros)
-              revenueData.putInt("precision", adValue.precisionType)
-              revenueData.putString("currency", adValue.currencyCode)
+              val revenueData =
+                ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(
+                  adValue,
+                  nativeAd.responseInfo,
+                )
               emitAdEvent("paid", revenueData)
             }
             loadedListener.onNativeAdLoaded(nativeAd)

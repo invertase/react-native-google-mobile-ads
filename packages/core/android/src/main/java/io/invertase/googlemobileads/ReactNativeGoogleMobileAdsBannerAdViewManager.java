@@ -228,10 +228,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
         new OnPaidEventListener() {
           @Override
           public void onPaidEvent(AdValue adValue) {
-            WritableMap payload = Arguments.createMap();
-            payload.putDouble("value", 1e-6 * adValue.getValueMicros());
-            payload.putDouble("precision", adValue.getPrecisionType());
-            payload.putString("currency", adValue.getCurrencyCode());
+            WritableMap payload =
+                ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(
+                    adValue, adView.getResponseInfo());
             sendEvent(reactViewGroup, EVENT_PAID, payload);
           }
         });
@@ -265,6 +264,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
             WritableMap payload = Arguments.createMap();
             payload.putDouble("width", PixelUtil.toDIPFromPixel(width));
             payload.putDouble("height", PixelUtil.toDIPFromPixel(height));
+            WritableMap responseInfo =
+                ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(adView.getResponseInfo());
+            if (responseInfo != null) {
+              payload.putMap("responseInfo", responseInfo);
+            }
 
             sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
           }
@@ -273,6 +277,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
             int errorCode = loadAdError.getCode();
             WritableMap payload = ReactNativeGoogleMobileAdsCommon.errorCodeToMap(errorCode);
+            WritableMap responseInfo =
+                ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.getResponseInfo());
+            if (responseInfo != null) {
+              payload.putMap("responseInfo", responseInfo);
+            }
             sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
           }
 

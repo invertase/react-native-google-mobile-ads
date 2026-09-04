@@ -1,0 +1,22 @@
+{
+  "responseId": null,
+  "adapterClassName": null,
+  "loadedAdapterResponse": null,
+  "adapterResponses": [
+    {
+      "adapterClassName": "com.google.ads.mediation.admob.AdMobAdapter",
+      "adSourceName": "AdMob Network",
+      "adSourceId": "fixture-source",
+      "adSourceInstanceName": null,
+      "adSourceInstanceId": null,
+      "latencyMillis": 18,
+      "outcome": "error",
+      "adError": {
+        "domain": "com.google.android.gms.ads",
+        "code": 3,
+        "message": "No fill."
+      }
+    }
+  ],
+  "extras": {}
+}

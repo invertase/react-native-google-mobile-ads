@@ -37,6 +37,8 @@ export type NativeAdProps = {
   images: Array<NativeAdImage> | null;
   mediaContent: NativeMediaContent;
   extras: UnsafeObject | null;
+  /** Privacy-filtered ResponseInfo snapshot when native attach succeeded. */
+  responseInfo?: UnsafeObject | null;
 };
 
 export type NativeAdImage = {
@@ -58,7 +60,10 @@ export type NativeAdEventPayload = {
 export type NativeAdPaidEventPayload = {
   value: number;
   precision: number;
-  currencyCode: string;
+  /** Public paid key is `currency` (native GMA field is currencyCode). */
+  currency: string;
+  valueMicros?: string | null;
+  responseInfo?: UnsafeObject;
 };
 
 export interface Spec extends TurboModule {

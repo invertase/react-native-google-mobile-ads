@@ -132,4 +132,34 @@
   XCTAssertNil([RNGoogleMobileAdsOwnedMappers namedBannerSizeTokenFromString:@"not-a-size"]);
 }
 
+- (void)testEmptyToNullAndExtrasAllowlist {
+  XCTAssertNil([RNGoogleMobileAdsOwnedMappers emptyToNull:nil]);
+  XCTAssertNil([RNGoogleMobileAdsOwnedMappers emptyToNull:@""]);
+  XCTAssertNil([RNGoogleMobileAdsOwnedMappers emptyToNull:@"  "]);
+  XCTAssertEqualObjects([RNGoogleMobileAdsOwnedMappers emptyToNull:@"AdMob"], @"AdMob");
+
+  NSDictionary *extras = [RNGoogleMobileAdsOwnedMappers allowlistedResponseInfoExtras:@{
+    @"mediation_group_name" : @"group-a",
+    @"creative_id" : @"creative-1",
+    @"secret_credential" : @"drop-me",
+    @"mediation_ab_test_name" : @"",
+  }];
+  XCTAssertEqualObjects(extras[@"mediationGroupName"], @"group-a");
+  XCTAssertEqualObjects(extras[@"creativeId"], @"creative-1");
+  XCTAssertNil(extras[@"secret_credential"]);
+  XCTAssertNil(extras[@"mediationAbTestName"]);
+}
+
+- (void)testLatencyMillisAndCompactPaid {
+  XCTAssertEqualObjects([RNGoogleMobileAdsOwnedMappers latencyMillisFromSeconds:0.042], @(42));
+  NSDictionary *full = @{
+    @"responseId" : @"abc",
+    @"adapterResponses" : @[ @{} ],
+    @"extras" : @{},
+  };
+  NSDictionary *compact = [RNGoogleMobileAdsOwnedMappers compactPaidResponseInfoFromFull:full];
+  XCTAssertEqualObjects(compact[@"responseId"], @"abc");
+  XCTAssertNil(compact[@"adapterResponses"]);
+}
+
 @end
