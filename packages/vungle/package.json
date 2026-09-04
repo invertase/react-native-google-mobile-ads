@@ -1,7 +1,7 @@
 {
   "name": "@react-native-google-mobile-ads/vungle",
   "version": "16.5.0",
-  "description": "Empty package shell for the Liftoff / Vungle Google Mobile Ads (GAM) mediation adapter. Product adapter content is out of scope for this shell (see A-0 / ADAPT-02).",
+  "description": "Liftoff Monetize (Vungle) Google Mobile Ads (GAM) mediation adapter for react-native-google-mobile-ads. Links the official Google mediation adapter on Android and iOS; does not add JS ad APIs.",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "license": "Apache-2.0",
   "repository": {
@@ -15,10 +15,116 @@
     "admob",
     "mediation",
     "gam",
-    "vungle"
+    "vungle",
+    "liftoff",
+    "liftoff-monetize"
   ],
-  "files": [],
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "react-native": "src/index.ts",
+  "types": "lib/typescript/commonjs/index.d.ts",
+  "exports": {
+    ".": {
+      "react-native": {
+        "types": "./lib/typescript/module/index.d.ts",
+        "default": "./src/index.ts"
+      },
+      "source": {
+        "types": "./lib/typescript/module/index.d.ts",
+        "default": "./src/index.ts"
+      },
+      "import": {
+        "types": "./lib/typescript/module/index.d.ts",
+        "default": "./lib/module/index.js"
+      },
+      "require": {
+        "types": "./lib/typescript/commonjs/index.d.ts",
+        "default": "./lib/commonjs/index.js"
+      },
+      "default": "./lib/commonjs/index.js"
+    },
+    "./app.plugin": "./app.plugin.js",
+    "./app.plugin.js": "./app.plugin.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "/android/",
+    "/ios/",
+    "/lib/",
+    "/plugin/",
+    "/src/",
+    "/LICENSE",
+    "/RNGoogleMobileAdsAdapterVungle.podspec",
+    "/app.plugin.js",
+    "/react-native.config.js"
+  ],
   "publishConfig": {
     "access": "public"
+  },
+  "gamAdapter": {
+    "network": "vungle",
+    "androidArtifact": "com.google.ads.mediation:vungle",
+    "androidAdapterClassName": "com.google.ads.mediation.vungle.VungleMediationAdapter",
+    "iosPod": "GoogleMobileAdsMediationVungle",
+    "iosAdapterClassName": "GADMediationAdapterVungle"
+  },
+  "sdkVersions": {
+    "ios": {
+      "googleMobileAdsMediation": "7.7.7.0"
+    },
+    "android": {
+      "minSdk": 23,
+      "targetSdk": 34,
+      "compileSdk": 34,
+      "buildTools": "34.0.0",
+      "googleMobileAdsMediation": "7.7.8.0"
+    }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "commonjs",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      "typescript"
+    ]
+  },
+  "scripts": {
+    "prepare": "yarn build && yarn build:plugin",
+    "build": "bob build",
+    "build:clean": "rimraf android/build && rimraf ios/build && rimraf lib && rimraf plugin/build",
+    "build:plugin": "yarn tsc --build plugin"
+  },
+  "peerDependencies": {
+    "@expo/config-plugins": ">=5.0.0",
+    "expo": ">=47.0.0",
+    "react": "*",
+    "react-native": "*",
+    "react-native-google-mobile-ads": "*"
+  },
+  "peerDependenciesMeta": {
+    "@expo/config-plugins": {
+      "optional": true
+    },
+    "expo": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@expo/config-plugins": "^54.0.4",
+    "react-native-builder-bob": "^0.40.13",
+    "react-native-google-mobile-ads": "workspace:*",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3"
   }
 }

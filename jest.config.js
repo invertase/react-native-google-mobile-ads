@@ -8,6 +8,7 @@ module.exports = {
     '<rootDir>/packages/facebook/lib/',
     '<rootDir>/packages/unity/lib/',
     '<rootDir>/packages/pangle/lib/',
+    '<rootDir>/packages/vungle/lib/',
   ],
 
   setupFiles: ['./jest.setup.ts'],
