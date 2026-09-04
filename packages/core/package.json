@@ -132,7 +132,8 @@
       "componentProvider": {
         "RNGoogleMobileAdsBannerView": "RNGoogleMobileAdsBannerView",
         "RNGoogleMobileAdsNativeView": "RNGoogleMobileAdsNativeView",
-        "RNGoogleMobileAdsMediaView": "RNGoogleMobileAdsMediaView"
+        "RNGoogleMobileAdsMediaView": "RNGoogleMobileAdsMediaView",
+        "RNGoogleMobileAdsMultiFormatBannerView": "RNGoogleMobileAdsMultiFormatBannerView"
       }
     },
     "android": {

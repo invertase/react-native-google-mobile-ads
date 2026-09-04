@@ -17,6 +17,7 @@
 
 #import <GoogleMobileAds/GADAdLoader.h>
 #import <GoogleMobileAds/GADNativeAd.h>
+#import <GoogleMobileAds/GAMBannerView.h>
 
 #ifdef RCT_NEW_ARCH_ENABLED
 #import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
@@ -31,5 +32,11 @@
 #endif
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId;
+
+/** Preloaded multi-format GAM banner keyed by handleId (attach-only views). */
+- (nullable GAMBannerView *)bannerViewForHandleId:(NSString *)handleId;
+
+/** Class lookup for Fabric/Paper attach views (same store as instance method). */
++ (nullable GAMBannerView *)bannerViewForHandleId:(NSString *)handleId;
 
 @end

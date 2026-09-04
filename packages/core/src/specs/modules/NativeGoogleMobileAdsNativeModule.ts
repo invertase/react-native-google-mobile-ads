@@ -66,9 +66,54 @@ export type NativeAdPaidEventPayload = {
   responseInfo?: UnsafeObject;
 };
 
+/**
+ * Count-1 multi-format AdLoader result.
+ *
+ * `format: 'none'` is a completed request with no winner (clean no-fill or a
+ * failed load). When `error` is absent or reason is `no-fill`, JS treats it as
+ * clean no-fill. Other error reasons become `errors[]` entries.
+ */
+export type MultiFormatNativeLoadResult = {
+  format: 'native' | 'banner' | 'none';
+  /** Library/native registry id; used for banner attach and destroyHandle. */
+  handleId?: string;
+  responseId?: string;
+  advertiser?: string | null;
+  body?: string;
+  callToAction?: string;
+  headline?: string;
+  price?: string | null;
+  store?: string | null;
+  starRating?: Double | null;
+  icon?: NativeAdImage | null;
+  images?: Array<NativeAdImage> | null;
+  mediaContent?: NativeMediaContent | null;
+  extras?: UnsafeObject | null;
+  width?: Double;
+  height?: Double;
+  responseInfo?: UnsafeObject | null;
+  error?: {
+    code: string;
+    message: string;
+    reason?: string;
+    phase?: string;
+    responseInfo?: UnsafeObject | null;
+  } | null;
+};
+
 export interface Spec extends TurboModule {
   load(adUnitId: string, requestOptions: UnsafeObject): Promise<NativeAdProps>;
   destroy(responseId: string): void;
+  /**
+   * One AdLoader request: native and/or GAM banner compete (count 1).
+   * Settles on loader completion; never fans out multiple loads.
+   */
+  loadMultiFormat(
+    adUnitId: string,
+    requestOptions: UnsafeObject,
+  ): Promise<MultiFormatNativeLoadResult>;
+  /** Destroys multi-format banner (or native) inventory keyed by handleId. */
+  destroyHandle(handleId: string): void;
   readonly onAdEvent: EventEmitter<NativeAdEventPayload>;
 }
 

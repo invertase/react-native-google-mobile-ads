@@ -17,6 +17,14 @@ abstract class NativeGoogleMobileAdsNativeModuleSpec(
 
   abstract fun destroy(responseId: String)
 
+  abstract fun loadMultiFormat(
+    adUnitId: String,
+    requestOptions: ReadableMap,
+    promise: Promise,
+  )
+
+  abstract fun destroyHandle(handleId: String)
+
   fun emitOnAdEvent(params: ReadableMap) {
     reactApplicationContext
       .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)

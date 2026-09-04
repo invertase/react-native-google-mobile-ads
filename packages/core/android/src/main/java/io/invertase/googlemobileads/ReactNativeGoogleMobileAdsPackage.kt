@@ -31,6 +31,7 @@ class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
       ReactNativeGoogleMobileAdsBannerAdViewManager(),
       ReactNativeGoogleMobileAdsNativeAdViewManager(reactContext),
       ReactNativeGoogleMobileAdsMediaViewManager(reactContext),
+      ReactNativeGoogleMobileAdsMultiFormatBannerViewManager(reactContext),
     )
 
   override fun getModule(

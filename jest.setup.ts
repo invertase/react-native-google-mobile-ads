@@ -59,6 +59,49 @@ jest.doMock('./packages/core/src/specs/components/GoogleMobileAdsNativeViewNativ
     default: ReactNative.View,
   };
 });
+jest.doMock(
+  './packages/core/src/specs/components/GoogleMobileAdsMultiFormatBannerViewNativeComponent',
+  () => {
+    return {
+      __esModule: true,
+      default: ReactNative.View,
+    };
+  },
+);
+jest.doMock('./packages/core/src/specs/modules/NativeGoogleMobileAdsNativeModule', () => {
+  return {
+    __esModule: true,
+    default: {
+      load: jest.fn(() =>
+        Promise.resolve({
+          responseId: 'native-response',
+          advertiser: null,
+          body: '',
+          callToAction: '',
+          headline: '',
+          price: null,
+          store: null,
+          starRating: null,
+          icon: null,
+          images: null,
+          mediaContent: { aspectRatio: 1, hasVideoContent: false, duration: 0 },
+          extras: null,
+          responseInfo: null,
+        }),
+      ),
+      destroy: jest.fn(),
+      loadMultiFormat: jest.fn(() =>
+        Promise.resolve({
+          format: 'none',
+          responseInfo: null,
+          error: null,
+        }),
+      ),
+      destroyHandle: jest.fn(),
+      onAdEvent: jest.fn(() => ({ remove: jest.fn() })),
+    },
+  };
+});
 jest.doMock('./packages/core/src/specs/modules/NativeInterstitialModule', () => {
   return {
     __esModule: true,
