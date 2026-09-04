@@ -21,6 +21,7 @@
         ["Ad Inspector", "/ad-inspector"],
         ["Impression-level ad revenue", "/impression-level-ad-revenue"],
         ["Revenue telemetry and auction diagnostics", "/revenue-telemetry-and-auction-diagnostics"],
+        ["Preload pools and multi-format recipes", "/preload-pools-and-multiformat-recipes"],
         ["Video ad volume control", "/video-ad_volume-control"],
         ["Testing", "/testing"]
       ]

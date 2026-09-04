@@ -1,0 +1,356 @@
+# Preload pools and multi-format recipes
+
+Use this guide when you want **warm inventory** (poll when you need an ad) or a
+**single request that may return native or banner**. Prefer the presets below —
+do not invent capability matrices in app code.
+
+Classic create/load/show and `<BannerAd>` / `NativeAd` keep working. Pools and
+multi-format APIs are **opt-in**. Full TypeScript shapes live in the
+[v17 API reference](./rngma-v17-api-reference.md#which-api-to-reach-for).
+
+## Pick a recipe
+
+| Need                                                       | Reach for                                                                  |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Warm a fullscreen format and poll at show time             | `AdPoolPresets.fullscreen` + `AdPoolProvider` / `usePooledAd`              |
+| One request: native **or** GAM banner winner (count **1**) | `MultiFormatAdPresets.nativeOrBanner` + `useMultiFormatAd`                 |
+| Warm display (native + banner) inventory                   | `AdPoolPresets.display` + provider / `usePooledAd` (depth **1**, emulated) |
+| Ask what this binary can do (diagnostics only)             | `getAdCapabilities()`                                                      |
+
+## Recipe: fullscreen interstitial pool
+
+Canonical path for warming a classic fullscreen format. Same pattern applies to
+rewarded and app open; use `AdFormat.REWARDED` or `AdFormat.APP_OPEN` in the
+preset.
+
+```tsx
+import React, { useCallback, useMemo } from 'react';
+import { Button } from 'react-native';
+import {
+  AdEventType,
+  AdFormat,
+  AdPoolPresets,
+  AdPoolProvider,
+  TestIds,
+  usePooledAd,
+} from 'react-native-google-mobile-ads';
+
+const UNIT = TestIds.INTERSTITIAL;
+const fullscreenPool = AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, UNIT);
+const POOL_ID = fullscreenPool.poolId;
+
+function LevelEndButton() {
+  const { poll, release } = usePooledAd(POOL_ID);
+
+  const onPress = useCallback(async () => {
+    const result = await poll();
+    if (result.status !== 'filled' || result.ad.format !== AdFormat.INTERSTITIAL) {
+      return;
+    }
+
+    const next = release();
+    if (!next) return;
+    if (next.isStaleByPolicy()) {
+      next.destroy();
+      return;
+    }
+
+    const unsub = next.addAdEventListener(AdEventType.CLOSED, () => {
+      unsub();
+      next.destroy();
+    });
+    await next.show();
+  }, [poll, release]);
+
+  return <Button title="Continue (ad)" onPress={onPress} />;
+}
+
+export function AppWithFullscreenPool() {
+  const pools = useMemo(() => [fullscreenPool], []);
+  return (
+    <AdPoolProvider pools={pools}>
+      <LevelEndButton />
+    </AdPoolProvider>
+  );
+}
+```
+
+**Notes**
+
+- Read `poolId` from the preset config so provider and consumer share one typed id.
+- Prefer **poll at show time**. Holding a polled ad across a long session is your risk;
+  the pool cannot refresh an ad it no longer owns.
+- Default preset `bufferSize` is **1**. Google recommends **2** per preload ID — pass
+  `{ bufferSize: 2 }` when you want that depth under the app-wide cap.
+- There is no separate “pooled interstitial hook”: a polled fullscreen `PooledAd`
+  already exposes `show()` and the same event listeners.
+
+Imperative equivalent (no React provider):
+
+```ts
+import { AdFormat, AdPools, AdPoolPresets, TestIds } from 'react-native-google-mobile-ads';
+
+const pool = await AdPools.create(
+  AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL),
+);
+const result = await pool.poll();
+if (result.status === 'filled' && result.ad.format === AdFormat.INTERSTITIAL) {
+  if (result.ad.isStaleByPolicy()) {
+    result.ad.destroy();
+  } else {
+    await result.ad.show();
+    result.ad.destroy();
+  }
+}
+```
+
+## Recipe: multi-format native or banner (count 1)
+
+One AdLoader-style request. Formats compete; you get **at most one** winner.
+Banner participation is **Google Ad Manager** only — use a GAM unit and
+`adServer: 'ad-manager'` (the preset sets that for you).
+
+```tsx
+import React from 'react';
+import { ActivityIndicator, Text, View } from 'react-native';
+import {
+  AdFormat,
+  BannerAdSize,
+  MultiFormatAdPresets,
+  MultiFormatBannerAdView,
+  NativeAdView,
+  NativeAsset,
+  NativeAssetType,
+  TestIds,
+  useMultiFormatAd,
+} from 'react-native-google-mobile-ads';
+
+// Use a GAM unit — AdMob ca-app-pub-… units hard-error when banner is requested.
+const UNIT = TestIds.GAM_NATIVE;
+
+export function MultiFormatFeedSlot({ consentReady }: { consentReady: boolean }) {
+  const { status, ads, errors, retry } = useMultiFormatAd({
+    adUnitId: UNIT,
+    requestOptions: MultiFormatAdPresets.nativeOrBanner([
+      BannerAdSize.MEDIUM_RECTANGLE,
+      BannerAdSize.BANNER,
+    ]),
+    autoLoad: consentReady,
+  });
+
+  if (status === 'idle' || status === 'loading') return <ActivityIndicator />;
+  if (status === 'no-fill') {
+    return <Text onPress={retry}>Nothing to show, tap to retry</Text>;
+  }
+  if (status === 'error') {
+    return <Text onPress={retry}>Load failed: {errors[0]?.reason}. Tap to retry.</Text>;
+  }
+
+  const handle = ads[0];
+  if (!handle) return null;
+
+  return (
+    <View>
+      {handle.format === AdFormat.NATIVE ? (
+        <NativeAdView nativeAd={handle.ad}>
+          <NativeAsset assetType={NativeAssetType.HEADLINE}>
+            <Text>{handle.ad.headline}</Text>
+          </NativeAsset>
+        </NativeAdView>
+      ) : (
+        <MultiFormatBannerAdView handle={handle} />
+      )}
+    </View>
+  );
+}
+```
+
+**Notes**
+
+- **Multi-format is not multi-count.** `requestCount` other than `1` is rejected.
+  Multi-count is out of v1 and unsupported on mediated units.
+- Adaptive / `FLUID` banner sizes are illegal here (no view width at request time).
+- `<MultiFormatBannerAdView>` is **attach-only** — it does not issue a second load.
+- Native winners use existing `<NativeAdView>` via `handle.ad`.
+
+## Recipe: display pool (native + banner, depth 1)
+
+Classic backends have **no** SDK display preloader. `AdPoolPresets.display` still
+creates a usable pool: the library fills depth **1** via the same count-1
+multi-format request, reports `degraded: true` with
+`'pool/emulated-no-sdk-preloader'`, and matches
+`getAdCapabilities().displayPreload === 'emulated'`.
+
+```tsx
+import React, { useCallback, useMemo } from 'react';
+import { Button, Text, View } from 'react-native';
+import {
+  AdFormat,
+  AdPoolPresets,
+  AdPoolProvider,
+  BannerAdSize,
+  MultiFormatBannerAdView,
+  NativeAdView,
+  NativeAsset,
+  NativeAssetType,
+  TestIds,
+  useAdPool,
+  usePooledAd,
+} from 'react-native-google-mobile-ads';
+
+const FEED_UNIT = TestIds.GAM_NATIVE; // replace with your GAM display unit
+const displayPool = AdPoolPresets.display(FEED_UNIT, {
+  bannerSizes: [BannerAdSize.MEDIUM_RECTANGLE, BannerAdSize.BANNER],
+});
+const DISPLAY_POOL_ID = displayPool.poolId;
+
+function FeedPlacement() {
+  const poolState = useAdPool(DISPLAY_POOL_ID);
+  const { status, poolStatus, available, observedCount, poll, ad } = usePooledAd(DISPLAY_POOL_ID);
+
+  const onShowNext = useCallback(() => {
+    void poll();
+  }, [poll]);
+
+  if (poolStatus === 'creating') return <Text>Warming display pool…</Text>;
+  if (poolStatus === 'error') {
+    return <Text onPress={poolState.retry}>Pool failed. Tap to retry.</Text>;
+  }
+
+  return (
+    <View>
+      {poolState.status === 'ready-degraded' ? (
+        <Text>Pool degraded: {poolState.pool.resolved.degradeReasons.join(', ')}</Text>
+      ) : null}
+      <Text>
+        Available: {available ? 'yes' : 'no'} (count {observedCount})
+      </Text>
+      <Button title="Poll next ad" onPress={onShowNext} disabled={status === 'polling'} />
+      {ad?.format === AdFormat.BANNER ? <MultiFormatBannerAdView handle={ad} /> : null}
+      {ad?.format === AdFormat.NATIVE ? (
+        <NativeAdView nativeAd={ad.ad}>
+          <NativeAsset assetType={NativeAssetType.HEADLINE}>
+            <Text>{ad.ad.headline}</Text>
+          </NativeAsset>
+        </NativeAdView>
+      ) : null}
+    </View>
+  );
+}
+
+export function AppWithDisplayPool() {
+  const pools = useMemo(() => [displayPool], []);
+  return (
+    <AdPoolProvider pools={pools}>
+      <FeedPlacement />
+    </AdPoolProvider>
+  );
+}
+```
+
+**Notes**
+
+- Asking for `bufferSize > 1` on a display pool **loud-degrades** to depth 1 (see below).
+- Do not mount two `usePooledAd(sameId)` owners on a depth-1 pool — one starves the other.
+  Give each placement its own pool, or make a single owner poll and pass the ad down.
+- Mixing fullscreen and display formats in one pool is a **hard error**.
+
+## What ships today (classic)
+
+| Surface                     | Behavior on tip                                                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Fullscreen pools            | SDK-managed preload (iOS Beta / Android limited-alpha maturity → `experimental`)                                                                             |
+| Rewarded interstitial pools | **iOS only.** Android create hard-errors (`pool/format-preload-unsupported`)                                                                                 |
+| Display pools               | Library-emulated depth 1; `displayPreload: 'emulated'`                                                                                                       |
+| Multi-format                | GAM native ± banner, count 1                                                                                                                                 |
+| `maxManagedPoolAds`         | Always `null` (server-delivered). Documented classic default app-wide cap is **6**                                                                           |
+| `poolResponseInfoPeek`      | SDK-managed peek: iOS supported; Android classic **unavailable** (`pool/peek-unsupported`). Emulated display pools peek the library buffer without that gate |
+
+Pooling improves readiness and may let the SDK optimize cache order among already-won
+ads. It is **not** evidence of yield lift. Do not claim that buffering or multi-format
+raises eCPM.
+
+## Loud degrade vs hard error
+
+| Outcome          | When                                                                | What you see                                                               |
+| ---------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Loud degrade** | Milder adjustment is safe (display depth > 1 → 1; emulated display) | `resolved.degraded === true`, `degradeReasons`, `__DEV__` one-time warning |
+| **Hard error**   | Request is impossible (format drop, illegal size, unsupported mix)  | `AdPools.create` / `MultiFormatAdRequest.create` reject or throw           |
+
+```ts
+import { AdPoolPresets, AdPools, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const pool = await AdPools.create(
+  AdPoolPresets.display(TestIds.GAM_NATIVE, {
+    bannerSizes: [BannerAdSize.MEDIUM_RECTANGLE],
+    bufferSize: 3, // not honourable on a display pool today
+  }),
+);
+
+pool.resolved.requestedBufferSize; // 3
+pool.resolved.effectiveBufferSize; // 1
+pool.resolved.degraded; // true
+pool.resolved.degradeReasons;
+// ['pool/degraded-buffer-size', 'pool/emulated-no-sdk-preloader']
+```
+
+`useAdPool` surfaces the same pool as `status: 'ready-degraded'`.
+
+## Anti-pattern: pre-flight capability branching
+
+**Wrong** — reinvent the matrix before every call:
+
+```ts
+const caps = getAdCapabilities();
+if (caps.displayPreload === 'emulated') {
+  // hand-roll a one-shot load…
+} else if (caps.fullscreenPreloadFormats[AdFormat.INTERSTITIAL] === 'experimental') {
+  // …
+}
+```
+
+**Right** — use presets, catch hard errors, read `resolved` when you care:
+
+```ts
+try {
+  const pool = await AdPools.create(
+    AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, unit, { bufferSize: 2 }),
+  );
+  if (pool.resolved.degraded) {
+    console.warn(pool.resolved.degradeReasons);
+  }
+} catch (e) {
+  // e.g. rewarded interstitial on Android classic → pool/format-preload-unsupported
+}
+```
+
+Reserve `getAdCapabilities()` for UI gating (hide a placement) or issue diagnostics —
+not as a second config language.
+
+### Diagnostics dump
+
+When filing a bug, include:
+
+```ts
+JSON.stringify(getAdCapabilities(), null, 2);
+```
+
+Useful fields: `backend`, `sdkVersion`, `fullscreenPreloadFormats`, `displayPreload`,
+`poolResponseInfoPeek`, `multiFormatNativeBanner`, `maxManagedPoolAds` (expect `null`).
+
+## App-wide pool cap
+
+Google’s managed preload cache is **app-wide** across formats and preload IDs. The SDK
+resolves the limit from server-delivered settings, so `maxManagedPoolAds` reports
+`null`. The classic documented default is **6**. Shallow pools coexist comfortably;
+many deep pools will clamp. Read `pool.resolved.effectiveBufferSize` after create.
+
+## Related guides
+
+- [Displaying Ads](/displaying-ads) — classic create/load/show
+- [Displaying Ads via Hook](/displaying-ads-hook) — fullscreen hooks without pools
+- [Native Ads](/native-ads) — standalone native layouts
+- [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics) —
+  `responseInfo` / paid events on load and poll
+- [v17 API reference](./rngma-v17-api-reference.md#ad-pools-new) — pool / multi-format types,
+  expiry, and ownership rules

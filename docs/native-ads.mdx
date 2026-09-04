@@ -7,6 +7,10 @@ When a native ad loads, your app receives an ad object that contains its assets,
 
 Broadly speaking, there are two parts to successfully implementing native ads: Loading an ad using the SDK and then displaying the ad content in your app.
 
+For a **one-request native-or-banner** competitive load (GAM, count 1), or an emulated
+display pool that keeps one ready fill, see
+[Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes).
+
 ## Load ads
 
 Native ads are loaded with `NativeAd.createForAdRequest` static method, which returns a promise that resolves with a `NativeAd` object.
