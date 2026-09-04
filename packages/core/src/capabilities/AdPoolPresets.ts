@@ -108,8 +108,10 @@ function fullscreen<TFormat extends FullscreenAdFormat, TAdUnitId extends string
  * Display pool (native + banner). Resolves to an emulated depth-1 pool
  * where no SDK preloader exists (`'pool/emulated-no-sdk-preloader'`).
  *
- * `formats` and `adUnitId` are fixed by this preset; override buffer, request
- * options, banner sizes, or `poolId` via `AdPoolPresetOverrides`.
+ * Defaults `adServer: 'ad-manager'` because the preset formats always include
+ * banner (GAM-only). Override buffer, request options, banner sizes, or
+ * `poolId` via `AdPoolPresetOverrides`. Pass a GAM unit id — AdMob
+ * `ca-app-pub-…` units hard-error when banner is requested.
  */
 function display<TAdUnitId extends string>(
   adUnitId: TAdUnitId,
@@ -128,6 +130,7 @@ function display<TAdUnitId extends string>(
     formats: [AdFormat.NATIVE, AdFormat.BANNER],
     adUnitId,
     bufferSize: 1,
+    adServer: 'ad-manager',
     ...options,
   };
 }

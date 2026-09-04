@@ -29,8 +29,8 @@ import { createPoolAdError, validateAdPoolConfig } from './validateAdPoolConfig'
 /**
  * Factory for managed ad pools.
  *
- * Classic fullscreen pools wire to the platform SDK preloader (FEAT-05).
- * Display (banner/native) emulation is FEAT-06.
+ * Classic fullscreen pools wire to the platform SDK preloader.
+ * Display (banner/native) pools are library-emulated depth-1.
  */
 export const AdPools: AdPoolsApi = {
   getCapabilities: getAdCapabilities,
@@ -62,9 +62,19 @@ export const AdPools: AdPoolsApi = {
     const pool = await startNativePool(resolved);
     registerAdPool(pool);
     if (resolved.degraded) {
-      queueMicrotask(() => {
-        pool.notifyDegraded();
-      });
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        // Loud degrade: one-time warning per create (dev + production event;
+        // console only in __DEV__).
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[AdPools] pool "${resolved.poolId}" created in degraded mode: ${resolved.degradeReasons.join(
+            ', ',
+          )}`,
+        );
+      }
+      // Sync notify: EmulatedAdPool defers emission until the first addListener
+      // when no subscribers exist yet (common after `await create()`).
+      pool.notifyDegraded();
     }
     return pool;
   },

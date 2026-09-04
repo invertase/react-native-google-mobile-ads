@@ -145,7 +145,12 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
     }
     void refreshAvailability(poolId);
     const unsub = pool.addListener(event => {
-      if (event.type === 'available' || event.type === 'exhausted') {
+      if (
+        event.type === 'available' ||
+        event.type === 'exhausted' ||
+        event.type === 'refreshed' ||
+        event.type === 'expired'
+      ) {
         void refreshAvailability(poolIdRef.current);
       }
     });
