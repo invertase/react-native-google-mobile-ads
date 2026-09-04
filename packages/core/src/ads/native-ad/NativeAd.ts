@@ -176,6 +176,14 @@ export class NativeAd {
 
     return new NativeAd(adUnitId, props);
   }
+
+  /**
+   * Hydrate a NativeAd from an already-loaded native payload (multi-format path).
+   * Does not issue a second network request. Package-internal.
+   */
+  static fromLoadedProps(adUnitId: string, props: NativeAdProps): NativeAd {
+    return new NativeAd(adUnitId, props);
+  }
 }
 
 /**

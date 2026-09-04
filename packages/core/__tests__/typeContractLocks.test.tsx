@@ -90,7 +90,7 @@ describe('type contract locks', () => {
       pooled = usePooledAd('display-pool');
       multi = useMultiFormatAd({
         adUnitId: 'unit',
-        requestOptions: { formats: [AdFormat.BANNER] },
+        requestOptions: { formats: [AdFormat.NATIVE] },
         autoLoad: false,
       });
       return null;

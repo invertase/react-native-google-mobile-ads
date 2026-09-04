@@ -17,6 +17,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { MultiFormatAdRequest } from '../ads/MultiFormatAdRequest';
+import { NativeError } from '../internal/NativeError';
 import type { AdError } from '../types/AdError';
 import type {
   MultiFormatAdConfig,
@@ -119,62 +121,15 @@ type UseMultiFormatAdResultBase = {
  * `error` arm cannot carry handles. `loaded-partial` is the arm where both
  * arrays are populated. Hook-only arms are `idle`, `loading`, and
  * `stale-by-policy`.
- *
- * During `loading`, previously held handles and prior load errors may still be
- * present until the in-flight load settles and supersedes them.
- * `stale-by-policy` retains prior load `errors` and may still list
- * already-rendered handles.
- *
- * Status words follow the multi-format **load** vocabulary (`loading`,
- * `loaded`, `loaded-partial`), not the pool/poll vocabulary (`polling`,
- * `filled`). That is deliberate: each hook's status words mirror the surface it
- * observes, so terminal arms here mirror `MultiFormatLoadResult`, just as
- * `UsePooledAdStatus` mirrors `PollResult` and `UseFullScreenAdStatus` mirrors
- * the `AdEventType` lifecycle. Shared words (`idle`, `no-fill`, `error`,
- * `stale-by-policy`) mean the same thing across hooks; in-flight and success
- * words do not.
- *
- * `loaded-partial` exists because one request can return both a usable handle
- * and load-time errors. The SDK does not say which format (if any) each error
- * belongs to, so `ads` and `errors` can both be non-empty on the same result.
- *
- * `no-fill` and `error` are split so a clean no-fill does not masquerade as a
- * failure with an empty `errors` array. `stale-by-policy` is not an error
- * either, the same split `usePooledAd` makes; when it fires after
- * `loaded-partial`, prior load `errors` are retained rather than discarded.
- *
- * There is no `'consumed'` arm: multi-format handles are banner/native and have
- * no `show()`. Fullscreen consumption lives on `usePooledAd` only.
- *
- * **Ownership:** while this hook holds handles, do not call `handle.destroy()`.
- * Call `release()` first if you need to own destruction, or leave destruction
- * to the hook (unmount, superseding load, or stale unrendered eviction).
  */
 export type UseMultiFormatAdResult = UseMultiFormatAdResultBase &
   (
     | { status: 'idle'; ads: never[]; errors: never[] }
     | { status: 'loading'; ads: MultiFormatAdHandle[]; errors: AdError[] }
-    /** At least one handle, no errors. */
     | { status: 'loaded'; ads: MultiFormatAdHandle[]; errors: never[] }
-    /** At least one handle plus at least one error. */
     | { status: 'loaded-partial'; ads: MultiFormatAdHandle[]; errors: AdError[] }
-    /**
-     * Request completed, no handles, nothing failed. Routine ad-server
-     * outcome, so `errors` is empty. Read `responseInfo` for the response id.
-     */
     | { status: 'no-fill'; ads: never[]; errors: never[] }
-    /** No handles, and at least one leg actually failed. */
     | { status: 'error'; ads: never[]; errors: AdError[] }
-    /**
-     * Every held handle crossed the publisher's staleness window while the hook
-     * owned it, so `ads` is empty of showable inventory. Not an error. Call
-     * `load()` for fresh inventory.
-     *
-     * Per-handle rather than all-or-nothing: one handle going stale drops only
-     * that handle. Unrendered handles are destroyed; already-rendered
-     * banner/native handles are left in place until release or unmount.
-     * Load-time `errors` from a prior `loaded-partial` are retained.
-     */
     | { status: 'stale-by-policy'; ads: MultiFormatAdHandle[]; errors: AdError[] }
   );
 
@@ -199,29 +154,39 @@ const initialMultiFormatAdState: MultiFormatAdHookState = {
   responseInfo: null,
 };
 
+function toLoadResult(
+  ads: MultiFormatAdHandle[],
+  errors: AdError[],
+  responseInfo: ResponseInfo | null,
+): MultiFormatLoadResult {
+  if (ads.length > 0 && errors.length === 0) {
+    return { status: 'loaded', ads, errors: [] as never[], responseInfo };
+  }
+  if (ads.length > 0 && errors.length > 0) {
+    return { status: 'loaded-partial', ads, errors, responseInfo };
+  }
+  if (errors.length === 0) {
+    return { status: 'no-fill', ads: [] as never[], errors: [] as never[], responseInfo };
+  }
+  return { status: 'error', ads: [] as never[], errors, responseInfo };
+}
+
+function configError(message: string): AdError {
+  const error = NativeError.fromEvent(
+    { code: 'invalid-request', message },
+    'googleMobileAds/multi-format',
+  ) as AdError;
+  error.reason = 'invalid-request';
+  error.phase = 'load';
+  return error;
+}
+
 /**
  * Multi-format request as a hook. One request, several eligible formats, one
  * winner (`requestCount` 1 in v1).
  *
- * Loads on its own as soon as `autoLoad` allows it, so the common case needs no
- * effect at the call site:
- *
- * ```jsx
- * const { status, ads, retry } = useMultiFormatAd({
- *   adUnitId: UNIT,
- *   requestOptions: MultiFormatAdPresets.nativeOrBanner([BannerAdSize.MEDIUM_RECTANGLE]),
- *   autoLoad: consentReady,
- * });
- * ```
- *
  * Ownership, release ordering, never-reject load, load coalescing, and
- * `stale-by-policy` semantics match `usePooledAd`. Status vocabulary does not,
- * for the reason given on `UseMultiFormatAdResult`.
- *
- * Stub: load resolves `{ status: 'no-fill', ads: [], errors: [], responseInfo: null }`.
- * Callback identity, automatic loading, and per-instance coalescing match the
- * documented contract, so StrictMode double-invoke behaves as the reference
- * describes.
+ * `stale-by-policy` semantics match `usePooledAd`.
  */
 export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiFormatAdResult {
   const autoLoad = options.autoLoad ?? true;
@@ -230,42 +195,133 @@ export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiForm
   optionsRef.current = options;
 
   const [state, setState] = useState<MultiFormatAdHookState>(initialMultiFormatAdState);
+  const adsRef = useRef<MultiFormatAdHandle[]>([]);
+  const unsubsRef = useRef<Array<() => void>>([]);
   const inflightRef = useRef<Promise<MultiFormatLoadResult> | null>(null);
   const autoLoadedForRef = useRef<string | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      unsubsRef.current.forEach(unsub => {
+        unsub();
+      });
+      unsubsRef.current = [];
+      adsRef.current.forEach(handle => {
+        handle.destroy();
+      });
+      adsRef.current = [];
+    };
+  }, []);
+
+  const clearHeldAds = useCallback((destroy: boolean) => {
+    unsubsRef.current.forEach(unsub => {
+      unsub();
+    });
+    unsubsRef.current = [];
+    const previous = adsRef.current;
+    adsRef.current = [];
+    if (destroy) {
+      previous.forEach(handle => {
+        handle.destroy();
+      });
+    }
+    return previous;
+  }, []);
+
+  const watchStaleness = useCallback((handles: MultiFormatAdHandle[], priorErrors: AdError[]) => {
+    unsubsRef.current.forEach(unsub => {
+      unsub();
+    });
+    unsubsRef.current = handles.map(handle =>
+      handle.onStaleByPolicy(() => {
+        if (!mountedRef.current) {
+          return;
+        }
+        // Destroy unrendered inventory; leave already-held handles in the array
+        // only when still considered showable — for count-1, drop the stale one.
+        const remaining = adsRef.current.filter(candidate => {
+          if (candidate.adId !== handle.adId) {
+            return true;
+          }
+          handle.destroy();
+          return false;
+        });
+        adsRef.current = remaining;
+        setState(previous => ({
+          status: remaining.length === 0 ? 'stale-by-policy' : previous.status,
+          ads: remaining,
+          errors: priorErrors,
+          responseInfo: previous.responseInfo,
+        }));
+      }),
+    );
+  }, []);
 
   const load = useCallback((): Promise<MultiFormatLoadResult> => {
-    void optionsRef.current.adUnitId;
-    void optionsRef.current.requestOptions;
     if (inflightRef.current) {
       return inflightRef.current;
     }
+
     setState(previousState => ({ ...previousState, status: 'loading' }));
-    const result: MultiFormatLoadResult = {
-      status: 'no-fill',
-      ads: [],
-      errors: [],
-      responseInfo: null,
-    };
-    const flight = Promise.resolve(result)
-      .then(nextState => {
-        setState(nextState);
-        return nextState;
-      })
-      .finally(() => {
-        inflightRef.current = null;
-      });
+
+    const flight = (async (): Promise<MultiFormatLoadResult> => {
+      clearHeldAds(true);
+      const {
+        adUnitId,
+        requestOptions,
+        autoLoad: _ignored,
+        ...rest
+      } = optionsRef.current as UseMultiFormatAdOptions & Record<string, unknown>;
+      void _ignored;
+      void rest;
+
+      let request: MultiFormatAdRequest;
+      try {
+        request = MultiFormatAdRequest.create({ adUnitId, requestOptions });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Invalid multi-format config';
+        const mapped = configError(message);
+        const result = toLoadResult([], [mapped], null);
+        if (mountedRef.current) {
+          setState(result);
+        }
+        return result;
+      }
+
+      const { ads, errors, responseInfo } = await request.load();
+
+      if (!mountedRef.current) {
+        ads.forEach(handle => {
+          handle.destroy();
+        });
+        return toLoadResult([], [], responseInfo);
+      }
+
+      adsRef.current = ads;
+      watchStaleness(ads, errors);
+      const result = toLoadResult(ads, errors, responseInfo);
+      setState(result);
+      return result;
+    })().finally(() => {
+      inflightRef.current = null;
+    });
+
     inflightRef.current = flight;
     return flight;
-  }, []);
+  }, [clearHeldAds, watchStaleness]);
 
   const retry = useCallback(() => {
     void load();
   }, [load]);
 
   const release = useCallback((): MultiFormatAdHandle[] => {
+    const released = clearHeldAds(false);
     setState(initialMultiFormatAdState);
-    return [];
-  }, []);
+    return released;
+  }, [clearHeldAds]);
 
   // Automatic loading. Keyed by ad unit so it fires once per unit, covering
   // mount, a new unit, and `autoLoad` flipping true, without re-firing on every

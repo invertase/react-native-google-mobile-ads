@@ -42,12 +42,16 @@ describe('expiry policy surface stubs', () => {
     expect(display.bufferSize).toBe(1);
   });
 
-  it('rejects MultiFormatAdRequest.load until native wiring lands', async () => {
+  it('resolves MultiFormatAdRequest.load via native multi-format bridge', async () => {
     const request = MultiFormatAdRequest.create({
       adUnitId: 'unit',
       requestOptions: { formats: [AdFormat.NATIVE] },
     });
-    await expect(request.load()).rejects.toThrow('MultiFormatAdRequest.load is not implemented');
+    await expect(request.load()).resolves.toEqual({
+      ads: [],
+      errors: [],
+      responseInfo: null,
+    });
     expect(() => request.destroy()).not.toThrow();
   });
 
@@ -58,7 +62,7 @@ describe('expiry policy surface stubs', () => {
       pooled = usePooledAd('display-pool');
       multi = useMultiFormatAd({
         adUnitId: 'unit',
-        requestOptions: { formats: [AdFormat.BANNER] },
+        requestOptions: { formats: [AdFormat.NATIVE] },
         autoLoad: false,
       });
       return null;

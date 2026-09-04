@@ -16,8 +16,9 @@
  */
 
 import React from 'react';
-import { View, type ViewProps } from 'react-native';
+import type { ViewProps } from 'react-native';
 
+import GoogleMobileAdsMultiFormatBannerViewNativeComponent from '../specs/components/GoogleMobileAdsMultiFormatBannerViewNativeComponent';
 import { AdFormat } from '../types/AdFormat';
 import type { MultiFormatAdHandle } from '../types/MultiFormatAd';
 
@@ -41,14 +42,17 @@ export type MultiFormatBannerAdViewProps = ViewProps & {
  *
  * Attach-only: the handle already owns the loaded inventory. Pass the handle
  * once; double-attach is rejected by the hooks that own destruction.
- *
- * Stub: empty View until native attach lands. `handle` is retained for the
- * typed prop contract; native wiring will attach it to the view.
  */
 export function MultiFormatBannerAdView({
   handle,
+  style,
   ...viewProps
 }: MultiFormatBannerAdViewProps): React.JSX.Element {
-  void handle;
-  return <View {...viewProps} />;
+  return (
+    <GoogleMobileAdsMultiFormatBannerViewNativeComponent
+      {...viewProps}
+      handleId={handle.adId}
+      style={[{ width: handle.size.width, height: handle.size.height }, style]}
+    />
+  );
 }
