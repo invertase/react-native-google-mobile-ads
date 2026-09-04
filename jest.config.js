@@ -11,6 +11,7 @@ module.exports = {
     '<rootDir>/packages/vungle/lib/',
     '<rootDir>/packages/moloco/lib/',
     '<rootDir>/packages/mintegral/lib/',
+    '<rootDir>/packages/inmobi/lib/',
   ],
 
   setupFiles: ['./jest.setup.ts'],
