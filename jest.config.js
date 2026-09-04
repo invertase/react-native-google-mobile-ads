@@ -6,6 +6,7 @@ module.exports = {
     '<rootDir>/packages/_template/lib/',
     '<rootDir>/packages/applovin/lib/',
     '<rootDir>/packages/facebook/lib/',
+    '<rootDir>/packages/unity/lib/',
   ],
 
   setupFiles: ['./jest.setup.ts'],

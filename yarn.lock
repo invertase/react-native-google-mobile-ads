@@ -6148,6 +6148,23 @@ __metadata:
 "@react-native-google-mobile-ads/unity@workspace:packages/unity":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/unity@workspace:packages/unity"
+  dependencies:
+    "@expo/config-plugins": "npm:^54.0.4"
+    react-native-builder-bob: "npm:^0.40.13"
+    react-native-google-mobile-ads: "workspace:*"
+    rimraf: "npm:^6.0.1"
+    typescript: "npm:^5.9.3"
+  peerDependencies:
+    "@expo/config-plugins": ">=5.0.0"
+    expo: ">=47.0.0"
+    react: "*"
+    react-native: "*"
+    react-native-google-mobile-ads: "*"
+  peerDependenciesMeta:
+    "@expo/config-plugins":
+      optional: true
+    expo:
+      optional: true
   languageName: unknown
   linkType: soft
 
