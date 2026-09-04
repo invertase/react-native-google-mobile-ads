@@ -4,6 +4,7 @@ module.exports = {
     '<rootDir>/RNGoogleMobileAdsExample/node_modules',
     '<rootDir>/packages/core/lib/',
     '<rootDir>/packages/_template/lib/',
+    '<rootDir>/packages/applovin/lib/',
   ],
   setupFiles: ['./jest.setup.ts'],
   testPathIgnorePatterns: ['<rootDir>/RNGoogleMobileAdsExample'],
