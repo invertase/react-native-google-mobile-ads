@@ -3,6 +3,7 @@ module.exports = {
   modulePathIgnorePatterns: [
     '<rootDir>/RNGoogleMobileAdsExample/node_modules',
     '<rootDir>/packages/core/lib/',
+    '<rootDir>/packages/_template/lib/',
   ],
   setupFiles: ['./jest.setup.ts'],
   testPathIgnorePatterns: ['<rootDir>/RNGoogleMobileAdsExample'],
