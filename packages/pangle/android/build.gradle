@@ -1,0 +1,72 @@
+import groovy.json.JsonSlurper
+
+buildscript {
+  ext.getExtOrDefault = { name, fallback ->
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : fallback
+  }
+
+  // AGP is only required when opening this android/ folder stand-alone.
+  if (project == rootProject) {
+    repositories {
+      google()
+      mavenCentral()
+    }
+    dependencies {
+      classpath("com.android.tools.build:gradle:8.1.1")
+    }
+  }
+}
+
+apply plugin: "com.android.library"
+
+def packageJson = new JsonSlurper().parseText(file("${projectDir}/../package.json").text)
+def gamAdapter = packageJson.gamAdapter
+def sdkVersions = packageJson.sdkVersions.android
+def mediationArtifact = "${gamAdapter.androidArtifact}:${sdkVersions.googleMobileAdsMediation}"
+
+android {
+  namespace "io.invertase.googlemobileads.adapters.pangle"
+
+  compileSdkVersion sdkVersions.compileSdk as Integer
+
+  defaultConfig {
+    minSdkVersion sdkVersions.minSdk as Integer
+    targetSdkVersion sdkVersions.targetSdk as Integer
+    buildConfigField "String", "GAM_ADAPTER_NETWORK", "\"${gamAdapter.network}\""
+    buildConfigField "String", "GAM_ADAPTER_ANDROID_CLASS", "\"${gamAdapter.androidAdapterClassName}\""
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  sourceSets {
+    main {
+      java.srcDirs = ["src/main/java"]
+    }
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+  // Pangle SDK (`com.pangle.global:pag-sdk`) is hosted on ByteDance Maven — required by
+  // Google's GAM Pangle mediation guide Step 3.
+  // https://developers.google.com/ad-manager/mobile-ads-sdk/android/mediation/pangle
+  maven {
+    url = uri("https://artifact.bytedance.com/repository/pangle/")
+  }
+}
+
+dependencies {
+  // Google-published Pangle GAM mediation adapter.
+  // Pin: package.json sdkVersions.android.googleMobileAdsMediation (docs: 8.2.0.4.0 as of package publish; verify against current docs/Maven).
+  // Core GMA is provided by react-native-google-mobile-ads; do not re-pin it here.
+  // https://developers.google.com/ad-manager/mobile-ads-sdk/android/mediation/pangle
+  api mediationArtifact
+}
