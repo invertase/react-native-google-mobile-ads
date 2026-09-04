@@ -20,6 +20,7 @@
         ["European User Consent", "/european-user-consent"],
         ["Ad Inspector", "/ad-inspector"],
         ["Impression-level ad revenue", "/impression-level-ad-revenue"],
+        ["Revenue telemetry and auction diagnostics", "/revenue-telemetry-and-auction-diagnostics"],
         ["Video ad volume control", "/video-ad_volume-control"],
         ["Testing", "/testing"]
       ]

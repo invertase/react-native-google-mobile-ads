@@ -1,0 +1,214 @@
+# Revenue telemetry and auction diagnostics
+
+Use this guide when you need **per-request auction metadata** and **impression-level revenue**
+from the Google Mobile Ads SDK through `react-native-google-mobile-ads`.
+
+It covers:
+
+- Reading `ResponseInfo` after a load (fill or no-fill)
+- Sending compact paid payloads to analytics
+- Distinguishing routine **no-fill** from real load failures
+- Debugging mediation waterfalls without shipping the full adapter list on every paid event
+
+For enabling impression-level ad revenue in the AdMob console and wiring `onPaid` /
+`AdEventType.PAID` listeners, see [Impression-level ad revenue](/impression-level-ad-revenue).
+For the full TypeScript shapes, see the
+[v17 API reference § Response metadata and paid events](./rngma-v17-api-reference.md#7-response-metadata-and-paid-events).
+
+## What you get
+
+| Signal                                              | When it arrives                             | What it answers                                                       |
+| --------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------- |
+| `responseInfo` on a loaded ad / handle              | After a successful load                     | Which response won, full waterfall rows, allowlisted extras           |
+| `error.responseInfo` (or top-level on multi-format) | On load failure **including** clean no-fill | Same response record when the ad server returned one                  |
+| `PaidEvent` (`PAID` / `onPaid` / hook `revenue`)    | On impression-level revenue                 | Value, precision, currency, and a **compact** winning-source snapshot |
+
+The library does **not** invent eCPM helpers, lift claims, or a second paid path that
+re-fetches metadata after the paid callback. Prefer capturing revenue **inside** the paid
+listener, as Google recommends for [impression-level ad revenue](https://support.google.com/admob/answer/11322405).
+
+## Read `ResponseInfo` after load
+
+After a successful load, read `responseInfo` on the ad instance (or the hook /
+multi-format handle). The snapshot is privacy-filtered: adapter identity, latency,
+outcome, and allowlisted extras — not credentials or arbitrary native dictionaries.
+
+```ts
+import { AdEventType, InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+
+const ad = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
+
+ad.addAdEventListener(AdEventType.LOADED, () => {
+  const info = ad.responseInfo;
+  console.log('responseId', info?.responseId);
+  console.log('winning source', info?.loadedAdapterResponse?.adSourceName);
+  console.log(
+    'waterfall',
+    info?.adapterResponses.map(row => ({
+      source: row.adSourceName,
+      latencyMillis: row.latencyMillis,
+      error: row.outcome === 'error' ? row.adError.message : null,
+    })),
+  );
+});
+
+ad.load();
+```
+
+### Surfaces that expose it
+
+| Surface                                   | How to read it                                                       |
+| ----------------------------------------- | -------------------------------------------------------------------- |
+| Full-screen classes (`InterstitialAd`, …) | `ad.responseInfo` after `LOADED`; also on the hook as `responseInfo` |
+| Banner / GAM banner                       | `onAdLoaded({ width, height, responseInfo? })`                       |
+| Native ads                                | `nativeAd.responseInfo` after `createForAdRequest` resolves          |
+| Full-screen hooks                         | `responseInfo` on the returned state                                 |
+| Load errors                               | `error.responseInfo` when the platform attached a response record    |
+| Multi-format results                      | Top-level `responseInfo` on every result arm, including `'no-fill'`  |
+
+`responseId` is server metadata for investigation and analytics joins. Do **not** treat a
+nullable `responseId` as object identity for your own ad handles.
+
+## Full snapshot vs compact paid snapshot
+
+| Type               | Includes `adapterResponses`? | Typical use                                                        |
+| ------------------ | ---------------------------- | ------------------------------------------------------------------ |
+| `ResponseInfo`     | Yes — full waterfall         | Load-time diagnostics, mediation debugging, Ad Inspector follow-up |
+| `PaidResponseInfo` | **No** — omits the full list | Analytics on every paid event (winning source + extras only)       |
+
+Paid events carry an optional compact `responseInfo`:
+
+```ts
+type PaidEvent = {
+  currency: string;
+  precision: RevenuePrecisions;
+  value: number;
+  /** Compact waterfall snapshot (no full adapter list). */
+  responseInfo?: PaidResponseInfo;
+  /** Exact micros as a decimal string; null when exact micros are unavailable. */
+  valueMicros?: string | null;
+};
+```
+
+`PaidResponseInfo` keeps `responseId`, `adapterClassName`, `loadedAdapterResponse`, and
+`extras`. It deliberately drops `adapterResponses` so high-frequency analytics events stay
+small. For waterfall debugging, use the load-time `ResponseInfo` (or [Ad Inspector](/ad-inspector)),
+not the paid compact snapshot.
+
+## Paid events: currency, value, and micros
+
+Public field names match the JS contract:
+
+- **`currency`** — ISO-4217 currency string. Native Google Mobile Ads APIs expose
+  `currencyCode`; this library maps that to **`currency`**. Do not expect `currencyCode`
+  on the public paid payload.
+- **`value`** — floating-point amount in currency units (existing compatibility field).
+- **`valueMicros`** — optional decimal **string** when the backend supplies exact micros;
+  `null` when exact micros are unavailable. Prefer `valueMicros` when present. Do **not**
+  derive micros from floating-point `value` in JavaScript.
+- **`precision`** — `RevenuePrecisions` (`UNKNOWN`, `ESTIMATED`, `PUBLISHER_PROVIDED`,
+  `PRECISE`).
+
+```ts
+ad.addAdEventListener(AdEventType.PAID, paid => {
+  analytics.logRevenue({
+    currency: paid.currency,
+    value: paid.value,
+    valueMicros: paid.valueMicros ?? undefined,
+    precision: paid.precision,
+    responseId: paid.responseInfo?.responseId,
+    adSource: paid.responseInfo?.loadedAdapterResponse?.adSourceName,
+  });
+});
+```
+
+Banner components use the `onPaid` prop; hooks expose the last paid payload as `revenue`.
+See [Impression-level ad revenue](/impression-level-ad-revenue) for enablement steps.
+
+Include zero-value (`$0`) paid events when Google delivers them — ILRD totals count those
+impressions.
+
+## Distinct no-fill vs failure
+
+A clean **no-fill** is a routine ad-server outcome, not a transport or configuration failure.
+
+| Check                                                 | Meaning                                                                                |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Hook / result `status === 'no-fill'`                  | Routine empty response; branch UI without treating it as a crash                       |
+| `error.reason === 'no-fill'` or `'mediation-no-fill'` | Structured reason on the error payload (load phase)                                    |
+| `error.phase === 'load'`                              | Load-time outcome (fail-to-show uses `phase: 'show'` on `ERROR`, not a separate event) |
+
+On single-ad paths, a no-fill still carries one error payload (`error` is non-null) **and**
+`status === 'no-fill'`. Use **`status`**, not `error !== null`, to decide whether anything
+actually failed. On multi-format loads, a clean no-fill has empty `errors` and a top-level
+`responseInfo` when the server returned a record.
+
+```ts
+const { status, error, responseInfo, retry } = useInterstitialAd({
+  adUnitId: TestIds.INTERSTITIAL,
+});
+
+if (status === 'no-fill') {
+  // Routine: inspect responseInfo / error.responseInfo for waterfall rows, then retry if desired.
+  console.log('no-fill responseId', responseInfo?.responseId ?? error?.responseInfo?.responseId);
+  return <Button title="Try again" onPress={() => retry()} />;
+}
+
+if (status === 'error') {
+  console.warn(error?.reason, error?.phase, error?.message);
+}
+```
+
+There is **no** `SHOW_FAILED` event. Presentation failures arrive as `AdEventType.ERROR`
+with `phase: 'show'`.
+
+## Auction / waterfall diagnostics
+
+When fill quality or mediation mix looks wrong:
+
+1. Confirm the unit is filling in [Ad Inspector](/ad-inspector) on an authorized test device.
+2. On `LOADED`, log `loadedAdapterResponse` and each `adapterResponses` row
+   (`adSourceName`, `latencyMillis`, `outcome` / `adError`).
+3. On no-fill or load error, read `error.responseInfo` (or multi-format top-level
+   `responseInfo`) the same way — failed rows still report latency so slow losers are visible.
+4. Check allowlisted `extras` when present:
+   - AdMob mediation: `mediationGroupName`, `mediationAbTestName`, `mediationAbTestVariant`
+   - GAM reservation: `creativeId`, `lineItemId`
+5. Keep full waterfalls in diagnostic logs or sampling. Send **compact** paid snapshots to
+   product analytics.
+
+```ts
+function summarizeWaterfall(info: ResponseInfo | null | undefined) {
+  if (!info) return null;
+  return {
+    responseId: info.responseId,
+    winner: info.loadedAdapterResponse?.adSourceName ?? null,
+    rows: info.adapterResponses.map(row => ({
+      adapterClassName: row.adapterClassName,
+      adSourceName: row.adSourceName,
+      latencyMillis: row.latencyMillis,
+      outcome: row.outcome,
+      message: row.outcome === 'error' ? row.adError.message : null,
+    })),
+    extras: info.extras,
+  };
+}
+```
+
+## What this API deliberately omits
+
+- Adapter **credentials** / ad-unit mappings
+- Arbitrary native extras dictionaries or `toString()` dumps
+- Public eCPM or “lift” helpers
+- Attaching the full `adapterResponses` list to every paid event
+
+Those omissions keep the bridge small and avoid shipping publisher configuration into
+analytics by default.
+
+## Related guides
+
+- [Impression-level ad revenue](/impression-level-ad-revenue) — enable ILRD and wire paid listeners
+- [Ad Inspector](/ad-inspector) — live in-app request inspection
+- [Mediation](/mediation) — adapter installation
+- [Common reasons for ads not showing](/common-reasons-for-ads-not-showing) — account and setup fill issues
+- [v17 API reference](./rngma-v17-api-reference.md#7-response-metadata-and-paid-events) — canonical types
