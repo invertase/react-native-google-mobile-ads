@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GAM adapter packages carry Google mediation artifacts only.
+  App ID / measurement flags live in core (react-native-google-mobile-ads).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
