@@ -1,0 +1,24 @@
+{
+  "name": "@react-native-google-mobile-ads/unity",
+  "version": "16.5.0",
+  "description": "Empty package shell for the Unity Ads Google Mobile Ads (GAM) mediation adapter. Product adapter content is out of scope for this shell (see A-0 / ADAPT-02).",
+  "author": "Invertase <oss@invertase.io> (http://invertase.io)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/invertase/react-native-google-mobile-ads",
+    "directory": "packages/unity"
+  },
+  "keywords": [
+    "react-native",
+    "google-mobile-ads",
+    "admob",
+    "mediation",
+    "gam",
+    "unity"
+  ],
+  "files": [],
+  "publishConfig": {
+    "access": "public"
+  }
+}
