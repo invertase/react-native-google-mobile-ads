@@ -479,15 +479,156 @@ export async function assertDisplayed(testId: string): Promise<void> {
   await expect(el).toBeDisplayed();
 }
 
+async function elementText(el: WebdriverIO.Element): Promise<string> {
+  const parts: string[] = [];
+  const push = async (fn: () => Promise<unknown>) => {
+    try {
+      const v = await fn();
+      if (v != null && String(v).length > 0) {
+        parts.push(String(v));
+      }
+    } catch {
+      // Platform-specific attributes throw on the other OS — ignore.
+    }
+  };
+  await push(() => el.getText());
+  if (isAndroid()) {
+    await push(() => el.getAttribute('text'));
+    await push(() => el.getAttribute('contentDescription'));
+    await push(() => el.getAttribute('content-desc'));
+  } else {
+    await push(() => el.getAttribute('label'));
+    await push(() => el.getAttribute('name'));
+    await push(() => el.getAttribute('value'));
+  }
+  return parts.join(' ');
+}
+
+/** Wait until a testID's accessible text includes `substring` (probe / status seams). */
+export async function waitForTestIdTextContaining(
+  testId: string,
+  substring: string,
+  timeoutMs = 20000,
+): Promise<void> {
+  let lastSeen = '';
+  try {
+    await driver.waitUntil(
+      async () => {
+        if (isAndroid()) {
+          for (const sel of [
+            `android=new UiSelector().resourceId("${testId}").textContains("${substring}")`,
+            `android=new UiSelector().resourceId("${testId}").descriptionContains("${substring}")`,
+            `android=new UiSelector().textContains("${substring}")`,
+            `android=new UiSelector().descriptionContains("${substring}")`,
+          ]) {
+            if (await $(sel).isExisting().catch(() => false)) {
+              return true;
+            }
+          }
+        } else {
+          // XCUITest: accessibility label / value often carries RN accessibilityLabel.
+          for (const pred of [
+            `name == "${testId}" AND label CONTAINS "${substring}"`,
+            `name == "${testId}" AND value CONTAINS "${substring}"`,
+            `label CONTAINS "${substring}"`,
+            `value CONTAINS "${substring}"`,
+            `name CONTAINS "${substring}"`,
+          ]) {
+            if (await $(`-ios predicate string:${pred}`).isExisting().catch(() => false)) {
+              return true;
+            }
+          }
+        }
+        const el = await findByTestId(testId);
+        if (!(await el.isExisting().catch(() => false))) {
+          return false;
+        }
+        lastSeen = await elementText(el);
+        return lastSeen.includes(substring);
+      },
+      {
+        timeout: timeoutMs,
+        timeoutMsg: `testID ${testId} text did not include "${substring}" (lastSeen=${JSON.stringify(lastSeen)})`,
+      },
+    );
+  } catch (err) {
+    try {
+      const dump = await driver.getPageSource();
+      const idx = dump.indexOf(testId);
+      const snip =
+        idx >= 0 ? dump.slice(Math.max(0, idx - 120), idx + 280).replace(/\s+/g, ' ') : 'testID absent from page source';
+      throw new Error(`${String(err)} | pageSource=${snip}`);
+    } catch (inner) {
+      if (String(inner).includes('pageSource=')) {
+        throw inner;
+      }
+      throw err;
+    }
+  }
+}
+
+/** Tap a format action without using gallery UiScrollable (format detail is not the gallery list). */
+async function tapFormatAction(actionId: string, accessibilityLabel?: string): Promise<void> {
+  if (isAndroid()) {
+    const selectors = [
+      `android=new UiSelector().resourceId("${actionId}")`,
+      ...(accessibilityLabel
+        ? [
+            `android=new UiSelector().description("${accessibilityLabel}")`,
+            `android=new UiSelector().text("${accessibilityLabel}")`,
+            `android=new UiSelector().textContains("${accessibilityLabel}")`,
+          ]
+        : []),
+    ];
+    for (const sel of selectors) {
+      const el = await $(sel);
+      if (!(await el.isExisting().catch(() => false))) {
+        continue;
+      }
+      try {
+        const rect = await el.getLocation();
+        const size = await el.getSize();
+        if (size.height <= 0 || size.width <= 0) {
+          continue;
+        }
+        const x = Math.floor(rect.x + size.width / 2);
+        const y = Math.floor(rect.y + size.height / 2);
+        await driver.execute('mobile: shell', {
+          command: 'input',
+          args: ['tap', String(x), String(y)],
+        });
+        await driver.pause(300);
+        return;
+      } catch {
+        // Try next selector.
+      }
+    }
+  } else if (accessibilityLabel) {
+    const byLabel = await $(`~${accessibilityLabel}`);
+    if (await byLabel.isExisting().catch(() => false)) {
+      await clickElement(byLabel);
+      await driver.pause(300);
+      return;
+    }
+  }
+  // Fallback: testID click within the current screen (not gallery UiScrollable).
+  const el = await findByTestId(actionId);
+  await clickElement(el);
+}
+
 /**
  * Smoke: open format, assert container, optionally tap an action without waiting for ad fill.
  * Live Google auction/fill is out of scope (ANR / flake); UI seam + TestIds wiring is the gate.
+ * When `expectLoadedSubstring` is set, after the action tap wait for `action.loaded` text
+ * (e.g. NativeRNGMATesting `ok ping=`) so a null/broken TurboModule cannot pass.
  */
 export async function smokeFormat(opts: {
   formatId: string;
   containerId: string;
   actionId?: string;
   galleryTitle?: string;
+  expectLoadedSubstring?: string;
+  actionAccessibilityLabel?: string;
 }): Promise<void> {
   if (!GALLERY_HOME_ONLY_FORMATS.has(opts.formatId)) {
     await resetAppState();
@@ -496,9 +637,18 @@ export async function smokeFormat(opts: {
     await openFormat(opts.formatId, opts.galleryTitle);
     await assertDisplayed(opts.containerId);
     if (opts.actionId) {
-      const action = await findByTestId(opts.actionId);
-      if (await action.isDisplayed().catch(() => false)) {
-        await clickElement(action);
+      if (opts.expectLoadedSubstring) {
+        // Avoid gallery-scroll tap path — it can leave the format screen.
+        await tapFormatAction(opts.actionId, opts.actionAccessibilityLabel);
+        await waitForTestIdTextContaining(
+          AppiumTestIds.action.loaded(opts.formatId),
+          opts.expectLoadedSubstring,
+        );
+      } else {
+        const action = await findByTestId(opts.actionId);
+        if (await action.isDisplayed().catch(() => false)) {
+          await clickElement(action);
+        }
       }
     }
     await backToGallery();

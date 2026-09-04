@@ -4329,6 +4329,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@invertase/rngma-testing@portal:./modules/rngma-testing::locator=RNGoogleMobileAdsExample%40workspace%3ARNGoogleMobileAdsExample":
+  version: 0.0.0-use.local
+  resolution: "@invertase/rngma-testing@portal:./modules/rngma-testing::locator=RNGoogleMobileAdsExample%40workspace%3ARNGoogleMobileAdsExample"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: node
+  linkType: soft
+
 "@isaacs/balanced-match@npm:^4.0.1":
   version: 4.0.1
   resolution: "@isaacs/balanced-match@npm:4.0.1"
@@ -8290,6 +8299,7 @@ __metadata:
     "@babel/core": "npm:^7.25.2"
     "@babel/preset-env": "npm:^7.25.3"
     "@babel/runtime": "npm:^7.25.0"
+    "@invertase/rngma-testing": "portal:./modules/rngma-testing"
     "@react-native-community/cli": "npm:20.1.0"
     "@react-native-community/cli-platform-android": "npm:20.1.0"
     "@react-native-community/cli-platform-ios": "npm:20.1.0"

@@ -1945,6 +1945,28 @@ PODS:
     - React-Core
     - React-jsi
   - ReactTestApp-Resources (1.0.0-dev)
+  - RNGMATesting (0.0.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - RNGoogleMobileAds (16.5.0):
     - Google-Mobile-Ads-SDK (= 13.5.0)
     - GoogleUserMessagingPlatform (= 3.1.0)
@@ -2052,6 +2074,7 @@ DEPENDENCIES:
   - "ReactNativeHost (from `../node_modules/@rnx-kit/react-native-host`)"
   - ReactTestApp-DevSupport (from `../node_modules/react-native-test-app`)
   - ReactTestApp-Resources (from `..`)
+  - "RNGMATesting (from `../node_modules/@invertase/rngma-testing`)"
   - RNGoogleMobileAds (from `../node_modules/react-native-google-mobile-ads`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -2220,6 +2243,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-test-app"
   ReactTestApp-Resources:
     :path: ".."
+  RNGMATesting:
+    :path: "../node_modules/@invertase/rngma-testing"
   RNGoogleMobileAds:
     :path: "../node_modules/react-native-google-mobile-ads"
   Yoga:
@@ -2307,6 +2332,7 @@ SPEC CHECKSUMS:
   ReactNativeHost: c49183895850a534a9d58049bf02b3c80a3ebb0c
   ReactTestApp-DevSupport: 407a6f0915350eeaabb7e9d51fbe17873d836f36
   ReactTestApp-Resources: 1bd9ff10e4c24f2ad87101a32023721ae923bccf
+  RNGMATesting: 28354db6165b9a432abd9f0284f21a446ef93e11
   RNGoogleMobileAds: 5b69457ffb7692fa03fcf64097bc7f9e901b43a5
   Yoga: fe50ab299e578f397fef753cf309c6703a4db29b
 

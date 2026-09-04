@@ -1,0 +1,37 @@
+{
+  "name": "@invertase/rngma-testing",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pattern C example-only TurboModule for RNGMA native integration probes",
+  "main": "src/index.ts",
+  "react-native": "src/index.ts",
+  "source": "src/index.ts",
+  "files": [
+    "src",
+    "android",
+    "ios",
+    "*.podspec"
+  ],
+  "keywords": [
+    "react-native",
+    "testing"
+  ],
+  "license": "Apache-2.0",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "codegenConfig": {
+    "name": "RNGMATestingSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.invertase.rngmatesting"
+    },
+    "ios": {
+      "modulesProvider": {
+        "NativeRNGMATesting": "RNGMATesting"
+      }
+    }
+  }
+}

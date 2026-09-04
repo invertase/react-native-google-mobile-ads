@@ -13,6 +13,7 @@ import {
   Button,
   Image,
   Platform,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -22,6 +23,7 @@ import {
 } from 'react-native';
 
 import { AppiumTestIds } from './src/appiumTestIds';
+import { getNativeRNGMATesting } from '@invertase/rngma-testing';
 import MobileAds, {
   AdEventType,
   AdsConsent,
@@ -786,6 +788,67 @@ function FlushCoverageFormat() {
   );
 }
 
+/** Pattern C: exercise NativeRNGMATesting seed probes (ping / TTL / attach / ResponseInfo fixtures). */
+function NativeRNGMATestingFormat() {
+  const [status, setStatus] = useState('idle');
+
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.nativeRngmaTesting}>
+      <Text style={styles.subheading}>
+        Example-only TurboModule probes (reparent / expiry / ResponseInfo seams). Not product code.
+      </Text>
+      {/* accessible + accessibilityLabel: Android Appium reads content-desc; Pressable (not
+          RN Button) so show testID is a real clickable resource-id. */}
+      <Text
+        testID={AppiumTestIds.action.loaded(AppiumTestIds.format.nativeRngmaTesting)}
+        accessible
+        accessibilityLabel={status}
+      >
+        Status: {status}
+      </Text>
+      <Pressable
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.nativeRngmaTesting)}
+        accessibilityRole="button"
+        accessibilityLabel="Run NativeRNGMATesting probes"
+        onPress={() => {
+          void (async () => {
+            try {
+              setStatus('running');
+              const NativeRNGMATesting = getNativeRNGMATesting();
+              if (NativeRNGMATesting == null) {
+                setStatus('error: module not linked');
+                return;
+              }
+              const ping = await NativeRNGMATesting.ping();
+              await NativeRNGMATesting.setDebugInventoryTtlMs(60_000);
+              const ttl = await NativeRNGMATesting.getDebugInventoryTtlMs();
+              await NativeRNGMATesting.setDebugInventoryTtlMs(0);
+              const attach = await NativeRNGMATesting.supportsDelayedBannerAttach();
+              const loaded = await NativeRNGMATesting.getResponseInfoFixtureJson('loaded');
+              const noFill = await NativeRNGMATesting.getResponseInfoFixtureJson('no-fill');
+              const paid = await NativeRNGMATesting.getResponseInfoFixtureJson('paid-compact');
+              setStatus(
+                `ok ping=${ping} ttl=${ttl} attach=${attach} fixtures=${[
+                  loaded,
+                  noFill,
+                  paid,
+                ]
+                  .map(j => JSON.parse(j).responseId ?? 'null')
+                  .join(',')}`,
+              );
+            } catch (error) {
+              setStatus(`error: ${String(error)}`);
+            }
+          })();
+        }}
+        style={styles.probePressable}
+      >
+        <Text>Run NativeRNGMATesting probes</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function buildGalleryEntries(): GalleryEntry[] {
   const entries: GalleryEntry[] = [];
 
@@ -945,6 +1008,12 @@ function buildGalleryEntries(): GalleryEntry[] {
     section: 'debug',
     render: () => <FlushCoverageFormat />,
   });
+  entries.push({
+    id: AppiumTestIds.format.nativeRngmaTesting,
+    title: 'NativeRNGMATesting',
+    section: 'debug',
+    render: () => <NativeRNGMATestingFormat />,
+  });
 
   return entries;
 }
@@ -976,6 +1045,12 @@ const styles = StyleSheet.create({
   },
   subheading: {
     marginBottom: 12,
+  },
+  probePressable: {
+    marginTop: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
   },
   container: {
     flex: 1,
