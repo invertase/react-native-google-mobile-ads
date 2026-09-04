@@ -12,6 +12,7 @@ module.exports = {
     '<rootDir>/packages/moloco/lib/',
     '<rootDir>/packages/mintegral/lib/',
     '<rootDir>/packages/inmobi/lib/',
+    '<rootDir>/packages/yandex/lib/',
   ],
 
   setupFiles: ['./jest.setup.ts'],

@@ -1,0 +1,65 @@
+import groovy.json.JsonSlurper
+
+buildscript {
+  ext.getExtOrDefault = { name, fallback ->
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : fallback
+  }
+
+  // AGP is only required when opening this android/ folder stand-alone.
+  if (project == rootProject) {
+    repositories {
+      google()
+      mavenCentral()
+    }
+    dependencies {
+      classpath("com.android.tools.build:gradle:8.1.1")
+    }
+  }
+}
+
+apply plugin: "com.android.library"
+
+def packageJson = new JsonSlurper().parseText(file("${projectDir}/../package.json").text)
+def gamAdapter = packageJson.gamAdapter
+def sdkVersions = packageJson.sdkVersions.android
+
+android {
+  // A-0 layout stub only: this package is iOS-only (see package.json gamAdapter.platforms).
+  // Google publishes no com.google.ads.mediation:yandex; Android autolinking is disabled.
+  namespace "io.invertase.googlemobileads.adapters.yandex"
+
+  compileSdkVersion sdkVersions.compileSdk as Integer
+
+  defaultConfig {
+    minSdkVersion sdkVersions.minSdk as Integer
+    targetSdkVersion sdkVersions.targetSdk as Integer
+    buildConfigField "String", "GAM_ADAPTER_NETWORK", "\"${gamAdapter.network}\""
+    buildConfigField "String", "GAM_ADAPTER_ANDROID_SHIPPED", "\"false\""
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  sourceSets {
+    main {
+      java.srcDirs = ["src/main/java"]
+    }
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+dependencies {
+  // Intentionally empty: no Android Yandex GAM mediation artifact is linked.
+  // Yandex publishes com.yandex.ads.adapter:admob-mobileads, but Google has no
+  // official Android Yandex GAM adapter and Character inventory is iOS-only.
+}
