@@ -34,6 +34,9 @@ export const GOOGLE_DEFAULT_POOL_BUFFER_SIZE = 2;
  */
 export const DOCUMENTED_APP_WIDE_POOL_CAP = 6;
 
+/** Emulated display pools always run at depth 1 (no SDK display preloader). */
+export const EMULATED_DISPLAY_BUFFER_SIZE = 1;
+
 const FULLSCREEN_FORMATS: ReadonlySet<string> = new Set([
   AdFormat.APP_OPEN,
   AdFormat.INTERSTITIAL,
@@ -54,13 +57,11 @@ function isFullscreenFormat(format: string): format is FullscreenAdFormat {
   return FULLSCREEN_FORMATS.has(format);
 }
 
-/**
- * Validates an AdPoolConfig for classic fullscreen SDK-managed pools (FEAT-05).
- *
- * Hard-errors on impossible configs. Loud-degrades are reserved for display
- * emulation (FEAT-06); fullscreen buffer sizes are not coerced.
- */
-export function validateAdPoolConfig(config: AdPoolConfig): AdPoolResolvedConfig {
+function isDisplayFormat(format: string): format is AdFormat.BANNER | AdFormat.NATIVE {
+  return DISPLAY_FORMATS.has(format);
+}
+
+function validateSharedFields(config: AdPoolConfig): void {
   if (!isObject(config) || isArray(config)) {
     throw createPoolAdError('invalid-request', "'config' expected an object");
   }
@@ -72,56 +73,6 @@ export function validateAdPoolConfig(config: AdPoolConfig): AdPoolResolvedConfig
   }
   if (!isArray(config.formats) || config.formats.length === 0) {
     throw createPoolAdError('invalid-request', "'formats' expected a non-empty array");
-  }
-
-  const formats = config.formats as string[];
-  const seen = new Set<string>();
-  for (let i = 0; i < formats.length; i++) {
-    const format = formats[i];
-    if (!isString(format)) {
-      throw createPoolAdError('invalid-request', `'formats[${i}]' expected a string AdFormat`);
-    }
-    if (seen.has(format)) {
-      throw createPoolAdError('invalid-request', "'formats' must not contain duplicates");
-    }
-    seen.add(format);
-  }
-
-  const hasFullscreen = formats.some(f => FULLSCREEN_FORMATS.has(f));
-  const hasDisplay = formats.some(f => DISPLAY_FORMATS.has(f));
-  if (hasFullscreen && hasDisplay) {
-    throw createPoolAdError(
-      'invalid-request',
-      "'formats' cannot mix fullscreen and display formats in one pool",
-    );
-  }
-  if (hasDisplay) {
-    throw createPoolAdError(
-      'pool/format-preload-unsupported',
-      'Display (banner/native) pools require emulated preload (FEAT-06); classic SDK preloader is fullscreen-only',
-    );
-  }
-  if (!hasFullscreen) {
-    throw createPoolAdError(
-      'pool/format-preload-unsupported',
-      "'formats' expected a fullscreen AdFormat for classic preload pools",
-    );
-  }
-  if (formats.length !== 1 || !isFullscreenFormat(formats[0])) {
-    throw createPoolAdError(
-      'invalid-request',
-      'Classic fullscreen pools accept exactly one fullscreen format',
-    );
-  }
-
-  const format = formats[0];
-  const caps = getAdCapabilities();
-  const formatSupport = caps.fullscreenPreloadFormats[format];
-  if (formatSupport === 'unavailable') {
-    throw createPoolAdError(
-      'pool/format-preload-unsupported',
-      `Format '${format}' is unavailable for SDK-managed preload on backend '${caps.backend}'`,
-    );
   }
 
   if (!isUndefined(config.bufferSize)) {
@@ -172,6 +123,73 @@ export function validateAdPoolConfig(config: AdPoolConfig): AdPoolResolvedConfig
       );
     }
   }
+}
+
+/**
+ * Validates an AdPoolConfig for classic fullscreen SDK pools and emulated
+ * display (banner/native) depth-1 pools.
+ *
+ * Hard-errors on impossible configs (format drop, illegal mix). Loud-degrades
+ * display depth > 1 and always tags display pools as emulated.
+ */
+export function validateAdPoolConfig(config: AdPoolConfig): AdPoolResolvedConfig {
+  validateSharedFields(config);
+
+  const formats = config.formats as string[];
+  const seen = new Set<string>();
+  for (let i = 0; i < formats.length; i++) {
+    const format = formats[i];
+    if (!isString(format)) {
+      throw createPoolAdError('invalid-request', `'formats[${i}]' expected a string AdFormat`);
+    }
+    if (seen.has(format)) {
+      throw createPoolAdError('invalid-request', "'formats' must not contain duplicates");
+    }
+    seen.add(format);
+  }
+
+  const hasFullscreen = formats.some(f => FULLSCREEN_FORMATS.has(f));
+  const hasDisplay = formats.some(f => DISPLAY_FORMATS.has(f));
+  if (hasFullscreen && hasDisplay) {
+    throw createPoolAdError(
+      'invalid-request',
+      "'formats' cannot mix fullscreen and display formats in one pool",
+    );
+  }
+
+  if (hasDisplay) {
+    return validateDisplayPoolConfig(config, formats);
+  }
+  if (hasFullscreen) {
+    return validateFullscreenPoolConfig(config, formats);
+  }
+
+  throw createPoolAdError(
+    'pool/format-preload-unsupported',
+    "'formats' expected a fullscreen or display AdFormat",
+  );
+}
+
+function validateFullscreenPoolConfig(
+  config: AdPoolConfig,
+  formats: string[],
+): AdPoolResolvedConfig {
+  if (formats.length !== 1 || !isFullscreenFormat(formats[0])) {
+    throw createPoolAdError(
+      'invalid-request',
+      'Classic fullscreen pools accept exactly one fullscreen format',
+    );
+  }
+
+  const format = formats[0];
+  const caps = getAdCapabilities();
+  const formatSupport = caps.fullscreenPreloadFormats[format];
+  if (formatSupport === 'unavailable') {
+    throw createPoolAdError(
+      'pool/format-preload-unsupported',
+      `Format '${format}' is unavailable for SDK-managed preload on backend '${caps.backend}'`,
+    );
+  }
 
   const requestOptions = validateAdRequestOptions(config.requestOptions);
   const { stalenessWindowMillis, stalenessWindowSource } = resolveStalenessWindow({
@@ -184,9 +202,7 @@ export function validateAdPoolConfig(config: AdPoolConfig): AdPoolResolvedConfig
   const effectiveBufferSize =
     typeof requestedBufferSize === 'number' ? requestedBufferSize : GOOGLE_DEFAULT_POOL_BUFFER_SIZE;
 
-  const degradeReasons: AdPoolDegradeReason[] = [];
-
-  const resolved: AdPoolResolvedConfig = {
+  return {
     ...config,
     formats: [format],
     requestOptions,
@@ -194,9 +210,74 @@ export function validateAdPoolConfig(config: AdPoolConfig): AdPoolResolvedConfig
     effectiveBufferSize,
     effectiveStalenessWindowMillis: stalenessWindowMillis,
     effectiveStalenessWindowSource: stalenessWindowSource,
-    degraded: degradeReasons.length > 0,
+    degraded: false,
+    degradeReasons: [],
+  };
+}
+
+function validateDisplayPoolConfig(config: AdPoolConfig, formats: string[]): AdPoolResolvedConfig {
+  for (let i = 0; i < formats.length; i++) {
+    if (!isDisplayFormat(formats[i])) {
+      throw createPoolAdError(
+        'pool/format-preload-unsupported',
+        `'formats[${i}]' expected '${AdFormat.BANNER}' or '${AdFormat.NATIVE}' for display pools`,
+      );
+    }
+  }
+
+  const displayFormats = formats as Array<AdFormat.BANNER | AdFormat.NATIVE>;
+  const wantsBanner = displayFormats.includes(AdFormat.BANNER);
+  const adServer = config.adServer as string | undefined;
+
+  if (wantsBanner) {
+    // Hard-error: coercing away banner would drop a requested format.
+    if (adServer !== 'ad-manager') {
+      throw createPoolAdError(
+        'invalid-request',
+        "'adServer' must be 'ad-manager' when formats includes banner (GAM-only; would drop a format)",
+      );
+    }
+    if (config.adUnitId.startsWith('ca-app-pub-')) {
+      throw createPoolAdError(
+        'invalid-request',
+        "'adUnitId' AdMob units cannot request banner in a display pool (would drop a format)",
+      );
+    }
+    if (!isArray(config.bannerSizes) || config.bannerSizes.length === 0) {
+      throw createPoolAdError(
+        'invalid-request',
+        "'bannerSizes' expected a non-empty array when formats includes banner",
+      );
+    }
+  }
+
+  const requestOptions = validateAdRequestOptions(config.requestOptions);
+  const { stalenessWindowMillis, stalenessWindowSource } = resolveStalenessWindow({
+    stalenessWindowMillis: config.stalenessWindowMillis,
+    format: 'other',
+  });
+
+  const requestedBufferSize = config.bufferSize;
+  const degradeReasons: AdPoolDegradeReason[] = ['pool/emulated-no-sdk-preloader'];
+
+  const effectiveBufferSize = EMULATED_DISPLAY_BUFFER_SIZE;
+  if (
+    typeof requestedBufferSize === 'number' &&
+    requestedBufferSize > EMULATED_DISPLAY_BUFFER_SIZE
+  ) {
+    // Loud degrade mixed / display depth > 1 → depth 1 (Decision 2026-08-19).
+    degradeReasons.unshift('pool/degraded-buffer-size');
+  }
+
+  return {
+    ...config,
+    formats: displayFormats,
+    requestOptions,
+    requestedBufferSize,
+    effectiveBufferSize,
+    effectiveStalenessWindowMillis: stalenessWindowMillis,
+    effectiveStalenessWindowSource: stalenessWindowSource,
+    degraded: true,
     degradeReasons,
   };
-
-  return resolved;
 }

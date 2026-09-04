@@ -36,12 +36,13 @@ const SDK_VERSION = {
  *
  * Classic fullscreen preload is experimental (iOS Beta / Android limited-alpha).
  * Android classic has no rewarded-interstitial preloader and no peek API.
- * Display preload stays unavailable until emulated pools (FEAT-06).
+ * Display preload is library-emulated depth-1 (no classic SDK display preloader).
  * `maxManagedPoolAds` stays null (server-delivered; documented default is 6).
  */
 export function getAdCapabilities(): AdCapabilities {
   const isIos = Platform.OS === 'ios';
   const backend = isIos ? 'ios' : 'android-classic';
+  const emulated: CapabilitySupport = 'emulated';
 
   return {
     backend,
@@ -63,7 +64,7 @@ export function getAdCapabilities(): AdCapabilities {
       // Android classic has no RewardedInterstitialAdPreloader.
       [AdFormat.REWARDED_INTERSTITIAL]: isIos ? experimental : unavailable,
     },
-    displayPreload: unavailable,
+    displayPreload: emulated,
     multiCountNative: unavailable,
     poolResponseInfoPeek: isIos ? supported : unavailable,
     maxManagedPoolAds: null,

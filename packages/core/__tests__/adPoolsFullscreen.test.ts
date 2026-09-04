@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import { AdFormat, AdPools, AdPoolPresets, getAdCapabilities } from '../src';
+import { AdFormat, AdPools, AdPoolPresets, BannerAdSize, getAdCapabilities } from '../src';
 import { destroyAllAdPools } from '../src/internal/adPoolRegistry';
 import {
   createPoolAdError,
@@ -19,7 +19,7 @@ describe('FEAT-05 classic fullscreen AdPools', () => {
     expect(caps.maxManagedPoolAds).toBeNull();
     expect(DOCUMENTED_APP_WIDE_POOL_CAP).toBe(6);
     expect(caps.fullscreenPreload).toBe('experimental');
-    expect(caps.displayPreload).toBe('unavailable');
+    expect(caps.displayPreload).toBe('emulated');
     if (Platform.OS === 'ios') {
       expect(caps.backend).toBe('ios');
       expect(caps.poolResponseInfoPeek).toBe('supported');
@@ -47,10 +47,12 @@ describe('FEAT-05 classic fullscreen AdPools', () => {
     expect(handWritten.effectiveStalenessWindowSource).toBe('guidance/other');
   });
 
-  it('hard-errors display pools and mixed formats', () => {
-    expect(() => validateAdPoolConfig(AdPoolPresets.display('feed'))).toThrow(
-      /format-preload-unsupported|Display/,
+  it('loud-degrades display pools and hard-errors mixed formats', () => {
+    const display = validateAdPoolConfig(
+      AdPoolPresets.display('/123/feed', { bannerSizes: [BannerAdSize.BANNER] }),
     );
+    expect(display.degraded).toBe(true);
+    expect(display.degradeReasons).toContain('pool/emulated-no-sdk-preloader');
     expect(() =>
       validateAdPoolConfig({
         poolId: 'mix',

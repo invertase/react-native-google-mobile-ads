@@ -18,7 +18,9 @@
 import { EmitterSubscription } from 'react-native';
 
 import { getAdCapabilities } from '../capabilities/getAdCapabilities';
+import { AdFormat } from '../types/AdFormat';
 import { adErrorFromNativeEvent } from './adErrorFromNativeEvent';
+import { EmulatedAdPool, createEmulatedDisplayPool } from './emulatedAdPool';
 import { allocateFullscreenRequestId, createPooledFullscreenAd } from './pooledFullscreenAd';
 import { SharedEventEmitter } from './SharedEventEmitter';
 import NativeGoogleMobileAdsPoolModule from '../specs/modules/NativeGoogleMobileAdsPoolModule';
@@ -33,6 +35,9 @@ import type {
 import type { FullscreenAdFormat } from '../types/FullscreenAdFormat';
 import type { ResponseInfo } from '../types/ResponseInfo';
 import { createPoolAdError } from '../validateAdPoolConfig';
+
+/** Registered pools expose notifyDegraded for create-time loud-degrade events. */
+export type RegisteredAdPool = AdPool & { notifyDegraded(): void };
 
 type PoolNativeEvent = {
   type: 'available' | 'exhausted' | 'error';
@@ -265,7 +270,7 @@ export class SdkManagedAdPool implements AdPool {
   }
 }
 
-const registry = new Map<string, SdkManagedAdPool>();
+const registry = new Map<string, RegisteredAdPool>();
 
 /** Notifies AdPoolProvider / hooks when the registry changes. */
 type RegistryListener = () => void;
@@ -292,7 +297,7 @@ export function getRegisteredAdPool(poolId: string): AdPool | null {
   return registry.get(poolId) ?? null;
 }
 
-export function registerAdPool(pool: SdkManagedAdPool): void {
+export function registerAdPool(pool: RegisteredAdPool): void {
   const existing = registry.get(pool.poolId);
   if (existing && existing !== pool) {
     existing.destroy();
@@ -320,7 +325,21 @@ export function destroyAllAdPools(): void {
   notifyRegistry();
 }
 
-export async function startNativePool(resolved: AdPoolResolvedConfig): Promise<SdkManagedAdPool> {
+function isDisplayResolved(resolved: AdPoolResolvedConfig): boolean {
+  return resolved.formats.some(format => format === AdFormat.BANNER || format === AdFormat.NATIVE);
+}
+
+export async function startNativePool(resolved: AdPoolResolvedConfig): Promise<RegisteredAdPool> {
+  if (isDisplayResolved(resolved)) {
+    const pool = createEmulatedDisplayPool(resolved, () => {
+      if (registry.get(pool.poolId) === pool) {
+        registry.delete(pool.poolId);
+        notifyRegistry();
+      }
+    });
+    return pool;
+  }
+
   const format = resolved.formats[0] as FullscreenAdFormat;
   NativeGoogleMobileAdsPoolModule.addListener('google_mobile_ads_pool_event');
   const start = await NativeGoogleMobileAdsPoolModule.poolStart(
@@ -331,10 +350,10 @@ export async function startNativePool(resolved: AdPoolResolvedConfig): Promise<S
     (resolved.requestOptions ?? {}) as Record<string, unknown>,
   );
 
-  const pool = new SdkManagedAdPool({
+  return new SdkManagedAdPool({
     ...resolved,
     effectiveBufferSize: start.effectiveBufferSize || resolved.effectiveBufferSize,
   });
-
-  return pool;
 }
+
+export { EmulatedAdPool };
