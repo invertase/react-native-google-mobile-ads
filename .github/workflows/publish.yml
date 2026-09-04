@@ -13,24 +13,42 @@ jobs:
   publish_npm:
     if: "(github.repository == 'invertase/react-native-google-mobile-ads') && (github.event_name == 'workflow_dispatch')"
     name: 'NPM'
-    timeout-minutes: 5
-    runs-on: ubuntu-latest
+    # Darwin + Xcode: semantic-release prepare refreshes RNGoogleMobileAdsExample/ios/Podfile.lock
+    timeout-minutes: 60
+    runs-on: macos-15
     permissions:
       contents: write # to be able to publish a GitHub release
       issues: write # to be able to comment on released issues
       pull-requests: write # to be able to comment on released pull requests
       id-token: write # Required for NPM OIDC Trusted Publish + Provenance
+    env:
+      XCODE_VERSION: latest-stable
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3
+      - name: Update Ruby build tools
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 2
+          retry_wait_seconds: 60
+          max_attempts: 3
+          command: gem update cocoapods xcodeproj
       - name: Yarn Install
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 10
+          timeout_minutes: 15
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn
