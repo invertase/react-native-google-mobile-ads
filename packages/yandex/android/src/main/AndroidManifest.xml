@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  iOS-only Yandex GAM/AdMob adapter package. Android module is an A-0 layout stub;
+  autolinking is disabled (react-native.config.js). No mediation artifact linked.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
