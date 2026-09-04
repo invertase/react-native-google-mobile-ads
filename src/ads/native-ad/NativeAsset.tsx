@@ -30,6 +30,11 @@ export enum NativeAssetType {
   STORE = 'store',
   STAR_RATING = 'starRating',
   ICON = 'icon',
+  /**
+   * Android only: not supported when the app is built against GMA Next-Gen SDK (see
+   * `mobileAds().googleMobileAdsSdk`) - its NativeAdView has no equivalent asset slot for this,
+   * so it is silently ignored (no view is attached, no error is raised) under `'next-gen'`.
+   */
   IMAGE = 'image',
 }
 

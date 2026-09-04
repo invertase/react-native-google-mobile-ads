@@ -25,13 +25,17 @@ concurrency:
 
 jobs:
   android:
-    name: Android
+    name: Android (${{ matrix.google-mobile-ads-sdk }})
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       EMULATOR_COMMAND: "-avd TestingAVD -noaudio -gpu swiftshader_indirect -camera-back none -no-snapshot -no-window -no-boot-anim -nojni -memory 2048 -timezone 'Europe/London' -cores 2"
       EMULATOR_EXECUTABLE: qemu-system-x86_64-headless
+      # Picked up automatically by Gradle as the `googleMobileAdsSdk` project property - see
+      # android/build.gradle. Selects which Google Mobile Ads SDK react-native-google-mobile-ads
+      # builds against for this job.
+      ORG_GRADLE_PROJECT_googleMobileAdsSdk: ${{ matrix.google-mobile-ads-sdk }}
     strategy:
       fail-fast: false
       matrix:
@@ -43,6 +47,8 @@ jobs:
         first-boot-delay: [600]
         # This is useful for benchmarking, do 0, 1, 2, etc (up to 256 max job-per-matrix limit) for averages
         iteration: [0]
+        # Build/run the E2E suite against both supported Google Mobile Ads SDKs for Android.
+        google-mobile-ads-sdk: [legacy, next-gen]
     steps:
       - name: Liberate disk space
         uses: jlumbroso/free-disk-space@main
@@ -215,5 +221,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: adb_logs
+          name: adb_logs-${{ matrix.google-mobile-ads-sdk }}
           path: adb-log.txt

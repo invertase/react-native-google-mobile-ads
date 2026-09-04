@@ -17,6 +17,7 @@ describe.each(['app.json', 'app.config.js', 'app.config.ts'])('Expo Config Plugi
     'main',
     'AndroidManifest.xml',
   );
+  const androidGradlePropertiesPath = path.join(testAppPath, 'android', 'gradle.properties');
 
   beforeEach(async () => {
     await fs.rm(testAppPath, { recursive: true, force: true });
@@ -81,6 +82,25 @@ describe.each(['app.json', 'app.config.js', 'app.config.ts'])('Expo Config Plugi
     expect(androidManifest).toContain(
       '<meta-data android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING" android:value="true" tools:replace="android:value"/>',
     );
+  });
+
+  it('Sets googleMobileAdsSdk in android/gradle.properties', async () => {
+    await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
+
+    const gradleProperties = await fs.readFile(androidGradlePropertiesPath, 'utf8');
+    expect(gradleProperties).toContain('googleMobileAdsSdk=next-gen');
+  });
+
+  it('Does not set googleMobileAdsSdk in android/gradle.properties without params', async () => {
+    await fs.copyFile(
+      path.join(fixturesPath, "without-params", expoConfigFileName),
+      path.join(testAppPath, expoConfigFileName),
+    );
+
+    await execAsync(`yarn expo prebuild --no-install ${testAppPath}`);
+
+    const gradleProperties = await fs.readFile(androidGradlePropertiesPath, 'utf8');
+    expect(gradleProperties).not.toContain('googleMobileAdsSdk');
   });
 
   it('Should modify AndroidManifest.xml', async () => {

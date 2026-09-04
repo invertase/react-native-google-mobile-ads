@@ -6,6 +6,19 @@ import { RequestConfiguration } from './RequestConfiguration';
  */
 export interface MobileAdsModuleInterface {
   /**
+   * Which Android Google Mobile Ads SDK the native module was built against: `'legacy'`
+   * (`com.google.android.gms:play-services-ads`) or `'next-gen'` (`ads-mobile-sdk`).
+   *
+   * Always `'legacy'` on iOS, since there is currently no GMA Next-Gen SDK for iOS.
+   *
+   * `'next-gen'` does not support Google Ad Manager ad unit IDs (those starting with `/`) - use
+   * this to hide or disable Ad Manager specific UI/features when `'next-gen'` is selected.
+   *
+   * @see https://react-native-google-mobile-ads.invertase.dev/next-gen-sdk
+   */
+  googleMobileAdsSdk: 'legacy' | 'next-gen';
+
+  /**
    * Initialize the SDK.
    */
   initialize(): Promise<AdapterStatus[]>;

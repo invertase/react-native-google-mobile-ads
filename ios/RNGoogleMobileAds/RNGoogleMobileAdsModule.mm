@@ -40,6 +40,12 @@ RCT_EXPORT_MODULE();
   return YES;
 }
 
+- (NSDictionary *)constantsToExport {
+  // There is currently no GMA Next-Gen SDK for iOS, so this is always "legacy" - see the Android
+  // implementation of this same constant for the Android/next-gen equivalent.
+  return @{@"googleMobileAdsSdk" : @"legacy"};
+}
+
 #pragma mark -
 #pragma mark Google Mobile Ads Methods
 

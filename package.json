@@ -47,11 +47,12 @@
       "googleUmp": "3.1.0"
     },
     "android": {
-      "minSdk": 23,
+      "minSdk": 24,
       "targetSdk": 34,
-      "compileSdk": 34,
-      "buildTools": "34.0.0",
+      "compileSdk": 35,
+      "buildTools": "35.0.0",
       "googleMobileAds": "25.4.0",
+      "googleMobileAdsNextGen": "1.4.0",
       "googleUmp": "4.0.0"
     }
   },
