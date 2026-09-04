@@ -319,12 +319,19 @@ export interface AdPool {
    * information, so it is not a freshness / age check. Racy: do not treat it
    * as a poll.
    *
-   * Capability-gated by `AdCapabilities.poolResponseInfoPeek` (classic Android
-   * has no peek API; classic iOS does). When that capability is `unavailable`,
-   * this call hard-errors with reason `'pool/peek-unsupported'`. When
-   * supported, a resolved `null` means the head is empty — not "unsupported".
-   * Check the capability (or catch `'pool/peek-unsupported'`) before treating
-   * `null` as empty inventory.
+   * **SDK-managed** (classic fullscreen) pools are capability-gated by
+   * `AdCapabilities.poolResponseInfoPeek` (classic Android has no SDK peek API;
+   * classic iOS does). When that capability is `unavailable`, this call
+   * hard-errors with reason `'pool/peek-unsupported'`.
+   *
+   * **Library-managed (emulated) display pools** peek the library's own buffer
+   * head and do **not** consult `poolResponseInfoPeek` — they resolve on both
+   * platforms. A successful Android peek on an emulated pool is not proof that
+   * the SDK peek capability is supported.
+   *
+   * On either path, a resolved `null` means the head is empty — not
+   * "unsupported". Check the capability (or catch `'pool/peek-unsupported'`)
+   * before treating `null` as empty inventory on SDK-managed pools.
    */
   peekResponseInfo(): Promise<ResponseInfo | null>;
   /**
@@ -352,10 +359,8 @@ export interface AdPool {
    *
    * Staleness policy on an already-polled ad lives on that ad, not on the pool:
    * the policy timer keeps running after `poll()` / `release()` and is not
-   * stopped by this call. Whether pool `destroy()` also tears down the native
-   * resources of an already-polled ad is unverified (open probe); do not build
-   * on either answer — treat held ads as independently owned and destroy them
-   * explicitly when you are done.
+   * stopped by this call. Do not rely on pool `destroy()` to tear down ads
+   * already handed out; destroy held ads explicitly when you are done.
    */
   destroy(): void;
 }

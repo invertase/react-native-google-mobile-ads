@@ -22,6 +22,7 @@
         ["Impression-level ad revenue", "/impression-level-ad-revenue"],
         ["Revenue telemetry and auction diagnostics", "/revenue-telemetry-and-auction-diagnostics"],
         ["Preload pools and multi-format recipes", "/preload-pools-and-multiformat-recipes"],
+        ["v17 API reference", "/rngma-v17-api-reference"],
         ["Video ad volume control", "/video-ad_volume-control"],
         ["Testing", "/testing"]
       ]
@@ -31,7 +32,8 @@
       [
         ["Migrating to v5", "/migrating-to-v5"],
         ["Migrating to v6", "/migrating-to-v6"],
-        ["Migrating to v15", "/migrating-to-v15"]
+        ["Migrating to v15", "/migrating-to-v15"],
+        ["Migrating to v17", "/migrating-to-v17"]
       ]
     ]
   ]

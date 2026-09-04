@@ -45,11 +45,12 @@ export type AdCapabilities = {
   /** numberOfAds > 1. Unsupported on mediated units. */
   multiCountNative: CapabilitySupport;
   /**
-   * Non-consuming head-of-queue `ResponseInfo` peek on an `AdPool`.
-   * Classic Android has no peek API (`unavailable`); classic iOS exposes
-   * `adResponseInfoWithPreloadID:` (`supported` when wired). Gate before
-   * `AdPool.peekResponseInfo()`: when `unavailable`, peek hard-errors with
+   * Non-consuming head-of-queue `ResponseInfo` peek for **SDK-managed** pools.
+   * Classic Android has no SDK peek API (`unavailable`); classic iOS exposes
+   * `adResponseInfoWithPreloadID:` (`supported`). When `unavailable`,
+   * SDK-managed `AdPool.peekResponseInfo()` hard-errors with
    * `'pool/peek-unsupported'` rather than resolving `null` (empty head).
+   * Library-managed (emulated) pools peek their own buffer without this gate.
    */
   poolResponseInfoPeek: CapabilitySupport;
   /**
