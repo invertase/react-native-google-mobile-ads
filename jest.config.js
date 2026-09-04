@@ -10,6 +10,7 @@ module.exports = {
     '<rootDir>/packages/pangle/lib/',
     '<rootDir>/packages/vungle/lib/',
     '<rootDir>/packages/moloco/lib/',
+    '<rootDir>/packages/mintegral/lib/',
   ],
 
   setupFiles: ['./jest.setup.ts'],
