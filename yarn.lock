@@ -6009,6 +6009,60 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native-google-mobile-ads/applovin@workspace:packages/applovin":
+  version: 0.0.0-use.local
+  resolution: "@react-native-google-mobile-ads/applovin@workspace:packages/applovin"
+  languageName: unknown
+  linkType: soft
+
+"@react-native-google-mobile-ads/facebook@workspace:packages/facebook":
+  version: 0.0.0-use.local
+  resolution: "@react-native-google-mobile-ads/facebook@workspace:packages/facebook"
+  languageName: unknown
+  linkType: soft
+
+"@react-native-google-mobile-ads/inmobi@workspace:packages/inmobi":
+  version: 0.0.0-use.local
+  resolution: "@react-native-google-mobile-ads/inmobi@workspace:packages/inmobi"
+  languageName: unknown
+  linkType: soft
+
+"@react-native-google-mobile-ads/mintegral@workspace:packages/mintegral":
+  version: 0.0.0-use.local
+  resolution: "@react-native-google-mobile-ads/mintegral@workspace:packages/mintegral"
+  languageName: unknown
+  linkType: soft
+
+"@react-native-google-mobile-ads/moloco@workspace:packages/moloco":
+  version: 0.0.0-use.local
+  resolution: "@react-native-google-mobile-ads/moloco@workspace:packages/moloco"
+  languageName: unknown
+  linkType: soft
+
+"@react-native-google-mobile-ads/pangle@workspace:packages/pangle":
+  version: 0.0.0-use.local
+  resolution: "@react-native-google-mobile-ads/pangle@workspace:packages/pangle"
+  languageName: unknown
+  linkType: soft
+
+"@react-native-google-mobile-ads/unity@workspace:packages/unity":
+  version: 0.0.0-use.local
+  resolution: "@react-native-google-mobile-ads/unity@workspace:packages/unity"
+  languageName: unknown
+  linkType: soft
+
+"@react-native-google-mobile-ads/vungle@workspace:packages/vungle":
+  version: 0.0.0-use.local
+  resolution: "@react-native-google-mobile-ads/vungle@workspace:packages/vungle"
+  languageName: unknown
+  linkType: soft
+
+"@react-native-google-mobile-ads/yandex@workspace:packages/yandex":
+  version: 0.0.0-use.local
+  resolution: "@react-native-google-mobile-ads/yandex@workspace:packages/yandex"
+  languageName: unknown
+  linkType: soft
+
 "@react-native/assets-registry@npm:0.83.1":
   version: 0.83.1
   resolution: "@react-native/assets-registry@npm:0.83.1"
