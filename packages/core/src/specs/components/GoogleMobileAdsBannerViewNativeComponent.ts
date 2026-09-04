@@ -27,6 +27,10 @@ export type NativeEvent = {
   height?: Float;
   code?: string;
   message?: string;
+  /** Additive v17 AdErrorReason. */
+  reason?: string;
+  /** Additive v17 AdError phase (`load` | `show`). */
+  phase?: string;
   name?: string;
   data?: string;
   currency?: string;

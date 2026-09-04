@@ -70,6 +70,45 @@ class ReactNativeGoogleMobileAdsCommonTest {
   }
 
   @Test
+  fun reasonFromLegacyCode_mirrorsJsVocabulary() {
+    assertEquals("no-fill", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode("no-fill"))
+    assertEquals("no-fill", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode("error-code-no-fill"))
+    assertEquals("network-error", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode("error-code-network-error"))
+    assertEquals("app-id-missing", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode("application-identifier-missing"))
+    assertEquals("invalid-ad-string", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode("received-invalid-ad-string"))
+    assertEquals("internal-error", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode("internal"))
+    assertEquals("unknown", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode(null))
+    assertEquals("unknown", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode(""))
+    assertEquals("mediation-no-fill", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode("error-code-mediation-no-fill"))
+    assertEquals("custom", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode("custom"))
+  }
+
+  @Test
+  fun bannerErrorCodeParts_fillPreviouslyMissingDefaultBranch() {
+    // Pure code/message mapping — avoids React Native Arguments bridge init.
+    val noFill = ReactNativeGoogleMobileAdsCommon.bannerErrorCodeParts(AdRequest.ERROR_CODE_NO_FILL)
+    assertEquals("error-code-no-fill", noFill[0])
+    assertEquals("no-fill", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode(noFill[0]))
+
+    val appId = ReactNativeGoogleMobileAdsCommon.bannerErrorCodeParts(AdRequest.ERROR_CODE_APP_ID_MISSING)
+    assertEquals("error-code-app-id-missing", appId[0])
+    assertEquals("app-id-missing", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode(appId[0]))
+
+    val mediation = ReactNativeGoogleMobileAdsCommon.bannerErrorCodeParts(AdRequest.ERROR_CODE_MEDIATION_NO_FILL)
+    assertEquals("error-code-mediation-no-fill", mediation[0])
+
+    val invalidAd = ReactNativeGoogleMobileAdsCommon.bannerErrorCodeParts(AdRequest.ERROR_CODE_INVALID_AD_STRING)
+    assertEquals("error-code-invalid-ad-string", invalidAd[0])
+
+    val mismatch = ReactNativeGoogleMobileAdsCommon.bannerErrorCodeParts(AdRequest.ERROR_CODE_REQUEST_ID_MISMATCH)
+    assertEquals("error-code-request-id-mismatch", mismatch[0])
+
+    val unknown = ReactNativeGoogleMobileAdsCommon.bannerErrorCodeParts(999)
+    assertEquals("error-code-unknown", unknown[0])
+    assertEquals("unknown", ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode(unknown[0]))
+  }
+
+  @Test
   fun eventConstants_matchOwnedWireNames() {
     assertEquals("loaded", ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_LOADED)
     assertEquals("error", ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR)
@@ -84,5 +123,9 @@ class ReactNativeGoogleMobileAdsCommonTest {
     val mapped = ReactNativeGoogleMobileAdsCommon.getCodeAndMessageFromAdError(error)
     assertEquals(expectedCode, mapped[0])
     assertEquals("detail-$errorCode", mapped[1])
+    assertEquals(
+      ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode(expectedCode),
+      ReactNativeGoogleMobileAdsCommon.reasonFromLegacyCode(mapped[0]),
+    )
   }
 }

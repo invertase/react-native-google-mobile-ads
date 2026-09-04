@@ -25,6 +25,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
+import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdLoadCallback
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
@@ -249,6 +250,17 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
               // Not Implemented Yet
             }
 
+            override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+              val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(adError, "show")
+              sendAdEvent(
+                ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
+                requestId,
+                adUnitId,
+                error,
+                null,
+              )
+            }
+
             private fun sendAdEvent(type: String) {
               sendAdEvent(
                 type,
@@ -275,9 +287,8 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
       } catch (e: Exception) {
         Log.w("RNGoogleMobileAds", "Unknown error on load")
         Log.w("RNGoogleMobileAds", e)
-        val error = Arguments.createMap()
-        error.putString("code", "internal")
-        error.putString("message", e.message)
+        val error =
+          ReactNativeGoogleMobileAdsCommon.buildAdErrorMap("internal-error", e.message, "load")
         sendAdEvent(
           ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
           requestId,
@@ -289,11 +300,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
     }
 
     override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-      val error = Arguments.createMap()
-      val codeAndMessage =
-        ReactNativeGoogleMobileAdsCommon.getCodeAndMessageFromAdError(loadAdError)
-      error.putString("code", codeAndMessage[0])
-      error.putString("message", codeAndMessage[1])
+      val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(loadAdError, "load")
       ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.responseInfo)?.let {
         error.putMap("responseInfo", it)
       }

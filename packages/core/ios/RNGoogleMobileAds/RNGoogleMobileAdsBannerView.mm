@@ -234,7 +234,8 @@ using namespace facebook::react;
 }
 
 - (void)bannerView:(GADBannerView *)bannerView didFailToReceiveAdWithError:(NSError *)error {
-  NSDictionary *errorAndMessage = [RNGoogleMobileAdsCommon getCodeAndMessageFromAdError:error];
+  NSDictionary *errorAndMessage = [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error
+                                                                               phase:@"load"];
   NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
       dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo responseInfoFromLoadError:error]
                          compact:NO];
@@ -246,12 +247,20 @@ using namespace facebook::react;
     }
   }
   if (_eventEmitter != nullptr) {
+    std::string reason = errorAndMessage[@"reason"] != nil
+                             ? std::string([[errorAndMessage valueForKey:@"reason"] UTF8String])
+                             : "";
+    std::string phase = errorAndMessage[@"phase"] != nil
+                            ? std::string([[errorAndMessage valueForKey:@"phase"] UTF8String])
+                            : "load";
     std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
         _eventEmitter)
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
             .type = "onAdFailedToLoad",
             .code = std::string([[errorAndMessage valueForKey:@"code"] UTF8String]),
             .message = std::string([[errorAndMessage valueForKey:@"message"] UTF8String]),
+            .reason = reason,
+            .phase = phase,
             .responseInfoJson = std::string([responseInfoJson UTF8String]),
         });
   }

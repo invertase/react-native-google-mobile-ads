@@ -21,6 +21,7 @@
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsNativeAdRegistry.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
+#import "RNSharedUtils.h"
 
 typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable nativeAd,
                                                    NSError *_Nullable error);
@@ -72,56 +73,85 @@ RCT_EXPORT_MODULE();
   return self;
 }
 
-RCT_EXPORT_METHOD(
-    load
-    : (NSString *)adUnitId requestOptions
-    : (NSDictionary *)requestOptions resolve
-    : (RCTPromiseResolveBlock)resolve reject
-    : (RCTPromiseRejectBlock)reject {
-      RNGMANativeAdHolder *adHolder =
-          [[RNGMANativeAdHolder alloc] initWithNativeModule:self
-                                                   adUnitId:adUnitId
-                                             requestOptions:requestOptions];
+RCT_EXPORT_METHOD(load
+                  : (NSString *)adUnitId requestOptions
+                  : (NSDictionary *)requestOptions resolve
+                  : (RCTPromiseResolveBlock)resolve reject
+                  : (RCTPromiseRejectBlock)reject {
+                    RNGMANativeAdHolder *adHolder =
+                        [[RNGMANativeAdHolder alloc] initWithNativeModule:self
+                                                                 adUnitId:adUnitId
+                                                           requestOptions:requestOptions];
 
-      [adHolder loadWithCompletionHandler:^(GADNativeAd *nativeAd, NSError *error) {
-        if (error != nil) {
-          reject(@"ERROR_LOAD", error.description, error);
-          return;
-        }
+                    [adHolder loadWithCompletionHandler:^(GADNativeAd *nativeAd, NSError *error) {
+                      if (error != nil) {
+                        // Keep legacy `ERROR_LOAD` as `code` (additive-only); put detail in
+                        // `reason`.
+                        NSMutableDictionary *userInfo =
+                            [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"load"];
+                        NSString *reason = userInfo[@"reason"] ?: @"unknown";
+                        userInfo[@"code"] = @"ERROR_LOAD";
+                        userInfo[@"reason"] = reason;
+                        userInfo[@"message"] = error.description ?: userInfo[@"message"] ?: @"";
+                        NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
+                            dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo
+                                                           responseInfoFromLoadError:error]
+                                               compact:NO];
+                        if (responseInfo != nil) {
+                          userInfo[@"responseInfo"] = responseInfo;
+                        }
+                        [RNSharedUtils rejectPromiseWithUserInfo:reject userInfo:userInfo];
+                        return;
+                      }
 
-        NSString *responseId = nativeAd.responseInfo.responseIdentifier;
-        if (responseId == nil) {
-          reject(@"ERROR_LOAD", @"Failed to get a valid response ID from the loaded ad.", nil);
-          return;
-        }
+                      NSString *responseId = nativeAd.responseInfo.responseIdentifier;
+                      if (responseId == nil) {
+                        // Build via NSMutableDictionary — multi-entry @{…} inside RCT_EXPORT_METHOD
+                        // is a preprocessor footgun (commas become extra macro args).
+                        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+                        userInfo[@"code"] = @"ERROR_LOAD";
+                        userInfo[@"message"] =
+                            @"Failed to get a valid response ID from the loaded ad.";
+                        userInfo[@"reason"] = @"unknown";
+                        userInfo[@"phase"] = @"load";
+                        [RNSharedUtils rejectPromiseWithUserInfo:reject userInfo:userInfo];
+                        return;
+                      }
 
-        [_adHolders setValue:adHolder forKey:responseId];
-        [RNGoogleMobileAdsNativeAdRegistry setNativeAd:nativeAd forResponseId:responseId];
+                      [_adHolders setValue:adHolder forKey:responseId];
+                      [RNGoogleMobileAdsNativeAdRegistry setNativeAd:nativeAd
+                                                       forResponseId:responseId];
 
-        NSDictionary *responseInfo =
-            [RNGoogleMobileAdsResponseInfo dictionaryFromResponseInfo:nativeAd.responseInfo
-                                                              compact:NO];
-        resolve(@{
-          @"responseId" : responseId,
-          @"advertiser" : nativeAd.advertiser ?: [NSNull null],
-          @"body" : nativeAd.body ?: [NSNull null],
-          @"callToAction" : nativeAd.callToAction ?: [NSNull null],
-          @"headline" : nativeAd.headline ?: [NSNull null],
-          @"price" : nativeAd.price ?: [NSNull null],
-          @"store" : nativeAd.store ?: [NSNull null],
-          @"starRating" : nativeAd.starRating ?: [NSNull null],
-          @"icon" : (nativeAd.icon && nativeAd.icon.imageURL != nil)
-              ? @{@"scale" : @(nativeAd.icon.scale), @"url" : nativeAd.icon.imageURL.absoluteString}
-              : [NSNull null],
-          @"mediaContent" : @{
-            @"aspectRatio" : @(nativeAd.mediaContent.aspectRatio),
-            @"hasVideoContent" : @(nativeAd.mediaContent.hasVideoContent),
-            @"duration" : @(nativeAd.mediaContent.duration)
-          },
-          @"responseInfo" : responseInfo ?: [NSNull null]
-        });
-      }];
-    })
+                      NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
+                          dictionaryFromResponseInfo:nativeAd.responseInfo
+                                             compact:NO];
+                      // NSMutableDictionary avoids @{…} commas inside RCT_EXPORT_METHOD.
+                      NSMutableDictionary *payload = [NSMutableDictionary dictionary];
+                      payload[@"responseId"] = responseId;
+                      payload[@"advertiser"] = nativeAd.advertiser ?: [NSNull null];
+                      payload[@"body"] = nativeAd.body ?: [NSNull null];
+                      payload[@"callToAction"] = nativeAd.callToAction ?: [NSNull null];
+                      payload[@"headline"] = nativeAd.headline ?: [NSNull null];
+                      payload[@"price"] = nativeAd.price ?: [NSNull null];
+                      payload[@"store"] = nativeAd.store ?: [NSNull null];
+                      payload[@"starRating"] = nativeAd.starRating ?: [NSNull null];
+                      if (nativeAd.icon && nativeAd.icon.imageURL != nil) {
+                        NSMutableDictionary *icon = [NSMutableDictionary dictionary];
+                        icon[@"scale"] = @(nativeAd.icon.scale);
+                        icon[@"url"] = nativeAd.icon.imageURL.absoluteString;
+                        payload[@"icon"] = icon;
+                      } else {
+                        payload[@"icon"] = [NSNull null];
+                      }
+                      NSMutableDictionary *mediaContent = [NSMutableDictionary dictionary];
+                      mediaContent[@"aspectRatio"] = @(nativeAd.mediaContent.aspectRatio);
+                      mediaContent[@"hasVideoContent"] = @(nativeAd.mediaContent.hasVideoContent);
+                      mediaContent[@"duration"] = @(nativeAd.mediaContent.duration);
+                      payload[@"mediaContent"] = mediaContent;
+                      payload[@"responseInfo"] = responseInfo ?: [NSNull null];
+                      resolve(payload);
+                    }];
+                  })
 
 RCT_EXPORT_METHOD(destroy
                   : (NSString *)responseId {

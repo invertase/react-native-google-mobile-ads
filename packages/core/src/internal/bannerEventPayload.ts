@@ -32,6 +32,8 @@ export type BannerNativeEvent =
       type: 'onAdFailedToLoad';
       code: string;
       message: string;
+      reason?: string;
+      phase?: 'load' | 'show';
       responseInfo?: ResponseInfo;
       responseInfoJson?: string;
     }

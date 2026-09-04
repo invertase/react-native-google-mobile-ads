@@ -73,10 +73,30 @@ static const NSInteger kRNGMAErrorReceivedInvalidAdString = 21;
     mappedCode = @"application-identifier-missing";
   }
 
+  NSString *reason = mappedCode;
+  if ([mappedCode isEqualToString:@"application-identifier-missing"]) {
+    reason = @"app-id-missing";
+  } else if ([mappedCode isEqualToString:@"received-invalid-ad-string"]) {
+    reason = @"invalid-ad-string";
+  }
+
   return @{
     @"code" : mappedCode,
     @"message" : mappedMessage,
+    @"reason" : reason,
   };
+}
+
+/**
+ * Additive AdErrorPayload: legacy code/message plus reason and phase.
+ */
++ (NSMutableDictionary *)adErrorPayloadFromAdErrorCode:(NSInteger)code
+                                               message:(nullable NSString *)message
+                                                 phase:(NSString *)phase {
+  NSMutableDictionary *payload = [[self codeAndMessageFromAdErrorCode:code
+                                                              message:message] mutableCopy];
+  payload[@"phase"] = phase;
+  return payload;
 }
 
 + (BOOL)customAdSizeFromString:(NSString *)value width:(CGFloat *)width height:(CGFloat *)height {

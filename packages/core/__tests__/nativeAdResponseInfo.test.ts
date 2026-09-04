@@ -60,4 +60,76 @@ describe('NativeAd responseInfo', () => {
     expect(ad.responseInfo).toBeNull();
     ad.destroy();
   });
+
+  it('enriches native load rejection with reason/phase (keeps ERROR_LOAD code)', async () => {
+    const rejection = Object.assign(new Error('no inventory'), {
+      code: 'ERROR_LOAD',
+      message: 'no inventory',
+      userInfo: {
+        code: 'ERROR_LOAD',
+        message: 'no inventory',
+        reason: 'no-fill',
+        phase: 'load' as const,
+        responseInfo: {
+          responseId: 'err-ri',
+          adapterClassName: null,
+          loadedAdapterResponse: null,
+          adapterResponses: [],
+          extras: {},
+        },
+      },
+    });
+    (NativeGoogleMobileAdsNativeModule.load as jest.Mock).mockRejectedValueOnce(rejection);
+
+    await expect(NativeAd.createForAdRequest('unit')).rejects.toMatchObject({
+      code: 'googleMobileAds/ERROR_LOAD',
+      reason: 'no-fill',
+      phase: 'load',
+      responseInfo: { responseId: 'err-ri' },
+    });
+  });
+
+  it('maps Android fullscreen vocabulary rejection without inventing SHOW_FAILED', async () => {
+    const rejection = Object.assign(new Error('empty'), {
+      code: 'no-fill',
+      message: 'empty',
+      userInfo: {
+        code: 'no-fill',
+        message: 'empty',
+        reason: 'no-fill',
+        phase: 'load' as const,
+      },
+    });
+    (NativeGoogleMobileAdsNativeModule.load as jest.Mock).mockRejectedValueOnce(rejection);
+
+    await expect(NativeAd.createForAdRequest('unit')).rejects.toMatchObject({
+      code: 'googleMobileAds/no-fill',
+      reason: 'no-fill',
+      phase: 'load',
+    });
+  });
+
+  it('strips namespaced reject codes and defaults missing userInfo', async () => {
+    const rejection = Object.assign(new Error('bare'), {
+      code: 'googleMobileAds/network-error',
+      message: 'bare',
+    });
+    (NativeGoogleMobileAdsNativeModule.load as jest.Mock).mockRejectedValueOnce(rejection);
+
+    await expect(NativeAd.createForAdRequest('unit')).rejects.toMatchObject({
+      code: 'googleMobileAds/network-error',
+      reason: 'network-error',
+      phase: 'load',
+    });
+  });
+
+  it('defaults unknown wire code when rejection has no code fields', async () => {
+    (NativeGoogleMobileAdsNativeModule.load as jest.Mock).mockRejectedValueOnce({});
+
+    await expect(NativeAd.createForAdRequest('unit')).rejects.toMatchObject({
+      code: 'googleMobileAds/unknown',
+      reason: 'unknown',
+      phase: 'load',
+    });
+  });
 });
