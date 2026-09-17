@@ -2,8 +2,8 @@
 
 /**
  * semantic-release prepare plugin: refresh example Podfile.lock after
- * @semantic-release/npm bumps packages/core/package.json, before
- * @semantic-release/git commits release assets.
+ * @semantic-release/npm prepares the public packages and the version-sync plugin
+ * aligns their manifests, before @semantic-release/git commits release assets.
  */
 
 const { refreshIosPodLockfile } = require('./refresh-ios-pod-lockfile');

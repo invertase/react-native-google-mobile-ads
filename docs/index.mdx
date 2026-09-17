@@ -77,6 +77,20 @@ To do so [follow the official `expo-build-properties` installation instructions]
 </TabItem>
 </Tabs>
 
+### Android Kotlin compatibility
+
+Google Mobile Ads Android SDK 25.4 ships Kotlin 2.3 metadata. This library supports
+Kotlin 1.9.25 and newer:
+
+- With Kotlin 1.9.25 through versions earlier than 2.3, the library adds
+  `-Xskip-metadata-version-check` only to its own Kotlin compile tasks.
+- With Kotlin 2.3 or newer, no metadata skip is added.
+
+The scoped compiler flag is safe here because this module consumes the Google Mobile
+Ads public Java API. It is a compiler compatibility setting, not a dependency exclusion.
+If Kotlin code in your app or another module directly consumes an affected dependency,
+upgrade that module to Kotlin 2.3+ or configure its compile tasks separately.
+
 ### Setting up Google AdMob
 
 Before you are able to display ads to your users, you must have a [Google AdMob account](https://apps.admob.com). Under the

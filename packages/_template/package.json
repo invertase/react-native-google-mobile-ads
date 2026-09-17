@@ -69,10 +69,10 @@
       "googleMobileAdsMediation": "__IOS_MEDIATION_VERSION__"
     },
     "android": {
-      "minSdk": 23,
-      "targetSdk": 34,
-      "compileSdk": 34,
-      "buildTools": "34.0.0",
+      "minSdk": 24,
+      "targetSdk": 36,
+      "compileSdk": 36,
+      "buildTools": "36.0.0",
       "googleMobileAdsMediation": "__ANDROID_MEDIATION_VERSION__"
     }
   },
@@ -105,8 +105,8 @@
     "@expo/config-plugins": ">=5.0.0",
     "expo": ">=47.0.0",
     "react": "*",
-    "react-native": "*",
-    "react-native-google-mobile-ads": "*"
+    "react-native": ">=0.76",
+    "react-native-google-mobile-ads": ">=17.0.0"
   },
   "peerDependenciesMeta": {
     "@expo/config-plugins": {

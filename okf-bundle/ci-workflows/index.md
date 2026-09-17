@@ -17,16 +17,44 @@ Do not copy other repos’ Detox patch inventories, macOS-app e2e suites, Jacoco
 | Docs | [`.github/workflows/docs.yml`](../../.github/workflows/docs.yml) | `yarn lint:spellcheck` | Job title mentions Markdown; CI is spellcheck only — [§ lint](../testing/validation-checklist.md#lint-and-formatting) |
 | PR title | [`.github/workflows/pr_title.yml`](../../.github/workflows/pr_title.yml) | [documentation-policy § pull requests](../documentation-policy.md#pull-requests) | Conventional Commits; `validateSingleCommit` |
 | Test patches | [`.github/workflows/create_test_patches.yml`](../../.github/workflows/create_test_patches.yml) | Do not invent a local substitute | `workflow_dispatch` + push/PR; patch-package artifacts |
-| Publish | [`.github/workflows/publish.yml`](../../.github/workflows/publish.yml) | Maintainers only | `workflow_dispatch` only (`on.push` exists; job `if` ignores push). Runs on **macos-15** with Xcode + CocoaPods so semantic-release prepare can refresh `RNGoogleMobileAdsExample/ios/Podfile.lock` into the release commit ([§ publish Podfile.lock](#publish-podfile-lock)). |
+| Publish | [`.github/workflows/publish.yml`](../../.github/workflows/publish.yml) | Maintainers only | `workflow_dispatch` only (`on.push` exists; job `if` ignores push). semantic-release records one version for core and every public scoped adapter; `lerna publish from-package` is the only npm upload path and excludes private `packages/_template/`. Runs on **macos-15** with Xcode + CocoaPods so semantic-release prepare can refresh `RNGoogleMobileAdsExample/ios/Podfile.lock` into the release commit ([§ publish convergence](#publish-podfile-lock)). |
 | Stale | [`.github/workflows/stale.yml`](../../.github/workflows/stale.yml) | n/a | Scheduled issue/PR stale bot |
 
 Jest/e2e/patch workflows `paths-ignore` markdown and `docs/**` (YAML also lists `website/**`; that tree is not in this repo — ignore it). Lint runs on markdown PRs and pushes to `main`. Docs spellcheck is PR-only.
 
 <a id="publish-podfile-lock"></a>
 
-## Publish Podfile.lock refresh
+## Publish convergence and Podfile.lock refresh
 
-After `@semantic-release/npm` bumps `packages/core/package.json`, the local prepare plugin `scripts/semantic-release-refresh-ios-pod-lockfile.js` runs `yarn release:refresh-ios-pod-lockfile` (Darwin-only): two `yarn tests:ios:pod:install` passes, asserts `RNGoogleMobileAds` / `Google-Mobile-Ads-SDK` / `GoogleUserMessagingPlatform` match `packages/core` version + `sdkVersions.ios`, then requires an idempotent `git diff --exit-code` on `RNGoogleMobileAdsExample/ios/Podfile.lock`. `@semantic-release/git` includes that lockfile in the release commit assets.
+One `@semantic-release/npm` instance per public package prepares core plus all
+scoped adapters at `nextRelease.version`, with `npmPublish: false` on every
+instance. The local `scripts/semantic-release-sync-package-versions.js` prepare
+plugin fails the release unless `.releaserc` still has `npmPublish: false` on
+every npm root with each manifest plus `lerna.json` in the `@semantic-release/git`
+assets, and `publish.yml` still keeps `id-token: write`, a setup-node
+`registry-url`, and the `if: success()` Lerna upload step. It then aligns those
+manifests and `lerna.json` and excludes the private template. semantic-release
+commits and tags that version and creates the GitHub release. Same assertions
+locally: `node ./scripts/semantic-release-sync-package-versions.js --self-check`,
+locked by `packages/core/__tests__/semanticReleaseSyncPackageVersions.test.js`.
+
+After semantic-release, the workflow runs
+`yarn lerna publish from-package --yes --loglevel trace` under `if: success()` —
+a no-op semantic-release still exits 0 once git is at version V, so a rerun
+reaches this step, while a failed release (bumped manifests, no tag) never
+uploads. This is the only npm upload path. Job `id-token: write` plus setup-node
+`registry-url: https://registry.npmjs.org` keep npm OIDC Trusted Publish and
+Sigstore provenance on that Lerna step. Node 24 already ships npm 11+, which is
+the OIDC floor; this repo does not copy a separate pinned-npm installer.
+
+For the version recorded in git, Lerna publishes each public package whose
+matching version is absent from npm and skips versions already present.
+Therefore a partial upload is convergent: **rerunning Publish heals** npm gaps
+without republishing completed packages. The invariant is one git version V for
+all public packages; `from-package` makes npm converge to that set. Private
+`packages/_template/` is never uploaded.
+
+After the core package is bumped, the local prepare plugin `scripts/semantic-release-refresh-ios-pod-lockfile.js` runs `yarn release:refresh-ios-pod-lockfile` (Darwin-only): two `yarn tests:ios:pod:install` passes, asserts `RNGoogleMobileAds` / `Google-Mobile-Ads-SDK` / `GoogleUserMessagingPlatform` match `packages/core` version + `sdkVersions.ios`, then requires an idempotent `git diff --exit-code` on `RNGoogleMobileAdsExample/ios/Podfile.lock`. `@semantic-release/git` includes every public package manifest, `lerna.json`, and that lockfile in the release commit assets.
 
 Do **not** delete `Podfile.lock` on routine `yarn tests:ios:pod:install` — install updates it in place. Pin-vs-lock drift (for example declared GMA `13.5.0` vs a stale lock) is fixed by that install or by the release refresh, not by wiping the lockfile. Local smoke without CocoaPods churn: `node ./scripts/refresh-ios-pod-lockfile.js --assert-pins-only` or `--self-check`. Commands: [agent command policy](../testing/agent-command-policy.md#canonical-registry).
 

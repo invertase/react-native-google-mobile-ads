@@ -12,6 +12,10 @@ Scope:
 
 Out of scope: MAX / CloudX / Yandex-as-host packages; filling AppLovin/Meta/… product SDK pins (add one network package per commit); core public JS API changes.
 
+Generated adapters must match core’s platform floors: iOS **15.1** and Android minSdk **24**.
+
+> Google’s mediation guides may permit Android minSdk 23 upstream; this product advertises 24 to match core.
+
 ## Layout
 
 ```text

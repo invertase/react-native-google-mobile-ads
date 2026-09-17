@@ -38,7 +38,15 @@ Commands: [validation checklist § Expo plugin](testing/validation-checklist.md#
 
 ## GMA-AD-2 — Yarn workspaces + Lerna/Nx prepare — **Accepted**
 
-This repo is a **Yarn 4 workspaces** monorepo. The publishable npm package `react-native-google-mobile-ads` lives in `packages/core/`. The example app stays at `RNGoogleMobileAdsExample/` and depends on the core package via the workspace protocol (not `portal:`).
+This repo is a **Yarn 4 workspaces** monorepo. The core npm package
+`react-native-google-mobile-ads` lives in `packages/core/`; public scoped mediation
+adapters live in `packages/{applovin,facebook,inmobi,mintegral,moloco,pangle,unity,vungle,yandex}/`.
+semantic-release versions core plus all public adapters in lockstep; the publish
+workflow's convergent `lerna publish from-package` step is the only npm uploader
+([CI publish convergence](ci-workflows/index.md#publish-podfile-lock)).
+`packages/_template/` is a private scaffold and is never published. The example app
+stays at `RNGoogleMobileAdsExample/` and depends on the core package via the workspace
+protocol (not `portal:`).
 
 Root `yarn prepare` runs `yarn lerna:prepare` (Lerna 9 + Nx cache, `neverConnectToCloud`). Per-package `prepare` performs genversion, bob (`lib/`), and the Expo plugin build. Do not invent a second task runner.
 

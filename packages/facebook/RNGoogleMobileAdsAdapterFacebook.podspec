@@ -17,9 +17,9 @@ Pod::Spec.new do |s|
     :git => "#{package["repository"]["url"]}.git",
     :tag => "v#{s.version}"
   }
-  # Meta Audience Network mediation adapter 6.22.0.0 requires iOS 15.0+.
+  # Core requires iOS 15.1+; Meta Audience Network mediation adapter 6.22.0.0 requires iOS 15.0+.
   # https://developers.google.com/admob/ios/mediation/meta
-  s.platforms    = { :ios => "15.0" }
+  s.platforms    = { :ios => "15.1" }
   s.source_files = "ios/**/*.{h,m,mm,swift}"
 
   if respond_to?(:install_modules_dependencies, true)

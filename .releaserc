@@ -12,14 +12,61 @@
     }],
     "@semantic-release/changelog",
     ["@semantic-release/npm", {
-      "pkgRoot": "packages/core"
+      "pkgRoot": "packages/core",
+      "npmPublish": false
     }],
+    ["@semantic-release/npm", {
+      "pkgRoot": "packages/applovin",
+      "npmPublish": false
+    }],
+    ["@semantic-release/npm", {
+      "pkgRoot": "packages/facebook",
+      "npmPublish": false
+    }],
+    ["@semantic-release/npm", {
+      "pkgRoot": "packages/inmobi",
+      "npmPublish": false
+    }],
+    ["@semantic-release/npm", {
+      "pkgRoot": "packages/mintegral",
+      "npmPublish": false
+    }],
+    ["@semantic-release/npm", {
+      "pkgRoot": "packages/moloco",
+      "npmPublish": false
+    }],
+    ["@semantic-release/npm", {
+      "pkgRoot": "packages/pangle",
+      "npmPublish": false
+    }],
+    ["@semantic-release/npm", {
+      "pkgRoot": "packages/unity",
+      "npmPublish": false
+    }],
+    ["@semantic-release/npm", {
+      "pkgRoot": "packages/vungle",
+      "npmPublish": false
+    }],
+    ["@semantic-release/npm", {
+      "pkgRoot": "packages/yandex",
+      "npmPublish": false
+    }],
+    "./scripts/semantic-release-sync-package-versions.js",
     "./scripts/semantic-release-refresh-ios-pod-lockfile.js",
     [
       "@semantic-release/git",
       {
         "assets": [
           "packages/core/package.json",
+          "packages/applovin/package.json",
+          "packages/facebook/package.json",
+          "packages/inmobi/package.json",
+          "packages/mintegral/package.json",
+          "packages/moloco/package.json",
+          "packages/pangle/package.json",
+          "packages/unity/package.json",
+          "packages/vungle/package.json",
+          "packages/yandex/package.json",
           "lerna.json",
           "CHANGELOG.md",
           "RNGoogleMobileAdsExample/ios/Podfile.lock"
