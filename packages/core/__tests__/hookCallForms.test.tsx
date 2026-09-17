@@ -4,6 +4,7 @@ import { act, render } from '@testing-library/react-native';
 import {
   AdEventType,
   AdFormat,
+  BannerAdSize,
   InterstitialAd,
   RewardedAd,
   RewardedAdEventType,
@@ -23,6 +24,7 @@ import {
 } from '../src';
 import { useFullScreenAd } from '../src/hooks/useFullScreenAd';
 import { resetWarnOnce } from '../src/internal/warnOnce';
+import NativeGoogleMobileAdsNativeModule from '../src/specs/modules/NativeGoogleMobileAdsNativeModule';
 
 // Importing these from the public barrel fails the build if the fullscreen hook exports
 // are dropped. Compile-time narrowing locks live in type-test.ts.
@@ -75,10 +77,7 @@ function createResponseInfo(responseId: string): ResponseInfo {
   };
 }
 
-function createAdError(
-  reason: 'no-fill' | 'network-error',
-  responseInfo: ResponseInfo,
-): AdError {
+function createAdError(reason: 'no-fill' | 'network-error', responseInfo: ResponseInfo): AdError {
   return Object.assign(new Error(reason), {
     code: `googleMobileAds/${reason}`,
     reason,
@@ -259,13 +258,7 @@ describe('fullscreen hook call forms', () => {
       .mockReturnValueOnce(third.ad);
     let result: UseInterstitialAdResult | undefined;
 
-    function Probe({
-      adUnitId,
-      keyword,
-    }: {
-      adUnitId: string | null;
-      keyword: string;
-    }) {
+    function Probe({ adUnitId, keyword }: { adUnitId: string | null; keyword: string }) {
       result = useInterstitialAd({
         adUnitId,
         requestOptions: { keywords: [keyword] },
@@ -401,9 +394,7 @@ describe('fullscreen hook call forms', () => {
 
   it('keeps options ownership through a non-null transition to the positional form', () => {
     const optionsAd = createTestInterstitial();
-    const create = jest
-      .spyOn(InterstitialAd, 'createForAdRequest')
-      .mockReturnValue(optionsAd.ad);
+    const create = jest.spyOn(InterstitialAd, 'createForAdRequest').mockReturnValue(optionsAd.ad);
 
     function Probe({ optionsForm }: { optionsForm: boolean }) {
       const argument = optionsForm
@@ -432,22 +423,14 @@ describe('fullscreen hook call forms', () => {
       .mockReturnValueOnce(positionalAd.ad)
       .mockReturnValueOnce(optionsAd.ad);
 
-    function Probe({
-      optionsForm,
-      adUnitId,
-    }: {
-      optionsForm: boolean;
-      adUnitId: string;
-    }) {
+    function Probe({ optionsForm, adUnitId }: { optionsForm: boolean; adUnitId: string }) {
       const argument = optionsForm ? { adUnitId, autoLoad: false } : adUnitId;
       // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
       useInterstitialAd(argument as never);
       return null;
     }
 
-    const view = render(
-      <Probe optionsForm={false} adUnitId={TestIds.INTERSTITIAL} />,
-    );
+    const view = render(<Probe optionsForm={false} adUnitId={TestIds.INTERSTITIAL} />);
     view.rerender(<Probe optionsForm adUnitId={TestIds.INTERSTITIAL} />);
     expect(create).toHaveBeenCalledTimes(1);
     expect(positionalAd.destroy).not.toHaveBeenCalled();
@@ -701,5 +684,77 @@ describe('fullscreen hook call forms', () => {
       await Promise.resolve();
     });
     expect(result!.status).toBe('no-fill');
+  });
+
+  it('never renders useMultiFormatAd loading with the handles that load destroyed', async () => {
+    function bannerWinner(handleId: string) {
+      return {
+        format: 'banner' as const,
+        handleId,
+        width: 320,
+        height: 50,
+        responseInfo: null,
+        error: null,
+      };
+    }
+
+    let resolveSecondLoad: (value: ReturnType<typeof bannerWinner>) => void = () => undefined;
+    jest
+      .mocked(NativeGoogleMobileAdsNativeModule.loadMultiFormat)
+      .mockResolvedValueOnce(bannerWinner('h-first'))
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            resolveSecondLoad = resolve;
+          }),
+      );
+
+    const rendered: Array<{ status: string; ads: number }> = [];
+    let result: UseMultiFormatAdResult | undefined;
+    function Probe() {
+      result = useMultiFormatAd({
+        adUnitId: TestIds.GAM_NATIVE,
+        requestOptions: {
+          formats: [AdFormat.BANNER],
+          bannerSizes: [BannerAdSize.BANNER],
+          adServer: 'ad-manager',
+        },
+        autoLoad: false,
+      });
+      rendered.push({ status: result.status, ads: result.ads.length });
+      return null;
+    }
+    render(<Probe />);
+
+    await act(async () => {
+      await result!.load();
+    });
+    expect(result!.status).toBe('loaded');
+    expect(result!.ads).toHaveLength(1);
+    const destroyFirst = jest.spyOn(result!.ads[0], 'destroy');
+
+    let pending: Promise<unknown> | undefined;
+    act(() => {
+      pending = result!.load();
+    });
+
+    // The paint that announces 'loading' is the one that could hand a consumer
+    // a destroyed handle, so assert on what rendered, not just the final state.
+    expect(destroyFirst).toHaveBeenCalledTimes(1);
+    expect(rendered[rendered.length - 1]).toEqual({ status: 'loading', ads: 0 });
+    expect(result!.status).toBe('loading');
+    expect(result!.ads).toEqual([]);
+    expect(result!.errors).toEqual([]);
+
+    await act(async () => {
+      resolveSecondLoad(bannerWinner('h-second'));
+      await pending;
+    });
+    expect(result!.status).toBe('loaded');
+    expect(result!.ads).toHaveLength(1);
+
+    act(() => {
+      result!.release().forEach(handle => handle.destroy());
+    });
   });
 });

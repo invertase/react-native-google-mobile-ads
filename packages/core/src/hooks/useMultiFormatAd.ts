@@ -265,10 +265,17 @@ export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiForm
       return inflightRef.current;
     }
 
-    setState(previousState => ({ ...previousState, status: 'loading' }));
+    // Destroy the previous handles before publishing `'loading'`, so no render
+    // can read `ads` that are already dead.
+    clearHeldAds(true);
+    setState(previousState => ({
+      status: 'loading',
+      ads: [],
+      errors: [],
+      responseInfo: previousState.responseInfo,
+    }));
 
     const flight = (async (): Promise<MultiFormatLoadResult> => {
-      clearHeldAds(true);
       const {
         adUnitId,
         requestOptions,
