@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
   }
   # Unity Ads mediation adapter requires iOS 13.0+ (guide + changelog since 4.16.0.0).
   # https://developers.google.com/ad-manager/mobile-ads-sdk/ios/mediation/unity
-  s.platforms    = { :ios => "13.0" }
+  s.platforms    = { :ios => "15.1" }
   s.source_files = "ios/**/*.{h,m,mm,swift}"
 
   if respond_to?(:install_modules_dependencies, true)

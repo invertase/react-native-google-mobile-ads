@@ -15,8 +15,8 @@ buildscript {
     }
 
     dependencies {
-      classpath("com.android.tools.build:gradle:7.0.4")
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.8.22')}"
+      classpath("com.android.tools.build:gradle:8.6.0")
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.9.25')}"
     }
   } else {
     repositories {
@@ -24,7 +24,7 @@ buildscript {
     }
 
     dependencies {
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.8.22')}"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.9.25')}"
     }
   }
 }
@@ -34,6 +34,29 @@ plugins {
 }
 apply plugin: 'kotlin-android'
 
+// Google Mobile Ads 25.4 ships Kotlin 2.3 metadata. This module consumes its public Java API,
+// so older supported compilers may skip the metadata version check without affecting the app.
+def kotlinVersionForCompile = {
+  if (rootProject.ext.has('kotlinVersion')) {
+    return rootProject.ext.kotlinVersion.toString()
+  }
+  if (project.hasProperty('KOTLIN_VERSION')) {
+    return project.property('KOTLIN_VERSION').toString()
+  }
+  return getExtOrDefault('kotlinVersion', '1.9.25').toString()
+}()
+
+def kotlinVersionParts = kotlinVersionForCompile.tokenize('.').take(2)*.toInteger()
+def kotlinMajor = kotlinVersionParts.size() > 0 ? kotlinVersionParts[0] : 0
+def kotlinMinor = kotlinVersionParts.size() > 1 ? kotlinVersionParts[1] : 0
+def kotlinNeedsAdsMetadataSkip = kotlinMajor < 2 || (kotlinMajor == 2 && kotlinMinor < 3)
+
+if (kotlinNeedsAdsMetadataSkip) {
+  tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions.freeCompilerArgs += ["-Xskip-metadata-version-check"]
+  }
+}
+
 def packageJson = PackageJson.getForProject(project)
 def googleMobileAdsVersion = packageJson['sdkVersions']['android']['googleMobileAds']
 def googleUmpVersion = packageJson['sdkVersions']['android']['googleUmp']
@@ -41,8 +64,19 @@ def jsonMinSdk = packageJson['sdkVersions']['android']['minSdk']
 def jsonTargetSdk = packageJson['sdkVersions']['android']['targetSdk']
 def jsonCompileSdk = packageJson['sdkVersions']['android']['compileSdk']
 def jsonBuildTools = packageJson['sdkVersions']['android']['buildTools']
+def isNewArchitectureDisabled() {
+    return project.hasProperty("newArchEnabled") && project.newArchEnabled != "true"
+}
+
 def isNewArchitectureEnabled() {
-    return project.hasProperty("newArchEnabled") && project.newArchEnabled == "true"
+    return !isNewArchitectureDisabled()
+}
+
+if (isNewArchitectureDisabled()) {
+    throw new GradleException(
+      "react-native-google-mobile-ads v17 requires React Native's New Architecture. " +
+      "Remove the explicit old-architecture opt-out or set newArchEnabled=true in android/gradle.properties."
+    )
 }
 
 if (isNewArchitectureEnabled()) {

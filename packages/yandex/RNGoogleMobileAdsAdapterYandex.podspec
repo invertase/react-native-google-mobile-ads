@@ -20,7 +20,7 @@ Pod::Spec.new do |s|
   # Yandex AdMob adapters require iOS 13.0+ (CocoaPods podspec platforms.ios).
   # https://ads.yandex.com/helpcenter/en/dev/ios/admob-third
   # https://cocoapods.org/pods/YandexMobileAdsAdMobAdapters
-  s.platforms    = { :ios => "13.0" }
+  s.platforms    = { :ios => "15.1" }
   s.source_files = "ios/**/*.{h,m,mm,swift}"
 
   if respond_to?(:install_modules_dependencies, true)

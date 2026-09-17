@@ -113,10 +113,13 @@ Unlike rewarded ads, users aren't required to opt-in to view a rewarded intersti
 
 [Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#rewarded-interstitial-ads)
 
-## Migrating to the New Architecture Status (backwards compatible)
+## Platform requirements
 
-This package can be used in both The Old and [The New Architecture](https://reactnative.dev/docs/the-new-architecture/landing-page).
-When using The New Architecture, some legacy code will still be used though. See status below:
+Version 17 requires React Native 0.76 or newer with
+[the New Architecture](https://reactnative.dev/docs/the-new-architecture/landing-page)
+enabled. The Legacy Architecture is no longer supported. The minimum operating system
+versions are **iOS 15.1** (matching React Native 0.76) and **Android API level 24**.
+The current migration status of individual native surfaces is:
 
 | Platform | Feature                                                                                                                                                        | Status      |
 | -------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------| ----------- |

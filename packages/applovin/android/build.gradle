@@ -12,7 +12,7 @@ buildscript {
       mavenCentral()
     }
     dependencies {
-      classpath("com.android.tools.build:gradle:8.1.1")
+      classpath("com.android.tools.build:gradle:8.6.0")
     }
   }
 }
@@ -28,6 +28,7 @@ android {
   namespace "io.invertase.googlemobileads.adapters.applovin"
 
   compileSdkVersion sdkVersions.compileSdk as Integer
+  buildToolsVersion sdkVersions.buildTools
 
   defaultConfig {
     minSdkVersion sdkVersions.minSdk as Integer

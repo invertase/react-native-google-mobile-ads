@@ -2255,7 +2255,7 @@ SPEC CHECKSUMS:
   FBLazyVector: b3e7ad108f0d882e30445c5527d774e3fd432f3d
   Google-Mobile-Ads-SDK: 2171620c6497804b57dc88b95644cc82e7dfb5b0
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
-  hermes-engine: a627b71d28f366bb9d7eee892bfaa977b40cfbc4
+  hermes-engine: 34396b38b188dd02770d12c6560f6ac6d2461f5e
   RCTDeprecation: 2a74a2c57675e64419bd89078efde81f7c1de90b
   RCTRequired: 30451112e6fef4e6f31b4e7eee0845156e35e4b0
   RCTSwiftUI: 5aaf0b07e747ba749dc6acc94d8bd41eea4b570f
@@ -2333,7 +2333,7 @@ SPEC CHECKSUMS:
   ReactTestApp-DevSupport: 407a6f0915350eeaabb7e9d51fbe17873d836f36
   ReactTestApp-Resources: 1bd9ff10e4c24f2ad87101a32023721ae923bccf
   RNGMATesting: 28354db6165b9a432abd9f0284f21a446ef93e11
-  RNGoogleMobileAds: 5b69457ffb7692fa03fcf64097bc7f9e901b43a5
+  RNGoogleMobileAds: ac19a26588de8f63b4e871ad3f5be3376959eb62
   Yoga: fe50ab299e578f397fef753cf309c6703a4db29b
 
 PODFILE CHECKSUM: a5a967f29d02fbbc5627cd1343d767d808bcd1f4

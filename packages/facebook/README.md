@@ -44,7 +44,9 @@ Citations (verify at upgrade time):
 
 Core continues to own `play-services-ads` / `Google-Mobile-Ads-SDK`. This package does not re-pin the GMA SDK.
 
-iOS platform floor is **15.0** (required by Meta Audience Network mediation adapter `6.22.0.0`).
+Platform floors align with core: iOS **15.1** and Android minSdk **24**. The Meta Audience Network mediation adapter `6.22.0.0` requires iOS 15.0, below the React Native-driven product floor.
+
+> Google’s mediation guide permits Android minSdk 23 upstream; this product advertises 24 to match core.
 
 ## Expo (optional)
 

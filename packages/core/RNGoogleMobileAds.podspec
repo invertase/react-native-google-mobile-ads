@@ -7,6 +7,12 @@ google_ump_sdk_version = package['sdkVersions']['ios']['googleUmp']
 Pod::Spec.new do |s|
   s.name                = "RNGoogleMobileAds"
 
+  # Fail fast for old architecture users, but safely in case the variable goes away
+  # completely in future react-native versions
+  if defined?(ENV["RCT_NEW_ARCH_ENABLED"]) != nil && (ENV["RCT_NEW_ARCH_ENABLED"] == '0')
+    raise "#{s.name} requires New Architecture. Remove the explicit old-architecture opt-out before installing pods."
+  end
+
   s.version             = package["version"]
   s.description         = package["description"]
   s.summary             = <<-DESC
@@ -17,7 +23,7 @@ Pod::Spec.new do |s|
   s.authors             = "Invertase Limited"
   s.source              = { :git => "#{package["repository"]["url"]}.git", :tag => "v#{s.version}" }
   s.social_media_url    = 'http://twitter.com/invertaseio'
-  s.ios.deployment_target = "12.0"
+  s.ios.deployment_target = "15.1"
   s.cocoapods_version   = '>= 1.12.0'
   s.source_files        = "ios/**/*.{h,m,mm,swift}"
   s.exclude_files       = "ios/Tests/**/*"
@@ -35,8 +41,8 @@ Pod::Spec.new do |s|
   else
     s.dependency "React-Core"
 
-    # Don't install the dependencies when we run `pod install` in the old architecture.
-    if ENV['RCT_NEW_ARCH_ENABLED'] == '1' then
+    # A missing flag uses React Native's New Architecture default; only an explicit 0 opts out.
+    if ENV['RCT_NEW_ARCH_ENABLED'] != '0' then
       s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
       s.pod_target_xcconfig    = {
           "HEADER_SEARCH_PATHS" => "\"$(PODS_ROOT)/boost\"",

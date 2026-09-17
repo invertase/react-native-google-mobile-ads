@@ -68,10 +68,10 @@
       "googleUmp": "3.1.0"
     },
     "android": {
-      "minSdk": 23,
-      "targetSdk": 34,
-      "compileSdk": 34,
-      "buildTools": "34.0.0",
+      "minSdk": 24,
+      "targetSdk": 36,
+      "compileSdk": 36,
+      "buildTools": "36.0.0",
       "googleMobileAds": "25.4.0",
       "googleUmp": "4.0.0"
     }
@@ -108,7 +108,7 @@
   "peerDependencies": {
     "expo": ">=47.0.0",
     "react": "*",
-    "react-native": "*"
+    "react-native": ">=0.76"
   },
   "peerDependenciesMeta": {
     "expo": {

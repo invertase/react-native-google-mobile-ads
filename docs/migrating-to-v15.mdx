@@ -2,6 +2,10 @@
 
 ## Important Notice (Android Only)
 
-If you're upgrading to v15, please note that it requires Kotlin 2.0.0. Ensure your project is updated accordingly to prevent build issues.
+The original v15 guidance recommended Kotlin 2.0.0 to match its contemporary Android
+build tools. That is not a general minimum for later releases.
 
-Open your `android/build.gradle` file and update the Kotlin version to "2.0.0".
+For v17, use Kotlin 1.9.25 or newer. Google Mobile Ads Android SDK 25.4 ships Kotlin 2.3
+metadata, so v17 applies a module-scoped metadata compatibility compiler flag when built
+with Kotlin versions earlier than 2.3. Kotlin 2.3 and newer need no skip. See
+[Android Kotlin compatibility](/#android-kotlin-compatibility) for details.

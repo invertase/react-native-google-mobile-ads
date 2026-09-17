@@ -34,6 +34,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+          registry-url: 'https://registry.npmjs.org'
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -52,8 +53,14 @@ jobs:
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn
-      - name: Publish Packages
+      - name: Record Release
         run: yarn semantic-release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      # Only npm uploader. A rerun heals partial uploads because a no-op
+      # semantic-release still exits 0 once git is already at version V; a failed
+      # release (bumped manifests, no tag) must not reach npm.
+      - name: Publish Missing Packages
+        if: success()
+        run: yarn lerna publish from-package --yes --loglevel trace

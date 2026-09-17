@@ -17,7 +17,7 @@ Pod::Spec.new do |s|
     :git => "#{package["repository"]["url"]}.git",
     :tag => "v#{s.version}"
   }
-  s.platforms    = { :ios => "12.0" }
+  s.platforms    = { :ios => "15.1" }
   s.source_files = "ios/**/*.{h,m,mm,swift}"
 
   if respond_to?(:install_modules_dependencies, true)

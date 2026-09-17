@@ -4385,8 +4385,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -6075,7 +6075,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-native-google-mobile-ads/applovin@workspace:packages/applovin":
+"@react-native-google-mobile-ads/applovin@workspace:*, @react-native-google-mobile-ads/applovin@workspace:packages/applovin":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/applovin@workspace:packages/applovin"
   dependencies:
@@ -6088,8 +6088,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -6098,7 +6098,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-google-mobile-ads/facebook@workspace:packages/facebook":
+"@react-native-google-mobile-ads/facebook@workspace:*, @react-native-google-mobile-ads/facebook@workspace:packages/facebook":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/facebook@workspace:packages/facebook"
   dependencies:
@@ -6111,8 +6111,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -6121,7 +6121,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-google-mobile-ads/inmobi@workspace:packages/inmobi":
+"@react-native-google-mobile-ads/inmobi@workspace:*, @react-native-google-mobile-ads/inmobi@workspace:packages/inmobi":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/inmobi@workspace:packages/inmobi"
   dependencies:
@@ -6134,8 +6134,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -6144,7 +6144,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-google-mobile-ads/mintegral@workspace:packages/mintegral":
+"@react-native-google-mobile-ads/mintegral@workspace:*, @react-native-google-mobile-ads/mintegral@workspace:packages/mintegral":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/mintegral@workspace:packages/mintegral"
   dependencies:
@@ -6157,8 +6157,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -6167,7 +6167,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-google-mobile-ads/moloco@workspace:packages/moloco":
+"@react-native-google-mobile-ads/moloco@workspace:*, @react-native-google-mobile-ads/moloco@workspace:packages/moloco":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/moloco@workspace:packages/moloco"
   dependencies:
@@ -6180,8 +6180,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -6190,7 +6190,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-google-mobile-ads/pangle@workspace:packages/pangle":
+"@react-native-google-mobile-ads/pangle@workspace:*, @react-native-google-mobile-ads/pangle@workspace:packages/pangle":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/pangle@workspace:packages/pangle"
   dependencies:
@@ -6203,8 +6203,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -6213,7 +6213,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-google-mobile-ads/unity@workspace:packages/unity":
+"@react-native-google-mobile-ads/unity@workspace:*, @react-native-google-mobile-ads/unity@workspace:packages/unity":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/unity@workspace:packages/unity"
   dependencies:
@@ -6226,8 +6226,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -6236,7 +6236,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-google-mobile-ads/vungle@workspace:packages/vungle":
+"@react-native-google-mobile-ads/vungle@workspace:*, @react-native-google-mobile-ads/vungle@workspace:packages/vungle":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/vungle@workspace:packages/vungle"
   dependencies:
@@ -6249,8 +6249,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -6259,7 +6259,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-google-mobile-ads/yandex@workspace:packages/yandex":
+"@react-native-google-mobile-ads/yandex@workspace:*, @react-native-google-mobile-ads/yandex@workspace:packages/yandex":
   version: 0.0.0-use.local
   resolution: "@react-native-google-mobile-ads/yandex@workspace:packages/yandex"
   dependencies:
@@ -6272,8 +6272,8 @@ __metadata:
     "@expo/config-plugins": ">=5.0.0"
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
-    react-native-google-mobile-ads: "*"
+    react-native: ">=0.76"
+    react-native-google-mobile-ads: ">=17.0.0"
   peerDependenciesMeta:
     "@expo/config-plugins":
       optional: true
@@ -8576,6 +8576,15 @@ __metadata:
     "@react-native-community/cli": "npm:20.1.0"
     "@react-native-community/cli-platform-android": "npm:20.1.0"
     "@react-native-community/cli-platform-ios": "npm:20.1.0"
+    "@react-native-google-mobile-ads/applovin": "workspace:*"
+    "@react-native-google-mobile-ads/facebook": "workspace:*"
+    "@react-native-google-mobile-ads/inmobi": "workspace:*"
+    "@react-native-google-mobile-ads/mintegral": "workspace:*"
+    "@react-native-google-mobile-ads/moloco": "workspace:*"
+    "@react-native-google-mobile-ads/pangle": "workspace:*"
+    "@react-native-google-mobile-ads/unity": "workspace:*"
+    "@react-native-google-mobile-ads/vungle": "workspace:*"
+    "@react-native-google-mobile-ads/yandex": "workspace:*"
     "@react-native/babel-preset": "npm:0.86.0"
     "@react-native/eslint-config": "npm:0.86.0"
     "@react-native/metro-config": "npm:0.86.0"
@@ -23205,7 +23214,7 @@ __metadata:
   peerDependencies:
     expo: ">=47.0.0"
     react: "*"
-    react-native: "*"
+    react-native: ">=0.76"
   peerDependenciesMeta:
     expo:
       optional: true

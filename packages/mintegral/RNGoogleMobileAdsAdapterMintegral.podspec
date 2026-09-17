@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
   }
   # Mintegral mediation adapter requires iOS 13.0+ (guide prerequisites + CocoaPods podspec).
   # https://developers.google.com/ad-manager/mobile-ads-sdk/ios/mediation/mintegral
-  s.platforms    = { :ios => "13.0" }
+  s.platforms    = { :ios => "15.1" }
   s.source_files = "ios/**/*.{h,m,mm,swift}"
 
   if respond_to?(:install_modules_dependencies, true)
