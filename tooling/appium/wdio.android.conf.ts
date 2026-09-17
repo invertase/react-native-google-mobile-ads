@@ -19,6 +19,7 @@ export const config: Options.Testrunner = {
       platformName: 'Android',
       'appium:automationName': 'UiAutomator2',
       'appium:deviceName': process.env.RNGMA_ANDROID_DEVICE || 'Android Emulator',
+      'appium:udid': process.env.RNGMA_ANDROID_UDID,
       'appium:app': androidDebugApkPath(),
       'appium:appPackage': EXAMPLE_ANDROID_PACKAGE,
       'appium:appActivity': EXAMPLE_ANDROID_ACTIVITY,

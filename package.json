@@ -101,5 +101,8 @@
     "spellchecker-cli": "^7.0.0",
     "typescript": "^5.9.3"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.10.3",
+  "engines": {
+    "node": ">=24"
+  }
 }

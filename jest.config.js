@@ -16,6 +16,6 @@ module.exports = {
   ],
 
   setupFiles: ['./jest.setup.ts'],
-  testPathIgnorePatterns: ['<rootDir>/RNGoogleMobileAdsExample'],
+  testPathIgnorePatterns: ['<rootDir>/RNGoogleMobileAdsExample', '<rootDir>/tooling'],
   testRegex: '(/__tests__/.*\\.(test|spec))\\.[jt]sx?$',
 };
