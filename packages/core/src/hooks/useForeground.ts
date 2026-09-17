@@ -26,10 +26,15 @@ import { AppState } from 'react-native';
 export function useForeground(callback: () => void) {
   const appState = useRef(AppState.currentState);
 
+  // Sampled from a ref so the subscription stays stable while the callback the
+  // publisher passes each render (and anything it closes over) stays current.
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (appState.current === 'background' && nextAppState === 'active') {
-        callback();
+        callbackRef.current();
       }
       appState.current = nextAppState;
     });
