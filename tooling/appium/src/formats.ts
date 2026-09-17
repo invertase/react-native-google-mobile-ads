@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { type IosAppBundleResolution, resolveIosAppBundle } from './hostPreflight.ts';
 import { AppiumTestIds } from './testIds.ts';
 
 const srcDir = path.dirname(fileURLToPath(import.meta.url));
@@ -28,38 +29,33 @@ export function defaultIosSimulatorAppPath(): string {
   );
 }
 
-function derivedDataIosAppPath(): string | undefined {
+function derivedDataIosAppPaths(): string[] {
   const derivedRoot = path.join(os.homedir(), 'Library/Developer/Xcode/DerivedData');
   if (!fs.existsSync(derivedRoot)) {
-    return undefined;
+    return [];
   }
   const prefix = 'RNGoogleMobileAdsExample-';
-  for (const entry of fs.readdirSync(derivedRoot)) {
-    if (!entry.startsWith(prefix)) {
-      continue;
-    }
-    const candidate = path.join(
-      derivedRoot,
-      entry,
-      'Build/Products/Debug-iphonesimulator/ReactTestApp.app',
+  return fs
+    .readdirSync(derivedRoot)
+    .sort()
+    .filter(entry => entry.startsWith(prefix))
+    .map(entry =>
+      path.join(derivedRoot, entry, 'Build/Products/Debug-iphonesimulator/ReactTestApp.app'),
     );
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
+}
+
+export function iosAppBundleResolution(): IosAppBundleResolution {
+  if (process.env.RNGMA_IOS_APP) {
+    const configuredPath = process.env.RNGMA_IOS_APP;
+    const resolution = resolveIosAppBundle([configuredPath]);
+    return resolution.kind === 'absent' ? { kind: 'incomplete', path: configuredPath } : resolution;
   }
-  return undefined;
+  return resolveIosAppBundle([defaultIosSimulatorAppPath(), ...derivedDataIosAppPaths()]);
 }
 
 export function iosAppPath(): string | undefined {
-  if (process.env.RNGMA_IOS_APP) {
-    return process.env.RNGMA_IOS_APP;
-  }
-  for (const candidate of [defaultIosSimulatorAppPath(), derivedDataIosAppPath()]) {
-    if (candidate && fs.existsSync(candidate)) {
-      return candidate;
-    }
-  }
-  return undefined;
+  const resolution = iosAppBundleResolution();
+  return resolution.kind === 'complete' ? resolution.path : undefined;
 }
 
 /** Representative banner size used in smoke (remaining sizes via gallery accordion / manual). */

@@ -5,11 +5,11 @@
   "description": "Appium 3 + WebdriverIO smoke harness for RNGoogleMobileAdsExample",
   "license": "Apache-2.0",
   "scripts": {
-    "validate": "node ./scripts/validate-config.mjs",
+    "validate": "node ./scripts/validate-config.mjs && node --import tsx --test ./__tests__/hostPreflight.test.ts",
     "drivers:install": "node ./scripts/install-drivers.mjs",
     "drivers:verify": "node ./scripts/verify-drivers.mjs",
-    "appium:android": "wdio run ./wdio.android.conf.ts",
-    "appium:ios": "wdio run ./wdio.ios.conf.ts"
+    "appium:android": "tsx ./scripts/preflight.ts android --run",
+    "appium:ios": "tsx ./scripts/preflight.ts ios --run"
   },
   "dependencies": {
     "@wdio/appium-service": "9.31.3",
@@ -33,6 +33,6 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24"
   }
 }
