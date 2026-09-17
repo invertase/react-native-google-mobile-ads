@@ -157,11 +157,17 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
     return unsub;
   }, [poolId, refreshAvailability]);
 
+  // Cleanup runs on `poolId` change and on unmount, so a new id never inherits
+  // the previous pool's ad or status. `destroyOwnedAd` skips released ads
+  // (`ownedByHookRef` is false after `release()`), so publisher-owned inventory
+  // survives an id change.
   useEffect(() => {
     return () => {
       destroyOwnedAd();
+      ownedByHookRef.current = true;
+      setState(initialState);
     };
-  }, []);
+  }, [poolId]);
 
   const watchStale = (ad: PooledAd) => {
     clearStaleSub();
