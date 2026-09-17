@@ -18,11 +18,7 @@
 import * as React from 'react';
 
 import { AdPools } from '../AdPools';
-import {
-  getRegisteredAdPool,
-  subscribeAdPoolRegistry,
-  unregisterAdPool,
-} from '../internal/adPoolRegistry';
+import { getRegisteredAdPool, unregisterAdPool } from '../internal/adPoolRegistry';
 import type { AdPoolConfig } from '../types/AdPool';
 
 export type AdPoolProviderProps = {
@@ -69,19 +65,16 @@ function configSignature(config: AdPoolConfig): string {
  * Declarative pool ownership. Creates pools for the configs it is given and
  * destroys them on unmount, reconciling by `poolId` on every render rather
  * than by array identity.
+ *
+ * Renders `children` unchanged and keeps no React state: it is not a context
+ * provider, so it never subscribes to the pool registry. Consumers read pool
+ * state through `useAdPool` / `usePooledAd`, which subscribe individually; a
+ * registry subscription here would re-render the whole subtree every time any
+ * pool registered or was destroyed.
  */
 export function AdPoolProvider(props: AdPoolProviderProps): React.ReactElement {
   const { pools, children } = props;
   const ownedRef = React.useRef<Map<string, OwnedEntry>>(new Map());
-  const [, bump] = React.useState(0);
-
-  React.useEffect(
-    () =>
-      subscribeAdPoolRegistry(() => {
-        bump(n => n + 1);
-      }),
-    [],
-  );
 
   React.useEffect(() => {
     const nextIds = new Set(pools.map(p => p.poolId));
