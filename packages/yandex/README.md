@@ -69,7 +69,7 @@ Citations (verify at upgrade time):
 
 Core continues to own `play-services-ads` / `Google-Mobile-Ads-SDK`. This package does not re-pin the GMA SDK.
 
-**GMA compatibility note:** `YandexMobileAdsAdMobAdapters@8.4.0.0` requires `Google-Mobile-Ads-SDK ~> 13.6.0`. Core currently pins iOS GMA `13.5.0` — apps that enable this adapter may need a core GMA bump or supported override (same class of pin tension documented for other networks in Character intake).
+`YandexMobileAdsAdMobAdapters@8.4.0.0` requires `Google-Mobile-Ads-SDK ~> 13.6.0`, which matches the core package's iOS GMA pin.
 
 Platform floors align with core: iOS **15.1** and Android minSdk **24**. The mediation integration remains iOS-only.
 
