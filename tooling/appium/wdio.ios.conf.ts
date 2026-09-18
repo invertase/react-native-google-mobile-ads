@@ -24,6 +24,9 @@ export const config: Options.Testrunner = {
       ...(iosApp ? { 'appium:app': iosApp } : {}),
       'appium:newCommandTimeout': 240,
       'appium:noReset': false,
+      // Mirror Android: force reinstall so a cached/pre-installed bundle never shadows the
+      // freshly built app when the version is unchanged.
+      'appium:enforceAppInstall': true,
     },
   ],
 };

@@ -27,6 +27,10 @@ export const config: Options.Testrunner = {
       'appium:autoGrantPermissions': true,
       'appium:newCommandTimeout': 240,
       'appium:noReset': false,
+      // CI caches the whole emulator (`~/.android/avd/*`) after the app is installed, so a
+      // freshly built APK with the same versionCode is otherwise skipped and a stale app runs
+      // against fresh Metro JS. Force reinstall so native always matches the built APK.
+      'appium:enforceAppInstall': true,
       'appium:uiautomator2ServerLaunchTimeout': 60000,
       'appium:adbExecTimeout': 60000,
       'appium:ignoreHiddenApiPolicyError': true,
