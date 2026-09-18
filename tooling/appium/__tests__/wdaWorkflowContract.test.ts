@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +10,11 @@ import {
 } from '../src/hostPreflight.ts';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const require = createRequire(import.meta.url);
+const { appPath, parseUdid } = require('../../../scripts/run-ios-app.js') as {
+  appPath: string;
+  parseUdid: (args: string[]) => string;
+};
 
 test('iOS CI and publish use an explicit frozen root Ruby bundle before Yarn', () => {
   const workflows = ['tests_e2e_ios.yml', 'publish.yml'].map(name =>
@@ -43,6 +49,26 @@ test('iOS CI and publish use an explicit frozen root Ruby bundle before Yarn', (
   assert.equal(
     rootPackage.scripts['tests:ios:pod:install'],
     'bundle exec pod install --project-directory=RNGoogleMobileAdsExample/ios --repo-update',
+  );
+  assert.equal(
+    rootPackage.scripts['tests:ios:run'],
+    'yarn tests:e2e:codegen && yarn tests:ios:pod:install && yarn workspace RNGoogleMobileAdsExample react-native build-ios --buildFolder build && node ./scripts/run-ios-app.js',
+  );
+});
+
+test('canonical iOS installer requires the selected simulator and exact app', () => {
+  assert.equal(
+    appPath,
+    resolve(
+      repositoryRoot,
+      'RNGoogleMobileAdsExample/ios/build/Build/Products/Debug-iphonesimulator/ReactTestApp.app',
+    ),
+  );
+  assert.equal(parseUdid(['--udid', 'selected-simulator']), 'selected-simulator');
+  assert.throws(() => parseUdid([]), /tests:ios:run --udid/);
+  assert.throws(
+    () => parseUdid(['--udid', 'selected-simulator', '--unexpected']),
+    /tests:ios:run --udid/,
   );
 });
 

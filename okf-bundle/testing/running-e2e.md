@@ -24,7 +24,7 @@ Once: `yarn && yarn prepare`; on iOS also root `BUNDLE_FROZEN=true bundle instal
 
 Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:android`, `yarn tests:appium:ios`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
 
-`yarn tests:e2e:codegen` always generates native metadata for **both Android and iOS** (`react-native codegen --platform all`), then removes only the transient Android app codegen tree that would create duplicate CMake targets. The canonical Android build/run and iOS pod-install/run scripts invoke it before native work; Appium preflight invokes the same yarn target rather than duplicating its implementation.
+`yarn tests:e2e:codegen` always generates native metadata for **both Android and iOS** (`react-native codegen --platform all`), then removes only the transient Android app codegen tree that would create duplicate CMake targets. The canonical Android build/run and iOS run scripts invoke it before native work; Appium preflight invokes the same yarn target rather than duplicating its implementation. The frozen `tests:ios:pod:install` script remains exactly the bundled pod command and is called by `tests:ios:run` after codegen.
 
 <a id="ios-wda-prebuilt-validation"></a>
 
@@ -61,7 +61,7 @@ Four separate Google-test-ID **request-outcome contracts** cover standard Banner
 
 **Native coverage flush:** After each top-level smoke suite, while the Appium session is still alive, WDIO taps home **Flush coverage** (`gma.debug.flushCoverage`) so `react-native-coverage` `flush()` dumps Emma/LLVM (and Istanbul when Metro is instrumented) before process kill. Agent pull/report/assert: [coverage design § native agent collection](coverage-design.md#native-agent-collection).
 
-**Android app path:** default `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk` after `yarn tests:android:build` (override `RNGMA_ANDROID_APK`). **iOS:** `yarn tests:ios:run` passes `react-native run-ios --buildFolder build`, so the app is always `RNGoogleMobileAdsExample/ios/build/Build/Products/Debug-iphonesimulator/ReactTestApp.app`; Appium uses that exact path. Set `RNGMA_IOS_APP` only to explicitly override it. Never discover an app from DerivedData or fall back to an installed bundle id.
+**Android app path:** default `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk` after `yarn tests:android:build` (override `RNGMA_ANDROID_APK`). **iOS:** `yarn tests:ios:run --udid <selected-udid>` runs codegen, the exact frozen bundled pod script, `react-native build-ios --buildFolder build`, then installs and launches `RNGoogleMobileAdsExample/ios/build/Build/Products/Debug-iphonesimulator/ReactTestApp.app` on that simulator with `simctl`; Appium uses the same exact path. Set `RNGMA_IOS_APP` only to explicitly override Appium. Never discover an app from DerivedData or fall back to an installed bundle id.
 
 <a id="platform-coverage-gate-blocking"></a>
 
