@@ -177,8 +177,8 @@ repositories {
 }
 
 dependencies {
-  implementation("com.google.android.gms:play-services-ads:${googleMobileAdsVersion}")
-  api "com.google.android.ump:user-messaging-platform:${googleUmpVersion}"
+  implementation("com.google.android.gms:play-services-ads:${ReactNative.ext.getVersion("googleMobileAds", "sdk")}")
+  api "com.google.android.ump:user-messaging-platform:${ReactNative.ext.getVersion("ads", "consent")}"
 
   testImplementation "junit:junit:4.13.2"
   testImplementation "org.robolectric:robolectric:4.14.1"

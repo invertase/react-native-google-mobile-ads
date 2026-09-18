@@ -21,7 +21,12 @@ import type { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
 import { AdapterStatus } from '../../types';
 
+export type NativeGoogleMobileAdsConstants = {
+  sdkVersion: string;
+};
+
 export interface Spec extends TurboModule {
+  getConstants(): NativeGoogleMobileAdsConstants;
   initialize(): Promise<AdapterStatus[]>;
   setRequestConfiguration(requestConfiguration?: UnsafeObject): Promise<void>;
   openAdInspector(): Promise<void>;

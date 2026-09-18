@@ -40,6 +40,19 @@ RCT_EXPORT_MODULE();
   return YES;
 }
 
+- (NSDictionary *)getConstants {
+#if TARGET_OS_MACCATALYST
+  return @{@"sdkVersion" : @""};
+#else
+  GADVersionNumber version = GADMobileAds.sharedInstance.versionNumber;
+  NSString *sdkVersion =
+      [NSString stringWithFormat:@"%ld.%ld.%ld", static_cast<long>(version.majorVersion),
+                                 static_cast<long>(version.minorVersion),
+                                 static_cast<long>(version.patchVersion)];
+  return @{@"sdkVersion" : sdkVersion};
+#endif
+}
+
 #pragma mark -
 #pragma mark Google Mobile Ads Methods
 

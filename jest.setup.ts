@@ -32,6 +32,7 @@ jest.doMock('react-native', () => {
           }
 
           return {
+            getConstants: jest.fn(() => ({ sdkVersion: 'test-linked-sdk' })),
             initialize: jest.fn(),
             setRequestConfiguration: jest.fn(),
             openAdInspector: jest.fn(),
