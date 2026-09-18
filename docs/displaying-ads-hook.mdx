@@ -92,6 +92,10 @@ Return values of the hook are:
 | show         | Function                 | Show the loaded advert.                                                             |
 | destroy      | Function                 | Destroy the current ad instance.                                                    |
 
+In the options form, `destroy()` creates a fresh idle ad with the current arguments but does not
+load it, even when `autoLoad` is true; later `load()` or `retry()` uses that replacement.
+The positional and imperative-ad forms only destroy the current instance.
+
 `responseInfo` and `revenue` together cover load-time auction metadata and paid
 telemetry. See [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics).
 

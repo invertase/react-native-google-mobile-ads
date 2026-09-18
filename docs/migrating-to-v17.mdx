@@ -161,7 +161,12 @@ const { status, show, error } = useInterstitialAd({
 | `isShowing`                 | `status === 'showing'`                            |
 | `isClosed`                  | `status === 'closed'`                             |
 | `error?: Error`             | `error: AdError \| null` + `'no-fill'` status arm |
-| `load` / `show` / `destroy` | Same, plus `retry`                                |
+| `load` / `show` / `destroy` | See below; options also adds `retry`              |
+
+Options-form `destroy()` destroys the current ad, creates a fresh idle instance from the
+current arguments, and does not load it even when `autoLoad` is true; later `load()` or
+`retry()` uses that replacement. Positional and imperative-ad `destroy()` only destroy
+the current instance.
 
 `autoLoad` is a load **policy**, not a second placement identity. Setting it `false`
 stops future automatic loads; it does not cancel an in-flight request (platforms do not

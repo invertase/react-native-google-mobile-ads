@@ -192,7 +192,7 @@ type UseRewardedInterstitialAdOptions = FullScreenAdHookOptions;
 
 **Why an overload rather than a new default.** In the options form `autoLoad` can default to `true` and load on its own at no risk, because no existing caller can reach that form without rewriting the call. Changing the positional form's behavior instead would have been a silent break for every app that mounts a hook and defers `load()` until consent resolves.
 
-**What the options form returns.** `status` answers where the ad is right now and is mutually exclusive. The fields beside it answer what has already happened to the ad and accumulate, because those facts genuinely overlap: a user can click an ad and then dismiss it, and a paid event can arrive at any point. Everything in the second group resets when the next `load()` starts and when `adUnitId` or `requestOptions` changes.
+**What the options form returns.** `status` answers where the ad is right now and is mutually exclusive. The fields beside it answer what has already happened to the ad and accumulate, because those facts genuinely overlap: a user can click an ad and then dismiss it, and a paid event can arrive at any point. Everything in the second group resets when the next `load()` starts, when `adUnitId` or `requestOptions` changes, and when `destroy()` returns the hook to `'idle'`.
 
 ```ts
 type UseFullScreenAdStatus =
@@ -207,7 +207,8 @@ type UseFullScreenAdStatus =
 type UseFullScreenAdResultBase = {
   autoLoad: boolean; // resolved policy, so a permanent 'idle' is diagnosable
 
-  // Retained facts. Reset on the next load() and on identity/request changes.
+  // Retained facts. Reset on the next load(), identity/request changes,
+  // and options-form destroy() returning to 'idle'.
   clicked: boolean;
   impression: boolean;
   revenue: PaidEvent | null;
@@ -221,7 +222,7 @@ type UseFullScreenAdResultBase = {
   // appears only if an ad event arrives. Imperative `MobileAd.show()` is still
   // a Promise.
   show: (showOptions?: AdShowOptions) => void;
-  destroy: () => void;
+  destroy: () => void; // options form: fresh idle instance; does not load
   retry: () => void; // alias for load, named for the error-path call site
 };
 
@@ -245,6 +246,10 @@ type UseRewardedInterstitialAdResult = UseFullScreenAdResult;
 **Automatic loading.** The options form loads when it mounts with a non-null `adUnitId`, when `autoLoad` flips from false to true, and when `adUnitId` or `requestOptions` replaces the ad with a new instance. It deliberately does **not** load again after `'closed'`, `'error'`, or `'no-fill'`: reloading a spent ad produces fills nobody asked for and depresses match rate, and auto-retrying a failure is a request storm. Call `retry()` for the failure paths, and see [Reloading after dismissal](#reloading-after-dismissal) for the next-impression pattern.
 
 **`autoLoad` is a policy, not a second placement identity.** Turning it off stops future automatic loads. It does not destroy the ad, and it does not cancel a load already in flight, because neither platform exposes load cancellation. An explicit `load()` or `retry()` still works while `autoLoad` is false.
+
+**`destroy()` (options form).** Destroys the current managed ad, creates a fresh instance with the same current `adUnitId` and `requestOptions` (no instance while `adUnitId` is `null`), and returns `status` to `'idle'` with retained facts cleared. `destroy()` itself does not load. With `autoLoad: true`, the replacement is still not loaded automatically. Later explicit `load()` or `retry()` operate on that replacement.
+
+The positional overload and `useFullScreenAd(ad)` keep their existing ownership: `destroy()` releases the current instance and does not create a replacement.
 
 **Deprecation.** The positional overload carries `@deprecated`, so editors strike it through at the call site while the options form stays clean. First use in `__DEV__` also logs a one-time warning once per hook. Removal is version 18.
 
@@ -1796,7 +1801,7 @@ Field-by-field, so nothing goes missing:
 | `reward`         | `reward` (rewarded hooks)                 |
 | `isEarnedReward` | `earnedReward` (rewarded hooks)           |
 | `responseInfo`   | `responseInfo`                            |
-| `load` / `show` / `destroy` | unchanged, plus `retry`        |
+| `load` / `show` / `destroy` | see call-form `destroy()` contract above; options also adds `retry` |
 
 **Multi-format positional → one config object**
 
