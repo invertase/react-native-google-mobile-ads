@@ -76,6 +76,9 @@ for (const specifier of required) {
 const appiumHome = resolveAppiumHome(manifest);
 const { register } = await import('tsx/esm/api');
 const unregister = register();
+const originalIosUdid = process.env.RNGMA_IOS_UDID;
+const iosUdidFixture = '00000000-0000-0000-0000-000000000000';
+process.env.RNGMA_IOS_UDID = iosUdidFixture;
 try {
   const shared = await import(pathToFileURL(path.join(packageRoot, 'wdio.shared.conf.ts')).href);
   const android = await import(pathToFileURL(path.join(packageRoot, 'wdio.android.conf.ts')).href);
@@ -90,7 +93,16 @@ try {
   if (!ios.config?.capabilities?.length) {
     throw new Error('wdio.ios.conf.ts missing capabilities');
   }
+  const iosCaps = ios.config.capabilities[0];
+  if (iosCaps?.['appium:udid'] !== iosUdidFixture) {
+    throw new Error('wdio.ios.conf.ts must set appium:udid from RNGMA_IOS_UDID');
+  }
 } finally {
+  if (originalIosUdid === undefined) {
+    delete process.env.RNGMA_IOS_UDID;
+  } else {
+    process.env.RNGMA_IOS_UDID = originalIosUdid;
+  }
   unregister();
 }
 

@@ -1,12 +1,16 @@
-import { SMOKE_FORMATS_PRIMARY } from '../../src/formats.ts';
+import {
+  NAVIGATION_SMOKE_PRIMARY,
+  REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
+} from '../../src/formats.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
 import {
   assertDisplayed,
-  smokeFormat,
+  navigateToFormat,
+  proveRepresentativeRequestOutcome,
   waitForGalleryHome,
 } from '../helpers/gallery.ts';
 
-describe('GMA format gallery smoke (primary)', () => {
+describe('GMA gallery navigation smoke and representative request outcomes (primary)', () => {
   before(async () => {
     await waitForGalleryHome();
   });
@@ -16,14 +20,19 @@ describe('GMA format gallery smoke (primary)', () => {
     await assertDisplayed(AppiumTestIds.gallery);
   });
 
-  for (const format of SMOKE_FORMATS_PRIMARY) {
-    it(`opens ${format.title}`, async () => {
-      await smokeFormat({
-        formatId: format.id,
-        containerId: format.containerId,
-        actionId: format.actionId,
-        galleryTitle: format.title,
+  describe('navigation/container smoke (does not assert ad load)', () => {
+    for (const format of NAVIGATION_SMOKE_PRIMARY) {
+      it(`opens ${format.title}`, async () => {
+        await navigateToFormat(format);
       });
-    });
-  }
+    }
+  });
+
+  describe('representative Google test-ID request-outcome contracts', () => {
+    for (const format of REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS) {
+      it(`proves ${format.title}`, async () => {
+        await proveRepresentativeRequestOutcome(format);
+      });
+    }
+  });
 });
