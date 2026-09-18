@@ -36,6 +36,7 @@ describe('hook argument freshness and load coalescing', () => {
 
   it('keeps poll/load/release/retry identity stable across re-renders with fresh inline options', () => {
     const snapshots: Array<{
+      tick: number;
       poll: () => unknown;
       releasePooled: () => unknown;
       load: () => unknown;
@@ -59,6 +60,7 @@ describe('hook argument freshness and load coalescing', () => {
       const pool = useAdPool(`pool-${tick}`);
 
       snapshots.push({
+        tick,
         poll: pooled.poll,
         releasePooled: pooled.release,
         load: multi.load,
@@ -74,9 +76,10 @@ describe('hook argument freshness and load coalescing', () => {
     rerender(<Probe tick={1} />);
     rerender(<Probe tick={2} />);
 
-    // StrictMode may double-invoke render (pairs). Take the first of each tick.
-    const perTick = snapshots.filter((_, index) => index % 2 === 0).slice(0, 3);
-    expect(perTick).toHaveLength(3);
+    // A tick can commit one render or several (StrictMode double-invoke, an
+    // effect state update): key on the tick instead of the render index.
+    const perTick = [0, 1, 2].map(tick => snapshots.find(snapshot => snapshot.tick === tick));
+    expect(perTick.filter(snapshot => snapshot !== undefined)).toHaveLength(3);
     const [a, b, c] = perTick;
     expect(a!.poll).toBe(b!.poll);
     expect(b!.poll).toBe(c!.poll);
