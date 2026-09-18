@@ -383,7 +383,9 @@ function NativeComponent() {
   const [requestOutcome, setRequestOutcome] = useState(REQUEST_OUTCOME_PENDING);
 
   useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.GAM_NATIVE, {
+    // Generic native ads use AdMob's system-defined native test unit. GAM_NATIVE
+    // also serves a custom native format that this SDK does not request.
+    NativeAd.createForAdRequest(TestIds.NATIVE, {
       aspectRatio: NativeMediaAspectRatio.LANDSCAPE,
     })
       .then(ad => {
