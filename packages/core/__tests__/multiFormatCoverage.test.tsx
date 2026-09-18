@@ -305,42 +305,46 @@ describe('FEAT-04 multi-format coverage', () => {
 
   it('hook maps loaded-partial and fires stale-by-policy', async () => {
     jest.useFakeTimers();
-    const partialError = NativeError.fromEvent(
-      { code: 'internal-error', message: 'side' },
-      'googleMobileAds/multi-format',
-    ) as AdError;
-    partialError.reason = 'internal-error';
-    partialError.phase = 'load';
+    try {
+      const partialError = NativeError.fromEvent(
+        { code: 'internal-error', message: 'side' },
+        'googleMobileAds/multi-format',
+      ) as AdError;
+      partialError.reason = 'internal-error';
+      partialError.phase = 'load';
 
-    jest.mocked(NativeGoogleMobileAdsNativeModule.loadMultiFormat).mockResolvedValueOnce({
-      ...nativeWinner({ handleId: 'stale-1' }),
-      error: {
-        code: 'internal-error',
-        message: 'side',
-        reason: 'internal-error',
-        phase: 'load',
-      },
-    });
-
-    let multi: ReturnType<typeof useMultiFormatAd> | undefined;
-    function Probe() {
-      multi = useMultiFormatAd({
-        adUnitId: '/123/u',
-        requestOptions: { formats: [AdFormat.NATIVE], stalenessWindowMillis: 1 },
-        autoLoad: false,
+      jest.mocked(NativeGoogleMobileAdsNativeModule.loadMultiFormat).mockResolvedValueOnce({
+        ...nativeWinner({ handleId: 'stale-1' }),
+        error: {
+          code: 'internal-error',
+          message: 'side',
+          reason: 'internal-error',
+          phase: 'load',
+        },
       });
-      return null;
-    }
-    render(<Probe />);
-    await act(async () => {
-      const result = await multi!.load();
-      expect(result.status).toBe('loaded-partial');
-    });
 
-    await act(async () => {
-      jest.advanceTimersByTime(2);
-    });
-    expect(multi!.status).toBe('stale-by-policy');
+      let multi: ReturnType<typeof useMultiFormatAd> | undefined;
+      function Probe() {
+        multi = useMultiFormatAd({
+          adUnitId: '/123/u',
+          requestOptions: { formats: [AdFormat.NATIVE], stalenessWindowMillis: 1 },
+          autoLoad: false,
+        });
+        return null;
+      }
+      render(<Probe />);
+      await act(async () => {
+        const result = await multi!.load();
+        expect(result.status).toBe('loaded-partial');
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(5);
+      });
+      expect(multi!.status).toBe('stale-by-policy');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('hook destroys ads when unmounted mid-flight', async () => {
