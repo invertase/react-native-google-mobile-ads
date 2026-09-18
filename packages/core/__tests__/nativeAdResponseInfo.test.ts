@@ -82,7 +82,8 @@ describe('NativeAd responseInfo', () => {
     (NativeGoogleMobileAdsNativeModule.load as jest.Mock).mockRejectedValueOnce(rejection);
 
     await expect(NativeAd.createForAdRequest('unit')).rejects.toMatchObject({
-      code: 'googleMobileAds/ERROR_LOAD',
+      code: 'ERROR_LOAD',
+      message: 'no inventory',
       reason: 'no-fill',
       phase: 'load',
       responseInfo: { responseId: 'err-ri' },
@@ -103,7 +104,7 @@ describe('NativeAd responseInfo', () => {
     (NativeGoogleMobileAdsNativeModule.load as jest.Mock).mockRejectedValueOnce(rejection);
 
     await expect(NativeAd.createForAdRequest('unit')).rejects.toMatchObject({
-      code: 'googleMobileAds/no-fill',
+      code: 'ERROR_LOAD',
       reason: 'no-fill',
       phase: 'load',
     });
@@ -117,7 +118,7 @@ describe('NativeAd responseInfo', () => {
     (NativeGoogleMobileAdsNativeModule.load as jest.Mock).mockRejectedValueOnce(rejection);
 
     await expect(NativeAd.createForAdRequest('unit')).rejects.toMatchObject({
-      code: 'googleMobileAds/network-error',
+      code: 'ERROR_LOAD',
       reason: 'network-error',
       phase: 'load',
     });
@@ -127,7 +128,7 @@ describe('NativeAd responseInfo', () => {
     (NativeGoogleMobileAdsNativeModule.load as jest.Mock).mockRejectedValueOnce({});
 
     await expect(NativeAd.createForAdRequest('unit')).rejects.toMatchObject({
-      code: 'googleMobileAds/unknown',
+      code: 'ERROR_LOAD',
       reason: 'unknown',
       phase: 'load',
     });

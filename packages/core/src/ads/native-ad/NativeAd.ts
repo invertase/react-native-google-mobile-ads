@@ -150,6 +150,8 @@ export class NativeAd {
    *
    * @param adUnitId The Ad Unit ID for the Native Ad. You can find this on your Google Mobile Ads dashboard.
    * @param requestOptions Optional RequestOptions used to load the ad.
+   * The returned promise rejects when `adUnitId` or `requestOptions` validation fails (Error),
+   * or when the native ad request fails ({@link AdError}).
    */
   static async createForAdRequest(
     adUnitId: string,
@@ -188,8 +190,8 @@ export class NativeAd {
 
 /**
  * Normalize a TurboModule / bridge rejection into `Error & AdErrorPayload`.
- * Native attaches `reason` / `phase` / optional `responseInfo` on the userInfo map;
- * iOS keeps legacy `ERROR_LOAD` as `code`.
+ * Native attaches `reason` / `phase` / optional `responseInfo` on the userInfo map.
+ * Native ad load failures keep legacy `ERROR_LOAD` as `code` on both platforms.
  */
 function nativeAdErrorFromRejection(nativeError: unknown) {
   const err = nativeError as {
@@ -210,7 +212,7 @@ function nativeAdErrorFromRejection(nativeError: unknown) {
   if (slash >= 0) {
     code = code.slice(slash + 1);
   }
-  return adErrorFromNativeEvent(
+  const error = adErrorFromNativeEvent(
     {
       code,
       message: userInfo.message ?? err.message ?? 'Native ad failed to load',
@@ -221,4 +223,9 @@ function nativeAdErrorFromRejection(nativeError: unknown) {
     'googleMobileAds',
     'load',
   );
+  (error as { code: string }).code = 'ERROR_LOAD';
+  error.message = userInfo.message ?? err.message ?? 'Native ad failed to load';
+  error.userInfo.code = 'ERROR_LOAD';
+  error.userInfo.message = error.message;
+  return error;
 }

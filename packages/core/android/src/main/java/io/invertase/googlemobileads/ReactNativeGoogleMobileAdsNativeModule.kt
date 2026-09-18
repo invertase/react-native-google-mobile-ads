@@ -59,13 +59,15 @@ class ReactNativeGoogleMobileAdsNativeModule(
       onLoaded = { nativeAd ->
         val responseId = nativeAd.responseInfo?.responseId
         if (responseId == null) {
+          holder.destroy()
           val error =
             ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(
-              "internal-error",
+              "ERROR_LOAD",
               "Failed to get a valid response ID from the loaded ad.",
               "load",
             )
-          promise.reject(error.getString("code"), error.getString("message"), error)
+          error.putString("reason", "internal-error")
+          promise.reject("ERROR_LOAD", error.getString("message"), error)
           return@loadAd
         }
         adHolders[responseId] = holder
@@ -77,7 +79,8 @@ class ReactNativeGoogleMobileAdsNativeModule(
         ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.responseInfo)?.let {
           error.putMap("responseInfo", it)
         }
-        promise.reject(error.getString("code"), error.getString("message"), error)
+        error.putString("code", "ERROR_LOAD")
+        promise.reject("ERROR_LOAD", error.getString("message"), error)
       },
     )
   }

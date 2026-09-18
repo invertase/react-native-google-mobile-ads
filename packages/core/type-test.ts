@@ -372,10 +372,7 @@ const support: CapabilitySupport = capabilities.fullscreenPreload;
 console.log(backend, support, capabilities.sdkVersion);
 console.log(AdFormat.NATIVE, AdFormat.BANNER, AdFormat.INTERSTITIAL);
 
-const fullscreenPoolConfig = AdPoolPresets.fullscreen(
-  AdFormat.INTERSTITIAL,
-  TestIds.INTERSTITIAL,
-);
+const fullscreenPoolConfig = AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL);
 const fullscreenPoolConfigAsAdPool: AdPoolConfig = fullscreenPoolConfig;
 const displayPoolConfig = AdPoolPresets.display(TestIds.GAM_NATIVE);
 console.log(fullscreenPoolConfigAsAdPool.poolId, displayPoolConfig.formats);
@@ -419,9 +416,8 @@ const multiFormatBannerSizes: MultiFormatBannerSize[] = [
   '300x200',
   { width: 300, height: 200 },
 ];
-const multiFormatOptions: MultiFormatAdRequestOptions = MultiFormatAdPresets.nativeOrBanner(
-  multiFormatBannerSizes,
-);
+const multiFormatOptions: MultiFormatAdRequestOptions =
+  MultiFormatAdPresets.nativeOrBanner(multiFormatBannerSizes);
 const multiFormat = MultiFormatAdRequest.create({
   adUnitId: TestIds.GAM_NATIVE,
   requestOptions: multiFormatOptions,
@@ -554,7 +550,11 @@ if (pooledState.status === 'filled') {
 if (pooledState.status === 'error' || pooledState.status === 'no-fill') {
   console.log(pooledState.error.reason, pooledState.error.phase, pooledState.ad);
 }
-if (pooledState.status === 'idle' || pooledState.status === 'empty' || pooledState.status === 'timeout') {
+if (
+  pooledState.status === 'idle' ||
+  pooledState.status === 'empty' ||
+  pooledState.status === 'timeout'
+) {
   console.log(pooledState.ad, pooledState.error);
 }
 if (pooledState.status === 'consumed') {
@@ -605,16 +605,28 @@ declare const multiFormatHookNoFill: MultiFormatHookNoFill;
 declare const multiFormatHookError: MultiFormatHookError;
 declare const multiFormatHookStale: MultiFormatHookStale;
 console.log(multiFormatLoaded.ads.length, multiFormatLoaded.errors.length);
-console.log(multiFormatPartial.ads.length, multiFormatPartial.errors.map(e => e.reason));
+console.log(
+  multiFormatPartial.ads.length,
+  multiFormatPartial.errors.map(e => e.reason),
+);
 console.log(multiFormatHookNoFill.ads.length, multiFormatHookNoFill.errors.length);
-console.log(multiFormatHookError.errors.map(e => e.phase), multiFormatHookError.ads.length);
-console.log(multiFormatHookStale.ads.length, multiFormatHookStale.errors.map(e => e.reason));
+console.log(
+  multiFormatHookError.errors.map(e => e.phase),
+  multiFormatHookError.ads.length,
+);
+console.log(
+  multiFormatHookStale.ads.length,
+  multiFormatHookStale.errors.map(e => e.reason),
+);
 
 if (multiFormatState.status === 'loaded') {
   console.log(multiFormatState.ads[0]?.format, multiFormatState.errors.length);
 }
 if (multiFormatState.status === 'loaded-partial') {
-  console.log(multiFormatState.ads[0]?.format, multiFormatState.errors.map(e => e.reason));
+  console.log(
+    multiFormatState.ads[0]?.format,
+    multiFormatState.errors.map(e => e.reason),
+  );
 }
 if (multiFormatState.status === 'error') {
   console.log(multiFormatState.errors.map(e => `${e.reason}/${e.phase}: ${e.message}`));
@@ -639,9 +651,8 @@ console.log(
 // Use*AdStatus is derived from Use*AdResult['status'] — equality must hold.
 // Poll-only words must not appear on multi-format; load-only words must not appear on pooled.
 // (Avoid leading-underscore type alias names: noUnusedLocals + TS2552 interact badly.)
-type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
-  ? true
-  : false;
+type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 type AssertNever<T extends never> = T;
 
 const pooledStatusEqualsResult: Equal<UsePooledAdStatus, UsePooledAdResult['status']> = true;
@@ -785,10 +796,7 @@ const peekUnsupportedReason: KnownAdErrorReason = 'pool/peek-unsupported';
 const formatPreloadUnsupportedReason: KnownAdErrorReason = 'pool/format-preload-unsupported';
 console.log(peekUnsupportedReason, formatPreloadUnsupportedReason);
 // Peek gate is a real AdCapabilities key, not a JSDoc claim.
-type AdCapabilitiesHasPeekGate = Equal<
-  AdCapabilities['poolResponseInfoPeek'],
-  CapabilitySupport
->;
+type AdCapabilitiesHasPeekGate = Equal<AdCapabilities['poolResponseInfoPeek'], CapabilitySupport>;
 const adCapabilitiesPeekGate: AdCapabilitiesHasPeekGate = true;
 console.log(adCapabilitiesPeekGate);
 
@@ -811,6 +819,7 @@ const errorPayload: AdErrorPayload = {
   reason: 'no-fill',
   phase: 'load',
 };
+
 const paid: PaidEvent = {
   currency: 'USD',
   precision: 3,
@@ -1077,12 +1086,8 @@ useMultiFormatAd({ ...multiFormatConfig, adUnitId: null });
 // @ts-expect-error enabled was renamed to autoLoad on the hook-only extension
 useMultiFormatAd({ ...multiFormatConfig, enabled: false });
 
-type MultiFormatOptionsExtendConfig = MultiFormatAdConfig extends Omit<
-  UseMultiFormatAdOptions,
-  'autoLoad'
->
-  ? true
-  : false;
+type MultiFormatOptionsExtendConfig =
+  MultiFormatAdConfig extends Omit<UseMultiFormatAdOptions, 'autoLoad'> ? true : false;
 const multiFormatOptionsLock: MultiFormatOptionsExtendConfig = true;
 
 // Every load-result arm carries the response record, including a clean no-fill.
