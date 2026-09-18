@@ -5,6 +5,9 @@ import { join } from 'node:path';
 import { describe, test } from 'node:test';
 import { iosAppBundleResolution } from '../src/formats.ts';
 import {
+  appiumPort,
+  DEFAULT_APPIUM_PORT,
+  DEFAULT_IOS_DEVICE_NAME,
   findCompleteIosAppBundle,
   isCompleteIosAppBundle,
   MIN_ANDROID_API,
@@ -12,13 +15,25 @@ import {
   nodeMajor,
   nodeMeetsMinimum,
   parseAvdApi,
+  parseAvailableIosSimulators,
   PREFERRED_ANDROID_API,
   resolveIosAppBundle,
+  requireIosUdid,
   selectConnectedAndroidDevice,
   selectAndroidAvd,
+  selectIosSimulator,
 } from '../src/hostPreflight.ts';
 
 describe('hostPreflight', () => {
+  test('uses a dedicated Appium port and rejects invalid overrides', () => {
+    assert.equal(DEFAULT_APPIUM_PORT, 4725);
+    assert.equal(appiumPort(), 4725);
+    assert.equal(appiumPort('4730'), 4730);
+    assert.throws(() => appiumPort('not-a-port'), /integer from 1 to 65535/);
+    assert.throws(() => appiumPort('0'), /integer from 1 to 65535/);
+    assert.throws(() => appiumPort('65536'), /integer from 1 to 65535/);
+  });
+
   test('treats Node 24+ as the floor and Node 22 as below minimum', () => {
     assert.equal(MIN_NODE_MAJOR, 24);
     assert.equal(nodeMajor('v24.20.0'), 24);
@@ -59,6 +74,72 @@ describe('hostPreflight', () => {
       serial: 'api-33',
       api: 33,
     });
+  });
+
+  test('requires a preflight-selected iOS UDID before WDIO capabilities load', () => {
+    assert.throws(() => requireIosUdid({}), /RNGMA_IOS_UDID is required/);
+    assert.throws(() => requireIosUdid({ RNGMA_IOS_UDID: '   ' }), /RNGMA_IOS_UDID is required/);
+    assert.equal(
+      requireIosUdid({ RNGMA_IOS_UDID: ' fixture-udid ' }),
+      'fixture-udid',
+    );
+  });
+
+  test('defaults to exact iPhone 17 and prefers an already booted match', () => {
+    assert.equal(DEFAULT_IOS_DEVICE_NAME, 'iPhone 17');
+    const simulators = parseAvailableIosSimulators(
+      JSON.stringify({
+        devices: {
+          'com.apple.CoreSimulator.SimRuntime.iOS-26-0': [
+            { name: 'iPhone 17', udid: 'ios-26-shutdown', state: 'Shutdown', isAvailable: true },
+            { name: 'iPhone 17 Pro', udid: 'pro', state: 'Booted', isAvailable: true },
+          ],
+          'com.apple.CoreSimulator.SimRuntime.iOS-25-5': [
+            { name: 'iPhone 17', udid: 'ios-25-booted', state: 'Booted', isAvailable: true },
+          ],
+        },
+      }),
+    );
+    assert.equal(selectIosSimulator(simulators)?.udid, 'ios-25-booted');
+  });
+
+  test('selects the newest exact-name runtime deterministically when none is booted', () => {
+    const simulators = parseAvailableIosSimulators(
+      JSON.stringify({
+        devices: {
+          'com.apple.CoreSimulator.SimRuntime.iOS-25-5': [
+            { name: 'iPhone 17', udid: 'older', state: 'Shutdown', isAvailable: true },
+          ],
+          'com.apple.CoreSimulator.SimRuntime.iOS-26-1': [
+            { name: 'iPhone 17', udid: 'newer-b', state: 'Shutdown', isAvailable: true },
+            { name: 'iPhone 17', udid: 'newer-a', state: 'Shutdown', isAvailable: true },
+          ],
+        },
+      }),
+    );
+    assert.equal(selectIosSimulator(simulators)?.udid, 'newer-a');
+    assert.equal(
+      selectIosSimulator(simulators, { platformVersion: '25.5' })?.udid,
+      'older',
+    );
+  });
+
+  test('rejects absent exact-name, unavailable, version, and UDID selections', () => {
+    const simulators = parseAvailableIosSimulators(
+      JSON.stringify({
+        devices: {
+          'com.apple.CoreSimulator.SimRuntime.iOS-26-0': [
+            { name: 'iPhone 16', udid: 'old-model', state: 'Shutdown', isAvailable: true },
+            { name: 'iPhone 17', udid: 'unavailable', state: 'Shutdown', isAvailable: false },
+            { name: 'iPhone 17', udid: 'available', state: 'Shutdown', isAvailable: true },
+          ],
+        },
+      }),
+    );
+    assert.equal(selectIosSimulator(simulators, { deviceName: 'iPhone 18' }), null);
+    assert.equal(selectIosSimulator(simulators, { platformVersion: '25.5' }), null);
+    assert.equal(selectIosSimulator(simulators, { udid: 'missing' }), null);
+    assert.equal(selectIosSimulator(simulators, { udid: 'available' })?.udid, 'available');
   });
 
   test('discovers only iOS app bundles with a regular inner executable', () => {

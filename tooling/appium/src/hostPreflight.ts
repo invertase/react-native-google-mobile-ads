@@ -7,6 +7,37 @@ export const MIN_ANDROID_API = 26;
 export const PREFERRED_ANDROID_API = 36;
 /** Yarn 4 + this repo's Appium/Metro stack is a hard floor on Node 24. Node 22 hard-fails locally. */
 export const MIN_NODE_MAJOR = 24;
+/** Dedicated local Appium listener; Metro remains on 8081. */
+export const DEFAULT_APPIUM_PORT = 4725;
+/** Canonical local/CI simulator model. Preflight resolves an existing UDID. */
+export const DEFAULT_IOS_DEVICE_NAME = 'iPhone 17';
+
+/** WDIO must target a preflight-selected simulator; never omit `appium:udid`. */
+export function requireIosUdid(env: NodeJS.ProcessEnv = process.env): string {
+  const udid = env.RNGMA_IOS_UDID?.trim();
+  if (!udid) {
+    throw new Error(
+      'RNGMA_IOS_UDID is required. Canonical yarn tests:appium:ios selects an existing simulator; Appium must not fabricate one.',
+    );
+  }
+  return udid;
+}
+
+export type IosSimulator = {
+  name: string;
+  udid: string;
+  state: string;
+  runtimeIdentifier: string;
+  runtimeVersion: string;
+};
+
+export function appiumPort(value?: string): number {
+  const port = value == null || value === '' ? DEFAULT_APPIUM_PORT : Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`RNGMA_APPIUM_PORT must be an integer from 1 to 65535; received "${value}".`);
+  }
+  return port;
+}
 
 export function nodeMajor(version: string = process.version): number {
   const match = /^v?(\d+)/.exec(version.trim());
@@ -57,6 +88,76 @@ export function selectConnectedAndroidDevice(
       Number(b.api === PREFERRED_ANDROID_API) - Number(a.api === PREFERRED_ANDROID_API) ||
       b.api - a.api ||
       a.serial.localeCompare(b.serial),
+  );
+  return candidates[0] ?? null;
+}
+
+function runtimeVersion(runtimeIdentifier: string): string {
+  const suffix = runtimeIdentifier.split('.SimRuntime.iOS-')[1];
+  return suffix ? suffix.replaceAll('-', '.') : runtimeIdentifier;
+}
+
+function compareVersionsDescending(a: string, b: string): number {
+  const left = a.split('.').map(Number);
+  const right = b.split('.').map(Number);
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index++) {
+    const difference = (right[index] ?? 0) - (left[index] ?? 0);
+    if (difference !== 0) {
+      return difference;
+    }
+  }
+  return 0;
+}
+
+export function parseAvailableIosSimulators(simctlJson: string): IosSimulator[] {
+  const parsed = JSON.parse(simctlJson) as {
+    devices?: Record<
+      string,
+      Array<{ name?: string; udid?: string; state?: string; isAvailable?: boolean }>
+    >;
+  };
+  const simulators: IosSimulator[] = [];
+  for (const [runtimeIdentifier, devices] of Object.entries(parsed.devices ?? {})) {
+    for (const device of devices) {
+      if (
+        device.isAvailable === false ||
+        typeof device.name !== 'string' ||
+        typeof device.udid !== 'string'
+      ) {
+        continue;
+      }
+      simulators.push({
+        name: device.name,
+        udid: device.udid,
+        state: device.state ?? 'Unknown',
+        runtimeIdentifier,
+        runtimeVersion: runtimeVersion(runtimeIdentifier),
+      });
+    }
+  }
+  return simulators;
+}
+
+export function selectIosSimulator(
+  simulators: IosSimulator[],
+  options?: { deviceName?: string; platformVersion?: string; udid?: string },
+): IosSimulator | null {
+  const deviceName = options?.deviceName ?? DEFAULT_IOS_DEVICE_NAME;
+  let candidates = simulators.filter(simulator => simulator.name === deviceName);
+  if (options?.platformVersion) {
+    candidates = candidates.filter(
+      simulator => simulator.runtimeVersion === options.platformVersion,
+    );
+  }
+  if (options?.udid) {
+    return candidates.find(simulator => simulator.udid === options.udid) ?? null;
+  }
+  candidates.sort(
+    (a, b) =>
+      Number(b.state === 'Booted') - Number(a.state === 'Booted') ||
+      compareVersionsDescending(a.runtimeVersion, b.runtimeVersion) ||
+      a.udid.localeCompare(b.udid),
   );
   return candidates[0] ?? null;
 }

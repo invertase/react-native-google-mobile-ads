@@ -5,7 +5,7 @@
   "description": "Appium 3 + WebdriverIO smoke harness for RNGoogleMobileAdsExample",
   "license": "Apache-2.0",
   "scripts": {
-    "validate": "node ./scripts/validate-config.mjs && node --import tsx --test ./__tests__/hostPreflight.test.ts",
+    "validate": "node ./scripts/validate-config.mjs && node --import tsx ./scripts/validate-specs.mjs && node --import tsx --test ./__tests__/*.test.ts",
     "drivers:install": "node ./scripts/install-drivers.mjs",
     "drivers:verify": "node ./scripts/verify-drivers.mjs",
     "appium:android": "tsx ./scripts/preflight.ts android --run",

@@ -1,12 +1,16 @@
-import { SMOKE_FORMATS_TERTIARY } from '../../src/formats.ts';
+import {
+  NATIVE_RNGMA_TESTING_PROBE,
+  NAVIGATION_SMOKE_TERTIARY,
+} from '../../src/formats.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
 import {
   assertDisplayed,
-  smokeFormat,
+  navigateToFormat,
+  proveProbeStatus,
   waitForGalleryHome,
 } from '../helpers/gallery.ts';
 
-describe('GMA format gallery smoke (tertiary)', () => {
+describe('GMA gallery navigation smoke and probe status (tertiary)', () => {
   before(async () => {
     await waitForGalleryHome();
   });
@@ -16,16 +20,20 @@ describe('GMA format gallery smoke (tertiary)', () => {
     await assertDisplayed(AppiumTestIds.gallery);
   });
 
-  for (const format of SMOKE_FORMATS_TERTIARY) {
+  for (const format of NAVIGATION_SMOKE_TERTIARY) {
     it(`opens ${format.title}`, async () => {
-      await smokeFormat({
-        formatId: format.id,
-        containerId: format.containerId,
-        actionId: format.actionId,
-        galleryTitle: format.title,
-        expectLoadedSubstring: format.expectLoadedSubstring,
-        actionAccessibilityLabel: format.actionAccessibilityLabel,
-      });
+      await navigateToFormat(format);
     });
   }
+
+  it('preserves NativeRNGMATesting loaded/status probe behavior', async () => {
+    await proveProbeStatus({
+      formatId: NATIVE_RNGMA_TESTING_PROBE.id,
+      containerId: NATIVE_RNGMA_TESTING_PROBE.containerId,
+      galleryTitle: NATIVE_RNGMA_TESTING_PROBE.title,
+      actionId: NATIVE_RNGMA_TESTING_PROBE.actionId,
+      expectedStatusText: NATIVE_RNGMA_TESTING_PROBE.expectedStatusText,
+      actionAccessibilityLabel: NATIVE_RNGMA_TESTING_PROBE.actionAccessibilityLabel,
+    });
+  });
 });

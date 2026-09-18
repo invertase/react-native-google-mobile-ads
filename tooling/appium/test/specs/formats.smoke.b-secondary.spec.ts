@@ -1,12 +1,12 @@
-import { SMOKE_FORMATS_SECONDARY } from '../../src/formats.ts';
+import { NAVIGATION_SMOKE_SECONDARY } from '../../src/formats.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
 import {
   assertDisplayed,
-  smokeFormat,
+  navigateToFormat,
   waitForGalleryHome,
 } from '../helpers/gallery.ts';
 
-describe('GMA format gallery smoke (secondary)', () => {
+describe('GMA gallery navigation/container smoke (secondary; no ad-load assertion)', () => {
   before(async () => {
     await waitForGalleryHome();
   });
@@ -16,14 +16,9 @@ describe('GMA format gallery smoke (secondary)', () => {
     await assertDisplayed(AppiumTestIds.gallery);
   });
 
-  for (const format of SMOKE_FORMATS_SECONDARY) {
+  for (const format of NAVIGATION_SMOKE_SECONDARY) {
     it(`opens ${format.title}`, async () => {
-      await smokeFormat({
-        formatId: format.id,
-        containerId: format.containerId,
-        actionId: format.actionId,
-        galleryTitle: format.title,
-      });
+      await navigateToFormat(format);
     });
   }
 });

@@ -1,10 +1,12 @@
 import {
   EXAMPLE_ANDROID_PACKAGE,
   EXAMPLE_IOS_BUNDLE_ID,
-  GALLERY_HOME_ONLY_FORMATS,
   gallerySectionForFormat,
   type GallerySectionId,
+  type NavigationSmokeCase,
+  type RepresentativeRequestOutcomeContract,
 } from '../../src/formats.ts';
+import { acceptRepresentativeRequestOutcome } from '../../src/requestOutcomes.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
 
 function isAndroid(): boolean {
@@ -158,8 +160,8 @@ async function clickAndroidByTestId(testId: string): Promise<void> {
     centerY = rect.y + size.height / 2;
   }
 
-  // Repeated lift — single swipe was not enough for low rows (RWI / Flush adjacency).
-  for (let lift = 0; lift < 5 && centerY >= safeMax; lift++) {
+  // Repeated lift only when the opener sits in the gesture-nav band.
+  for (let lift = 0; lift < 2 && centerY >= safeMax; lift++) {
     await androidSwipeUp(centerY > height ? 0.55 : 0.4);
     el = await findByTestId(testId);
     rect = await el.getLocation();
@@ -306,12 +308,21 @@ async function clickAndroidOpenerByTitle(galleryTitle: string): Promise<boolean>
       let size = await byText.getSize();
       const { height, width } = await driver.getWindowSize();
       let centerY = rect.y + size.height / 2;
-      // Bring title into mid-screen if clipped or near the gesture edge.
-      for (let lift = 0; lift < 5 && (size.height <= 8 || centerY < 0 || centerY > height * 0.72); lift++) {
+      // Lift only while measured bounds are clipped/unsafe, and stop if a swipe
+      // did not move the row. This avoids the former repeated double-drag tax.
+      for (
+        let lift = 0;
+        lift < 2 && (size.height <= 8 || centerY < 0 || centerY > height * 0.72);
+        lift++
+      ) {
+        const previousCenterY = centerY;
         await androidSwipeUp(0.45);
         rect = await byText.getLocation();
         size = await byText.getSize();
         centerY = rect.y + size.height / 2;
+        if (Math.abs(centerY - previousCenterY) < 2) {
+          break;
+        }
       }
       if (size.height <= 8 || centerY < 0 || centerY > height) {
         continue;
@@ -518,8 +529,6 @@ export async function waitForTestIdTextContaining(
           for (const sel of [
             `android=new UiSelector().resourceId("${testId}").textContains("${substring}")`,
             `android=new UiSelector().resourceId("${testId}").descriptionContains("${substring}")`,
-            `android=new UiSelector().textContains("${substring}")`,
-            `android=new UiSelector().descriptionContains("${substring}")`,
           ]) {
             if (await $(sel).isExisting().catch(() => false)) {
               return true;
@@ -530,9 +539,6 @@ export async function waitForTestIdTextContaining(
           for (const pred of [
             `name == "${testId}" AND label CONTAINS "${substring}"`,
             `name == "${testId}" AND value CONTAINS "${substring}"`,
-            `label CONTAINS "${substring}"`,
-            `value CONTAINS "${substring}"`,
-            `name CONTAINS "${substring}"`,
           ]) {
             if (await $(`-ios predicate string:${pred}`).isExisting().catch(() => false)) {
               return true;
@@ -564,6 +570,38 @@ export async function waitForTestIdTextContaining(
       }
       throw err;
     }
+  }
+}
+
+async function waitForRepresentativeRequestOutcome(
+  formatId: string,
+  timeoutMs = 60000,
+): Promise<void> {
+  const testId = AppiumTestIds.action.loaded(formatId);
+  let lastSeen = '';
+  try {
+    await driver.waitUntil(
+      async () => {
+        const el = await findByTestId(testId);
+        if (!(await el.isExisting().catch(() => false))) {
+          return false;
+        }
+        lastSeen = await elementText(el);
+        return acceptRepresentativeRequestOutcome(formatId, lastSeen);
+      },
+      {
+        timeout: timeoutMs,
+        timeoutMsg: `testID ${testId} did not report a terminal request outcome (lastSeen=${JSON.stringify(lastSeen)})`,
+      },
+    );
+  } catch (error) {
+    const dump = await driver.getPageSource().catch(() => '');
+    const idx = dump.indexOf(testId);
+    const snippet =
+      idx >= 0
+        ? dump.slice(Math.max(0, idx - 120), idx + 320).replace(/\s+/g, ' ')
+        : 'testID absent from page source';
+    throw new Error(`${String(error)} | pageSource=${snippet}`);
   }
 }
 
@@ -616,41 +654,77 @@ async function tapFormatAction(actionId: string, accessibilityLabel?: string): P
   await clickElement(el);
 }
 
-/**
- * Smoke: open format, assert container, optionally tap an action without waiting for ad fill.
- * Live Google auction/fill is out of scope (ANR / flake); UI seam + TestIds wiring is the gate.
- * When `expectLoadedSubstring` is set, after the action tap wait for `action.loaded` text
- * (e.g. NativeRNGMATesting `ok ping=`) so a null/broken TurboModule cannot pass.
- */
-export async function smokeFormat(opts: {
+async function runFormatContract(opts: {
   formatId: string;
   containerId: string;
+  galleryTitle: string;
   actionId?: string;
-  galleryTitle?: string;
-  expectLoadedSubstring?: string;
+  expectedText?: string;
+  requestOutcome?: boolean;
   actionAccessibilityLabel?: string;
+  requiresAppRestart?: boolean;
 }): Promise<void> {
-  if (!GALLERY_HOME_ONLY_FORMATS.has(opts.formatId)) {
+  // Cold restarts are opt-in for formats with demonstrated state leakage.
+  // Instrumentation-crash recovery remains in withInstrumentationRecovery().
+  if (opts.requiresAppRestart) {
     await resetAppState();
   }
   await withInstrumentationRecovery(async () => {
     await openFormat(opts.formatId, opts.galleryTitle);
     await assertDisplayed(opts.containerId);
     if (opts.actionId) {
-      if (opts.expectLoadedSubstring) {
-        // Avoid gallery-scroll tap path — it can leave the format screen.
+      if (opts.expectedText || opts.requestOutcome) {
         await tapFormatAction(opts.actionId, opts.actionAccessibilityLabel);
-        await waitForTestIdTextContaining(
-          AppiumTestIds.action.loaded(opts.formatId),
-          opts.expectLoadedSubstring,
-        );
-      } else {
-        const action = await findByTestId(opts.actionId);
-        if (await action.isDisplayed().catch(() => false)) {
-          await clickElement(action);
-        }
       }
     }
+    if (opts.requestOutcome) {
+      await waitForRepresentativeRequestOutcome(opts.formatId);
+    } else if (opts.expectedText) {
+      await waitForTestIdTextContaining(
+        AppiumTestIds.action.loaded(opts.formatId),
+        opts.expectedText,
+        60000,
+      );
+    }
     await backToGallery();
+  });
+}
+
+/** Broad gallery contract: navigation and container presence only, never ad fill. */
+export async function navigateToFormat(format: NavigationSmokeCase): Promise<void> {
+  await runFormatContract({
+    formatId: format.id,
+    containerId: format.containerId,
+    galleryTitle: format.title,
+    requiresAppRestart: format.requiresAppRestart,
+  });
+}
+
+/** Representative Google-test-ID contract: require loaded or explicit SDK no-fill, never Show. */
+export async function proveRepresentativeRequestOutcome(
+  format: RepresentativeRequestOutcomeContract,
+): Promise<void> {
+  await runFormatContract({
+    formatId: format.id,
+    containerId: format.containerId,
+    galleryTitle: format.galleryTitle,
+    actionId: format.actionId,
+    requestOutcome: true,
+    requiresAppRestart: format.requiresAppRestart,
+  });
+}
+
+/** Preserve the example-only NativeRNGMATesting status behavior outside ad-fill contracts. */
+export async function proveProbeStatus(opts: {
+  formatId: string;
+  containerId: string;
+  galleryTitle: string;
+  actionId: string;
+  expectedStatusText: string;
+  actionAccessibilityLabel: string;
+}): Promise<void> {
+  await runFormatContract({
+    ...opts,
+    expectedText: opts.expectedStatusText,
   });
 }

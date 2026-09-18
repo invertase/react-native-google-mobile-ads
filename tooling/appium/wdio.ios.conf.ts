@@ -1,5 +1,6 @@
 import type { Options } from '@wdio/types';
 import { EXAMPLE_IOS_BUNDLE_ID, iosAppPath } from './src/formats.ts';
+import { DEFAULT_IOS_DEVICE_NAME, requireIosUdid } from './src/hostPreflight.ts';
 import { config as shared } from './wdio.shared.conf.ts';
 
 const iosApp = iosAppPath();
@@ -16,7 +17,8 @@ export const config: Options.Testrunner = {
     {
       platformName: 'iOS',
       'appium:automationName': 'XCUITest',
-      'appium:deviceName': process.env.RNGMA_IOS_DEVICE || 'iPhone 16',
+      'appium:deviceName': process.env.RNGMA_IOS_DEVICE || DEFAULT_IOS_DEVICE_NAME,
+      'appium:udid': requireIosUdid(),
       'appium:platformVersion': process.env.RNGMA_IOS_VERSION,
       'appium:bundleId': EXAMPLE_IOS_BUNDLE_ID,
       ...(iosApp ? { 'appium:app': iosApp } : {}),

@@ -2,10 +2,11 @@ import type { Options } from '@wdio/types';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { flushCoverageFromApp } from './src/flushCoverage.ts';
+import { appiumPort } from './src/hostPreflight.ts';
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 const appiumHome = path.join(packageRoot, '.appium-home');
-const APPIUM_PORT = Number(process.env.RNGMA_APPIUM_PORT || 4725);
+const APPIUM_PORT = appiumPort(process.env.RNGMA_APPIUM_PORT);
 
 /**
  * Shared WebdriverIO config for Appium 3 focused smoke against RNGoogleMobileAdsExample.
