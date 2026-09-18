@@ -702,7 +702,7 @@ export async function navigateToFormat(format: NavigationSmokeCase): Promise<voi
   });
 }
 
-/** Representative Google-test-ID contract: require loaded or explicit SDK no-fill, never Show. */
+/** Representative Google-test-ID contract: require loaded, no-fill, or SDK internal-error; never Show. */
 export async function proveRepresentativeRequestOutcome(
   format: RepresentativeRequestOutcomeContract,
 ): Promise<void> {
