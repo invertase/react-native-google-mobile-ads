@@ -15,7 +15,7 @@
  *
  */
 
-import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { AdEventType } from '../AdEventType';
@@ -234,6 +234,30 @@ const initialCoreState: FullScreenAdCoreState = {
   responseInfo: null,
 };
 
+/**
+ * Merges a partial update, returning the state it was given when that update
+ * says nothing new.
+ *
+ * Every reset dispatches the whole `initialCoreState`, and most of those land
+ * on a hook that is already idle: mount, a new ad instance, and `destroy()` on
+ * an untouched ad. An unconditional spread allocates a state object that
+ * differs only by identity, which React then has to render and commit.
+ * Comparing just the keys the update carries keeps real partial updates —
+ * `{ clicked: true }` and friends — publishing as they always have, and the
+ * shared `initialCoreState` is only ever read here, never written.
+ */
+function mergeCoreState(
+  prevState: FullScreenAdCoreState,
+  update: Partial<FullScreenAdCoreState>,
+): FullScreenAdCoreState {
+  for (const key of Object.keys(update) as (keyof FullScreenAdCoreState)[]) {
+    if (!Object.is(prevState[key], update[key])) {
+      return { ...prevState, ...update } as FullScreenAdCoreState;
+    }
+  }
+  return prevState;
+}
+
 type FullScreenAdCore = {
   state: FullScreenAdCoreState;
   load: () => void;
@@ -256,11 +280,14 @@ function useFullScreenAdCore(
   destroyCurrent?: () => FullScreenAd | null | undefined,
   committedConfigRef?: { current: NormalizedHookArgs },
 ): FullScreenAdCore {
-  const [state, dispatch] = useReducer(
-    (prevState: FullScreenAdCoreState, newState: Partial<FullScreenAdCoreState>) =>
-      ({ ...prevState, ...newState }) as FullScreenAdCoreState,
-    initialCoreState,
-  );
+  // One updater behind every dispatch site, so the equality bail-out applies to
+  // all of them. `useState` rather than `useReducer` because only the state
+  // updater path lets React drop an update that resolves to the state it
+  // already has; a reducer that returns its argument still renders once.
+  const [state, setState] = useState(initialCoreState);
+  const dispatch = useCallback((update: Partial<FullScreenAdCoreState>) => {
+    setState(prevState => mergeCoreState(prevState, update));
+  }, []);
 
   const inFlightRef = useRef(false);
   const loadedRef = useRef(false);
