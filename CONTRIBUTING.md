@@ -79,7 +79,18 @@ yarn prepare
 
 Root `yarn` installs all workspaces (library under `packages/core/`, `RNGoogleMobileAdsExample/`, and `tooling/*`). `yarn prepare` builds the library via Lerna/Nx (`yarn lerna:prepare`). Package TypeScript extends root `tsconfig.packages.base.json`; ESLint is the root `eslint.config.js`.
 
-Appium 3 + WebdriverIO lives in `tooling/appium/` (`@invertase/rngma-appium`). Pin contract: `yarn.lock` plus `tooling/appium/drivers.manifest.json`. Device-free check: `yarn tests:appium:validate`. Drivers: `yarn tests:appium:drivers:install` then `yarn tests:appium:drivers:verify`. Device smoke: `yarn tests:appium:android` / `yarn tests:appium:ios` after build/install prerequisites. Details: [Appium](okf-bundle/testing/running-e2e.md#appium-scaffold).
+### Step 3 (iOS only): Install the Ruby bundle, then CocoaPods
+
+```bash
+BUNDLE_FROZEN=true bundle install
+yarn tests:ios:pod:install
+```
+
+Both commands run from the repository root. The root `Gemfile` / `Gemfile.lock` own the shared Ruby toolchain (CocoaPods and `xcodeproj` pins), and `Gemfile.lock`'s `BUNDLED WITH` is the Bundler pin — frozen mode keeps that lock authoritative, so a mismatch fails loudly instead of resolving new gems. Run the frozen install once per clean machine and again whenever `Gemfile.lock` changes; `yarn tests:ios:pod:install` is `bundle exec pod install`, so it fails without it. That yarn script is the only supported pod command: do not run bare `pod install`, do not `gem install`/`gem update cocoapods xcodeproj` globally, and do not delete `Podfile.lock` to force a refresh. CI and publish run the same frozen `bundle install` before Yarn — [publish convergence](okf-bundle/ci-workflows/index.md#publish-podfile-lock), [agent command policy](okf-bundle/testing/agent-command-policy.md#canonical-registry).
+
+### Step 4: Tooling, tests, and formatting
+
+Appium 3 + WebdriverIO lives in `tooling/appium/` (`@invertase/rngma-appium`). Pin contract: `yarn.lock` plus `tooling/appium/drivers.manifest.json`. Device-free check: `yarn tests:appium:validate`. Drivers: `yarn tests:appium:drivers:install` then `yarn tests:appium:drivers:verify`. Device smoke: `yarn tests:appium:android` / `yarn tests:appium:ios` after build/install prerequisites; local iOS runs do not need a WebDriverAgent prebuild, and the explicit prebuilt-WDA path (`yarn tests:appium:ios:select-and-boot --github-env <path>`, which requires that flag locally too) is [§ prebuilt validation](okf-bundle/testing/running-e2e.md#ios-wda-prebuilt-validation). Details: [Appium](okf-bundle/testing/running-e2e.md#appium-scaffold).
 
 Android **Java** format: `yarn lint:android`. Android **Kotlin** format: repo-root `./gradlew ktlintFormat` (check-only: `./gradlew ktlintCheck`). Optional: `./gradlew addKtlintFormatGitPreCommitHook` to install a local hook; Invertase global pre-commit also invokes root `./gradlew ktlintFormat` when present (this repo does not ship an installed hook). Example app builds remain under `RNGoogleMobileAdsExample/android/`. Native unit tests (owned mappers/helpers; no Google auction/fill asserts): `yarn tests:android:unit` (Robolectric) and `yarn tests:ios:unit` (XCTest) — see [agent command policy](okf-bundle/testing/agent-command-policy.md).
 

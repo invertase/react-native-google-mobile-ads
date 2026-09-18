@@ -4,6 +4,10 @@ ws_dir = ws_dir.parent until
   ws_dir.expand_path.to_s == '/'
 require "#{ws_dir}/node_modules/react-native-test-app/test_app.rb"
 
+# CocoaPods' --project-directory locates this Podfile without changing the
+# process directory. React Native autolinking expects to run from the iOS app.
+Dir.chdir(__dir__)
+
 # react-native-coverage CocoaPods helper (LLVM + CoverageConfig.h).
 # Resolves via example node_modules (Pattern C — harness only). CocoaPods-first / static.
 rn_coverage_post_install = Pod::Executable.execute_command('node', ['-p',

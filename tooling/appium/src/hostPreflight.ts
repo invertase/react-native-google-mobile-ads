@@ -1,5 +1,6 @@
 import { existsSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /** Appium UiAutomator2 requires Android 8.0+ (API 26). */
 export const MIN_ANDROID_API = 26;
@@ -11,6 +12,47 @@ export const MIN_NODE_MAJOR = 24;
 export const DEFAULT_APPIUM_PORT = 4725;
 /** Canonical local/CI simulator model. Preflight resolves an existing UDID. */
 export const DEFAULT_IOS_DEVICE_NAME = 'iPhone 17';
+/** XCUITest default is 60s; first WDA xcodebuild on Xcode 26 CI exceeds that. */
+export const WDA_LAUNCH_TIMEOUT_MS = 300_000;
+/** WDIO must outlive WDA launch or it SIGTERMs xcodebuild mid-compile. */
+export const IOS_SESSION_RETRY_TIMEOUT_MS = 330_000;
+/** Shared output root for the CI WDA prebuild and XCUITest's prebuilt lookup. */
+export const IOS_WDA_DERIVED_DATA_PATH = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '.wda-derived',
+);
+export const IOS_WDA_RUNNER_APP_PATH = join(
+  IOS_WDA_DERIVED_DATA_PATH,
+  'Build',
+  'Products',
+  'Debug-iphonesimulator',
+  'WebDriverAgentRunner-Runner.app',
+);
+
+export function isCompleteWdaRunnerApp(): boolean {
+  const executable = join(IOS_WDA_RUNNER_APP_PATH, 'WebDriverAgentRunner-Runner');
+  try {
+    return (
+      statSync(IOS_WDA_RUNNER_APP_PATH).isDirectory() &&
+      statSync(executable).isFile()
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function iosPrebuiltWdaCapabilities(
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string | boolean> {
+  if (env.RNGMA_WDA_PREBUILT !== '1') {
+    return {};
+  }
+  return {
+    'appium:usePrebuiltWDA': true,
+    'appium:derivedDataPath': IOS_WDA_DERIVED_DATA_PATH,
+  };
+}
 
 /** WDIO must target a preflight-selected simulator; never omit `appium:udid`. */
 export function requireIosUdid(env: NodeJS.ProcessEnv = process.env): string {
@@ -38,15 +80,19 @@ export function githubEnvUdidLine(udid: string): string {
   return `RNGMA_IOS_UDID=${udid}\n`;
 }
 
+export function githubEnvSelectionLines(udid: string, runtimeVersion: string): string {
+  return `${githubEnvUdidLine(udid)}RNGMA_IOS_VERSION=${runtimeVersion}\n`;
+}
+
 export type SimctlExec = (bin: string, args: string[]) => void;
 export type GithubEnvAppend = (path: string, data: string) => void;
 
 /**
- * Boot an already-selected simulator and persist its UDID. Does not inventory or
- * create devices; callers supply the selected UDID/state.
+ * Boot an already-selected simulator and persist its UDID and runtime version.
+ * Does not inventory or create devices; callers supply the selection.
  */
 export function bootAndPersistSelectedSimulator(
-  selected: { udid: string; state: string },
+  selected: { udid: string; state: string; runtimeVersion: string },
   argv: string[],
   execFile: SimctlExec,
   appendFile: GithubEnvAppend,
@@ -55,7 +101,10 @@ export function bootAndPersistSelectedSimulator(
     execFile('xcrun', ['simctl', 'boot', selected.udid]);
   }
   execFile('xcrun', ['simctl', 'bootstatus', selected.udid, '-b']);
-  appendFile(requireGithubEnvPath(argv), githubEnvUdidLine(selected.udid));
+  appendFile(
+    requireGithubEnvPath(argv),
+    githubEnvSelectionLines(selected.udid, selected.runtimeVersion),
+  );
 }
 
 export type IosSimulator = {
