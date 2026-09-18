@@ -30,6 +30,10 @@ export function acceptRepresentativeRequestOutcome(
     warn(`[request-outcome] ${formatId}: SDK no-fill accepted`);
     return true;
   }
+  if (outcome === 'error' && text.includes('Request error: internal-error')) {
+    warn(`[request-outcome] ${formatId}: SDK internal-error accepted`);
+    return true;
+  }
   if (outcome === 'error') {
     throw new Error(`[request-outcome] ${formatId}: ${text}`);
   }

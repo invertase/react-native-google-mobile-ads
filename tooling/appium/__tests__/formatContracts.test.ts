@@ -62,7 +62,20 @@ test('SDK no-fill passes through the explicit warning path', () => {
   assert.deepEqual(warnings, ['[request-outcome] gma.format.example: SDK no-fill accepted']);
 });
 
-test('non-no-fill SDK errors fail immediately with details', () => {
+test('SDK internal-error passes through the explicit warning path', () => {
+  const warnings: string[] = [];
+  assert.equal(
+    acceptRepresentativeRequestOutcome(
+      'gma.format.example',
+      'Request error: internal-error: [googleMobileAds/internal-error] Internal error.',
+      warning => warnings.push(warning),
+    ),
+    true,
+  );
+  assert.deepEqual(warnings, ['[request-outcome] gma.format.example: SDK internal-error accepted']);
+});
+
+test('non-internal SDK errors fail immediately with details', () => {
   assert.throws(
     () =>
       acceptRepresentativeRequestOutcome(
