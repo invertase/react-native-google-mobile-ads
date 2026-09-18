@@ -87,7 +87,7 @@ jobs:
         name: Cache Pods
         id: pods-cache
         with:
-          path: tests/ios/Pods
+          path: RNGoogleMobileAdsExample/ios/Pods
           key: ${{ runner.os }}-pods-v2-${{ hashFiles('RNGoogleMobileAdsExample/ios/Podfile.lock') }}
           restore-keys: ${{ runner.os }}-pods-v2
 
