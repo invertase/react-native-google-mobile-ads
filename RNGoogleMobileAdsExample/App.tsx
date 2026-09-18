@@ -26,6 +26,9 @@ import { AppiumTestIds } from './src/appiumTestIds';
 import { getNativeRNGMATesting } from '@invertase/rngma-testing';
 import MobileAds, {
   AdEventType,
+  AdFormat,
+  AdPoolPresets,
+  AdPools,
   AdsConsent,
   AdsConsentDebugGeography,
   AppOpenAd,
@@ -881,15 +884,59 @@ function NativeRNGMATestingFormat() {
               const loaded = await NativeRNGMATesting.getResponseInfoFixtureJson('loaded');
               const noFill = await NativeRNGMATesting.getResponseInfoFixtureJson('no-fill');
               const paid = await NativeRNGMATesting.getResponseInfoFixtureJson('paid-compact');
+              let poolStatus = 'not-started';
+              let poolProbeStage = 'create';
+              try {
+                if (Platform.OS === 'android') {
+                  poolProbeStage = 'initialize';
+                  await MobileAds().initialize();
+                  poolProbeStage = 'create';
+                }
+                const pool = await AdPools.create(
+                  AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
+                    // GMA retains preload ids process-wide; every probe must own a fresh id.
+                    poolId: `appium-native-coverage-pool-${Date.now()}`,
+                    bufferSize: 1,
+                  }),
+                );
+                const removePoolListener = pool.addListener(() => {});
+                try {
+                  poolProbeStage = 'availability';
+                  const availability = await pool.getAvailability();
+                  poolProbeStage = 'poll';
+                  const poll = await pool.poll();
+                  if (poll.status === 'error') {
+                    throw new Error(`pool poll failed: ${String(poll.error)}`);
+                  }
+                  try {
+                    poolProbeStage = 'peek';
+                    await pool.peekResponseInfo();
+                    poolStatus = `${availability.observedCount}/${poll.status}/peek`;
+                  } catch (error) {
+                    if (Platform.OS !== 'android') {
+                      throw error;
+                    }
+                    // Android classic intentionally reports peek unsupported.
+                    poolStatus = `${availability.observedCount}/${poll.status}/no-peek`;
+                  }
+                } finally {
+                  poolProbeStage = 'listener teardown';
+                  removePoolListener();
+                  poolProbeStage = 'destroy';
+                  pool.destroy();
+                }
+              } catch (error) {
+                throw new Error(`${poolProbeStage}: ${String(error)}`);
+              }
               // Fold P-expiry (TTL seam) + P-reparent-and (delayed attach) into gallery status.
               setStatus(
-                `ok ping=${ping} ttl=${ttl} cleared=${cleared} attach=${attach} fixtures=${[
-                  loaded,
-                  noFill,
-                  paid,
-                ]
-                  .map(j => JSON.parse(j).responseId ?? 'null')
-                  .join(',')}`,
+                `ok ping=${ping} ttl=${ttl} cleared=${cleared} attach=${attach} pool=${poolStatus} fixtures=${[
+                    loaded,
+                    noFill,
+                    paid,
+                  ]
+                    .map(j => JSON.parse(j).responseId ?? 'null')
+                    .join(',')}`,
               );
             } catch (error) {
               setStatus(`error: ${String(error)}`);

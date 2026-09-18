@@ -34,8 +34,9 @@ export const config: Options.Testrunner = {
   onComplete(exitCode, _config, _capabilities, result) {
     const failed = result?.failed ?? 0;
     if (exitCode !== 0 || failed > 0) {
-      // WDIO can report failures while still exiting 0; force a non-zero process status.
-      process.exit(1);
+      throw new Error(
+        `WebdriverIO completed with exit code ${exitCode} and ${failed} failed test(s).`,
+      );
     }
   },
   async onPrepare() {

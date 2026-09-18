@@ -1,6 +1,8 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { createServer } from 'node:net';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   appiumPort,
   bootAndPersistSelectedSimulator,
@@ -17,7 +19,10 @@ import {
   selectAndroidAvd,
   selectIosSimulator,
 } from '../src/hostPreflight.ts';
-import { iosAppBundleResolution } from '../src/formats.ts';
+import { iosAppBundleResolution, iosAppPath } from '../src/formats.ts';
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptDir, '../../..');
 
 function run(bin: string, args: string[]): string | null {
   try {
@@ -209,15 +214,10 @@ function checkIos(options: { checkAppBundle?: boolean } = {}): {
   }
 
   const resolution = iosAppBundleResolution();
-  if (resolution.kind === 'absent') {
-    console.log(
-      'iOS appium:app omitted (no ReactTestApp.app found); using the installed com.microsoft.ReactTestApp bundle-id fallback.',
-    );
-    return selected;
-  }
-  if (resolution.kind === 'incomplete') {
+  if (resolution.kind !== 'complete') {
+    const unavailablePath = resolution.kind === 'absent' ? iosAppPath() : resolution.path;
     console.error(
-      `iOS bundle is unavailable or incomplete (missing a regular ReactTestApp executable): ${resolution.path}. Rebuild it or correct RNGMA_IOS_APP; do not blindly retry Appium or Node.`,
+      `iOS bundle is unavailable or incomplete (missing a regular ReactTestApp executable): ${unavailablePath}. Rebuild it or correct RNGMA_IOS_APP; do not blindly retry Appium or Node.`,
     );
     process.exit(1);
   }
@@ -275,6 +275,16 @@ async function main(): Promise<void> {
   if (target !== 'android' && target !== 'ios') {
     console.error('--run requires an android or ios target.');
     process.exit(1);
+  }
+  const codegen = spawnSync('yarn', ['tests:e2e:codegen'], {
+    cwd: repoRoot,
+    stdio: 'inherit',
+  });
+  if (codegen.error) {
+    throw codegen.error;
+  }
+  if (codegen.status !== 0) {
+    process.exit(codegen.status ?? 1);
   }
   const result = spawnSync('yarn', ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`], {
     env: {

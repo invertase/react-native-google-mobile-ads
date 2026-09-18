@@ -71,3 +71,27 @@ subprojects { subproject ->
         subproject.apply from: new File(rnCoverageRoot, "android/rn-coverage-jacoco.gradle")
     }
 }
+
+// RNTA evaluates :app before autolinked libraries. Refresh only the report's
+// workspace-library inputs after every project has applied its Android plugin.
+gradle.projectsEvaluated {
+    def coverageLibrary = findProject(':react-native-google-mobile-ads')
+    def coverageApp = findProject(':app')
+    def excludes = coverageApp.ext.rnCoverageClassExcludes
+    coverageApp.tasks.withType(JacocoReport).configureEach { report ->
+        report.classDirectories.setFrom(files(
+            fileTree(
+                dir: "${coverageLibrary.projectDir}/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+                excludes: excludes,
+            ),
+            fileTree(
+                dir: "${coverageLibrary.projectDir}/build/tmp/kotlin-classes/debug",
+                excludes: excludes,
+            ),
+        ))
+        report.sourceDirectories.setFrom(files(
+            "${coverageLibrary.projectDir}/src/main/java",
+            "${coverageLibrary.projectDir}/src/main/kotlin",
+        ))
+    }
+}
