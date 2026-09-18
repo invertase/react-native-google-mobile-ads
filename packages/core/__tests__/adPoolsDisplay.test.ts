@@ -272,10 +272,11 @@ describe('FEAT-06 emulated display AdPools', () => {
     }
     bannerPool.destroy();
 
+    let resolveSlow: ((value: ReturnType<typeof nativeWinner>) => void) | undefined;
     jest.mocked(NativeGoogleMobileAdsNativeModule.loadMultiFormat).mockImplementationOnce(
       () =>
-        new Promise(() => {
-          // never settles — exercises pollTimeoutMillis
+        new Promise(resolve => {
+          resolveSlow = resolve as (value: ReturnType<typeof nativeWinner>) => void;
         }),
     );
     const slow = await AdPools.create({
@@ -287,6 +288,8 @@ describe('FEAT-06 emulated display AdPools', () => {
     const timed = await slow.poll();
     expect(timed.status).toBe('timeout');
     slow.destroy();
+    resolveSlow!(nativeWinner('late-slow'));
+    await Promise.resolve();
   });
 
   it('timed poll awaits in-flight fill then returns filled', async () => {
@@ -611,8 +614,14 @@ describe('FEAT-06 emulated display AdPools', () => {
       await Promise.resolve();
     });
     expect((await pool.getAvailability()).observedCount).toBe(1);
-    await pool.poll(); // kicks refill
-    await pool.poll(); // empty while refill in flight
+    const firstPoll = await pool.poll(); // kicks refill
+    const secondPoll = await pool.poll(); // empty while refill in flight
+    if (firstPoll.status === 'filled') {
+      firstPoll.ad.destroy();
+    }
+    if (secondPoll.status === 'filled') {
+      secondPoll.ad.destroy();
+    }
 
     pool.destroy();
     pool.destroy();

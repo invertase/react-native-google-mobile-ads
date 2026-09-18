@@ -17,7 +17,6 @@
 
 import { EmitterSubscription } from 'react-native';
 
-import { getAdCapabilities } from '../capabilities/getAdCapabilities';
 import { AdFormat } from '../types/AdFormat';
 import { adErrorFromNativeEvent } from './adErrorFromNativeEvent';
 import { EmulatedAdPool, createEmulatedDisplayPool } from './emulatedAdPool';
@@ -41,9 +40,10 @@ export type RegisteredAdPool = AdPool & { notifyDegraded(): void };
 
 type PoolNativeEvent = {
   type: 'available' | 'exhausted' | 'error';
+  generation?: number;
   poolId?: string;
   responseId?: string;
-  data?: { responseId?: string };
+  data?: { responseId?: string; generation?: number };
   error?: {
     code: string;
     message: string;
@@ -67,13 +67,15 @@ export class SdkManagedAdPool implements AdPool {
   private readonly observedResponseIds = new Map<string, number>();
   private readonly nativeSubscription: EmitterSubscription;
   private readonly format: FullscreenAdFormat;
+  private readonly generation: number;
   private readonly pollTimeoutMillis: number | undefined;
 
-  constructor(resolved: AdPoolResolvedConfig) {
+  constructor(resolved: AdPoolResolvedConfig, generation: number) {
     this.poolId = resolved.poolId;
     this.formats = resolved.formats as FullscreenAdFormat[];
     this.resolved = resolved;
     this.format = this.formats[0];
+    this.generation = generation;
     this.pollTimeoutMillis = resolved.pollTimeoutMillis;
 
     this.nativeSubscription = SharedEventEmitter.addListener(
@@ -83,6 +85,9 @@ export class SdkManagedAdPool implements AdPool {
           return;
         }
         const payload = event.body ?? event;
+        if ((payload.generation ?? payload.data?.generation) !== this.generation) {
+          return;
+        }
         const responseId = payload.responseId ?? payload.data?.responseId;
         if (payload.type === 'available' && responseId) {
           if (!this.observedResponseIds.has(responseId)) {
@@ -141,6 +146,7 @@ export class SdkManagedAdPool implements AdPool {
     const result = await NativeGoogleMobileAdsPoolModule.poolGetAvailability(
       this.poolId,
       this.format,
+      this.generation,
     );
     return {
       available: result.observedCount > 0,
@@ -152,16 +158,10 @@ export class SdkManagedAdPool implements AdPool {
     if (this.destroyed) {
       return null;
     }
-    const caps = getAdCapabilities();
-    if (caps.poolResponseInfoPeek === 'unavailable') {
-      throw createPoolAdError(
-        'pool/peek-unsupported',
-        `AdPool.peekResponseInfo is unsupported on backend '${caps.backend}'`,
-      );
-    }
     const info = await NativeGoogleMobileAdsPoolModule.poolPeekResponseInfo(
       this.poolId,
       this.format,
+      this.generation,
     );
     return (info as ResponseInfo | null) ?? null;
   }
@@ -176,15 +176,11 @@ export class SdkManagedAdPool implements AdPool {
 
     const runPoll = async (): Promise<PollResult> => {
       try {
-        const availability = await this.getAvailability();
-        if (!availability.available) {
-          return { status: 'empty' };
-        }
-
         const requestId = allocateFullscreenRequestId();
         const result = await NativeGoogleMobileAdsPoolModule.poolPoll(
           this.poolId,
           this.format,
+          this.generation,
           requestId,
           this.resolved.adUnitId,
         );
@@ -230,14 +226,21 @@ export class SdkManagedAdPool implements AdPool {
       Number.isFinite(this.pollTimeoutMillis) &&
       this.pollTimeoutMillis > 0
     ) {
-      return await Promise.race([
-        runPoll(),
-        new Promise<PollResult>(resolve => {
-          setTimeout(() => {
-            resolve({ status: 'timeout' });
-          }, this.pollTimeoutMillis);
-        }),
-      ]);
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        return await Promise.race([
+          runPoll(),
+          new Promise<PollResult>(resolve => {
+            timeout = setTimeout(() => {
+              resolve({ status: 'timeout' });
+            }, this.pollTimeoutMillis);
+          }),
+        ]);
+      } finally {
+        if (timeout !== undefined) {
+          clearTimeout(timeout);
+        }
+      }
     }
 
     return runPoll();
@@ -262,15 +265,75 @@ export class SdkManagedAdPool implements AdPool {
       registry.delete(this.poolId);
       notifyRegistry();
     }
-    try {
-      NativeGoogleMobileAdsPoolModule.poolDestroy(this.poolId, this.format);
-    } catch {
-      // native may already be torn down
-    }
+    destroyNativePool(this.poolId, this.format, this.generation);
   }
 }
 
 const registry = new Map<string, RegisteredAdPool>();
+let nextPoolGeneration = 0;
+
+type PendingCreation = {
+  generation: number;
+  format: FullscreenAdFormat | null;
+  cancel(): void;
+  supersede(winner: Promise<AdPool>): void;
+};
+
+const pendingCreations = new Map<string, PendingCreation>();
+
+function destroyNativePool(poolId: string, format: FullscreenAdFormat, generation: number): void {
+  try {
+    NativeGoogleMobileAdsPoolModule.poolDestroy(poolId, format, generation);
+  } catch {
+    // Native ownership may already be gone; JS cancellation must still settle.
+  }
+}
+
+export function beginAdPoolCreation(
+  poolId: string,
+  format: FullscreenAdFormat | null,
+  cancel: () => void,
+  supersede: (winner: Promise<AdPool>) => void,
+  winner: Promise<AdPool>,
+): number {
+  const previous = pendingCreations.get(poolId);
+  if (previous) {
+    if (previous.format) {
+      destroyNativePool(poolId, previous.format, previous.generation);
+    }
+    previous.supersede(winner);
+  }
+  nextPoolGeneration += 1;
+  pendingCreations.set(poolId, {
+    generation: nextPoolGeneration,
+    format,
+    cancel,
+    supersede,
+  });
+  return nextPoolGeneration;
+}
+
+export function isCurrentAdPoolCreation(poolId: string, generation: number): boolean {
+  return pendingCreations.get(poolId)?.generation === generation;
+}
+
+export function completeAdPoolCreation(poolId: string, generation: number): void {
+  if (isCurrentAdPoolCreation(poolId, generation)) {
+    pendingCreations.delete(poolId);
+  }
+}
+
+function cancelAdPoolCreation(poolId: string): void {
+  const pending = pendingCreations.get(poolId);
+  if (!pending) {
+    return;
+  }
+  pendingCreations.delete(poolId);
+  if (pending.format) {
+    destroyNativePool(poolId, pending.format, pending.generation);
+  }
+  pending.cancel();
+}
 
 /** Notifies AdPoolProvider / hooks when the registry changes. */
 type RegistryListener = () => void;
@@ -307,6 +370,7 @@ export function registerAdPool(pool: RegisteredAdPool): void {
 }
 
 export function unregisterAdPool(poolId: string): void {
+  cancelAdPoolCreation(poolId);
   const existing = registry.get(poolId);
   if (!existing) {
     return;
@@ -317,6 +381,9 @@ export function unregisterAdPool(poolId: string): void {
 }
 
 export function destroyAllAdPools(): void {
+  for (const poolId of Array.from(pendingCreations.keys())) {
+    cancelAdPoolCreation(poolId);
+  }
   const pools = Array.from(registry.values());
   registry.clear();
   pools.forEach(pool => {
@@ -329,7 +396,10 @@ function isDisplayResolved(resolved: AdPoolResolvedConfig): boolean {
   return resolved.formats.some(format => format === AdFormat.BANNER || format === AdFormat.NATIVE);
 }
 
-export async function startNativePool(resolved: AdPoolResolvedConfig): Promise<RegisteredAdPool> {
+export async function startNativePool(
+  resolved: AdPoolResolvedConfig,
+  generation: number,
+): Promise<RegisteredAdPool> {
   if (isDisplayResolved(resolved)) {
     const pool = createEmulatedDisplayPool(resolved, () => {
       if (registry.get(pool.poolId) === pool) {
@@ -341,19 +411,40 @@ export async function startNativePool(resolved: AdPoolResolvedConfig): Promise<R
   }
 
   const format = resolved.formats[0] as FullscreenAdFormat;
-  NativeGoogleMobileAdsPoolModule.addListener('google_mobile_ads_pool_event');
-  const start = await NativeGoogleMobileAdsPoolModule.poolStart(
-    resolved.poolId,
-    format,
-    resolved.adUnitId,
-    resolved.effectiveBufferSize,
-    (resolved.requestOptions ?? {}) as Record<string, unknown>,
+  let startPromise;
+  try {
+    startPromise = NativeGoogleMobileAdsPoolModule.poolStart(
+      resolved.poolId,
+      format,
+      generation,
+      resolved.adUnitId,
+      resolved.effectiveBufferSize,
+      (resolved.requestOptions ?? {}) as Record<string, unknown>,
+    );
+  } catch (error) {
+    destroyNativePool(resolved.poolId, format, generation);
+    throw createPoolAdError(
+      'internal-error',
+      `Pool "${resolved.poolId}" native start failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  const start = await startPromise;
+  if (!start.started) {
+    destroyNativePool(resolved.poolId, format, generation);
+    throw createPoolAdError(
+      'internal-error',
+      `Pool "${resolved.poolId}" could not start native preloading`,
+    );
+  }
+  return new SdkManagedAdPool(
+    {
+      ...resolved,
+      effectiveBufferSize: start.effectiveBufferSize || resolved.effectiveBufferSize,
+    },
+    generation,
   );
-
-  return new SdkManagedAdPool({
-    ...resolved,
-    effectiveBufferSize: start.effectiveBufferSize || resolved.effectiveBufferSize,
-  });
 }
 
 export { EmulatedAdPool };

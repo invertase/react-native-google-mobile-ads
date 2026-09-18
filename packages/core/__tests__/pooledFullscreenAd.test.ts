@@ -68,16 +68,19 @@ describe('FEAT-05 pooledFullscreenAd + registry events', () => {
   });
 
   it('SdkManagedAdPool maps native available/exhausted/error events', () => {
-    const pool = new SdkManagedAdPool({
-      poolId: 'evt-pool',
-      formats: [AdFormat.INTERSTITIAL],
-      adUnitId: 'unit',
-      effectiveBufferSize: 1,
-      effectiveStalenessWindowMillis: 60_000,
-      effectiveStalenessWindowSource: 'guidance/other',
-      degraded: false,
-      degradeReasons: [],
-    });
+    const pool = new SdkManagedAdPool(
+      {
+        poolId: 'evt-pool',
+        formats: [AdFormat.INTERSTITIAL],
+        adUnitId: 'unit',
+        effectiveBufferSize: 1,
+        effectiveStalenessWindowMillis: 60_000,
+        effectiveStalenessWindowSource: 'guidance/other',
+        degraded: false,
+        degradeReasons: [],
+      },
+      1,
+    );
 
     const seen: string[] = [];
     const unsub = pool.addListener(event => {
@@ -85,14 +88,15 @@ describe('FEAT-05 pooledFullscreenAd + registry events', () => {
     });
 
     SharedEventEmitter.emit('google_mobile_ads_pool_event:evt-pool:0', {
-      body: { type: 'available', data: { responseId: 'resp-1' } },
+      body: { type: 'available', data: { responseId: 'resp-1', generation: 1 } },
     });
     SharedEventEmitter.emit('google_mobile_ads_pool_event:evt-pool:0', {
-      body: { type: 'exhausted' },
+      body: { type: 'exhausted', data: { generation: 1 } },
     });
     SharedEventEmitter.emit('google_mobile_ads_pool_event:evt-pool:0', {
       body: {
         type: 'error',
+        data: { generation: 1 },
         error: { code: 'internal-error', message: 'boom', reason: 'internal-error', phase: 'load' },
       },
     });

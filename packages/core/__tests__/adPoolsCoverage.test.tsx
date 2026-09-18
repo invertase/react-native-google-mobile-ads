@@ -20,6 +20,11 @@ import { resetFullscreenRequestIdsForTests } from '../src/internal/fullscreenReq
 import { validateAdPoolConfig } from '../src/validateAdPoolConfig';
 import NativeGoogleMobileAdsPoolModule from '../src/specs/modules/NativeGoogleMobileAdsPoolModule';
 
+function poolGeneration(poolId: string): number {
+  const calls = (NativeGoogleMobileAdsPoolModule.poolStart as jest.Mock).mock.calls;
+  return [...calls].reverse().find(call => call[0] === poolId)![2];
+}
+
 describe('FEAT-05 pool coverage arms', () => {
   afterEach(() => {
     // Registry notify updates mounted hooks; keep teardown inside act (F3).
@@ -303,15 +308,7 @@ describe('FEAT-05 pool coverage arms', () => {
 
     (
       NativeGoogleMobileAdsPoolModule.poolPoll as jest.Mock
-    ).mockImplementationOnce(
-      () =>
-        new Promise(resolve => {
-          setTimeout(
-            () => resolve({ filled: true, requestId: 99, responseId: 'late' }),
-            80,
-          );
-        }),
-    );
+    ).mockImplementationOnce(() => new Promise(() => undefined));
 
     let pooledHook: ReturnType<typeof usePooledAd> | undefined;
     function Probe() {
@@ -363,37 +360,46 @@ describe('FEAT-05 pool coverage arms', () => {
     );
     (
       NativeGoogleMobileAdsPoolModule.poolPoll as jest.Mock
-    ).mockImplementationOnce(
-      () =>
-        new Promise(resolve => {
-          setTimeout(
-            () => resolve({ filled: true, requestId: 1, responseId: 'late' }),
-            50,
-          );
-        }),
-    );
+    ).mockImplementationOnce(() => new Promise(() => undefined));
     const timed = await live.poll();
     expect(['timeout', 'filled']).toContain(timed.status);
     live.destroy();
   });
 
-  it('poll empty when native reports no fill; listener errors are swallowed', async () => {
+  it('poll invokes native when availability is empty and maps unfilled; listener errors are swallowed', async () => {
     const pool = await AdPools.create(
       AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, 'empty-unit', { bufferSize: 1 }),
     );
-    // Exhaust mock inventory then poll again.
-    await pool.poll();
+    const availability = NativeGoogleMobileAdsPoolModule.poolGetAvailability as jest.Mock;
+    availability.mockResolvedValueOnce({ available: false, observedCount: 0 });
+    const nativePoll = NativeGoogleMobileAdsPoolModule.poolPoll as jest.Mock;
+    nativePoll.mockResolvedValueOnce({ filled: false });
+
     await expect(pool.poll()).resolves.toMatchObject({ status: 'empty' });
+    expect(availability).not.toHaveBeenCalled();
+    expect(nativePoll).toHaveBeenCalledWith(
+      pool.poolId,
+      AdFormat.INTERSTITIAL,
+      poolGeneration(pool.poolId),
+      expect.any(Number),
+      'empty-unit',
+    );
 
     pool.addListener(() => {
       throw new Error('listener boom');
     });
     const { SharedEventEmitter } = require('../src/internal/SharedEventEmitter');
     SharedEventEmitter.emit(`google_mobile_ads_pool_event:${pool.poolId}:0`, {
-      body: { type: 'available', data: { responseId: 'seen-1' } },
+      body: {
+        type: 'available',
+        data: { responseId: 'seen-1', generation: poolGeneration(pool.poolId) },
+      },
     });
     SharedEventEmitter.emit(`google_mobile_ads_pool_event:${pool.poolId}:0`, {
-      body: { type: 'available', data: { responseId: 'seen-1' } },
+      body: {
+        type: 'available',
+        data: { responseId: 'seen-1', generation: poolGeneration(pool.poolId) },
+      },
     });
     pool.destroy();
   });
@@ -478,7 +484,10 @@ describe('FEAT-05 pool coverage arms', () => {
 
       await act(async () => {
         SharedEventEmitter.emit(`google_mobile_ads_pool_event:${pool.poolId}:0`, {
-          body: { type: 'available', data: { responseId } },
+          body: {
+            type: 'available',
+            data: { responseId, generation: poolGeneration(pool.poolId) },
+          },
         });
       });
 
@@ -604,7 +613,10 @@ describe('FEAT-05 pool coverage arms', () => {
     avail.mockResolvedValueOnce({ available: true, observedCount: 2 });
     await act(async () => {
       SharedEventEmitter.emit(`google_mobile_ads_pool_event:${pool.poolId}:0`, {
-        body: { type: 'available', data: { responseId: 'avail-1' } },
+        body: {
+          type: 'available',
+          data: { responseId: 'avail-1', generation: poolGeneration(pool.poolId) },
+        },
       });
       await Promise.resolve();
       await Promise.resolve();
@@ -615,7 +627,7 @@ describe('FEAT-05 pool coverage arms', () => {
     avail.mockResolvedValueOnce({ available: false, observedCount: 0 });
     await act(async () => {
       SharedEventEmitter.emit(`google_mobile_ads_pool_event:${pool.poolId}:0`, {
-        body: { type: 'exhausted' },
+        body: { type: 'exhausted', data: { generation: poolGeneration(pool.poolId) } },
       });
       await Promise.resolve();
       await Promise.resolve();
@@ -628,10 +640,8 @@ describe('FEAT-05 pool coverage arms', () => {
       { status: 'filled' }
     >['ad'] | null = null;
 
-    // getAvailability + poolPoll for fill, then refreshAvailability after poll.
-    avail
-      .mockResolvedValueOnce({ available: true, observedCount: 2 })
-      .mockResolvedValueOnce({ available: true, observedCount: 1 });
+    // Native poll supplies the result; the hook refreshes availability afterward.
+    avail.mockResolvedValueOnce({ available: true, observedCount: 1 });
     pollNative.mockResolvedValueOnce({
       filled: true,
       requestId: 601,
@@ -649,9 +659,7 @@ describe('FEAT-05 pool coverage arms', () => {
     expect(firstAd).not.toBeNull();
     const destroySpy = jest.spyOn(firstAd!, 'destroy');
 
-    avail
-      .mockResolvedValueOnce({ available: true, observedCount: 1 })
-      .mockResolvedValueOnce({ available: true, observedCount: 0 });
+    avail.mockResolvedValueOnce({ available: true, observedCount: 0 });
     pollNative.mockResolvedValueOnce({
       filled: true,
       requestId: 602,
@@ -667,9 +675,8 @@ describe('FEAT-05 pool coverage arms', () => {
     expect(pooledHook!.status).toBe('filled');
     expect(pooledHook!.ad).not.toBe(firstAd);
 
-    avail
-      .mockResolvedValueOnce({ available: false, observedCount: 0 })
-      .mockResolvedValueOnce({ available: false, observedCount: 0 });
+    avail.mockResolvedValueOnce({ available: false, observedCount: 0 });
+    pollNative.mockResolvedValueOnce({ filled: false });
     await act(async () => {
       const empty = await pooledHook!.poll();
       expect(empty.status).toBe('empty');
@@ -695,9 +702,9 @@ describe('FEAT-05 pool coverage arms', () => {
     const resolved = validateAdPoolConfig(
       AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, 'replace-registry', { bufferSize: 1 }),
     );
-    const first = new SdkManagedAdPool(resolved);
+    const first = new SdkManagedAdPool(resolved, 1);
     registerAdPool(first);
-    const second = new SdkManagedAdPool(resolved);
+    const second = new SdkManagedAdPool(resolved, 2);
     const firstDestroy = jest.spyOn(first, 'destroy');
     registerAdPool(second);
     expect(firstDestroy).toHaveBeenCalled();

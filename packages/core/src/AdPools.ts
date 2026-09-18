@@ -17,14 +17,56 @@
 
 import { getAdCapabilities } from './capabilities/getAdCapabilities';
 import {
+  beginAdPoolCreation,
+  completeAdPoolCreation,
   destroyAllAdPools,
   getRegisteredAdPool,
+  isCurrentAdPoolCreation,
   registerAdPool,
   startNativePool,
 } from './internal/adPoolRegistry';
 import { MobileAds } from './MobileAds';
 import type { AdPool, AdPoolConfig, AdPoolsApi } from './types/AdPool';
 import { createPoolAdError, validateAdPoolConfig } from './validateAdPoolConfig';
+import { AdFormat } from './types/AdFormat';
+import type { FullscreenAdFormat } from './types/FullscreenAdFormat';
+
+type CreationAttempt = {
+  promise: Promise<AdPool>;
+  resolve(value: AdPool | PromiseLike<AdPool>): void;
+  reject(error: unknown): void;
+};
+
+const creationAttempts = new Map<string, CreationAttempt>();
+
+function createAttempt(): CreationAttempt {
+  let settled = false;
+  let resolvePromise!: (value: AdPool | PromiseLike<AdPool>) => void;
+  let rejectPromise!: (error: unknown) => void;
+  const promise = new Promise<AdPool>((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+  return {
+    promise,
+    resolve(value) {
+      if (!settled) {
+        settled = true;
+        resolvePromise(value);
+      }
+    },
+    reject(error) {
+      if (!settled) {
+        settled = true;
+        rejectPromise(error);
+      }
+    },
+  };
+}
+
+function isSdkManagedFormat(format: AdFormat): format is FullscreenAdFormat {
+  return format !== AdFormat.BANNER && format !== AdFormat.NATIVE;
+}
 
 /**
  * Factory for managed ad pools.
@@ -59,24 +101,67 @@ export const AdPools: AdPoolsApi = {
       existing.destroy();
     }
 
-    const pool = await startNativePool(resolved);
-    registerAdPool(pool);
-    if (resolved.degraded) {
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
-        // Loud degrade: one-time warning per create (dev + production event;
-        // console only in __DEV__).
-        // eslint-disable-next-line no-console
-        console.warn(
-          `[AdPools] pool "${resolved.poolId}" created in degraded mode: ${resolved.degradeReasons.join(
-            ', ',
-          )}`,
+    const attempt = createAttempt();
+    const format = resolved.formats[0];
+    const generation = beginAdPoolCreation(
+      resolved.poolId,
+      isSdkManagedFormat(format) ? format : null,
+      () => {
+        if (creationAttempts.get(resolved.poolId) === attempt) {
+          creationAttempts.delete(resolved.poolId);
+        }
+        attempt.reject(
+          createPoolAdError('internal-error', `Pool "${resolved.poolId}" creation was cancelled`),
         );
+      },
+      winner => {
+        attempt.resolve(winner);
+      },
+      attempt.promise,
+    );
+    creationAttempts.set(resolved.poolId, attempt);
+
+    void Promise.resolve().then(async () => {
+      try {
+        if (!isCurrentAdPoolCreation(resolved.poolId, generation)) {
+          return;
+        }
+
+        const pool = await startNativePool(resolved, generation);
+        if (!isCurrentAdPoolCreation(resolved.poolId, generation)) {
+          pool.destroy();
+          return;
+        }
+
+        registerAdPool(pool);
+        completeAdPoolCreation(resolved.poolId, generation);
+        if (resolved.degraded) {
+          if (typeof __DEV__ !== 'undefined' && __DEV__) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              `[AdPools] pool "${resolved.poolId}" created in degraded mode: ${resolved.degradeReasons.join(
+                ', ',
+              )}`,
+            );
+          }
+          pool.notifyDegraded();
+        }
+        attempt.resolve(pool);
+        if (creationAttempts.get(resolved.poolId) === attempt) {
+          creationAttempts.delete(resolved.poolId);
+        }
+      } catch (error) {
+        if (!isCurrentAdPoolCreation(resolved.poolId, generation)) {
+          return;
+        }
+        completeAdPoolCreation(resolved.poolId, generation);
+        attempt.reject(error);
+        if (creationAttempts.get(resolved.poolId) === attempt) {
+          creationAttempts.delete(resolved.poolId);
+        }
       }
-      // Sync notify: EmulatedAdPool defers emission until the first addListener
-      // when no subscribers exist yet (common after `await create()`).
-      pool.notifyDegraded();
-    }
-    return pool;
+    });
+    return attempt.promise;
   },
 
   get(poolId: string): AdPool | null {

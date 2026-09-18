@@ -41,6 +41,7 @@ class ReactNativeGoogleMobileAdsPoolModule(
   reactContext: ReactApplicationContext,
 ) : NativeGoogleMobileAdsPoolModuleSpec(reactContext) {
   private val callbacks = HashMap<String, PreloadCallbackV2>()
+  private val generations = PoolGenerationTracker()
 
   override fun getName() = NAME
 
@@ -51,44 +52,56 @@ class ReactNativeGoogleMobileAdsPoolModule(
 
   private fun sendPoolEvent(
     poolId: String,
+    generation: Long,
     type: String,
     data: WritableMap? = null,
     error: WritableMap? = null,
   ) {
+    val eventData = data ?: Arguments.createMap()
+    eventData.putDouble("generation", generation.toDouble())
     ReactNativeGoogleMobileAdsCommon.sendAdEvent(
       GOOGLE_MOBILE_ADS_EVENT_POOL,
       0,
       type,
       poolId,
       error,
-      data,
+      eventData,
     )
   }
 
-  private fun buildCallback(poolId: String): PreloadCallbackV2 =
+  private fun buildCallback(
+    poolId: String,
+    key: String,
+    generation: Long,
+  ): PreloadCallbackV2 =
     object : PreloadCallbackV2() {
       override fun onAdPreloaded(
         preloadId: String,
         responseInfo: com.google.android.gms.ads.ResponseInfo?,
       ) {
+        if (!generations.allowsCallback(key, generation)) return
         val data = Arguments.createMap()
         val responseId = responseInfo?.responseId
         if (responseId != null) {
           data.putString("responseId", responseId)
         }
-        sendPoolEvent(poolId, "available", data)
+        sendPoolEvent(poolId, generation, "available", data)
       }
 
       override fun onAdsExhausted(preloadId: String) {
-        sendPoolEvent(poolId, "exhausted")
+        if (generations.allowsCallback(key, generation)) {
+          sendPoolEvent(poolId, generation, "exhausted")
+        }
       }
 
       override fun onAdFailedToPreload(
         preloadId: String,
         adError: com.google.android.gms.ads.AdError,
       ) {
+        if (!generations.allowsCallback(key, generation)) return
         sendPoolEvent(
           poolId,
+          generation,
           "error",
           error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(adError, "load"),
         )
@@ -124,6 +137,7 @@ class ReactNativeGoogleMobileAdsPoolModule(
   override fun poolStart(
     preloadId: String,
     format: String,
+    generation: Double,
     adUnitId: String,
     bufferSize: Double,
     requestOptions: ReadableMap,
@@ -139,6 +153,8 @@ class ReactNativeGoogleMobileAdsPoolModule(
       return
     }
     val size = bufferSize.toInt().coerceAtLeast(1)
+    val generationId = generation.toLong()
+    val key = callbackKey(format, preloadId)
     val configuration = buildConfiguration(format, adUnitId, size, requestOptions)
     if (configuration == null) {
       ReactNativeModule.rejectPromiseWithCodeAndMessage(
@@ -148,11 +164,25 @@ class ReactNativeGoogleMobileAdsPoolModule(
       )
       return
     }
+    if (!generations.claimStart(key, generationId)) {
+      val result = Arguments.createMap()
+      result.putBoolean("started", false)
+      result.putInt("effectiveBufferSize", size)
+      promise.resolve(result)
+      return
+    }
 
     activity.runOnUiThread {
       try {
-        val key = callbackKey(format, preloadId)
-        val callback = buildCallback(preloadId)
+        if (!generations.allowsRead(key, generationId)) {
+          val result = Arguments.createMap()
+          result.putBoolean("started", false)
+          result.putInt("effectiveBufferSize", size)
+          promise.resolve(result)
+          return@runOnUiThread
+        }
+        destroyPreloader(preloadId, format)
+        val callback = buildCallback(preloadId, key, generationId)
         callbacks[key] = callback
         val started =
           when (format) {
@@ -161,11 +191,19 @@ class ReactNativeGoogleMobileAdsPoolModule(
             "rewarded" -> RewardedAdPreloader.start(preloadId, configuration, callback)
             else -> false
           }
+        if (!started && generations.releaseDestroy(key, generationId)) {
+          callbacks.remove(key)
+          destroyPreloader(preloadId, format)
+        }
         val result = Arguments.createMap()
         result.putBoolean("started", started)
         result.putInt("effectiveBufferSize", size)
         promise.resolve(result)
       } catch (e: Exception) {
+        if (generations.releaseDestroy(key, generationId)) {
+          callbacks.remove(key)
+          destroyPreloader(preloadId, format)
+        }
         ReactNativeModule.rejectPromiseWithCodeAndMessage(
           promise,
           "internal-error",
@@ -179,8 +217,18 @@ class ReactNativeGoogleMobileAdsPoolModule(
   override fun poolGetAvailability(
     preloadId: String,
     format: String,
+    generation: Double,
     promise: Promise,
   ) {
+    val key = callbackKey(format, preloadId)
+    val generationId = generation.toLong()
+    if (!generations.allowsRead(key, generationId)) {
+      val result = Arguments.createMap()
+      result.putBoolean("available", false)
+      result.putInt("observedCount", 0)
+      promise.resolve(result)
+      return
+    }
     val activity = reactApplicationContext.currentActivity
     val runner =
       activity ?: return run {
@@ -190,6 +238,13 @@ class ReactNativeGoogleMobileAdsPoolModule(
         promise.resolve(result)
       }
     runner.runOnUiThread {
+      if (!generations.allowsRead(key, generationId)) {
+        val result = Arguments.createMap()
+        result.putBoolean("available", false)
+        result.putInt("observedCount", 0)
+        promise.resolve(result)
+        return@runOnUiThread
+      }
       val count =
         when (format) {
           "appOpen" -> AppOpenAdPreloader.getNumAdsAvailable(preloadId)
@@ -208,8 +263,13 @@ class ReactNativeGoogleMobileAdsPoolModule(
   override fun poolPeekResponseInfo(
     preloadId: String,
     format: String,
+    generation: Double,
     promise: Promise,
   ) {
+    if (!generations.allowsRead(callbackKey(format, preloadId), generation.toLong())) {
+      promise.resolve(null)
+      return
+    }
     ReactNativeModule.rejectPromiseWithCodeAndMessage(
       promise,
       "pool/peek-unsupported",
@@ -221,10 +281,17 @@ class ReactNativeGoogleMobileAdsPoolModule(
   override fun poolPoll(
     preloadId: String,
     format: String,
+    generation: Double,
     requestId: Double,
     adUnitId: String,
     promise: Promise,
   ) {
+    val key = callbackKey(format, preloadId)
+    val generationId = generation.toLong()
+    if (!generations.allowsRead(key, generationId)) {
+      resolveEmptyPoll(promise)
+      return
+    }
     val activity = reactApplicationContext.currentActivity
     if (activity == null) {
       ReactNativeModule.rejectPromiseWithCodeAndMessage(
@@ -237,6 +304,10 @@ class ReactNativeGoogleMobileAdsPoolModule(
     val reqId = requestId.toInt()
     activity.runOnUiThread {
       try {
+        if (!generations.allowsRead(key, generationId)) {
+          resolveEmptyPoll(promise)
+          return@runOnUiThread
+        }
         when (format) {
           "appOpen" -> {
             val ad: AppOpenAd? = AppOpenAdPreloader.pollAd(preloadId)
@@ -323,15 +394,16 @@ class ReactNativeGoogleMobileAdsPoolModule(
   override fun poolDestroy(
     preloadId: String,
     format: String,
+    generation: Double,
   ) {
+    val key = callbackKey(format, preloadId)
+    if (!generations.releaseDestroy(key, generation.toLong())) {
+      return
+    }
     val activity = reactApplicationContext.currentActivity
     val destroy = {
-      callbacks.remove(callbackKey(format, preloadId))
-      when (format) {
-        "appOpen" -> AppOpenAdPreloader.destroy(preloadId)
-        "interstitial" -> InterstitialAdPreloader.destroy(preloadId)
-        "rewarded" -> RewardedAdPreloader.destroy(preloadId)
-      }
+      callbacks.remove(key)
+      destroyPreloader(preloadId, format)
     }
     if (activity != null) {
       activity.runOnUiThread { destroy() }
@@ -340,14 +412,15 @@ class ReactNativeGoogleMobileAdsPoolModule(
     }
   }
 
-  @ReactMethod
-  override fun addListener(eventName: String) {
-    // Required for RN built-in EventEmitter.
-  }
-
-  @ReactMethod
-  override fun removeListeners(count: Double) {
-    // Required for RN built-in EventEmitter.
+  private fun destroyPreloader(
+    preloadId: String,
+    format: String,
+  ) {
+    when (format) {
+      "appOpen" -> AppOpenAdPreloader.destroy(preloadId)
+      "interstitial" -> InterstitialAdPreloader.destroy(preloadId)
+      "rewarded" -> RewardedAdPreloader.destroy(preloadId)
+    }
   }
 
   companion object {
