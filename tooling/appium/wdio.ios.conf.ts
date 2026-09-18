@@ -14,7 +14,7 @@ const iosApp = iosAppPath();
 /**
  * iOS Appium smoke (XCUITest).
  * Prerequisites: `yarn tests:appium:drivers:install`, simulator, Metro on :8081,
- * built example (`yarn tests:ios:pod:install` + install via `yarn tests:ios:run` or set RNGMA_IOS_APP).
+ * built example (`yarn tests:ios:pod:install` + install via `yarn tests:ios:run --udid <selected-udid>` or set RNGMA_IOS_APP).
  */
 export const config: Options.Testrunner = {
   ...shared,
