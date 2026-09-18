@@ -22,7 +22,7 @@ Once: `yarn && yarn prepare` (+ `yarn tests:ios:pod:install` on iOS). `yarn test
 
 **Names only.** Which of these to run is [platform coverage](#platform-coverage-gate-blocking). When running e2e, use only these named scripts (no `yarn tests:android:*` / `yarn tests:ios:*` globs). Do **not** run every named script unless that table requires it.
 
-Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:android`, `yarn tests:appium:ios`.
+Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:android`, `yarn tests:appium:ios`. CI additionally uses `yarn tests:appium:ios:select-and-boot --github-env "$GITHUB_ENV"` before the iOS build to select, boot, and persist one existing simulator UDID.
 
 When those named scripts are the e2e gate, `tee` `yarn tests:appium:android` to a unique `/tmp/rngma-e2e-android-*.log` and `yarn tests:appium:ios` to a unique `/tmp/rngma-e2e-ios-*.log`. Redirect/`tee` of the **same** named yarn script is allowed; do not add other wrappers.
 
@@ -30,7 +30,7 @@ Device driver: Appium 3 + WebdriverIO in `tooling/appium/` ([§ Appium](#appium-
 
 There is no separate macOS-app e2e target. iOS e2e is `yarn tests:ios:pod:install` / `yarn tests:ios:run` (install) then `yarn tests:appium:ios` (local Mac or CI `macos-15`).
 
-A green GitHub Actions e2e workflow is **not** a pass ([continue-on-error](../ci-workflows/index.md#e2e-continue-on-error)). Use local counts + `/tmp/rngma-e2e-*.log`, or triaged `simulator_log` / `adb_logs`.
+GitHub Actions fails when the app install or Appium suite fails; artifact uploads remain unconditional. Local gates still require counts + `/tmp/rngma-e2e-*.log`, or triaged `simulator_log` / `adb_logs`.
 
 <a id="appium-scaffold"></a>
 
@@ -74,7 +74,7 @@ Four separate Google-test-ID **request-outcome contracts** cover standard Banner
 
 A green run of **unrelated** e2e files does not close review for the touched area.
 
-`full` / `pre-merge-validation`: [validation-checklist work types](validation-checklist.md#work-types) (this table **and** lint-by-tree / evidence for this diff). CI e2e jobs are not the pass signal ([continue-on-error](../ci-workflows/index.md#e2e-continue-on-error)).
+`full` / `pre-merge-validation`: [validation-checklist work types](validation-checklist.md#work-types) (this table **and** lint-by-tree / evidence for this diff). Install/Appium CI failures fail the job; local counts/logs remain independent evidence ([truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error)).
 
 <a id="pre-flight"></a>
 
@@ -84,7 +84,7 @@ A green run of **unrelated** e2e files does not close review for the touched are
 
 **Blocking preparation.** [Prepare must finish first](agent-command-policy.md#prepare-must-finish-first): `yarn` then `yarn prepare` before Metro/e2e (this pass runs Metro/native). Do not parallelize prepare with packager, Jest, Gradle, or pods. What to record stays on the [evidence prepare row](validation-checklist.md#validation-evidence-package).
 
-Before Android Appium, inventory AVDs with `emulator -list-avds`; the canonical Appium command preflights connected devices, deterministically prefers API 36, and passes its selected serial to WDIO. UiAutomator2 requires Android 8+ (API 26): boot the reported qualifying AVD and retry the same command, never retry API 24. Before iOS Appium, preflight inventories `xcrun simctl list devices available`, selects an **existing exact-name iPhone 17** by UDID, and passes that UDID to every WDIO session. It prefers an already booted exact match, then the newest available runtime; `RNGMA_IOS_VERSION` constrains the runtime without a checked-in version pin, and an explicit `RNGMA_IOS_UDID` must resolve to an available exact-name match. No exact match is an immediate blocker—Appium must never fabricate a simulator. A discovered or `RNGMA_IOS_APP`-configured `ReactTestApp.app` is usable only when its inner `ReactTestApp` executable is a regular file. A missing executable means a stale/incomplete build and fails preflight: rebuild or correct the override rather than blindly retrying Appium or Node. Only when no app wrapper is discovered or configured may preflight use the installed `com.microsoft.ReactTestApp` bundle-id fallback.
+Before Android Appium, inventory AVDs with `emulator -list-avds`; the canonical Appium command preflights connected devices, deterministically prefers API 36, and passes its selected serial to WDIO. UiAutomator2 requires Android 8+ (API 26): boot the reported qualifying AVD and retry the same command, never retry API 24. Before iOS Appium, preflight inventories `xcrun simctl list devices available`, selects an **existing exact-name iPhone 17** by UDID, and passes that UDID to every WDIO session. It prefers an already booted exact match, then the newest available runtime; `RNGMA_IOS_VERSION` constrains the runtime without a checked-in version pin, and an explicit `RNGMA_IOS_UDID` must resolve to an available exact-name match. In CI, the selector boots that exact simulator and writes `RNGMA_IOS_UDID` to `$GITHUB_ENV`; `tests:ios:run --udid`, simulator logging, and Appium all consume it. No exact match is an immediate blocker—Appium must never fabricate a simulator. A discovered or `RNGMA_IOS_APP`-configured `ReactTestApp.app` is usable only when its inner `ReactTestApp` executable is a regular file. A missing executable means a stale/incomplete build and fails preflight: rebuild or correct the override rather than blindly retrying Appium or Node. Only when no app wrapper is discovered or configured may preflight use the installed `com.microsoft.ReactTestApp` bundle-id fallback.
 
 Before taking any e2e slot required by this task, determine whether another task owns it. If the slot is occupied and this task has no explicit ownership transfer, ask the user whether this task may take it. Without authorization, do not stop or otherwise displace the owner. Once ownership is transferred, take the slot and continue.
 
@@ -105,4 +105,4 @@ Interrupted Shell: log footer `N passing`/`N failing` = complete. An open tee or
 
 Do not invent harness override files or debug flags from other repos.
 
-Merge: no `.only`. Pre-merge validation: [platform coverage](#platform-coverage-gate-blocking) for this diff (CI e2e not the pass) **and** the lint/tsc/coverage rows that [validation evidence](validation-checklist.md#validation-evidence-package) / [lint-by-tree](validation-checklist.md#lint-and-formatting) already require for this diff.
+Merge: no `.only`. Pre-merge validation: [platform coverage](#platform-coverage-gate-blocking) for this diff in addition to [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error) **and** the lint/tsc/coverage rows that [validation evidence](validation-checklist.md#validation-evidence-package) / [lint-by-tree](validation-checklist.md#lint-and-formatting) already require for this diff.

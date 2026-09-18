@@ -1,12 +1,15 @@
 import { execFileSync, spawnSync } from 'node:child_process';
+import { appendFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import {
   appiumPort,
+  bootAndPersistSelectedSimulator,
   DEFAULT_IOS_DEVICE_NAME,
   MIN_ANDROID_API,
   MIN_NODE_MAJOR,
   nodeMeetsMinimum,
   parseAvailableIosSimulators,
+  SELECT_AND_BOOT_GITHUB_ENV_ERROR,
   selectConnectedAndroidDevice,
   selectAndroidAvd,
   selectIosSimulator,
@@ -144,7 +147,10 @@ function checkAndroid(): string {
   process.exit(1);
 }
 
-function checkIos(): string {
+function checkIos(options: { checkAppBundle?: boolean } = {}): {
+  udid: string;
+  state: string;
+} {
   const simctlJson = run('xcrun', ['simctl', 'list', 'devices', 'available', '--json']);
   if (simctlJson == null) {
     console.error(
@@ -182,12 +188,16 @@ function checkIos(): string {
     `iOS simulator ${selected.name} iOS ${selected.runtimeVersion} ${selected.udid} (${selected.state}); using existing UDID.`,
   );
 
+  if (options.checkAppBundle === false) {
+    return selected;
+  }
+
   const resolution = iosAppBundleResolution();
   if (resolution.kind === 'absent') {
     console.log(
       'iOS appium:app omitted (no ReactTestApp.app found); using the installed com.microsoft.ReactTestApp bundle-id fallback.',
     );
-    return selected.udid;
+    return selected;
   }
   if (resolution.kind === 'incomplete') {
     console.error(
@@ -196,12 +206,38 @@ function checkIos(): string {
     process.exit(1);
   }
   console.log(`iOS app bundle is complete: ${resolution.path}`);
-  return selected.udid;
+  return selected;
+}
+
+function selectAndBootIos(): void {
+  const selected = checkIos({ checkAppBundle: false });
+  try {
+    bootAndPersistSelectedSimulator(
+      selected,
+      process.argv,
+      (bin, args) => {
+        execFileSync(bin, args, { stdio: 'inherit' });
+      },
+      appendFileSync,
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === SELECT_AND_BOOT_GITHUB_ENV_ERROR) {
+      console.error(message);
+      process.exit(1);
+    }
+    throw error;
+  }
+  console.log(`Booted and persisted RNGMA_IOS_UDID=${selected.udid}.`);
 }
 
 async function main(): Promise<void> {
   const target = process.argv[2] ?? 'all';
   checkNode();
+  if (target === 'ios' && process.argv.includes('--select-and-boot')) {
+    selectAndBootIos();
+    return;
+  }
   await checkAppiumPort();
   let androidUdid: string | undefined;
   let iosUdid: string | undefined;
@@ -209,7 +245,7 @@ async function main(): Promise<void> {
     androidUdid = checkAndroid();
   }
   if (target === 'ios' || target === 'all') {
-    iosUdid = checkIos();
+    iosUdid = checkIos().udid;
   }
 
   if (!process.argv.includes('--run')) {

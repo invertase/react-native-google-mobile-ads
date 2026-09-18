@@ -23,6 +23,41 @@ export function requireIosUdid(env: NodeJS.ProcessEnv = process.env): string {
   return udid;
 }
 
+export const SELECT_AND_BOOT_GITHUB_ENV_ERROR =
+  '--select-and-boot requires --github-env <path>.';
+
+export function requireGithubEnvPath(argv: string[]): string {
+  const githubEnvFlag = argv.indexOf('--github-env');
+  if (githubEnvFlag === -1 || !argv[githubEnvFlag + 1]) {
+    throw new Error(SELECT_AND_BOOT_GITHUB_ENV_ERROR);
+  }
+  return argv[githubEnvFlag + 1]!;
+}
+
+export function githubEnvUdidLine(udid: string): string {
+  return `RNGMA_IOS_UDID=${udid}\n`;
+}
+
+export type SimctlExec = (bin: string, args: string[]) => void;
+export type GithubEnvAppend = (path: string, data: string) => void;
+
+/**
+ * Boot an already-selected simulator and persist its UDID. Does not inventory or
+ * create devices; callers supply the selected UDID/state.
+ */
+export function bootAndPersistSelectedSimulator(
+  selected: { udid: string; state: string },
+  argv: string[],
+  execFile: SimctlExec,
+  appendFile: GithubEnvAppend,
+): void {
+  if (selected.state !== 'Booted') {
+    execFile('xcrun', ['simctl', 'boot', selected.udid]);
+  }
+  execFile('xcrun', ['simctl', 'bootstatus', selected.udid, '-b']);
+  appendFile(requireGithubEnvPath(argv), githubEnvUdidLine(selected.udid));
+}
+
 export type IosSimulator = {
   name: string;
   udid: string;

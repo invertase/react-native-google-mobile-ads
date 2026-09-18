@@ -120,7 +120,7 @@ Reviews of Pull Requests are based on the following acceptance criteria:
   - Have the TypeScript types been added?
 - Have the tests been updated or new tests been added to test newly implemented or changed functionality.
   - E2E and Jest when [platform coverage](okf-bundle/testing/running-e2e.md#platform-coverage-gate-blocking) requires them.
-- Do all CI checks pass. A green e2e GitHub Actions job is not an e2e pass — [continue-on-error](okf-bundle/ci-workflows/index.md#e2e-continue-on-error).
+- Do all CI checks pass. Install/Appium failures fail e2e workflows; local counts/logs remain independent evidence ([truthful e2e checks](okf-bundle/ci-workflows/index.md#e2e-continue-on-error)).
 
 Once a PR is merged into the `main` branch, maintainers publish with `workflow_dispatch` — [CI publish](okf-bundle/ci-workflows/index.md#workflows). Push to `main` does not publish. semantic-release versions core and every public scoped mediation adapter together; the convergent Lerna step is the only npm uploader and excludes the private adapter template. Publish runs on macOS so the release commit refreshes `RNGoogleMobileAdsExample/ios/Podfile.lock` against `packages/core` (pod version + `sdkVersions.ios`) — [publish convergence](okf-bundle/ci-workflows/index.md#publish-podfile-lock).
 
