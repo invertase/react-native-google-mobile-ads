@@ -77,11 +77,15 @@ function createResponseInfo(responseId: string): ResponseInfo {
   };
 }
 
-function createAdError(reason: 'no-fill' | 'network-error', responseInfo: ResponseInfo): AdError {
+function createAdError(
+  reason: 'no-fill' | 'mediation-no-fill' | 'network-error',
+  responseInfo: ResponseInfo,
+  phase: 'load' | 'show' = 'load',
+): AdError {
   return Object.assign(new Error(reason), {
     code: `googleMobileAds/${reason}`,
     reason,
-    phase: 'load' as const,
+    phase,
     responseInfo,
   }) as AdError;
 }
@@ -362,6 +366,56 @@ describe('fullscreen hook call forms', () => {
       status: 'error',
       error: failure,
       responseInfo: failureResponse,
+    });
+  });
+
+  it('classifies load-phase mediation-no-fill as no-fill and keeps show-phase errors as error', () => {
+    const fake = createTestInterstitial();
+    jest.spyOn(InterstitialAd, 'createForAdRequest').mockReturnValue(fake.ad);
+    let result: UseInterstitialAdResult | undefined;
+
+    function Probe() {
+      result = useInterstitialAd({
+        adUnitId: TestIds.INTERSTITIAL,
+        autoLoad: false,
+      });
+      return null;
+    }
+
+    render(<Probe />);
+    act(() => result!.load());
+
+    const mediationNoFillResponse = createResponseInfo('mediation-no-fill-response');
+    const mediationNoFillError = createAdError('mediation-no-fill', mediationNoFillResponse);
+    act(() => fake.emit(AdEventType.ERROR, mediationNoFillError));
+    expect(result!).toMatchObject({
+      status: 'no-fill',
+      error: mediationNoFillError,
+      responseInfo: mediationNoFillResponse,
+    });
+
+    act(() => result!.retry());
+    const showPhaseMediationNoFill = createAdError(
+      'mediation-no-fill',
+      createResponseInfo('show-mediation-no-fill'),
+      'show',
+    );
+    act(() => fake.emit(AdEventType.ERROR, showPhaseMediationNoFill));
+    expect(result!).toMatchObject({
+      status: 'error',
+      error: showPhaseMediationNoFill,
+    });
+
+    act(() => result!.retry());
+    const showPhaseNoFill = createAdError(
+      'no-fill',
+      createResponseInfo('show-no-fill'),
+      'show',
+    );
+    act(() => fake.emit(AdEventType.ERROR, showPhaseNoFill));
+    expect(result!).toMatchObject({
+      status: 'error',
+      error: showPhaseNoFill,
     });
   });
 

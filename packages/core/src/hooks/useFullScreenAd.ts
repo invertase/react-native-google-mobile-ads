@@ -311,8 +311,12 @@ function useFullScreenAdCore(
           loadedRef.current = false;
           const error = payload as AdError;
           // A no-fill is a routine ad-server outcome, not a defect, so it gets
-          // its own status. Show failures are always failures.
-          const isNoFill = error.reason === 'no-fill' && error.phase === 'load';
+          // its own status. Match MultiFormatAdRequest: both `no-fill` and
+          // `mediation-no-fill` on the load path. Show failures are always
+          // failures, even when the reason looks like inventory.
+          const isNoFill =
+            (error.reason === 'no-fill' || error.reason === 'mediation-no-fill') &&
+            error.phase === 'load';
           dispatch({
             status: isNoFill ? 'no-fill' : 'error',
             error,
