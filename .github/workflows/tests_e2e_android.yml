@@ -35,9 +35,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Refactor to make these dynamic with a low/high bracket only on schedule, not push
-        # For now this is just the fastest combo (api/arch/target/snapshot-warm-time) based on testing
-        api-level: [29]
+        # Single CI image: API 36 google_apis (Play services, no Play Store login).
+        # API 29 google_apis intermittently fails native loads with SDK internal-error 0
+        # ("Click actions were not properly specified") on both AdMob and GAM test units.
+        api-level: [36]
         arch: [x86_64]
         target: [google_apis]
         first-boot-delay: [600]
