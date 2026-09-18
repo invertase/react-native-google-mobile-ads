@@ -15,7 +15,7 @@
  *
  */
 
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { AdEventType } from '../AdEventType';
@@ -104,17 +104,19 @@ export type UseFullScreenAdStatus =
  * can click an ad and then dismiss it, and a paid event can arrive at any
  * point. Collapsing both questions into one word would throw information away.
  *
- * Every accumulating field resets when the next `load()` starts and when
- * `adUnitId` or `requestOptions` changes.
+ * Every accumulating field resets when the next `load()` starts, when
+ * `adUnitId` or `requestOptions` changes, and when options-form `destroy()`
+ * returns the hook to `'idle'`.
  */
 type UseFullScreenAdResultBase = {
   /**
    * The automatic-load policy the hook is acting on, after the default is
    * applied.
    *
-   * Echoed so a permanent `'idle'` is diagnosable: it distinguishes "nothing
-   * has been attempted yet" from "automatic loading is switched off", without
-   * putting a configuration value inside the lifecycle union.
+   * Echoed so `'idle'` can be interpreted against the current policy.
+   * `autoLoad: false` means automatic loading is off. After options-form
+   * `destroy()`, status remains `'idle'` even when this is true, until an
+   * explicit `load()` or `retry()`.
    */
   autoLoad: boolean;
   /** Whether the user clicked this ad. Stays true after dismissal. */
@@ -154,7 +156,19 @@ type UseFullScreenAdResultBase = {
    * only if an ad event arrives. Imperative `MobileAd.show()` remains a Promise.
    */
   show: (showOptions?: AdShowOptions) => void;
-  /** Releases the underlying native ad. Idempotent. */
+  /**
+   * Destroys the current native ad.
+   *
+   * Options form: also creates a fresh instance with the same current
+   * `adUnitId` and `requestOptions` (no instance while `adUnitId` is `null`)
+   * and returns `status` to `'idle'`. `destroy()` itself does not load. When
+   * `autoLoad` is true, the replacement is still not loaded automatically;
+   * a later explicit `load()` or `retry()` loads it.
+   *
+   * Positional arguments and `useFullScreenAd(ad)` keep their existing
+   * ownership: they destroy the current instance and do not create a
+   * replacement.
+   */
   destroy: () => void;
   /**
    * Alias for `load`, named for the call site it is written at: retrying after
@@ -239,7 +253,8 @@ type FullScreenAdCore = {
 function useFullScreenAdCore(
   ad: FullScreenAd | null,
   autoLoad: boolean,
-  destroyCurrent?: () => void,
+  destroyCurrent?: () => FullScreenAd | null | undefined,
+  committedConfigRef?: { current: NormalizedHookArgs },
 ): FullScreenAdCore {
   const [state, dispatch] = useReducer(
     (prevState: FullScreenAdCoreState, newState: Partial<FullScreenAdCoreState>) =>
@@ -252,12 +267,20 @@ function useFullScreenAdCore(
   const autoLoadedForRef = useRef<FullScreenAd | null>(null);
   const adRef = useRef(ad);
   adRef.current = ad;
+  const mountedRef = useRef(false);
   const destroyCurrentRef = useRef(destroyCurrent);
   destroyCurrentRef.current = destroyCurrent;
 
+  useLayoutEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const load = useCallback(() => {
     const currentAd = adRef.current;
-    if (!currentAd || inFlightRef.current || loadedRef.current) {
+    if (!mountedRef.current || !currentAd || inFlightRef.current || loadedRef.current) {
       return;
     }
     inFlightRef.current = true;
@@ -267,6 +290,9 @@ function useFullScreenAdCore(
   }, []);
 
   const show = useCallback((showOptions?: AdShowOptions) => {
+    if (!mountedRef.current) {
+      return;
+    }
     const currentAd = adRef.current;
     if (!currentAd) {
       return;
@@ -285,8 +311,21 @@ function useFullScreenAdCore(
   }, []);
 
   const destroy = useCallback(() => {
+    if (!mountedRef.current) {
+      return;
+    }
     if (destroyCurrentRef.current) {
-      destroyCurrentRef.current();
+      const replacement = destroyCurrentRef.current();
+      if (replacement !== undefined) {
+        adRef.current = replacement;
+        inFlightRef.current = false;
+        loadedRef.current = false;
+        const committed = committedConfigRef?.current;
+        if (committed?.form === 'options' && committed.autoLoad && replacement) {
+          autoLoadedForRef.current = replacement;
+        }
+        dispatch(initialCoreState);
+      }
       return;
     }
     adRef.current?.destroy();
@@ -300,6 +339,9 @@ function useFullScreenAdCore(
       return;
     }
     const unsubscribe = (ad as RewardedAd).addAdEventsListener(({ type, payload }) => {
+      if (!mountedRef.current || adRef.current !== ad) {
+        return;
+      }
       switch (type) {
         case AdEventType.LOADED:
           inFlightRef.current = false;
@@ -504,7 +546,26 @@ export function useFullScreenAdForm(
 
   const [ad, setAd] = useState<FullScreenAd | null>(null);
   const managedAdRef = useRef<ManagedFullScreenAd | null>(null);
+  // Destructive operations sample this snapshot, which is written only when a
+  // render commits. `adRef` still tracks the current instance for load/show.
+  const committedConfigRef = useRef(config);
   const { adUnitId } = config;
+
+  // Ownership and the destructive snapshot follow the committed call form, not
+  // create-time provenance and not a discarded render. This is a layout effect
+  // because identity supersession and unmount cleanup are passive: every layout
+  // effect of a commit flushes before any passive effect of that commit, so a
+  // commit that changes the form and the identity together has the incoming
+  // form in place before supersession reads it. A render that never commits
+  // never runs this, so the last committed tree keeps its own ownership and
+  // destroy() still recreates (or does not) from that tree's arguments.
+  useLayoutEffect(() => {
+    committedConfigRef.current = config;
+    const currentRecord = managedAdRef.current;
+    if (currentRecord) {
+      currentRecord.ownedByOptions = config.form === 'options';
+    }
+  });
 
   useDeepCompareEffect(() => {
     const nextAd = adUnitId !== null ? createAdRef.current(adUnitId, config.requestOptions) : null;
@@ -529,12 +590,28 @@ export function useFullScreenAdForm(
     if (currentRecord) {
       destroyManagedAd(currentRecord);
     }
+    const committed = committedConfigRef.current;
+    if (committed.form !== 'options') {
+      return undefined;
+    }
+    if (committed.adUnitId === null) {
+      return null;
+    }
+    const replacement = createAdRef.current(committed.adUnitId, committed.requestOptions);
+    managedAdRef.current = {
+      ad: replacement,
+      ownedByOptions: true,
+      destroyed: false,
+    };
+    setAd(replacement);
+    return replacement;
   }, []);
 
   const core = useFullScreenAdCore(
     ad,
     config.form === 'options' && config.autoLoad,
     destroyCurrent,
+    committedConfigRef,
   );
 
   useEffect(

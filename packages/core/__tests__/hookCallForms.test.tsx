@@ -21,6 +21,7 @@ import {
   type UseInterstitialAdOptions,
   type UseInterstitialAdResult,
   type UseMultiFormatAdResult,
+  type UseRewardedAdResult,
 } from '../src';
 import { useFullScreenAd } from '../src/hooks/useFullScreenAd';
 import { resetWarnOnce } from '../src/internal/warnOnce';
@@ -96,6 +97,64 @@ type NativeErrorEventBody = {
   message: string;
   phase?: 'load' | 'show';
 };
+
+/**
+ * Renders children until one of them throws, then renders nothing.
+ *
+ * Used to abort a render *after* the hook body has run: React discards the
+ * whole in-progress render, so nothing that render did in its effects is
+ * committed, and the previously committed tree is the one that unmounts.
+ */
+class RenderAbortBoundary extends React.Component<
+  { children: React.ReactNode },
+  { aborted: boolean }
+> {
+  state = { aborted: false };
+
+  static getDerivedStateFromError() {
+    return { aborted: true };
+  }
+
+  render() {
+    return this.state.aborted ? null : this.props.children;
+  }
+}
+
+/** Throws during render, after earlier siblings and parents have rendered. */
+function AbortRender({ abort }: { abort: boolean }) {
+  if (abort) {
+    throw new Error('aborted before commit');
+  }
+  return null;
+}
+
+function createSuspension() {
+  let resolvePromise!: () => void;
+  const suspension = {
+    pending: true,
+    promise: new Promise<void>(resolve => {
+      resolvePromise = resolve;
+    }),
+    resolve() {
+      suspension.pending = false;
+      resolvePromise();
+    },
+  };
+  return suspension;
+}
+
+function SuspendRender({
+  suspend,
+  suspension,
+}: {
+  suspend: boolean;
+  suspension: ReturnType<typeof createSuspension>;
+}) {
+  if (suspend && suspension.pending) {
+    throw suspension.promise;
+  }
+  return null;
+}
 
 /**
  * Drives real `InterstitialAd` instances, with only the native module mocked,
@@ -485,13 +544,14 @@ describe('fullscreen hook call forms', () => {
   it('keeps options ownership through a non-null transition to the positional form', () => {
     const optionsAd = createTestInterstitial();
     const create = jest.spyOn(InterstitialAd, 'createForAdRequest').mockReturnValue(optionsAd.ad);
+    let result: ReturnType<typeof useInterstitialAd> | undefined;
 
     function Probe({ optionsForm }: { optionsForm: boolean }) {
       const argument = optionsForm
         ? { adUnitId: TestIds.INTERSTITIAL, autoLoad: false }
         : TestIds.INTERSTITIAL;
       // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
-      useInterstitialAd(argument as never);
+      result = useInterstitialAd(argument as never);
       return null;
     }
 
@@ -501,85 +561,763 @@ describe('fullscreen hook call forms', () => {
     expect(create).toHaveBeenCalledTimes(1);
     expect(optionsAd.destroy).not.toHaveBeenCalled();
 
+    act(() => {
+      result!.destroy();
+      result!.destroy();
+    });
+    expect(optionsAd.destroy).toHaveBeenCalledTimes(1);
+    expect(optionsAd.load).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledTimes(1);
+
     view.unmount();
     expect(optionsAd.destroy).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps positional ownership through a non-null transition to the options form', () => {
-    const positionalAd = createTestInterstitial();
-    const optionsAd = createTestInterstitial();
+  it('destroys the surviving instance after a positional-to-options transition without destroy', () => {
+    const unmountAd = createTestInterstitial();
+    const identityFirst = createTestInterstitial();
+    const identitySecond = createTestInterstitial();
     const create = jest
       .spyOn(InterstitialAd, 'createForAdRequest')
-      .mockReturnValueOnce(positionalAd.ad)
-      .mockReturnValueOnce(optionsAd.ad);
+      .mockReturnValueOnce(unmountAd.ad)
+      .mockReturnValueOnce(identityFirst.ad)
+      .mockReturnValueOnce(identitySecond.ad);
 
-    function Probe({ optionsForm, adUnitId }: { optionsForm: boolean; adUnitId: string }) {
+    function UnmountProbe({ optionsForm }: { optionsForm: boolean }) {
+      const argument = optionsForm
+        ? { adUnitId: TestIds.INTERSTITIAL, autoLoad: false }
+        : TestIds.INTERSTITIAL;
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
+      useInterstitialAd(argument as never);
+      return null;
+    }
+
+    const unmountView = render(<UnmountProbe optionsForm={false} />);
+    unmountView.rerender(<UnmountProbe optionsForm />);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(unmountAd.destroy).not.toHaveBeenCalled();
+    unmountView.unmount();
+    expect(unmountAd.destroy).toHaveBeenCalledTimes(1);
+    expect(unmountAd.unsubscribe).toHaveBeenCalledTimes(1);
+
+    function IdentityProbe({
+      optionsForm,
+      adUnitId,
+    }: {
+      optionsForm: boolean;
+      adUnitId: string;
+    }) {
       const argument = optionsForm ? { adUnitId, autoLoad: false } : adUnitId;
       // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
       useInterstitialAd(argument as never);
       return null;
     }
 
-    const view = render(<Probe optionsForm={false} adUnitId={TestIds.INTERSTITIAL} />);
-    view.rerender(<Probe optionsForm adUnitId={TestIds.INTERSTITIAL} />);
+    const identityView = render(
+      <IdentityProbe optionsForm={false} adUnitId={TestIds.INTERSTITIAL} />,
+    );
+    identityView.rerender(
+      <IdentityProbe optionsForm adUnitId={TestIds.INTERSTITIAL} />,
+    );
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(identityFirst.destroy).not.toHaveBeenCalled();
+
+    identityView.rerender(
+      <IdentityProbe optionsForm adUnitId={TestIds.INTERSTITIAL_VIDEO} />,
+    );
+    expect(create).toHaveBeenCalledTimes(3);
+    expect(identityFirst.destroy).toHaveBeenCalledTimes(1);
+    expect(identityFirst.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(identitySecond.destroy).not.toHaveBeenCalled();
+
+    identityView.unmount();
+    expect(identityFirst.destroy).toHaveBeenCalledTimes(1);
+    expect(identitySecond.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('relinquishes options ownership after an options-to-positional transition without destroy', () => {
+    const unmountAd = createTestInterstitial();
+    const identityFirst = createTestInterstitial();
+    const identitySecond = createTestInterstitial();
+    const create = jest
+      .spyOn(InterstitialAd, 'createForAdRequest')
+      .mockReturnValueOnce(unmountAd.ad)
+      .mockReturnValueOnce(identityFirst.ad)
+      .mockReturnValueOnce(identitySecond.ad);
+
+    function UnmountProbe({ optionsForm }: { optionsForm: boolean }) {
+      const argument = optionsForm
+        ? { adUnitId: TestIds.INTERSTITIAL, autoLoad: false }
+        : TestIds.INTERSTITIAL;
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
+      useInterstitialAd(argument as never);
+      return null;
+    }
+
+    const unmountView = render(<UnmountProbe optionsForm />);
+    unmountView.rerender(<UnmountProbe optionsForm={false} />);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(unmountAd.destroy).not.toHaveBeenCalled();
+    unmountView.unmount();
+    expect(unmountAd.destroy).not.toHaveBeenCalled();
+    expect(unmountAd.unsubscribe).toHaveBeenCalledTimes(1);
+
+    function IdentityProbe({
+      optionsForm,
+      adUnitId,
+    }: {
+      optionsForm: boolean;
+      adUnitId: string;
+    }) {
+      const argument = optionsForm ? { adUnitId, autoLoad: false } : adUnitId;
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
+      useInterstitialAd(argument as never);
+      return null;
+    }
+
+    const identityView = render(
+      <IdentityProbe optionsForm adUnitId={TestIds.INTERSTITIAL} />,
+    );
+    identityView.rerender(
+      <IdentityProbe optionsForm={false} adUnitId={TestIds.INTERSTITIAL} />,
+    );
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(identityFirst.destroy).not.toHaveBeenCalled();
+
+    identityView.rerender(
+      <IdentityProbe optionsForm={false} adUnitId={TestIds.INTERSTITIAL_VIDEO} />,
+    );
+    expect(create).toHaveBeenCalledTimes(3);
+    expect(identityFirst.destroy).not.toHaveBeenCalled();
+    expect(identityFirst.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(identitySecond.destroy).not.toHaveBeenCalled();
+
+    identityView.unmount();
+    expect(identityFirst.destroy).not.toHaveBeenCalled();
+    expect(identitySecond.destroy).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      name: 'positional to options',
+      startsWithOptions: false,
+      expectedDestroyCalls: 0,
+    },
+    {
+      name: 'options to positional',
+      startsWithOptions: true,
+      expectedDestroyCalls: 1,
+    },
+  ])(
+    'keeps committed ownership when an aborted $name render is discarded',
+    ({ startsWithOptions, expectedDestroyCalls }) => {
+      const committedAd = createTestInterstitial();
+      const create = jest
+        .spyOn(InterstitialAd, 'createForAdRequest')
+        .mockReturnValue(committedAd.ad);
+      const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      function Probe({ optionsForm, abort }: { optionsForm: boolean; abort: boolean }) {
+        const argument = optionsForm
+          ? { adUnitId: TestIds.INTERSTITIAL, autoLoad: false }
+          : TestIds.INTERSTITIAL;
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
+        useInterstitialAd(argument as never);
+        return <AbortRender abort={abort} />;
+      }
+
+      try {
+        const view = render(
+          <RenderAbortBoundary>
+            <Probe optionsForm={startsWithOptions} abort={false} />
+          </RenderAbortBoundary>,
+        );
+        expect(create).toHaveBeenCalledTimes(1);
+        expect(committedAd.destroy).not.toHaveBeenCalled();
+
+        // The hook body runs with the other call form, then a child throws, so
+        // this render is thrown away and the committed tree unmounts instead.
+        view.rerender(
+          <RenderAbortBoundary>
+            <Probe optionsForm={!startsWithOptions} abort />
+          </RenderAbortBoundary>,
+        );
+
+        expect(create).toHaveBeenCalledTimes(1);
+        expect(committedAd.unsubscribe).toHaveBeenCalledTimes(1);
+        expect(committedAd.destroy).toHaveBeenCalledTimes(expectedDestroyCalls);
+
+        view.unmount();
+        expect(committedAd.destroy).toHaveBeenCalledTimes(expectedDestroyCalls);
+      } finally {
+        error.mockRestore();
+      }
+    },
+  );
+
+  it.each([
+    { name: 'options', optionsForm: true, expectedUnmountDestroyCalls: 1 },
+    { name: 'positional', optionsForm: false, expectedUnmountDestroyCalls: 0 },
+  ])(
+    'makes saved $name callbacks no-op after unmount',
+    ({ optionsForm, expectedUnmountDestroyCalls }) => {
+      const current = createTestInterstitial();
+      const create = jest.spyOn(InterstitialAd, 'createForAdRequest').mockReturnValue(current.ad);
+      let result: Record<string, unknown> | undefined;
+      let renders = 0;
+
+      function Probe() {
+        renders += 1;
+        const argument = optionsForm
+          ? { adUnitId: TestIds.INTERSTITIAL, autoLoad: false }
+          : TestIds.INTERSTITIAL;
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
+        result = useInterstitialAd(argument as never) as unknown as Record<string, unknown>;
+        return null;
+      }
+
+      const view = render(<Probe />);
+      const saved = {
+        destroy: result!.destroy as () => void,
+        load: result!.load as () => void,
+        retry: result!.retry as (() => void) | undefined,
+        show: result!.show as () => void,
+      };
+      const committedState = optionsForm ? result!.status : result!.isLoaded;
+      view.unmount();
+
+      expect(current.unsubscribe).toHaveBeenCalledTimes(1);
+      expect(current.destroy).toHaveBeenCalledTimes(expectedUnmountDestroyCalls);
+      const rendersAtUnmount = renders;
+      act(() => {
+        saved.load();
+        saved.retry?.();
+        saved.show();
+        saved.destroy();
+        current.emit(AdEventType.LOADED);
+      });
+
+      expect(create).toHaveBeenCalledTimes(1);
+      expect(current.load).not.toHaveBeenCalled();
+      expect(current.show).not.toHaveBeenCalled();
+      expect(current.destroy).toHaveBeenCalledTimes(expectedUnmountDestroyCalls);
+      expect(renders).toBe(rendersAtUnmount);
+      expect(optionsForm ? result!.status : result!.isLoaded).toBe(committedState);
+    },
+  );
+
+  it('uses committed positional form while an options render is suspended', async () => {
+    const committed = createTestInterstitial();
+    const unusedReplacement = createTestInterstitial();
+    const create = jest
+      .spyOn(InterstitialAd, 'createForAdRequest')
+      .mockReturnValueOnce(committed.ad)
+      .mockReturnValueOnce(unusedReplacement.ad);
+    const suspension = createSuspension();
+    let result: ReturnType<typeof useInterstitialAd> | undefined;
+
+    function Probe({ optionsForm, suspend }: { optionsForm: boolean; suspend: boolean }) {
+      const argument = optionsForm
+        ? {
+            adUnitId: TestIds.INTERSTITIAL_VIDEO,
+            requestOptions: { keywords: ['discarded'] },
+            autoLoad: false,
+          }
+        : TestIds.INTERSTITIAL;
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
+      result = useInterstitialAd(argument as never);
+      return <SuspendRender suspend={suspend} suspension={suspension} />;
+    }
+
+    const view = render(
+      <React.Suspense fallback={null}>
+        <Probe optionsForm={false} suspend={false} />
+      </React.Suspense>,
+    );
+    const destroy = result!.destroy;
+
+    act(() => {
+      React.startTransition(() => {
+        view.rerender(
+          <React.Suspense fallback={null}>
+            <Probe optionsForm suspend />
+          </React.Suspense>,
+        );
+      });
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(committed.unsubscribe).not.toHaveBeenCalled();
+    expect(committed.destroy).not.toHaveBeenCalled();
+
+    act(() => {
+      destroy();
+      // Unmount in the same batch to discard the still-suspended transition,
+      // after the callback has run against the mounted committed tree.
+      view.unmount();
+    });
+    expect(committed.destroy).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(unusedReplacement.load).not.toHaveBeenCalled();
+
+    await act(async () => {
+      suspension.resolve();
+      await suspension.promise;
+    });
+  });
+
+  it('uses committed options args and autoLoad while a changed render is suspended', async () => {
+    const committed = createTestInterstitial();
+    const replacement = createTestInterstitial();
+    const unused = createTestInterstitial();
+    const create = jest
+      .spyOn(InterstitialAd, 'createForAdRequest')
+      .mockReturnValueOnce(committed.ad)
+      .mockReturnValueOnce(replacement.ad)
+      .mockReturnValueOnce(unused.ad);
+    const suspension = createSuspension();
+    let result: UseInterstitialAdResult | undefined;
+
+    function Probe({
+      suspend,
+      adUnitId,
+      keyword,
+      autoLoad,
+    }: {
+      suspend: boolean;
+      adUnitId: string;
+      keyword: string;
+      autoLoad: boolean;
+    }) {
+      result = useInterstitialAd({
+        adUnitId,
+        requestOptions: { keywords: [keyword] },
+        autoLoad,
+      });
+      return <SuspendRender suspend={suspend} suspension={suspension} />;
+    }
+
+    const view = render(
+      <React.Suspense fallback={null}>
+        <Probe
+          suspend={false}
+          adUnitId={TestIds.INTERSTITIAL}
+          keyword="games"
+          autoLoad
+        />
+      </React.Suspense>,
+    );
+    expect(committed.load).toHaveBeenCalledTimes(1);
+    const destroy = result!.destroy;
+
+    act(() => {
+      React.startTransition(() => {
+        view.rerender(
+          <React.Suspense fallback={null}>
+            <Probe
+              suspend
+              adUnitId={TestIds.INTERSTITIAL_VIDEO}
+              keyword="discarded"
+              autoLoad={false}
+            />
+          </React.Suspense>,
+        );
+      });
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(committed.unsubscribe).not.toHaveBeenCalled();
+
+    act(() => {
+      destroy();
+      view.unmount();
+    });
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create).toHaveBeenLastCalledWith(TestIds.INTERSTITIAL, {
+      keywords: ['games'],
+    });
+    expect(replacement.load).not.toHaveBeenCalled();
+    expect(replacement.destroy).toHaveBeenCalledTimes(1);
+    expect(unused.load).not.toHaveBeenCalled();
+
+    await act(async () => {
+      suspension.resolve();
+      await suspension.promise;
+    });
+  });
+
+  it('destroy after a committed options-argument change recreates from the new values', () => {
+    const first = createTestInterstitial();
+    const second = createTestInterstitial();
+    const replacement = createTestInterstitial();
+    const create = jest
+      .spyOn(InterstitialAd, 'createForAdRequest')
+      .mockReturnValueOnce(first.ad)
+      .mockReturnValueOnce(second.ad)
+      .mockReturnValueOnce(replacement.ad);
+    let result: UseInterstitialAdResult | undefined;
+
+    function Probe({
+      adUnitId,
+      keyword,
+      autoLoad,
+    }: {
+      adUnitId: string;
+      keyword: string;
+      autoLoad: boolean;
+    }) {
+      result = useInterstitialAd({
+        adUnitId,
+        requestOptions: { keywords: [keyword] },
+        autoLoad,
+      });
+      return null;
+    }
+
+    const view = render(
+      <Probe adUnitId={TestIds.INTERSTITIAL} keyword="games" autoLoad />,
+    );
+    expect(first.load).toHaveBeenCalledTimes(1);
+
+    view.rerender(
+      <Probe adUnitId={TestIds.INTERSTITIAL_VIDEO} keyword="sports" autoLoad={false} />,
+    );
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(first.destroy).toHaveBeenCalledTimes(1);
+
+    act(() => result!.destroy());
+    expect(create).toHaveBeenCalledTimes(3);
+    expect(create).toHaveBeenLastCalledWith(TestIds.INTERSTITIAL_VIDEO, {
+      keywords: ['sports'],
+    });
+    expect(replacement.load).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { name: 'positional to options', startsWithOptions: false, outgoingDestroyed: true },
+    { name: 'options to positional', startsWithOptions: true, outgoingDestroyed: false },
+  ])(
+    'cleans the outgoing ad by the incoming committed form on a same-commit $name identity change',
+    ({ startsWithOptions, outgoingDestroyed }) => {
+      const outgoing = createTestInterstitial();
+      const incoming = createTestInterstitial();
+      const create = jest
+        .spyOn(InterstitialAd, 'createForAdRequest')
+        .mockReturnValueOnce(outgoing.ad)
+        .mockReturnValueOnce(incoming.ad);
+
+      function Probe({ optionsForm, adUnitId }: { optionsForm: boolean; adUnitId: string }) {
+        const argument = optionsForm ? { adUnitId, autoLoad: false } : adUnitId;
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
+        useInterstitialAd(argument as never);
+        return null;
+      }
+
+      const view = render(
+        <Probe optionsForm={startsWithOptions} adUnitId={TestIds.INTERSTITIAL} />,
+      );
+      expect(create).toHaveBeenCalledTimes(1);
+
+      // One commit changes the call form and the identity together.
+      view.rerender(
+        <Probe optionsForm={!startsWithOptions} adUnitId={TestIds.INTERSTITIAL_VIDEO} />,
+      );
+      expect(create).toHaveBeenCalledTimes(2);
+      expect(outgoing.unsubscribe).toHaveBeenCalledTimes(1);
+      expect(outgoing.destroy).toHaveBeenCalledTimes(outgoingDestroyed ? 1 : 0);
+      expect(incoming.destroy).not.toHaveBeenCalled();
+
+      view.unmount();
+      expect(outgoing.destroy).toHaveBeenCalledTimes(outgoingDestroyed ? 1 : 0);
+      expect(incoming.destroy).toHaveBeenCalledTimes(outgoingDestroyed ? 1 : 0);
+    },
+  );
+
+  it('makes current options behavior authoritative after a positional transition', () => {
+    const positionalAd = createTestInterstitial();
+    const replacement = createTestInterstitial();
+    const create = jest
+      .spyOn(InterstitialAd, 'createForAdRequest')
+      .mockReturnValueOnce(positionalAd.ad)
+      .mockReturnValueOnce(replacement.ad);
+    let result: ReturnType<typeof useInterstitialAd> | undefined;
+
+    function Probe({ optionsForm }: { optionsForm: boolean }) {
+      const argument = optionsForm
+        ? { adUnitId: TestIds.INTERSTITIAL }
+        : TestIds.INTERSTITIAL;
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- transition compatibility
+      result = useInterstitialAd(argument as never);
+      return null;
+    }
+
+    const view = render(<Probe optionsForm={false} />);
+    act(() => positionalAd.emit(AdEventType.LOADED));
+    view.rerender(<Probe optionsForm />);
     expect(create).toHaveBeenCalledTimes(1);
     expect(positionalAd.destroy).not.toHaveBeenCalled();
 
-    view.rerender(<Probe optionsForm adUnitId={TestIds.INTERSTITIAL_VIDEO} />);
+    act(() => result!.destroy());
+    expect(positionalAd.destroy).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledTimes(2);
-    expect(positionalAd.destroy).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ status: 'idle', autoLoad: true, error: null });
+    expect(replacement.load).not.toHaveBeenCalled();
+
+    act(() => result!.load());
+    expect(replacement.load).toHaveBeenCalledTimes(1);
+    act(() =>
+      replacement.emit(
+        AdEventType.ERROR,
+        createAdError('network-error', createResponseInfo('transition-retry')),
+      ),
+    );
+    act(() => (result as UseInterstitialAdResult).retry());
+    expect(replacement.load).toHaveBeenCalledTimes(2);
 
     view.unmount();
-    expect(positionalAd.destroy).not.toHaveBeenCalled();
-    expect(optionsAd.destroy).toHaveBeenCalledTimes(1);
+    expect(positionalAd.destroy).toHaveBeenCalledTimes(1);
+    expect(replacement.destroy).toHaveBeenCalledTimes(1);
   });
 
-  it('does not destroy an options-owned ad twice after manual destroy', () => {
-    const optionsAd = createTestInterstitial();
-    jest.spyOn(InterstitialAd, 'createForAdRequest').mockReturnValue(optionsAd.ad);
+  it('recreates an idle options-owned ad after destroy and loads the replacement', () => {
+    const first = createTestInterstitial();
+    const replacement = createTestInterstitial();
+    const create = jest
+      .spyOn(InterstitialAd, 'createForAdRequest')
+      .mockReturnValueOnce(first.ad)
+      .mockReturnValueOnce(replacement.ad);
     let result: UseInterstitialAdResult | undefined;
 
     function Probe() {
       result = useInterstitialAd({
         adUnitId: TestIds.INTERSTITIAL,
+        requestOptions: { keywords: ['games'] },
         autoLoad: false,
       });
       return null;
     }
 
-    const view = render(<Probe />);
-    act(() => {
-      result!.destroy();
-      result!.destroy();
-    });
-    expect(optionsAd.destroy).toHaveBeenCalledTimes(1);
+    render(<Probe />);
+    const callbacks = {
+      load: result!.load,
+      retry: result!.retry,
+      show: result!.show,
+      destroy: result!.destroy,
+    };
+    act(() => first.emit(AdEventType.LOADED));
+    expect(result!.status).toBe('loaded');
 
-    view.unmount();
-    expect(optionsAd.destroy).toHaveBeenCalledTimes(1);
+    act(() => result!.destroy());
+    expect(first.destroy).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create).toHaveBeenNthCalledWith(2, TestIds.INTERSTITIAL, {
+      keywords: ['games'],
+    });
+    expect(result!.status).toBe('idle');
+    expect(replacement.load).not.toHaveBeenCalled();
+    expect(result!.load).toBe(callbacks.load);
+    expect(result!.retry).toBe(callbacks.retry);
+    expect(result!.show).toBe(callbacks.show);
+    expect(result!.destroy).toBe(callbacks.destroy);
+
+    act(() => result!.load());
+    expect(first.load).not.toHaveBeenCalled();
+    expect(replacement.load).toHaveBeenCalledTimes(1);
+
+    act(() =>
+      replacement.emit(
+        AdEventType.ERROR,
+        createAdError('network-error', createResponseInfo('replacement-retry')),
+      ),
+    );
+    act(() => result!.retry());
+    expect(replacement.load).toHaveBeenCalledTimes(2);
   });
 
-  it('does not destroy a manually destroyed ad again on replacement', () => {
-    const first = createTestInterstitial();
-    const second = createTestInterstitial();
-    jest
-      .spyOn(InterstitialAd, 'createForAdRequest')
-      .mockReturnValueOnce(first.ad)
-      .mockReturnValueOnce(second.ad);
+  it('does not auto-load a replacement after destroy in StrictMode', () => {
+    const instances: ReturnType<typeof createTestInterstitial>[] = [];
+    jest.spyOn(InterstitialAd, 'createForAdRequest').mockImplementation(() => {
+      const instance = createTestInterstitial();
+      instances.push(instance);
+      return instance.ad;
+    });
     let result: UseInterstitialAdResult | undefined;
 
-    function Probe({ adUnitId }: { adUnitId: string }) {
-      result = useInterstitialAd({ adUnitId, autoLoad: false });
+    function Probe() {
+      result = useInterstitialAd({ adUnitId: TestIds.INTERSTITIAL });
       return null;
     }
 
-    const view = render(<Probe adUnitId={TestIds.INTERSTITIAL} />);
+    const view = render(
+      <React.StrictMode>
+        <Probe />
+      </React.StrictMode>,
+    );
+    expect(instances.reduce((count, instance) => count + instance.load.mock.calls.length, 0)).toBe(
+      1,
+    );
+
+    const beforeDestroy = instances.find(instance => instance.destroy.mock.calls.length === 0)!;
     act(() => result!.destroy());
-    view.rerender(<Probe adUnitId={TestIds.INTERSTITIAL_VIDEO} />);
+    const replacement = instances.at(-1)!;
+    expect(beforeDestroy.destroy).toHaveBeenCalledTimes(1);
+    expect(result!.status).toBe('idle');
+    expect(replacement.load).not.toHaveBeenCalled();
+
+    act(() => result!.retry());
+    expect(replacement.load).toHaveBeenCalledTimes(1);
+
+    view.unmount();
+    expect(instances.every(instance => instance.destroy.mock.calls.length === 1)).toBe(true);
+  });
+
+  it('ignores stale in-flight events after destroy', () => {
+    const first = createTestInterstitial();
+    const replacement = createTestInterstitial();
+    jest
+      .spyOn(InterstitialAd, 'createForAdRequest')
+      .mockReturnValueOnce(first.ad)
+      .mockReturnValueOnce(replacement.ad);
+    let result: UseInterstitialAdResult | undefined;
+
+    function Probe() {
+      result = useInterstitialAd({ adUnitId: TestIds.INTERSTITIAL, autoLoad: false });
+      return null;
+    }
+
+    render(<Probe />);
+    act(() => result!.load());
+    expect(result!.status).toBe('loading');
+
+    act(() => result!.destroy());
+    expect(result!.status).toBe('idle');
+    expect(first.unsubscribe).toHaveBeenCalledTimes(1);
+
+    act(() => first.emit(AdEventType.LOADED));
+    act(() =>
+      first.emit(
+        AdEventType.ERROR,
+        createAdError('network-error', createResponseInfo('retired-error')),
+      ),
+    );
+    expect(result!).toMatchObject({ status: 'idle', error: null });
+
+    act(() => result!.load());
+    act(() => replacement.emit(AdEventType.LOADED));
+    expect(result!.status).toBe('loaded');
+  });
+
+  it('resets a closed rewarded ad and its accumulated fields on destroy', () => {
+    const first = createTestInterstitial();
+    const replacement = createTestInterstitial();
+    jest
+      .spyOn(RewardedAd, 'createForAdRequest')
+      .mockReturnValueOnce(first.ad as unknown as RewardedAd)
+      .mockReturnValueOnce(replacement.ad as unknown as RewardedAd);
+    let result: UseRewardedAdResult | undefined;
+
+    function Probe() {
+      result = useRewardedAd({ adUnitId: TestIds.REWARDED, autoLoad: false });
+      return null;
+    }
+
+    render(<Probe />);
+    const reward = { amount: 1, type: 'coin' };
+    act(() => first.emit(RewardedAdEventType.LOADED as unknown as AdEventType, reward));
+    act(() => first.emit(AdEventType.CLICKED));
+    act(() => first.emit(AdEventType.IMPRESSION));
+    act(() => first.emit(AdEventType.PAID, { value: 7 }));
+    act(() =>
+      first.emit(RewardedAdEventType.EARNED_REWARD as unknown as AdEventType, reward),
+    );
+    const responseInfo = createResponseInfo('closed-response');
+    const showError = createAdError('network-error', responseInfo, 'show');
+    act(() => first.emit(AdEventType.ERROR, showError));
+    expect(result).toMatchObject({ status: 'error', error: showError, responseInfo });
+    act(() => first.emit(AdEventType.CLOSED));
+    expect(result).toMatchObject({
+      status: 'closed',
+      error: null,
+      clicked: true,
+      impression: true,
+      revenue: { value: 7 },
+      responseInfo,
+      reward,
+      earnedReward: true,
+    });
+
+    act(() => result!.destroy());
+    expect(first.destroy).toHaveBeenCalledTimes(1);
+    expect(replacement.load).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      status: 'idle',
+      error: null,
+      clicked: false,
+      impression: false,
+      revenue: null,
+      responseInfo: null,
+      reward: null,
+      earnedReward: false,
+    });
+  });
+
+  it('recreates on repeated options destroy and destroys every instance once', () => {
+    const first = createTestInterstitial();
+    const second = createTestInterstitial();
+    const third = createTestInterstitial();
+    jest
+      .spyOn(InterstitialAd, 'createForAdRequest')
+      .mockReturnValueOnce(first.ad)
+      .mockReturnValueOnce(second.ad)
+      .mockReturnValueOnce(third.ad);
+    let result: UseInterstitialAdResult | undefined;
+
+    function Probe() {
+      result = useInterstitialAd({ adUnitId: TestIds.INTERSTITIAL, autoLoad: false });
+      return null;
+    }
+
+    const view = render(<Probe />);
+    act(() => result!.destroy());
+    act(() => result!.destroy());
 
     expect(first.destroy).toHaveBeenCalledTimes(1);
-    view.unmount();
-    expect(first.destroy).toHaveBeenCalledTimes(1);
     expect(second.destroy).toHaveBeenCalledTimes(1);
+    expect(third.destroy).not.toHaveBeenCalled();
+    expect(result!.status).toBe('idle');
+
+    view.unmount();
+    expect(third.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps options destroy idle when the current ad unit is null', () => {
+    const create = jest.spyOn(InterstitialAd, 'createForAdRequest');
+    let result: UseInterstitialAdResult | undefined;
+
+    function Probe() {
+      result = useInterstitialAd({ adUnitId: null });
+      return null;
+    }
+
+    render(<Probe />);
+    act(() => result!.destroy());
+    expect(create).not.toHaveBeenCalled();
+    expect(result!.status).toBe('idle');
+  });
+
+  it('keeps positional destroy behavior unchanged', () => {
+    const positional = createTestInterstitial();
+    const create = jest.spyOn(InterstitialAd, 'createForAdRequest').mockReturnValue(positional.ad);
+    let result: ReturnType<typeof useInterstitialAd> | undefined;
+
+    function Probe() {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- compatibility behavior
+      result = useInterstitialAd(TestIds.INTERSTITIAL);
+      return null;
+    }
+
+    render(<Probe />);
+    act(() => result!.destroy());
+    expect(positional.destroy).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(1);
   });
 
   it('keeps fullscreen callbacks stable while sampling replacement ads', () => {
