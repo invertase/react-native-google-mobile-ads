@@ -126,14 +126,14 @@ function refreshIosPodLockfile(options = {}) {
 function selfCheck() {
   const sampleLock = `
 PODS:
-  - Google-Mobile-Ads-SDK (13.5.0):
+  - Google-Mobile-Ads-SDK (13.6.0):
     - GoogleUserMessagingPlatform (>= 1.1)
   - GoogleUserMessagingPlatform (3.1.0)
   - RNGoogleMobileAds (16.5.0):
 `;
   const okPkg = {
     version: '16.5.0',
-    sdkVersions: { ios: { googleMobileAds: '13.5.0', googleUmp: '3.1.0' } },
+    sdkVersions: { ios: { googleMobileAds: '13.6.0', googleUmp: '3.1.0' } },
   };
   const badPkg = {
     version: '16.5.0',

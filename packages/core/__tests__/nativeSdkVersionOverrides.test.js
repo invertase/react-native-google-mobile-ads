@@ -67,7 +67,7 @@ describe('native SDK version overrides', () => {
     expect(umpEnv).toBeLessThan(umpGlobal);
     expect(umpGlobal).toBeLessThan(umpDependency);
     expect(packageJson.sdkVersions.ios).toEqual({
-      googleMobileAds: '13.5.0',
+      googleMobileAds: '13.6.0',
       googleUmp: '3.1.0',
     });
   });
@@ -82,7 +82,7 @@ describe('native SDK version overrides', () => {
     expect(capabilitySource).toContain(
       'const { sdkVersion } = NativeGoogleMobileAdsModule.getConstants();',
     );
-    expect(capabilitySource).not.toMatch(/25\.4\.0|13\.5\.0|SDK_VERSION/);
+    expect(capabilitySource).not.toMatch(/25\.4\.0|13\.6\.0|SDK_VERSION/);
   });
 
   it('does not add SDK override fields to the Expo plugin', () => {
