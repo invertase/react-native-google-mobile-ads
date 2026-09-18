@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type IosAppBundleResolution, resolveIosAppBundle } from './hostPreflight.ts';
@@ -29,33 +27,14 @@ export function defaultIosSimulatorAppPath(): string {
   );
 }
 
-function derivedDataIosAppPaths(): string[] {
-  const derivedRoot = path.join(os.homedir(), 'Library/Developer/Xcode/DerivedData');
-  if (!fs.existsSync(derivedRoot)) {
-    return [];
-  }
-  const prefix = 'RNGoogleMobileAdsExample-';
-  return fs
-    .readdirSync(derivedRoot)
-    .sort()
-    .filter(entry => entry.startsWith(prefix))
-    .map(entry =>
-      path.join(derivedRoot, entry, 'Build/Products/Debug-iphonesimulator/ReactTestApp.app'),
-    );
-}
-
 export function iosAppBundleResolution(): IosAppBundleResolution {
-  if (process.env.RNGMA_IOS_APP) {
-    const configuredPath = process.env.RNGMA_IOS_APP;
-    const resolution = resolveIosAppBundle([configuredPath]);
-    return resolution.kind === 'absent' ? { kind: 'incomplete', path: configuredPath } : resolution;
-  }
-  return resolveIosAppBundle([defaultIosSimulatorAppPath(), ...derivedDataIosAppPaths()]);
+  const exactPath = process.env.RNGMA_IOS_APP || defaultIosSimulatorAppPath();
+  const resolution = resolveIosAppBundle([exactPath]);
+  return resolution.kind === 'absent' ? { kind: 'incomplete', path: exactPath } : resolution;
 }
 
-export function iosAppPath(): string | undefined {
-  const resolution = iosAppBundleResolution();
-  return resolution.kind === 'complete' ? resolution.path : undefined;
+export function iosAppPath(): string {
+  return process.env.RNGMA_IOS_APP || defaultIosSimulatorAppPath();
 }
 
 /** Representative banner size used in smoke (remaining sizes via gallery accordion / manual). */

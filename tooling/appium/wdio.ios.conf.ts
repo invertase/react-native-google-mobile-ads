@@ -1,5 +1,5 @@
 import type { Options } from '@wdio/types';
-import { EXAMPLE_IOS_BUNDLE_ID, iosAppPath } from './src/formats.ts';
+import { iosAppPath } from './src/formats.ts';
 import {
   DEFAULT_IOS_DEVICE_NAME,
   IOS_SESSION_RETRY_TIMEOUT_MS,
@@ -30,8 +30,7 @@ export const config: Options.Testrunner = {
       'appium:platformVersion': process.env.RNGMA_IOS_VERSION,
       'appium:wdaLaunchTimeout': WDA_LAUNCH_TIMEOUT_MS,
       ...iosPrebuiltWdaCapabilities(),
-      'appium:bundleId': EXAMPLE_IOS_BUNDLE_ID,
-      ...(iosApp ? { 'appium:app': iosApp } : {}),
+      'appium:app': iosApp,
       'appium:newCommandTimeout': 240,
       'appium:noReset': false,
       // Mirror Android: force reinstall so a cached/pre-installed bundle never shadows the
