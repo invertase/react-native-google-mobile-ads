@@ -230,6 +230,91 @@ describe('usePooledAd registry subscription', () => {
     expect(controlled.getAvailability).toHaveBeenCalledTimes(readsAfterMount + 2);
   });
 
+  it('does not commit when a current-pool availability read is unchanged', async () => {
+    const controlled = controlledPool('registry-unchanged-availability', {
+      available: true,
+      observedCount: 2,
+    });
+    registerAdPool(controlled.pool);
+    let renders = 0;
+    let commits = 0;
+    let pooled: UsePooledAdResult | undefined;
+    function Probe() {
+      renders += 1;
+      pooled = usePooledAd(controlled.poolId);
+      return null;
+    }
+
+    render(
+      <React.Profiler
+        id="unchanged-availability"
+        onRender={() => {
+          commits += 1;
+        }}
+      >
+        <Probe />
+      </React.Profiler>,
+    );
+    await settle();
+    expect(pooled).toMatchObject({ available: true, observedCount: 2 });
+
+    // Drain any in-flight mount read before the unchanged-event baseline.
+    await act(async () => {
+      controlled.emit({ type: 'available', poolId: controlled.poolId, responseId: 'same-1' });
+    });
+    await settle();
+    const afterUnchanged = { renders, commits };
+    const readsAfterUnchanged = controlled.getAvailability.mock.calls.length;
+
+    await act(async () => {
+      controlled.emit({ type: 'available', poolId: controlled.poolId, responseId: 'same-2' });
+    });
+    await settle();
+    await act(async () => {
+      controlled.emit({ type: 'refreshed', poolId: controlled.poolId });
+    });
+    await settle();
+
+    // The listener still reads; returning the previous state object is what
+    // keeps React from committing a pooled-ad re-render.
+    expect(controlled.getAvailability).toHaveBeenCalledTimes(readsAfterUnchanged + 2);
+    expect({ renders, commits }).toEqual(afterUnchanged);
+    expect(pooled).toMatchObject({
+      poolStatus: 'ready',
+      available: true,
+      observedCount: 2,
+      status: 'idle',
+    });
+
+    controlled.getAvailability.mockResolvedValue({ available: false, observedCount: 2 });
+    await act(async () => {
+      controlled.emit({ type: 'exhausted', poolId: controlled.poolId });
+    });
+    await settle();
+    expect(controlled.getAvailability).toHaveBeenCalledTimes(readsAfterUnchanged + 3);
+    expect(commits).toBeGreaterThan(afterUnchanged.commits);
+    expect(renders).toBeGreaterThan(afterUnchanged.renders);
+    expect(pooled).toMatchObject({ available: false, observedCount: 2 });
+
+    const afterAvailableChange = { renders, commits };
+    controlled.getAvailability.mockResolvedValue({ available: false, observedCount: 5 });
+    await act(async () => {
+      controlled.emit({ type: 'expired', poolId: controlled.poolId });
+    });
+    await settle();
+    expect(controlled.getAvailability).toHaveBeenCalledTimes(readsAfterUnchanged + 4);
+    expect(commits).toBeGreaterThan(afterAvailableChange.commits);
+    expect(renders).toBeGreaterThan(afterAvailableChange.renders);
+    expect(pooled).toMatchObject({
+      poolStatus: 'ready',
+      available: false,
+      observedCount: 5,
+      status: 'idle',
+    });
+    expect(controlled.listenerCount()).toBe(1);
+    expect(controlled.addListener).toHaveBeenCalledTimes(1);
+  });
+
   it('does not commit pooled state for absent unrelated-registry churn', async () => {
     const controlled = controlledPool('registry-churn-absent');
     let renders = 0;

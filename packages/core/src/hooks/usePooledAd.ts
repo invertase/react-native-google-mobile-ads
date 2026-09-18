@@ -129,7 +129,11 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
   const refreshAvailability = useCallback(async (id: string) => {
     const pool = getRegisteredAdPool(id);
     if (!pool) {
-      setState(prev => ({ ...prev, available: false, observedCount: 0 }));
+      setState(prev =>
+        prev.available || prev.observedCount !== 0
+          ? { ...prev, available: false, observedCount: 0 }
+          : prev,
+      );
       return;
     }
     try {
@@ -140,11 +144,16 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
       if (!mountedRef.current || poolIdRef.current !== id || getRegisteredAdPool(id) !== pool) {
         return;
       }
-      setState(prev => ({
-        ...prev,
-        available: availability.available,
-        observedCount: availability.observedCount,
-      }));
+      setState(prev =>
+        prev.available === availability.available &&
+        prev.observedCount === availability.observedCount
+          ? prev
+          : {
+              ...prev,
+              available: availability.available,
+              observedCount: availability.observedCount,
+            },
+      );
     } catch {
       // leave prior availability
     }
