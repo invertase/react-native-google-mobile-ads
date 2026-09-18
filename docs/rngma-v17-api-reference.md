@@ -937,7 +937,7 @@ Sibling guarantees that do match:
 - it **destroys** them on unmount, and when a later `load()` supersedes them,
 - it **subscribes** per handle to `onStaleByPolicy`, drops a stale unrendered handle from `ads`, and reports `status: 'stale-by-policy'` once no showable handle remains, retaining prior load `errors`,
 - `load()` **coalesces** concurrent calls onto the in-flight load (**per hook instance**), same parity as `poll()`, including under StrictMode double-invoke of the mount effect,
-- `load()` **never rejects**: it resolves a `MultiFormatLoadResult` mirroring the state it just set,
+- `load()` **never rejects**: a still-current load resolves a `MultiFormatLoadResult` mirroring the published hook state. If the request is superseded or ownership is released before settlement, stale handles are destroyed and that result is not published as current state. An original `'error'` or `'loaded-partial'` resolves `'error'` with those errors (order and metadata preserved) and that response's `responseInfo`; an original `'no-fill'` or a discarded clean fill resolves a handle-free `'no-fill'` cleanup result carrying that `responseInfo`,
 - `release()` hands the current handles to the caller and clears hook state to `status: 'idle'` (among the current arms), returning `[]` when nothing is held, with the same post-`await` ordering guarantee,
 - callers **must not** `destroy()` handles the hook still owns; `release()` first.
 
@@ -947,7 +947,9 @@ Sibling guarantees that do match:
 
 **Hook arguments are not frozen into those callbacks.** `poolId`, `adUnitId`, and `options` are sampled when the callback runs (the implementation holds them or the latest created instance in refs updated each render). Passing a fresh inline options object every render (including `MultiFormatAdPresets.nativeOrBanner(...)` called in the render body) does **not** change `load`'s identity and does **not** re-fire an effect that depends only on `[load]`. The next callback invocation uses the latest applicable arguments or ad instance.
 
-If you need to reload when options change, depend on those options (or a value derived from them) yourself and call `load()`; do not expect `[load]` alone to detect argument changes.
+**`useMultiFormatAd` reloads itself when the request changes.** With `autoLoad` true, a new `adUnitId` or different `requestOptions` contents (formats, banner sizes, keywords, and the rest) start one automatic load for the latest request. A freshly allocated but content-equal options object does **not** reload, so `MultiFormatAdPresets.nativeOrBanner(...)` in the render body is safe; property order within an object is ignored, array order is not. If the request changes while a load is in flight, that superseded load's handles are destroyed rather than published or held, and the latest enabled automatic request loads once after it settles. If `autoLoad` is turned off before that settlement, the hook returns `'idle'` while retaining the last current `responseInfo`. With `autoLoad: false` nothing loads automatically and an explicit `load()` samples the options current when you call it.
+
+On `usePooledAd` and the fullscreen hooks — and on `useMultiFormatAd` with `autoLoad: false` — reloading when options change is yours: depend on those options (or a value derived from them) and call `load()`; do not expect `[load]` alone to detect argument changes.
 
 **Coalescing and StrictMode.** Both `poll()` and `load()` coalesce concurrent calls onto one in-flight promise per hook instance. Joiners share the result started with the arguments current when the flight began; after it settles, the next call samples current arguments. React StrictMode in development double-invokes effects: without coalescing, the documented mount-effect pattern would issue two polls or two loads. Coalescing is still per hook instance: two components sharing one `poolId` do not share an in-flight poll (see shared-`poolId` note above).
 
@@ -1860,7 +1862,7 @@ Full React provider flows: [Usage examples](#usage-examples).
 | `usePooledAd` idle with empty buffer, create never runs | Provider missing or `pools` config omitted that id (pair with `useAdPool` / `poolStatus`) |
 | Two placements starve each other | Two `usePooledAd(sameId)` owners on a depth-1 pool |
 | `destroy()` then hook still looks filled | Destroyed hook-owned inventory; `release()` first |
-| A hook loads twice in development | React StrictMode double-invokes effects; automatic loading is keyed per ad unit and `load()` coalesces per instance, so only one request goes out |
+| A hook loads twice in development | React StrictMode double-invokes effects; automatic loading fires once per ad unit (once per request contents on `useMultiFormatAd`) and `load()` coalesces per instance, so only one request goes out |
 | Options-form hook sits on `'idle'` forever | `autoLoad` is false. Read the echoed `autoLoad` on the result to confirm, rather than guessing from `status` |
 | Next ad never warms after dismissal | By design: automatic loading does not re-fire after `'closed'`. See [Reloading after dismissal](#reloading-after-dismissal) |
 | `useInterstitialAd(unit)` is struck through in the editor | The positional overload is deprecated; pass an options object. Removed in version 18 |

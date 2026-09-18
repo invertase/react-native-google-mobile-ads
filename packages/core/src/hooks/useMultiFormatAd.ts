@@ -40,7 +40,19 @@ export type UseMultiFormatAdOptions = MultiFormatAdConfig & {
    *
    * Set it to `false` while something the load depends on is still resolving,
    * such as consent or SDK initialization; the hook loads as soon as it flips
-   * true. An explicit `load()` still works while `autoLoad` is false.
+   * true. An explicit `load()` still works while `autoLoad` is false, and
+   * samples the options current when you call it.
+   *
+   * While true, the hook also loads again when the request itself changes: a
+   * new `adUnitId`, or different `requestOptions` contents (formats, banner
+   * sizes, keywords, and the rest). A freshly allocated but content-equal
+   * options object does not reload — including `MultiFormatAdPresets.*(...)`
+   * called in the render body — and property order within an object is
+   * ignored while array order is not. If the request changes while a load is
+   * in flight, that superseded load's handles are destroyed rather than
+   * published, and the latest enabled automatic request loads once after it
+   * settles. If `autoLoad` is turned off before that settlement, the hook
+   * returns `'idle'` while retaining the last current `responseInfo`.
    */
   autoLoad?: boolean;
 };
@@ -70,10 +82,17 @@ type UseMultiFormatAdResultBase = {
    */
   responseInfo: ResponseInfo | null;
   /**
-   * Issues the request and updates hook state. Never rejects: it resolves into
-   * a `MultiFormatLoadResult` mirroring the state it just set, so the return
-   * value is optional convenience for callers that want to load and render in
-   * one handler, exactly like `usePooledAd().poll()`.
+   * Issues the request and updates hook state. Never rejects. A still-current
+   * load resolves a `MultiFormatLoadResult` mirroring the published hook
+   * state, so the return value is optional convenience for callers that want
+   * to load and render in one handler, exactly like `usePooledAd().poll()`.
+   * If the request is superseded or ownership is released before settlement,
+   * stale handles are destroyed and that result is not published as current
+   * state. An original `'error'` or `'loaded-partial'` resolves `'error'` with
+   * those errors (order and metadata preserved) and that response's
+   * `responseInfo`. An original `'no-fill'`, or a discarded clean fill,
+   * resolves a handle-free `'no-fill'` cleanup result carrying that
+   * `responseInfo`.
    *
    * Concurrent calls coalesce onto the in-flight load, same parity as
    * `usePooledAd().poll()`, so automatic loading and a manual call in the same
@@ -154,6 +173,33 @@ const initialMultiFormatAdState: MultiFormatAdHookState = {
   responseInfo: null,
 };
 
+/**
+ * Canonical JSON signature for the native request contents.
+ *
+ * Object key order is intentionally ignored (including targeting/extras
+ * records), while array order remains significant. Optional `undefined`
+ * properties are omitted consistently with the request bridge.
+ */
+function configSignature(options: UseMultiFormatAdOptions): string {
+  return JSON.stringify(
+    {
+      adUnitId: options.adUnitId,
+      requestOptions: options.requestOptions,
+    },
+    (_key, value: unknown) => {
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        return value;
+      }
+      return Object.keys(value as Record<string, unknown>)
+        .sort()
+        .reduce<Record<string, unknown>>((sorted, key) => {
+          sorted[key] = (value as Record<string, unknown>)[key];
+          return sorted;
+        }, {});
+    },
+  );
+}
+
 function toLoadResult(
   ads: MultiFormatAdHandle[],
   errors: AdError[],
@@ -186,19 +232,27 @@ function configError(message: string): AdError {
  * winner (`requestCount` 1 in v1).
  *
  * Ownership, release ordering, never-reject load, load coalescing, and
- * `stale-by-policy` semantics match `usePooledAd`.
+ * `stale-by-policy` semantics match `usePooledAd`. Automatic loading, including
+ * when a changed request reloads, is `UseMultiFormatAdOptions.autoLoad`.
  */
 export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiFormatAdResult {
   const autoLoad = options.autoLoad ?? true;
+  const requestSignature = configSignature(options);
 
   const optionsRef = useRef(options);
   optionsRef.current = options;
+  const requestSignatureRef = useRef(requestSignature);
+  requestSignatureRef.current = requestSignature;
+  const autoLoadRef = useRef(autoLoad);
+  autoLoadRef.current = autoLoad;
 
   const [state, setState] = useState<MultiFormatAdHookState>(initialMultiFormatAdState);
   const adsRef = useRef<MultiFormatAdHandle[]>([]);
   const unsubsRef = useRef<Array<() => void>>([]);
   const inflightRef = useRef<Promise<MultiFormatLoadResult> | null>(null);
-  const autoLoadedForRef = useRef<string | null>(null);
+  const inflightSignatureRef = useRef<string | null>(null);
+  const autoStartedSignatureRef = useRef<string | null>(null);
+  const ownershipGenerationRef = useRef(0);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -265,6 +319,10 @@ export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiForm
       return inflightRef.current;
     }
 
+    const flightSignature = requestSignatureRef.current;
+    const flightGeneration = ownershipGenerationRef.current;
+    inflightSignatureRef.current = flightSignature;
+
     // Destroy the previous handles before publishing `'loading'`, so no render
     // can read `ads` that are already dead.
     clearHeldAds(true);
@@ -304,7 +362,23 @@ export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiForm
         ads.forEach(handle => {
           handle.destroy();
         });
-        return toLoadResult([], [], responseInfo);
+        return toLoadResult([], errors, responseInfo);
+      }
+
+      if (
+        ownershipGenerationRef.current !== flightGeneration ||
+        requestSignatureRef.current !== flightSignature
+      ) {
+        ads.forEach(handle => {
+          handle.destroy();
+        });
+        if (ownershipGenerationRef.current === flightGeneration && !autoLoadRef.current) {
+          setState(previous => ({
+            ...initialMultiFormatAdState,
+            responseInfo: previous.responseInfo,
+          }));
+        }
+        return toLoadResult([], errors, responseInfo);
       }
 
       adsRef.current = ads;
@@ -314,6 +388,7 @@ export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiForm
       return result;
     })().finally(() => {
       inflightRef.current = null;
+      inflightSignatureRef.current = null;
     });
 
     inflightRef.current = flight;
@@ -325,22 +400,40 @@ export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiForm
   }, [load]);
 
   const release = useCallback((): MultiFormatAdHandle[] => {
+    ownershipGenerationRef.current += 1;
     const released = clearHeldAds(false);
     setState(initialMultiFormatAdState);
     return released;
   }, [clearHeldAds]);
 
-  // Automatic loading. Keyed by ad unit so it fires once per unit, covering
-  // mount, a new unit, and `autoLoad` flipping true, without re-firing on every
-  // fresh inline options object.
-  const { adUnitId } = options;
+  // Automatic loading is keyed by canonical request contents. If those
+  // contents change during a flight, await that flight without claiming the
+  // new signature. Only the latest still-enabled effect may start afterwards.
   useEffect(() => {
-    if (!autoLoad || autoLoadedForRef.current === adUnitId) {
+    if (!autoLoad || autoStartedSignatureRef.current === requestSignature) {
       return;
     }
-    autoLoadedForRef.current = adUnitId;
-    void load();
-  }, [adUnitId, autoLoad, load]);
+    const run = { cancelled: false };
+    void (async () => {
+      const currentFlight = inflightRef.current;
+      if (currentFlight) {
+        if (inflightSignatureRef.current === requestSignature) {
+          autoStartedSignatureRef.current = requestSignature;
+          await currentFlight;
+          return;
+        }
+        await currentFlight;
+      }
+      if (run.cancelled) {
+        return;
+      }
+      autoStartedSignatureRef.current = requestSignature;
+      await load();
+    })();
+    return () => {
+      run.cancelled = true;
+    };
+  }, [autoLoad, load, requestSignature]);
 
   return {
     ...state,

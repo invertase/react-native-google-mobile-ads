@@ -368,10 +368,24 @@ describe('FEAT-04 multi-format coverage', () => {
     });
     unmount();
     await act(async () => {
-      resolveLoad(nativeWinner({ handleId: 'late' }));
-      await pending;
+      resolveLoad(
+        nativeWinner({
+          handleId: 'late',
+          responseId: 'r-unmounted-loaded',
+          responseInfo: { responseId: 'r-unmounted-loaded' },
+        }),
+      );
+      await expect(pending).resolves.toEqual({
+        status: 'no-fill',
+        ads: [],
+        errors: [],
+        responseInfo: { responseId: 'r-unmounted-loaded' },
+      });
     });
-    expect(NativeGoogleMobileAdsNativeModule.destroy).toHaveBeenCalled();
+    expect(NativeGoogleMobileAdsNativeModule.destroy).toHaveBeenCalledTimes(1);
+    expect(NativeGoogleMobileAdsNativeModule.destroy).toHaveBeenCalledWith(
+      'r-unmounted-loaded',
+    );
   });
 
   it('clearHeldAds destroy path and unmount cleanup cover remaining branches', async () => {
