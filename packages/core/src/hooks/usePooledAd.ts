@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { getRegisteredAdPool, subscribeAdPoolRegistry } from '../internal/adPoolRegistry';
+import { getRegisteredAdPool } from '../internal/adPoolRegistry';
 import type { AdError } from '../types/AdError';
 import { AdFormat } from '../types/AdFormat';
 import type { AdShowOptions } from '../types/AdShowOptions';
@@ -134,7 +134,10 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
     }
     try {
       const availability = await pool.getAvailability();
-      if (!mountedRef.current || poolIdRef.current !== id) {
+      // The id alone is not enough: a replacement pool can take the same id
+      // while this read is in flight, so only the pool object that started the
+      // read may publish it.
+      if (!mountedRef.current || poolIdRef.current !== id || getRegisteredAdPool(id) !== pool) {
         return;
       }
       setState(prev => ({
@@ -147,16 +150,24 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
     }
   }, []);
 
-  useEffect(() => {
-    return subscribeAdPoolRegistry(() => {
-      void refreshAvailability(poolIdRef.current);
-    });
-  }, [refreshAvailability]);
+  // `useAdPool` above already subscribes to the registry for this `poolId`, so
+  // its lookup is the register / unregister signal: a second subscription here
+  // only read availability again for every unrelated registry change.
+  const lookupPool =
+    poolLookup.status === 'ready' || poolLookup.status === 'ready-degraded'
+      ? poolLookup.pool
+      : null;
 
   useEffect(() => {
-    const pool = getRegisteredAdPool(poolId);
+    // The registry stays the source of truth: a lookup published one render
+    // behind the registry must not resurrect a pool this id no longer owns.
+    const pool = lookupPool && getRegisteredAdPool(poolId) === lookupPool ? lookupPool : null;
     if (!pool) {
-      setState(prev => ({ ...prev, available: false, observedCount: 0 }));
+      setState(prev =>
+        prev.available || prev.observedCount !== 0
+          ? { ...prev, available: false, observedCount: 0 }
+          : prev,
+      );
       return;
     }
     void refreshAvailability(poolId);
@@ -171,7 +182,7 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
       }
     });
     return unsub;
-  }, [poolId, refreshAvailability]);
+  }, [poolId, lookupPool, refreshAvailability]);
 
   // Cleanup runs on `poolId` change and on unmount, so a new id never inherits
   // the previous pool's ad or status. `destroyOwnedAd` skips released ads
