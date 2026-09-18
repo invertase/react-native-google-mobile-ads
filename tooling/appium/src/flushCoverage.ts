@@ -1,4 +1,10 @@
-import { backToGallery, findByTestId, tapByTestId } from '../test/helpers/gallery.ts';
+import {
+  backToGallery,
+  findByTestId,
+  selectGallerySection,
+  tapByTestId,
+} from '../test/helpers/gallery.ts';
+import { FLUSH_TEARDOWN_SECTION } from './formats.ts';
 import { AppiumTestIds } from './testIds.ts';
 
 /**
@@ -15,6 +21,10 @@ export async function flushCoverageFromApp(): Promise<void> {
     if (await back.isDisplayed().catch(() => false)) {
       await backToGallery();
     }
+
+    // Flush sits below the section list on home, so a long selection (e.g. `formats`)
+    // can park it beyond the scrollable viewport. Narrow to the shortest section first.
+    await selectGallerySection(FLUSH_TEARDOWN_SECTION);
 
     // Same hardened path as format openers (Android coordinate-tap + safe-band lift).
     await tapByTestId(AppiumTestIds.flushCoverage);

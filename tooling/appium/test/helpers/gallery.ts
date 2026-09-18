@@ -268,7 +268,9 @@ export async function waitForGalleryHome(): Promise<void> {
   });
 }
 
-async function selectGallerySection(section: Exclude<GallerySectionId, 'all'>): Promise<void> {
+export async function selectGallerySection(
+  section: Exclude<GallerySectionId, 'all'>,
+): Promise<void> {
   await scrollGalleryToTop();
   const chipId = AppiumTestIds.section[section];
   // Chips stay near the top — use the same coordinate tap path as format openers.
