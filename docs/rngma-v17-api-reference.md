@@ -216,6 +216,10 @@ type UseFullScreenAdResultBase = {
   earnedReward: boolean; // rewarded hooks only
 
   load: () => void; // coalesces per instance; void, because status is the channel
+  // Hook `show` is void and press-safe: unsafe presses no-op; throws and
+  // rejections do not escape; this path synthesizes no state. An `AdError`
+  // appears only if an ad event arrives. Imperative `MobileAd.show()` is still
+  // a Promise.
   show: (showOptions?: AdShowOptions) => void;
   destroy: () => void;
   retry: () => void; // alias for load, named for the error-path call site

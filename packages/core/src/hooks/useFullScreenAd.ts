@@ -148,7 +148,11 @@ type UseFullScreenAdResultBase = {
    * promise could only hand back what the next render already carries.
    */
   load: () => void;
-  /** Shows a loaded ad. */
+  /**
+   * Shows a loaded ad. Unsafe presses no-op. Sync throws and promise rejections
+   * do not escape. This path synthesizes no hook state; an `AdError` appears
+   * only if an ad event arrives. Imperative `MobileAd.show()` remains a Promise.
+   */
   show: (showOptions?: AdShowOptions) => void;
   /** Releases the underlying native ad. Idempotent. */
   destroy: () => void;
@@ -264,10 +268,19 @@ function useFullScreenAdCore(
 
   const show = useCallback((showOptions?: AdShowOptions) => {
     const currentAd = adRef.current;
-    if (currentAd) {
-      // ad.show returns a promise but we don't await
-      // errors handled by library-consumer-provided functions
-      void currentAd.show(showOptions);
+    if (!currentAd) {
+      return;
+    }
+    try {
+      // `MobileAd.show()` throws synchronously when the ad is not showable —
+      // idle, already requested, or destroyed — and its promise can reject
+      // once the platform declines. This callback is written at `onPress`, so
+      // both are absorbed: an unsafe press is a no-op, and `void show()` never
+      // leaves an unhandled rejection. Ad events stay the failure channel, so
+      // nothing here writes hook state.
+      void Promise.resolve(currentAd.show(showOptions)).catch(() => undefined);
+    } catch {
+      // Not showable yet; the state that says so already rendered.
     }
   }, []);
 

@@ -25,6 +25,7 @@ import {
 import { useFullScreenAd } from '../src/hooks/useFullScreenAd';
 import { resetWarnOnce } from '../src/internal/warnOnce';
 import NativeGoogleMobileAdsNativeModule from '../src/specs/modules/NativeGoogleMobileAdsNativeModule';
+import NativeInterstitialModule from '../src/specs/modules/NativeInterstitialModule';
 
 // Importing these from the public barrel fails the build if the fullscreen hook exports
 // are dropped. Compile-time narrowing locks live in type-test.ts.
@@ -88,6 +89,41 @@ function createAdError(
     phase,
     responseInfo,
   }) as AdError;
+}
+
+type NativeErrorEventBody = {
+  code: string;
+  message: string;
+  phase?: 'load' | 'show';
+};
+
+/**
+ * Drives real `InterstitialAd` instances, with only the native module mocked,
+ * so the show-path guards under test come from `MobileAd.show()` itself rather
+ * than from a stub that decides when to throw.
+ */
+function trackRealInterstitials() {
+  const createForAdRequest = InterstitialAd.createForAdRequest.bind(InterstitialAd);
+  const created: InterstitialAd[] = [];
+  jest
+    .spyOn(InterstitialAd, 'createForAdRequest')
+    .mockImplementation((...args: Parameters<typeof InterstitialAd.createForAdRequest>) => {
+      const ad = createForAdRequest(...args);
+      created.push(ad);
+      return ad;
+    });
+  const show = jest.mocked(NativeInterstitialModule.interstitialShow);
+  show.mockReset();
+
+  return {
+    created,
+    show,
+    emit(ad: InterstitialAd, type: AdEventType, error?: NativeErrorEventBody) {
+      (ad as unknown as { _handleAdEvent: (event: unknown) => void })._handleAdEvent({
+        body: { type, error },
+      });
+    },
+  };
 }
 
 describe('fullscreen hook call forms', () => {
@@ -585,6 +621,101 @@ describe('fullscreen hook call forms', () => {
     expect(second.show).toHaveBeenCalledTimes(1);
 
     view.unmount();
+  });
+
+  it('keeps an unshowable show() a silent no-op instead of throwing at the press', () => {
+    const interstitials = trackRealInterstitials();
+    let loadedNothing: UseInterstitialAdResult | undefined;
+    let withoutAnAd: Record<string, unknown> | null = null;
+
+    function Probe() {
+      loadedNothing = useInterstitialAd({ adUnitId: TestIds.INTERSTITIAL, autoLoad: false });
+      withoutAnAd = useAppOpenAd({ adUnitId: null }) as unknown as Record<string, unknown>;
+      return null;
+    }
+    render(<Probe />);
+
+    // `MobileAd.show()` throws "has not loaded" here. `show` is written at
+    // `onPress`, so the press has to survive it, and nothing native runs.
+    expect(() => act(() => loadedNothing!.show())).not.toThrow();
+    expect(interstitials.show).not.toHaveBeenCalled();
+    expect(loadedNothing!).toMatchObject({ status: 'idle', error: null });
+
+    // No ad instance at all: same silence, and still no invented error.
+    expect(() => act(() => (withoutAnAd!.show as () => void)())).not.toThrow();
+    expect(withoutAnAd!).toMatchObject({ status: 'idle', error: null });
+  });
+
+  it('shows a loaded ad once and absorbs a repeated press before it opens', () => {
+    const interstitials = trackRealInterstitials();
+    let result: UseInterstitialAdResult | undefined;
+
+    function Probe() {
+      result = useInterstitialAd({ adUnitId: TestIds.INTERSTITIAL, autoLoad: false });
+      return null;
+    }
+    render(<Probe />);
+    const ad = interstitials.created[0]!;
+
+    act(() => interstitials.emit(ad, AdEventType.LOADED));
+    expect(result!.status).toBe('loaded');
+
+    act(() => result!.show({ immersiveModeEnabled: true }));
+    expect(interstitials.show).toHaveBeenCalledTimes(1);
+    expect(interstitials.show.mock.calls[0]![2]).toEqual({ immersiveModeEnabled: true });
+    // `'showing'` stays event-driven: the call itself moves no status.
+    expect(result!.status).toBe('loaded');
+
+    // A second press before OPENED throws "Show has already been requested".
+    expect(() => act(() => result!.show())).not.toThrow();
+    expect(interstitials.show).toHaveBeenCalledTimes(1);
+    expect(result!).toMatchObject({ status: 'loaded', error: null });
+
+    act(() => interstitials.emit(ad, AdEventType.OPENED));
+    expect(result!.status).toBe('showing');
+  });
+
+  it('consumes a rejected show promise rather than leaking an unhandled rejection', async () => {
+    const interstitials = trackRealInterstitials();
+    interstitials.show.mockImplementationOnce(() => Promise.reject(new Error('show declined')));
+    const unhandled: unknown[] = [];
+    const recordUnhandled = (reason: unknown) => {
+      unhandled.push(reason);
+    };
+    process.on('unhandledRejection', recordUnhandled);
+
+    let result: UseInterstitialAdResult | undefined;
+    function Probe() {
+      result = useInterstitialAd({ adUnitId: TestIds.INTERSTITIAL, autoLoad: false });
+      return null;
+    }
+
+    try {
+      render(<Probe />);
+      const ad = interstitials.created[0]!;
+      act(() => interstitials.emit(ad, AdEventType.LOADED));
+
+      act(() => result!.show());
+      await act(async () => {
+        await new Promise(resolve => setImmediate(resolve));
+      });
+      expect(unhandled).toEqual([]);
+
+      // The rejection alone invents no status; the ERROR event is the one that
+      // reports a show failure.
+      expect(result!).toMatchObject({ status: 'loaded', error: null });
+      act(() =>
+        interstitials.emit(ad, AdEventType.ERROR, {
+          code: 'internal-error',
+          message: 'Show failed.',
+          phase: 'show',
+        }),
+      );
+      expect(result!.status).toBe('error');
+      expect(result!.error?.phase).toBe('show');
+    } finally {
+      process.off('unhandledRejection', recordUnhandled);
+    }
   });
 
   it('issues only one automatic load for the surviving StrictMode instance', () => {
