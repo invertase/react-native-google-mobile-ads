@@ -6,9 +6,11 @@ import { describe, test } from 'node:test';
 import { iosAppBundleResolution } from '../src/formats.ts';
 import {
   appiumPort,
+  bootAndPersistSelectedSimulator,
   DEFAULT_APPIUM_PORT,
   DEFAULT_IOS_DEVICE_NAME,
   findCompleteIosAppBundle,
+  githubEnvUdidLine,
   isCompleteIosAppBundle,
   MIN_ANDROID_API,
   MIN_NODE_MAJOR,
@@ -18,7 +20,9 @@ import {
   parseAvailableIosSimulators,
   PREFERRED_ANDROID_API,
   resolveIosAppBundle,
+  requireGithubEnvPath,
   requireIosUdid,
+  SELECT_AND_BOOT_GITHUB_ENV_ERROR,
   selectConnectedAndroidDevice,
   selectAndroidAvd,
   selectIosSimulator,
@@ -83,6 +87,67 @@ describe('hostPreflight', () => {
       requireIosUdid({ RNGMA_IOS_UDID: ' fixture-udid ' }),
       'fixture-udid',
     );
+  });
+
+  test('boots a shutdown simulator then waits on bootstatus before persisting UDID', () => {
+    const calls: string[][] = [];
+    const writes: Array<{ path: string; data: string }> = [];
+    bootAndPersistSelectedSimulator(
+      { udid: 'shutdown-udid', state: 'Shutdown' },
+      ['ios', '--select-and-boot', '--github-env', '/tmp/github.env'],
+      (bin, args) => {
+        calls.push([bin, ...args]);
+      },
+      (path, data) => {
+        writes.push({ path, data });
+      },
+    );
+    assert.deepEqual(calls, [
+      ['xcrun', 'simctl', 'boot', 'shutdown-udid'],
+      ['xcrun', 'simctl', 'bootstatus', 'shutdown-udid', '-b'],
+    ]);
+    assert.deepEqual(writes, [
+      { path: '/tmp/github.env', data: githubEnvUdidLine('shutdown-udid') },
+    ]);
+    assert.equal(writes[0]?.data, 'RNGMA_IOS_UDID=shutdown-udid\n');
+  });
+
+  test('skips boot for an already-Booted simulator and still waits on bootstatus', () => {
+    const calls: string[][] = [];
+    bootAndPersistSelectedSimulator(
+      { udid: 'booted-udid', state: 'Booted' },
+      ['--github-env', '/tmp/github.env'],
+      (_bin, args) => {
+        calls.push(args);
+      },
+      () => {},
+    );
+    assert.deepEqual(calls, [['simctl', 'bootstatus', 'booted-udid', '-b']]);
+  });
+
+  test('fails clearly when --github-env or its path is missing', () => {
+    assert.throws(() => requireGithubEnvPath([]), {
+      message: SELECT_AND_BOOT_GITHUB_ENV_ERROR,
+    });
+    assert.throws(() => requireGithubEnvPath(['--github-env']), {
+      message: SELECT_AND_BOOT_GITHUB_ENV_ERROR,
+    });
+    const calls: string[][] = [];
+    assert.throws(
+      () =>
+        bootAndPersistSelectedSimulator(
+          { udid: 'udid', state: 'Booted' },
+          ['ios', '--select-and-boot'],
+          (bin, args) => {
+            calls.push([bin, ...args]);
+          },
+          () => {
+            assert.fail('must not persist without --github-env');
+          },
+        ),
+      { message: SELECT_AND_BOOT_GITHUB_ENV_ERROR },
+    );
+    assert.deepEqual(calls, [['xcrun', 'simctl', 'bootstatus', 'udid', '-b']]);
   });
 
   test('defaults to exact iPhone 17 and prefers an already booted match', () => {

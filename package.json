@@ -51,6 +51,7 @@
     "tests:appium:drivers:verify": "yarn workspace @invertase/rngma-appium drivers:verify",
     "tests:appium:android": "yarn workspace @invertase/rngma-appium appium:android",
     "tests:appium:ios": "yarn workspace @invertase/rngma-appium appium:ios",
+    "tests:appium:ios:select-and-boot": "yarn workspace @invertase/rngma-appium ios:select-and-boot",
     "package:update": "yarn upgrade-interactive"
   },
   "devDependencies": {

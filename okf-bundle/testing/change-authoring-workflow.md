@@ -32,7 +32,7 @@ OKF, `AGENTS.md`, and `CONTRIBUTING.md` edits belong in `documentation?` **on th
 | `commit` | none | stage | yes |
 | `pre-merge-validation` | `full` | revert `.only` | no |
 
-Tiers: `unit-focused` = Jest + optional `.only`/narrow e2e for **diagnosis only**; closing `implementation` still follows [platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](validation-checklist.md#lint-and-formatting). `area-focused` = full area, no `.only`, frozen for review. `full` / `pre-merge-validation` = [platform coverage](running-e2e.md#platform-coverage-gate-blocking) **and** the lint-by-tree / evidence rows that already apply for this diff; not automatically both platforms; CI e2e jobs are not the pass signal.
+Tiers: `unit-focused` = Jest + optional `.only`/narrow e2e for **diagnosis only**; closing `implementation` still follows [platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](validation-checklist.md#lint-and-formatting). `area-focused` = full area, no `.only`, frozen for review. `full` / `pre-merge-validation` = [platform coverage](running-e2e.md#platform-coverage-gate-blocking) **and** the lint-by-tree / evidence rows that already apply for this diff; not automatically both platforms; [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error).
 
 <a id="gates"></a>
 
@@ -44,7 +44,7 @@ Tiers: `unit-focused` = Jest + optional `.only`/narrow e2e for **diagnosis only*
 | `independent-review` (`review_gate`) | `documentation?` already done when OKF/`AGENTS.md`/`CONTRIBUTING.md`/user docs changed; area-focused green on frozen tree; **all** findings fixed ([§ quality](#quality-standards)); apply per [§ frozen tree](#frozen-tree) (not every finding → `documentation?`); OKF scan when `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` is in the frozen tree |
 | `coverage_evidence_gate` | Closes per [coverage evidence](coverage-design.md#coverage-evidence-package) (`n/a` unless the diff includes `packages/core/src/` **or** `packages/core/android/` **or** `packages/core/ios/` **or** `packages/core/plugin/` TS; `packages/core/app.plugin.js`-only is `n/a` unless plugin TS changed — plugin Jest still follows [§ Expo plugin](validation-checklist.md#expo-plugin)) |
 | `commit` (`commit_gate`) | Prior gates closed with [evidence package](validation-checklist.md#validation-evidence-package) |
-| `pre-merge-validation` | [Validation-checklist work types](validation-checklist.md#work-types) pre-merge row recorded (platform coverage + lint/evidence); CI e2e is not the pass |
+| `pre-merge-validation` | [Validation-checklist work types](validation-checklist.md#work-types) pre-merge row recorded (platform coverage + lint/evidence in addition to [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error)) |
 
 Open `review_gate` = unverified.
 

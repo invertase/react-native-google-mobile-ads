@@ -26,7 +26,7 @@ Order is **not** implied by this table; sequence: [change authoring § loop](cha
 |------|---------|
 | `unit-focused` | Fast, while code is changing |
 | `area-focused` | Full area spec |
-| `full` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) **and** lint-by-tree / evidence for this diff; not automatically both platforms; CI e2e jobs are not the pass signal |
+| `full` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) **and** lint-by-tree / evidence for this diff; not automatically both platforms; [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error) |
 
 Gate-state fields (`open`\|`closed` unless noted): `next_work_type`, `validation_tier`, `platform`, `implementation_gate`, `review_gate`, `commit_gate`, `coverage_evidence_gate` (`open`\|`closed`\|`n/a`), `commit_subject` (planned or landed Conventional Commits first line), `blocked`.
 

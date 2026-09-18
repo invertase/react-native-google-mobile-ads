@@ -11,8 +11,8 @@ Do not copy other repos’ Detox patch inventories, macOS-app e2e suites, Jacoco
 | Workflow | File | Local equivalent | Artifacts / notes |
 |----------|------|------------------|-------------------|
 | Jest | [`.github/workflows/tests_jest.yml`](../../.github/workflows/tests_jest.yml) | `yarn tests:jest-coverage` | Codecov upload |
-| E2e Android | [`.github/workflows/tests_e2e_android.yml`](../../.github/workflows/tests_e2e_android.yml) | [platform coverage](../testing/running-e2e.md#platform-coverage-gate-blocking) + [named scripts](../testing/running-e2e.md#local-e2e-commands) (`yarn tests:appium:android`) | `adb_logs`; Codecov; Metro prefetch on `:8081`. **Run Emulator Tests**: [continue-on-error](#e2e-continue-on-error) |
-| E2e iOS | [`.github/workflows/tests_e2e_ios.yml`](../../.github/workflows/tests_e2e_ios.yml) | [platform coverage](../testing/running-e2e.md#platform-coverage-gate-blocking) + [named scripts](../testing/running-e2e.md#local-e2e-commands) (`yarn tests:appium:ios`) | `simulator_log`; Codecov; Metro prefetch on `:8081`. **Install example on simulator**, **Build and Run Appium e2e**, and **Create Simulator Log**: [continue-on-error](#e2e-continue-on-error) |
+| E2e Android | [`.github/workflows/tests_e2e_android.yml`](../../.github/workflows/tests_e2e_android.yml) | [platform coverage](../testing/running-e2e.md#platform-coverage-gate-blocking) + [named scripts](../testing/running-e2e.md#local-e2e-commands) (`yarn tests:appium:android`) | `adb_logs`; Codecov; Metro prefetch on `:8081`; Appium failure fails the job |
+| E2e iOS | [`.github/workflows/tests_e2e_ios.yml`](../../.github/workflows/tests_e2e_ios.yml) | [platform coverage](../testing/running-e2e.md#platform-coverage-gate-blocking) + [named scripts](../testing/running-e2e.md#local-e2e-commands) (`yarn tests:appium:ios`) | `simulator_log`; Codecov; Metro prefetch on `:8081`; one selected/booted iPhone 17 UDID is shared by build, logging, and Appium; install/Appium failures fail the job |
 | Lint | [`.github/workflows/linting.yml`](../../.github/workflows/linting.yml) | [lint-by-tree](../testing/validation-checklist.md#lint-and-formatting) | CI always runs `yarn lint:code` and repo-root `./gradlew ktlintCheck`; local agents do not copy the `yarn lint:code` combo unless `packages/core/src/` **and** `packages/core/android/` **and** `packages/core/ios/` changed. Also `yarn tsc:compile`. `eslint-report.json` |
 | Docs | [`.github/workflows/docs.yml`](../../.github/workflows/docs.yml) | `yarn lint:spellcheck` | Job title mentions Markdown; CI is spellcheck only — [§ lint](../testing/validation-checklist.md#lint-and-formatting) |
 | PR title | [`.github/workflows/pr_title.yml`](../../.github/workflows/pr_title.yml) | [documentation-policy § pull requests](../documentation-policy.md#pull-requests) | Conventional Commits; `validateSingleCommit` |
@@ -60,9 +60,9 @@ Do **not** delete `Podfile.lock` on routine `yarn tests:ios:pod:install` — ins
 
 <a id="e2e-continue-on-error"></a>
 
-## E2e continue-on-error
+## Truthful e2e checks
 
-`continue-on-error: true` is on Android **Run Emulator Tests** (Appium) and on iOS **Install example on simulator** plus **Build and Run Appium e2e**. iOS **Create Simulator Log** also sets it; that step is log capture, not the e2e pass signal. A green workflow is **not** an e2e pass. Pass signal: local counts + unique `/tmp/rngma-e2e-*-*.log` tees ([running e2e § local commands](../testing/running-e2e.md#local-e2e-commands)), or triaged `simulator_log` / `adb_logs`. Soft-fail Appium CI is intentional until the flake budget closes.
+Android **Run Emulator Tests** and iOS **Install example on simulator** / **Build and Run Appium e2e** are hard-fail steps, so an Appium footer failure fails the workflow. iOS **Create Simulator Log** alone keeps `continue-on-error: true`; diagnostics must not hide or replace the test result. Artifact uploads use `if: always()`. Local gate evidence remains counts + unique `/tmp/rngma-e2e-*-*.log` tees ([running e2e § local commands](../testing/running-e2e.md#local-e2e-commands)), or triaged `simulator_log` / `adb_logs`.
 
 <a id="triage"></a>
 

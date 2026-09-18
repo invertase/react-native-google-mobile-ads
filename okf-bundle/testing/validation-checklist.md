@@ -19,7 +19,7 @@ Coverage: [coverage design](coverage-design.md). Tiers: [change authoring](chang
 | `implementation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](#lint-and-formatting) for this diff; `.only` local OK |
 | `documentation` | Promote durable OKF / user docs / `AGENTS.md` / `CONTRIBUTING.md`. [Lint](#lint-and-formatting) if `docs/**`. **Do not** run the independent OKF scan here. |
 | `independent-review` | Rows that apply to **this** diff ([platform coverage](running-e2e.md#platform-coverage-gate-blocking), check-only [lint-by-tree](#lint-and-formatting)), frozen, no `.only`. [OKF scan](#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md`. |
-| `pre-merge-validation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) for this diff; [lint-by-tree](#lint-and-formatting) / evidence rows that already apply; CI e2e jobs are not the pass signal |
+| `pre-merge-validation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) for this diff; [lint-by-tree](#lint-and-formatting) / evidence rows that already apply; [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error) |
 
 <a id="lint-and-formatting"></a>
 
