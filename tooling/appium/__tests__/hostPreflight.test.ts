@@ -10,6 +10,7 @@ import {
   DEFAULT_APPIUM_PORT,
   DEFAULT_IOS_DEVICE_NAME,
   findCompleteIosAppBundle,
+  githubEnvSelectionLines,
   githubEnvUdidLine,
   isCompleteIosAppBundle,
   MIN_ANDROID_API,
@@ -93,7 +94,7 @@ describe('hostPreflight', () => {
     const calls: string[][] = [];
     const writes: Array<{ path: string; data: string }> = [];
     bootAndPersistSelectedSimulator(
-      { udid: 'shutdown-udid', state: 'Shutdown' },
+      { udid: 'shutdown-udid', state: 'Shutdown', runtimeVersion: '26.2' },
       ['ios', '--select-and-boot', '--github-env', '/tmp/github.env'],
       (bin, args) => {
         calls.push([bin, ...args]);
@@ -107,15 +108,18 @@ describe('hostPreflight', () => {
       ['xcrun', 'simctl', 'bootstatus', 'shutdown-udid', '-b'],
     ]);
     assert.deepEqual(writes, [
-      { path: '/tmp/github.env', data: githubEnvUdidLine('shutdown-udid') },
+      {
+        path: '/tmp/github.env',
+        data: githubEnvSelectionLines('shutdown-udid', '26.2'),
+      },
     ]);
-    assert.equal(writes[0]?.data, 'RNGMA_IOS_UDID=shutdown-udid\n');
+    assert.equal(writes[0]?.data, 'RNGMA_IOS_UDID=shutdown-udid\nRNGMA_IOS_VERSION=26.2\n');
   });
 
   test('skips boot for an already-Booted simulator and still waits on bootstatus', () => {
     const calls: string[][] = [];
     bootAndPersistSelectedSimulator(
-      { udid: 'booted-udid', state: 'Booted' },
+      { udid: 'booted-udid', state: 'Booted', runtimeVersion: '26.2' },
       ['--github-env', '/tmp/github.env'],
       (_bin, args) => {
         calls.push(args);
@@ -136,7 +140,7 @@ describe('hostPreflight', () => {
     assert.throws(
       () =>
         bootAndPersistSelectedSimulator(
-          { udid: 'udid', state: 'Booted' },
+          { udid: 'udid', state: 'Booted', runtimeVersion: '26.2' },
           ['ios', '--select-and-boot'],
           (bin, args) => {
             calls.push([bin, ...args]);

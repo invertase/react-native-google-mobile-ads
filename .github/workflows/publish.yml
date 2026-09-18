@@ -39,13 +39,15 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3
-      - name: Update Ruby build tools
+      - name: Bundle Install
         uses: nick-fields/retry@v3
+        # Gemfile.lock's `BUNDLED WITH` version is the Bundler pin; frozen mode
+        # makes the root lock authoritative without a separate gem install path.
         with:
-          timeout_minutes: 2
+          timeout_minutes: 15
           retry_wait_seconds: 60
           max_attempts: 3
-          command: gem update cocoapods xcodeproj
+          command: BUNDLE_FROZEN=true bundle install
       - name: Yarn Install
         uses: nick-fields/retry@v3
         with:

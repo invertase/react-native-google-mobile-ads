@@ -43,7 +43,7 @@
     "tests:android:run": "yarn workspace RNGoogleMobileAdsExample android",
     "tests:android:unit": "cd RNGoogleMobileAdsExample/android && ./gradlew :react-native-google-mobile-ads:testDebugUnitTest",
     "tests:ios:run": "yarn workspace RNGoogleMobileAdsExample react-native run-ios",
-    "tests:ios:pod:install": "cd RNGoogleMobileAdsExample/ios && pod install --repo-update",
+    "tests:ios:pod:install": "bundle exec pod install --project-directory=RNGoogleMobileAdsExample/ios --repo-update",
     "release:refresh-ios-pod-lockfile": "node ./scripts/refresh-ios-pod-lockfile.js",
     "tests:ios:unit": "bash -c 'UDID=$(xcrun simctl list devices available | sed -n \"s/.*(\\([A-F0-9-]*\\)).*/\\1/p\" | head -1); test -n \"$UDID\" || { echo \"No available iOS Simulator\" >&2; exit 1; }; xcodebuild test -project packages/core/ios/RNGoogleMobileAdsUnitTests.xcodeproj -scheme RNGoogleMobileAdsUnitTests -destination \"id=$UDID\" CODE_SIGNING_ALLOWED=NO'",
     "tests:appium:validate": "yarn workspace @invertase/rngma-appium validate",
@@ -52,6 +52,7 @@
     "tests:appium:android": "yarn workspace @invertase/rngma-appium appium:android",
     "tests:appium:ios": "yarn workspace @invertase/rngma-appium appium:ios",
     "tests:appium:ios:select-and-boot": "yarn workspace @invertase/rngma-appium ios:select-and-boot",
+    "tests:appium:ios:prebuild-wda": "yarn workspace @invertase/rngma-appium ios:prebuild-wda",
     "package:update": "yarn upgrade-interactive"
   },
   "devDependencies": {

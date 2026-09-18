@@ -5,6 +5,9 @@ import {
   appiumPort,
   bootAndPersistSelectedSimulator,
   DEFAULT_IOS_DEVICE_NAME,
+  IOS_WDA_DERIVED_DATA_PATH,
+  IOS_WDA_RUNNER_APP_PATH,
+  isCompleteWdaRunnerApp,
   MIN_ANDROID_API,
   MIN_NODE_MAJOR,
   nodeMeetsMinimum,
@@ -150,6 +153,7 @@ function checkAndroid(): string {
 function checkIos(options: { checkAppBundle?: boolean } = {}): {
   udid: string;
   state: string;
+  runtimeVersion: string;
 } {
   const simctlJson = run('xcrun', ['simctl', 'list', 'devices', 'available', '--json']);
   if (simctlJson == null) {
@@ -187,6 +191,18 @@ function checkIos(options: { checkAppBundle?: boolean } = {}): {
   console.log(
     `iOS simulator ${selected.name} iOS ${selected.runtimeVersion} ${selected.udid} (${selected.state}); using existing UDID.`,
   );
+
+  if (process.env.RNGMA_WDA_PREBUILT === '1') {
+    if (!isCompleteWdaRunnerApp()) {
+      console.error(
+        `RNGMA_WDA_PREBUILT=1 requires the complete shared artifact ${IOS_WDA_RUNNER_APP_PATH}. Run yarn tests:appium:ios:prebuild-wda first.`,
+      );
+      process.exit(1);
+    }
+    console.log(
+      `iOS WDA prebuilt mode: usePrebuiltWDA=true; derivedDataPath=${IOS_WDA_DERIVED_DATA_PATH}; artifact=${IOS_WDA_RUNNER_APP_PATH}`,
+    );
+  }
 
   if (options.checkAppBundle === false) {
     return selected;
@@ -228,7 +244,9 @@ function selectAndBootIos(): void {
     }
     throw error;
   }
-  console.log(`Booted and persisted RNGMA_IOS_UDID=${selected.udid}.`);
+  console.log(
+    `Booted and persisted RNGMA_IOS_UDID=${selected.udid} RNGMA_IOS_VERSION=${selected.runtimeVersion}.`,
+  );
 }
 
 async function main(): Promise<void> {
@@ -241,11 +259,14 @@ async function main(): Promise<void> {
   await checkAppiumPort();
   let androidUdid: string | undefined;
   let iosUdid: string | undefined;
+  let iosVersion: string | undefined;
   if (target === 'android' || target === 'all') {
     androidUdid = checkAndroid();
   }
   if (target === 'ios' || target === 'all') {
-    iosUdid = checkIos().udid;
+    const ios = checkIos();
+    iosUdid = ios.udid;
+    iosVersion = ios.runtimeVersion;
   }
 
   if (!process.argv.includes('--run')) {
@@ -260,6 +281,7 @@ async function main(): Promise<void> {
       ...process.env,
       ...(androidUdid ? { RNGMA_ANDROID_UDID: androidUdid } : {}),
       ...(iosUdid ? { RNGMA_IOS_UDID: iosUdid } : {}),
+      ...(iosVersion ? { RNGMA_IOS_VERSION: iosVersion } : {}),
     },
     stdio: 'inherit',
   });

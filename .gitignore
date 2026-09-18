@@ -590,5 +590,9 @@ RNGoogleMobileAdsExample/ios/.xcode.env.local
 # Nx local cache
 .nx/
 
+# Local Bundler configuration and installed gems
+**/.bundle/
+
 # Appium driver install tree (pins live in tooling/appium/drivers.manifest.json)
 tooling/appium/.appium-home/
+tooling/appium/.wda-derived/

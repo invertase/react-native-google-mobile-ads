@@ -73,13 +73,15 @@ jobs:
         with:
           ruby-version: 3
 
-      - name: Update Ruby build tools
+      - name: Bundle Install
         uses: nick-fields/retry@v3
+        # Gemfile.lock's `BUNDLED WITH` version is the Bundler pin; frozen mode
+        # makes the root lock authoritative without a separate gem install path.
         with:
-          timeout_minutes: 2
+          timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
-          command: gem update cocoapods xcodeproj
+          command: BUNDLE_FROZEN=true bundle install
 
       - uses: actions/cache@v4
         name: Cache Pods
@@ -140,6 +142,8 @@ jobs:
         run: |
           yarn tests:appium:drivers:install
           yarn tests:appium:drivers:verify
+          yarn tests:appium:ios:prebuild-wda
+          export RNGMA_WDA_PREBUILT=1
           yarn tests:appium:ios
 
       - name: Upload Simulator Log

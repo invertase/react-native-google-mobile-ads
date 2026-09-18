@@ -10,7 +10,8 @@
     "drivers:verify": "node ./scripts/verify-drivers.mjs",
     "appium:android": "tsx ./scripts/preflight.ts android --run",
     "appium:ios": "tsx ./scripts/preflight.ts ios --run",
-    "ios:select-and-boot": "tsx ./scripts/preflight.ts ios --select-and-boot"
+    "ios:select-and-boot": "tsx ./scripts/preflight.ts ios --select-and-boot",
+    "ios:prebuild-wda": "tsx ./scripts/prebuild-wda.ts"
   },
   "dependencies": {
     "@wdio/appium-service": "9.31.3",
