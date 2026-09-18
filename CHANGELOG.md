@@ -1,3 +1,56 @@
+## [17.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.5.0...v17.0.0) (2026-09-18)
+
+### ⚠ BREAKING CHANGES
+
+* v17 requires React Native 0.76+, the New Architecture, iOS 15.1, and Android API 24. Legacy Architecture is unsupported.
+* **api:** refreshed API w/better ergonomics, multiformat, adpools
+
+### Features
+
+* **adapters:** add applovin GAM mediation package ([c530d31](https://github.com/invertase/react-native-google-mobile-ads/commit/c530d31f93c0e7bb41c5aabccd4a0f10ccd40ee7))
+* **adapters:** add facebook GAM mediation package ([9c3d290](https://github.com/invertase/react-native-google-mobile-ads/commit/9c3d290909b1cc2b18f0aeb7957b066acd2d0ed4))
+* **adapters:** add GAM adapter package template ([9ced417](https://github.com/invertase/react-native-google-mobile-ads/commit/9ced41793d2360c3382d8618bbe0a9daaf880076))
+* **adapters:** add inmobi GAM mediation package ([ea67c57](https://github.com/invertase/react-native-google-mobile-ads/commit/ea67c578a6021ca11d4492b907b289096e298322))
+* **adapters:** add mintegral GAM mediation package ([021edc5](https://github.com/invertase/react-native-google-mobile-ads/commit/021edc5ff56fe2ef9f8628c90152cf4f8ba157ac))
+* **adapters:** add moloco GAM mediation package ([0395cb9](https://github.com/invertase/react-native-google-mobile-ads/commit/0395cb937c196f564d3451d93df4d057ce6a5857))
+* **adapters:** add pangle GAM mediation package ([9f9f3f6](https://github.com/invertase/react-native-google-mobile-ads/commit/9f9f3f6a60637eaf96b9dddc26f9bec91f0d31aa))
+* **adapters:** add unity GAM mediation package ([8e6eeb9](https://github.com/invertase/react-native-google-mobile-ads/commit/8e6eeb9e55805d817441031e0c77c0c7b8e31ae0))
+* **adapters:** add vungle GAM mediation package ([04c41fd](https://github.com/invertase/react-native-google-mobile-ads/commit/04c41fd22a32007e39378888e6693a99819ff0d9))
+* **adapters:** add yandex GAM mediation package ([0cbe57a](https://github.com/invertase/react-native-google-mobile-ads/commit/0cbe57ac74f985ed2c38ee09978f32e1eaa78894))
+* allow native SDK version overrides and report the linked version ([6d722f2](https://github.com/invertase/react-native-google-mobile-ads/commit/6d722f23b2ccb8b48aec63ab1197c04809eddcfd))
+* **api:** refreshed API w/better ergonomics, multiformat, adpools ([afe4a40](https://github.com/invertase/react-native-google-mobile-ads/commit/afe4a40c597e964969c16e59f7c19c9f5d6dd2b2))
+* **errors:** wire additive reason and phase on native paths ([c9f5e4e](https://github.com/invertase/react-native-google-mobile-ads/commit/c9f5e4ee70b2af012b5d357d8acbd81e5115f46b))
+* **lifecycle:** stabilize fullscreen and native ownership ([f231342](https://github.com/invertase/react-native-google-mobile-ads/commit/f2313420aaea4d41c293dfd7d0e95529f3d97d82))
+* **meta:** attach ResponseInfo and no-fill telemetry ([0de2b19](https://github.com/invertase/react-native-google-mobile-ads/commit/0de2b19199f47198da8630c5f8fe036656262cd2))
+* **multi:** gam native and banner competitive request count 1 ([b0be97a](https://github.com/invertase/react-native-google-mobile-ads/commit/b0be97ae107e21a9f59650e9dc8c07795bde5a90))
+* **pools:** emulated banner and native depth-1 pools ([999bb59](https://github.com/invertase/react-native-google-mobile-ads/commit/999bb5967d750db1fbb46d66445df19252e81df3))
+* **preload:** classic fullscreen pools with expiry policy ([ce3a004](https://github.com/invertase/react-native-google-mobile-ads/commit/ce3a0047333448534f047a0f975538b18b4920e2))
+* require New Architecture and raise v17 native floors ([269a57d](https://github.com/invertase/react-native-google-mobile-ads/commit/269a57d69b1c904c3e1d7ae42a8f2e9a30c72a9d))
+
+### Bug Fixes
+
+* **core, ios:** adopt sdk 13.6.0 ([5229e2d](https://github.com/invertase/react-native-google-mobile-ads/commit/5229e2daf94d943a9aa6c8501dd31bf9c554cd0b))
+* **e2e:** make iOS build path deterministic ([b9c00d8](https://github.com/invertase/react-native-google-mobile-ads/commit/b9c00d8805c1ca41658770e0448bd19bb6fd4503))
+* **hooks:** auto-reload multi-format when request options change ([e1d4332](https://github.com/invertase/react-native-google-mobile-ads/commit/e1d43320584b395105bb7d0f4271cc7c00c12078))
+* **hooks:** clear multi-format ads before loading status ([c86f45c](https://github.com/invertase/react-native-google-mobile-ads/commit/c86f45ccc0d684ca298a88d59d3278071f3bbdda))
+* **hooks:** drop pooled ad when poolId changes ([06431c5](https://github.com/invertase/react-native-google-mobile-ads/commit/06431c590e824c9a4f483963ddb5b9a9e8171ee6))
+* **hooks:** guard pool retry and poll after unmount ([d61b1e6](https://github.com/invertase/react-native-google-mobile-ads/commit/d61b1e66b1c79e4593d84be60b1ee597d10b1037))
+* **hooks:** keep useForeground callback current ([c5a81cf](https://github.com/invertase/react-native-google-mobile-ads/commit/c5a81cf03a9998275e1f3a1799a83785f2a2219e))
+* **hooks:** recreate fullscreen ad after destroy ([a33ccd8](https://github.com/invertase/react-native-google-mobile-ads/commit/a33ccd87921ac344c97e13bb57fa3b6fea24571d))
+* **hooks:** stop AdPoolProvider registry re-render cascade ([557725a](https://github.com/invertase/react-native-google-mobile-ads/commit/557725ab732aadf4c5b4bf472b53586d871dc898))
+* **hooks:** swallow unsafe fullscreen show from press handlers ([8476fab](https://github.com/invertase/react-native-google-mobile-ads/commit/8476fab9d10912b640c0783f9924d342cc189dbd))
+* **hooks:** treat mediation-no-fill as no-fill on load ([6c4029e](https://github.com/invertase/react-native-google-mobile-ads/commit/6c4029ed9db9d2943b996521aad2aaeb4cebe141))
+* **lint:** exclude generated Java from Android formatting ([401c5e9](https://github.com/invertase/react-native-google-mobile-ads/commit/401c5e94dfc004086e0692f61bd4c4c7261de85d))
+* make v17 e2e workflows truthful ([52e6f5e](https://github.com/invertase/react-native-google-mobile-ads/commit/52e6f5e4eec83c877ec0d5291c305bef21450c0c))
+* **pools:** ignore superseded overlapping AdPools.create ([b8dc8c6](https://github.com/invertase/react-native-google-mobile-ads/commit/b8dc8c628593ffd9ff8d73fe679f0a19a93c562c))
+* reinstall the example app so cached emulators can't run a stale build ([d2afbcb](https://github.com/invertase/react-native-google-mobile-ads/commit/d2afbcbddb9852ca6ff3581ffdaac08304bc31f3))
+
+### Performance Improvements
+
+* **hooks:** drop duplicate usePooledAd registry subscription ([42ef82d](https://github.com/invertase/react-native-google-mobile-ads/commit/42ef82da7205dfcd63b37ad34cad80f387ba55f3))
+* **hooks:** skip fullscreen state updates when unchanged ([8899d56](https://github.com/invertase/react-native-google-mobile-ads/commit/8899d5637e2518d57ba506e91f9447d4c0457cd6))
+* **hooks:** skip pooled availability setState when unchanged ([f49fe2d](https://github.com/invertase/react-native-google-mobile-ads/commit/f49fe2d33e50647c77f0e0e83d1e1a29ea8beb3e))
+
 ## [16.5.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.4.0...v16.5.0) (2026-08-18)
 
 ### Features
