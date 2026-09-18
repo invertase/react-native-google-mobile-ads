@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { AdPools } from '../AdPools';
+import { AdPools, createOwnedAdPool } from '../AdPools';
 import { getRegisteredAdPool, subscribeAdPoolRegistry } from '../internal/adPoolRegistry';
 import type { AdPool } from '../types/AdPool';
 import type { AdError } from '../types/AdError';
@@ -103,17 +103,25 @@ export function useAdPool(poolId: string): UseAdPoolResult {
   poolIdRef.current = poolId;
 
   const [state, setState] = useState<LookupState>(() => lookupPool(poolId));
-  const creatingRef = useRef(false);
+  const creatingRef = useRef(new Set<string>());
+  const mountedRef = useRef(true);
   const lastConfigRef = useRef<AdPool['resolved'] | null>(
     getRegisteredAdPool(poolId)?.resolved ?? null,
   );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     return subscribeAdPoolRegistry(() => {
       const next = lookupPool(poolIdRef.current);
       if (next.status === 'ready' || next.status === 'ready-degraded') {
         lastConfigRef.current = next.pool.resolved;
-        creatingRef.current = false;
+        creatingRef.current.delete(poolIdRef.current);
       }
       setState(prev => (prev.status === next.status && prev.pool === next.pool ? prev : next));
     });
@@ -128,18 +136,24 @@ export function useAdPool(poolId: string): UseAdPoolResult {
   }, [poolId]);
 
   const retry = useCallback(() => {
-    if (creatingRef.current) {
+    const id = poolIdRef.current;
+    if (creatingRef.current.has(id)) {
       return;
     }
     const config = lastConfigRef.current;
-    if (!config) {
+    if (!config || config.poolId !== id) {
       return;
     }
-    creatingRef.current = true;
+    creatingRef.current.add(id);
     setState({ status: 'creating', pool: null, error: null });
-    void AdPools.create(config)
+    const creation = createOwnedAdPool(config);
+    void creation.promise
       .then(pool => {
-        creatingRef.current = false;
+        creatingRef.current.delete(id);
+        if (!mountedRef.current || poolIdRef.current !== id) {
+          creation.abandon(pool);
+          return;
+        }
         lastConfigRef.current = pool.resolved;
         setState(
           pool.resolved.degraded
@@ -148,7 +162,10 @@ export function useAdPool(poolId: string): UseAdPoolResult {
         );
       })
       .catch((error: unknown) => {
-        creatingRef.current = false;
+        creatingRef.current.delete(id);
+        if (!mountedRef.current || poolIdRef.current !== id) {
+          return;
+        }
         setState({
           status: 'error',
           pool: null,

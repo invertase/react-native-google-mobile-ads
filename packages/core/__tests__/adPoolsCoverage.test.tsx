@@ -739,16 +739,15 @@ describe('FEAT-05 pool coverage arms', () => {
     });
     expect(poolHook!.status).toBe('ready');
 
-    const createSpy = jest.spyOn(AdPools, 'create').mockRejectedValueOnce({
+    (NativeGoogleMobileAdsPoolModule.poolStart as jest.Mock).mockRejectedValueOnce({
       reason: 'internal-error',
       message: 'boom',
-    } as never);
+    });
     await act(async () => {
       poolHook!.retry();
       await Promise.resolve();
       await Promise.resolve();
     });
     expect(poolHook!.status).toBe('error');
-    createSpy.mockRestore();
   });
 });
