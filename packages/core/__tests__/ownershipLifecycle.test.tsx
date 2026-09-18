@@ -60,6 +60,19 @@ function controlledDisplayAd() {
   };
 }
 
+function controlledFullscreenAd(showResult: Promise<void>) {
+  const destroy = jest.fn();
+  const unsubscribe = jest.fn();
+  const innerShow = jest.fn(() => showResult);
+  const ad = {
+    format: AdFormat.INTERSTITIAL,
+    destroy,
+    show: innerShow,
+    onStaleByPolicy: jest.fn(() => unsubscribe),
+  } as unknown as PooledAd;
+  return { ad, destroy, unsubscribe, innerShow };
+}
+
 /**
  * Ownership/consumption contract locks (runtime stubs + compile-time status shape).
  * Full ownership/consumed transitions need native wiring; this locks the
@@ -235,6 +248,85 @@ describe('usePooledAd poolId change', () => {
     });
 
     expect(destroySpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('usePooledAd release then show ownership', () => {
+  afterEach(() => {
+    act(() => {
+      destroyAllAdPools();
+    });
+    jest.clearAllMocks();
+  });
+
+  it('keeps released show settlement isolated from later hook-owned inventory', async () => {
+    const config = AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, 'released-show-settlement');
+    const pool = await AdPools.create(config);
+    const releasedShow = deferred<void>();
+    const released = controlledFullscreenAd(releasedShow.promise);
+    const current = controlledFullscreenAd(Promise.resolve());
+    jest
+      .spyOn(pool, 'poll')
+      .mockResolvedValueOnce({ status: 'filled', ad: released.ad })
+      .mockResolvedValueOnce({ status: 'filled', ad: current.ad });
+    const availabilitySpy = jest.spyOn(pool, 'getAvailability');
+
+    const renderedStatuses: UsePooledAdStatus[] = [];
+    let pooled: UsePooledAdResult | undefined;
+    function Probe() {
+      pooled = usePooledAd(config.poolId);
+      renderedStatuses.push(pooled.status);
+      return null;
+    }
+
+    render(<Probe />);
+    await act(async () => {
+      await Promise.resolve();
+      await pooled!.poll();
+    });
+    expect(released.ad.show).not.toBe(released.innerShow);
+    expect(released.innerShow).not.toHaveBeenCalled();
+
+    let publisherAd: PooledAd | null = null;
+    act(() => {
+      publisherAd = pooled!.release();
+    });
+    expect(publisherAd).toBe(released.ad);
+    expect(publisherAd!.show).not.toBe(released.innerShow);
+
+    let releasedShowPromise!: Promise<void>;
+    act(() => {
+      releasedShowPromise = publisherAd!.show();
+    });
+    expect(released.innerShow).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await pooled!.poll();
+    });
+    expect(pooled).toMatchObject({ status: 'filled', ad: current.ad, error: null });
+    expect(current.ad.show).not.toBe(current.innerShow);
+    expect(current.unsubscribe).not.toHaveBeenCalled();
+    const availabilityReadsBeforeSettlement = availabilitySpy.mock.calls.length;
+    const settlementRenderStart = renderedStatuses.length;
+
+    await act(async () => {
+      releasedShow.resolve();
+      await releasedShowPromise;
+      await Promise.resolve();
+    });
+
+    expect(renderedStatuses.slice(settlementRenderStart)).not.toContain('consumed');
+    expect(pooled).toMatchObject({ status: 'filled', ad: current.ad, error: null });
+    expect(released.destroy).not.toHaveBeenCalled();
+    expect(current.destroy).not.toHaveBeenCalled();
+    expect(current.unsubscribe).not.toHaveBeenCalled();
+    expect(released.innerShow).toHaveBeenCalledTimes(1);
+    expect(availabilitySpy).toHaveBeenCalledTimes(availabilityReadsBeforeSettlement);
+
+    publisherAd!.destroy();
+    expect(released.destroy).toHaveBeenCalledTimes(1);
+    expect(current.destroy).not.toHaveBeenCalled();
+    expect(current.unsubscribe).not.toHaveBeenCalled();
   });
 });
 
