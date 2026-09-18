@@ -36,6 +36,11 @@ class ReactNativeGoogleMobileAdsModule(
 ) : ReactContextBaseJavaModule(reactContext) {
   override fun getName() = NAME
 
+  override fun getConstants(): Map<String, Any> =
+    mapOf(
+      "sdkVersion" to MobileAds.getVersion().toString(),
+    )
+
   private fun buildRequestConfiguration(requestConfiguration: ReadableMap): RequestConfiguration {
     val builder = RequestConfiguration.Builder()
 

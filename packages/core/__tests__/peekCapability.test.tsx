@@ -33,5 +33,6 @@ describe('peekResponseInfo capability gate', () => {
     // Jest RN Platform.OS is ios: peek is supported on classic iOS.
     expect(caps.poolResponseInfoPeek).toBe('supported');
     expect(caps.backend).toBe('ios');
+    expect(caps.sdkVersion).toBe('test-linked-sdk');
   });
 });

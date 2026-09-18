@@ -17,6 +17,7 @@
 
 import { Platform } from 'react-native';
 
+import NativeGoogleMobileAdsModule from '../specs/modules/NativeGoogleMobileAdsModule';
 import { AdFormat } from '../types/AdFormat';
 import type { CapabilitySupport } from '../types/CapabilitySupport';
 import type { AdCapabilities } from '../types/AdCapabilities';
@@ -25,11 +26,7 @@ const supported: CapabilitySupport = 'supported';
 const experimental: CapabilitySupport = 'experimental';
 const unavailable: CapabilitySupport = 'unavailable';
 
-/** Pinned linked SDK versions from package.json sdkVersions (exact pins). */
-const SDK_VERSION = {
-  ios: '13.5.0',
-  android: '25.4.0',
-} as const;
+const { sdkVersion } = NativeGoogleMobileAdsModule.getConstants();
 
 /**
  * Returns the static capability snapshot for this binary.
@@ -46,7 +43,7 @@ export function getAdCapabilities(): AdCapabilities {
 
   return {
     backend,
-    sdkVersion: isIos ? SDK_VERSION.ios : SDK_VERSION.android,
+    sdkVersion,
     formats: {
       [AdFormat.APP_OPEN]: supported,
       [AdFormat.INTERSTITIAL]: supported,

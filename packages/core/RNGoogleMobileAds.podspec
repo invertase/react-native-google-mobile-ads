@@ -58,7 +58,10 @@ Pod::Spec.new do |s|
   end
 
   # Other dependencies
-  if defined?($RNGoogleUmpSDKVersion)
+  if ENV['RNGMA_IOS_GOOGLE_UMP_SDK_VERSION']
+    google_ump_sdk_version = ENV['RNGMA_IOS_GOOGLE_UMP_SDK_VERSION']
+    Pod::UI.puts "#{s.name}: Using RNGMA_IOS_GOOGLE_UMP_SDK_VERSION '#{google_ump_sdk_version}'"
+  elsif defined?($RNGoogleUmpSDKVersion)
     Pod::UI.puts "#{s.name}: Using user specified Google UMP SDK version '#{$RNGoogleUmpSDKVersion}'"
     google_ump_sdk_version = $RNGoogleUmpSDKVersion
   end
@@ -67,7 +70,10 @@ Pod::Spec.new do |s|
   s.dependency          'GoogleUserMessagingPlatform', google_ump_sdk_version
   end
 
-  if defined?($RNGoogleMobileAdsSDKVersion)
+  if ENV['RNGMA_IOS_GOOGLE_MOBILE_ADS_SDK_VERSION']
+    google_mobile_ads_sdk_version = ENV['RNGMA_IOS_GOOGLE_MOBILE_ADS_SDK_VERSION']
+    Pod::UI.puts "#{s.name}: Using RNGMA_IOS_GOOGLE_MOBILE_ADS_SDK_VERSION '#{google_mobile_ads_sdk_version}'"
+  elsif defined?($RNGoogleMobileAdsSDKVersion)
     Pod::UI.puts "#{s.name}: Using user specified Google Mobile-Ads SDK version '#{$RNGoogleMobileAdsSDKVersion}'"
     google_mobile_ads_sdk_version = $RNGoogleMobileAdsSDKVersion
   end

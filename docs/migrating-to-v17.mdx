@@ -188,6 +188,64 @@ Third-party network adapters ship as separate packages under
 `unity`). Install only the networks you mediate; they are **not** required for AdMob-only
 apps. Follow [Mediation](/mediation) for AdMob UI setup and native wiring.
 
+## Native SDK version overrides
+
+v17 pins the Google Mobile Ads and User Messaging Platform SDK versions in the package.
+Those defaults are the supported and release-tested combination. If an app must satisfy
+a native mediation-adapter constraint, it can take ownership of the versions.
+
+Android uses the existing React Native Gradle version map. Add only the entries you need
+to the root project's `android/build.gradle`:
+
+```groovy
+rootProject.ext {
+  def reactNative = has('react-native') ? get('react-native') : [:]
+  reactNative.versions = (reactNative.versions ?: [:]) + [
+    googleMobileAds: [
+      sdk: '25.4.0',
+    ],
+    ads: [
+      consent: '4.0.0',
+    ],
+  ]
+  set('react-native', reactNative)
+}
+```
+
+The app map wins over the package defaults
+(`sdkVersions.android.googleMobileAds` and `sdkVersions.android.googleUmp`).
+
+On iOS, set either Podfile globals before declaring the React Native pods:
+
+```ruby
+$RNGoogleMobileAdsSDKVersion = '13.5.0'
+$RNGoogleUmpSDKVersion = '3.1.0'
+```
+
+or set the prefixed environment variables while installing pods:
+
+```bash
+RNGMA_IOS_GOOGLE_MOBILE_ADS_SDK_VERSION=13.5.0 \
+RNGMA_IOS_GOOGLE_UMP_SDK_VERSION=3.1.0 \
+bundle exec pod install
+```
+
+iOS precedence is environment variable, then Podfile global, then package pin. This is
+also the Expo/EAS bridge: configure the two environment variables for the native build.
+The Expo config plugin deliberately has no SDK version parameters or `app.json` fields.
+Expo Android projects use native Gradle configuration after generating native projects.
+
+Overriding transfers compatibility testing to the app. An override is not a statement
+that arbitrary SDK versions are supported, and adapters do not change the Google Mobile
+Ads SDK for you. Check every mediation adapter's compatibility table and test the
+resolved native dependency graph. Release tooling continues to validate the package
+default pins in the example `Podfile.lock`; app-local overrides do not change that
+invariant.
+
+These controls only select versions of the existing native dependencies. They do not
+select a different ads backend. Any Next-Gen coordinate, configuration key, or backend
+switch requires a separate design and is not implemented in v17.
+
 ## Troubleshooting
 
 ### Ads still load, but analytics / retries look wrong
