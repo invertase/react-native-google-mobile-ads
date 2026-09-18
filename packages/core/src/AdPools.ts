@@ -38,6 +38,7 @@ type CreationAttempt = {
 };
 
 const creationAttempts = new Map<string, CreationAttempt>();
+const creationOwners = new WeakMap<AdPool, object>();
 
 function createAttempt(): CreationAttempt {
   let settled = false;
@@ -74,10 +75,14 @@ function isSdkManagedFormat(format: AdFormat): format is FullscreenAdFormat {
  * Classic fullscreen pools wire to the platform SDK preloader.
  * Display (banner/native) pools are library-emulated depth-1.
  */
-export const AdPools: AdPoolsApi = {
+type InternalAdPoolsApi = Omit<AdPoolsApi, 'create'> & {
+  create(config: AdPoolConfig, owner?: object | null): Promise<AdPool>;
+};
+
+const adPools: InternalAdPoolsApi = {
   getCapabilities: getAdCapabilities,
 
-  async create(config: AdPoolConfig): Promise<AdPool> {
+  async create(config: AdPoolConfig, owner = null): Promise<AdPool> {
     // Ensure native event bridge subscriptions (including pool events) are live.
     MobileAds();
 
@@ -133,6 +138,9 @@ export const AdPools: AdPoolsApi = {
           return;
         }
 
+        if (owner) {
+          creationOwners.set(pool, owner);
+        }
         registerAdPool(pool);
         completeAdPoolCreation(resolved.poolId, generation);
         if (resolved.degraded) {
@@ -172,3 +180,20 @@ export const AdPools: AdPoolsApi = {
     destroyAllAdPools();
   },
 };
+
+export const AdPools: AdPoolsApi = adPools;
+
+export function createOwnedAdPool(config: AdPoolConfig): {
+  promise: Promise<AdPool>;
+  abandon(pool: AdPool): void;
+} {
+  const owner = {};
+  return {
+    promise: adPools.create(config, owner),
+    abandon(pool) {
+      if (creationOwners.get(pool) === owner && getRegisteredAdPool(pool.poolId) === pool) {
+        pool.destroy();
+      }
+    },
+  };
+}

@@ -75,6 +75,10 @@ const initialState: HookState = {
   observedCount: 0,
 };
 
+function emptyPollResult(): PollResult {
+  return { status: 'empty' };
+}
+
 function isDisplayPooledAd(ad: PooledAd): boolean {
   return ad.format === AdFormat.BANNER || ad.format === AdFormat.NATIVE;
 }
@@ -88,10 +92,19 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
   poolIdRef.current = poolId;
 
   const [state, setState] = useState<HookState>(initialState);
+  const statePoolIdRef = useRef(poolId);
   const adRef = useRef<PooledAd | null>(null);
   const staleUnsubRef = useRef<(() => void) | null>(null);
   const inflightRef = useRef<Promise<PollResult> | null>(null);
   const ownedByHookRef = useRef(true);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const clearStaleSub = () => {
     if (staleUnsubRef.current) {
@@ -121,6 +134,9 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
     }
     try {
       const availability = await pool.getAvailability();
+      if (!mountedRef.current || poolIdRef.current !== id) {
+        return;
+      }
       setState(prev => ({
         ...prev,
         available: availability.available,
@@ -165,14 +181,20 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
     return () => {
       destroyOwnedAd();
       ownedByHookRef.current = true;
-      setState(initialState);
     };
+  }, [poolId]);
+
+  useEffect(() => {
+    if (statePoolIdRef.current !== poolId) {
+      statePoolIdRef.current = poolId;
+      setState(initialState);
+    }
   }, [poolId]);
 
   const watchStale = (ad: PooledAd) => {
     clearStaleSub();
     staleUnsubRef.current = ad.onStaleByPolicy(() => {
-      if (adRef.current !== ad || !ownedByHookRef.current) {
+      if (!mountedRef.current || adRef.current !== ad || !ownedByHookRef.current) {
         return;
       }
       if (isDisplayPooledAd(ad)) {
@@ -205,6 +227,9 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
     if (inflightRef.current) {
       return inflightRef.current;
     }
+    if (!mountedRef.current) {
+      return Promise.resolve(emptyPollResult());
+    }
     const id = poolIdRef.current;
     const pool = getRegisteredAdPool(id);
     if (!pool) {
@@ -225,6 +250,16 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
     const flight = pool
       .poll()
       .then(result => {
+        if (!mountedRef.current || poolIdRef.current !== id) {
+          if (result.status === 'filled') {
+            try {
+              result.ad.destroy();
+            } catch {
+              // ignore
+            }
+          }
+          return emptyPollResult();
+        }
         if (result.status === 'filled') {
           // Supersede prior owned ad.
           if (adRef.current && adRef.current !== result.ad && ownedByHookRef.current) {
