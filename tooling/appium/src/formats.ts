@@ -267,6 +267,16 @@ const DEBUG_FORMAT_IDS = new Set<string>([
   AppiumTestIds.format.nativeRngmaTesting,
 ]);
 
+/**
+ * Section the coverage-flush teardown selects before locating the home Flush button.
+ *
+ * Flush renders at the bottom of gallery home regardless of section, so a long
+ * selection (notably `formats`) can leave it below the scrollable viewport and
+ * UiAutomator2 never exposes it. `debug` is the shortest list, so Flush stays
+ * reachable no matter which section a suite happened to leave selected.
+ */
+export const FLUSH_TEARDOWN_SECTION: Exclude<GallerySectionId, 'all'> = 'debug';
+
 export function gallerySectionForFormat(formatId: string): Exclude<GallerySectionId, 'all'> {
   if (HOOK_FORMAT_IDS.has(formatId)) {
     return 'hooks';
