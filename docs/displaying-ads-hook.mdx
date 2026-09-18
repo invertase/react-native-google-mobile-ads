@@ -76,21 +76,24 @@ Call `retry()` after an error or no-fill, or call `load()` explicitly when `auto
 
 Return values of the hook are:
 
-| Name         | Type                     | Description                                                                         |
-| :----------- | :----------------------- | :---------------------------------------------------------------------------------- |
-| status       | UseFullScreenAdStatus    | Current lifecycle state: idle, loading, loaded, showing, closed, no-fill, or error. |
-| autoLoad     | boolean                  | Resolved automatic-load policy.                                                     |
-| clicked      | boolean                  | Whether the user clicked this ad.                                                   |
-| impression   | boolean                  | Whether this ad recorded an impression.                                             |
-| error        | AdError \| null          | Non-null when status is `no-fill` or `error`.                                       |
-| responseInfo | ResponseInfo \| null     | Response metadata for the current load outcome.                                     |
-| revenue      | PaidEvent \| null        | See [Impression-level ad revenue].                                                  |
-| reward       | RewardedAdReward \| null | Reward item; rewarded hooks only.                                                   |
-| earnedReward | boolean                  | Whether the user earned the reward; rewarded hooks only.                            |
-| load         | Function                 | Explicitly load using the current request options.                                  |
-| retry        | Function                 | Retry after `no-fill` or `error`.                                                   |
-| show         | Function                 | Show the loaded advert.                                                             |
-| destroy      | Function                 | Destroy the current ad instance.                                                    |
+| Name         | Type                     | Description                                                                                      |
+| :----------- | :----------------------- | :----------------------------------------------------------------------------------------------- |
+| status       | UseFullScreenAdStatus    | Current lifecycle state: idle, loading, loaded, showing, closed, no-fill (load-phase), or error. |
+| autoLoad     | boolean                  | Resolved automatic-load policy.                                                                  |
+| clicked      | boolean                  | Whether the user clicked this ad.                                                                |
+| impression   | boolean                  | Whether this ad recorded an impression.                                                          |
+| error        | AdError \| null          | Non-null when status is `no-fill` or `error`.                                                    |
+| responseInfo | ResponseInfo \| null     | Response metadata for the current load outcome.                                                  |
+| revenue      | PaidEvent \| null        | See [Impression-level ad revenue].                                                               |
+| reward       | RewardedAdReward \| null | Reward item; rewarded hooks only.                                                                |
+| earnedReward | boolean                  | Whether the user earned the reward; rewarded hooks only.                                         |
+| load         | Function                 | Explicitly load using the current request options.                                               |
+| retry        | Function                 | Retry after `no-fill` or `error`.                                                                |
+| show         | Function                 | Show the loaded advert.                                                                          |
+| destroy      | Function                 | Destroy the current ad instance.                                                                 |
+
+Fullscreen `'no-fill'` is load-phase inventory emptiness (`no-fill` or `mediation-no-fill`);
+show-phase failures stay `'error'`. See [v17 API reference](/rngma-v17-api-reference#inventory-emptiness-on-load).
 
 In the options form, `destroy()` creates a fresh idle ad with the current arguments but does not
 load it, even when `autoLoad` is true; later `load()` or `retry()` uses that replacement.

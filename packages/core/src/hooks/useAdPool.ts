@@ -36,6 +36,11 @@ type UseAdPoolResultBase = {
    * A no-op while a create is already in flight, and a no-op when `status` is
    * `absent`: there is no config to retry with, so fix the provider instead.
    *
+   * Retry may already have published `creating`. If this hook unmounts or
+   * `poolId` changes before the create settles, the settling result is not
+   * published here: a fulfilled uniquely-owned creation is abandoned, and a
+   * rejection is ignored.
+   *
    * Keeps the same identity for the life of the hook instance, so it is safe
    * in a dependency array and safe to pass straight to a press handler.
    * `poolId` is sampled when `retry` runs (ref updated each render); a new

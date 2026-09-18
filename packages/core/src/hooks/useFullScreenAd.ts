@@ -82,9 +82,9 @@ export type FullScreenAdHookOptions = {
  * does **not** destroy anything, whereas `usePooledAd`'s `'consumed'` fires
  * when the show promise fulfills and the hook destroys the spent ad.
  *
- * `'no-fill'` is not a failure. The ad server simply had nothing to return,
- * which is a routine outcome, so it is split out of `'error'` exactly as the
- * pool and multi-format hooks split it.
+ * `'no-fill'` is not a failure. Load-phase `no-fill` and `mediation-no-fill`
+ * both land here, matching `MultiFormatAdRequest`. Show-phase failures stay
+ * `'error'` even when the reason looks like inventory.
  */
 export type UseFullScreenAdStatus =
   | 'idle'

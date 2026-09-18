@@ -201,7 +201,7 @@ type UseFullScreenAdStatus =
   | 'loaded' // ready to show
   | 'showing' // presented, not yet dismissed
   | 'closed' // dismissed; this ad is spent
-  | 'no-fill' // ad server returned nothing; routine, not a failure
+  | 'no-fill' // load-phase no-fill and mediation-no-fill; routine, not a failure
   | 'error'; // load or show actually failed
 
 type UseFullScreenAdResultBase = {
@@ -242,6 +242,10 @@ type UseAppOpenAdResult = WithoutReward<UseFullScreenAdResult>;
 type UseRewardedAdResult = UseFullScreenAdResult;
 type UseRewardedInterstitialAdResult = UseFullScreenAdResult;
 ```
+
+#### Inventory emptiness on load
+
+Options-form fullscreen hooks set `status: 'no-fill'` for load-phase `no-fill` and `mediation-no-fill`, matching `MultiFormatAdRequest`. Show-phase failures stay `'error'` even when the reason looks like inventory.
 
 **Automatic loading.** The options form loads when it mounts with a non-null `adUnitId`, when `autoLoad` flips from false to true, and when `adUnitId` or `requestOptions` replaces the ad with a new instance. It deliberately does **not** load again after `'closed'`, `'error'`, or `'no-fill'`: reloading a spent ad produces fills nobody asked for and depresses match rate, and auto-retrying a failure is a request storm. Call `retry()` for the failure paths, and see [Reloading after dismissal](#reloading-after-dismissal) for the next-impression pattern.
 
@@ -920,7 +924,7 @@ Use `release()` when the ad must outlive the hook, or when you need post-show ev
 | `useMultiFormatAd`       | `MultiFormatLoadResult`  | `loading` / `loaded` / `loaded-partial` |
 | The four fullscreen hooks | the `AdEventType` lifecycle | `loading` / `loaded` / `showing` / `closed` |
 
-Shared words (`idle`, `no-fill`, `error`, and `stale-by-policy` where it applies) mean the same thing everywhere. In-flight and success words do not, and must not be treated as synonyms.
+Shared words (`idle`, `no-fill`, `error`, and `stale-by-policy` where it applies) mean the same thing everywhere, but which outcomes each API classifies into them can differ — for `no-fill`, see [Inventory emptiness on load](#inventory-emptiness-on-load). In-flight and success words do not, and must not be treated as synonyms.
 
 Two of those are worth stating outright:
 
@@ -955,7 +959,7 @@ On `usePooledAd` and the fullscreen hooks — and on `useMultiFormatAd` with `au
 
 `useAdPool` exposes `status` rather than `ready` + `degraded` booleans, and does **not** mirror degrade reasons; read `pool.resolved.degradeReasons`, the single source of truth.
 
-`useAdPool().retry()` exists because pool creation is provider-owned: without it `status: 'error'` would be terminal, even though the underlying ad load may have failed transiently. It re-attempts `AdPools.create` for that `poolId` using the config the provider already holds, moving the state back through `creating`. It is a no-op while a create is already in flight, and a no-op when `status` is `absent`, where there is no config to retry with and the fix is the provider config. It lives on a shared base of the union, so it is callable without narrowing.
+`useAdPool().retry()` exists because pool creation is provider-owned: without it `status: 'error'` would be terminal, even though the underlying ad load may have failed transiently. It re-attempts `AdPools.create` for that `poolId` using the config the provider already holds, moving the state back through `creating`. It is a no-op while a create is already in flight, and a no-op when `status` is `absent`, where there is no config to retry with and the fix is the provider config. Retry may already have published `creating`. If the hook unmounts or `poolId` changes before that create settles, the settling result is not published to this hook: a fulfilled uniquely-owned creation is abandoned, and a rejection is ignored. It lives on a shared base of the union, so it is callable without narrowing.
 
 ### How the provider connects to later usage
 
@@ -1110,7 +1114,7 @@ Three channels, and each one answers a different question. Keeping them apart is
 
 Two consequences follow, and they explain a difference between the hooks that otherwise looks like an inconsistency.
 
-**Singular `error` carries the payload of one outcome.** On the single-ad paths (`PollResult`, `usePooledAd`, the fullscreen hooks) a no-fill is one response, and the platform delivers one error payload for it with `reason: 'no-fill'`. So `error` is populated on `'no-fill'`, and `status` rather than `error !== null` is what tells you whether anything actually failed.
+**Singular `error` carries the payload of one outcome.** On the single-ad paths (`PollResult`, `usePooledAd`, the fullscreen hooks) a no-fill is one response, so `error` is populated on `'no-fill'` and `status` rather than `error !== null` is what tells you whether anything actually failed. Payload `reason` may be `'no-fill'` or `'mediation-no-fill'` on any of those paths. Only options-form fullscreen hooks (and `MultiFormatAdRequest`) classify load-phase `mediation-no-fill` into `status: 'no-fill'`; `PollResult` / `usePooledAd` take `status` from the pool poll outcome and do not apply that classifier.
 
 **Plural `errors` lists what failed.** On the multi-format path a clean no-fill had no per-format failure, so `errors` is `never[]`. Populating it would assert failures that did not occur, which is exactly what splitting `no-fill` out of `error` was meant to prevent.
 
@@ -1653,7 +1657,7 @@ AdPools.get(`fullscreen-${AdFormat.INTERSTITIAL}-${unit}`);
 
 `code` / `message` stay as today. Use **`reason`** for cross-platform branching and **`phase`** to tell load vs show failures (no separate show-failed event).
 
-Those fields are **required** on the structured delivery surfaces that share one payload shape: `AdEventType.ERROR` payloads are `Error & AdErrorPayload`, the hooks expose `AdError` (exactly `NativeError & AdErrorPayload`), and the pool data records carry `AdErrorPayload`. So the branching below reads the same on a hook error as on an event payload.
+Those fields are **required** on the structured delivery surfaces that share one payload shape: `AdEventType.ERROR` payloads are `Error & AdErrorPayload`, the hooks expose `AdError` (exactly `NativeError & AdErrorPayload`), and the pool data records carry `AdErrorPayload`. Event listeners must branch on **`phase` before `reason`**: a show-phase `no-fill` / `mediation-no-fill` is still a presentation failure. Options-form fullscreen hooks already fold that into **`status`** (`'no-fill'` only for load-phase inventory emptiness; show-phase stays `'error'`). See [Inventory emptiness on load](#inventory-emptiness-on-load).
 
 The **banner / GAM banner** `onAdFailedToLoad` prop is the deliberate exception: it is typed `Error & Partial<AdErrorPayload>` so existing `(error: Error) => void` handlers stay assignable under `strictFunctionTypes`. Treat `reason` / `phase` as optional there (`error.reason === 'no-fill'` is fine; do not assume they are always present).
 
@@ -1664,10 +1668,10 @@ const ad = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
 
 ad.addAdEventListener(AdEventType.ERROR, error => {
   // error is Error & AdErrorPayload
-  if (error.reason === 'no-fill' || error.reason === 'mediation-no-fill') {
-    // distinct no-fill; required fields on event / hook / pool surfaces
-  } else if (error.phase === 'show') {
-    // fail-to-show (exactly one ERROR event)
+  if (error.phase === 'show') {
+    // Presentation failed; do not treat as load/no-fill even if reason looks like inventory.
+  } else if (error.reason === 'no-fill' || error.reason === 'mediation-no-fill') {
+    // Load-phase empty response — routine, not a crash
   } else {
     console.warn(error.phase, error.reason, error.message);
   }
