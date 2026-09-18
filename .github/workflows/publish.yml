@@ -60,6 +60,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          # `npm version` (run per pkgRoot by @semantic-release/npm) otherwise
+          # relinks every workspace, and npm cannot parse Yarn's `workspace:`
+          # and `portal:` protocols. Only the version field needs writing here.
+          npm_config_workspaces_update: 'false'
       # Only npm uploader. A rerun heals partial uploads because a no-op
       # semantic-release still exits 0 once git is already at version V; a failed
       # release (bumped manifests, no tag) must not reach npm.
