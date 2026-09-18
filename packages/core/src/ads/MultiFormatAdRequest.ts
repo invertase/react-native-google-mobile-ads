@@ -86,6 +86,7 @@ export class MultiFormatAdRequest {
 
   private destroyed = false;
   private ownedHandleIds = new Set<string>();
+  private ownedHandleExpiryClearers = new Map<string, () => void>();
   private readonly bridgeOptions: Record<string, unknown>;
 
   private constructor(config: MultiFormatAdConfig) {
@@ -208,12 +209,16 @@ export class MultiFormatAdRequest {
     });
     const handleId = nativeResult.handleId;
     this.ownedHandleIds.add(handleId);
+    this.ownedHandleExpiryClearers.set(handleId, () => {
+      expiry.clear();
+    });
 
     const destroyBanner = () => {
       if (!this.ownedHandleIds.has(handleId)) {
         return;
       }
       this.ownedHandleIds.delete(handleId);
+      this.ownedHandleExpiryClearers.delete(handleId);
       expiry.clear();
       NativeGoogleMobileAdsNativeModule.destroyHandle(handleId);
     };
@@ -255,6 +260,7 @@ export class MultiFormatAdRequest {
             return;
           }
           this.ownedHandleIds.delete(handleId);
+          this.ownedHandleExpiryClearers.delete(handleId);
           expiry.clear();
           ad.destroy();
           // Also drop multi-format handle bookkeeping if native used handleId ≠ responseId.
@@ -300,6 +306,8 @@ export class MultiFormatAdRequest {
     this.destroyed = true;
     for (const handleId of [...this.ownedHandleIds]) {
       this.ownedHandleIds.delete(handleId);
+      this.ownedHandleExpiryClearers.get(handleId)?.();
+      this.ownedHandleExpiryClearers.delete(handleId);
       NativeGoogleMobileAdsNativeModule.destroyHandle(handleId);
     }
   }

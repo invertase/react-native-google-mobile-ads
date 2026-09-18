@@ -323,27 +323,34 @@ export class EmulatedAdPool implements AdPool {
 
     const timeoutMs = this.pollTimeoutMillis;
     if (typeof timeoutMs === 'number' && Number.isFinite(timeoutMs) && timeoutMs > 0) {
-      return await Promise.race([
-        (async () => {
-          // Wait for an in-flight fill once, then re-run poll logic.
-          const inflight = this.loadInFlight;
-          if (inflight) {
-            await inflight;
-          } else {
-            this.ensureFilling();
-            const kicked = this.loadInFlight;
-            if (kicked) {
-              await kicked;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        return await Promise.race([
+          (async () => {
+            // Wait for an in-flight fill once, then re-run poll logic.
+            const inflight = this.loadInFlight;
+            if (inflight) {
+              await inflight;
+            } else {
+              this.ensureFilling();
+              const kicked = this.loadInFlight;
+              if (kicked) {
+                await kicked;
+              }
             }
-          }
-          return runPoll();
-        })(),
-        new Promise<PollResult>(resolve => {
-          setTimeout(() => {
-            resolve({ status: 'timeout' });
-          }, timeoutMs);
-        }),
-      ]);
+            return runPoll();
+          })(),
+          new Promise<PollResult>(resolve => {
+            timeout = setTimeout(() => {
+              resolve({ status: 'timeout' });
+            }, timeoutMs);
+          }),
+        ]);
+      } finally {
+        if (timeout !== undefined) {
+          clearTimeout(timeout);
+        }
+      }
     }
 
     return runPoll();

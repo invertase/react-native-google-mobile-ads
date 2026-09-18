@@ -46,6 +46,10 @@ describe('FEAT-04 multi-format coverage', () => {
     });
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('validates custom WxH and object sizes; rejects bad shapes', () => {
     expect(() =>
       MultiFormatAdRequest.create({
@@ -300,6 +304,7 @@ describe('FEAT-04 multi-format coverage', () => {
   });
 
   it('hook maps loaded-partial and fires stale-by-policy', async () => {
+    jest.useFakeTimers();
     const partialError = NativeError.fromEvent(
       { code: 'internal-error', message: 'side' },
       'googleMobileAds/multi-format',
@@ -333,7 +338,7 @@ describe('FEAT-04 multi-format coverage', () => {
     });
 
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 5));
+      jest.advanceTimersByTime(2);
     });
     expect(multi!.status).toBe('stale-by-policy');
   });

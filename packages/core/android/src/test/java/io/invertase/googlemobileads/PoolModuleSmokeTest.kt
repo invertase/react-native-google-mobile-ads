@@ -43,4 +43,23 @@ class PoolModuleSmokeTest {
     tracker.destroy(7)
     assertEquals(null, tracker.get(7))
   }
+
+  @Test
+  fun poolGenerationTrackerGatesStartCallbackReadAndDestroy() {
+    val tracker = PoolGenerationTracker()
+    val key = "interstitial::pool"
+    assertEquals(true, tracker.claimStart(key, 1))
+    assertEquals(true, tracker.allowsCallback(key, 1))
+    assertEquals(true, tracker.allowsRead(key, 1))
+    assertEquals(true, tracker.claimStart(key, 2))
+    assertEquals(false, tracker.allowsCallback(key, 1))
+    assertEquals(false, tracker.allowsRead(key, 1))
+    assertEquals(false, tracker.releaseDestroy(key, 1))
+    assertEquals(true, tracker.allowsCallback(key, 2))
+    assertEquals(true, tracker.allowsRead(key, 2))
+    assertEquals(true, tracker.releaseDestroy(key, 2))
+    assertEquals(false, tracker.allowsCallback(key, 2))
+    assertEquals(false, tracker.allowsRead(key, 2))
+    assertEquals(false, tracker.claimStart(key, 1))
+  }
 }

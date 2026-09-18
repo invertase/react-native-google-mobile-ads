@@ -39,26 +39,33 @@ export interface Spec extends TurboModule {
   poolStart(
     preloadId: string,
     format: string,
+    generation: number,
     adUnitId: string,
     bufferSize: number,
     requestOptions: UnsafeObject,
   ): Promise<PoolStartResult>;
 
-  poolGetAvailability(preloadId: string, format: string): Promise<PoolAvailabilityResult>;
+  poolGetAvailability(
+    preloadId: string,
+    format: string,
+    generation: number,
+  ): Promise<PoolAvailabilityResult>;
 
-  poolPeekResponseInfo(preloadId: string, format: string): Promise<UnsafeObject | null>;
+  poolPeekResponseInfo(
+    preloadId: string,
+    format: string,
+    generation: number,
+  ): Promise<UnsafeObject | null>;
 
   poolPoll(
     preloadId: string,
     format: string,
+    generation: number,
     requestId: number,
     adUnitId: string,
   ): Promise<PoolPollResult>;
 
-  poolDestroy(preloadId: string, format: string): void;
-
-  addListener(eventName: string): void;
-  removeListeners(count: number): void;
+  poolDestroy(preloadId: string, format: string, generation: number): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsPoolModule');
