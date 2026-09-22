@@ -22,6 +22,7 @@ import {
   type RunningCommand,
 } from '../src/parallelOrchestrator.ts';
 import { isParallelParentChild } from '../src/parentContract.ts';
+import { serialAndroidApkPath, slotAndroidApkPath } from '../src/slots.ts';
 import { WDIO_SMOKE_SPECS, selectedWdioSpecs } from '../src/wdioSpecs.ts';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -68,6 +69,9 @@ class MockRunner implements ParallelRunner {
   packagerExitCodes = new Map<number, number>();
   packagerSpawnErrors = new Map<number, Error>();
   readinessErrors = new Map<number, Error>();
+  readonly copies: Array<{ source: string; destination: string }> = [];
+  copyErrors = new Map<string, Error>();
+  heldCopies = new Map<string, Deferred>();
   versions = new Map<number, string>([
     [1, '26.5'],
     [2, '26.5'],
@@ -148,6 +152,15 @@ class MockRunner implements ParallelRunner {
       RNGMA_IOS_UDID: `udid-${slot}`,
       RNGMA_IOS_VERSION: this.versions.get(slot)!,
     };
+  }
+
+  async copyFile(source: string, destination: string): Promise<void> {
+    this.events.push(`copy:${destination}`);
+    this.copies.push({ source, destination });
+    const error = this.copyErrors.get(destination);
+    if (error) throw error;
+    const held = this.heldCopies.get(destination);
+    if (held) await held.promise;
   }
 }
 
@@ -338,9 +351,11 @@ test('root and workspace expose parallel names without changing serial scripts',
   );
 });
 
-test('Android uses Gradle app codegen and builds before concurrent children', async () => {
+test('Android builds once and fans the same APK out before concurrent children', async () => {
   const runner = new MockRunner();
-  const summary = await runParallelE2e('android', runner, { env: {} });
+  const summary = await runParallelE2e('android', runner, {
+    env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,5' },
+  });
   assert.equal(summary.totalTests, 25);
   assert.ok(summary.slots.every(result => result.status === 'pass'));
   assert.deepEqual(
@@ -358,18 +373,21 @@ test('Android uses Gradle app codegen and builds before concurrent children', as
   );
   assert.equal(
     runner.events[0],
-    'ports:13007,13013,13014,13015,14013,14014,14015,16013,16014,16015',
+    'ports:13007,13013,13014,13015,16013,16014,16015,17013,17014,17015',
   );
   assert.equal(runner.commands.filter(item => item.script === 'tests:e2e:codegen').length, 0);
-  assert.deepEqual(
-    runner.commands
-      .filter(item => item.script === 'tests:android:build')
-      .map(item => item.env.RNGMA_E2E_SLOT),
-    ['1', '2', '4'],
-  );
-  const lastBuild = runner.events.lastIndexOf('start:slot 4 Android build');
+  const builds = runner.commands.filter(item => item.script === 'tests:android:build');
+  assert.equal(builds.length, 1);
+  assert.equal(builds[0]?.env.RNGMA_E2E_SLOT, '1');
+  assert.equal(builds[0]?.env.RNGMA_E2E_METRO_SLOT, '1');
+  assert.equal(builds[0]?.role, 'shared Android build for Metro 13007');
+  assert.deepEqual(runner.copies, [1, 4, 5].map(slot => ({
+    source: serialAndroidApkPath(),
+    destination: slotAndroidApkPath(slot),
+  })));
+  const lastCopy = runner.events.lastIndexOf(`copy:${slotAndroidApkPath(5)}`);
   const firstPackager = runner.events.findIndex(event => event.includes('worktree Metro owner'));
-  assert.ok(lastBuild < firstPackager);
+  assert.ok(lastCopy < firstPackager);
   assert.deepEqual(
     runner.events.filter(event => event.includes('packager') && event.startsWith('start:')),
     ['start:worktree Metro owner slot 1 packager'],
@@ -381,6 +399,58 @@ test('Android uses Gradle app codegen and builds before concurrent children', as
   );
   assert.ok(appiums.every(item => item.logPath?.endsWith('.log')));
   assert.ok(runner.commands.every(item => item.env.RNGMA_E2E_SLOT !== '3'));
+});
+
+test('Android starts one first-slot build for an alternate configured triple', async () => {
+  const runner = new MockRunner();
+  await runParallelE2e('android', runner, {
+    env: { RNGMA_E2E_PARALLEL_SLOTS: '7,6,4' },
+  });
+  const builds = runner.commands.filter(item => item.script === 'tests:android:build');
+  assert.equal(builds.length, 1);
+  assert.equal(builds[0]?.env.RNGMA_E2E_SLOT, '7');
+  assert.equal(builds[0]?.env.RNGMA_E2E_METRO_SLOT, '7');
+  assert.deepEqual(
+    runner.copies,
+    [7, 6, 4].map(slot => ({
+      source: serialAndroidApkPath(),
+      destination: slotAndroidApkPath(slot),
+    })),
+  );
+});
+
+test('Android copy failure prevents Appium and reports cancelled slot summaries', async () => {
+  const runner = new MockRunner();
+  const failedDestination = slotAndroidApkPath(4);
+  runner.copyErrors.set(failedDestination, new Error('copy failed'));
+  await assert.rejects(
+    () =>
+      runParallelE2e('android', runner, {
+        env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,5' },
+      }),
+    error => {
+      const summary = (
+        error as {
+          summary?: { slots: Array<{ status: string; exitCode: number }> };
+        }
+      ).summary;
+      assert.ok(summary?.slots.every(item => item.status === 'cancelled'));
+      assert.ok(summary?.slots.every(item => item.exitCode === CANCELLED_EXIT_CODE));
+      return /copy failed/.test((error as Error).message);
+    },
+  );
+  assert.equal(
+    runner.commands.filter(item => item.script === 'tests:android:build').length,
+    1,
+  );
+  assert.deepEqual(
+    runner.copies.map(item => item.destination),
+    [slotAndroidApkPath(1), failedDestination],
+  );
+  assert.equal(
+    runner.commands.some(item => item.role.endsWith('Appium')),
+    false,
+  );
 });
 
 test('external Metro consumers require the shared listener and never own a packager', async () => {
@@ -404,7 +474,8 @@ test('external Metro consumers require the shared listener and never own a packa
 test('combined barrier launches all six Appium children only after both preps', async () => {
   const runner = new MockRunner();
   runner.autoCompleteAppium = false;
-  runner.heldRoles.add('slot 6 Android build');
+  const androidCopy = deferred();
+  runner.heldCopies.set(slotAndroidApkPath(6), androidCopy);
   runner.heldRoles.add('shared WDA prebuild');
   const run = runCombinedParallelE2e(runner, {
     env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
@@ -412,7 +483,7 @@ test('combined barrier launches all six Appium children only after both preps', 
 
   await waitFor(
     () =>
-      runner.children.some(item => item.command.role === 'slot 6 Android build') &&
+      runner.events.includes(`copy:${slotAndroidApkPath(6)}`) &&
       runner.children.some(item => item.command.role === 'shared WDA prebuild'),
   );
   const metroChildren = runner.children.filter(item => item.command.role.endsWith('packager'));
@@ -422,12 +493,12 @@ test('combined barrier launches all six Appium children only after both preps', 
     false,
   );
   assert.ok(
-    runner.events.indexOf('ready:13007') < runner.events.indexOf('start:slot 1 Android build'),
+    runner.events.indexOf('ready:13007') <
+      runner.events.indexOf('start:shared Android build for Metro 13007'),
   );
 
-  const androidPrep = runner.children.find(item => item.command.role === 'slot 6 Android build')!;
   const iosPrep = runner.children.find(item => item.command.role === 'shared WDA prebuild')!;
-  androidPrep.deferred.resolve(0);
+  androidCopy.resolve(0);
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(runner.children.filter(item => item.command.role.endsWith('Appium')).length, 0);
   iosPrep.deferred.resolve(0);
@@ -458,13 +529,13 @@ test('combined barrier launches all six Appium children only after both preps', 
 test('combined preparation failure cancels sibling prep and one Metro', async () => {
   const runner = new MockRunner();
   runner.heldRoles.add('shared codegen');
-  runner.commandExitCodes.set('slot 6 Android build', 7);
+  runner.copyErrors.set(slotAndroidApkPath(6), new Error('slot 6 APK copy failed'));
   await assert.rejects(
     () =>
       runCombinedParallelE2e(runner, {
         env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
       }),
-    /slot 6 Android build exited with code 7/,
+    /slot 6 APK copy failed/,
   );
   assert.equal(
     runner.children.some(item => item.command.role.endsWith('Appium')),
@@ -525,7 +596,6 @@ test('combined unexpected Metro exit cancels all six Appium children', async () 
 test('combined abort during prep cancels owned children and launches no Appium', async () => {
   const runner = new MockRunner();
   const controller = new AbortController();
-  runner.heldRoles.add('slot 6 Android build');
   runner.heldRoles.add('shared WDA prebuild');
   const run = runCombinedParallelE2e(runner, {
     env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
@@ -533,7 +603,7 @@ test('combined abort during prep cancels owned children and launches no Appium',
   });
   await waitFor(
     () =>
-      runner.children.some(item => item.command.role === 'slot 6 Android build') &&
+      runner.events.includes(`copy:${slotAndroidApkPath(6)}`) &&
       runner.children.some(item => item.command.role === 'shared WDA prebuild'),
   );
   controller.abort();
@@ -962,7 +1032,7 @@ test('abort between preparation phases prevents the next command', async () => {
   const runner = new MockRunner();
   const controller = new AbortController();
   runner.abortAfterRole = {
-    role: 'slot 1 Android build',
+    role: 'shared Android build for Metro 13007',
     abort: () => controller.abort(),
   };
   await assert.rejects(
@@ -971,8 +1041,9 @@ test('abort between preparation phases prevents the next command', async () => {
   );
   assert.deepEqual(
     runner.commands.map(item => item.role),
-    ['slot 1 Android build'],
+    ['shared Android build for Metro 13007'],
   );
+  assert.deepEqual(runner.copies, []);
   assert.ok(runner.children.every(item => item.stops <= 1));
 });
 

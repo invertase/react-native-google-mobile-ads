@@ -4,6 +4,7 @@ import {
   type ParallelPlatform,
 } from './parallelPlan.ts';
 import { PARALLEL_PARENT_CONTRACT } from './parentContract.ts';
+import { serialAndroidApkPath } from './slots.ts';
 
 export type ChildCommand = {
   script: string;
@@ -25,6 +26,7 @@ export type ParallelRunner = {
   waitForPort(port: number, owner: RunningCommand): Promise<void>;
   freshEnvFile(path: string): Promise<void>;
   readEnvFile(path: string): Promise<Record<string, string>>;
+  copyFile(source: string, destination: string): Promise<void>;
 };
 
 /** Stable summary code for signal interruption, child-signal death, and sibling cancellation. */
@@ -386,13 +388,20 @@ async function preparePlatform(
   }
 
   if (platform === 'android') {
+    const first = plan[0]!;
+    await runOwnedCommand(
+      runner,
+      context,
+      named(
+        'tests:android:build',
+        childEnv(first),
+        `shared Android build for Metro ${first.metroPort}`,
+      ),
+    );
+    context.throwIfAborted();
     for (const entry of plan) {
       context.throwIfAborted();
-      await runOwnedCommand(
-        runner,
-        context,
-        named('tests:android:build', childEnv(entry), `slot ${entry.slot} Android build`),
-      );
+      await runner.copyFile(serialAndroidApkPath(), entry.androidApkPath!);
       context.throwIfAborted();
     }
     return;

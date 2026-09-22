@@ -38,7 +38,7 @@ function output(bin: string, args: string[]): string {
 function runAndroidBuild(): void {
   execute(androidGradleCommand());
   const runtime = runtimeResources('android');
-  if (runtime.slot != null) {
+  if (runtime.slot != null && !isParallelParentChild()) {
     mkdirSync(path.dirname(runtime.androidApkPath), { recursive: true });
     copyFileSync(serialAndroidApkPath(), runtime.androidApkPath);
     console.log(
