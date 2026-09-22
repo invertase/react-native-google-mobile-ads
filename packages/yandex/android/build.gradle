@@ -18,10 +18,12 @@ buildscript {
 }
 
 apply plugin: "com.android.library"
+evaluationDependsOn(":react-native-google-mobile-ads")
 
 def packageJson = new JsonSlurper().parseText(file("${projectDir}/../package.json").text)
 def gamAdapter = packageJson.gamAdapter
 def sdkVersions = packageJson.sdkVersions.android
+def rngmaAndroidBackend = rootProject.ext.rngmaAndroidBackend
 
 android {
   // A-0 layout stub only: this package is iOS-only (see package.json gamAdapter.platforms).
@@ -61,6 +63,8 @@ repositories {
 
 dependencies {
   // Intentionally empty: no Android Yandex GAM mediation artifact is linked.
+  // The shared backend selection is still resolved above; there is no transitive
+  // classic ads artifact to exclude for this iOS-only adapter.
   // Yandex publishes com.yandex.ads.adapter:admob-mobileads, but Google has no
   // official Android Yandex GAM adapter and Character inventory is iOS-only.
 }

@@ -52,6 +52,9 @@ export const config: Options.Testrunner = {
    * Idempotent across the three session-split specs.
    */
   async afterSuite(suite) {
+    if (process.env.RNGMA_NEXTGEN_FAIL_FAST === '1') {
+      return;
+    }
     // Mocha top-level describe: parent is the root suite.
     // Also accept root-less shapes from WDIO wrappers so bail paths still flush.
     if (suite.parent && !suite.parent.root) {

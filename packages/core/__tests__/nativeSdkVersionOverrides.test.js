@@ -12,7 +12,7 @@ const podspec = read('RNGoogleMobileAds.podspec');
 const androidModule = read(
   'android',
   'src',
-  'main',
+  'classic',
   'java',
   'io',
   'invertase',
@@ -25,7 +25,7 @@ const pluginSource = read('plugin', 'src', 'index.ts');
 
 describe('native SDK version overrides', () => {
   it('keeps the package default pins in the ReactNative version map', () => {
-    const { googleMobileAds, googleUmp } = packageJson.sdkVersions.android;
+    const { googleMobileAds, googleMobileAdsNextGen, googleUmp } = packageJson.sdkVersions.android;
 
     expect(androidBuild).toContain(
       `def googleMobileAdsVersion = packageJson['sdkVersions']['android']['googleMobileAds']`,
@@ -36,6 +36,7 @@ describe('native SDK version overrides', () => {
     expect(androidBuild).toContain('sdk: googleMobileAdsVersion');
     expect(androidBuild).toContain('consent: googleUmpVersion');
     expect(googleMobileAds).toBe('25.4.0');
+    expect(googleMobileAdsNextGen).toBe('1.4.0');
     expect(googleUmp).toBe('4.0.0');
   });
 
@@ -46,6 +47,10 @@ describe('native SDK version overrides', () => {
     expect(androidBuild).toContain(
       'user-messaging-platform:${ReactNative.ext.getVersion("ads", "consent")}',
     );
+    expect(androidBuild).toContain(
+      'ads-mobile-sdk:${ReactNative.ext.getVersion("googleMobileAds", "nextGenSdk")}',
+    );
+    expect(androidBuild).toContain('module: "play-services-ads-lite"');
   });
 
   it('gives iOS ENV precedence over Podfile globals and package defaults', () => {

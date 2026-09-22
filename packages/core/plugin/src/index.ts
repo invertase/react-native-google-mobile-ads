@@ -2,11 +2,13 @@ import {
   AndroidConfig,
   ConfigPlugin,
   withAndroidManifest,
+  withGradleProperties,
   withPlugins,
   withInfoPlist,
 } from '@expo/config-plugins';
 
 type PluginParameters = {
+  androidSdk?: 'classic' | 'legacy' | 'nextgen';
   androidAppId?: string;
   iosAppId?: string;
   delayAppMeasurementInit?: boolean;
@@ -14,6 +16,39 @@ type PluginParameters = {
   optimizeAdLoading?: boolean;
   skAdNetworkItems?: string[];
   userTrackingUsageDescription?: string;
+};
+
+const ANDROID_BACKEND_PROPERTY = 'RNGMA_ANDROID_BACKEND';
+
+export const setAndroidSdkGradleProperties = (
+  properties: Array<{ type: string; key?: string; value?: string }>,
+  androidSdk: NonNullable<PluginParameters['androidSdk']>,
+) => [
+  ...properties.filter(
+    item => item.type !== 'property' || item.key !== ANDROID_BACKEND_PROPERTY,
+  ),
+  {
+    type: 'property',
+    key: ANDROID_BACKEND_PROPERTY,
+    value: androidSdk,
+  },
+];
+
+export const withAndroidSdk: ConfigPlugin<PluginParameters['androidSdk']> = (config, androidSdk) => {
+  if (androidSdk === undefined) return config;
+  if (!['classic', 'legacy', 'nextgen'].includes(androidSdk)) {
+    throw new Error(
+      `Invalid androidSdk "${androidSdk}". Expected "classic", "legacy", or "nextgen".`,
+    );
+  }
+
+  return withGradleProperties(config, config => {
+    config.modResults = setAndroidSdkGradleProperties(
+      config.modResults,
+      androidSdk,
+    ) as typeof config.modResults;
+    return config;
+  });
 };
 
 function addReplacingMainApplicationMetaDataItem(
@@ -167,6 +202,7 @@ const withIosUserTrackingUsageDescription: ConfigPlugin<
 const withReactNativeGoogleMobileAds: ConfigPlugin<PluginParameters> = (
   config,
   {
+    androidSdk,
     androidAppId,
     delayAppMeasurementInit,
     optimizeInitialization,
@@ -190,6 +226,7 @@ const withReactNativeGoogleMobileAds: ConfigPlugin<PluginParameters> = (
 
   return withPlugins(config, [
     // Android
+    [withAndroidSdk, androidSdk],
     [withAndroidAppId, androidAppId],
     [withAndroidAppMeasurementInitDelayed, delayAppMeasurementInit],
     [withAndroidInitializationOptimized, optimizeInitialization],

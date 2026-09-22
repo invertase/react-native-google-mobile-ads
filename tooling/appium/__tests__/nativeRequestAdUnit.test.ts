@@ -30,7 +30,7 @@ test('the example requests plain native ads from system-defined units only', () 
 
 test('the native loader does not request custom formats', () => {
   const androidModule = readRepoFile(
-    'packages/core/android/src/main/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsNativeModule.kt',
+    'packages/core/android/src/classic/java/io/invertase/googlemobileads/ReactNativeGoogleMobileAdsNativeModule.kt',
   );
   const iosModule = readRepoFile('packages/core/ios/RNGoogleMobileAds/RNGoogleMobileAdsNativeModule.mm');
 

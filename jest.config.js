@@ -1,5 +1,5 @@
 module.exports = {
-  preset: 'react-native',
+  preset: '@react-native/jest-preset',
   modulePathIgnorePatterns: [
     '<rootDir>/RNGoogleMobileAdsExample/node_modules',
     '<rootDir>/packages/core/lib/',

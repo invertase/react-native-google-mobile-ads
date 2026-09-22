@@ -11,6 +11,7 @@ export default {
     [
       '../../build',
       {
+        androidSdk: 'nextgen',
         androidAppId: 'TestAppId',
         iosAppId: 'TestIosId',
         delayAppMeasurementInit: true,
