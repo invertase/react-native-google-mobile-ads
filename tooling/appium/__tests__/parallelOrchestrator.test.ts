@@ -270,7 +270,7 @@ test('root and workspace expose parallel names without changing serial scripts',
   );
 });
 
-test('Android serializes one codegen and builds before concurrent children', async () => {
+test('Android uses Gradle app codegen and builds before concurrent children', async () => {
   const runner = new MockRunner();
   const summary = await runParallelE2e('android', runner, { env: {} });
   assert.equal(summary.totalTests, 25);
@@ -289,7 +289,7 @@ test('Android serializes one codegen and builds before concurrent children', asy
     runner.events[0],
     'ports:13007,13013,13014,13015,14007,14013,14014,14015,16007,16013,16014,16015',
   );
-  assert.equal(runner.commands.filter(item => item.script === 'tests:e2e:codegen').length, 1);
+  assert.equal(runner.commands.filter(item => item.script === 'tests:e2e:codegen').length, 0);
   assert.deepEqual(
     runner.commands
       .filter(item => item.script === 'tests:android:build')
@@ -646,7 +646,7 @@ test('abort during earliest preparation stops it once and starts nothing later',
     if (command.role === 'shared codegen') controller.abort();
   };
   await assert.rejects(
-    () => runParallelE2e('android', runner, { env: {}, signal: controller.signal }),
+    () => runParallelE2e('ios', runner, { env: {}, signal: controller.signal }),
     /interrupted/,
   );
   assert.deepEqual(runner.commands.map(item => item.role), ['shared codegen']);
@@ -665,7 +665,6 @@ test('abort between preparation phases prevents the next command', async () => {
     /interrupted/,
   );
   assert.deepEqual(runner.commands.map(item => item.role), [
-    'shared codegen',
     'slot 1 Android build',
   ]);
   assert.ok(runner.children.every(item => item.stops <= 1));

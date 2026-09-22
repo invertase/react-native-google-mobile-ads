@@ -25,7 +25,14 @@ Pod::Spec.new do |s|
   s.social_media_url    = 'http://twitter.com/invertaseio'
   s.ios.deployment_target = "15.1"
   s.cocoapods_version   = '>= 1.12.0'
-  s.source_files        = "ios/**/*.{h,m,mm,swift}"
+  s.source_files        = [
+    "ios/RNGoogleMobileAds/**/*.{h,m,mm,swift}",
+    "ios/generated/**/*.{h,m,mm,cpp}"
+  ]
+  # Generated imports retain RN's package-local RNGoogleMobileAdsSpec/... layout.
+  s.pod_target_xcconfig = {
+    "HEADER_SEARCH_PATHS" => "$(inherited) \"$(PODS_TARGET_SRCROOT)/ios/generated\""
+  }
   s.exclude_files       = "ios/Tests/**/*"
   s.weak_frameworks     = "AppTrackingTransparency"
 
@@ -44,11 +51,11 @@ Pod::Spec.new do |s|
     # A missing flag uses React Native's New Architecture default; only an explicit 0 opts out.
     if ENV['RCT_NEW_ARCH_ENABLED'] != '0' then
       s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
-      s.pod_target_xcconfig    = {
-          "HEADER_SEARCH_PATHS" => "\"$(PODS_ROOT)/boost\"",
+      s.pod_target_xcconfig.merge!({
+          "HEADER_SEARCH_PATHS" => "#{s.pod_target_xcconfig["HEADER_SEARCH_PATHS"]} \"$(PODS_ROOT)/boost\"",
           "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1",
           "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
-      }
+      })
       s.dependency "React-Codegen"
       s.dependency "RCT-Folly"
       s.dependency "RCTRequired"

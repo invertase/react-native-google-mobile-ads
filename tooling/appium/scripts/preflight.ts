@@ -375,7 +375,7 @@ async function main(): Promise<void> {
     console.error('--run requires an android or ios target.');
     process.exit(1);
   }
-  if (!isParallelParentChild()) {
+  if (target === 'ios' && !isParallelParentChild()) {
     const codegen = spawnSync('yarn', ['tests:e2e:codegen'], {
       cwd: repoRoot,
       stdio: 'inherit',

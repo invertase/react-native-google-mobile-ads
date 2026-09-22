@@ -53,3 +53,56 @@ Root `yarn prepare` runs `yarn lerna:prepare` (Lerna 9 + Nx cache, `neverConnect
 Package TypeScript extends root `tsconfig.packages.base.json`. Root `eslint.config.js` is the shared flat ESLint config for workspace packages (`tooling/*` will reuse it when lint is wired for that tree). Private Appium harness: `@invertase/rngma-appium` under `tooling/appium/` ([Appium](testing/running-e2e.md#appium-scaffold)). Core publishes explicit `exports` where `react-native`, `source`, `import`, and `require` each nest `types` (`react-native` / `source` / `import` → `./lib/typescript/module/index.d.ts`; `require` → `./lib/typescript/commonjs/index.d.ts`); `react-native` and `source` `default` → `./src/index.ts`; `import`/`require` `default` → dual Bob JS; bare `default` → CJS. Bob `esm` dual build under `lib/commonjs`, `lib/module`, and `lib/typescript/{commonjs,module}`.
 
 Commands: [agent command policy](testing/agent-command-policy.md). Product trees: [change authoring](testing/change-authoring-workflow.md).
+
+<a id="gma-ad-3"></a>
+
+## GMA-AD-3 — Commit library Codegen — **Accepted**
+
+`packages/core` ships React Native Codegen output as package source. Its
+`codegenConfig.includesGeneratedCode` is `true`; Android artifacts live under
+`packages/core/android/generated/` and iOS artifacts under
+`packages/core/ios/generated/`. Gradle, CocoaPods, and Android autolinking
+consume those package-owned trees, so consumer builds do not regenerate core
+library code.
+
+Generation uses the example-owned React Native toolchain ([GMA-AD-4](#gma-ad-4))
+with `--source library`
+and always wipes a platform output tree before writing it. Generated files are
+committed, published by the package's existing `android/` and `ios/` file
+entries, and excluded from handwritten-source formatting. Do not hand-edit
+them. Handwritten-file whitespace and diff checks explicitly exclude both
+generated trees; `yarn codegen:verify` owns their generated-byte integrity. The
+verification command first requires both trees to contain tracked
+index entries, then regenerates them and rejects tracked drift, deletions, and
+untracked extras only under those two paths.
+
+This decision applies only to the core library. The example app and its
+example-only `@invertase/rngma-testing` probe do not set
+`includesGeneratedCode`; their app-level artifacts remain build-time and
+uncommitted. Routine e2e performs the separate app-source iOS generation needed
+before CocoaPods, while Android Gradle continues to generate app/probe metadata
+during its build. Commands: [agent command policy](testing/agent-command-policy.md).
+
+<a id="gma-ad-4"></a>
+
+## GMA-AD-4 — Pin the Codegen toolchain — **Accepted**
+
+The React Native line of `RNGoogleMobileAdsExample/` owns core library Codegen.
+The example pins `react-native`, `@react-native/codegen`, and the
+`@react-native-community/cli` family needed by generation to compatible exact
+versions. The shared runner resolves React Native and Codegen from that
+workspace, verifies the resolved versions at runtime, then uses React Native's
+generator. Root and package manifests must not provide a competing React Native
+toolchain or use floating toolchain ranges. Core and adapter peer dependencies
+must expose the same React Native minimum as the committed template line.
+
+Committed Codegen is React-Native-version-specific. Updating the example's
+React Native line is one coordinated breaking change: update all compatible
+example and root React Native tooling pins, wipe and regenerate both committed
+core trees, run `codegen:self-check` and `codegen:verify`, and rebuild/test both
+native platforms. CI runs `codegen:verify`; routine e2e consumes the committed
+core trees and generates only example/probe app-source metadata.
+
+The generated directories remain package source and must never be patched by
+hand. CocoaPods preserves their package-local header layout, and the npm
+package's existing `android/` and `ios/` entries publish both trees.
