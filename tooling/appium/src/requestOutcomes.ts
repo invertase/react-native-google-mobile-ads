@@ -24,6 +24,16 @@ export type RequestOutcomeAttempt = {
   fingerprint: RequestFingerprint;
 };
 
+export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam';
+export type RepresentativeRequestAcceptance = {
+  status: 'accepted' | 'retry';
+  reason: 'loaded' | 'android-native-matched-fingerprint' | 'outcome-not-accepted';
+};
+
+export function hasNonzeroRectangle(rect: { width: number; height: number }): boolean {
+  return rect.width > 0 && rect.height > 0;
+}
+
 export const REPRESENTATIVE_REQUEST_MAX_ATTEMPTS = 10;
 export const REPRESENTATIVE_REQUEST_BASE_BACKOFF_MS = 250;
 export const REPRESENTATIVE_REQUEST_MAX_BACKOFF_MS = 2000;
@@ -136,8 +146,33 @@ export function nativeFingerprintFromAndroidLog(log: string): RequestFingerprint
   };
 }
 
-export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam';
 export type RepresentativeRequestOperation = 'auto-load' | 'reload' | 'remount' | 'load';
+
+/**
+ * Final representative-session acceptance policy.
+ *
+ * Every format/platform accepts loaded. The only degradation allowance is the
+ * request-scoped matched Android Native malformed-creative fingerprint.
+ */
+export function evaluateRepresentativeRequestAttempt(options: {
+  path: RepresentativeRequestPath;
+  platform: 'android' | 'ios';
+  attempt: Pick<RequestOutcomeAttempt, 'classification' | 'fingerprint'>;
+}): RepresentativeRequestAcceptance {
+  const { path, platform, attempt } = options;
+  if (attempt.classification === 'loaded') {
+    return { status: 'accepted', reason: 'loaded' };
+  }
+  if (
+    path === 'native' &&
+    platform === 'android' &&
+    attempt.classification === 'internal-error' &&
+    attempt.fingerprint.status === 'matched'
+  ) {
+    return { status: 'accepted', reason: 'android-native-matched-fingerprint' };
+  }
+  return { status: 'retry', reason: 'outcome-not-accepted' };
+}
 
 export function representativeRequestOperation(
   path: RepresentativeRequestPath,
@@ -193,6 +228,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
   sleep?: (delayMs: number) => Promise<void>;
   emit?: (line: string) => void;
   maxAttempts?: number;
+  evaluateAcceptance: (attempt: RequestOutcomeAttempt) => RepresentativeRequestAcceptance;
 }): Promise<readonly RequestOutcomeAttempt[]> {
   const {
     format,
@@ -201,6 +237,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
     sleep = delayMs => new Promise(resolve => setTimeout(resolve, delayMs)),
     emit = console.log,
     maxAttempts = REPRESENTATIVE_REQUEST_MAX_ATTEMPTS,
+    evaluateAcceptance,
   } = options;
   const attempts: RequestOutcomeAttempt[] = [];
   const requestIds = new Set<number>();
@@ -232,12 +269,20 @@ export async function collectRepresentativeRequestOutcomes(options: {
     const result = { format, platform, attempt, ...observed };
     attempts.push(result);
     emit(formatRequestOutcomeAttempt(result));
-    if (result.classification === 'loaded') {
-      break;
+    if (evaluateAcceptance(result).status === 'accepted') {
+      return attempts;
     }
   }
 
-  return attempts;
+  const diagnostic = attempts.map(({ attempt, requestId, classification, fingerprint }) => ({
+    attempt,
+    requestId,
+    classification,
+    fingerprint,
+  }));
+  throw new Error(
+    `[request-outcome] ${format}/${platform}: exhausted ${maxAttempts} attempts without acceptance; attempts=${JSON.stringify(diagnostic)}`,
+  );
 }
 
 export type RepresentativeRequestRuntime = {
@@ -263,14 +308,17 @@ export async function runRepresentativeRequestOutcomeContract(options: {
   sleep?: (delayMs: number) => Promise<void>;
   emit?: (line: string) => void;
   maxAttempts?: number;
+  onAccepted?: (attempt: RequestOutcomeAttempt) => Promise<void>;
 }): Promise<readonly RequestOutcomeAttempt[]> {
-  const { format, platform, path, runtime, sleep, emit, maxAttempts } = options;
+  const { format, platform, path, runtime, sleep, emit, maxAttempts, onAccepted } = options;
   const attempts = await collectRepresentativeRequestOutcomes({
     format,
     platform,
     sleep,
     emit,
     maxAttempts,
+    evaluateAcceptance: attempt =>
+      evaluateRepresentativeRequestAttempt({ path, platform, attempt }),
     request: async attempt => {
       if (path === 'native') {
         if (attempt > 1) {
@@ -294,30 +342,9 @@ export async function runRepresentativeRequestOutcomeContract(options: {
       return runtime.observe(attempt);
     },
   });
+  if (onAccepted) {
+    await onAccepted(attempts.at(-1)!);
+  }
   await runtime.backToGallery();
   return attempts;
-}
-
-export function acceptRepresentativeRequestOutcome(
-  formatId: string,
-  text: string,
-  warn: (message: string) => void = console.warn,
-): boolean {
-  const outcome = requestOutcomeFromText(text);
-  if (outcome === 'loaded') {
-    return true;
-  }
-  if (outcome === 'no-fill') {
-    warn(`[request-outcome] ${formatId}: SDK no-fill accepted`);
-    return true;
-  }
-  if (outcome === 'error' && text.includes('Request error: internal-error')) {
-    warn(`[request-outcome] ${formatId}: SDK internal-error accepted`);
-    return true;
-  }
-  if (outcome === 'error') {
-    warn(`[request-outcome] ${formatId}: SDK other-error accepted: ${text}`);
-    return true;
-  }
-  return false;
 }

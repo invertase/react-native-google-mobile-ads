@@ -1,16 +1,19 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   NAVIGATION_SMOKE_PRIMARY,
   NAVIGATION_SMOKE_SECONDARY,
   NAVIGATION_SMOKE_TERTIARY,
+  NATIVE_RNGMA_TESTING_PROBE,
   REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
   SMOKE_BANNER_VARIANT,
 } from '../src/formats.ts';
 import {
-  acceptRepresentativeRequestOutcome,
   classifyRequestOutcome,
+  evaluateRepresentativeRequestAttempt,
   formatRequestOutcomeAttempt,
+  hasNonzeroRectangle,
   nativeFingerprintFromAndroidLog,
   representativeRequestBackoffMs,
   requestIdFromText,
@@ -31,12 +34,13 @@ const NOT_APPLICABLE_FINGERPRINT = {
 function observedRequest(
   requestId: number,
   classification: RequestOutcomeClassification = 'other-error',
+  fingerprint = NOT_APPLICABLE_FINGERPRINT,
 ) {
   return {
     requestId,
     classification,
     detail: `request ${requestId}`,
-    fingerprint: NOT_APPLICABLE_FINGERPRINT,
+    fingerprint,
   };
 }
 
@@ -86,6 +90,10 @@ test('locks one representative request-outcome contract per required path', () =
       contract => contract.contract === 'request-outcome',
     ),
   );
+  assert.deepEqual(
+    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.map(contract => contract.renderProof),
+    ['banner', 'native', 'none', 'none'],
+  );
 });
 
 test('representative request-outcome contracts never invoke Show actions', () => {
@@ -97,60 +105,49 @@ test('representative request-outcome contracts never invoke Show actions', () =>
   }
 });
 
-test('loaded request outcomes pass without warning', () => {
-  const warnings: string[] = [];
-  assert.equal(
-    acceptRepresentativeRequestOutcome('gma.format.example', REQUEST_OUTCOME_LOADED, warning =>
-      warnings.push(warning),
-    ),
-    true,
-  );
-  assert.deepEqual(warnings, []);
-});
-
-test('SDK no-fill passes through the explicit warning path', () => {
-  const warnings: string[] = [];
-  assert.equal(
-    acceptRepresentativeRequestOutcome('gma.format.example', REQUEST_OUTCOME_NO_FILL, warning =>
-      warnings.push(warning),
-    ),
-    true,
-  );
-  assert.deepEqual(warnings, ['[request-outcome] gma.format.example: SDK no-fill accepted']);
-});
-
-test('SDK internal-error passes through the explicit warning path', () => {
-  const warnings: string[] = [];
-  assert.equal(
-    acceptRepresentativeRequestOutcome(
-      'gma.format.example',
-      'Request error: internal-error: [googleMobileAds/internal-error] Internal error.',
-      warning => warnings.push(warning),
-    ),
-    true,
-  );
-  assert.deepEqual(warnings, ['[request-outcome] gma.format.example: SDK internal-error accepted']);
-});
-
-test('other SDK errors remain temporarily accepted with details', () => {
-  const warnings: string[] = [];
-  assert.equal(
-    acceptRepresentativeRequestOutcome(
-      'gma.format.example',
-      'Request error: network-error: offline',
-      warning => warnings.push(warning),
-    ),
-    true,
-  );
-  assert.deepEqual(warnings, [
-    '[request-outcome] gma.format.example: SDK other-error accepted: Request error: network-error: offline',
-  ]);
-});
-
-test('non-terminal request outcomes keep waiting instead of passing', () => {
-  for (const text of ['Request outcome: pending', 'Loaded? false', '']) {
-    assert.equal(acceptRepresentativeRequestOutcome('gma.format.example', text), false);
+test('locks the acceptance matrix for every format path and platform', () => {
+  const paths = ['banner', 'native', 'fullscreen', 'gam'] as const;
+  const platforms = ['android', 'ios'] as const;
+  const classifications: RequestOutcomeClassification[] = [
+    'loaded',
+    'no-fill',
+    'internal-error',
+    'other-error',
+  ];
+  for (const path of paths) {
+    for (const platform of platforms) {
+      for (const classification of classifications) {
+        for (const fingerprintStatus of [
+          'matched',
+          'not-matched',
+          'unavailable',
+          'not-applicable',
+        ] as const) {
+          const result = evaluateRepresentativeRequestAttempt({
+            path,
+            platform,
+            attempt: {
+              classification,
+              fingerprint: { status: fingerprintStatus, evidence: 'matrix' },
+            },
+          });
+          const accepted =
+            classification === 'loaded' ||
+            (path === 'native' &&
+              platform === 'android' &&
+              classification === 'internal-error' &&
+              fingerprintStatus === 'matched');
+          assert.equal(result.status, accepted ? 'accepted' : 'retry');
+        }
+      }
+    }
   }
+});
+
+test('render rectangle proof rejects zero dimensions', () => {
+  assert.equal(hasNonzeroRectangle({ width: 320, height: 50 }), true);
+  assert.equal(hasNonzeroRectangle({ width: 0, height: 50 }), false);
+  assert.equal(hasNonzeroRectangle({ width: 320, height: 0 }), false);
 });
 
 test('classifies terminal outcomes and leaves non-terminal markers unclassified', () => {
@@ -205,36 +202,85 @@ test('formats stable machine-readable attempt output', () => {
   );
 });
 
-test('runtime retries terminal degradation with capped backoff and stable records', async () => {
+test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnostics', async () => {
   const lines: string[] = [];
   const delays: number[] = [];
   const calls: string[] = [];
-  const attempts = await runRepresentativeRequestOutcomeContract({
-    format: 'gma.format.banner.Banner',
-    platform: 'ios',
-    path: 'banner',
-    runtime: runtimeRecorder(
-      calls,
-      Array.from({ length: REPRESENTATIVE_REQUEST_MAX_ATTEMPTS }, (_, index) =>
-        observedRequest(101 + index, index % 2 === 0 ? 'no-fill' : 'other-error'),
+  await assert.rejects(
+    runRepresentativeRequestOutcomeContract({
+      format: 'gma.format.banner.Banner',
+      platform: 'ios',
+      path: 'banner',
+      runtime: runtimeRecorder(
+        calls,
+        Array.from({ length: REPRESENTATIVE_REQUEST_MAX_ATTEMPTS }, (_, index) =>
+          observedRequest(101 + index, index % 2 === 0 ? 'no-fill' : 'other-error'),
+        ),
       ),
-    ),
-    sleep: async delayMs => {
-      delays.push(delayMs);
+      sleep: async delayMs => {
+        delays.push(delayMs);
+      },
+      emit: line => lines.push(line),
+    }),
+    error => {
+      const message = String(error);
+      return (
+        message.includes('exhausted 10 attempts without acceptance') &&
+        message.includes('"requestId":101') &&
+        message.includes('"requestId":110') &&
+        message.includes('"classification":"no-fill"') &&
+        message.includes('"classification":"other-error"') &&
+        message.includes('"status":"not-applicable"')
+      );
     },
-    emit: line => lines.push(line),
-  });
-
-  assert.equal(attempts.length, REPRESENTATIVE_REQUEST_MAX_ATTEMPTS);
-  assert.equal(lines.length, REPRESENTATIVE_REQUEST_MAX_ATTEMPTS);
-  assert.deepEqual(delays, [250, 500, 1000, 2000, 2000, 2000, 2000, 2000, 2000]);
-  assert.deepEqual(
-    attempts.map(attempt => attempt.requestId),
-    [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
   );
-  assert.deepEqual(calls.slice(0, 4), ['navigate', 'observe:1', 'reload', 'observe:2']);
+
+  assert.equal(lines.length, REPRESENTATIVE_REQUEST_MAX_ATTEMPTS);
+  assert.ok(lines.every(line => line.startsWith('[request-outcome-attempt] {')));
+  assert.deepEqual(delays, [250, 500, 1000, 2000, 2000, 2000, 2000, 2000, 2000]);
   assert.equal(calls.filter(call => call === 'reload').length, 9);
-  assert.equal(calls.at(-1), 'back');
+  assert.notEqual(calls.at(-1), 'back');
+});
+
+test('all rejected classifications and fingerprints hard-fail at attempt ten', async () => {
+  const rejected = [
+    observedRequest(1, 'no-fill'),
+    observedRequest(1, 'other-error'),
+    observedRequest(1, 'internal-error', {
+      status: 'not-matched' as const,
+      evidence: 'signature absent',
+    }),
+    observedRequest(1, 'internal-error', {
+      status: 'unavailable' as const,
+      evidence: 'ios unavailable',
+    }),
+  ];
+  for (const seed of rejected) {
+    await assert.rejects(
+      runRepresentativeRequestOutcomeContract({
+        format: 'gma.format.native',
+        platform: seed.fingerprint.status === 'unavailable' ? 'ios' : 'android',
+        path: 'native',
+        runtime: runtimeRecorder(
+          [],
+          Array.from({ length: 10 }, (_, index) => ({
+            ...seed,
+            requestId: index + 1,
+          })),
+        ),
+        sleep: async () => {},
+        emit: () => {},
+      }),
+      error => {
+        const message = String(error);
+        return (
+          message.includes('exhausted 10 attempts without acceptance') &&
+          message.includes(`"classification":"${seed.classification}"`) &&
+          message.includes(`"status":"${seed.fingerprint.status}"`)
+        );
+      },
+    );
+  }
 });
 
 test('runtime stops immediately after a loaded outcome', async () => {
@@ -259,6 +305,80 @@ test('runtime stops immediately after a loaded outcome', async () => {
   );
   assert.equal(calls.filter(call => call === 'load').length, 3);
   assert.equal(calls.filter(call => call.startsWith('observe:')).length, 3);
+});
+
+test('Android Native matched fingerprint stops immediately without requiring loaded', async () => {
+  const calls: string[] = [];
+  const attempts = await runRepresentativeRequestOutcomeContract({
+    format: 'gma.format.native',
+    platform: 'android',
+    path: 'native',
+    runtime: runtimeRecorder(calls, [
+      observedRequest(1, 'internal-error', {
+        status: 'matched',
+        evidence: 'request-scoped exact signature',
+      }),
+      observedRequest(2, 'loaded'),
+    ]),
+    sleep: async () => {},
+    emit: () => {},
+  });
+  assert.equal(attempts.length, 1);
+  assert.equal(attempts[0].fingerprint.status, 'matched');
+  assert.equal(calls.filter(call => call === 'navigate').length, 1);
+});
+
+test('matched fingerprint does not waive non-Native or iOS sessions', async () => {
+  for (const [path, platform] of [
+    ['banner', 'android'],
+    ['native', 'ios'],
+    ['fullscreen', 'android'],
+    ['gam', 'android'],
+  ] as const) {
+    await assert.rejects(
+      runRepresentativeRequestOutcomeContract({
+        format: `gma.format.${path}`,
+        platform,
+        path,
+        maxAttempts: 1,
+        runtime: runtimeRecorder(
+          [],
+          [
+            observedRequest(1, 'internal-error', {
+              status: 'matched',
+              evidence: 'must not waive',
+            }),
+          ],
+        ),
+        sleep: async () => {},
+        emit: () => {},
+      }),
+      /exhausted 1 attempts without acceptance/,
+    );
+  }
+});
+
+test('accepted callback distinguishes loaded render from Native fingerprint waiver', async () => {
+  const accepted: RequestOutcomeClassification[] = [];
+  for (const observation of [
+    observedRequest(1, 'loaded'),
+    observedRequest(1, 'internal-error', {
+      status: 'matched' as const,
+      evidence: 'request-scoped exact signature',
+    }),
+  ]) {
+    await runRepresentativeRequestOutcomeContract({
+      format: 'gma.format.native',
+      platform: 'android',
+      path: 'native',
+      runtime: runtimeRecorder([], [observation]),
+      emit: () => {},
+      onAccepted: async attempt => {
+        accepted.push(attempt.classification);
+      },
+    });
+  }
+  assert.deepEqual(accepted, ['loaded', 'internal-error']);
 });
 
 test('runtime propagates timeout, WebDriver, and instrumentation errors without recovery', async () => {
@@ -497,4 +617,54 @@ test('broad format coverage remains navigation/container-only', () => {
   assert.equal(navigationCases.length, 17);
   assert.ok(navigationCases.every(contract => contract.contract === 'navigation'));
   assert.ok(navigationCases.every(contract => !contract.requiresAppRestart));
+});
+
+test('retires blanket per-attempt acceptance and locks real render probes', () => {
+  const outcomeSource = readFileSync(
+    new URL('../src/requestOutcomes.ts', import.meta.url),
+    'utf8',
+  );
+  const exampleSource = readFileSync(
+    new URL('../../../RNGoogleMobileAdsExample/App.tsx', import.meta.url),
+    'utf8',
+  );
+  const gallerySource = readFileSync(
+    new URL('../test/helpers/gallery.ts', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(outcomeSource, /acceptRepresentativeRequestOutcome/);
+  assert.match(
+    exampleSource,
+    /<View testID=\{AppiumTestIds\.action\.rendered\(formatId\)\} collapsable=\{false\}>[\s\S]*?<BannerAd[\s\S]*?onAdLoaded=/,
+  );
+  assert.match(
+    exampleSource,
+    /<NativeAdView[\s\S]*?testID=\{AppiumTestIds\.action\.rendered\(AppiumTestIds\.format\.native\)\}/,
+  );
+  assert.match(gallerySource, /attempt\.classification === 'loaded'/);
+  assert.match(gallerySource, /format\.renderProof === 'banner'/);
+  assert.match(gallerySource, /root\.\$\$\('\.\/\/\*'\)/);
+  assert.match(gallerySource, /hasNonzeroRectangle\(size\)/);
+  assert.match(gallerySource, /\[render-proof\]/);
+  assert.match(gallerySource, /descendantType/);
+  assert.match(gallerySource, /emitStatusLabel: 'probe-seam'/);
+});
+
+test('deterministic NativeRNGMATesting seam requires exact state markers', () => {
+  assert.equal(NATIVE_RNGMA_TESTING_PROBE.expectedStatusText, 'ok ping=');
+  assert.deepEqual(NATIVE_RNGMA_TESTING_PROBE.expectedPingByPlatform, {
+    android: 'ok ping=ok:android',
+    ios: 'ok ping=ok:ios',
+  });
+  assert.deepEqual(NATIVE_RNGMA_TESTING_PROBE.expectedStatusMarkers, [
+    'ttl=60000',
+    'cleared=-1',
+    'attach=true',
+    'fixtures=fixture-loaded-response,null,fixture-paid-response',
+  ]);
+  assert.ok(
+    NATIVE_RNGMA_TESTING_PROBE.expectedStatusMarkers.every(
+      marker => !marker.startsWith('pool='),
+    ),
+  );
 });

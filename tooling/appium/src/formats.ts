@@ -51,6 +51,7 @@ export type NavigationSmokeCase = {
 };
 
 export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam';
+export type RepresentativeRenderProof = 'banner' | 'native' | 'none';
 
 export type RepresentativeRequestOutcomeContract = {
   id: string;
@@ -59,6 +60,7 @@ export type RepresentativeRequestOutcomeContract = {
   containerId: string;
   contract: 'request-outcome';
   path: RepresentativeRequestPath;
+  renderProof: RepresentativeRenderProof;
   actionId?: string;
   requiresAppRestart?: boolean;
 };
@@ -184,6 +186,7 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     containerId: SMOKE_BANNER_VARIANT,
     contract: 'request-outcome',
     path: 'banner',
+    renderProof: 'banner',
   },
   {
     id: AppiumTestIds.format.native,
@@ -192,6 +195,7 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     containerId: AppiumTestIds.format.native,
     contract: 'request-outcome',
     path: 'native',
+    renderProof: 'native',
   },
   {
     id: AppiumTestIds.format.interstitial,
@@ -200,6 +204,7 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     containerId: AppiumTestIds.format.interstitial,
     contract: 'request-outcome',
     path: 'fullscreen',
+    renderProof: 'none',
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.interstitial),
   },
   {
@@ -209,6 +214,7 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     containerId: AppiumTestIds.format.gamInterstitial,
     contract: 'request-outcome',
     path: 'gam',
+    renderProof: 'none',
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.gamInterstitial),
   },
   ] as const;
@@ -220,6 +226,16 @@ export const NATIVE_RNGMA_TESTING_PROBE = {
   containerId: AppiumTestIds.format.nativeRngmaTesting,
   actionId: AppiumTestIds.action.show(AppiumTestIds.format.nativeRngmaTesting),
   expectedStatusText: 'ok ping=',
+  expectedStatusMarkers: [
+    'ttl=60000',
+    'cleared=-1',
+    'attach=true',
+    'fixtures=fixture-loaded-response,null,fixture-paid-response',
+  ],
+  expectedPingByPlatform: {
+    android: 'ok ping=ok:android',
+    ios: 'ok ping=ok:ios',
+  },
   actionAccessibilityLabel: 'Run NativeRNGMATesting probes',
 } as const;
 

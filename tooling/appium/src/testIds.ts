@@ -45,6 +45,7 @@ export const AppiumTestIds = {
     show: (formatId: string) => `${formatId}.show`,
     reload: (formatId: string) => `${formatId}.reload`,
     loaded: (formatId: string) => `${formatId}.loaded`,
+    rendered: (formatId: string) => `${formatId}.rendered`,
     recordImpression: (formatId: string) => `${formatId}.record-impression`,
   },
   /** Open a format from the gallery home list. */

@@ -33,6 +33,8 @@ describe('GMA gallery navigation smoke and probe status (tertiary)', () => {
       galleryTitle: NATIVE_RNGMA_TESTING_PROBE.title,
       actionId: NATIVE_RNGMA_TESTING_PROBE.actionId,
       expectedStatusText: NATIVE_RNGMA_TESTING_PROBE.expectedStatusText,
+      expectedStatusMarkers: NATIVE_RNGMA_TESTING_PROBE.expectedStatusMarkers,
+      expectedPingByPlatform: NATIVE_RNGMA_TESTING_PROBE.expectedPingByPlatform,
       actionAccessibilityLabel: NATIVE_RNGMA_TESTING_PROBE.actionAccessibilityLabel,
     });
   });
