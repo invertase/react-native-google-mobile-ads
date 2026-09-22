@@ -83,6 +83,11 @@ test('CI prebuilds WDA before the WDIO command enables the prebuilt capability',
     rootPackage.scripts['tests:appium:ios:prebuild-wda'],
     'yarn workspace @invertase/rngma-appium ios:prebuild-wda',
   );
+  assert.equal(
+    rootPackage.scripts['tests:appium:ios'],
+    'cross-env RNGMA_WDA_PREBUILT=1 yarn workspace @invertase/rngma-appium appium:ios',
+    'the canonical local iOS command must consume the shared prebuilt WDA by default',
+  );
   assert.equal(appiumPackage.scripts['ios:prebuild-wda'], 'tsx ./scripts/prebuild-wda.ts');
 
   const workflow = readFileSync(
