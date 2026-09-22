@@ -50,6 +50,8 @@
     "tests:appium:validate": "yarn workspace @invertase/rngma-appium validate",
     "tests:appium:drivers:install": "yarn workspace @invertase/rngma-appium drivers:install",
     "tests:appium:drivers:verify": "yarn workspace @invertase/rngma-appium drivers:verify",
+    "tests:appium:check": "yarn workspace @invertase/rngma-appium check",
+    "tests:appium:release": "yarn workspace @invertase/rngma-appium release",
     "tests:appium:provision": "yarn workspace @invertase/rngma-appium provision",
     "tests:appium:android": "yarn workspace @invertase/rngma-appium appium:android",
     "tests:appium:ios": "cross-env RNGMA_WDA_PREBUILT=1 yarn workspace @invertase/rngma-appium appium:ios",
