@@ -11,6 +11,7 @@ module.exports = {
     [
       '../../build',
       {
+        androidSdk: 'nextgen',
         androidAppId: 'TestAppId',
         iosAppId: 'TestIosId',
         delayAppMeasurementInit: true,

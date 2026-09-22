@@ -18,6 +18,7 @@ buildscript {
 }
 
 apply plugin: "com.android.library"
+evaluationDependsOn(":react-native-google-mobile-ads")
 
 def packageJson = new JsonSlurper().parseText(file("${projectDir}/../package.json").text)
 def gamAdapter = packageJson.gamAdapter
@@ -63,5 +64,10 @@ dependencies {
   // Pin: package.json sdkVersions.android.googleMobileAdsMediation (docs/Maven: 7.7.8.0 as of package publish; verify against current docs/Maven).
   // Core GMA is provided by react-native-google-mobile-ads; do not re-pin it here.
   // https://developers.google.com/ad-manager/mobile-ads-sdk/android/mediation/liftoff-monetize
-  api mediationArtifact
+  api(mediationArtifact) {
+    if (rootProject.ext.rngmaAndroidBackend == "nextgen") {
+      exclude group: "com.google.android.gms", module: "play-services-ads"
+      exclude group: "com.google.android.gms", module: "play-services-ads-lite"
+    }
+  }
 }

@@ -57,6 +57,12 @@ export function androidGradleCommand(
   env: NodeJS.ProcessEnv = process.env,
 ): NamedCommand {
   const runtime = runtimeResources('android', env);
+  const backend = env.RNGMA_ANDROID_BACKEND;
+  if (backend && !['classic', 'legacy', 'nextgen'].includes(backend)) {
+    throw new Error(
+      `RNGMA_ANDROID_BACKEND must be classic, legacy, or nextgen; received "${backend}".`,
+    );
+  }
   return {
     bin: process.platform === 'win32' ? 'gradlew.bat' : './gradlew',
     args: [
@@ -64,6 +70,7 @@ export function androidGradleCommand(
       ...(runtime.slot == null
         ? []
         : [`-PreactNativeDevServerPort=${runtime.metroPort}`]),
+      ...(backend ? [`-PRNGMA_ANDROID_BACKEND=${backend}`] : []),
     ],
     cwd: 'RNGoogleMobileAdsExample/android',
   };

@@ -30,7 +30,11 @@ import {
   SMOKE_SHARD_TEST_TOTAL,
 } from '../src/sessionShards.ts';
 import { serialAndroidApkPath, slotAndroidApkPath } from '../src/slots.ts';
-import { WDIO_SMOKE_SPECS, selectedWdioSpecs } from '../src/wdioSpecs.ts';
+import {
+  WDIO_NEXTGEN_FAIL_FAST_SPEC,
+  WDIO_SMOKE_SPECS,
+  selectedWdioSpecs,
+} from '../src/wdioSpecs.ts';
 
 /** Expected summary rows when the first slot settles one way and siblings cancel. */
 function expectedSlotRows(
@@ -359,6 +363,10 @@ test('WDIO defaults to all specs and accepts only one exact allowlisted spec', (
   assert.deepEqual(selectedWdioSpecs({ RNGMA_WDIO_SPEC: WDIO_SMOKE_SPECS[1] }), [
     WDIO_SMOKE_SPECS[1],
   ]);
+  assert.deepEqual(
+    selectedWdioSpecs({ RNGMA_WDIO_SPEC: WDIO_NEXTGEN_FAIL_FAST_SPEC }),
+    [WDIO_NEXTGEN_FAIL_FAST_SPEC],
+  );
   for (const invalid of [
     './test/specs/**/*.ts',
     '../formats.smoke.a-primary.spec.ts',

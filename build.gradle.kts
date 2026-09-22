@@ -18,8 +18,11 @@ kotlin {
         setSrcDirs(
           listOf(
             "packages/core/android/src/main/java",
-            "packages/core/android/src/oldarch",
+            "packages/core/android/src/classic/java",
+            "packages/core/android/src/nextgen/java",
             "packages/core/android/src/test/java",
+            "packages/core/android/src/testClassic/java",
+            "packages/core/android/src/testNextgen/java",
           ),
         )
       }

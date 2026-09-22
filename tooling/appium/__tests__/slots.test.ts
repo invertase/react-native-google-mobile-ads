@@ -89,6 +89,14 @@ describe('cross-platform e2e slots', () => {
       'start',
     ]);
     assert.deepEqual(androidGradleCommand({}).args, ['assembleDebug']);
+    assert.deepEqual(
+      androidGradleCommand({ RNGMA_ANDROID_BACKEND: 'nextgen' }).args,
+      ['assembleDebug', '-PRNGMA_ANDROID_BACKEND=nextgen'],
+    );
+    assert.throws(
+      () => androidGradleCommand({ RNGMA_ANDROID_BACKEND: 'unsupported' }),
+      /must be classic, legacy, or nextgen/,
+    );
     assert.deepEqual(androidRunCommands({}), [
       {
         bin: 'yarn',
