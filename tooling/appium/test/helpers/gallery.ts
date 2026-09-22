@@ -53,10 +53,16 @@ async function scrollGalleryToTop(): Promise<void> {
     }
     return;
   }
-  const galleryId = AppiumTestIds.gallery;
-  await $(
-    `android=new UiScrollable(new UiSelector().scrollable(true).resourceId("${galleryId}")).scrollToBeginning(5)`,
-  );
+  const topChip = await findByTestId(AppiumTestIds.section.all);
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const rect = await topChip.getLocation().catch(() => null);
+    const size = await topChip.getSize().catch(() => null);
+    if (rect && size && rect.y >= 0 && size.height > 0) {
+      return;
+    }
+    await androidSwipe('down', 0.65);
+  }
+  await topChip.waitForDisplayed({ timeout: 5000 });
 }
 
 /** Scroll the gallery list until the target testID is displayed. */
@@ -67,21 +73,24 @@ export async function scrollToTestId(testId: string) {
   }
 
   if (isAndroid()) {
-    const galleryId = AppiumTestIds.gallery;
-    const scrollable = `new UiScrollable(new UiSelector().scrollable(true).resourceId("${galleryId}")).setMaxSearchSwipes(30)`;
-    for (let attempt = 0; attempt < 35; attempt++) {
+    const { height } = await driver.getWindowSize();
+    for (let attempt = 0; attempt < 12; attempt++) {
       const latest = await findByTestId(testId);
-      if (await latest.isDisplayed().catch(() => false)) {
+      const rect = await latest.getLocation().catch(() => null);
+      const size = await latest.getSize().catch(() => null);
+      if (
+        rect &&
+        size &&
+        size.height > 0 &&
+        rect.y >= 0 &&
+        rect.y + size.height <= height
+      ) {
         return latest;
       }
-      try {
-        await $(`android=${scrollable}.scrollIntoView(new UiSelector().resourceId("${testId}"))`);
-      } catch {
-        await $(`android=${scrollable}.scrollForward()`);
-      }
+      await androidSwipe('up', 0.55);
     }
     const finalEl = await findByTestId(testId);
-    await finalEl.waitForDisplayed({ timeout: 15000 });
+    await finalEl.waitForDisplayed({ timeout: 5000 });
     return finalEl;
   }
 
@@ -99,7 +108,7 @@ export async function scrollToTestId(testId: string) {
 /** Mid-screen band — avoid status bar and gesture-nav / Flush-adjacency misses. */
 const ANDROID_SAFE_Y_MAX = 0.68;
 
-async function androidSwipeUp(percent = 0.4): Promise<void> {
+async function androidSwipe(direction: 'up' | 'down', percent = 0.4): Promise<void> {
   const { height, width } = await driver.getWindowSize();
   try {
     await driver.execute('mobile: swipeGesture', {
@@ -107,13 +116,16 @@ async function androidSwipeUp(percent = 0.4): Promise<void> {
       top: Math.floor(height * 0.4),
       width: Math.floor(width * 0.6),
       height: Math.floor(height * 0.35),
-      direction: 'up',
+      direction,
       percent,
     });
   } catch {
     // Best-effort.
   }
-  await driver.pause(350);
+}
+
+async function androidSwipeUp(percent = 0.4): Promise<void> {
+  await androidSwipe('up', percent);
 }
 
 /**
@@ -180,7 +192,6 @@ async function clickAndroidByTestId(testId: string): Promise<void> {
   } catch {
     await driver.execute('mobile: clickGesture', { x, y });
   }
-  await driver.pause(250);
 }
 
 /**
@@ -231,7 +242,6 @@ async function withInstrumentationRecovery<T>(fn: () => Promise<T>): Promise<T> 
 }
 
 export async function waitForGalleryHome(): Promise<void> {
-  await driver.pause(3000);
   try {
     await driver.updateSettings({
       waitForIdleTimeout: 100,
@@ -254,7 +264,10 @@ export async function waitForGalleryHome(): Promise<void> {
           command: 'input',
           args: ['tap', String(Math.floor(rect.x + size.width - 40)), String(Math.floor(rect.y + size.height / 2))],
         });
-        await driver.pause(300);
+        await driver.waitUntil(
+          async () => !(await dismiss.isDisplayed().catch(() => false)),
+          { timeout: 3000, timeoutMsg: 'LogBox did not dismiss' },
+        );
       }
     } catch {
       // Best-effort.
@@ -271,8 +284,15 @@ export async function waitForGalleryHome(): Promise<void> {
 export async function selectGallerySection(
   section: Exclude<GallerySectionId, 'all'>,
 ): Promise<void> {
-  await scrollGalleryToTop();
   const chipId = AppiumTestIds.section[section];
+  const selected = async (): Promise<boolean> => {
+    const chip = await findByTestId(chipId);
+    return (await elementText(chip)).includes('•');
+  };
+  if (await selected().catch(() => false)) {
+    return;
+  }
+  await scrollGalleryToTop();
   // Chips stay near the top — use the same coordinate tap path as format openers.
   if (isAndroid()) {
     await clickAndroidByTestId(chipId);
@@ -283,19 +303,20 @@ export async function selectGallerySection(
     }
     await clickElement(await findByTestId(chipId));
   }
-  await driver.pause(600);
-  if (isAndroid()) {
-    // Prefer confirming via content-desc • prefix; soft-retry once if missing.
-    const chip = await findByTestId(chipId);
-    const desc = String(
-      (await chip.getAttribute('contentDescription').catch(() => null)) ??
-        (await chip.getAttribute('content-desc').catch(() => null)) ??
-        '',
-    );
-    if (!desc.includes('•')) {
-      await clickAndroidByTestId(chipId);
-      await driver.pause(500);
+  try {
+    await driver.waitUntil(selected, {
+      timeout: 3000,
+      timeoutMsg: `Gallery section ${section} did not become selected`,
+    });
+  } catch (error) {
+    if (!isAndroid()) {
+      throw error;
     }
+    await clickAndroidByTestId(chipId);
+    await driver.waitUntil(selected, {
+      timeout: 3000,
+      timeoutMsg: `Gallery section ${section} did not become selected after retry`,
+    });
   }
 }
 
@@ -335,7 +356,6 @@ async function clickAndroidOpenerByTitle(galleryTitle: string): Promise<boolean>
         command: 'input',
         args: ['tap', String(x), String(y)],
       });
-      await driver.pause(250);
       return true;
     } catch {
       // Try next label.
@@ -375,7 +395,18 @@ async function ensureBannerAccordionClosed(): Promise<void> {
       const hide = await $(`android=new UiSelector().text("${label}")`);
       if (await hide.isDisplayed().catch(() => false)) {
         await clickElement(hide);
-        await driver.pause(300);
+        await driver.waitUntil(
+          async () => {
+            for (const currentLabel of ['Hide banner sizes', 'HIDE BANNER SIZES']) {
+              const current = await $(`android=new UiSelector().text("${currentLabel}")`);
+              if (await current.isDisplayed().catch(() => false)) {
+                return false;
+              }
+            }
+            return true;
+          },
+          { timeout: 3000, timeoutMsg: 'Banner accordion did not close' },
+        );
         return;
       }
     }
@@ -384,7 +415,13 @@ async function ensureBannerAccordionClosed(): Promise<void> {
   const hide = await $('~Hide banner sizes');
   if (await hide.isDisplayed().catch(() => false)) {
     await clickElement(hide);
-    await driver.pause(300);
+    await driver.waitUntil(
+      async () => {
+        const current = await $('~Hide banner sizes');
+        return !(await current.isDisplayed().catch(() => false));
+      },
+      { timeout: 3000, timeoutMsg: 'Banner accordion did not close' },
+    );
   }
 }
 
@@ -398,14 +435,15 @@ async function formatLooksOpen(formatId: string): Promise<boolean> {
 }
 
 async function waitForFormatOpen(formatId: string, timeoutMs: number): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await formatLooksOpen(formatId)) {
-      return true;
-    }
-    await driver.pause(400);
+  try {
+    await driver.waitUntil(async () => formatLooksOpen(formatId), {
+      timeout: timeoutMs,
+      timeoutMsg: `Format ${formatId} did not open`,
+    });
+    return true;
+  } catch {
+    return formatLooksOpen(formatId);
   }
-  return formatLooksOpen(formatId);
 }
 
 export async function openFormat(formatId: string, galleryTitle?: string): Promise<void> {
@@ -419,7 +457,6 @@ export async function openFormat(formatId: string, galleryTitle?: string): Promi
         await backToGallery();
       }
       await ensureBannerAccordionClosed();
-      await driver.pause(300);
       await selectGallerySection(gallerySectionForFormat(formatId));
       if (formatId.startsWith('gma.format.banner.')) {
         const variantOpen = await findByTestId(openId);
@@ -433,7 +470,16 @@ export async function openFormat(formatId: string, galleryTitle?: string): Promi
               AppiumTestIds.openFormat(AppiumTestIds.format.banner),
               'Banner sizes',
             );
-            await driver.pause(300);
+            await driver.waitUntil(
+              async () => {
+                const opener = await findByTestId(openId);
+                return opener.isExisting().catch(() => false);
+              },
+              {
+                timeout: 5000,
+                timeoutMsg: `Banner variant ${formatId} did not appear`,
+              },
+            );
           }
         }
       }
@@ -445,7 +491,6 @@ export async function openFormat(formatId: string, galleryTitle?: string): Promi
       } else {
         await clickGalleryOpener(openId, galleryTitle);
       }
-      await driver.pause(400);
       const waitMs = attempt < maxAttempts ? 12000 : 45000;
       if (await waitForFormatOpen(formatId, waitMs)) {
         return;
@@ -637,7 +682,6 @@ async function tapFormatAction(actionId: string, accessibilityLabel?: string): P
           command: 'input',
           args: ['tap', String(x), String(y)],
         });
-        await driver.pause(300);
         return;
       } catch {
         // Try next selector.
@@ -647,7 +691,6 @@ async function tapFormatAction(actionId: string, accessibilityLabel?: string): P
     const byLabel = await $(`~${accessibilityLabel}`);
     if (await byLabel.isExisting().catch(() => false)) {
       await clickElement(byLabel);
-      await driver.pause(300);
       return;
     }
   }
