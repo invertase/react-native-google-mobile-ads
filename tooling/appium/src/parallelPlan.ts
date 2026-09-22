@@ -2,6 +2,7 @@ import {
   assertRngmaSlotAllowed,
   parseSlot,
   runtimeResources,
+  slotAndroidApkPath,
   slotIosAppPath,
 } from './slots.ts';
 import {
@@ -69,6 +70,7 @@ export type ParallelPlanEntry = ParallelAssignment & {
   mjpegPort: number;
   device: string;
   logPath: string;
+  androidApkPath?: string;
   iosAppPath?: string;
 };
 
@@ -147,9 +149,9 @@ export function createParallelPlan(
       mjpegPort: runtime.slotResources!.mjpegPort,
       device,
       logPath: `/tmp/rngma-e2e-${platform}-slot-${assignment.slot}-${assignment.label}.log`,
-      ...(platform === 'ios'
-        ? { iosAppPath: slotIosAppPath(assignment.slot) }
-        : {}),
+      ...(platform === 'android'
+        ? { androidApkPath: slotAndroidApkPath(assignment.slot) }
+        : { iosAppPath: slotIosAppPath(assignment.slot) }),
     };
   });
 }

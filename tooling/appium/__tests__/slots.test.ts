@@ -493,6 +493,7 @@ describe('cross-platform e2e slots', () => {
       'yarn workspace @invertase/rngma-appium ios:run',
     );
     assert.match(runner, /androidGradleCommand\(\)/);
+    assert.match(runner, /runtime\.slot != null && !isParallelParentChild\(\)/);
     assert.match(runner, /copyFileSync\(serialAndroidApkPath\(\), runtime\.androidApkPath\)/);
     assert.match(runner, /execute\(iosBuildCommand\(\)\)/);
     assert.match(preflight, /RNGMA_E2E_PLATFORM: target/);

@@ -162,6 +162,12 @@ class NodeParallelRunner implements ParallelRunner {
     }
     return values;
   }
+
+  async copyFile(source: string, destination: string): Promise<void> {
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await fs.copyFile(source, destination);
+    console.log(`[parallel] copied Android APK ${source} -> ${destination}`);
+  }
 }
 
 function printSummary(summary: {
