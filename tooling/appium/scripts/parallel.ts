@@ -6,8 +6,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   childSlotExitCode,
+  runCombinedParallelE2e,
   runParallelE2e,
   type ChildCommand,
+  type CombinedParallelRunSummary,
   type ParallelRunner,
   type RunningCommand,
 } from '../src/parallelOrchestrator.ts';
@@ -48,9 +50,7 @@ class NodeRunningCommand implements RunningCommand {
     private readonly child: ChildProcess,
     command: ChildCommand,
   ) {
-    const log = command.logPath
-      ? createWriteStream(command.logPath, { flags: 'w' })
-      : undefined;
+    const log = command.logPath ? createWriteStream(command.logPath, { flags: 'w' }) : undefined;
     child.stdout?.on('data', chunk => {
       process.stdout.write(chunk);
       log?.write(chunk);
@@ -104,6 +104,14 @@ class NodeParallelRunner implements ParallelRunner {
           `Required parallel port 127.0.0.1:${port} is occupied; no mutation was started.`,
         );
       }
+    }
+  }
+
+  async assertPortListening(port: number): Promise<void> {
+    if (!(await isListening(port))) {
+      throw new Error(
+        `External worktree Metro 127.0.0.1:${port} is not listening; consumer parents never start it.`,
+      );
     }
   }
 
@@ -176,11 +184,18 @@ function printSummary(summary: {
   }
 }
 
-const platform = process.argv[2] as ParallelPlatform | undefined;
-if (platform !== 'android' && platform !== 'ios') {
-  console.error('Usage: parallel.ts <android|ios>');
+const platform = process.argv[2] as ParallelPlatform | 'both' | undefined;
+const metroArgument = process.argv[3] ?? '--metro=owner';
+if (
+  (platform !== 'android' && platform !== 'ios' && platform !== 'both') ||
+  (metroArgument !== '--metro=owner' && metroArgument !== '--metro=external') ||
+  (platform === 'both' && metroArgument !== '--metro=owner') ||
+  process.argv.length > 4
+) {
+  console.error('Usage: parallel.ts <android|ios> [--metro=owner|--metro=external] | both');
   process.exit(1);
 }
+const metroMode = metroArgument.slice('--metro='.length) as 'owner' | 'external';
 
 const controller = new AbortController();
 const runner = new NodeParallelRunner();
@@ -190,13 +205,34 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   });
 }
 
-runParallelE2e(platform, runner, { signal: controller.signal })
+const run =
+  platform === 'both'
+    ? runCombinedParallelE2e(runner, { signal: controller.signal })
+    : runParallelE2e(platform, runner, { signal: controller.signal, metroMode });
+
+run
   .then(summary => {
-    printSummary(summary);
+    if ('android' in summary) {
+      printSummary(summary.android);
+      printSummary(summary.ios);
+    } else {
+      printSummary(summary);
+    }
   })
   .catch(error => {
-    const summary = (error as { summary?: Parameters<typeof printSummary>[0] }).summary;
-    if (summary) printSummary(summary);
+    const summary = (
+      error as {
+        summary?: Parameters<typeof printSummary>[0] | CombinedParallelRunSummary;
+      }
+    ).summary;
+    if (summary) {
+      if ('android' in summary) {
+        printSummary(summary.android);
+        printSummary(summary.ios);
+      } else {
+        printSummary(summary);
+      }
+    }
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });

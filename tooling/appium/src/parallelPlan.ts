@@ -1,4 +1,9 @@
-import { runtimeResources, slotIosAppPath } from './slots.ts';
+import {
+  assertRngmaSlotAllowed,
+  parseSlot,
+  runtimeResources,
+  slotIosAppPath,
+} from './slots.ts';
 import {
   WDIO_SMOKE_SPECS,
   type WdioSmokeSpec,
@@ -34,6 +39,28 @@ export const PARALLEL_ASSIGNMENTS: readonly ParallelAssignment[] = [
   },
 ] as const;
 
+export const PARALLEL_SLOTS_ENV = 'RNGMA_E2E_PARALLEL_SLOTS';
+
+export function parseParallelSlots(value: string | undefined): number[] {
+  const raw = value == null ? ['1', '2', '4'] : value.split(',');
+  if (raw.length !== 3) {
+    throw new Error(`${PARALLEL_SLOTS_ENV} must contain exactly three comma-separated slots.`);
+  }
+  const slots = raw.map(item => {
+    if (item === '') {
+      throw new Error(`${PARALLEL_SLOTS_ENV} contains an empty slot.`);
+    }
+    const slot = parseSlot(item);
+    if (slot == null) throw new Error(`${PARALLEL_SLOTS_ENV} contains an empty slot.`);
+    assertRngmaSlotAllowed(slot);
+    return slot;
+  });
+  if (new Set(slots).size !== slots.length) {
+    throw new Error(`${PARALLEL_SLOTS_ENV} contains a duplicate slot.`);
+  }
+  return slots;
+}
+
 export type ParallelPlanEntry = ParallelAssignment & {
   env: NodeJS.ProcessEnv;
   metroPort: number;
@@ -65,17 +92,11 @@ export function validateParallelAssignments(
   ) {
     throw new Error('Parallel mapping must contain every smoke spec exactly once.');
   }
-  const expected = new Map(
-    PARALLEL_ASSIGNMENTS.map(entry => [
-      entry.label,
-      { slot: entry.slot, spec: entry.spec },
-    ]),
-  );
-  for (const entry of assignments) {
-    const locked = expected.get(entry.label);
-    if (!locked || entry.slot !== locked.slot || entry.spec !== locked.spec) {
+  for (const [index, entry] of assignments.entries()) {
+    const locked = PARALLEL_ASSIGNMENTS[index];
+    if (!locked || entry.label !== locked.label || entry.spec !== locked.spec) {
       throw new Error(
-        `Parallel mapping for ${entry.label} must use slot ${locked?.slot ?? 'unknown'} and its exact spec.`,
+        `Parallel mapping position ${index + 1} must use ${locked?.label ?? 'unknown'} and its exact spec.`,
       );
     }
   }
@@ -85,12 +106,31 @@ export function createParallelPlan(
   platform: ParallelPlatform,
   baseEnv: NodeJS.ProcessEnv = process.env,
 ): ParallelPlanEntry[] {
-  validateParallelAssignments(PARALLEL_ASSIGNMENTS);
-  return PARALLEL_ASSIGNMENTS.map(assignment => {
+  for (const name of [
+    'RNGMA_E2E_SLOT',
+    'RNGMA_E2E_PLATFORM',
+    'RNGMA_WDIO_SPEC',
+    'RNGMA_E2E_METRO_SLOT',
+    'RNGMA_METRO_PORT',
+    'RNGMA_APPIUM_PORT',
+  ]) {
+    if (baseEnv[name] != null && baseEnv[name] !== '') {
+      throw new Error(`${name} conflicts with the parallel parent contract.`);
+    }
+  }
+  const slots = parseParallelSlots(baseEnv[PARALLEL_SLOTS_ENV]);
+  const assignments = PARALLEL_ASSIGNMENTS.map((assignment, index) => ({
+    ...assignment,
+    slot: slots[index]!,
+  }));
+  validateParallelAssignments(assignments);
+  const metroOwnerSlot = slots[0]!;
+  return assignments.map(assignment => {
     const env = {
       ...baseEnv,
       RNGMA_E2E_SLOT: String(assignment.slot),
       RNGMA_E2E_PLATFORM: platform,
+      RNGMA_E2E_METRO_SLOT: String(metroOwnerSlot),
       RNGMA_WDIO_SPEC: assignment.spec,
     };
     const runtime = runtimeResources(platform, env);

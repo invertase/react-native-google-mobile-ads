@@ -4,6 +4,7 @@ import {
   SERIAL_APPIUM_PORT,
   SERIAL_METRO_PORT,
   slotResources,
+  worktreeMetroPort,
 } from './slots.ts';
 
 export const OPERATIONAL_SLOTS = [1, 2, 4, 5, 6, 7] as const;
@@ -24,7 +25,8 @@ export type ResourceCategory =
 export type ResourceTarget = {
   slot?: number;
   platform: ResourcePlatform;
-  metroPort: number;
+  metroPort?: number;
+  metroOwned: boolean;
   appiumPort: number;
   automationPort: number;
   mjpegPort: number;
@@ -66,6 +68,7 @@ function serialTarget(platform: ResourcePlatform): ResourceTarget {
     return {
       platform,
       metroPort: SERIAL_METRO_PORT,
+      metroOwned: true,
       appiumPort: SERIAL_APPIUM_PORT,
       automationPort: 8200,
       mjpegPort: 7810,
@@ -77,6 +80,7 @@ function serialTarget(platform: ResourcePlatform): ResourceTarget {
   return {
     platform,
     metroPort: SERIAL_METRO_PORT,
+    metroOwned: true,
     appiumPort: SERIAL_APPIUM_PORT,
     automationPort: 8100,
     mjpegPort: 9100,
@@ -84,13 +88,22 @@ function serialTarget(platform: ResourcePlatform): ResourceTarget {
   };
 }
 
-function slottedTarget(slot: number, platform: ResourcePlatform): ResourceTarget {
+function slottedTarget(
+  slot: number,
+  platform: ResourcePlatform,
+  metroOwnerSlot?: number,
+): ResourceTarget {
   assertRngmaSlotAllowed(slot);
   const resources = slotResources(slot, platform);
   return {
     slot,
     platform,
-    metroPort: resources.metroPort,
+    ...(metroOwnerSlot == null
+      ? {}
+      : {
+          metroPort: worktreeMetroPort(metroOwnerSlot),
+        }),
+    metroOwned: slot === metroOwnerSlot,
     appiumPort: resources.appiumPort,
     automationPort: resources.automationPort,
     mjpegPort: resources.mjpegPort,
@@ -128,6 +141,7 @@ export function parseResourceOptions(
   let slotFlag = false;
   let allSlots = false;
   let platformFlag: string | undefined;
+  let metroOwnerSlotValue: string | undefined;
   let services = false;
   let devices = false;
   let only: ReadonlySet<ResourceCategory> | undefined;
@@ -141,6 +155,11 @@ export function parseResourceOptions(
       allSlots = true;
     } else if (argument.startsWith('--platform=')) {
       platformFlag = argument.slice('--platform='.length);
+    } else if (argument.startsWith('--metro-owner-slot=')) {
+      metroOwnerSlotValue = argument.slice('--metro-owner-slot='.length);
+      if (!metroOwnerSlotValue) {
+        throw new ResourceArgumentError('--metro-owner-slot requires an operational slot.');
+      }
     } else if (mode === 'check' && (argument === '--services' || argument === '--strict')) {
       services = true;
     } else if (mode === 'release' && argument === '--devices') {
@@ -186,6 +205,26 @@ export function parseResourceOptions(
     : ['android', 'ios'];
 
   let slots: Array<number | undefined>;
+  const envMetroOwnerSlot = env.RNGMA_E2E_METRO_SLOT;
+  if (
+    metroOwnerSlotValue &&
+    envMetroOwnerSlot &&
+    metroOwnerSlotValue !== envMetroOwnerSlot
+  ) {
+    throw new ResourceArgumentError(
+      `--metro-owner-slot=${metroOwnerSlotValue} conflicts with RNGMA_E2E_METRO_SLOT=${envMetroOwnerSlot}.`,
+    );
+  }
+  let metroOwnerSlot: number | undefined;
+  const selectedMetroOwnerSlot = metroOwnerSlotValue ?? envMetroOwnerSlot;
+  if (selectedMetroOwnerSlot != null && selectedMetroOwnerSlot !== '') {
+    try {
+      metroOwnerSlot = parseSlot(selectedMetroOwnerSlot)!;
+      assertRngmaSlotAllowed(metroOwnerSlot);
+    } catch (error) {
+      throw new ResourceArgumentError(error instanceof Error ? error.message : String(error));
+    }
+  }
   if (allSlots) {
     slots = [undefined, ...OPERATIONAL_SLOTS];
   } else if (selectedSlotValue != null && selectedSlotValue !== '') {
@@ -201,12 +240,21 @@ export function parseResourceOptions(
   } else {
     slots = [undefined];
   }
+  if (metroOwnerSlot != null && !allSlots && slots[0] == null) {
+    throw new ResourceArgumentError(
+      '--metro-owner-slot/RNGMA_E2E_METRO_SLOT requires --slot, RNGMA_E2E_SLOT, or --all-slots.',
+    );
+  }
 
   return {
     targets: slots.flatMap(slot =>
-      platforms.map(platform =>
-        slot == null ? serialTarget(platform) : slottedTarget(slot, platform),
-      ),
+      platforms.map(platform => {
+        if (slot != null) return slottedTarget(slot, platform, metroOwnerSlot);
+        const target = serialTarget(platform);
+        return allSlots
+          ? { ...target, metroPort: undefined, metroOwned: false }
+          : target;
+      }),
     ),
     services,
     devices,
@@ -237,7 +285,9 @@ function portFindings(
   services: boolean,
 ): ResourceFinding[] {
   const ports = [
-    ['metro', target.metroPort, services],
+    ...(target.metroPort == null
+      ? []
+      : [['metro', target.metroPort, services] as const]),
     ['appium', target.appiumPort, true],
     ['automation', target.automationPort, true],
     ['mjpeg', target.mjpegPort, true],
@@ -268,8 +318,28 @@ export function classifyResources(
   inventory: ResourceInventory,
 ): ResourceFinding[] {
   const findings: ResourceFinding[] = [];
+  const seenPorts = new Set<number>();
+  const metroTarget =
+    options.targets.find(target => target.metroOwned && target.metroPort != null) ??
+    options.targets.find(target => target.metroPort != null);
+  if (metroTarget?.metroPort != null) {
+    const metroFinding = portFindings(
+      metroTarget,
+      inventory,
+      options.services,
+    ).find(finding => finding.detail.includes('(metro)'));
+    if (metroFinding) {
+      findings.push(metroFinding);
+      seenPorts.add(metroTarget.metroPort);
+    }
+  }
   for (const target of options.targets) {
-    findings.push(...portFindings(target, inventory, options.services));
+    const portResults = portFindings(target, inventory, options.services);
+    for (const finding of portResults) {
+      if (finding.port != null && seenPorts.has(finding.port)) continue;
+      if (finding.port != null) seenPorts.add(finding.port);
+      findings.push(finding);
+    }
     if (target.platform === 'android') {
       const booted = inventory.androidDevices.some(
         device =>

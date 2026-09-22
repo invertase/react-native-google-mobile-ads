@@ -22,7 +22,7 @@ Once: `yarn && yarn prepare`; on iOS also root `BUNDLE_FROZEN=true bundle instal
 
 **Names only.** Which of these to run is [platform coverage](#platform-coverage-gate-blocking). When running e2e, use only these named scripts (no `yarn tests:android:*` / `yarn tests:ios:*` globs). Do **not** run every named script unless that table requires it.
 
-Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:check`, `yarn tests:appium:release`, `yarn tests:appium:provision <android|ios|both>`, `yarn tests:appium:android`, `yarn tests:appium:ios`, `yarn tests:appium:android:parallel`, `yarn tests:appium:ios:parallel`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
+Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:check`, `yarn tests:appium:release`, `yarn tests:appium:provision <android|ios|both>`, `yarn tests:appium:android`, `yarn tests:appium:ios`, `yarn tests:appium:parallel`, `yarn tests:appium:android:parallel`, `yarn tests:appium:ios:parallel`, `yarn tests:appium:android:parallel:external`, `yarn tests:appium:ios:parallel:external`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
 
 `yarn tests:e2e:codegen` generates **app-source iOS** metadata for the example and `@invertase/rngma-testing` probe before CocoaPods. [GMA-AD-3](../architecture-decisions.md#gma-ad-3) core library output is committed and skipped. Android Gradle generates the remaining app/probe metadata during its build, so Android paths do not invoke this iOS-only command or delete any generated tree. The canonical iOS run and Appium preflight invoke the same yarn target rather than duplicating its implementation. The frozen `tests:ios:pod:install` script remains exactly the bundled pod command and is called by `tests:ios:run` after codegen.
 
@@ -30,11 +30,11 @@ Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn t
 
 ## E2e slots
 
-The pure calculator supports slots `0`–`7`. For slot `N` and platform offset `P`, `BASE = 12000 + 1000N + P`, where Android `P=0`, iOS `P=100`, and macOS `P=200`; Metro is `BASE+7`, Appium is `BASE+13`, and the Android console is `5556+2N` (`emulator-<console>`). Android AVDs are `TestingAVD-N`; iOS simulators are `RN E2E iOS slot-N`. The macOS offset is reserved for compatible cross-repository arithmetic; RNGMA has no macOS-app e2e target.
+The pure calculator supports slots `0`–`7`. For slot `N` and platform offset `P`, `BASE = 12000 + 1000N + P`, where Android `P=0`, iOS `P=100`, and macOS `P=200`; raw platform resources use Appium `BASE+13`, automation `BASE+14`, and MJPEG `BASE+15`, while the Android console is `5556+2N` (`emulator-<console>`). Operational Metro is worktree-scoped and never platform-offset: `12000 + 1000N + 7` for both Android and iOS. Android AVDs are `TestingAVD-N`; iOS simulators are `RN E2E iOS slot-N`. The macOS offset is reserved for compatible cross-repository arithmetic; RNGMA has no macOS-app e2e target.
 
 RNGMA operational commands accept only slots `1`, `2`, and `4`–`7`. Slot `0` remains calculator-supported but is not an RNGMA operational slot; slot `3` is reserved for RNFB. Provision, select, build, run, and Appium paths reject `0` and `3`. With `RNGMA_E2E_SLOT` unset, the serial/default behavior is unchanged: Metro `8081`, Appium `4725`, serial APK path, existing-device selection, and CI's `TestingAVD`. CI remains serial and does not use slot provisioning.
 
-`RNGMA_E2E_SLOT` must be an unsigned integer string in `0`–`7`; operational commands then apply the RNGMA rejection above. `RNGMA_E2E_PLATFORM=android|ios` is the unified slot target: the packager requires it to choose the platform offset, shared WDIO requires it for slot ports (Appium preflight supplies its own target), and every slot-aware platform-specific command rejects a conflicting value instead of ignoring or overriding it. When a slot is selected, computed ports win: `RNGMA_METRO_PORT` or `RNGMA_APPIUM_PORT` may be omitted or equal the computed value, but a different explicit value is rejected. A conflicting `RNGMA_ANDROID_UDID` or `RNGMA_IOS_DEVICE` is also rejected. `RNGMA_IOS_UDID` and `RNGMA_IOS_VERSION` may further constrain the exact slot-named simulator selected by the iOS selector. With no slot, the platform variable does not change serial resources.
+`RNGMA_E2E_SLOT` must be an unsigned integer string in `0`–`7`; operational commands then apply the RNGMA rejection above. `RNGMA_E2E_PLATFORM=android|ios` is the unified slot target: the packager requires it to validate the consumer platform, shared WDIO requires it for platform-specific service ports (Appium preflight supplies its own target), and every slot-aware platform-specific command rejects a conflicting value instead of ignoring or overriding it. When a slot is selected, computed ports win: `RNGMA_METRO_PORT` may equal only the worktree port, while `RNGMA_APPIUM_PORT` may equal only the platform-specific port; different explicit values are rejected. A conflicting `RNGMA_ANDROID_UDID` or `RNGMA_IOS_DEVICE` is also rejected. `RNGMA_IOS_UDID` and `RNGMA_IOS_VERSION` may further constrain the exact slot-named simulator selected by the iOS selector. With no slot, the platform variable does not change serial resources.
 
 **Create-only provisioning.** Before first use of a missing slot device, run exactly one of:
 
@@ -42,9 +42,9 @@ RNGMA operational commands accept only slots `1`, `2`, and `4`–`7`. Slot `0` r
 RNGMA_E2E_SLOT=<1|2|4-7> yarn tests:appium:provision <android|ios|both>
 ```
 
-The command reuses an available exact existing name and otherwise creates it. It never deletes, erases, renames, or overwrites any device. Android installs the missing API 36 `google_apis` x86_64 system image if needed and creates `TestingAVD-N`; iOS creates an exact iPhone 17 on the newest available installed iOS runtime. Provisioning requires a slot and rejects `0` and `3`. A single-platform argument must match `RNGMA_E2E_PLATFORM` when that variable is set; `both` requires it unset. Those rejections happen before inventory or create. Appium and `ios:select-and-boot` remain select-and-boot only: they never create a device. A missing exact device is a blocker until this provisioning command succeeds.
+The command reuses an available exact existing name and otherwise creates it. It never deletes, erases, renames, overwrites, or repairs any device—even when an existing exact-name AVD has an incompatible ABI. For a missing Android AVD, local slot provisioning installs the API 36 `google_apis` image matching the Node host (`arm64-v8a` on `arm64`, `x86_64` on `x64`) and creates `TestingAVD-N`; any other host architecture is rejected before inventory or mutation. iOS creates an exact iPhone 17 on the newest available installed iOS runtime. Provisioning requires a slot and rejects `0` and `3`. A single-platform argument must match `RNGMA_E2E_PLATFORM` when that variable is set; `both` requires it unset. Those rejections happen before inventory or create. Appium and `ios:select-and-boot` remain select-and-boot only: they never create a device. A missing exact device is a blocker until this provisioning command succeeds.
 
-**Operator check/release.** Use `yarn tests:appium:check` before taking serial resources, or add `--slot=N`; `RNGMA_E2E_SLOT` is equivalent. `--platform=android|ios` scopes a platform. Default host-clear treats Metro and the Android emulator console as informational, while `--services` (alias `--strict`) includes them as BUSY. Appium, automation, MJPEG, the example app, and the exact booted device are always BUSY. `yarn tests:appium:release` clears only scoped listeners and the example app; it also clears Metro by default. Add `--devices` to stop the exact scoped emulator/simulator. `--only=<comma-separated categories>` narrows release to `metro`, `appium`, `android-apps`, `android-emulator`, and/or `ios-sims`. `--all-slots` is a dedicated-host action over serial plus slots `1`, `2`, and `4`–`7`; it never includes reserved slot `3` or Detox-clone simulators. Both commands reject slots `0` and `3` before probing or changing the host.
+**Operator check/release.** Use `yarn tests:appium:check` before taking serial resources, or add `--slot=N`; `RNGMA_E2E_SLOT` is equivalent. `--platform=android|ios` scopes a platform. For slotted worktree Metro, add `--metro-owner-slot=N` (or set `RNGMA_E2E_METRO_SLOT`) so checks identify the actual first-slot listener. Consumer slots inspect that shared listener but never own or release it. Slotted release may stop Metro only when both the selected slot and `--metro-owner-slot` identify the owner; omitting owner scope omits Metro entirely. Default host-clear treats Metro and the Android emulator console as informational, while `--services` (alias `--strict`) includes them as BUSY. Appium, automation, MJPEG, the example app, and the exact booted device are always BUSY. Add `--devices` to stop the exact scoped emulator/simulator. `--only=<comma-separated categories>` narrows release to `metro`, `appium`, `android-apps`, `android-emulator`, and/or `ios-sims`. `--all-slots` is a dedicated-host action over serial plus slots `1`, `2`, and `4`–`7`; it never includes reserved slot `3` or Detox-clone simulators, and it does not infer or multiply Metro ownership. Supply one explicit `--metro-owner-slot=N` when that whole-worktree Metro is intentionally in scope. Both commands reject slots `0` and `3` before probing or changing the host.
 
 **Canonical slot 1 Android sequence** (one shell per long-lived owner is normal):
 
@@ -68,51 +68,84 @@ RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:appium:ios:prebuild-wda
 RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:appium:ios
 ```
 
-Use a fresh writable env file because selection appends. The packager owner keeps Metro `13107` alive; the selector owner selects and boots only `RN E2E iOS slot-1` and emits its UDID/runtime; slot `tests:ios:run --udid` requires those selector variables, verifies the exact slot name and runtime, and rejects an arbitrary or serial UDID **before** build or install; the named pod/build/run path then installs on that UDID and passes `RCT_METRO_PORT=13107` as an explicit Xcode build setting; WDA is rebuilt in the shared `tooling/appium/.wda-derived`; and the Appium owner uses listener `13113`, the same selection, app, and prebuilt WDA. XCUITest launches the app with `-RCT_jsLocation localhost:13107` and `RCT_METRO_PORT=13107`, so native launch and build target the same slot Metro. Slot ownership is per nonreserved slot: the manual sequence supports one Android or iOS session in each of slots `1`, `2`, and `4`–`7`; the parallel owner below uses exactly slots `1`, `2`, and `4`. Serial operation remains one e2e at a time on `8081`/`4725`.
+Use a fresh writable env file because selection appends. The packager owner keeps worktree Metro `13007` alive; the selector owner selects and boots only `RN E2E iOS slot-1` and emits its UDID/runtime; slot `tests:ios:run --udid` requires those selector variables, verifies the exact slot name and runtime, and rejects an arbitrary or serial UDID **before** build or install; the named pod/build/run path then installs on that UDID and passes `RCT_METRO_PORT=13007` as an explicit Xcode build setting; WDA is rebuilt in the shared `tooling/appium/.wda-derived`; and the Appium owner uses platform-specific listener `13113`, the same selection, app, and prebuilt WDA. XCUITest launches the app with `-RCT_jsLocation localhost:13007` and `RCT_METRO_PORT=13007`, so native launch and build target the same worktree Metro. Slot ownership is per nonreserved slot: the manual sequence supports one Android or iOS session in each operational slot; the parallel owner below selects exactly three. Serial operation remains one e2e at a time on `8081`/`4725`.
 
 <a id="parallel-appium"></a>
 
 ### Parallel Appium (local only)
 
-The complete public command surface is exactly:
+The preferred simultaneous Android+iOS command is:
+
+```bash
+RNGMA_E2E_PARALLEL_SLOTS=1,4,6 yarn tests:appium:parallel
+```
+
+This combined owner starts one worktree Metro and waits for readiness **before** either platform prepares. Android and iOS preparation then run concurrently. A cross-platform barrier waits for both preparations to succeed before synchronously launching all six Appium children, so neither platform can enter its session phase early. One platform's preparation/session failure, an unexpected Metro exit, or abort cancels the sibling platform and the one Metro through shared once-only cleanup. The two platform summaries each retain total `25` and positional `15 + 6 + 4` rows.
+
+Single-platform parents use:
 
 ```bash
 yarn tests:appium:android:parallel
 yarn tests:appium:ios:parallel
 ```
 
-Do not set the internal spec-filter or parent/child environment variables and do not invoke the workspace implementation directly. Each command starts three isolated Appium/WDIO processes, each with `maxInstances: 1` and one fixed smoke spec: `a-primary` uses slot `1` for 15 tests, `b-secondary` uses slot `2` for 6, and `c-tertiary` uses slot `4` for 4. The aggregate is **15 + 6 + 4 = 25 tests**, not 75. Slot `3` is never selected. Existing serial commands and the manual per-slot sequence above are unchanged.
+Set `RNGMA_E2E_PARALLEL_SLOTS` to exactly three comma-separated operational slots when the defaults are unsuitable. Pairing is positional: first/second/third map to `a-primary` (15), `b-secondary` (6), and `c-tertiary` (4). The product default remains `1,2,4`; for a host where those slots are not all owned, select only owned slots, for example:
+
+```bash
+RNGMA_E2E_PARALLEL_SLOTS=1,4,5 yarn tests:appium:android:parallel
+```
+
+The aggregate is **15 + 6 + 4 = 25 tests**, not 75. Parsing rejects a count other than three, empty/malformed values, duplicates, slot `0`, reserved slot `3`, out-of-range slots, and conflicting slot/platform/port child environment. Do not set internal spec-filter, parent/child, or Metro-slot variables and do not invoke the workspace implementation directly. Existing serial commands and the manual per-slot sequence above are unchanged.
 
 Before first device use, the exact devices for all three slots must already exist. Provision missing devices with the create-only command, once per slot:
 
 ```bash
 RNGMA_E2E_SLOT=1 yarn tests:appium:provision android
-RNGMA_E2E_SLOT=2 yarn tests:appium:provision android
 RNGMA_E2E_SLOT=4 yarn tests:appium:provision android
+RNGMA_E2E_SLOT=5 yarn tests:appium:provision android
 RNGMA_E2E_SLOT=1 yarn tests:appium:provision ios
-RNGMA_E2E_SLOT=2 yarn tests:appium:provision ios
 RNGMA_E2E_SLOT=4 yarn tests:appium:provision ios
+RNGMA_E2E_SLOT=5 yarn tests:appium:provision ios
 ```
 
-Run only the three commands for the platform being prepared. They create or reuse exact `TestingAVD-1`, `TestingAVD-2`, and `TestingAVD-4`, or exact `RN E2E iOS slot-1`, `slot-2`, and `slot-4`; they never delete, erase, rename, or overwrite devices. The parallel command remains select-and-boot only and fails when an exact device is missing. Before taking the slots, apply the ownership-transfer rule in [pre-flight](#pre-flight). The task must own all three slots and every required listener must be free before the orchestrator mutates codegen, files, builds, simulators, or child processes.
+Run only the three commands for the platform being prepared. This `1,4,5` example creates or reuses exact `TestingAVD-1`, `TestingAVD-4`, and `TestingAVD-5`, or exact `RN E2E iOS slot-1`, `slot-4`, and `slot-5`; it never deletes, erases, renames, or overwrites devices. Other operational slot triples, including the product default, remain supported. The parallel command remains select-and-boot only and fails when an exact device is missing. Before taking the slots, apply the ownership-transfer rule in [pre-flight](#pre-flight). The task must own all three slots and every required listener must be free before the orchestrator mutates codegen, files, builds, simulators, or child processes.
 
 Android resources are:
 
-- slot `1`: Metro `13007`, Appium `13013`, UiAutomator2 `systemPort` `13014`, MJPEG `13015`, `TestingAVD-1` / `emulator-5558`;
-- slot `2`: Metro `14007`, Appium `14013`, UiAutomator2 `systemPort` `14014`, MJPEG `14015`, `TestingAVD-2` / `emulator-5560`;
-- slot `4`: Metro `16007`, Appium `16013`, UiAutomator2 `systemPort` `16014`, MJPEG `16015`, `TestingAVD-4` / `emulator-5564`.
+- slot `1`: Appium `13013`, UiAutomator2 `systemPort` `13014`, MJPEG `13015`, `TestingAVD-1` / `emulator-5558`;
+- slot `4`: Appium `16013`, UiAutomator2 `systemPort` `16014`, MJPEG `16015`, `TestingAVD-4` / `emulator-5564`.
+- slot `5`: Appium `17013`, UiAutomator2 `systemPort` `17014`, MJPEG `17015`, `TestingAVD-5` / `emulator-5566`.
 
 iOS resources are:
 
-- slot `1`: Metro `13107`, Appium `13113`, XCUITest `wdaLocalPort` `13114`, MJPEG `13115`, `RN E2E iOS slot-1`;
-- slot `2`: Metro `14107`, Appium `14113`, XCUITest `wdaLocalPort` `14114`, MJPEG `14115`, `RN E2E iOS slot-2`;
-- slot `4`: Metro `16107`, Appium `16113`, XCUITest `wdaLocalPort` `16114`, MJPEG `16115`, `RN E2E iOS slot-4`.
+- slot `1`: Appium `13113`, XCUITest `wdaLocalPort` `13114`, MJPEG `13115`, `RN E2E iOS slot-1`;
+- slot `4`: Appium `16113`, XCUITest `wdaLocalPort` `16114`, MJPEG `16115`, `RN E2E iOS slot-4`.
+- slot `5`: Appium `17113`, XCUITest `wdaLocalPort` `17114`, MJPEG `17115`, `RN E2E iOS slot-5`.
 
-The Android command checks all twelve ports first, then serializes slot `1`, `2`, and `4` APK builds so each Gradle build produces app/probe Codegen metadata, bakes its own Metro port, and preserves a distinct `.../debug/slots/slot-N/app-debug.apk`. Committed core library Codegen is consumed rather than regenerated. Only after every build succeeds does it start three task-owned Metro children, wait for all three listeners, and start the three Appium/WDIO children concurrently. Serializing Gradle output avoids build races.
+The first configured slot identifies one worktree Metro at `12000 + slot*1000 + 7`, without a platform offset. With `1,4,5`, every Android and iOS child uses `13007`; Appium, automation, MJPEG, devices, and copied app artifacts remain slot- and platform-specific. A normal single-platform parent checks that shared port once, serializes preparation, starts exactly one task-owned Metro, waits for it, then starts three Appium/WDIO children. All three Android Gradle builds bake the common port and preserve distinct `.../debug/slots/slot-N/app-debug.apk` files; each serial-scoped reverse, debug host, install, and launch uses that common port.
 
-The iOS command has the same twelve-port precheck and runs app-source iOS Codegen once. It requires the frozen root Ruby bundle to be installed first (`BUNDLE_FROZEN=true bundle install`). It serially selects/boots slots `1`, `2`, and `4` into fresh per-slot environment files, requires all three exact simulators to resolve to the same installed iOS runtime, then serially builds/installs each app. Each build is copied to `RNGoogleMobileAdsExample/ios/build/slots/slot-N/ReactTestApp.app`. After all builds, one shared WDA prebuild runs against the first selection; the common runtime plus serialized build/WDA preparation avoids DerivedData and WDA build races. The command then starts the three Metros and three Appium/WDIO children concurrently, with each Appium child consuming its slot-specific app and simulator selection.
+The iOS command runs app-source iOS Codegen once. It requires the frozen root Ruby bundle to be installed first (`BUNDLE_FROZEN=true bundle install`). It serially selects/boots the configured slots into fresh per-slot environment files, requires all exact simulators to resolve to the same installed iOS runtime, then serially builds/installs each app. Each build and XCUITest launch receives the common `RCT_METRO_PORT` / `-RCT_jsLocation`, while copied apps remain under `RNGoogleMobileAdsExample/ios/build/slots/slot-N/ReactTestApp.app`. One shared WDA prebuild runs against the first selection.
 
-Each Appium/collector stream is preserved separately at `/tmp/rngma-e2e-<platform>-slot-<N>-<label>.log`; each Metro has the matching `.packager.log`. Logs are replaced for a new invocation, so copy them before rerunning if they are needed. Abort handling is armed before any planning, preparation, or mutation; every spawn and await checks it, task-owned children are cancelled once, and the run never continues after abort. The parent waits up to 120 seconds for each task-owned Metro and fails immediately if a packager exits before readiness. Port, preparation, Metro-readiness, Appium, or unexpected packager failure stops started task-owned children and exits nonzero. A successful run prints all three passing rows and total `25`, then stops its packagers. Every printed or returned per-slot summary includes `slot`, `spec`, `tests`, `status`, numeric `exitCode`, and `log`. `exitCode` is `0` on pass, the child's numeric code when it exited without a signal, `130` for any child signal (not `128+n`) and for cancelled siblings, and `1` when that slot's packager spawn/readiness or other startup rejection has no child code; the parent process exit remains separate from those per-slot codes. It does not perform global device or simulator cleanup and does not stop unrelated listeners. After interruption, release only task-owned slots `1`, `2`, and `4` individually; the parallel parent must never perform a whole-host wipe.
+**Advanced/manual simultaneous contract.** The combined command above is preferred because its barrier guarantees concurrent Appium launch. The explicit external-consumer flow remains available when an operator needs separate parent processes; neither parent may opportunistically attach to a busy port. Use three shells so the owner remains foregrounded and both consumers overlap:
+
+Shell A — start the explicit owner, wait for Metro's ready message, and leave this shell running:
+```bash
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=android yarn tests:packager
+```
+
+Shell B — after Shell A is ready:
+```bash
+RNGMA_E2E_PARALLEL_SLOTS=1,4,5 yarn tests:appium:android:parallel:external
+```
+
+Shell C — start after Shell A is ready, without waiting for Shell B:
+```bash
+RNGMA_E2E_PARALLEL_SLOTS=1,4,5 yarn tests:appium:ios:parallel:external
+```
+
+Wait for both Shell B and Shell C to exit. Only then return to Shell A and interrupt its foreground named packager with Ctrl-C. The external parents require `13007` to be listening before any preparation and again before Appium, never start or stop it, and own only their platform-specific children. The standalone owner is the only process allowed to bind or stop Metro and therefore outlives both consumers without ad-hoc process discovery or cleanup.
+
+Each Appium/collector stream is preserved separately at `/tmp/rngma-e2e-<platform>-slot-<N>-<label>.log`; the owned Metro log is `/tmp/rngma-e2e-worktree-metro-<port>.log`. Logs are replaced for a new invocation. Abort handling is armed before planning or mutation; every spawn and await checks it, task-owned children are cancelled once, and the run never continues after abort. The owner parent waits up to 120 seconds for Metro and fails immediately if it exits before readiness. Port, preparation, Metro-readiness, Appium, or unexpected owner failure stops started task-owned children and exits nonzero. A successful run prints all three passing rows and total `25`, then an owner parent stops its one Metro; an external parent never does. Every summary retains slot/spec/tests/status/numeric exit/log. Release interrupted slots individually; release the shared Metro only from its explicit owner slot scope.
 
 These parallel commands are local-only. GitHub Actions remains on the serial commands and serial `8081`/`4725` resources documented in [CI workflows](../ci-workflows/index.md#workflows).
 
@@ -134,7 +167,7 @@ That artifact is gitignored but survives between runs, so later `yarn tests:appi
 
 When those named scripts are the e2e gate, `tee` `yarn tests:appium:android` to a unique `/tmp/rngma-e2e-android-*.log` and `yarn tests:appium:ios` to a unique `/tmp/rngma-e2e-ios-*.log`. Redirect/`tee` of the **same** named yarn script is allowed; do not add other wrappers.
 
-Device driver: Appium 3 + WebdriverIO in `tooling/appium/` ([§ Appium](#appium-scaffold)). Specs: `tooling/appium/test/specs/**/*.ts`. App: `RNGoogleMobileAdsExample/` (format gallery + stable `testID`s). Serial operation is one e2e at a time on `:8081`; manual slot operation is one session per supported nonreserved slot, while the local parallel owner fixes three one-worker sessions to slots `1`, `2`, and `4` ([§ parallel Appium](#parallel-appium)). No source edits during a run.
+Device driver: Appium 3 + WebdriverIO in `tooling/appium/` ([§ Appium](#appium-scaffold)). Specs: `tooling/appium/test/specs/**/*.ts`. App: `RNGoogleMobileAdsExample/` (format gallery + stable `testID`s). Serial operation is one e2e at a time on `:8081`; manual slot operation is one session per supported nonreserved slot; a single-platform parallel owner runs three positionally mapped one-worker sessions on the three configured slots, while the preferred combined owner runs six (three per platform) after the documented session barrier ([§ parallel Appium](#parallel-appium)). No source edits during a run.
 
 There is no separate macOS-app e2e target. iOS e2e is `yarn tests:ios:pod:install` / `yarn tests:ios:run` (install) then `yarn tests:appium:ios` (local Mac or CI `macos-15`; the required WDA prebuild comes first: [§ prebuilt WDA](#ios-wda-prebuilt-validation)).
 
@@ -170,7 +203,7 @@ Every attempt emits one stable `[request-outcome-attempt]` JSON line with `forma
 
 <a id="android-app-path"></a>
 
-**Android app path:** default `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk` after `yarn tests:android:build` (override `RNGMA_ANDROID_APK`). With a slot, the same named build passes the computed Metro port as Gradle's real `reactNativeDevServerPort`, then copies the APK to `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/slots/slot-N/app-debug.apk`; Appium selects that slot path unless `RNGMA_ANDROID_APK` explicitly overrides it. Appium install/reset may clear app data; the named Android Appium command restores React Native `debug_http_host=127.0.0.1:<computed-Metro-port>` after that reset and launches afterward. Do not invent ad hoc `adb` / SharedPreferences / launch steps. Metro reverse and connectivity use the same computed port for the selected serial ([pre-flight](#pre-flight)). **iOS:** `yarn tests:ios:run --udid <selected-udid>` runs codegen, the exact frozen bundled pod script, and `react-native build-ios --buildFolder build`, then installs and launches `RNGoogleMobileAdsExample/ios/build/Build/Products/Debug-iphonesimulator/ReactTestApp.app` on that simulator with `simctl`; Appium uses the same exact path. Slot mode also requires selector-produced `RNGMA_IOS_UDID` / `RNGMA_IOS_VERSION`, matches `--udid` to that UDID, and verifies the exact slot simulator name and runtime before those steps. Slot builds add explicit Xcode setting `RCT_METRO_PORT=<computed-iOS-Metro-port>`, and XCUITest supplies `-RCT_jsLocation localhost:<same-port>` plus that environment value at launch. Serial builds and launches add neither, preserving prior behavior. Set `RNGMA_IOS_APP` only to explicitly override Appium. Never discover an app from DerivedData or fall back to an installed bundle id.
+**Android app path:** default `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk` after `yarn tests:android:build` (override `RNGMA_ANDROID_APK`). With a slot, the same named build passes the computed worktree Metro port as Gradle's real `reactNativeDevServerPort`, then copies the APK to `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/slots/slot-N/app-debug.apk`; Appium selects that slot path unless `RNGMA_ANDROID_APK` explicitly overrides it. Appium install/reset may clear app data; the named Android Appium command restores React Native `debug_http_host=127.0.0.1:<worktree-Metro-port>` after that reset and launches afterward. Do not invent ad hoc `adb` / SharedPreferences / launch steps. Metro reverse and connectivity use the same computed port for the selected serial ([pre-flight](#pre-flight)). **iOS:** `yarn tests:ios:run --udid <selected-udid>` runs codegen, the exact frozen bundled pod script, and `react-native build-ios --buildFolder build`, then installs and launches `RNGoogleMobileAdsExample/ios/build/Build/Products/Debug-iphonesimulator/ReactTestApp.app` on that simulator with `simctl`; Appium uses the same exact path. Slot mode also requires selector-produced `RNGMA_IOS_UDID` / `RNGMA_IOS_VERSION`, matches `--udid` to that UDID, and verifies the exact slot simulator name and runtime before those steps. Slot builds add explicit Xcode setting `RCT_METRO_PORT=<worktree-Metro-port>`, and XCUITest supplies `-RCT_jsLocation localhost:<same-port>` plus that environment value at launch. Serial builds and launches add neither, preserving prior behavior. Set `RNGMA_IOS_APP` only to explicitly override Appium. Never discover an app from DerivedData or fall back to an installed bundle id.
 
 <a id="request-outcome-sample"></a>
 
@@ -178,7 +211,7 @@ Every attempt emits one stable `[request-outcome-attempt]` JSON line with `forma
 
 Cumulative aggregate from the [request-outcome contracts](#appium-scaffold) above. It is durable because these counts are the input that selected the [settled acceptance rule](#representative-acceptance) each format now holds — see [documentation policy § cumulative verification-evidence tables](../documentation-policy.md#verification-evidence-tables) for why counts live here and why logs, run identifiers, and dates do not.
 
-**Lower bound, not a census.** Every cell counts only attempts whose classification is verified and non-overlapping across sessions, so totals only ever grow. Absence of a count is not evidence that an outcome cannot occur. Every subsequent qualifying run feeds this sample. The published table is the snapshot at the last implementation or documentation pass before independent review; runs taken while that tree is frozen accumulate for the next permitted documentation pass and do not mutate the table under review. The four request-outcome contracts live only in `formats.smoke.a-primary`; parallel slots `2` and `4` run `b-secondary` / `c-tertiary` and do not run them ([§ parallel Appium](#parallel-appium)).
+**Lower bound, not a census.** Every cell counts only attempts whose classification is verified and non-overlapping across sessions, so totals only ever grow. Absence of a count is not evidence that an outcome cannot occur. Every subsequent qualifying run feeds this sample. The published table is the snapshot at the last implementation or documentation pass before independent review; runs taken while that tree is frozen accumulate for the next permitted documentation pass and do not mutate the table under review. The four request-outcome contracts live only in `formats.smoke.a-primary`; the second and third configured slots run `b-secondary` / `c-tertiary` and do not run them (slots `4` / `5` in the `1,4,5` example; [§ parallel Appium](#parallel-appium)).
 
 | format | platform | attempts | loaded | no-fill | internal-error(fingerprinted) | other-error | current-acceptance |
 |--------|----------|----------|--------|---------|-------------------------------|-------------|--------------------|

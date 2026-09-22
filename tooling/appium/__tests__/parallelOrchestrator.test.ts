@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   PARALLEL_ASSIGNMENTS,
   createParallelPlan,
+  parseParallelSlots,
   validateParallelAssignments,
   type ParallelAssignment,
 } from '../src/parallelPlan.ts';
@@ -13,21 +14,17 @@ import {
   CANCELLED_EXIT_CODE,
   UNKNOWN_FAILURE_EXIT_CODE,
   childSlotExitCode,
+  runCombinedParallelE2e,
   runParallelE2e,
   type ChildCommand,
+  type CombinedParallelRunSummary,
   type ParallelRunner,
   type RunningCommand,
 } from '../src/parallelOrchestrator.ts';
 import { isParallelParentChild } from '../src/parentContract.ts';
-import {
-  WDIO_SMOKE_SPECS,
-  selectedWdioSpecs,
-} from '../src/wdioSpecs.ts';
+import { WDIO_SMOKE_SPECS, selectedWdioSpecs } from '../src/wdioSpecs.ts';
 
-const repositoryRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../..',
-);
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 type Deferred = {
   promise: Promise<number>;
@@ -66,6 +63,8 @@ class MockRunner implements ParallelRunner {
   afterPorts?: () => void;
   abortAfterRole?: { role: string; abort(): void };
   onStart?: (command: ChildCommand) => void;
+  heldRoles = new Set<string>();
+  commandExitCodes = new Map<string, number>();
   packagerExitCodes = new Map<number, number>();
   packagerSpawnErrors = new Map<number, Error>();
   readinessErrors = new Map<number, Error>();
@@ -73,11 +72,16 @@ class MockRunner implements ParallelRunner {
     [1, '26.5'],
     [2, '26.5'],
     [4, '26.5'],
+    [6, '26.5'],
   ]);
 
   async assertPortsFree(ports: number[]): Promise<void> {
     this.events.push(`ports:${ports.join(',')}`);
     this.afterPorts?.();
+  }
+
+  async assertPortListening(port: number): Promise<void> {
+    this.events.push(`listening:${port}`);
   }
 
   start(command: ChildCommand): RunningCommand {
@@ -87,7 +91,19 @@ class MockRunner implements ParallelRunner {
     const state = { command, deferred: pending, stops: 0 };
     this.children.push(state);
     this.onStart?.(command);
-    if (command.role.endsWith('Appium') && this.autoCompleteAppium) {
+    if (this.heldRoles.has(command.role)) {
+      return {
+        completion: pending.promise,
+        stop: async () => {
+          state.stops += 1;
+          pending.resolve(CANCELLED_EXIT_CODE);
+        },
+      };
+    }
+    const configuredCode = this.commandExitCodes.get(command.role);
+    if (configuredCode != null) {
+      queueMicrotask(() => pending.resolve(configuredCode));
+    } else if (command.role.endsWith('Appium') && this.autoCompleteAppium) {
       queueMicrotask(() => pending.resolve(this.appiumExitCode));
     } else if (command.role.endsWith('packager')) {
       const slot = Number(command.env.RNGMA_E2E_SLOT);
@@ -135,33 +151,68 @@ class MockRunner implements ParallelRunner {
   }
 }
 
-test('parallel plan locks exact slots, specs, ports, devices, logs, and 25 tests', () => {
-  const android = createParallelPlan('android', {});
-  assert.deepEqual(android.map(item => item.slot), [1, 2, 4]);
-  assert.deepEqual(android.map(item => item.spec), WDIO_SMOKE_SPECS);
-  assert.deepEqual(android.map(item => item.testCount), [15, 6, 4]);
-  assert.equal(android.reduce((sum, item) => sum + item.testCount, 0), 25);
-  assert.deepEqual(android.map(item => item.metroPort), [13007, 14007, 16007]);
-  assert.deepEqual(android.map(item => item.appiumPort), [13013, 14013, 16013]);
-  assert.deepEqual(android.map(item => item.automationPort), [13014, 14014, 16014]);
-  assert.deepEqual(android.map(item => item.mjpegPort), [13015, 14015, 16015]);
-  assert.deepEqual(android.map(item => item.device), [
-    'emulator-5558',
-    'emulator-5560',
-    'emulator-5564',
-  ]);
+test('parallel plan maps configured 1/4/5 slots to one Metro and positional specs', () => {
+  const env = { RNGMA_E2E_PARALLEL_SLOTS: '1,4,5' };
+  const android = createParallelPlan('android', env);
+  assert.deepEqual(
+    android.map(item => item.slot),
+    [1, 4, 5],
+  );
+  assert.deepEqual(
+    android.map(item => item.spec),
+    WDIO_SMOKE_SPECS,
+  );
+  assert.deepEqual(
+    android.map(item => item.testCount),
+    [15, 6, 4],
+  );
+  assert.equal(
+    android.reduce((sum, item) => sum + item.testCount, 0),
+    25,
+  );
+  assert.deepEqual(
+    android.map(item => item.metroPort),
+    [13007, 13007, 13007],
+  );
+  assert.deepEqual(
+    android.map(item => item.appiumPort),
+    [13013, 16013, 17013],
+  );
+  assert.deepEqual(
+    android.map(item => item.automationPort),
+    [13014, 16014, 17014],
+  );
+  assert.deepEqual(
+    android.map(item => item.mjpegPort),
+    [13015, 16015, 17015],
+  );
+  assert.deepEqual(
+    android.map(item => item.device),
+    ['emulator-5558', 'emulator-5564', 'emulator-5566'],
+  );
   assert.ok(android.every(item => item.logPath.includes(`slot-${item.slot}`)));
 
-  const ios = createParallelPlan('ios', {});
-  assert.deepEqual(ios.map(item => item.metroPort), [13107, 14107, 16107]);
-  assert.deepEqual(ios.map(item => item.appiumPort), [13113, 14113, 16113]);
-  assert.deepEqual(ios.map(item => item.automationPort), [13114, 14114, 16114]);
-  assert.deepEqual(ios.map(item => item.mjpegPort), [13115, 14115, 16115]);
-  assert.deepEqual(ios.map(item => item.device), [
-    'RN E2E iOS slot-1',
-    'RN E2E iOS slot-2',
-    'RN E2E iOS slot-4',
-  ]);
+  const ios = createParallelPlan('ios', env);
+  assert.deepEqual(
+    ios.map(item => item.metroPort),
+    [13007, 13007, 13007],
+  );
+  assert.deepEqual(
+    ios.map(item => item.appiumPort),
+    [13113, 16113, 17113],
+  );
+  assert.deepEqual(
+    ios.map(item => item.automationPort),
+    [13114, 16114, 17114],
+  );
+  assert.deepEqual(
+    ios.map(item => item.mjpegPort),
+    [13115, 16115, 17115],
+  );
+  assert.deepEqual(
+    ios.map(item => item.device),
+    ['RN E2E iOS slot-1', 'RN E2E iOS slot-4', 'RN E2E iOS slot-5'],
+  );
 });
 
 test('slot driver listeners are consumed by both actual WDIO configs', () => {
@@ -169,10 +220,7 @@ test('slot driver listeners are consumed by both actual WDIO configs', () => {
     path.join(repositoryRoot, 'tooling/appium/wdio.android.conf.ts'),
     'utf8',
   );
-  const ios = readFileSync(
-    path.join(repositoryRoot, 'tooling/appium/wdio.ios.conf.ts'),
-    'utf8',
-  );
+  const ios = readFileSync(path.join(repositoryRoot, 'tooling/appium/wdio.ios.conf.ts'), 'utf8');
   assert.match(android, /'appium:systemPort': runtime\.slotResources\.automationPort/);
   assert.match(android, /'appium:mjpegServerPort': runtime\.slotResources\.mjpegPort/);
   assert.match(ios, /'appium:wdaLocalPort': runtime\.slotResources\.automationPort/);
@@ -180,8 +228,7 @@ test('slot driver listeners are consumed by both actual WDIO configs', () => {
 });
 
 test('parallel mapping rejects forbidden, duplicate, and missing entries', () => {
-  const copy = (): ParallelAssignment[] =>
-    PARALLEL_ASSIGNMENTS.map(item => ({ ...item }));
+  const copy = (): ParallelAssignment[] => PARALLEL_ASSIGNMENTS.map(item => ({ ...item }));
   const zero = copy();
   zero[0]!.slot = 0;
   assert.throws(() => validateParallelAssignments(zero), /slot 0/);
@@ -191,13 +238,27 @@ test('parallel mapping rejects forbidden, duplicate, and missing entries', () =>
   const duplicate = copy();
   duplicate[1]!.slot = 1;
   assert.throws(() => validateParallelAssignments(duplicate), /duplicate slot/);
-  const wrongOperationalSlot = copy();
-  wrongOperationalSlot[2]!.slot = 5;
-  assert.throws(() => validateParallelAssignments(wrongOperationalSlot), /must use slot 4/);
+  const alternateOperationalSlot = copy();
+  alternateOperationalSlot[2]!.slot = 5;
+  assert.doesNotThrow(() => validateParallelAssignments(alternateOperationalSlot));
   assert.throws(() => validateParallelAssignments(copy().slice(0, 2)), /exactly three/);
   const missingSpec = copy();
   missingSpec[2]!.spec = missingSpec[1]!.spec;
   assert.throws(() => validateParallelAssignments(missingSpec), /every smoke spec/);
+});
+
+test('parallel slot configuration rejects malformed, forbidden, duplicate, and conflicting input', () => {
+  for (const value of ['', '1,4', '1,4,5,6', '1,,5', '1,1,5', '0,4,5', '1,3,5', '1,4,8']) {
+    assert.throws(() => parseParallelSlots(value));
+  }
+  assert.throws(
+    () =>
+      createParallelPlan('android', {
+        RNGMA_E2E_PARALLEL_SLOTS: '1,4,5',
+        RNGMA_E2E_SLOT: '1',
+      }),
+    /conflicts with the parallel parent contract/,
+  );
 });
 
 test('WDIO defaults to all specs and accepts only one exact allowlisted spec', () => {
@@ -238,9 +299,9 @@ test('parent-child codegen contract is exact and standalone defaults remain unch
 });
 
 test('root and workspace expose parallel names without changing serial scripts', () => {
-  const root = JSON.parse(
-    readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'),
-  ) as { scripts: Record<string, string> };
+  const root = JSON.parse(readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')) as {
+    scripts: Record<string, string>;
+  };
   const workspace = JSON.parse(
     readFileSync(path.join(repositoryRoot, 'tooling/appium/package.json'), 'utf8'),
   ) as { scripts: Record<string, string> };
@@ -261,12 +322,19 @@ test('root and workspace expose parallel names without changing serial scripts',
     'yarn workspace @invertase/rngma-appium appium:ios:parallel',
   );
   assert.equal(
-    workspace.scripts['appium:android:parallel'],
-    'tsx ./scripts/parallel.ts android',
+    root.scripts['tests:appium:parallel'],
+    'yarn workspace @invertase/rngma-appium appium:parallel',
+  );
+  assert.equal(workspace.scripts['appium:parallel'], 'tsx ./scripts/parallel.ts both');
+  assert.equal(workspace.scripts['appium:android:parallel'], 'tsx ./scripts/parallel.ts android');
+  assert.equal(workspace.scripts['appium:ios:parallel'], 'tsx ./scripts/parallel.ts ios');
+  assert.equal(
+    root.scripts['tests:appium:android:parallel:external'],
+    'yarn workspace @invertase/rngma-appium appium:android:parallel:external',
   );
   assert.equal(
-    workspace.scripts['appium:ios:parallel'],
-    'tsx ./scripts/parallel.ts ios',
+    root.scripts['tests:appium:ios:parallel:external'],
+    'yarn workspace @invertase/rngma-appium appium:ios:parallel:external',
   );
 });
 
@@ -275,7 +343,10 @@ test('Android uses Gradle app codegen and builds before concurrent children', as
   const summary = await runParallelE2e('android', runner, { env: {} });
   assert.equal(summary.totalTests, 25);
   assert.ok(summary.slots.every(result => result.status === 'pass'));
-  assert.deepEqual(summary.slots.map(result => result.exitCode), [0, 0, 0]);
+  assert.deepEqual(
+    summary.slots.map(result => result.exitCode),
+    [0, 0, 0],
+  );
   assert.ok(
     summary.slots.every(
       result =>
@@ -287,7 +358,7 @@ test('Android uses Gradle app codegen and builds before concurrent children', as
   );
   assert.equal(
     runner.events[0],
-    'ports:13007,13013,13014,13015,14007,14013,14014,14015,16007,16013,16014,16015',
+    'ports:13007,13013,13014,13015,14013,14014,14015,16013,16014,16015',
   );
   assert.equal(runner.commands.filter(item => item.script === 'tests:e2e:codegen').length, 0);
   assert.deepEqual(
@@ -297,49 +368,274 @@ test('Android uses Gradle app codegen and builds before concurrent children', as
     ['1', '2', '4'],
   );
   const lastBuild = runner.events.lastIndexOf('start:slot 4 Android build');
-  const firstPackager = runner.events.findIndex(event => event === 'start:slot 1 packager');
+  const firstPackager = runner.events.findIndex(event => event.includes('worktree Metro owner'));
   assert.ok(lastBuild < firstPackager);
   assert.deepEqual(
     runner.events.filter(event => event.includes('packager') && event.startsWith('start:')),
-    ['start:slot 1 packager', 'start:slot 2 packager', 'start:slot 4 packager'],
+    ['start:worktree Metro owner slot 1 packager'],
   );
   const appiums = runner.commands.filter(item => item.role.endsWith('Appium'));
-  assert.deepEqual(appiums.map(item => item.env.RNGMA_WDIO_SPEC), WDIO_SMOKE_SPECS);
+  assert.deepEqual(
+    appiums.map(item => item.env.RNGMA_WDIO_SPEC),
+    WDIO_SMOKE_SPECS,
+  );
   assert.ok(appiums.every(item => item.logPath?.endsWith('.log')));
   assert.ok(runner.commands.every(item => item.env.RNGMA_E2E_SLOT !== '3'));
+});
+
+test('external Metro consumers require the shared listener and never own a packager', async () => {
+  const runner = new MockRunner();
+  await runParallelE2e('android', runner, {
+    env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,5' },
+    metroMode: 'external',
+  });
+  assert.equal(
+    runner.commands.some(item => item.script === 'tests:packager'),
+    false,
+  );
+  assert.deepEqual(
+    runner.events.filter(event => event.startsWith('listening:')),
+    ['listening:13007', 'listening:13007'],
+  );
+  const children = runner.commands.filter(item => item.role.endsWith('Appium'));
+  assert.ok(children.every(item => item.env.RNGMA_E2E_METRO_SLOT === '1'));
+});
+
+test('combined barrier launches all six Appium children only after both preps', async () => {
+  const runner = new MockRunner();
+  runner.autoCompleteAppium = false;
+  runner.heldRoles.add('slot 6 Android build');
+  runner.heldRoles.add('shared WDA prebuild');
+  const run = runCombinedParallelE2e(runner, {
+    env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
+  });
+
+  await waitFor(
+    () =>
+      runner.children.some(item => item.command.role === 'slot 6 Android build') &&
+      runner.children.some(item => item.command.role === 'shared WDA prebuild'),
+  );
+  const metroChildren = runner.children.filter(item => item.command.role.endsWith('packager'));
+  assert.equal(metroChildren.length, 1);
+  assert.equal(
+    runner.events.some(event => event.startsWith('listening:')),
+    false,
+  );
+  assert.ok(
+    runner.events.indexOf('ready:13007') < runner.events.indexOf('start:slot 1 Android build'),
+  );
+
+  const androidPrep = runner.children.find(item => item.command.role === 'slot 6 Android build')!;
+  const iosPrep = runner.children.find(item => item.command.role === 'shared WDA prebuild')!;
+  androidPrep.deferred.resolve(0);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(runner.children.filter(item => item.command.role.endsWith('Appium')).length, 0);
+  iosPrep.deferred.resolve(0);
+  await waitFor(
+    () => runner.children.filter(item => item.command.role.endsWith('Appium')).length === 6,
+  );
+
+  const appiums = runner.children.filter(item => item.command.role.endsWith('Appium'));
+  assert.equal(appiums.filter(item => item.command.role.startsWith('android ')).length, 3);
+  assert.equal(appiums.filter(item => item.command.role.startsWith('ios ')).length, 3);
+  assert.ok(appiums.every(item => item.stops === 0));
+  for (const child of appiums) child.deferred.resolve(0);
+
+  const summary = await run;
+  assert.equal(summary.android.totalTests, 25);
+  assert.equal(summary.ios.totalTests, 25);
+  assert.deepEqual(
+    summary.android.slots.map(item => item.testCount),
+    [15, 6, 4],
+  );
+  assert.deepEqual(
+    summary.ios.slots.map(item => item.testCount),
+    [15, 6, 4],
+  );
+  assert.equal(metroChildren[0]?.stops, 1);
+});
+
+test('combined preparation failure cancels sibling prep and one Metro', async () => {
+  const runner = new MockRunner();
+  runner.heldRoles.add('shared codegen');
+  runner.commandExitCodes.set('slot 6 Android build', 7);
+  await assert.rejects(
+    () =>
+      runCombinedParallelE2e(runner, {
+        env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
+      }),
+    /slot 6 Android build exited with code 7/,
+  );
+  assert.equal(
+    runner.children.some(item => item.command.role.endsWith('Appium')),
+    false,
+  );
+  const owned = runner.children.filter(
+    item => item.command.role.endsWith('packager') || item.command.role === 'shared codegen',
+  );
+  assert.ok(owned.every(item => item.stops === 1));
+});
+
+test('combined Appium failure cancels sibling platform and Metro once', async () => {
+  const runner = new MockRunner();
+  runner.autoCompleteAppium = false;
+  const run = runCombinedParallelE2e(runner, {
+    env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
+  });
+  await waitFor(
+    () => runner.children.filter(item => item.command.role.endsWith('Appium')).length === 6,
+  );
+  const appiums = runner.children.filter(item => item.command.role.endsWith('Appium'));
+  const failed = appiums.find(item => item.command.role === 'android slot 1 Appium')!;
+  failed.deferred.resolve(9);
+  await assert.rejects(run, error => {
+    const summary = (error as { summary?: CombinedParallelRunSummary }).summary;
+    assert.equal(summary?.android.totalTests, 25);
+    assert.equal(summary?.ios.totalTests, 25);
+    assert.equal(summary?.android.slots[0]?.exitCode, 9);
+    assert.ok(summary?.ios.slots.every(item => item.exitCode === CANCELLED_EXIT_CODE));
+    return true;
+  });
+  const runtime = runner.children.filter(
+    item => item.command.role.endsWith('packager') || item.command.role.endsWith('Appium'),
+  );
+  assert.equal(runtime.length, 7);
+  assert.ok(runtime.every(item => item === failed || item.stops === 1));
+});
+
+test('combined unexpected Metro exit cancels all six Appium children', async () => {
+  const runner = new MockRunner();
+  runner.autoCompleteAppium = false;
+  const run = runCombinedParallelE2e(runner, {
+    env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
+  });
+  await waitFor(
+    () => runner.children.filter(item => item.command.role.endsWith('Appium')).length === 6,
+  );
+  const metro = runner.children.find(item => item.command.role.endsWith('packager'))!;
+  metro.deferred.resolve(8);
+  await assert.rejects(run, /Metro owner exited unexpectedly with code 8/);
+  assert.ok(
+    runner.children
+      .filter(item => item.command.role.endsWith('Appium'))
+      .every(item => item.stops === 1),
+  );
+});
+
+test('combined abort during prep cancels owned children and launches no Appium', async () => {
+  const runner = new MockRunner();
+  const controller = new AbortController();
+  runner.heldRoles.add('slot 6 Android build');
+  runner.heldRoles.add('shared WDA prebuild');
+  const run = runCombinedParallelE2e(runner, {
+    env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
+    signal: controller.signal,
+  });
+  await waitFor(
+    () =>
+      runner.children.some(item => item.command.role === 'slot 6 Android build') &&
+      runner.children.some(item => item.command.role === 'shared WDA prebuild'),
+  );
+  controller.abort();
+  await assert.rejects(run, /interrupted/);
+  assert.equal(
+    runner.children.some(item => item.command.role.endsWith('Appium')),
+    false,
+  );
+  assert.ok(
+    runner.children
+      .filter(
+        item => item.command.role.endsWith('packager') || runner.heldRoles.has(item.command.role),
+      )
+      .every(item => item.stops === 1),
+  );
+});
+
+test('combined pre-abort stops before ports, Metro, or preparation', async () => {
+  const runner = new MockRunner();
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(
+    () =>
+      runCombinedParallelE2e(runner, {
+        env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
+        signal: controller.signal,
+      }),
+    /interrupted/,
+  );
+  assert.deepEqual(runner.events, []);
+  assert.deepEqual(runner.children, []);
+});
+
+test('combined invalid parent environment fails before host work', async () => {
+  for (const env of [
+    { RNGMA_E2E_PARALLEL_SLOTS: '1,4' },
+    {
+      RNGMA_E2E_PARALLEL_SLOTS: '1,4,6',
+      RNGMA_E2E_SLOT: '1',
+    },
+  ]) {
+    const runner = new MockRunner();
+    await assert.rejects(() => runCombinedParallelE2e(runner, { env }));
+    assert.deepEqual(runner.events, []);
+    assert.deepEqual(runner.children, []);
+  }
+});
+
+test('combined Metro readiness failure prevents all preparation', async () => {
+  const runner = new MockRunner();
+  runner.readinessErrors.set(13007, new Error('Metro never opened'));
+  await assert.rejects(
+    () =>
+      runCombinedParallelE2e(runner, {
+        env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
+      }),
+    /Metro never opened/,
+  );
+  assert.deepEqual(
+    runner.commands.map(item => item.role),
+    ['worktree Metro owner slot 1 packager'],
+  );
+  assert.equal(runner.children[0]?.stops, 1);
 });
 
 test('iOS isolates selections, builds serially, and prebuilds WDA once', async () => {
   const runner = new MockRunner();
   await runParallelE2e('ios', runner, { env: {} });
-  assert.equal(
-    runner.commands.filter(item => item.script === 'tests:e2e:codegen').length,
-    1,
-  );
+  assert.equal(runner.commands.filter(item => item.script === 'tests:e2e:codegen').length, 1);
   assert.deepEqual(
-    runner.events.filter(event => event.startsWith('fresh:')).map(event => event.match(/slot-(\d+)/)?.[1]),
+    runner.events
+      .filter(event => event.startsWith('fresh:'))
+      .map(event => event.match(/slot-(\d+)/)?.[1]),
     ['1', '2', '4'],
   );
   const builds = runner.commands.filter(item => item.script === 'tests:ios:run');
-  assert.deepEqual(builds.map(item => item.args?.[1]), ['udid-1', 'udid-2', 'udid-4']);
-  assert.deepEqual(builds.map(item => item.env.RNGMA_IOS_UDID), [
-    'udid-1',
-    'udid-2',
-    'udid-4',
-  ]);
+  assert.deepEqual(
+    builds.map(item => item.args?.[1]),
+    ['udid-1', 'udid-2', 'udid-4'],
+  );
+  assert.deepEqual(
+    builds.map(item => item.env.RNGMA_IOS_UDID),
+    ['udid-1', 'udid-2', 'udid-4'],
+  );
   assert.equal(
     runner.commands.filter(item => item.script === 'tests:appium:ios:prebuild-wda').length,
     1,
   );
   const appiums = runner.commands.filter(item => item.role.endsWith('Appium'));
-  assert.ok(appiums.every(item => item.env.RNGMA_IOS_APP?.includes(`slot-${item.env.RNGMA_E2E_SLOT}`)));
+  assert.ok(
+    appiums.every(item => item.env.RNGMA_IOS_APP?.includes(`slot-${item.env.RNGMA_E2E_SLOT}`)),
+  );
 });
 
 test('iOS rejects mixed runtimes before build or WDA mutation', async () => {
   const runner = new MockRunner();
   runner.versions.set(4, '25.0');
   await assert.rejects(() => runParallelE2e('ios', runner, { env: {} }), /consistent/);
-  assert.equal(runner.commands.some(item => item.script === 'tests:ios:run'), false);
+  assert.equal(
+    runner.commands.some(item => item.script === 'tests:ios:run'),
+    false,
+  );
   assert.equal(
     runner.commands.some(item => item.script === 'tests:appium:ios:prebuild-wda'),
     false,
@@ -357,25 +653,23 @@ test('first child failure cancels only started siblings and aggregates exits', a
   assert.equal(appiums.length, 3);
   appiums[1]!.deferred.resolve(7);
   await assert.rejects(run, error => {
-    const summary = (error as {
-      summary?: { slots: Array<{ status: string; exitCode: number }> };
-    }).summary;
-    assert.deepEqual(summary?.slots.map(item => item.status), [
-      'cancelled',
-      'fail',
-      'cancelled',
-    ]);
-    assert.deepEqual(summary?.slots.map(item => item.exitCode), [
-      CANCELLED_EXIT_CODE,
-      7,
-      CANCELLED_EXIT_CODE,
-    ]);
+    const summary = (
+      error as {
+        summary?: { slots: Array<{ status: string; exitCode: number }> };
+      }
+    ).summary;
+    assert.deepEqual(
+      summary?.slots.map(item => item.status),
+      ['cancelled', 'fail', 'cancelled'],
+    );
+    assert.deepEqual(
+      summary?.slots.map(item => item.exitCode),
+      [CANCELLED_EXIT_CODE, 7, CANCELLED_EXIT_CODE],
+    );
     return true;
   });
   const runtime = runner.children.filter(
-    item =>
-      item.command.role.endsWith('packager') ||
-      item.command.role.endsWith('Appium'),
+    item => item.command.role.endsWith('packager') || item.command.role.endsWith('Appium'),
   );
   assert.ok(runtime.every(item => item.stops === 1 || item === appiums[1]));
 });
@@ -406,18 +700,20 @@ test('SIGTERM child completion fails slot 1 with 130 and cancels siblings at 130
   const appiums = runner.children.filter(item => item.command.role.endsWith('Appium'));
   appiums[0]!.deferred.resolve(childSlotExitCode(null, 'SIGTERM'));
   await assert.rejects(run, error => {
-    const summary = (error as {
-      summary?: {
-        slots: Array<{
-          slot: number;
-          spec: string;
-          testCount: number;
-          logPath: string;
-          status: string;
-          exitCode: number;
-        }>;
-      };
-    }).summary;
+    const summary = (
+      error as {
+        summary?: {
+          slots: Array<{
+            slot: number;
+            spec: string;
+            testCount: number;
+            logPath: string;
+            status: string;
+            exitCode: number;
+          }>;
+        };
+      }
+    ).summary;
     assert.deepEqual(
       summary?.slots.map(item => ({
         slot: item.slot,
@@ -454,9 +750,7 @@ test('SIGTERM child completion fails slot 1 with 130 and cancels siblings at 130
     return true;
   });
   const runtime = runner.children.filter(
-    item =>
-      item.command.role.endsWith('packager') ||
-      item.command.role.endsWith('Appium'),
+    item => item.command.role.endsWith('packager') || item.command.role.endsWith('Appium'),
   );
   assert.ok(runtime.every(item => item.stops === 1 || item === appiums[0]));
 });
@@ -471,19 +765,19 @@ test('SIGKILL child completion uses the same 130 slot mapping', async () => {
   const appiums = runner.children.filter(item => item.command.role.endsWith('Appium'));
   appiums[0]!.deferred.resolve(childSlotExitCode(null, 'SIGKILL'));
   await assert.rejects(run, error => {
-    const summary = (error as {
-      summary?: { slots: Array<{ status: string; exitCode: number }> };
-    }).summary;
-    assert.deepEqual(summary?.slots.map(item => item.status), [
-      'fail',
-      'cancelled',
-      'cancelled',
-    ]);
-    assert.deepEqual(summary?.slots.map(item => item.exitCode), [
-      CANCELLED_EXIT_CODE,
-      CANCELLED_EXIT_CODE,
-      CANCELLED_EXIT_CODE,
-    ]);
+    const summary = (
+      error as {
+        summary?: { slots: Array<{ status: string; exitCode: number }> };
+      }
+    ).summary;
+    assert.deepEqual(
+      summary?.slots.map(item => item.status),
+      ['fail', 'cancelled', 'cancelled'],
+    );
+    assert.deepEqual(
+      summary?.slots.map(item => item.exitCode),
+      [CANCELLED_EXIT_CODE, CANCELLED_EXIT_CODE, CANCELLED_EXIT_CODE],
+    );
     return true;
   });
 });
@@ -494,18 +788,20 @@ test('packager readiness rejection fails slot 1 with 1 and cancels siblings at 1
   await assert.rejects(
     () => runParallelE2e('android', runner, { env: {} }),
     error => {
-      const summary = (error as {
-        summary?: {
-          slots: Array<{
-            slot: number;
-            spec: string;
-            testCount: number;
-            logPath: string;
-            status: string;
-            exitCode: number;
-          }>;
-        };
-      }).summary;
+      const summary = (
+        error as {
+          summary?: {
+            slots: Array<{
+              slot: number;
+              spec: string;
+              testCount: number;
+              logPath: string;
+              status: string;
+              exitCode: number;
+            }>;
+          };
+        }
+      ).summary;
       assert.deepEqual(
         summary?.slots.map(item => ({
           slot: item.slot,
@@ -538,16 +834,16 @@ test('packager readiness rejection fails slot 1 with 1 and cancels siblings at 1
           },
         ],
       );
-      assert.equal(
-        summary?.slots[0]?.logPath,
-        '/tmp/rngma-e2e-android-slot-1-a-primary.log',
-      );
+      assert.equal(summary?.slots[0]?.logPath, '/tmp/rngma-e2e-android-slot-1-a-primary.log');
       return true;
     },
   );
-  assert.equal(runner.children.some(item => item.command.role.endsWith('Appium')), false);
+  assert.equal(
+    runner.children.some(item => item.command.role.endsWith('Appium')),
+    false,
+  );
   const packagers = runner.children.filter(item => item.command.role.endsWith('packager'));
-  assert.equal(packagers.length, 3);
+  assert.equal(packagers.length, 1);
   assert.ok(packagers.every(item => item.stops === 1));
 });
 
@@ -557,48 +853,54 @@ test('packager spawn rejection is an unknown startup failure on that slot only',
   await assert.rejects(
     () => runParallelE2e('android', runner, { env: {} }),
     error => {
-      const summary = (error as {
-        summary?: { slots: Array<{ status: string; exitCode: number }> };
-      }).summary;
-      assert.deepEqual(summary?.slots.map(item => item.status), [
-        'fail',
-        'cancelled',
-        'cancelled',
-      ]);
-      assert.deepEqual(summary?.slots.map(item => item.exitCode), [
-        UNKNOWN_FAILURE_EXIT_CODE,
-        CANCELLED_EXIT_CODE,
-        CANCELLED_EXIT_CODE,
-      ]);
+      const summary = (
+        error as {
+          summary?: { slots: Array<{ status: string; exitCode: number }> };
+        }
+      ).summary;
+      assert.deepEqual(
+        summary?.slots.map(item => item.status),
+        ['fail', 'cancelled', 'cancelled'],
+      );
+      assert.deepEqual(
+        summary?.slots.map(item => item.exitCode),
+        [UNKNOWN_FAILURE_EXIT_CODE, CANCELLED_EXIT_CODE, CANCELLED_EXIT_CODE],
+      );
       return /spawn ENOENT/.test((error as Error).message);
     },
   );
-  assert.equal(runner.children.some(item => item.command.role.endsWith('Appium')), false);
+  assert.equal(
+    runner.children.some(item => item.command.role.endsWith('Appium')),
+    false,
+  );
 });
 
 test('packager startup failure reports numeric exit and starts no Appium child', async () => {
   const runner = new MockRunner();
-  runner.packagerExitCodes.set(2, 9);
+  runner.packagerExitCodes.set(1, 9);
   await assert.rejects(
     () => runParallelE2e('android', runner, { env: {} }),
     error => {
-      const summary = (error as {
-        summary?: { slots: Array<{ status: string; exitCode: number }> };
-      }).summary;
-      assert.deepEqual(summary?.slots.map(item => item.status), [
-        'cancelled',
-        'fail',
-        'cancelled',
-      ]);
-      assert.deepEqual(summary?.slots.map(item => item.exitCode), [
-        CANCELLED_EXIT_CODE,
-        9,
-        CANCELLED_EXIT_CODE,
-      ]);
+      const summary = (
+        error as {
+          summary?: { slots: Array<{ status: string; exitCode: number }> };
+        }
+      ).summary;
+      assert.deepEqual(
+        summary?.slots.map(item => item.status),
+        ['fail', 'cancelled', 'cancelled'],
+      );
+      assert.deepEqual(
+        summary?.slots.map(item => item.exitCode),
+        [9, CANCELLED_EXIT_CODE, CANCELLED_EXIT_CODE],
+      );
       return true;
     },
   );
-  assert.equal(runner.children.some(item => item.command.role.endsWith('Appium')), false);
+  assert.equal(
+    runner.children.some(item => item.command.role.endsWith('Appium')),
+    false,
+  );
   assert.ok(
     runner.children
       .filter(item => item.command.role.endsWith('packager'))
@@ -649,7 +951,10 @@ test('abort during earliest preparation stops it once and starts nothing later',
     () => runParallelE2e('ios', runner, { env: {}, signal: controller.signal }),
     /interrupted/,
   );
-  assert.deepEqual(runner.commands.map(item => item.role), ['shared codegen']);
+  assert.deepEqual(
+    runner.commands.map(item => item.role),
+    ['shared codegen'],
+  );
   assert.equal(runner.children[0]?.stops, 1);
 });
 
@@ -664,9 +969,10 @@ test('abort between preparation phases prevents the next command', async () => {
     () => runParallelE2e('android', runner, { env: {}, signal: controller.signal }),
     /interrupted/,
   );
-  assert.deepEqual(runner.commands.map(item => item.role), [
-    'slot 1 Android build',
-  ]);
+  assert.deepEqual(
+    runner.commands.map(item => item.role),
+    ['slot 1 Android build'],
+  );
   assert.ok(runner.children.every(item => item.stops <= 1));
 });
 
@@ -699,15 +1005,11 @@ test('signal cleanup stops every task-owned runtime child once with numeric canc
     return true;
   });
   const runtime = runner.children.filter(
-    item =>
-      item.command.role.endsWith('packager') ||
-      item.command.role.endsWith('Appium'),
+    item => item.command.role.endsWith('packager') || item.command.role.endsWith('Appium'),
   );
-  assert.equal(runtime.length, 6);
+  assert.equal(runtime.length, 4);
   assert.ok(runtime.every(item => item.stops === 1));
   assert.ok(
-    runner.children
-      .filter(item => !runtime.includes(item))
-      .every(item => item.stops === 0),
+    runner.children.filter(item => !runtime.includes(item)).every(item => item.stops === 0),
   );
 });
