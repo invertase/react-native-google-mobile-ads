@@ -60,8 +60,11 @@
     "tests:appium:provision": "yarn workspace @invertase/rngma-appium provision",
     "tests:appium:android": "yarn workspace @invertase/rngma-appium appium:android",
     "tests:appium:ios": "cross-env RNGMA_WDA_PREBUILT=1 yarn workspace @invertase/rngma-appium appium:ios",
+    "tests:appium:parallel": "yarn workspace @invertase/rngma-appium appium:parallel",
     "tests:appium:android:parallel": "yarn workspace @invertase/rngma-appium appium:android:parallel",
+    "tests:appium:android:parallel:external": "yarn workspace @invertase/rngma-appium appium:android:parallel:external",
     "tests:appium:ios:parallel": "yarn workspace @invertase/rngma-appium appium:ios:parallel",
+    "tests:appium:ios:parallel:external": "yarn workspace @invertase/rngma-appium appium:ios:parallel:external",
     "tests:appium:ios:select-and-boot": "yarn workspace @invertase/rngma-appium ios:select-and-boot",
     "tests:appium:ios:prebuild-wda": "yarn workspace @invertase/rngma-appium ios:prebuild-wda",
     "package:update": "yarn upgrade-interactive"

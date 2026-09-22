@@ -1,13 +1,9 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
 import {
-  androidProvisionCommands,
-  executeCreateOnly,
-  iosProvisionCommands,
-  parseProvisionPlatforms,
+  runSlotProvisioning,
   type ProvisionCommand,
 } from '../src/provision.ts';
-import { requireRngmaSlot, slotResources } from '../src/slots.ts';
 
 function output(bin: string, args: string[]): string {
   return execFileSync(bin, args, { encoding: 'utf8' });
@@ -28,26 +24,6 @@ function androidInventory(): string[] {
     .sort();
 }
 
-function provisionAndroid(slot: number): void {
-  const avdNames = androidInventory();
-  console.log(`Android AVD inventory before: ${JSON.stringify(avdNames)}`);
-  const name = slotResources(slot, 'android').androidAvdName;
-  const installedPackages = avdNames.includes(name)
-    ? []
-    : output('sdkmanager', ['--list_installed'])
-        .split(/\r?\n/)
-        .map(line => line.split('|')[0]?.trim() ?? '')
-        .filter(Boolean);
-  const commands = androidProvisionCommands({ slot, avdNames, installedPackages });
-  executeCreateOnly(commands, execute);
-  console.log(
-    commands.length === 0
-      ? `Reusing existing Android AVD ${name}.`
-      : `Created Android AVD ${name}.`,
-  );
-  console.log(`Android AVD inventory after: ${JSON.stringify(androidInventory())}`);
-}
-
 function iosInventoryNames(inventoryJson: string): string[] {
   const inventory = JSON.parse(inventoryJson) as {
     devices?: Record<string, Array<{ name?: string; udid?: string; isAvailable?: boolean }>>;
@@ -61,32 +37,52 @@ function iosInventoryNames(inventoryJson: string): string[] {
     .sort();
 }
 
-function provisionIos(slot: number): void {
-  const inventory = output('xcrun', ['simctl', 'list', '--json']);
-  console.log(`iOS simulator inventory before: ${JSON.stringify(iosInventoryNames(inventory))}`);
-  const commands = iosProvisionCommands(slot, inventory);
-  executeCreateOnly(commands, execute);
-  const name = slotResources(slot, 'ios').iosSimulatorName;
-  console.log(
-    commands.length === 0
-      ? `Reusing existing iOS simulator ${name}.`
-      : `Created iOS simulator ${name}.`,
-  );
-  console.log(
-    `iOS simulator inventory after: ${JSON.stringify(
-      iosInventoryNames(output('xcrun', ['simctl', 'list', '--json'])),
-    )}`,
-  );
-}
-
 function main(): void {
-  const platforms = parseProvisionPlatforms(process.argv[2], process.env);
-  const slot = requireRngmaSlot(process.env.RNGMA_E2E_SLOT);
-  if (platforms.includes('android')) {
-    provisionAndroid(slot);
+  const outcome = runSlotProvisioning({
+    target: process.argv[2],
+    env: process.env,
+    architecture: process.arch,
+    host: {
+      listAndroidAvds() {
+        const avdNames = androidInventory();
+        console.log(`Android AVD inventory before: ${JSON.stringify(avdNames)}`);
+        return avdNames;
+      },
+      listInstalledPackages() {
+        return output('sdkmanager', ['--list_installed'])
+          .split(/\r?\n/)
+          .map(line => line.split('|')[0]?.trim() ?? '')
+          .filter(Boolean);
+      },
+      listIosInventory() {
+        const inventory = output('xcrun', ['simctl', 'list', '--json']);
+        console.log(
+          `iOS simulator inventory before: ${JSON.stringify(iosInventoryNames(inventory))}`,
+        );
+        return inventory;
+      },
+      run: execute,
+    },
+  });
+  if (outcome.android) {
+    console.log(
+      outcome.android.reused
+        ? `Reusing existing Android AVD ${outcome.android.name}.`
+        : `Created Android AVD ${outcome.android.name}.`,
+    );
+    console.log(`Android AVD inventory after: ${JSON.stringify(androidInventory())}`);
   }
-  if (platforms.includes('ios')) {
-    provisionIos(slot);
+  if (outcome.ios) {
+    console.log(
+      outcome.ios.reused
+        ? `Reusing existing iOS simulator ${outcome.ios.name}.`
+        : `Created iOS simulator ${outcome.ios.name}.`,
+    );
+    console.log(
+      `iOS simulator inventory after: ${JSON.stringify(
+        iosInventoryNames(output('xcrun', ['simctl', 'list', '--json'])),
+      )}`,
+    );
   }
 }
 

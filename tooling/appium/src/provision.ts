@@ -1,4 +1,4 @@
-import { assertRngmaSlotAllowed, slotResources } from './slots.ts';
+import { assertRngmaSlotAllowed, requireRngmaSlot, slotResources } from './slots.ts';
 
 export type ProvisionPlatform = 'android' | 'ios';
 export type ProvisionCommand = {
@@ -7,8 +7,23 @@ export type ProvisionCommand = {
   input?: string;
 };
 
-export const ANDROID_SYSTEM_IMAGE = 'system-images;android-36;google_apis;x86_64';
+const ANDROID_SYSTEM_IMAGE_PREFIX = 'system-images;android-36;google_apis';
 export const IOS_DEVICE_TYPE_NAME = 'iPhone 17';
+
+export function androidSystemImage(architecture: string): string {
+  const abi =
+    architecture === 'arm64'
+      ? 'arm64-v8a'
+      : architecture === 'x64'
+        ? 'x86_64'
+        : undefined;
+  if (!abi) {
+    throw new Error(
+      `Unsupported host architecture "${architecture}" for Android slot provisioning; supported architectures: arm64, x64.`,
+    );
+  }
+  return `${ANDROID_SYSTEM_IMAGE_PREFIX};${abi}`;
+}
 
 export function parseProvisionPlatforms(
   value: string | undefined,
@@ -40,19 +55,21 @@ export function parseProvisionPlatforms(
 
 export function androidProvisionCommands(options: {
   slot: number;
+  architecture: string;
   avdNames: string[];
   installedPackages: string[];
 }): ProvisionCommand[] {
   assertRngmaSlotAllowed(options.slot);
+  const systemImage = androidSystemImage(options.architecture);
   const name = slotResources(options.slot, 'android').androidAvdName;
   if (options.avdNames.includes(name)) {
     return [];
   }
   const commands: ProvisionCommand[] = [];
-  if (!options.installedPackages.includes(ANDROID_SYSTEM_IMAGE)) {
+  if (!options.installedPackages.includes(systemImage)) {
     commands.push({
       bin: 'sdkmanager',
-      args: [ANDROID_SYSTEM_IMAGE],
+      args: [systemImage],
     });
   }
   commands.push({
@@ -63,7 +80,7 @@ export function androidProvisionCommands(options: {
       '--name',
       name,
       '--package',
-      ANDROID_SYSTEM_IMAGE,
+      systemImage,
       '--device',
       'pixel_9',
     ],
@@ -145,4 +162,54 @@ export function executeCreateOnly(
 ): void {
   assertCreateOnly(commands);
   commands.forEach(executor);
+}
+
+export type ProvisionHost = {
+  listAndroidAvds(): string[];
+  listInstalledPackages(): string[];
+  listIosInventory(): string;
+  run(command: ProvisionCommand): void;
+};
+
+export type ProvisionOutcome = {
+  android?: { name: string; reused: boolean };
+  ios?: { name: string; reused: boolean };
+};
+
+export function runSlotProvisioning(options: {
+  target: string | undefined;
+  env: NodeJS.ProcessEnv;
+  architecture: string;
+  host: ProvisionHost;
+}): ProvisionOutcome {
+  const platforms = parseProvisionPlatforms(options.target, options.env);
+  const slot = requireRngmaSlot(options.env.RNGMA_E2E_SLOT);
+  if (platforms.includes('android')) {
+    androidSystemImage(options.architecture);
+  }
+
+  const outcome: ProvisionOutcome = {};
+  if (platforms.includes('android')) {
+    const name = slotResources(slot, 'android').androidAvdName;
+    const avdNames = options.host.listAndroidAvds();
+    const installedPackages = avdNames.includes(name)
+      ? []
+      : options.host.listInstalledPackages();
+    const commands = androidProvisionCommands({
+      slot,
+      architecture: options.architecture,
+      avdNames,
+      installedPackages,
+    });
+    executeCreateOnly(commands, options.host.run);
+    outcome.android = { name, reused: commands.length === 0 };
+  }
+  if (platforms.includes('ios')) {
+    const name = slotResources(slot, 'ios').iosSimulatorName;
+    const inventory = options.host.listIosInventory();
+    const commands = iosProvisionCommands(slot, inventory);
+    executeCreateOnly(commands, options.host.run);
+    outcome.ios = { name, reused: commands.length === 0 };
+  }
+  return outcome;
 }

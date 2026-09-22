@@ -61,6 +61,7 @@ describe('Appium check/release resources', () => {
       options.targets.map(target => ({
         platform: target.platform,
         metro: target.metroPort,
+        metroOwned: target.metroOwned,
         appium: target.appiumPort,
         automation: target.automationPort,
         mjpeg: target.mjpegPort,
@@ -72,6 +73,7 @@ describe('Appium check/release resources', () => {
         {
           platform: 'android',
           metro: 8081,
+          metroOwned: true,
           appium: 4725,
           automation: 8200,
           mjpeg: 7810,
@@ -82,6 +84,7 @@ describe('Appium check/release resources', () => {
         {
           platform: 'ios',
           metro: 8081,
+          metroOwned: true,
           appium: 4725,
           automation: 8100,
           mjpeg: 9100,
@@ -102,7 +105,7 @@ describe('Appium check/release resources', () => {
     assert.deepEqual(options.targets[0], {
       slot: 1,
       platform: 'android',
-      metroPort: 13007,
+      metroOwned: false,
       appiumPort: 13013,
       automationPort: 13014,
       mjpegPort: 13015,
@@ -117,6 +120,94 @@ describe('Appium check/release resources', () => {
       }, 'check').targets[0]?.iosSimulatorName,
       'RN E2E iOS slot-2',
     );
+  });
+
+  test('shared Metro is inspected by consumers but released only by explicit owner scope', () => {
+    const consumer = parseResourceOptions(
+      ['--slot=4', '--platform=android', '--metro-owner-slot=1'],
+      {},
+      'release',
+    );
+    assert.equal(consumer.targets[0]?.metroPort, 13007);
+    assert.equal(consumer.targets[0]?.metroOwned, false);
+    const owner = parseResourceOptions(
+      ['--slot=1', '--platform=android', '--metro-owner-slot=1'],
+      {},
+      'release',
+    );
+    assert.equal(owner.targets[0]?.metroOwned, true);
+    const iosOwner = parseResourceOptions(
+      ['--slot=1', '--platform=ios', '--metro-owner-slot=1'],
+      {},
+      'check',
+    );
+    assert.equal(iosOwner.targets[0]?.metroPort, 13007);
+    assert.equal(iosOwner.targets[0]?.appiumPort, 13113);
+    assert.equal(iosOwner.targets[0]?.metroOwned, true);
+
+    const consumerSignals: number[] = [];
+    releaseResources(
+      consumer,
+      inventory({ listeners: new Map([[13007, [101]]]) }),
+      'SIGTERM',
+      { signalPid: pid => consumerSignals.push(pid), run() {} },
+    );
+    assert.deepEqual(consumerSignals, []);
+
+    const ownerSignals: number[] = [];
+    releaseResources(
+      owner,
+      inventory({ listeners: new Map([[13007, [101]]]) }),
+      'SIGTERM',
+      { signalPid: pid => ownerSignals.push(pid), run() {} },
+    );
+    assert.deepEqual(ownerSignals, [101]);
+  });
+
+  test('Metro owner scope requires a slotted target or all-slots', () => {
+    for (const mode of ['check', 'release'] as const) {
+      assert.throws(
+        () => parseResourceOptions(['--metro-owner-slot=1'], {}, mode),
+        /requires --slot, RNGMA_E2E_SLOT, or --all-slots/,
+      );
+      assert.throws(
+        () =>
+          parseResourceOptions(
+            [],
+            { RNGMA_E2E_METRO_SLOT: '1' },
+            mode,
+          ),
+        /requires --slot, RNGMA_E2E_SLOT, or --all-slots/,
+      );
+      assert.doesNotThrow(() =>
+        parseResourceOptions(
+          ['--slot=4', '--metro-owner-slot=1'],
+          {},
+          mode,
+        ),
+      );
+      assert.doesNotThrow(() =>
+        parseResourceOptions(
+          ['--all-slots', '--metro-owner-slot=1'],
+          {},
+          mode,
+        ),
+      );
+      assert.doesNotThrow(() =>
+        parseResourceOptions(
+          [],
+          { RNGMA_E2E_SLOT: '4', RNGMA_E2E_METRO_SLOT: '1' },
+          mode,
+        ),
+      );
+      assert.doesNotThrow(() =>
+        parseResourceOptions(
+          ['--all-slots'],
+          { RNGMA_E2E_METRO_SLOT: '1' },
+          mode,
+        ),
+      );
+    }
   });
 
   test('rejects slots 0 and 3 before resource work', () => {
@@ -140,6 +231,24 @@ describe('Appium check/release resources', () => {
     );
     const rendered = JSON.stringify(options.targets);
     assert.doesNotMatch(rendered, /TestingAVD-3|emulator-5562|1500[7]|1501[3-5]/);
+    assert.ok(options.targets.every(target => target.metroOwned === false));
+    assert.ok(options.targets.every(target => target.metroPort == null));
+  });
+
+  test('--all-slots reports one explicitly owned shared Metro', () => {
+    const options = parseResourceOptions(
+      ['--all-slots', '--metro-owner-slot=5', '--services'],
+      {},
+      'check',
+    );
+    const metro = classifyResources(
+      options,
+      inventory({ listeners: new Map([[17007, [505]]]) }),
+    ).filter(finding => finding.detail.includes('(metro)'));
+    assert.equal(metro.length, 1);
+    assert.equal(metro[0]?.target.slot, 5);
+    assert.equal(metro[0]?.target.metroOwned, true);
+    assert.equal(metro[0]?.state, 'BUSY');
   });
 
   test('whole-name iOS matching excludes longer and Detox names', () => {

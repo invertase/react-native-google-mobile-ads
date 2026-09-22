@@ -69,6 +69,11 @@ export function slotResources(slot: number, platform: SlotPlatform): SlotResourc
   };
 }
 
+/** One Metro belongs to the worktree slot, independent of consumer platform. */
+export function worktreeMetroPort(slot: number): number {
+  return slotResources(slot, 'android').metroPort;
+}
+
 export function requireRngmaSlot(value: string | undefined): number {
   const slot = parseSlot(value);
   if (slot == null) {
@@ -106,6 +111,7 @@ function parsePort(name: string, value: string | undefined, fallback: number): n
 
 export type RuntimeResources = {
   slot?: number;
+  metroOwnerSlot?: number;
   metroPort: number;
   appiumPort: number;
   androidApkPath: string;
@@ -147,6 +153,9 @@ export function runtimeResources(
 ): RuntimeResources {
   const slot = parseSlot(env.RNGMA_E2E_SLOT);
   if (slot == null) {
+    if (env.RNGMA_E2E_METRO_SLOT != null && env.RNGMA_E2E_METRO_SLOT !== '') {
+      throw new Error('RNGMA_E2E_METRO_SLOT requires RNGMA_E2E_SLOT.');
+    }
     return {
       metroPort: parsePort('RNGMA_METRO_PORT', env.RNGMA_METRO_PORT, SERIAL_METRO_PORT),
       appiumPort: parsePort('RNGMA_APPIUM_PORT', env.RNGMA_APPIUM_PORT, SERIAL_APPIUM_PORT),
@@ -169,8 +178,16 @@ export function runtimeResources(
   }
   assertRngmaSlotAllowed(slot);
   const resources = slotResources(slot, platform);
+  const metroOwnerSlot = parseSlot(env.RNGMA_E2E_METRO_SLOT);
+  if (metroOwnerSlot != null) {
+    assertRngmaSlotAllowed(metroOwnerSlot);
+  }
+  const metroPort =
+    metroOwnerSlot == null
+      ? worktreeMetroPort(slot)
+      : worktreeMetroPort(metroOwnerSlot);
   for (const [name, value, expected] of [
-    ['RNGMA_METRO_PORT', env.RNGMA_METRO_PORT, resources.metroPort],
+    ['RNGMA_METRO_PORT', env.RNGMA_METRO_PORT, metroPort],
     ['RNGMA_APPIUM_PORT', env.RNGMA_APPIUM_PORT, resources.appiumPort],
   ] as const) {
     if (value != null && value !== '' && parsePort(name, value, expected) !== expected) {
@@ -181,7 +198,8 @@ export function runtimeResources(
   }
   return {
     slot,
-    metroPort: resources.metroPort,
+    metroOwnerSlot,
+    metroPort,
     appiumPort: resources.appiumPort,
     androidApkPath: slotAndroidApkPath(slot),
     slotResources: resources,

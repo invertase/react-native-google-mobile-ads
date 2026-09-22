@@ -25,6 +25,7 @@ import {
   serialAndroidApkPath,
   slotAndroidApkPath,
   slotResources,
+  worktreeMetroPort,
 } from '../src/slots.ts';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -64,6 +65,15 @@ describe('cross-platform e2e slots', () => {
     for (const slot of [1, 2, 4, 5, 6, 7]) {
       assert.doesNotThrow(() => assertRngmaSlotAllowed(slot));
     }
+  });
+
+  test('separates raw platform math from the operational worktree Metro', () => {
+    assert.equal(slotResources(1, 'ios').metroPort, 13107);
+    assert.equal(worktreeMetroPort(1), 13007);
+    assert.equal(runtimeResources('ios', {
+      RNGMA_E2E_SLOT: '1',
+      RNGMA_E2E_PLATFORM: 'ios',
+    }).metroPort, 13007);
   });
 
   test('preserves serial defaults and paths when RNGMA_E2E_SLOT is unset', () => {
@@ -288,7 +298,7 @@ describe('cross-platform e2e slots', () => {
     );
   });
 
-  test('requires the platform for slot Metro and computes the iOS offset', () => {
+  test('requires the platform while keeping slotted Metro platform-independent', () => {
     assert.throws(
       () => packagerCommand(false, { RNGMA_E2E_SLOT: '1' }),
       /RNGMA_E2E_PLATFORM must be android or ios/,
@@ -298,16 +308,16 @@ describe('cross-platform e2e slots', () => {
         RNGMA_E2E_SLOT: '1',
         RNGMA_E2E_PLATFORM: 'ios',
       }).args.slice(-2),
-      ['--port', '13107'],
+      ['--port', '13007'],
     );
     const iosBuild = iosBuildCommand({
       RNGMA_E2E_SLOT: '1',
       RNGMA_E2E_PLATFORM: 'ios',
     });
-    assert.equal(iosBuild.env?.RCT_METRO_PORT, '13107');
+    assert.equal(iosBuild.env?.RCT_METRO_PORT, '13007');
     assert.deepEqual(iosBuild.args.slice(-2), [
       '--extra-params',
-      'RCT_METRO_PORT=13107',
+      'RCT_METRO_PORT=13007',
     ]);
   });
 
@@ -330,8 +340,8 @@ describe('cross-platform e2e slots', () => {
       iosMetroProcessArguments(runtimeResources('ios', iosEnv)),
       {
         'appium:processArguments': {
-          args: ['-RCT_jsLocation', 'localhost:13107'],
-          env: { RCT_METRO_PORT: '13107' },
+          args: ['-RCT_jsLocation', 'localhost:13007'],
+          env: { RCT_METRO_PORT: '13007' },
         },
       },
     );
@@ -357,6 +367,77 @@ describe('cross-platform e2e slots', () => {
     );
   });
 
+  test('uses the first parallel slot as one cross-platform worktree Metro', () => {
+    for (const platform of ['android', 'ios'] as const) {
+      for (const slot of ['1', '4', '5']) {
+        const runtime = runtimeResources(platform, {
+          RNGMA_E2E_SLOT: slot,
+          RNGMA_E2E_PLATFORM: platform,
+          RNGMA_E2E_METRO_SLOT: '1',
+          RNGMA_METRO_PORT: '13007',
+        });
+        assert.equal(runtime.metroOwnerSlot, 1);
+        assert.equal(runtime.metroPort, 13007);
+      }
+    }
+    assert.throws(
+      () => runtimeResources('android', { RNGMA_E2E_METRO_SLOT: '1' }),
+      /requires RNGMA_E2E_SLOT/,
+    );
+  });
+
+  test('propagates the owner Metro through every consumer command surface', () => {
+    const androidEnv = {
+      RNGMA_E2E_SLOT: '4',
+      RNGMA_E2E_PLATFORM: 'android',
+      RNGMA_E2E_METRO_SLOT: '1',
+    };
+    assert.deepEqual(packagerCommand(false, androidEnv).args.slice(-2), [
+      '--port',
+      '13007',
+    ]);
+    assert.deepEqual(androidGradleCommand(androidEnv).args, [
+      'assembleDebug',
+      '-PreactNativeDevServerPort=13007',
+    ]);
+    const androidRun = androidRunCommands(androidEnv);
+    assert.equal(androidRun[0]?.args.at(-1), '-PreactNativeDevServerPort=13007');
+    assert.deepEqual(androidRun[1]?.args, [
+      '-s',
+      'emulator-5564',
+      'reverse',
+      'tcp:13007',
+      'tcp:13007',
+    ]);
+    assert.ok(
+      androidRun.slice(1).every(command =>
+        command.args.slice(0, 2).every((value, index) =>
+          value === ['-s', 'emulator-5564'][index]),
+      ),
+    );
+
+    const iosEnv = {
+      RNGMA_E2E_SLOT: '5',
+      RNGMA_E2E_PLATFORM: 'ios',
+      RNGMA_E2E_METRO_SLOT: '1',
+    };
+    const iosBuild = iosBuildCommand(iosEnv);
+    assert.equal(iosBuild.env?.RCT_METRO_PORT, '13007');
+    assert.deepEqual(iosBuild.args.slice(-2), [
+      '--extra-params',
+      'RCT_METRO_PORT=13007',
+    ]);
+    assert.deepEqual(
+      iosMetroProcessArguments(runtimeResources('ios', iosEnv)),
+      {
+        'appium:processArguments': {
+          args: ['-RCT_jsLocation', 'localhost:13007'],
+          env: { RCT_METRO_PORT: '13007' },
+        },
+      },
+    );
+  });
+
   test('rejects explicit port overrides that conflict with a selected slot', () => {
     assert.throws(
       () =>
@@ -377,7 +458,7 @@ describe('cross-platform e2e slots', () => {
     assert.doesNotThrow(() =>
       runtimeResources('ios', {
         RNGMA_E2E_SLOT: '1',
-        RNGMA_METRO_PORT: '13107',
+        RNGMA_METRO_PORT: '13007',
         RNGMA_APPIUM_PORT: '13113',
       }),
     );

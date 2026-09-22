@@ -82,7 +82,7 @@ function iosDevices(): SimctlDevice[] {
 export function collectResourceInventory(options: ResourceOptions): ResourceInventory {
   const ports = new Set<number>();
   for (const target of options.targets) {
-    ports.add(target.metroPort);
+    if (target.metroPort != null) ports.add(target.metroPort);
     ports.add(target.appiumPort);
     ports.add(target.automationPort);
     ports.add(target.mjpegPort);
@@ -175,7 +175,11 @@ export function releaseResources(
 ): void {
   const listenerPids = new Set<number>();
   for (const target of options.targets) {
-    if (categoryWanted(options, 'metro')) {
+    if (
+      target.metroOwned &&
+      target.metroPort != null &&
+      categoryWanted(options, 'metro')
+    ) {
       inventory.listeners.get(target.metroPort)?.forEach(pid => listenerPids.add(pid));
     }
     if (categoryWanted(options, 'appium')) {
@@ -240,7 +244,9 @@ export function releaseRelevantFindings(
 ): ResourceFinding[] {
   return findings.filter(finding => {
     if (finding.kind === 'port') {
-      if (finding.detail.includes('(metro)')) return categoryWanted(options, 'metro');
+      if (finding.detail.includes('(metro)')) {
+        return finding.target.metroOwned && categoryWanted(options, 'metro');
+      }
       if (finding.detail.includes('(console)')) return false;
       return categoryWanted(options, 'appium');
     }
