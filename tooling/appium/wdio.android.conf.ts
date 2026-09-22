@@ -4,7 +4,10 @@ import {
   EXAMPLE_ANDROID_PACKAGE,
   androidDebugApkPath,
 } from './src/formats.ts';
+import { runtimeResources } from './src/slots.ts';
 import { config as shared } from './wdio.shared.conf.ts';
+
+const runtime = runtimeResources('android');
 
 /**
  * Android Appium smoke (UiAutomator2).
@@ -17,8 +20,7 @@ export const config: Options.Testrunner = {
   async before(_capabilities, _specs, browser) {
     // Appium clears app data during session creation, so establish the selected device's
     // reversed localhost as React Native's debug host only after that reset, then launch.
-    const preferences =
-      "<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map><string name='debug_http_host'>127.0.0.1:8081</string></map>";
+    const preferences = `<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map><string name='debug_http_host'>127.0.0.1:${runtime.metroPort}</string></map>`;
     const encodedPreferences = Buffer.from(preferences).toString('base64');
     await browser.execute('mobile: shell', {
       command: 'run-as',

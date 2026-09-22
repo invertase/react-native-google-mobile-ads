@@ -2,11 +2,11 @@ import type { Options } from '@wdio/types';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { flushCoverageFromApp } from './src/flushCoverage.ts';
-import { appiumPort } from './src/hostPreflight.ts';
+import { platformForSharedConfig, runtimeResources } from './src/slots.ts';
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 const appiumHome = path.join(packageRoot, '.appium-home');
-const APPIUM_PORT = appiumPort(process.env.RNGMA_APPIUM_PORT);
+const APPIUM_PORT = runtimeResources(platformForSharedConfig()).appiumPort;
 
 /**
  * Shared WebdriverIO config for Appium 3 focused smoke against RNGoogleMobileAdsExample.

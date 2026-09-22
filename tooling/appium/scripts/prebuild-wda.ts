@@ -10,6 +10,7 @@ import {
   isCompleteWdaRunnerApp,
   requireIosUdid,
 } from '../src/hostPreflight.ts';
+import { runtimeResources } from '../src/slots.ts';
 
 // Resolve through the pinned XCUITest driver's declared dependencies so the
 // prebuild uses the same WDA implementation that Appium will launch.
@@ -32,7 +33,11 @@ async function main(): Promise<void> {
   const { WebDriverAgent } = await importDriverDependency('appium-webdriveragent');
   const { Simctl } = await importDriverDependency('node-simctl');
 
-  const deviceName = process.env.RNGMA_IOS_DEVICE?.trim() || DEFAULT_IOS_DEVICE_NAME;
+  const runtime = runtimeResources('ios');
+  const deviceName =
+    runtime.slotResources?.iosSimulatorName ||
+    process.env.RNGMA_IOS_DEVICE?.trim() ||
+    DEFAULT_IOS_DEVICE_NAME;
   const platformVersion = process.env.RNGMA_IOS_VERSION?.trim();
   if (!platformVersion) {
     throw new Error(

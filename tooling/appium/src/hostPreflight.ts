@@ -179,21 +179,53 @@ export function selectConnectedAndroidDevice(
 export type AndroidExec = (bin: string, args: string[]) => string;
 
 /**
+ * Read API levels for connected Android devices. A slot/exact selection limits every
+ * device-scoped adb query to that serial; serial mode intentionally inventories all.
+ */
+export function inspectConnectedAndroidApis(
+  connectedSerials: string[],
+  execFile: AndroidExec,
+  selectedSerial?: string,
+): Array<{ serial: string; api: number }> {
+  const targets = selectedSerial
+    ? connectedSerials.filter(serial => serial === selectedSerial)
+    : connectedSerials;
+  const devices: Array<{ serial: string; api: number }> = [];
+  for (const serial of targets) {
+    const raw = execFile('adb', [
+      '-s',
+      serial,
+      'shell',
+      'getprop',
+      'ro.build.version.sdk',
+    ]);
+    const value = raw.trim();
+    const api = value ? Number(value) : NaN;
+    if (Number.isFinite(api)) {
+      devices.push({ serial, api });
+    }
+  }
+  return devices;
+}
+
+/**
  * Make this checkout's Metro reachable from the selected emulator before app launch,
  * then prove the selected device can traverse that exact reverse to a running Metro.
  */
 export function ensureAndroidMetroReverse(
   serial: string,
   execFile: AndroidExec,
+  metroPort = 8081,
 ): void {
-  execFile('adb', ['-s', serial, 'reverse', 'tcp:8081', 'tcp:8081']);
+  const tcpPort = `tcp:${metroPort}`;
+  execFile('adb', ['-s', serial, 'reverse', tcpPort, tcpPort]);
   const reverseList = execFile('adb', ['-s', serial, 'reverse', '--list']);
   const hasExpectedReverse = reverseList
     .split(/\r?\n/)
-    .some(line => line.trim().endsWith('tcp:8081 tcp:8081'));
+    .some(line => line.trim().endsWith(`${tcpPort} ${tcpPort}`));
   if (!hasExpectedReverse) {
     throw new Error(
-      `Android device ${serial} did not retain the required tcp:8081 reverse.`,
+      `Android device ${serial} did not retain the required ${tcpPort} reverse.`,
     );
   }
   execFile('adb', [
@@ -206,7 +238,7 @@ export function ensureAndroidMetroReverse(
     '5',
     '-z',
     '127.0.0.1',
-    '8081',
+    String(metroPort),
   ]);
 }
 

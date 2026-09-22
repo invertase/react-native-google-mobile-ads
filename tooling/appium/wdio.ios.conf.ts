@@ -7,9 +7,11 @@ import {
   requireIosUdid,
   WDA_LAUNCH_TIMEOUT_MS,
 } from './src/hostPreflight.ts';
+import { iosMetroProcessArguments, runtimeResources } from './src/slots.ts';
 import { config as shared } from './wdio.shared.conf.ts';
 
 const iosApp = iosAppPath();
+const runtime = runtimeResources('ios');
 
 /**
  * iOS Appium smoke (XCUITest).
@@ -28,6 +30,7 @@ export const config: Options.Testrunner = {
       'appium:deviceName': process.env.RNGMA_IOS_DEVICE || DEFAULT_IOS_DEVICE_NAME,
       'appium:udid': requireIosUdid(),
       'appium:platformVersion': process.env.RNGMA_IOS_VERSION,
+      ...iosMetroProcessArguments(runtime),
       'appium:wdaLaunchTimeout': WDA_LAUNCH_TIMEOUT_MS,
       ...iosPrebuiltWdaCapabilities(),
       'appium:app': iosApp,
