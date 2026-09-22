@@ -16,7 +16,6 @@ const runtime = runtimeResources('android');
  */
 export const config: Options.Testrunner = {
   ...shared,
-  specs: ['./test/specs/**/*.ts'],
   async before(_capabilities, _specs, browser) {
     // Appium clears app data during session creation, so establish the selected device's
     // reversed localhost as React Native's debug host only after that reset, then launch.
@@ -54,6 +53,12 @@ export const config: Options.Testrunner = {
       'appium:appWaitActivity': '*',
       'appium:autoLaunch': false,
       'appium:autoGrantPermissions': true,
+      ...(runtime.slotResources
+        ? {
+            'appium:systemPort': runtime.slotResources.automationPort,
+            'appium:mjpegServerPort': runtime.slotResources.mjpegPort,
+          }
+        : {}),
       'appium:newCommandTimeout': 240,
       'appium:noReset': false,
       // CI caches the whole emulator (`~/.android/avd/*`) after the app is installed, so a

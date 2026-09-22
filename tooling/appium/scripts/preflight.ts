@@ -24,6 +24,7 @@ import {
 import { iosAppBundleResolution, iosAppPath } from '../src/formats.ts';
 import { runtimeResources, type RuntimeResources } from '../src/slots.ts';
 import { androidSlotBootCommand } from '../src/commands.ts';
+import { isParallelParentChild } from '../src/parentContract.ts';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '../../..');
@@ -374,15 +375,17 @@ async function main(): Promise<void> {
     console.error('--run requires an android or ios target.');
     process.exit(1);
   }
-  const codegen = spawnSync('yarn', ['tests:e2e:codegen'], {
-    cwd: repoRoot,
-    stdio: 'inherit',
-  });
-  if (codegen.error) {
-    throw codegen.error;
-  }
-  if (codegen.status !== 0) {
-    process.exit(codegen.status ?? 1);
+  if (!isParallelParentChild()) {
+    const codegen = spawnSync('yarn', ['tests:e2e:codegen'], {
+      cwd: repoRoot,
+      stdio: 'inherit',
+    });
+    if (codegen.error) {
+      throw codegen.error;
+    }
+    if (codegen.status !== 0) {
+      process.exit(codegen.status ?? 1);
+    }
   }
   if (target === 'android' && androidUdid) {
     ensureAndroidMetroReverse(androidUdid, (bin, args) => {

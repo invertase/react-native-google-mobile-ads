@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync, spawn } from 'node:child_process';
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -13,7 +13,13 @@ import {
   androidSlotBootCommand,
   type NamedCommand,
 } from '../src/commands.ts';
-import { runtimeResources, serialAndroidApkPath } from '../src/slots.ts';
+import { defaultIosSimulatorAppPath } from '../src/formats.ts';
+import { isParallelParentChild } from '../src/parentContract.ts';
+import {
+  runtimeResources,
+  serialAndroidApkPath,
+  slotIosAppPath,
+} from '../src/slots.ts';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -30,7 +36,9 @@ function output(bin: string, args: string[]): string {
 }
 
 function runAndroidBuild(): void {
-  execute({ bin: 'yarn', args: ['tests:e2e:codegen'] });
+  if (!isParallelParentChild()) {
+    execute({ bin: 'yarn', args: ['tests:e2e:codegen'] });
+  }
   execute(androidGradleCommand());
   const runtime = runtimeResources('android');
   if (runtime.slot != null) {
@@ -97,7 +105,9 @@ function runAndroid(): void {
       ]);
     }
   }
-  execute({ bin: 'yarn', args: ['tests:e2e:codegen'] });
+  if (!isParallelParentChild()) {
+    execute({ bin: 'yarn', args: ['tests:e2e:codegen'] });
+  }
   commands.forEach(execute);
 }
 
@@ -108,10 +118,19 @@ function runIos(argv: string[]): void {
       ? undefined
       : output('xcrun', ['simctl', 'list', 'devices', 'available', '--json']);
   const udid = assertIosRunSelection(argv, process.env, inventory);
-  execute({ bin: 'yarn', args: ['tests:e2e:codegen'] });
+  if (!isParallelParentChild()) {
+    execute({ bin: 'yarn', args: ['tests:e2e:codegen'] });
+  }
   execute({ bin: 'yarn', args: ['tests:ios:pod:install'] });
   execute(iosBuildCommand());
   execute({ bin: 'node', args: ['./scripts/run-ios-app.js', '--udid', udid] });
+  if (runtime.slot != null && isParallelParentChild()) {
+    const destination = slotIosAppPath(runtime.slot);
+    rmSync(destination, { recursive: true, force: true });
+    mkdirSync(path.dirname(destination), { recursive: true });
+    cpSync(defaultIosSimulatorAppPath(), destination, { recursive: true });
+    console.log(`Slot ${runtime.slot} iOS app preserved at ${destination}`);
+  }
 }
 
 const command = process.argv[2];
