@@ -18,6 +18,8 @@
     "appium:ios": "tsx ./scripts/preflight.ts ios --run",
     "appium:android:parallel": "tsx ./scripts/parallel.ts android",
     "appium:ios:parallel": "tsx ./scripts/parallel.ts ios",
+    "check": "tsx ./scripts/check-resources.ts",
+    "release": "tsx ./scripts/release-resources.ts",
     "provision": "tsx ./scripts/provision.ts",
     "ios:select-and-boot": "tsx ./scripts/preflight.ts ios --select-and-boot",
     "ios:prebuild-wda": "tsx ./scripts/prebuild-wda.ts"
