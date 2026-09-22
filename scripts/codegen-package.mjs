@@ -22,9 +22,9 @@ const PLATFORMS = ['android', 'ios'];
 const TOOLCHAIN_PINS = Object.freeze({
   'react-native': '0.86.0',
   '@react-native/codegen': '0.86.0',
-  '@react-native-community/cli': '20.1.0',
-  '@react-native-community/cli-platform-android': '20.1.0',
-  '@react-native-community/cli-platform-ios': '20.1.0',
+  '@react-native-community/cli': '20.2.0',
+  '@react-native-community/cli-platform-android': '20.2.0',
+  '@react-native-community/cli-platform-ios': '20.2.0',
 });
 
 function packageVersion(packageJsonPath) {

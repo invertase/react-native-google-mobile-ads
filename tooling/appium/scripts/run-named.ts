@@ -14,6 +14,7 @@ import {
   type NamedCommand,
 } from '../src/commands.ts';
 import { defaultIosSimulatorAppPath } from '../src/formats.ts';
+import { ensureAndroidMetroReverse } from '../src/hostPreflight.ts';
 import { isParallelParentChild } from '../src/parentContract.ts';
 import {
   runtimeResources,
@@ -101,6 +102,19 @@ function runAndroid(): void {
         },
       ]);
     }
+    ensureAndroidMetroReverse(
+      runtime.slotResources.androidSerial,
+      (bin, args) =>
+        execFileSync(bin, args, {
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'inherit'],
+          timeout: 10_000,
+        }),
+      runtime.metroPort,
+    );
+    console.log(
+      `Android device ${runtime.slotResources.androidSerial} reaches this checkout's Metro through tcp:${runtime.metroPort}.`,
+    );
   }
   commands.forEach(execute);
 }
