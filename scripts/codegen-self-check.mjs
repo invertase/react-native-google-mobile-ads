@@ -191,7 +191,14 @@ function checkConfigurationContracts() {
   assert.equal(example.dependencies['react-native'], '0.86.0');
   assert.equal(example.dependencies['@react-native/new-app-screen'], '0.86.0');
   assert.equal(example.devDependencies['@react-native/codegen'], '0.86.0');
-  assert.equal(example.devDependencies['@react-native-community/cli'], '20.1.0');
+  for (const cliPackage of [
+    '@react-native-community/cli',
+    '@react-native-community/cli-platform-android',
+    '@react-native-community/cli-platform-ios',
+  ]) {
+    assert.equal(example.devDependencies[cliPackage], '20.2.0');
+    assert.equal(toolchain.packages[cliPackage].version, '20.2.0');
+  }
   assert.equal(core.peerDependencies['react-native'], '>=0.86.0');
   for (const adapter of [
     '_template',

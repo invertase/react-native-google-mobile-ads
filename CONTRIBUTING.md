@@ -96,9 +96,9 @@ Android **Java** format: `yarn lint:android`. Android **Kotlin** format: repo-ro
 
 Core library Codegen is committed. Use `yarn codegen:all`, then
 `yarn codegen:self-check` and `yarn codegen:verify`; never edit generated files.
-The example workspace owns the exact React Native/Codegen/CLI line. A React
-Native upgrade must update those compatible pins, regenerate both core trees,
-and validate Android and iOS in one breaking change — [GMA-AD-4](okf-bundle/architecture-decisions.md#gma-ad-4).
+The example workspace owns the exact React Native/Codegen/CLI line, including
+CLI family pin-change vs React Native line-change semantics —
+[GMA-AD-4](okf-bundle/architecture-decisions.md#gma-ad-4).
 
 ## Submitting code for review
 

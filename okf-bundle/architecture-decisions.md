@@ -88,20 +88,31 @@ during its build. Commands: [agent command policy](testing/agent-command-policy.
 ## GMA-AD-4 — Pin the Codegen toolchain — **Accepted**
 
 The React Native line of `RNGoogleMobileAdsExample/` owns core library Codegen.
-The example pins `react-native`, `@react-native/codegen`, and the
-`@react-native-community/cli` family needed by generation to compatible exact
-versions. The shared runner resolves React Native and Codegen from that
-workspace, verifies the resolved versions at runtime, then uses React Native's
-generator. Root and package manifests must not provide a competing React Native
-toolchain or use floating toolchain ranges. Core and adapter peer dependencies
-must expose the same React Native minimum as the committed template line.
+The example pins `react-native` and `@react-native/codegen` to the committed
+React Native line, and pins the `@react-native-community/cli` family used by
+generation and example launch — `cli`, `cli-platform-android`, and
+`cli-platform-ios` — to exact **20.2.0**. The shared runner resolves that
+workspace toolchain, verifies every pin at runtime (declared and resolved),
+then uses React Native's generator. Root and package manifests must not
+provide a competing React Native toolchain or use floating toolchain ranges.
+Core and adapter peer dependencies must expose the same React Native minimum
+as the committed template line.
 
 Committed Codegen is React-Native-version-specific. Updating the example's
 React Native line is one coordinated breaking change: update all compatible
 example and root React Native tooling pins, wipe and regenerate both committed
 core trees, run `codegen:self-check` and `codegen:verify`, and rebuild/test both
-native platforms. CI runs `codegen:verify`; routine e2e consumes the committed
-core trees and generates only example/probe app-source metadata.
+native platforms.
+
+A **CLI-only patch** of that 20.2 family is not a React Native line change:
+update the example pins, lockfile, and exact self-check/verify assertions to
+the new patch, then run `codegen:self-check` and `codegen:verify`. Regenerate
+committed core output only when that verification finds drift. Do not wipe
+and rewrite the trees as a ritual when verify is already clean.
+
+CI runs `codegen:verify`; routine e2e consumes the committed core trees and
+generates only example/probe app-source metadata. Commands:
+[agent command policy](testing/agent-command-policy.md).
 
 The generated directories remain package source and must never be patched by
 hand. CocoaPods preserves their package-local header layout, and the npm

@@ -122,47 +122,25 @@ describe('cross-platform e2e slots', () => {
     });
     assert.deepEqual(androidRunCommands(env), [
       {
-        bin: process.platform === 'win32' ? 'gradlew.bat' : './gradlew',
-        args: ['assembleDebug', '-PreactNativeDevServerPort=13007'],
-        cwd: 'RNGoogleMobileAdsExample/android',
-      },
-      {
-        bin: 'adb',
+        bin: 'yarn',
         args: [
-          '-s',
+          'workspace',
+          'RNGoogleMobileAdsExample',
+          'react-native',
+          'run-android',
+          '--device',
           'emulator-5558',
-          'reverse',
-          'tcp:13007',
-          'tcp:13007',
-        ],
-      },
-      {
-        bin: 'adb',
-        args: [
-          '-s',
-          'emulator-5558',
-          'install',
-          '-r',
-          serialAndroidApkPath(),
-        ],
-      },
-      {
-        bin: 'adb',
-        args: [
-          '-s',
-          'emulator-5558',
-          'shell',
-          'am',
-          'start',
-          '-n',
-          'com.microsoft.reacttestapp/com.microsoft.reacttestapp.MainActivity',
+          '--binary-path',
+          slotAndroidApkPath(1),
+          '--no-packager',
+          '--port',
+          '13007',
         ],
       },
     ]);
-    for (const command of androidRunCommands(env).filter(command => command.bin === 'adb')) {
-      assert.deepEqual(command.args.slice(0, 2), ['-s', 'emulator-5558']);
-      assert.doesNotMatch(command.args.join(' '), /emulator-5554|emulator-5562/);
-    }
+    const slotRun = androidRunCommands(env)[0]!;
+    assert.doesNotMatch(slotRun.args.join(' '), /installDebug|--tasks|assembleDebug/);
+    assert.doesNotMatch(slotRun.args.join(' '), /emulator-5554|emulator-5562/);
     assert.equal(runtime.androidApkPath, slotAndroidApkPath(1));
 
     const previousSlot = process.env.RNGMA_E2E_SLOT;
@@ -400,21 +378,19 @@ describe('cross-platform e2e slots', () => {
       'assembleDebug',
       '-PreactNativeDevServerPort=13007',
     ]);
-    const androidRun = androidRunCommands(androidEnv);
-    assert.equal(androidRun[0]?.args.at(-1), '-PreactNativeDevServerPort=13007');
-    assert.deepEqual(androidRun[1]?.args, [
-      '-s',
+    assert.deepEqual(androidRunCommands(androidEnv)[0]?.args, [
+      'workspace',
+      'RNGoogleMobileAdsExample',
+      'react-native',
+      'run-android',
+      '--device',
       'emulator-5564',
-      'reverse',
-      'tcp:13007',
-      'tcp:13007',
+      '--binary-path',
+      slotAndroidApkPath(4),
+      '--no-packager',
+      '--port',
+      '13007',
     ]);
-    assert.ok(
-      androidRun.slice(1).every(command =>
-        command.args.slice(0, 2).every((value, index) =>
-          value === ['-s', 'emulator-5564'][index]),
-      ),
-    );
 
     const iosEnv = {
       RNGMA_E2E_SLOT: '5',
@@ -495,6 +471,7 @@ describe('cross-platform e2e slots', () => {
     assert.match(runner, /androidGradleCommand\(\)/);
     assert.match(runner, /runtime\.slot != null && !isParallelParentChild\(\)/);
     assert.match(runner, /copyFileSync\(serialAndroidApkPath\(\), runtime\.androidApkPath\)/);
+    assert.match(runner, /ensureAndroidMetroReverse\(/);
     assert.match(runner, /execute\(iosBuildCommand\(\)\)/);
     assert.match(preflight, /RNGMA_E2E_PLATFORM: target/);
     assert.doesNotMatch(preflight, /RNGMA_E2E_TARGET/);

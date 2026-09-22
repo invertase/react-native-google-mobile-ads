@@ -4,7 +4,6 @@ import {
 } from './hostPreflight.ts';
 import {
   runtimeResources,
-  serialAndroidApkPath,
   type RuntimeResources,
 } from './slots.ts';
 
@@ -82,28 +81,21 @@ export function androidRunCommands(
       },
     ];
   }
-  const serial = runtime.slotResources!.androidSerial;
-  const tcpPort = `tcp:${runtime.metroPort}`;
   return [
-    androidGradleCommand(env),
     {
-      bin: 'adb',
-      args: ['-s', serial, 'reverse', tcpPort, tcpPort],
-    },
-    {
-      bin: 'adb',
-      args: ['-s', serial, 'install', '-r', serialAndroidApkPath()],
-    },
-    {
-      bin: 'adb',
+      bin: 'yarn',
       args: [
-        '-s',
-        serial,
-        'shell',
-        'am',
-        'start',
-        '-n',
-        'com.microsoft.reacttestapp/com.microsoft.reacttestapp.MainActivity',
+        'workspace',
+        'RNGoogleMobileAdsExample',
+        'react-native',
+        'run-android',
+        '--device',
+        runtime.slotResources!.androidSerial,
+        '--binary-path',
+        runtime.androidApkPath,
+        '--no-packager',
+        '--port',
+        String(runtime.metroPort),
       ],
     },
   ];
