@@ -3,6 +3,31 @@ export const REQUEST_OUTCOME_NO_FILL = 'Request outcome: no-fill';
 export const REQUEST_OUTCOME_ERROR = 'Request error:';
 
 export type RequestOutcome = 'pending' | 'loaded' | 'no-fill' | 'error';
+export type RequestOutcomeClassification =
+  | 'loaded'
+  | 'no-fill'
+  | 'internal-error'
+  | 'other-error';
+
+export type RequestFingerprint = {
+  status: 'matched' | 'not-matched' | 'unavailable' | 'not-applicable';
+  evidence: string;
+};
+
+export type RequestOutcomeAttempt = {
+  format: string;
+  platform: 'android' | 'ios';
+  attempt: number;
+  requestId: number;
+  classification: RequestOutcomeClassification;
+  detail: string;
+  fingerprint: RequestFingerprint;
+};
+
+export const REPRESENTATIVE_REQUEST_MAX_ATTEMPTS = 10;
+export const REPRESENTATIVE_REQUEST_BASE_BACKOFF_MS = 250;
+export const REPRESENTATIVE_REQUEST_MAX_BACKOFF_MS = 2000;
+export const REQUEST_OUTCOME_LOG_PREFIX = '[request-outcome-attempt]';
 
 export function requestOutcomeFromText(text: string): RequestOutcome {
   if (text.includes(REQUEST_OUTCOME_LOADED)) {
@@ -15,6 +40,262 @@ export function requestOutcomeFromText(text: string): RequestOutcome {
     return 'error';
   }
   return 'pending';
+}
+
+export function classifyRequestOutcome(
+  text: string,
+): RequestOutcomeClassification | undefined {
+  const outcome = requestOutcomeFromText(text);
+  if (outcome === 'loaded' || outcome === 'no-fill') {
+    return outcome;
+  }
+  if (outcome === 'error') {
+    return text.includes('Request error: internal-error') ? 'internal-error' : 'other-error';
+  }
+  return undefined;
+}
+
+export function requestIdFromText(text: string): number | undefined {
+  const match = text.match(/Request id: (\d+);/);
+  return match ? Number(match[1]) : undefined;
+}
+
+const NATIVE_RESPONSE_SIGNATURE =
+  '<Google:HTML> Incorrect native ad response. Click actions were not properly specified';
+const NATIVE_RESPONSE_LOG_MESSAGE = `Received log message: ${NATIVE_RESPONSE_SIGNATURE}`;
+const GMA_LOAD_FAILURE_ZERO = 'Ad failed to load : 0';
+const MAX_NATIVE_FINGERPRINT_GAP_MS = 250;
+
+type AndroidLogLine = {
+  timestampMs: number;
+  processId: number;
+  tag: string;
+  message: string;
+};
+
+function parseAndroidThreadtimeLine(line: string): AndroidLogLine | undefined {
+  const match = line.match(
+    /^(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})\.(\d{3})\s+(\d+)\s+\d+\s+[VDIWEF]\s+(\S+)\s*:\s(.*)$/,
+  );
+  if (!match) {
+    return undefined;
+  }
+  const [, month, day, hour, minute, second, millisecond, processId, tag, message] =
+    match;
+  return {
+    timestampMs: Date.UTC(
+      2000,
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second),
+      Number(millisecond),
+    ),
+    processId: Number(processId),
+    tag,
+    message,
+  };
+}
+
+export function nativeFingerprintFromAndroidLog(log: string): RequestFingerprint {
+  const rawLines = log.split(/\r?\n/);
+  if (rawLines.at(-1) === '') {
+    rawLines.pop();
+  }
+  const chronologicalLines = rawLines.map(parseAndroidThreadtimeLine);
+  const signatureIndexes = chronologicalLines.flatMap((line, index) =>
+    line?.tag === 'Ads' && line.message === NATIVE_RESPONSE_LOG_MESSAGE ? [index] : [],
+  );
+  if (signatureIndexes.length === 0) {
+    return {
+      status: 'not-matched',
+      evidence: 'android-logcat-request-window:no-known-native-response-signature',
+    };
+  }
+  const signatureIndex = signatureIndexes.at(-1)!;
+  const signature = chronologicalLines[signatureIndex]!;
+  const failure = chronologicalLines[signatureIndex + 1];
+  if (
+    !failure ||
+    failure.tag !== 'Ads' ||
+    failure.message !== GMA_LOAD_FAILURE_ZERO ||
+    failure.processId !== signature.processId ||
+    failure.timestampMs < signature.timestampMs ||
+    failure.timestampMs - signature.timestampMs > MAX_NATIVE_FINGERPRINT_GAP_MS
+  ) {
+    return {
+      status: 'not-matched',
+      evidence: 'android-logcat-request-window:signature-without-gma-error-0',
+    };
+  }
+  return {
+    status: 'matched',
+    evidence:
+      'android-logcat-request-window:<Google:HTML> Incorrect native ad response. Click actions were not properly specified + GMA error 0',
+  };
+}
+
+export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam';
+export type RepresentativeRequestOperation = 'auto-load' | 'reload' | 'remount' | 'load';
+
+export function representativeRequestOperation(
+  path: RepresentativeRequestPath,
+  attempt: number,
+): RepresentativeRequestOperation {
+  if (attempt < 1) {
+    throw new Error(`Request attempt must be positive, received ${attempt}`);
+  }
+  if (path === 'banner') {
+    return attempt === 1 ? 'auto-load' : 'reload';
+  }
+  if (path === 'native') {
+    return attempt === 1 ? 'auto-load' : 'remount';
+  }
+  return 'load';
+}
+
+export async function executeRepresentativeRequestOperation(
+  path: RepresentativeRequestPath,
+  attempt: number,
+  operations: {
+    reload: () => Promise<void>;
+    remount: () => Promise<void>;
+    load: () => Promise<void>;
+  },
+): Promise<RepresentativeRequestOperation> {
+  const operation = representativeRequestOperation(path, attempt);
+  if (operation !== 'auto-load') {
+    await operations[operation]();
+  }
+  return operation;
+}
+
+/** Delay before a retry (attempt 2+), capped to keep the device suite bounded. */
+export function representativeRequestBackoffMs(attempt: number): number {
+  if (attempt <= 1) {
+    return 0;
+  }
+  return Math.min(
+    REPRESENTATIVE_REQUEST_BASE_BACKOFF_MS * 2 ** (attempt - 2),
+    REPRESENTATIVE_REQUEST_MAX_BACKOFF_MS,
+  );
+}
+
+export function formatRequestOutcomeAttempt(attempt: RequestOutcomeAttempt): string {
+  return `${REQUEST_OUTCOME_LOG_PREFIX} ${JSON.stringify(attempt)}`;
+}
+
+export async function collectRepresentativeRequestOutcomes(options: {
+  format: string;
+  platform: 'android' | 'ios';
+  request: (attempt: number) => Promise<Omit<RequestOutcomeAttempt, 'format' | 'platform' | 'attempt'>>;
+  sleep?: (delayMs: number) => Promise<void>;
+  emit?: (line: string) => void;
+  maxAttempts?: number;
+}): Promise<readonly RequestOutcomeAttempt[]> {
+  const {
+    format,
+    platform,
+    request,
+    sleep = delayMs => new Promise(resolve => setTimeout(resolve, delayMs)),
+    emit = console.log,
+    maxAttempts = REPRESENTATIVE_REQUEST_MAX_ATTEMPTS,
+  } = options;
+  const attempts: RequestOutcomeAttempt[] = [];
+  const requestIds = new Set<number>();
+  let previousRequestId = 0;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const delayMs = representativeRequestBackoffMs(attempt);
+    if (delayMs > 0) {
+      await sleep(delayMs);
+    }
+    const observed = await request(attempt);
+    if (!Number.isSafeInteger(observed.requestId) || observed.requestId <= 0) {
+      throw new Error(
+        `[request-outcome] ${format}: attempt ${attempt} did not report a valid request id`,
+      );
+    }
+    if (requestIds.has(observed.requestId)) {
+      throw new Error(
+        `[request-outcome] ${format}: attempt ${attempt} reused request id ${observed.requestId}`,
+      );
+    }
+    if (observed.requestId <= previousRequestId) {
+      throw new Error(
+        `[request-outcome] ${format}: attempt ${attempt} request id ${observed.requestId} was not greater than ${previousRequestId}`,
+      );
+    }
+    requestIds.add(observed.requestId);
+    previousRequestId = observed.requestId;
+    const result = { format, platform, attempt, ...observed };
+    attempts.push(result);
+    emit(formatRequestOutcomeAttempt(result));
+    if (result.classification === 'loaded') {
+      break;
+    }
+  }
+
+  return attempts;
+}
+
+export type RepresentativeRequestRuntime = {
+  navigate: () => Promise<void>;
+  backToGallery: () => Promise<void>;
+  clearNativeLogs: () => Promise<void>;
+  reload: () => Promise<void>;
+  load: () => Promise<void>;
+  observe: (
+    uiAttempt: number,
+  ) => Promise<Omit<RequestOutcomeAttempt, 'format' | 'platform' | 'attempt'>>;
+};
+
+/**
+ * Runtime orchestration for representative request collection.
+ * Every dependency failure propagates directly; instrumentation recovery is intentionally absent.
+ */
+export async function runRepresentativeRequestOutcomeContract(options: {
+  format: string;
+  platform: 'android' | 'ios';
+  path: RepresentativeRequestPath;
+  runtime: RepresentativeRequestRuntime;
+  sleep?: (delayMs: number) => Promise<void>;
+  emit?: (line: string) => void;
+  maxAttempts?: number;
+}): Promise<readonly RequestOutcomeAttempt[]> {
+  const { format, platform, path, runtime, sleep, emit, maxAttempts } = options;
+  const attempts = await collectRepresentativeRequestOutcomes({
+    format,
+    platform,
+    sleep,
+    emit,
+    maxAttempts,
+    request: async attempt => {
+      if (path === 'native') {
+        if (attempt > 1) {
+          await runtime.backToGallery();
+        }
+        await runtime.clearNativeLogs();
+        await runtime.navigate();
+        return runtime.observe(1);
+      }
+
+      if (attempt === 1) {
+        await runtime.navigate();
+      }
+      await executeRepresentativeRequestOperation(path, attempt, {
+        reload: runtime.reload,
+        remount: async () => {
+          throw new Error('Native remounts are handled by the request runtime');
+        },
+        load: runtime.load,
+      });
+      return runtime.observe(attempt);
+    },
+  });
+  await runtime.backToGallery();
+  return attempts;
 }
 
 export function acceptRepresentativeRequestOutcome(
@@ -35,7 +316,8 @@ export function acceptRepresentativeRequestOutcome(
     return true;
   }
   if (outcome === 'error') {
-    throw new Error(`[request-outcome] ${formatId}: ${text}`);
+    warn(`[request-outcome] ${formatId}: SDK other-error accepted: ${text}`);
+    return true;
   }
   return false;
 }

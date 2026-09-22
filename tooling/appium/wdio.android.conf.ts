@@ -14,6 +14,32 @@ import { config as shared } from './wdio.shared.conf.ts';
 export const config: Options.Testrunner = {
   ...shared,
   specs: ['./test/specs/**/*.ts'],
+  async before(_capabilities, _specs, browser) {
+    // Appium clears app data during session creation, so establish the selected device's
+    // reversed localhost as React Native's debug host only after that reset, then launch.
+    const preferences =
+      "<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map><string name='debug_http_host'>127.0.0.1:8081</string></map>";
+    const encodedPreferences = Buffer.from(preferences).toString('base64');
+    await browser.execute('mobile: shell', {
+      command: 'run-as',
+      args: [
+        EXAMPLE_ANDROID_PACKAGE,
+        'mkdir',
+        '-p',
+        'shared_prefs',
+      ],
+    });
+    await browser.execute('mobile: shell', {
+      command: 'run-as',
+      args: [
+        EXAMPLE_ANDROID_PACKAGE,
+        'sh',
+        '-c',
+        `'echo ${encodedPreferences} | base64 -d > shared_prefs/${EXAMPLE_ANDROID_PACKAGE}_preferences.xml'`,
+      ],
+    });
+    await browser.activateApp(EXAMPLE_ANDROID_PACKAGE);
+  },
   capabilities: [
     {
       platformName: 'Android',
@@ -24,6 +50,7 @@ export const config: Options.Testrunner = {
       'appium:appPackage': EXAMPLE_ANDROID_PACKAGE,
       'appium:appActivity': EXAMPLE_ANDROID_ACTIVITY,
       'appium:appWaitActivity': '*',
+      'appium:autoLaunch': false,
       'appium:autoGrantPermissions': true,
       'appium:newCommandTimeout': 240,
       'appium:noReset': false,
