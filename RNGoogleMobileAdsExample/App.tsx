@@ -355,30 +355,32 @@ function BannerFormat(props: {
 
   return (
     <View style={styles.testSpacing} testID={formatId}>
-      <BannerAd
-        ref={bannerRef}
-        unitId={
-          String(props.bannerAdSize).includes('ADAPTIVE_BANNER')
-            ? TestIds.ADAPTIVE_BANNER
-            : TestIds.BANNER
-        }
-        size={props.bannerAdSize}
-        maxHeight={props.maxHeight}
-        width={props.width}
-        onAdLoaded={() => {
-          setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
-        }}
-        onAdFailedToLoad={error => {
-          setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
-        }}
-        onPaid={(event: PaidEvent) => {
-          console.log(
-            `Paid: ${event.value} ${event.currency} (precision ${
-              RevenuePrecisions[event.precision]
-            }})`,
-          );
-        }}
-      />
+      <View testID={AppiumTestIds.action.rendered(formatId)} collapsable={false}>
+        <BannerAd
+          ref={bannerRef}
+          unitId={
+            String(props.bannerAdSize).includes('ADAPTIVE_BANNER')
+              ? TestIds.ADAPTIVE_BANNER
+              : TestIds.BANNER
+          }
+          size={props.bannerAdSize}
+          maxHeight={props.maxHeight}
+          width={props.width}
+          onAdLoaded={() => {
+            setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
+          }}
+          onAdFailedToLoad={error => {
+            setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
+          }}
+          onPaid={(event: PaidEvent) => {
+            console.log(
+              `Paid: ${event.value} ${event.currency} (precision ${
+                RevenuePrecisions[event.precision]
+              }})`,
+            );
+          }}
+        />
+      </View>
       <Text testID={AppiumTestIds.action.loaded(formatId)}>
         {requestOutcomeLabel(requestState)}
       </Text>
@@ -478,7 +480,10 @@ function NativeComponent() {
         {requestOutcomeLabel(requestState)}
       </Text>
       <Text testID={AppiumTestIds.format.native}>Native ad</Text>
-      <NativeAdView nativeAd={nativeAd}>
+      <NativeAdView
+        nativeAd={nativeAd}
+        testID={AppiumTestIds.action.rendered(AppiumTestIds.format.native)}
+      >
         <View style={{ padding: 16, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             {nativeAd.icon && (

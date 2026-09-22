@@ -8,6 +8,7 @@ import {
 } from '../../src/formats.ts';
 import {
   classifyRequestOutcome,
+  hasNonzeroRectangle,
   nativeFingerprintFromAndroidLog,
   requestIdFromText,
   runRepresentativeRequestOutcomeContract,
@@ -572,6 +573,50 @@ export async function assertDisplayed(testId: string): Promise<void> {
   await expect(el).toBeDisplayed();
 }
 
+type RenderRectangle = { width: number; height: number };
+
+async function assertRenderedRectangle(testId: string): Promise<RenderRectangle> {
+  const el = await findByTestId(testId);
+  await el.waitForDisplayed({ timeout: 20000 });
+  await expect(el).toBeDisplayed();
+  const size = await el.getSize();
+  if (!hasNonzeroRectangle(size)) {
+    throw new Error(
+      `[request-outcome] render proof ${testId} has zero rectangle ${JSON.stringify(size)}`,
+    );
+  }
+  return size;
+}
+
+async function assertRenderedBannerSubtree(testId: string): Promise<{
+  root: RenderRectangle;
+  descendant: RenderRectangle;
+  descendantType: string;
+}> {
+  const rootRectangle = await assertRenderedRectangle(testId);
+  const root = await findByTestId(testId);
+  const descendants = await root.$$('.//*');
+  for (const descendant of descendants) {
+    if (!(await descendant.isDisplayed().catch(() => false))) {
+      continue;
+    }
+    const size = await descendant.getSize().catch(() => ({ width: 0, height: 0 }));
+    if (hasNonzeroRectangle(size)) {
+      const descendantType = await descendant
+        .getAttribute(isAndroid() ? 'className' : 'type')
+        .catch(() => 'unknown');
+      return {
+        root: rootRectangle,
+        descendant: size,
+        descendantType: String(descendantType || 'unknown'),
+      };
+    }
+  }
+  throw new Error(
+    `[request-outcome] banner render proof ${testId} has no displayed nonzero native descendant`,
+  );
+}
+
 async function elementText(el: WebdriverIO.Element): Promise<string> {
   const parts: string[] = [];
   const push = async (fn: () => Promise<unknown>) => {
@@ -804,6 +849,8 @@ async function runFormatContract(opts: {
   galleryTitle: string;
   actionId?: string;
   expectedText?: string;
+  expectedTexts?: readonly string[];
+  emitStatusLabel?: string;
   actionAccessibilityLabel?: string;
   requiresAppRestart?: boolean;
 }): Promise<void> {
@@ -818,11 +865,25 @@ async function runFormatContract(opts: {
     if (opts.actionId && opts.expectedText) {
       await tapFormatAction(opts.actionId, opts.actionAccessibilityLabel);
     }
-    if (opts.expectedText) {
+    for (const expectedText of [
+      ...(opts.expectedText ? [opts.expectedText] : []),
+      ...(opts.expectedTexts ?? []),
+    ]) {
       await waitForTestIdTextContaining(
         AppiumTestIds.action.loaded(opts.formatId),
-        opts.expectedText,
+        expectedText,
         60000,
+      );
+    }
+    if (opts.emitStatusLabel) {
+      const status = await elementText(
+        await findByTestId(AppiumTestIds.action.loaded(opts.formatId)),
+      );
+      console.log(
+        `[${opts.emitStatusLabel}] ${JSON.stringify({
+          platform: isAndroid() ? 'android' : 'ios',
+          status,
+        })}`,
       );
     }
     await backToGallery();
@@ -839,7 +900,7 @@ export async function navigateToFormat(format: NavigationSmokeCase): Promise<voi
   });
 }
 
-/** Collect up to ten request outcomes; loaded stops early and no ad-serving outcome fails the suite. */
+/** Prove the locked representative-session policy and any required loaded render. */
 export async function proveRepresentativeRequestOutcome(
   format: RepresentativeRequestOutcomeContract,
 ): Promise<void> {
@@ -867,6 +928,32 @@ export async function proveRepresentativeRequestOutcome(
       observe: uiAttempt =>
         observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt),
     },
+    onAccepted: async attempt => {
+      if (attempt.classification === 'loaded' && format.renderProof === 'banner') {
+        const evidence = await assertRenderedBannerSubtree(
+          AppiumTestIds.action.rendered(format.id),
+        );
+        console.log(
+          `[render-proof] ${JSON.stringify({
+            format: format.id,
+            platform: isAndroid() ? 'android' : 'ios',
+            ...evidence,
+          })}`,
+        );
+      }
+      if (attempt.classification === 'loaded' && format.renderProof === 'native') {
+        const rectangle = await assertRenderedRectangle(
+          AppiumTestIds.action.rendered(format.id),
+        );
+        console.log(
+          `[render-proof] ${JSON.stringify({
+            format: format.id,
+            platform: isAndroid() ? 'android' : 'ios',
+            rectangle,
+          })}`,
+        );
+      }
+    },
   });
 }
 
@@ -877,10 +964,18 @@ export async function proveProbeStatus(opts: {
   galleryTitle: string;
   actionId: string;
   expectedStatusText: string;
+  expectedStatusMarkers: readonly string[];
+  expectedPingByPlatform: { android: string; ios: string };
   actionAccessibilityLabel: string;
 }): Promise<void> {
+  const { expectedStatusMarkers, expectedPingByPlatform, ...contract } = opts;
   await runFormatContract({
-    ...opts,
+    ...contract,
     expectedText: opts.expectedStatusText,
+    emitStatusLabel: 'probe-seam',
+    expectedTexts: [
+      expectedPingByPlatform[isAndroid() ? 'android' : 'ios'],
+      ...expectedStatusMarkers,
+    ],
   });
 }
