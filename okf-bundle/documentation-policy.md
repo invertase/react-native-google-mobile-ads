@@ -28,9 +28,21 @@ Private items stay off GitHub, including off `AGENTS.md`, commits, PR titles, an
 
 **Rules**
 
-1. General OKF docs get **public/durable only** updates. Ephemeral fields and private items stay out of all GitHub-public **reference** docs (this heading defines the kinds; it is not the only file the restriction covers).
+1. General OKF docs get **public/durable only** updates. Ephemeral fields and private items stay out of all GitHub-public **reference** docs (this heading defines the kinds; it is not the only file the restriction covers). Narrow exception: [§ cumulative verification-evidence tables](#verification-evidence-tables).
 2. Ephemeral state has two layers: **session scratch** lives only in gitignored `.agents/`; **gate state** lives only in the internal tracker (ephemeral for durability purposes). When an item closes, **public** outcomes move to reference docs; session scratch stays under `.agents/` and gate state stays in the tracker.
 3. GitHub-public **reference** docs must not link to gitignored files — they are not on GitHub.
+
+<a id="verification-evidence-tables"></a>
+
+### Cumulative verification-evidence tables
+
+A GitHub-public reference doc may carry **one curated cumulative verification-evidence table** when the aggregate counts are themselves the stated basis for choosing or justifying a durable acceptance contract. Counts that decide a contract are durable input to that contract, not session state.
+
+The table carries only aggregate counts plus the stable labels the contract already uses (for example format, platform, outcome classification). Raw log paths, run IDs, dates, transient banners, gate or queue state, and private identifiers stay ephemeral and remain forbidden — use them to derive the counts, not to publish them.
+
+Counts must be verified minimums. When non-overlapping totals cannot be established, publish the lower bound and say so in the table; never estimate, and never round up to a tidier number. Preserve any fact that survives without a count (a reproduction signature, an affected platform, an ad unit) as concise prose instead of inventing a total for it.
+
+The owning doc is the one that defines the contract. Other docs link to that table and to this section; do not copy either the counts or this exception's prose.
 
 <a id="commits-as-documentation"></a>
 
@@ -65,7 +77,7 @@ Confirm:
 | **DRY** | No duplicated procedures, policy paragraphs, or ephemeral snapshots in GitHub-public docs |
 | **Efficiency** | Shortest text that stays **complete and true** ([§ Efficiency](#efficiency)). Completeness wins over brevity |
 | **Link hygiene** | Cross-links resolve; indexes list canonical entry points |
-| **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, or PR titles. Private items stay off GitHub. `.agents/` staging follows the [canonical rule](#durable-vs-ephemeral). Do not add ephemeral files under `okf-bundle/` |
+| **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, or PR titles, except a [cumulative verification-evidence table](#verification-evidence-tables). Private items stay off GitHub. `.agents/` staging follows the [canonical rule](#durable-vs-ephemeral). Do not add ephemeral files under `okf-bundle/` |
 
 **Blocking on `commit`.** Fix violations before `git commit` ([change authoring § commit](testing/change-authoring-workflow.md#commit)). Gate close is not a later escape hatch. Frozen `independent-review` **reports only**; `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings apply in `documentation?` then another frozen scan — product/lint findings are not this dump ([§ frozen tree](testing/change-authoring-workflow.md#frozen-tree)). Commands: [validation-checklist § OKF bundle review](testing/validation-checklist.md#okf-bundle-review). Loop: [change authoring](testing/change-authoring-workflow.md#loop).
 

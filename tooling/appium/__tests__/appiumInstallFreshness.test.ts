@@ -30,6 +30,44 @@ test('android capabilities force a fresh app install', async () => {
   assert.equal(cap['appium:enforceAppInstall'], true, 'expected appium:enforceAppInstall to be true');
   // noReset stays false so per-session app data is still reset.
   assert.equal(cap['appium:noReset'], false, 'expected appium:noReset to remain false');
+  assert.equal(
+    cap['appium:autoLaunch'],
+    false,
+    'expected app launch only after instrumentation startup',
+  );
+  assert.equal(typeof config.before, 'function', 'expected a post-session Android launch hook');
+  const startupCalls: Array<{ operation: string; value: unknown }> = [];
+  await (config.before as NonNullable<typeof config.before>)(
+    cap,
+    [],
+    {
+      execute: async (command: string, options: unknown) => {
+        startupCalls.push({ operation: command, value: options });
+      },
+      activateApp: async (packageName: string) => {
+        startupCalls.push({ operation: 'activateApp', value: packageName });
+      },
+    } as never,
+  );
+  assert.equal(startupCalls[0]?.operation, 'mobile: shell');
+  assert.deepEqual(
+    (startupCalls[0]?.value as { command: string; args: string[] }).args.slice(0, 3),
+    ['com.microsoft.reacttestapp', 'mkdir', '-p'],
+  );
+  assert.equal(
+    (startupCalls[0]?.value as { command: string; args: string[] }).args[3],
+    'shared_prefs',
+  );
+  const writeScript =
+    (startupCalls[1]?.value as { command: string; args: string[] }).args[3] ?? '';
+  const encodedPreferences = /echo ([A-Za-z0-9+/=]+) \|/.exec(writeScript)?.[1];
+  assert.ok(encodedPreferences, 'expected base64-encoded preferences write');
+  assert.match(Buffer.from(encodedPreferences, 'base64').toString(), /debug_http_host/);
+  assert.match(Buffer.from(encodedPreferences, 'base64').toString(), /127\.0\.0\.1:8081/);
+  assert.deepEqual(startupCalls[2], {
+    operation: 'activateApp',
+    value: 'com.microsoft.reacttestapp',
+  });
 });
 
 test('ios capabilities force a fresh app install', async () => {

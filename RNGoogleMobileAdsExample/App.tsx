@@ -73,6 +73,23 @@ const REQUEST_OUTCOME_LOADED = 'Request outcome: loaded';
 const REQUEST_OUTCOME_NO_FILL = 'Request outcome: no-fill';
 const REQUEST_OUTCOME_ERROR = 'Request error:';
 
+type RequestState = {
+  requestId: number;
+  attempt: number;
+  outcome: string;
+};
+
+let nextRequestId = 0;
+
+function freshRequestState(attempt: number): RequestState {
+  nextRequestId += 1;
+  return {
+    requestId: nextRequestId,
+    attempt,
+    outcome: REQUEST_OUTCOME_PENDING,
+  };
+}
+
 type RequestError = Error & {
   code?: string;
   reason?: string;
@@ -86,6 +103,10 @@ function requestErrorOutcome(error: unknown): string {
   const reason = requestError.reason ?? requestError.code ?? 'unknown';
   const message = requestError.message ?? String(error);
   return `${REQUEST_OUTCOME_ERROR} ${reason}: ${message}`;
+}
+
+function requestOutcomeLabel(state: RequestState): string {
+  return `Request id: ${state.requestId}; Request attempt: ${state.attempt}; ${state.outcome}`;
 }
 
 const GALLERY_SECTION_CHIPS: Array<{ id: GallerySection; title: string }> = [
@@ -266,7 +287,11 @@ const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
 const gamInterstitial = GAMInterstitialAd.createForAdRequest(TestIds.GAM_INTERSTITIAL);
 
 function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId: string }) {
-  const [requestOutcome, setRequestOutcome] = useState(REQUEST_OUTCOME_PENDING);
+  const [requestState, setRequestState] = useState<RequestState>({
+    requestId: 0,
+    attempt: 0,
+    outcome: REQUEST_OUTCOME_PENDING,
+  });
 
   useEffect(() => {
     const adListener = props.mobileAd.addAdEventsListener(({ type, payload }) => {
@@ -275,11 +300,11 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
         console.log(payload);
       }
       if (type === AdEventType.ERROR) {
-        setRequestOutcome(requestErrorOutcome(payload));
+        setRequestState(current => ({ ...current, outcome: requestErrorOutcome(payload) }));
         console.log(`${Platform.OS} ${props.type} error: ${(payload as Error)?.message}`);
       }
       if (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) {
-        setRequestOutcome(REQUEST_OUTCOME_LOADED);
+        setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
       }
     });
     return () => adListener();
@@ -292,15 +317,17 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
         testID={AppiumTestIds.action.load(props.formatId)}
         onPress={() => {
           try {
-            setRequestOutcome(REQUEST_OUTCOME_PENDING);
+            setRequestState(current => freshRequestState(current.attempt + 1));
             props.mobileAd.load();
           } catch (e) {
-            setRequestOutcome(requestErrorOutcome(e));
+            setRequestState(current => ({ ...current, outcome: requestErrorOutcome(e) }));
             console.log(`${Platform.OS} ${props.type} load error: ${e}`);
           }
         }}
       />
-      <Text testID={AppiumTestIds.action.loaded(props.formatId)}>{requestOutcome}</Text>
+      <Text testID={AppiumTestIds.action.loaded(props.formatId)}>
+        {requestOutcomeLabel(requestState)}
+      </Text>
       <Button
         title={`Show ${props.type} Ad`}
         testID={AppiumTestIds.action.show(props.formatId)}
@@ -322,7 +349,7 @@ function BannerFormat(props: {
   width?: number;
 }) {
   const bannerRef = useRef<BannerAd>(null);
-  const [requestOutcome, setRequestOutcome] = useState(REQUEST_OUTCOME_PENDING);
+  const [requestState, setRequestState] = useState<RequestState>(() => freshRequestState(1));
   const variantKey = bannerVariantKey(props.bannerAdSize, props.maxHeight, props.width);
   const formatId = AppiumTestIds.bannerVariant(variantKey);
 
@@ -339,10 +366,10 @@ function BannerFormat(props: {
         maxHeight={props.maxHeight}
         width={props.width}
         onAdLoaded={() => {
-          setRequestOutcome(REQUEST_OUTCOME_LOADED);
+          setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
         }}
         onAdFailedToLoad={error => {
-          setRequestOutcome(requestErrorOutcome(error));
+          setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
         }}
         onPaid={(event: PaidEvent) => {
           console.log(
@@ -352,12 +379,14 @@ function BannerFormat(props: {
           );
         }}
       />
-      <Text testID={AppiumTestIds.action.loaded(formatId)}>{requestOutcome}</Text>
+      <Text testID={AppiumTestIds.action.loaded(formatId)}>
+        {requestOutcomeLabel(requestState)}
+      </Text>
       <Button
         title="reload"
         testID={AppiumTestIds.action.reload(formatId)}
         onPress={() => {
-          setRequestOutcome(REQUEST_OUTCOME_PENDING);
+          setRequestState(current => freshRequestState(current.attempt + 1));
           bannerRef.current?.load();
         }}
       />
@@ -383,7 +412,7 @@ function CollapsibleBannerFormat() {
 
 function NativeComponent() {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
-  const [requestOutcome, setRequestOutcome] = useState(REQUEST_OUTCOME_PENDING);
+  const [requestState, setRequestState] = useState<RequestState>(() => freshRequestState(1));
 
   useEffect(() => {
     // Generic native ads use AdMob's system-defined native test unit. GAM_NATIVE
@@ -393,10 +422,10 @@ function NativeComponent() {
     })
       .then(ad => {
         setNativeAd(ad);
-        setRequestOutcome(REQUEST_OUTCOME_LOADED);
+        setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
       })
       .catch(error => {
-        setRequestOutcome(requestErrorOutcome(error));
+        setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
         console.error(error);
       });
   }, []);
@@ -436,7 +465,7 @@ function NativeComponent() {
     return (
       <View>
         <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.native)}>
-          {requestOutcome}
+          {requestOutcomeLabel(requestState)}
         </Text>
         <Text testID={AppiumTestIds.format.native}>Loading native ad…</Text>
       </View>
@@ -446,7 +475,7 @@ function NativeComponent() {
   return (
     <View>
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.native)}>
-        {requestOutcome}
+        {requestOutcomeLabel(requestState)}
       </Text>
       <Text testID={AppiumTestIds.format.native}>Native ad</Text>
       <NativeAdView nativeAd={nativeAd}>
@@ -748,17 +777,21 @@ function GAMBannerFormat(props: {
 }
 
 function GAMInterstitialFormat() {
-  const [requestOutcome, setRequestOutcome] = useState(REQUEST_OUTCOME_PENDING);
+  const [requestState, setRequestState] = useState<RequestState>({
+    requestId: 0,
+    attempt: 0,
+    outcome: REQUEST_OUTCOME_PENDING,
+  });
 
   useEffect(() => {
     const adListener = gamInterstitial.addAdEventsListener(({ type, payload }) => {
       console.log(`${Platform.OS} GAM interstitial ad event: ${type}`);
       if (type === AdEventType.ERROR) {
-        setRequestOutcome(requestErrorOutcome(payload));
+        setRequestState(current => ({ ...current, outcome: requestErrorOutcome(payload) }));
         console.log(`${Platform.OS} GAM interstitial error: ${(payload as Error).message}`);
       }
       if (type === AdEventType.LOADED) {
-        setRequestOutcome(REQUEST_OUTCOME_LOADED);
+        setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
       }
       if (type === GAMAdEventType.APP_EVENT) {
         console.log(`${Platform.OS} GAM interstitial app event: ${JSON.stringify(payload)}`);
@@ -774,16 +807,16 @@ function GAMInterstitialFormat() {
         testID={AppiumTestIds.action.load(AppiumTestIds.format.gamInterstitial)}
         onPress={() => {
           try {
-            setRequestOutcome(REQUEST_OUTCOME_PENDING);
+            setRequestState(current => freshRequestState(current.attempt + 1));
             gamInterstitial.load();
           } catch (e) {
-            setRequestOutcome(requestErrorOutcome(e));
+            setRequestState(current => ({ ...current, outcome: requestErrorOutcome(e) }));
             console.log(`${Platform.OS} GAM Interstitial load error: ${e}`);
           }
         }}
       />
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.gamInterstitial)}>
-        {requestOutcome}
+        {requestOutcomeLabel(requestState)}
       </Text>
       <Button
         title="Show GAM Interstitial"

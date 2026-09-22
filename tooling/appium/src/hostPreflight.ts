@@ -176,6 +176,40 @@ export function selectConnectedAndroidDevice(
   return candidates[0] ?? null;
 }
 
+export type AndroidExec = (bin: string, args: string[]) => string;
+
+/**
+ * Make this checkout's Metro reachable from the selected emulator before app launch,
+ * then prove the selected device can traverse that exact reverse to a running Metro.
+ */
+export function ensureAndroidMetroReverse(
+  serial: string,
+  execFile: AndroidExec,
+): void {
+  execFile('adb', ['-s', serial, 'reverse', 'tcp:8081', 'tcp:8081']);
+  const reverseList = execFile('adb', ['-s', serial, 'reverse', '--list']);
+  const hasExpectedReverse = reverseList
+    .split(/\r?\n/)
+    .some(line => line.trim().endsWith('tcp:8081 tcp:8081'));
+  if (!hasExpectedReverse) {
+    throw new Error(
+      `Android device ${serial} did not retain the required tcp:8081 reverse.`,
+    );
+  }
+  execFile('adb', [
+    '-s',
+    serial,
+    'shell',
+    'toybox',
+    'nc',
+    '-w',
+    '5',
+    '-z',
+    '127.0.0.1',
+    '8081',
+  ]);
+}
+
 function runtimeVersion(runtimeIdentifier: string): string {
   const suffix = runtimeIdentifier.split('.SimRuntime.iOS-')[1];
   return suffix ? suffix.replaceAll('-', '.') : runtimeIdentifier;

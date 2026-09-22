@@ -7,6 +7,7 @@ import {
   appiumPort,
   bootAndPersistSelectedSimulator,
   DEFAULT_IOS_DEVICE_NAME,
+  ensureAndroidMetroReverse,
   IOS_WDA_DERIVED_DATA_PATH,
   IOS_WDA_RUNNER_APP_PATH,
   isCompleteWdaRunnerApp,
@@ -285,6 +286,18 @@ async function main(): Promise<void> {
   }
   if (codegen.status !== 0) {
     process.exit(codegen.status ?? 1);
+  }
+  if (target === 'android' && androidUdid) {
+    ensureAndroidMetroReverse(androidUdid, (bin, args) => {
+      return execFileSync(bin, args, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'inherit'],
+        timeout: 10_000,
+      });
+    });
+    console.log(
+      `Android device ${androidUdid} reaches this checkout's Metro through tcp:8081.`,
+    );
   }
   const result = spawnSync('yarn', ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`], {
     env: {

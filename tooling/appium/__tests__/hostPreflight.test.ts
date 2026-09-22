@@ -9,6 +9,7 @@ import {
   bootAndPersistSelectedSimulator,
   DEFAULT_APPIUM_PORT,
   DEFAULT_IOS_DEVICE_NAME,
+  ensureAndroidMetroReverse,
   findCompleteIosAppBundle,
   githubEnvSelectionLines,
   githubEnvUdidLine,
@@ -79,6 +80,56 @@ describe('hostPreflight', () => {
       serial: 'api-33',
       api: 33,
     });
+  });
+
+  test('proves the selected Android serial can reach Metro through its reverse', () => {
+    const calls: string[][] = [];
+    ensureAndroidMetroReverse('emulator-5554', (bin, args) => {
+      calls.push([bin, ...args]);
+      if (args.at(-1) === '--list') {
+        return 'emulator-5554 tcp:8081 tcp:8081\n';
+      }
+      return '';
+    });
+    assert.deepEqual(calls, [
+      ['adb', '-s', 'emulator-5554', 'reverse', 'tcp:8081', 'tcp:8081'],
+      ['adb', '-s', 'emulator-5554', 'reverse', '--list'],
+      [
+        'adb',
+        '-s',
+        'emulator-5554',
+        'shell',
+        'toybox',
+        'nc',
+        '-w',
+        '5',
+        '-z',
+        '127.0.0.1',
+        '8081',
+      ],
+    ]);
+  });
+
+  test('rejects a missing reverse or failed selected-device Metro connection', () => {
+    assert.throws(
+      () => ensureAndroidMetroReverse('selected', (_bin, args) =>
+        args.at(-1) === '--list' ? '' : 'packager-status:running',
+      ),
+      /did not retain the required tcp:8081 reverse/,
+    );
+    assert.throws(
+      () =>
+        ensureAndroidMetroReverse('selected', (_bin, args) => {
+          if (args.at(-1) === '--list') {
+            return 'selected tcp:8081 tcp:8081';
+          }
+          if (args.includes('-z')) {
+            throw new Error('device connection refused');
+          }
+          return '';
+        }),
+      /device connection refused/,
+    );
   });
 
   test('requires a preflight-selected iOS UDID before WDIO capabilities load', () => {

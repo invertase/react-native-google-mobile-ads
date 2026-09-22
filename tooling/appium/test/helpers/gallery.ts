@@ -6,7 +6,14 @@ import {
   type NavigationSmokeCase,
   type RepresentativeRequestOutcomeContract,
 } from '../../src/formats.ts';
-import { acceptRepresentativeRequestOutcome } from '../../src/requestOutcomes.ts';
+import {
+  classifyRequestOutcome,
+  nativeFingerprintFromAndroidLog,
+  requestIdFromText,
+  runRepresentativeRequestOutcomeContract,
+  type RequestOutcomeClassification,
+  type RequestFingerprint,
+} from '../../src/requestOutcomes.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
 
 function isAndroid(): boolean {
@@ -512,6 +519,34 @@ export async function openFormat(formatId: string, galleryTitle?: string): Promi
   });
 }
 
+async function openFormatStrict(formatId: string, galleryTitle?: string): Promise<void> {
+  if (!(await isGalleryHome())) {
+    await backToGallery();
+  }
+  await ensureBannerAccordionClosed();
+  await selectGallerySection(gallerySectionForFormat(formatId));
+  const openId = AppiumTestIds.openFormat(formatId);
+  if (formatId.startsWith('gma.format.banner.')) {
+    const variantOpen = await findByTestId(openId);
+    if (!(await variantOpen.isDisplayed().catch(() => false))) {
+      await clickGalleryOpener(
+        AppiumTestIds.openFormat(AppiumTestIds.format.banner),
+        'Banner sizes',
+      );
+      const opener = await findByTestId(openId);
+      await opener.waitForExist({
+        timeout: 5000,
+        timeoutMsg: `Banner variant ${formatId} did not appear`,
+      });
+    }
+  }
+  await clickGalleryOpener(openId, galleryTitle);
+  await driver.waitUntil(async () => formatLooksOpen(formatId), {
+    timeout: 45000,
+    timeoutMsg: `Format ${formatId} did not open (container/back not visible)`,
+  });
+}
+
 export async function backToGallery(): Promise<void> {
   const back = await findByTestId(AppiumTestIds.galleryBack);
   if (await back.isDisplayed().catch(() => false)) {
@@ -620,36 +655,100 @@ export async function waitForTestIdTextContaining(
   }
 }
 
-async function waitForRepresentativeRequestOutcome(
+async function observeRepresentativeRequestOutcome(
   formatId: string,
-  timeoutMs = 60000,
-): Promise<void> {
+  path: RepresentativeRequestOutcomeContract['path'],
+  attempt: number,
+  timeoutMs = 10000,
+): Promise<{
+  requestId: number;
+  classification: RequestOutcomeClassification;
+  detail: string;
+  fingerprint: RequestFingerprint;
+}> {
   const testId = AppiumTestIds.action.loaded(formatId);
   let lastSeen = '';
+  const marker = await findByTestId(testId);
+  if (!(await marker.isExisting())) {
+    throw new Error(`[request-outcome] ${formatId}: required marker ${testId} is missing`);
+  }
   try {
     await driver.waitUntil(
       async () => {
         const el = await findByTestId(testId);
-        if (!(await el.isExisting().catch(() => false))) {
+        if (!(await el.isExisting())) {
+          throw new Error(`[request-outcome] ${formatId}: marker ${testId} disappeared`);
+        }
+        lastSeen = await el.getText();
+        if (!lastSeen.includes(`Request attempt: ${attempt};`)) {
           return false;
         }
-        lastSeen = await elementText(el);
-        return acceptRepresentativeRequestOutcome(formatId, lastSeen);
+        return classifyRequestOutcome(lastSeen) !== undefined;
       },
       {
         timeout: timeoutMs,
-        timeoutMsg: `testID ${testId} did not report a terminal request outcome (lastSeen=${JSON.stringify(lastSeen)})`,
+        timeoutMsg: `testID ${testId} did not report terminal request attempt ${attempt} (lastSeen=${JSON.stringify(lastSeen)})`,
       },
     );
+    const classification = classifyRequestOutcome(lastSeen);
+    if (!classification) {
+      throw new Error(
+        `[request-outcome] ${formatId}: wait completed without a terminal outcome`,
+      );
+    }
+    const requestId = requestIdFromText(lastSeen);
+    if (requestId === undefined) {
+      throw new Error(`[request-outcome] ${formatId}: terminal marker omitted request id`);
+    }
+    return {
+      requestId,
+      classification,
+      detail: lastSeen,
+      fingerprint: await collectRequestFingerprint(path, classification),
+    };
   } catch (error) {
-    const dump = await driver.getPageSource().catch(() => '');
-    const idx = dump.indexOf(testId);
-    const snippet =
-      idx >= 0
-        ? dump.slice(Math.max(0, idx - 120), idx + 320).replace(/\s+/g, ' ')
-        : 'testID absent from page source';
-    throw new Error(`${String(error)} | pageSource=${snippet}`);
+    let snippet = 'page source unavailable';
+    try {
+      const dump = await driver.getPageSource();
+      const index = dump.indexOf(testId);
+      snippet =
+        index >= 0
+          ? dump.slice(Math.max(0, index - 120), index + 320).replace(/\s+/g, ' ')
+          : 'testID absent from page source';
+    } catch {
+      // Preserve the original WebDriver failure; page source is diagnostics only.
+    }
+    throw new Error(`${String(error)} | pageSource=${snippet}`, { cause: error });
   }
+}
+
+async function resetNativeFingerprintWindow(): Promise<void> {
+  if (!isAndroid()) {
+    return;
+  }
+  await driver.execute('mobile: shell', { command: 'logcat', args: ['-c'] });
+}
+
+async function collectRequestFingerprint(
+  path: RepresentativeRequestOutcomeContract['path'],
+  classification: RequestOutcomeClassification,
+): Promise<RequestFingerprint> {
+  if (path !== 'native' || classification !== 'internal-error') {
+    return { status: 'not-applicable', evidence: 'not-native-internal-error' };
+  }
+  if (!isAndroid()) {
+    return {
+      status: 'unavailable',
+      evidence: 'ios:no-request-scoped-native-sdk-log-capability',
+    };
+  }
+  const log = await driver.execute('mobile: shell', {
+    command: 'logcat',
+    args: ['-d', '-v', 'threadtime'],
+  });
+  return nativeFingerprintFromAndroidLog(
+    typeof log === 'string' ? log : JSON.stringify(log),
+  );
 }
 
 /** Tap a format action without using gallery UiScrollable (format detail is not the gallery list). */
@@ -705,7 +804,6 @@ async function runFormatContract(opts: {
   galleryTitle: string;
   actionId?: string;
   expectedText?: string;
-  requestOutcome?: boolean;
   actionAccessibilityLabel?: string;
   requiresAppRestart?: boolean;
 }): Promise<void> {
@@ -717,14 +815,10 @@ async function runFormatContract(opts: {
   await withInstrumentationRecovery(async () => {
     await openFormat(opts.formatId, opts.galleryTitle);
     await assertDisplayed(opts.containerId);
-    if (opts.actionId) {
-      if (opts.expectedText || opts.requestOutcome) {
-        await tapFormatAction(opts.actionId, opts.actionAccessibilityLabel);
-      }
+    if (opts.actionId && opts.expectedText) {
+      await tapFormatAction(opts.actionId, opts.actionAccessibilityLabel);
     }
-    if (opts.requestOutcome) {
-      await waitForRepresentativeRequestOutcome(opts.formatId);
-    } else if (opts.expectedText) {
+    if (opts.expectedText) {
       await waitForTestIdTextContaining(
         AppiumTestIds.action.loaded(opts.formatId),
         opts.expectedText,
@@ -745,17 +839,34 @@ export async function navigateToFormat(format: NavigationSmokeCase): Promise<voi
   });
 }
 
-/** Representative Google-test-ID contract: require loaded, no-fill, or SDK internal-error; never Show. */
+/** Collect up to ten request outcomes; loaded stops early and no ad-serving outcome fails the suite. */
 export async function proveRepresentativeRequestOutcome(
   format: RepresentativeRequestOutcomeContract,
 ): Promise<void> {
-  await runFormatContract({
-    formatId: format.id,
-    containerId: format.containerId,
-    galleryTitle: format.galleryTitle,
-    actionId: format.actionId,
-    requestOutcome: true,
-    requiresAppRestart: format.requiresAppRestart,
+  if (format.requiresAppRestart) {
+    await resetAppState();
+  }
+  await runRepresentativeRequestOutcomeContract({
+    format: format.id,
+    platform: isAndroid() ? 'android' : 'ios',
+    path: format.path,
+    runtime: {
+      navigate: async () => {
+        await openFormatStrict(format.id, format.galleryTitle);
+        await assertDisplayed(format.containerId);
+      },
+      backToGallery,
+      clearNativeLogs: resetNativeFingerprintWindow,
+      reload: async () => tapFormatAction(AppiumTestIds.action.reload(format.id)),
+      load: async () => {
+        if (!format.actionId) {
+          throw new Error(`No Load action configured for ${format.id}`);
+        }
+        await tapFormatAction(format.actionId);
+      },
+      observe: uiAttempt =>
+        observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt),
+    },
   });
 }
 
