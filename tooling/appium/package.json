@@ -6,10 +6,17 @@
   "license": "Apache-2.0",
   "scripts": {
     "validate": "node ./scripts/validate-config.mjs && node --import tsx ./scripts/validate-specs.mjs && node --import tsx --test ./__tests__/*.test.ts",
+    "packager": "tsx ./scripts/run-named.ts packager",
+    "packager:reset-cache": "tsx ./scripts/run-named.ts packager --reset-cache",
+    "android:build": "tsx ./scripts/run-named.ts android-build",
+    "android:run": "tsx ./scripts/run-named.ts android-run",
+    "ios:run": "tsx ./scripts/run-named.ts ios-run",
+    "slot:guard": "tsx ./scripts/guard-slot.ts",
     "drivers:install": "node ./scripts/install-drivers.mjs",
     "drivers:verify": "node ./scripts/verify-drivers.mjs",
     "appium:android": "tsx ./scripts/preflight.ts android --run",
     "appium:ios": "tsx ./scripts/preflight.ts ios --run",
+    "provision": "tsx ./scripts/provision.ts",
     "ios:select-and-boot": "tsx ./scripts/preflight.ts ios --select-and-boot",
     "ios:prebuild-wda": "tsx ./scripts/prebuild-wda.ts"
   },

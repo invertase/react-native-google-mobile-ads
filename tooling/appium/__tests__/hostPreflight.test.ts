@@ -13,6 +13,7 @@ import {
   findCompleteIosAppBundle,
   githubEnvSelectionLines,
   githubEnvUdidLine,
+  inspectConnectedAndroidApis,
   isCompleteIosAppBundle,
   MIN_ANDROID_API,
   MIN_NODE_MAJOR,
@@ -82,6 +83,75 @@ describe('hostPreflight', () => {
     });
   });
 
+  test('slot Android inspection queries only the exact computed serial', () => {
+    const connected = [
+      'emulator-5554',
+      'emulator-5558',
+      'emulator-5562',
+      'physical-device',
+    ];
+    const calls: string[][] = [];
+    const devices = inspectConnectedAndroidApis(
+      connected,
+      (bin, args) => {
+        calls.push([bin, ...args]);
+        return args[1] === 'emulator-5558' ? '36\n' : '33\n';
+      },
+      'emulator-5558',
+    );
+    assert.deepEqual(devices, [{ serial: 'emulator-5558', api: 36 }]);
+    assert.deepEqual(calls, [
+      [
+        'adb',
+        '-s',
+        'emulator-5558',
+        'shell',
+        'getprop',
+        'ro.build.version.sdk',
+      ],
+    ]);
+    assert.doesNotMatch(JSON.stringify(calls), /5554|5562|physical-device/);
+  });
+
+  test('missing exact slot serial issues no device-scoped adb query', () => {
+    const calls: string[][] = [];
+    const devices = inspectConnectedAndroidApis(
+      ['emulator-5554', 'emulator-5562'],
+      (bin, args) => {
+        calls.push([bin, ...args]);
+        return '36';
+      },
+      'emulator-5558',
+    );
+    assert.deepEqual(devices, []);
+    assert.deepEqual(calls, []);
+  });
+
+  test('serial Android inspection preserves API queries across connected inventory', () => {
+    const calls: string[][] = [];
+    const apis = new Map([
+      ['emulator-5554', '36'],
+      ['emulator-5558', '35'],
+      ['physical-device', '33'],
+    ]);
+    const devices = inspectConnectedAndroidApis(
+      [...apis.keys()],
+      (bin, args) => {
+        calls.push([bin, ...args]);
+        return apis.get(args[1]!) ?? '';
+      },
+    );
+    assert.deepEqual(devices, [
+      { serial: 'emulator-5554', api: 36 },
+      { serial: 'emulator-5558', api: 35 },
+      { serial: 'physical-device', api: 33 },
+    ]);
+    assert.deepEqual(
+      calls.map(call => call[2]),
+      [...apis.keys()],
+    );
+  });
+
   test('proves the selected Android serial can reach Metro through its reverse', () => {
     const calls: string[][] = [];
     ensureAndroidMetroReverse('emulator-5554', (bin, args) => {
@@ -130,6 +200,29 @@ describe('hostPreflight', () => {
         }),
       /device connection refused/,
     );
+  });
+
+  test('parameterizes reverse and connectivity with a slot Metro port', () => {
+    const calls: string[][] = [];
+    ensureAndroidMetroReverse(
+      'emulator-5558',
+      (bin, args) => {
+        calls.push([bin, ...args]);
+        return args.at(-1) === '--list'
+          ? 'emulator-5558 tcp:13007 tcp:13007\n'
+          : '';
+      },
+      13007,
+    );
+    assert.deepEqual(calls[0], [
+      'adb',
+      '-s',
+      'emulator-5558',
+      'reverse',
+      'tcp:13007',
+      'tcp:13007',
+    ]);
+    assert.equal(calls[2]?.at(-1), '13007');
   });
 
   test('requires a preflight-selected iOS UDID before WDIO capabilities load', () => {

@@ -52,7 +52,7 @@ test('iOS CI and publish use an explicit frozen root Ruby bundle before Yarn', (
   );
   assert.equal(
     rootPackage.scripts['tests:ios:run'],
-    'yarn tests:e2e:codegen && yarn tests:ios:pod:install && yarn workspace RNGoogleMobileAdsExample react-native build-ios --buildFolder build && node ./scripts/run-ios-app.js',
+    'yarn workspace @invertase/rngma-appium ios:run',
   );
 });
 

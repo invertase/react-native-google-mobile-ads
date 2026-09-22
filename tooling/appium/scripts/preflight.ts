@@ -1,26 +1,29 @@
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  appiumPort,
   bootAndPersistSelectedSimulator,
   DEFAULT_IOS_DEVICE_NAME,
   ensureAndroidMetroReverse,
   IOS_WDA_DERIVED_DATA_PATH,
   IOS_WDA_RUNNER_APP_PATH,
+  inspectConnectedAndroidApis,
   isCompleteWdaRunnerApp,
   MIN_ANDROID_API,
   MIN_NODE_MAJOR,
   nodeMeetsMinimum,
   parseAvailableIosSimulators,
+  PREFERRED_ANDROID_API,
   SELECT_AND_BOOT_GITHUB_ENV_ERROR,
   selectConnectedAndroidDevice,
   selectAndroidAvd,
   selectIosSimulator,
 } from '../src/hostPreflight.ts';
 import { iosAppBundleResolution, iosAppPath } from '../src/formats.ts';
+import { runtimeResources, type RuntimeResources } from '../src/slots.ts';
+import { androidSlotBootCommand } from '../src/commands.ts';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '../../..');
@@ -44,15 +47,7 @@ function checkNode(): void {
   process.exit(1);
 }
 
-async function checkAppiumPort(): Promise<void> {
-  let port: number;
-  try {
-    port = appiumPort(process.env.RNGMA_APPIUM_PORT);
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
-
+async function checkAppiumPort(port: number): Promise<void> {
   const available = await new Promise<boolean>(resolve => {
     const server = createServer();
     server.once('error', () => resolve(false));
@@ -78,7 +73,24 @@ async function checkAppiumPort(): Promise<void> {
   process.exit(1);
 }
 
-function checkAndroid(): string {
+function bootSlotAndroid(runtime: RuntimeResources, avdNames: string[]): void {
+  const slot = runtime.slotResources!;
+  if (!avdNames.includes(slot.androidAvdName)) {
+    console.error(
+      `RNGMA slot ${slot.slot} is unprovisioned: exact AVD ${slot.androidAvdName} is missing. Run the canonical provisioning command first; Appium never creates AVDs.`,
+    );
+    process.exit(1);
+  }
+  const command = androidSlotBootCommand(process.env)!;
+  const emulator = spawn(command.bin, command.args, { detached: true, stdio: 'ignore' });
+  emulator.unref();
+  execFileSync('adb', ['-s', slot.androidSerial, 'wait-for-device'], {
+    stdio: 'ignore',
+    timeout: 180_000,
+  });
+}
+
+function checkAndroid(runtime: RuntimeResources): string {
   const sdkOut = run('adb', ['devices']);
   if (sdkOut == null) {
     console.error('adb is not available. Install platform-tools before yarn tests:appium:android.');
@@ -93,14 +105,29 @@ function checkAndroid(): string {
     .filter(parts => parts[0] && parts[1] === 'device')
     .map(parts => parts[0]!);
 
-  const apis: { serial: string; api: number }[] = [];
-  for (const serial of serials) {
-    const raw = run('adb', ['-s', serial, 'shell', 'getprop', 'ro.build.version.sdk']);
-    const api = raw ? Number(raw.trim()) : NaN;
-    if (Number.isFinite(api)) {
-      apis.push({ serial, api });
-    }
+  const selectedSerial = runtime.slotResources
+    ? runtime.slotResources.androidSerial
+    : process.env.RNGMA_ANDROID_UDID;
+  if (
+    runtime.slotResources &&
+    process.env.RNGMA_ANDROID_UDID &&
+    process.env.RNGMA_ANDROID_UDID !== selectedSerial
+  ) {
+    console.error(
+      `RNGMA_ANDROID_UDID=${process.env.RNGMA_ANDROID_UDID} conflicts with RNGMA_E2E_SLOT=${runtime.slot}; expected ${selectedSerial}.`,
+    );
+    process.exit(1);
   }
+  if (runtime.slotResources) {
+    console.log(
+      `Android slot preflight scopes every device query to ${selectedSerial}; unrelated connected devices remain inventory-only.`,
+    );
+  }
+  const apis = inspectConnectedAndroidApis(
+    serials,
+    (bin, args) => run(bin, args) ?? '',
+    selectedSerial,
+  );
 
   const avdOut = run('emulator', ['-list-avds']);
   const names = avdOut
@@ -109,20 +136,70 @@ function checkAndroid(): string {
         .map(line => line.trim())
         .filter(Boolean)
     : [];
-  const avd = selectAndroidAvd(names);
+  const avd = runtime.slotResources
+    ? names.includes(runtime.slotResources.androidAvdName)
+      ? { name: runtime.slotResources.androidAvdName, api: PREFERRED_ANDROID_API }
+      : null
+    : selectAndroidAvd(names);
   console.log(
     `emulator -list-avds: ${names.length === 0 ? 'none' : names.join(', ')}${
       avd ? `; deterministic choice=${avd.name} (API ${avd.api})` : ''
     }`,
   );
 
-  const selectedSerial = process.env.RNGMA_ANDROID_UDID;
   const chosen = selectConnectedAndroidDevice(apis, selectedSerial);
   if (chosen) {
+    if (runtime.slotResources) {
+      const connectedAvd = run('adb', [
+        '-s',
+        chosen.serial,
+        'shell',
+        'getprop',
+        'ro.boot.qemu.avd_name',
+      ]);
+      if (connectedAvd !== runtime.slotResources.androidAvdName) {
+        console.error(
+          `Android slot serial ${chosen.serial} is running ${connectedAvd || 'an unknown AVD'}, not exact ${runtime.slotResources.androidAvdName}. Refusing to select it.`,
+        );
+        process.exit(1);
+      }
+    }
     console.log(
       `Android device ${chosen.serial} API ${chosen.api} (>= ${MIN_ANDROID_API}; UiAutomator2 needs 8.0+).`,
     );
     return chosen.serial;
+  }
+
+  if (runtime.slotResources) {
+    bootSlotAndroid(runtime, names);
+    const raw = run('adb', [
+      '-s',
+      runtime.slotResources.androidSerial,
+      'shell',
+      'getprop',
+      'ro.build.version.sdk',
+    ]);
+    const api = raw ? Number(raw) : NaN;
+    if (!Number.isFinite(api) || api < MIN_ANDROID_API) {
+      console.error(
+        `Exact slot device ${runtime.slotResources.androidSerial} did not boot at API ${MIN_ANDROID_API}+.`,
+      );
+      process.exit(1);
+    }
+    const connectedAvd = run('adb', [
+      '-s',
+      runtime.slotResources.androidSerial,
+      'shell',
+      'getprop',
+      'ro.boot.qemu.avd_name',
+    ]);
+    if (connectedAvd !== runtime.slotResources.androidAvdName) {
+      console.error(
+        `Booted slot serial reports ${connectedAvd || 'an unknown AVD'}, expected exact ${runtime.slotResources.androidAvdName}.`,
+      );
+      process.exit(1);
+    }
+    return runtime.slotResources.androidSerial;
   }
 
   if (selectedSerial) {
@@ -156,7 +233,10 @@ function checkAndroid(): string {
   process.exit(1);
 }
 
-function checkIos(options: { checkAppBundle?: boolean } = {}): {
+function checkIos(
+  runtime: RuntimeResources,
+  options: { checkAppBundle?: boolean } = {},
+): {
   udid: string;
   state: string;
   runtimeVersion: string;
@@ -175,7 +255,19 @@ function checkIos(options: { checkAppBundle?: boolean } = {}): {
     console.error(`Unable to parse xcrun simctl JSON: ${String(error)}`);
     process.exit(1);
   }
-  const deviceName = process.env.RNGMA_IOS_DEVICE || DEFAULT_IOS_DEVICE_NAME;
+  const deviceName = runtime.slotResources
+    ? runtime.slotResources.iosSimulatorName
+    : process.env.RNGMA_IOS_DEVICE || DEFAULT_IOS_DEVICE_NAME;
+  if (
+    runtime.slotResources &&
+    process.env.RNGMA_IOS_DEVICE &&
+    process.env.RNGMA_IOS_DEVICE !== deviceName
+  ) {
+    console.error(
+      `RNGMA_IOS_DEVICE=${process.env.RNGMA_IOS_DEVICE} conflicts with RNGMA_E2E_SLOT=${runtime.slot}; expected ${deviceName}.`,
+    );
+    process.exit(1);
+  }
   const selected = selectIosSimulator(simulators, {
     deviceName,
     platformVersion: process.env.RNGMA_IOS_VERSION,
@@ -226,8 +318,8 @@ function checkIos(options: { checkAppBundle?: boolean } = {}): {
   return selected;
 }
 
-function selectAndBootIos(): void {
-  const selected = checkIos({ checkAppBundle: false });
+function selectAndBootIos(runtime: RuntimeResources): void {
+  const selected = checkIos(runtime, { checkAppBundle: false });
   try {
     bootAndPersistSelectedSimulator(
       selected,
@@ -252,20 +344,25 @@ function selectAndBootIos(): void {
 
 async function main(): Promise<void> {
   const target = process.argv[2] ?? 'all';
+  if (target !== 'android' && target !== 'ios' && target !== 'all') {
+    throw new Error(`Unknown preflight target "${target}".`);
+  }
+  const runtimePlatform = target === 'ios' ? 'ios' : 'android';
+  const runtime = runtimeResources(runtimePlatform);
   checkNode();
   if (target === 'ios' && process.argv.includes('--select-and-boot')) {
-    selectAndBootIos();
+    selectAndBootIos(runtime);
     return;
   }
-  await checkAppiumPort();
+  await checkAppiumPort(runtime.appiumPort);
   let androidUdid: string | undefined;
   let iosUdid: string | undefined;
   let iosVersion: string | undefined;
   if (target === 'android' || target === 'all') {
-    androidUdid = checkAndroid();
+    androidUdid = checkAndroid(runtime);
   }
   if (target === 'ios' || target === 'all') {
-    const ios = checkIos();
+    const ios = checkIos(runtime);
     iosUdid = ios.udid;
     iosVersion = ios.runtimeVersion;
   }
@@ -294,9 +391,9 @@ async function main(): Promise<void> {
         stdio: ['ignore', 'pipe', 'inherit'],
         timeout: 10_000,
       });
-    });
+    }, runtime.metroPort);
     console.log(
-      `Android device ${androidUdid} reaches this checkout's Metro through tcp:8081.`,
+      `Android device ${androidUdid} reaches this checkout's Metro through tcp:${runtime.metroPort}.`,
     );
   }
   const result = spawnSync('yarn', ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`], {
@@ -305,6 +402,11 @@ async function main(): Promise<void> {
       ...(androidUdid ? { RNGMA_ANDROID_UDID: androidUdid } : {}),
       ...(iosUdid ? { RNGMA_IOS_UDID: iosUdid } : {}),
       ...(iosVersion ? { RNGMA_IOS_VERSION: iosVersion } : {}),
+      RNGMA_E2E_PLATFORM: target,
+      RNGMA_IOS_DEVICE:
+        target === 'ios' && runtime.slotResources
+          ? runtime.slotResources.iosSimulatorName
+          : process.env.RNGMA_IOS_DEVICE,
     },
     stdio: 'inherit',
   });

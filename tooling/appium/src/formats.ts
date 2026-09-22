@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type IosAppBundleResolution, resolveIosAppBundle } from './hostPreflight.ts';
+import { runtimeResources } from './slots.ts';
 import { AppiumTestIds } from './testIds.ts';
 
 const srcDir = path.dirname(fileURLToPath(import.meta.url));
@@ -11,13 +12,7 @@ export const EXAMPLE_ANDROID_ACTIVITY = 'com.microsoft.reacttestapp.MainActivity
 export const EXAMPLE_IOS_BUNDLE_ID = 'com.microsoft.ReactTestApp';
 
 export function androidDebugApkPath(): string {
-  return (
-    process.env.RNGMA_ANDROID_APK ||
-    path.join(
-      repoRoot,
-      'RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk',
-    )
-  );
+  return process.env.RNGMA_ANDROID_APK || runtimeResources('android').androidApkPath;
 }
 
 export function defaultIosSimulatorAppPath(): string {

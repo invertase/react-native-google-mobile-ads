@@ -22,9 +22,51 @@ Once: `yarn && yarn prepare`; on iOS also root `BUNDLE_FROZEN=true bundle instal
 
 **Names only.** Which of these to run is [platform coverage](#platform-coverage-gate-blocking). When running e2e, use only these named scripts (no `yarn tests:android:*` / `yarn tests:ios:*` globs). Do **not** run every named script unless that table requires it.
 
-Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:android`, `yarn tests:appium:ios`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
+Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:provision <android|ios|both>`, `yarn tests:appium:android`, `yarn tests:appium:ios`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
 
 `yarn tests:e2e:codegen` always generates native metadata for **both Android and iOS** (`react-native codegen --platform all`), then removes only the transient Android app codegen tree that would create duplicate CMake targets. The canonical Android build/run and iOS run scripts invoke it before native work; Appium preflight invokes the same yarn target rather than duplicating its implementation. The frozen `tests:ios:pod:install` script remains exactly the bundled pod command and is called by `tests:ios:run` after codegen.
+
+<a id="e2e-slots"></a>
+
+## E2e slots
+
+The pure calculator supports slots `0`–`7`. For slot `N` and platform offset `P`, `BASE = 12000 + 1000N + P`, where Android `P=0`, iOS `P=100`, and macOS `P=200`; Metro is `BASE+7`, Appium is `BASE+13`, and the Android console is `5556+2N` (`emulator-<console>`). Android AVDs are `TestingAVD-N`; iOS simulators are `RN E2E iOS slot-N`. The macOS offset is reserved for compatible cross-repository arithmetic; RNGMA has no macOS-app e2e target.
+
+RNGMA operational commands accept only slots `1`, `2`, and `4`–`7`. Slot `0` remains calculator-supported but is not an RNGMA operational slot; slot `3` is reserved for RNFB. Provision, select, build, run, and Appium paths reject `0` and `3`. With `RNGMA_E2E_SLOT` unset, the serial/default behavior is unchanged: Metro `8081`, Appium `4725`, serial APK path, existing-device selection, and CI's `TestingAVD`. CI remains serial and does not use slot provisioning.
+
+`RNGMA_E2E_SLOT` must be an unsigned integer string in `0`–`7`; operational commands then apply the RNGMA rejection above. `RNGMA_E2E_PLATFORM=android|ios` is the unified slot target: the packager requires it to choose the platform offset, shared WDIO requires it for slot ports (Appium preflight supplies its own target), and every slot-aware platform-specific command rejects a conflicting value instead of ignoring or overriding it. When a slot is selected, computed ports win: `RNGMA_METRO_PORT` or `RNGMA_APPIUM_PORT` may be omitted or equal the computed value, but a different explicit value is rejected. A conflicting `RNGMA_ANDROID_UDID` or `RNGMA_IOS_DEVICE` is also rejected. `RNGMA_IOS_UDID` and `RNGMA_IOS_VERSION` may further constrain the exact slot-named simulator selected by the iOS selector. With no slot, the platform variable does not change serial resources.
+
+**Create-only provisioning.** Before first use of a missing slot device, run exactly one of:
+
+```bash
+RNGMA_E2E_SLOT=<1|2|4-7> yarn tests:appium:provision <android|ios|both>
+```
+
+The command reuses an available exact existing name and otherwise creates it. It never deletes, erases, renames, or overwrites any device. Android installs the missing API 36 `google_apis` x86_64 system image if needed and creates `TestingAVD-N`; iOS creates an exact iPhone 17 on the newest available installed iOS runtime. Provisioning requires a slot and rejects `0` and `3`. A single-platform argument must match `RNGMA_E2E_PLATFORM` when that variable is set; `both` requires it unset. Those rejections happen before inventory or create. Appium and `ios:select-and-boot` remain select-and-boot only: they never create a device. A missing exact device is a blocker until this provisioning command succeeds.
+
+**Canonical slot 1 Android sequence** (one shell per long-lived owner is normal):
+
+```bash
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=android yarn tests:packager
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=android yarn tests:android:build
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=android yarn tests:appium:android
+```
+
+These use Metro `13007`, Appium `13013`, AVD `TestingAVD-1`, and `emulator-5558`. The packager owner keeps Metro alive; the build owner runs codegen and Gradle; the Appium owner selects or boots only the exact existing AVD, owns the Appium listener, verifies connectivity, and runs WDIO. Slot-mode Android Appium preflight may read global `adb devices` inventory, but it computes the expected slot serial first; every device-targeted `adb -s` query or action is scoped only to that serial. A missing exact serial boots the exact AVD without probing other devices. Serial mode still selects among connected devices by API. `tests:android:build` passes the real Gradle property `-PreactNativeDevServerPort=13007`, then copies the resulting APK to `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/slots/slot-1/app-debug.apk`; Appium selects that slot path. With no slot, Gradle and `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk` remain unchanged. Named `tests:android:run` in slot mode does **not** use the React Native CLI: it validates or boots that exact AVD+serial, then serial-scopes assemble, reverse, install, and launch so no other emulator is touched. Serial mode still uses the existing RN CLI path.
+
+**Canonical slot 1 iOS sequence:**
+
+```bash
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:packager
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:appium:ios:select-and-boot --github-env /tmp/rngma-ios-slot-1-env
+set -a; . /tmp/rngma-ios-slot-1-env; set +a
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:ios:pod:install
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:ios:run --udid "$RNGMA_IOS_UDID"
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:appium:ios:prebuild-wda
+RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:appium:ios
+```
+
+Use a fresh writable env file because selection appends. The packager owner keeps Metro `13107` alive; the selector owner selects and boots only `RN E2E iOS slot-1` and emits its UDID/runtime; slot `tests:ios:run --udid` requires those selector variables, verifies the exact slot name and runtime, and rejects an arbitrary or serial UDID **before** build or install; the named pod/build/run path then installs on that UDID and passes `RCT_METRO_PORT=13107` as an explicit Xcode build setting; WDA is rebuilt in the shared `tooling/appium/.wda-derived`; and the Appium owner uses listener `13113`, the same selection, app, and prebuilt WDA. XCUITest launches the app with `-RCT_jsLocation localhost:13107` and `RCT_METRO_PORT=13107`, so native launch and build target the same slot Metro. Slot ownership is per nonreserved slot: E3 supports one Android or iOS session in each of slots `1`, `2`, and `4`–`7`; E4 will own parallel orchestration. Serial operation remains one e2e at a time on `8081`/`4725`.
 
 <a id="ios-wda-prebuilt-validation"></a>
 
@@ -44,7 +86,7 @@ That artifact is gitignored but survives between runs, so later `yarn tests:appi
 
 When those named scripts are the e2e gate, `tee` `yarn tests:appium:android` to a unique `/tmp/rngma-e2e-android-*.log` and `yarn tests:appium:ios` to a unique `/tmp/rngma-e2e-ios-*.log`. Redirect/`tee` of the **same** named yarn script is allowed; do not add other wrappers.
 
-Device driver: Appium 3 + WebdriverIO in `tooling/appium/` ([§ Appium](#appium-scaffold)). Specs: `tooling/appium/test/specs/**/*.ts`. App: `RNGoogleMobileAdsExample/` (format gallery + stable `testID`s). One e2e at a time (`:8081`). No source edits during a run.
+Device driver: Appium 3 + WebdriverIO in `tooling/appium/` ([§ Appium](#appium-scaffold)). Specs: `tooling/appium/test/specs/**/*.ts`. App: `RNGoogleMobileAdsExample/` (format gallery + stable `testID`s). Serial operation is one e2e at a time on `:8081`; slot operation is one session per supported nonreserved slot ([§ e2e slots](#e2e-slots)). E4 will own parallel orchestration. No source edits during a run.
 
 There is no separate macOS-app e2e target. iOS e2e is `yarn tests:ios:pod:install` / `yarn tests:ios:run` (install) then `yarn tests:appium:ios` (local Mac or CI `macos-15`; the required WDA prebuild comes first: [§ prebuilt WDA](#ios-wda-prebuilt-validation)).
 
@@ -72,7 +114,7 @@ Every collected attempt emits one stable `[request-outcome-attempt]` JSON line w
 
 <a id="android-app-path"></a>
 
-**Android app path:** default `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk` after `yarn tests:android:build` (override `RNGMA_ANDROID_APK`). Appium install/reset may clear app data; the named Android Appium command restores React Native `debug_http_host=127.0.0.1:8081` after that reset and launches afterward. Do not invent ad hoc `adb` / SharedPreferences / launch steps. Metro reverse and connectivity for the selected serial are [pre-flight](#pre-flight). **iOS:** `yarn tests:ios:run --udid <selected-udid>` runs codegen, the exact frozen bundled pod script, `react-native build-ios --buildFolder build`, then installs and launches `RNGoogleMobileAdsExample/ios/build/Build/Products/Debug-iphonesimulator/ReactTestApp.app` on that simulator with `simctl`; Appium uses the same exact path. Set `RNGMA_IOS_APP` only to explicitly override Appium. Never discover an app from DerivedData or fall back to an installed bundle id.
+**Android app path:** default `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/app-debug.apk` after `yarn tests:android:build` (override `RNGMA_ANDROID_APK`). With a slot, the same named build passes the computed Metro port as Gradle's real `reactNativeDevServerPort`, then copies the APK to `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/slots/slot-N/app-debug.apk`; Appium selects that slot path unless `RNGMA_ANDROID_APK` explicitly overrides it. Appium install/reset may clear app data; the named Android Appium command restores React Native `debug_http_host=127.0.0.1:<computed-Metro-port>` after that reset and launches afterward. Do not invent ad hoc `adb` / SharedPreferences / launch steps. Metro reverse and connectivity use the same computed port for the selected serial ([pre-flight](#pre-flight)). **iOS:** `yarn tests:ios:run --udid <selected-udid>` runs codegen, the exact frozen bundled pod script, and `react-native build-ios --buildFolder build`, then installs and launches `RNGoogleMobileAdsExample/ios/build/Build/Products/Debug-iphonesimulator/ReactTestApp.app` on that simulator with `simctl`; Appium uses the same exact path. Slot mode also requires selector-produced `RNGMA_IOS_UDID` / `RNGMA_IOS_VERSION`, matches `--udid` to that UDID, and verifies the exact slot simulator name and runtime before those steps. Slot builds add explicit Xcode setting `RCT_METRO_PORT=<computed-iOS-Metro-port>`, and XCUITest supplies `-RCT_jsLocation localhost:<same-port>` plus that environment value at launch. Serial builds and launches add neither, preserving prior behavior. Set `RNGMA_IOS_APP` only to explicitly override Appium. Never discover an app from DerivedData or fall back to an installed bundle id.
 
 <a id="request-outcome-sample"></a>
 
@@ -84,16 +126,16 @@ Cumulative aggregate from the [request-outcome contracts](#appium-scaffold) abov
 
 | format | platform | attempts | loaded | no-fill | internal-error(fingerprinted) | other-error | current-acceptance |
 |--------|----------|----------|--------|---------|-------------------------------|-------------|--------------------|
-| Banner | android | 8 | 8 | 0 | 0 | 0 | collect |
-| Banner | ios | 3 | 3 | 0 | 0 | 0 | collect |
-| Native | android | 73 | 1 | 0 | 48 (+24 unfingerprinted) | 0 | collect |
-| Native | ios | 3 | 3 | 0 | 0 | 0 | collect |
-| Interstitial | android | 9 | 9 | 0 | 0 | 0 | collect |
-| Interstitial | ios | 3 | 3 | 0 | 0 | 0 | collect |
-| GAM Interstitial | android | 10 | 8 | 2 | 0 | 0 | collect |
-| GAM Interstitial | ios | 3 | 3 | 0 | 0 | 0 | collect |
+| Banner | android | 14 | 14 | 0 | 0 | 0 | collect |
+| Banner | ios | 7 | 7 | 0 | 0 | 0 | collect |
+| Native | android | 133 | 1 | 0 | 99 (+33 unfingerprinted) | 0 | collect |
+| Native | ios | 7 | 7 | 0 | 0 | 0 | collect |
+| Interstitial | android | 15 | 15 | 0 | 0 | 0 | collect |
+| Interstitial | ios | 7 | 7 | 0 | 0 | 0 | collect |
+| GAM Interstitial | android | 16 | 14 | 2 | 0 | 0 | collect |
+| GAM Interstitial | ios | 7 | 7 | 0 | 0 | 0 | collect |
 
-`internal-error(fingerprinted)` counts only attempts whose structured fingerprint is `matched` under the raw-stream adjacency contract above. `(+N unfingerprinted)` are collector `internal-error` attempts that are not `matched` (no signature; blank, whitespace, malformed, or other non-Ads interleaving; signature without the adjacent same-PID failure; or iOS `unavailable`); they are real internal errors and are not counted as fingerprinted. Outcome columns sum to `attempts` in each row (`48 (+24)` is 72).
+`internal-error(fingerprinted)` counts only attempts whose structured fingerprint is `matched` under the raw-stream adjacency contract above. `(+N unfingerprinted)` are collector `internal-error` attempts that are not `matched` (no signature; blank, whitespace, malformed, or other non-Ads interleaving; signature without the adjacent same-PID failure; or iOS `unavailable`); they are real internal errors and are not counted as fingerprinted. Outcome columns sum to `attempts` in each row (`99 (+33)` is 132).
 
 That Native signature is Google serving a malformed native creative, not a local defect: it reproduced on API 29 **and** API 36 `google_apis`, and with both `TestIds.NATIVE` and `GAM_NATIVE`, so it is neither emulator-image- nor ad-unit-specific. The same Native contract has also loaded, and the official GAM interstitial test unit has returned `no-fill` twice in a session where the standard Interstitial loaded — so these are intermittent server-side outcomes that any per-format acceptance has to tolerate.
 
@@ -131,11 +173,11 @@ A green run of **unrelated** e2e files does not close review for the touched are
 
 **Blocking preparation.** [Prepare must finish first](agent-command-policy.md#prepare-must-finish-first): `yarn` then `yarn prepare` before Metro/e2e (this pass runs Metro/native). Do not parallelize prepare with packager, Jest, Gradle, or pods. What to record stays on the [evidence prepare row](validation-checklist.md#validation-evidence-package).
 
-Before Android Appium, inventory AVDs with `emulator -list-avds`; the canonical Appium command preflights connected devices, deterministically prefers API 36, passes its selected serial to WDIO, and verifies that serial's `tcp:8081` reverse **and** that the device can connect through it to this checkout's Metro. Do not invent a separate `adb reverse`. Session launch after Appium install/reset: [§ Android app path](#android-app-path). CI Android e2e uses that same image (API 36 `google_apis` x86_64; Play services, no Play Store login). UiAutomator2 requires Android 8+ (API 26): boot the reported qualifying AVD and retry the same command, never retry API 24. Before iOS Appium, preflight inventories `xcrun simctl list devices available`, selects an **existing exact-name iPhone 17** by UDID, and passes that UDID to every WDIO session. It prefers an already booted exact match, then the newest available runtime; `RNGMA_IOS_VERSION` constrains the runtime without a checked-in version pin, and an explicit `RNGMA_IOS_UDID` must resolve to an available exact-name match. The named selector opens each iOS device pass, because the required WDA prebuild consumes its variables: it boots that exact simulator and records `RNGMA_IOS_UDID` / `RNGMA_IOS_VERSION` into its required `--github-env` file (CI passes `$GITHUB_ENV`), which `tests:ios:run --udid`, simulator logging, WDA prebuild, and Appium then consume — local file path, consumption, and sequence: [§ prebuilt WDA](#ios-wda-prebuilt-validation). No exact match is an immediate blocker—Appium must never fabricate a simulator. The exact default or `RNGMA_IOS_APP`-configured `ReactTestApp.app` is usable only when its inner `ReactTestApp` executable is a regular file. A missing or incomplete exact app fails preflight: rebuild or correct the override rather than discovering another build or falling back to an installed app.
+Before Android Appium, inventory AVDs with `emulator -list-avds`. Serial mode preflights connected devices, deterministically prefers API 36, passes its selected serial to WDIO, and verifies that serial's computed Metro reverse **and** that the device can connect through it to this checkout's Metro. Slot-mode Android isolation (expected serial first; every `adb -s` query/action only on that serial; missing exact serial boots the exact AVD without probing others): [§ e2e slots](#e2e-slots). Do not invent a separate `adb reverse`. Missing exact slot device: use the create-only [provisioning command](#e2e-slots); Appium never creates it. Session launch after Appium install/reset: [§ Android app path](#android-app-path). CI Android e2e remains serial on `TestingAVD`, `8081`, and `4725`, using API 36 `google_apis` x86_64 (Play services, no Play Store login). UiAutomator2 requires Android 8+ (API 26): boot the reported qualifying AVD and retry the same command, never retry API 24. Before iOS Appium, preflight inventories `xcrun simctl list devices available`, selects an **existing exact name** by UDID (`iPhone 17` serially or `RN E2E iOS slot-N` for a slot), and passes that UDID to every WDIO session. It prefers an already booted exact match, then the newest available runtime; `RNGMA_IOS_VERSION` constrains the runtime without a checked-in version pin, and an explicit `RNGMA_IOS_UDID` must resolve to an available exact-name match. The named selector opens each iOS device pass, because the required WDA prebuild consumes its variables: it boots that exact simulator and records `RNGMA_IOS_UDID` / `RNGMA_IOS_VERSION` into its required `--github-env` file (CI passes `$GITHUB_ENV`), which `tests:ios:run --udid`, simulator logging, WDA prebuild, and Appium then consume — local file path, consumption, and sequence: [§ prebuilt WDA](#ios-wda-prebuilt-validation). No exact match is an immediate blocker—use the create-only provisioning command for a slot; Appium and the selector never fabricate a simulator. The exact default or `RNGMA_IOS_APP`-configured `ReactTestApp.app` is usable only when its inner `ReactTestApp` executable is a regular file. A missing or incomplete exact app fails preflight: rebuild or correct the override rather than discovering another build or falling back to an installed app.
 
 Before taking any e2e slot required by this task, determine whether another task owns it. If the slot is occupied and this task has no explicit ownership transfer, ask the user whether this task may take it. Without authorization, do not stop or otherwise displace the owner. Once ownership is transferred, take the slot and continue.
 
-Ports `:8081` and `:4725` are serialized e2e resources, not the ownership rule itself. Metro used by this task on `:8081` must be **this** checkout (`RNGoogleMobileAdsExample/`), not another worktree, and the port must be free before `yarn tests:packager:reset-cache`. The canonical Appium command fails preflight if its configured listener port (`RNGMA_APPIUM_PORT`, default `:4725`) is occupied; identify the listener and stop it only when this task owns it. Never launch WDIO into an occupied Appium port. The TCP probe is an early guard that closes before Appium spawns, so a race remains; Appium startup output is authoritative and must still be watched for `EADDRINUSE`. Revert `.only` before area-focused/full.
+Serial ports `:8081` and `:4725`, or the selected slot's computed Metro/Appium ports, are e2e resources, not the ownership rule itself. Metro must be **this** checkout (`RNGoogleMobileAdsExample/`), and its selected port must be free before `yarn tests:packager:reset-cache`. The canonical Appium command fails preflight if its selected listener port is occupied; identify the listener and stop it only when this task owns it. Never launch WDIO into an occupied Appium port. The TCP probe is an early guard that closes before Appium spawns, so a race remains; Appium startup output is authoritative and must still be watched for `EADDRINUSE`. Revert `.only` before area-focused/full.
 
 **Startup log watch is blocking.** Read the live tee closely and continuously from command launch through preflight and Appium session creation. Do not switch to a slow polling cadence until `Execution of … workers started` appears. Most host failures are immediate: stop and diagnose on preflight rejection, `EADDRINUSE`, Appium `onPrepare` failure, `ECONNREFUSED`, or failure to create the first WebDriver session. Do not wait for the suite timeout, and do not retry until the logged cause is corrected and task-owned listeners are cleaned up.
 
