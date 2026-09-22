@@ -2,7 +2,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* v17 requires React Native 0.76+, the New Architecture, iOS 15.1, and Android API 24. Legacy Architecture is unsupported.
+* v17 requires React Native 0.86.0+, the New Architecture, iOS 15.1, and Android API 24. Legacy Architecture is unsupported.
 * **api:** refreshed API w/better ergonomics, multiformat, adpools
 
 ### Features

@@ -105,7 +105,7 @@
     "@expo/config-plugins": ">=5.0.0",
     "expo": ">=47.0.0",
     "react": "*",
-    "react-native": ">=0.76",
+    "react-native": ">=0.86.0",
     "react-native-google-mobile-ads": ">=17.0.0"
   },
   "peerDependenciesMeta": {

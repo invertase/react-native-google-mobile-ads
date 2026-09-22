@@ -20,7 +20,7 @@
 #import "RNGoogleMobileAdsAppOpenModule.h"
 #import <GoogleMobileAds/GoogleMobileAds.h>
 #ifdef RCT_NEW_ARCH_ENABLED
-#import "RNGoogleMobileAdsSpec.h"
+#import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
 #endif
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsFullScreenAd.h"

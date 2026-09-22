@@ -94,6 +94,12 @@ Appium 3 + WebdriverIO lives in `tooling/appium/` (`@invertase/rngma-appium`). P
 
 Android **Java** format: `yarn lint:android`. Android **Kotlin** format: repo-root `./gradlew ktlintFormat` (check-only: `./gradlew ktlintCheck`). Optional: `./gradlew addKtlintFormatGitPreCommitHook` to install a local hook; Invertase global pre-commit also invokes root `./gradlew ktlintFormat` when present (this repo does not ship an installed hook). Example app builds remain under `RNGoogleMobileAdsExample/android/`. Native unit tests (owned mappers/helpers; no Google auction/fill asserts): `yarn tests:android:unit` (Robolectric) and `yarn tests:ios:unit` (XCTest) — see [agent command policy](okf-bundle/testing/agent-command-policy.md).
 
+Core library Codegen is committed. Use `yarn codegen:all`, then
+`yarn codegen:self-check` and `yarn codegen:verify`; never edit generated files.
+The example workspace owns the exact React Native/Codegen/CLI line. A React
+Native upgrade must update those compatible pins, regenerate both core trees,
+and validate Android and iOS in one breaking change — [GMA-AD-4](okf-bundle/architecture-decisions.md#gma-ad-4).
+
 ## Submitting code for review
 
 All code changes should be submitted as a pull request to the `main` branch.

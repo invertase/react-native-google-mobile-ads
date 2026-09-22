@@ -36,9 +36,6 @@ function output(bin: string, args: string[]): string {
 }
 
 function runAndroidBuild(): void {
-  if (!isParallelParentChild()) {
-    execute({ bin: 'yarn', args: ['tests:e2e:codegen'] });
-  }
   execute(androidGradleCommand());
   const runtime = runtimeResources('android');
   if (runtime.slot != null) {
@@ -104,9 +101,6 @@ function runAndroid(): void {
         },
       ]);
     }
-  }
-  if (!isParallelParentChild()) {
-    execute({ bin: 'yarn', args: ['tests:e2e:codegen'] });
   }
   commands.forEach(execute);
 }

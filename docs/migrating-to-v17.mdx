@@ -5,10 +5,10 @@ Most apps need no rewrite to keep ads loading and showing. New surfaces are **op
 structured errors, `ResponseInfo`, `destroy()`, fullscreen hook options, preload pools,
 multi-format requests, and scoped mediation adapter packages.
 
-The platform baseline does change: v17 requires React Native 0.76 or newer and the
+The platform baseline does change: v17 requires React Native 0.86.0 or newer and the
 New Architecture, and native installation fails only when the New Architecture is
 explicitly disabled. The Legacy Architecture is no longer supported. iOS requires a
-minimum deployment target of 15.1, matching React Native 0.76. Android requires
+minimum deployment target of 15.1, matching React Native 0.86.0. Android requires
 minimum API level 24. The supported and tested Android host baseline uses compile /
 target API level 36 and Build Tools 36.0.0. Standalone package builds use Android Gradle
 Plugin 8.6.0; the library does not enforce the host application's Android Gradle Plugin
@@ -33,7 +33,7 @@ You can upgrade, ship, and adopt new APIs later.
 
 ## Checklist
 
-1. Upgrade to React Native 0.76 or newer and enable the New Architecture.
+1. Upgrade to React Native 0.86.0 or newer and enable the New Architecture.
    Raise the app's iOS deployment target to 15.1 and Android `minSdkVersion` to 24.
 2. Upgrade `react-native-google-mobile-ads` and rebuild native apps (pods / Gradle).
 3. Keep using create / load / show until you need a new surface.

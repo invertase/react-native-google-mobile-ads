@@ -115,10 +115,10 @@ Unlike rewarded ads, users aren't required to opt-in to view a rewarded intersti
 
 ## Platform requirements
 
-Version 17 requires React Native 0.76 or newer with
+Version 17 requires React Native 0.86.0 or newer with
 [the New Architecture](https://reactnative.dev/docs/the-new-architecture/landing-page)
 enabled. The Legacy Architecture is no longer supported. The minimum operating system
-versions are **iOS 15.1** (matching React Native 0.76) and **Android API level 24**.
+versions remain **iOS 15.1** and **Android API level 24**.
 The current migration status of individual native surfaces is:
 
 | Platform | Feature                                                                                                                                                        | Status      |

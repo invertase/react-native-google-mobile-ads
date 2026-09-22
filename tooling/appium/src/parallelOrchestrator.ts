@@ -435,12 +435,14 @@ export async function runParallelE2e(
     context.throwIfAborted();
     await runner.assertPortsFree(ports);
     context.throwIfAborted();
-    await runOwnedCommand(
-      runner,
-      context,
-      named('tests:e2e:codegen', cleanBaseEnv(options.env ?? process.env), 'shared codegen'),
-    );
-    context.throwIfAborted();
+    if (platform === 'ios') {
+      await runOwnedCommand(
+        runner,
+        context,
+        named('tests:e2e:codegen', cleanBaseEnv(options.env ?? process.env), 'shared codegen'),
+      );
+      context.throwIfAborted();
+    }
 
     if (platform === 'android') {
       for (const entry of plan) {

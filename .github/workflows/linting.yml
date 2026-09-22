@@ -48,6 +48,8 @@ jobs:
         run: yarn lint:code
       - name: Kotlin lint
         run: ./gradlew ktlintCheck
+      - name: Verify committed Codegen
+        run: yarn codegen:verify
       - name: Save Code Linting Report JSON
         run: yarn lint:report
         continue-on-error: true

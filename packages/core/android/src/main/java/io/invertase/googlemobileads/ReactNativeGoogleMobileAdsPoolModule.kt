@@ -17,6 +17,7 @@ package io.invertase.googlemobileads
  *
  */
 
+import com.facebook.fbreact.specs.NativeGoogleMobileAdsPoolModuleSpec
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext

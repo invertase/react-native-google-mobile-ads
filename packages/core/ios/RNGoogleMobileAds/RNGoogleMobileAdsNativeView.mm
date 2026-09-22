@@ -20,10 +20,10 @@
 #import "RNGoogleMobileAdsNativeAdRegistry.h"
 
 #ifdef RCT_NEW_ARCH_ENABLED
-#import <react/renderer/components/RNGoogleMobileAdsSpec/ComponentDescriptors.h>
-#import <react/renderer/components/RNGoogleMobileAdsSpec/EventEmitters.h>
-#import <react/renderer/components/RNGoogleMobileAdsSpec/Props.h>
-#import <react/renderer/components/RNGoogleMobileAdsSpec/RCTComponentViewHelpers.h>
+#import <RNGoogleMobileAdsSpec/ComponentDescriptors.h>
+#import <RNGoogleMobileAdsSpec/EventEmitters.h>
+#import <RNGoogleMobileAdsSpec/Props.h>
+#import <RNGoogleMobileAdsSpec/RCTComponentViewHelpers.h>
 
 #import "RCTFabricComponentsPlugins.h"
 #endif

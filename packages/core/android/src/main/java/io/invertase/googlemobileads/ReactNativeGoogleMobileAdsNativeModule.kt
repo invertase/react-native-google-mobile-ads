@@ -20,6 +20,7 @@ package io.invertase.googlemobileads
 import android.os.Handler
 import android.os.Looper
 import android.view.ViewGroup
+import com.facebook.fbreact.specs.NativeGoogleMobileAdsNativeModuleSpec
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
