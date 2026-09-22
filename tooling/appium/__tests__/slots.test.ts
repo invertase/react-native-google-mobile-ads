@@ -39,6 +39,8 @@ describe('cross-platform e2e slots', () => {
         assert.equal(resources.basePort, expectedBase);
         assert.equal(resources.metroPort, expectedBase + 7);
         assert.equal(resources.appiumPort, expectedBase + 13);
+        assert.equal(resources.automationPort, expectedBase + 14);
+        assert.equal(resources.mjpegPort, expectedBase + 15);
         assert.equal(resources.androidConsolePort, 5556 + 2 * slot);
         assert.equal(resources.androidSerial, `emulator-${5556 + 2 * slot}`);
         assert.equal(resources.androidAvdName, `TestingAVD-${slot}`);

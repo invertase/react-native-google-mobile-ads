@@ -22,7 +22,7 @@ Once: `yarn && yarn prepare`; on iOS also root `BUNDLE_FROZEN=true bundle instal
 
 **Names only.** Which of these to run is [platform coverage](#platform-coverage-gate-blocking). When running e2e, use only these named scripts (no `yarn tests:android:*` / `yarn tests:ios:*` globs). Do **not** run every named script unless that table requires it.
 
-Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:provision <android|ios|both>`, `yarn tests:appium:android`, `yarn tests:appium:ios`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
+Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:provision <android|ios|both>`, `yarn tests:appium:android`, `yarn tests:appium:ios`, `yarn tests:appium:android:parallel`, `yarn tests:appium:ios:parallel`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
 
 `yarn tests:e2e:codegen` always generates native metadata for **both Android and iOS** (`react-native codegen --platform all`), then removes only the transient Android app codegen tree that would create duplicate CMake targets. The canonical Android build/run and iOS run scripts invoke it before native work; Appium preflight invokes the same yarn target rather than duplicating its implementation. The frozen `tests:ios:pod:install` script remains exactly the bundled pod command and is called by `tests:ios:run` after codegen.
 
@@ -66,7 +66,53 @@ RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:appium:ios:prebuild-wda
 RNGMA_E2E_SLOT=1 RNGMA_E2E_PLATFORM=ios yarn tests:appium:ios
 ```
 
-Use a fresh writable env file because selection appends. The packager owner keeps Metro `13107` alive; the selector owner selects and boots only `RN E2E iOS slot-1` and emits its UDID/runtime; slot `tests:ios:run --udid` requires those selector variables, verifies the exact slot name and runtime, and rejects an arbitrary or serial UDID **before** build or install; the named pod/build/run path then installs on that UDID and passes `RCT_METRO_PORT=13107` as an explicit Xcode build setting; WDA is rebuilt in the shared `tooling/appium/.wda-derived`; and the Appium owner uses listener `13113`, the same selection, app, and prebuilt WDA. XCUITest launches the app with `-RCT_jsLocation localhost:13107` and `RCT_METRO_PORT=13107`, so native launch and build target the same slot Metro. Slot ownership is per nonreserved slot: E3 supports one Android or iOS session in each of slots `1`, `2`, and `4`–`7`; E4 will own parallel orchestration. Serial operation remains one e2e at a time on `8081`/`4725`.
+Use a fresh writable env file because selection appends. The packager owner keeps Metro `13107` alive; the selector owner selects and boots only `RN E2E iOS slot-1` and emits its UDID/runtime; slot `tests:ios:run --udid` requires those selector variables, verifies the exact slot name and runtime, and rejects an arbitrary or serial UDID **before** build or install; the named pod/build/run path then installs on that UDID and passes `RCT_METRO_PORT=13107` as an explicit Xcode build setting; WDA is rebuilt in the shared `tooling/appium/.wda-derived`; and the Appium owner uses listener `13113`, the same selection, app, and prebuilt WDA. XCUITest launches the app with `-RCT_jsLocation localhost:13107` and `RCT_METRO_PORT=13107`, so native launch and build target the same slot Metro. Slot ownership is per nonreserved slot: the manual sequence supports one Android or iOS session in each of slots `1`, `2`, and `4`–`7`; the parallel owner below uses exactly slots `1`, `2`, and `4`. Serial operation remains one e2e at a time on `8081`/`4725`.
+
+<a id="parallel-appium"></a>
+
+### Parallel Appium (local only)
+
+The complete public command surface is exactly:
+
+```bash
+yarn tests:appium:android:parallel
+yarn tests:appium:ios:parallel
+```
+
+Do not set the internal spec-filter or parent/child environment variables and do not invoke the workspace implementation directly. Each command starts three isolated Appium/WDIO processes, each with `maxInstances: 1` and one fixed smoke spec: `a-primary` uses slot `1` for 15 tests, `b-secondary` uses slot `2` for 6, and `c-tertiary` uses slot `4` for 4. The aggregate is **15 + 6 + 4 = 25 tests**, not 75. Slot `3` is never selected. Existing serial commands and the manual per-slot sequence above are unchanged.
+
+Before first device use, the exact devices for all three slots must already exist. Provision missing devices with the create-only command, once per slot:
+
+```bash
+RNGMA_E2E_SLOT=1 yarn tests:appium:provision android
+RNGMA_E2E_SLOT=2 yarn tests:appium:provision android
+RNGMA_E2E_SLOT=4 yarn tests:appium:provision android
+RNGMA_E2E_SLOT=1 yarn tests:appium:provision ios
+RNGMA_E2E_SLOT=2 yarn tests:appium:provision ios
+RNGMA_E2E_SLOT=4 yarn tests:appium:provision ios
+```
+
+Run only the three commands for the platform being prepared. They create or reuse exact `TestingAVD-1`, `TestingAVD-2`, and `TestingAVD-4`, or exact `RN E2E iOS slot-1`, `slot-2`, and `slot-4`; they never delete, erase, rename, or overwrite devices. The parallel command remains select-and-boot only and fails when an exact device is missing. Before taking the slots, apply the ownership-transfer rule in [pre-flight](#pre-flight). The task must own all three slots and every required listener must be free before the orchestrator mutates codegen, files, builds, simulators, or child processes.
+
+Android resources are:
+
+- slot `1`: Metro `13007`, Appium `13013`, UiAutomator2 `systemPort` `13014`, MJPEG `13015`, `TestingAVD-1` / `emulator-5558`;
+- slot `2`: Metro `14007`, Appium `14013`, UiAutomator2 `systemPort` `14014`, MJPEG `14015`, `TestingAVD-2` / `emulator-5560`;
+- slot `4`: Metro `16007`, Appium `16013`, UiAutomator2 `systemPort` `16014`, MJPEG `16015`, `TestingAVD-4` / `emulator-5564`.
+
+iOS resources are:
+
+- slot `1`: Metro `13107`, Appium `13113`, XCUITest `wdaLocalPort` `13114`, MJPEG `13115`, `RN E2E iOS slot-1`;
+- slot `2`: Metro `14107`, Appium `14113`, XCUITest `wdaLocalPort` `14114`, MJPEG `14115`, `RN E2E iOS slot-2`;
+- slot `4`: Metro `16107`, Appium `16113`, XCUITest `wdaLocalPort` `16114`, MJPEG `16115`, `RN E2E iOS slot-4`.
+
+The Android command checks all twelve ports first, runs Codegen once, then serializes slot `1`, `2`, and `4` APK builds so each build bakes its own Metro port and preserves a distinct `.../debug/slots/slot-N/app-debug.apk`. Only after every build succeeds does it start three task-owned Metro children, wait for all three listeners, and start the three Appium/WDIO children concurrently. Serializing Gradle output avoids build races.
+
+The iOS command has the same twelve-port precheck and one Codegen. It requires the frozen root Ruby bundle to be installed first (`BUNDLE_FROZEN=true bundle install`). It serially selects/boots slots `1`, `2`, and `4` into fresh per-slot environment files, requires all three exact simulators to resolve to the same installed iOS runtime, then serially builds/installs each app. Each build is copied to `RNGoogleMobileAdsExample/ios/build/slots/slot-N/ReactTestApp.app`. After all builds, one shared WDA prebuild runs against the first selection; the common runtime plus serialized build/WDA preparation avoids DerivedData and WDA build races. The command then starts the three Metros and three Appium/WDIO children concurrently, with each Appium child consuming its slot-specific app and simulator selection.
+
+Each Appium/collector stream is preserved separately at `/tmp/rngma-e2e-<platform>-slot-<N>-<label>.log`; each Metro has the matching `.packager.log`. Logs are replaced for a new invocation, so copy them before rerunning if they are needed. Abort handling is armed before any planning, preparation, or mutation; every spawn and await checks it, task-owned children are cancelled once, and the run never continues after abort. The parent waits up to 120 seconds for each task-owned Metro and fails immediately if a packager exits before readiness. Port, preparation, Metro-readiness, Appium, or unexpected packager failure stops started task-owned children and exits nonzero. A successful run prints all three passing rows and total `25`, then stops its packagers. Every printed or returned per-slot summary includes `slot`, `spec`, `tests`, `status`, numeric `exitCode`, and `log`. `exitCode` is `0` on pass, the child's numeric code when it exited without a signal, `130` for any child signal (not `128+n`) and for cancelled siblings, and `1` when that slot's packager spawn/readiness or other startup rejection has no child code; the parent process exit remains separate from those per-slot codes. It does not perform global device or simulator cleanup and does not stop unrelated listeners.
+
+These parallel commands are local-only. GitHub Actions remains on the serial commands and serial `8081`/`4725` resources documented in [CI workflows](../ci-workflows/index.md#workflows).
 
 <a id="ios-wda-prebuilt-validation"></a>
 
@@ -86,7 +132,7 @@ That artifact is gitignored but survives between runs, so later `yarn tests:appi
 
 When those named scripts are the e2e gate, `tee` `yarn tests:appium:android` to a unique `/tmp/rngma-e2e-android-*.log` and `yarn tests:appium:ios` to a unique `/tmp/rngma-e2e-ios-*.log`. Redirect/`tee` of the **same** named yarn script is allowed; do not add other wrappers.
 
-Device driver: Appium 3 + WebdriverIO in `tooling/appium/` ([§ Appium](#appium-scaffold)). Specs: `tooling/appium/test/specs/**/*.ts`. App: `RNGoogleMobileAdsExample/` (format gallery + stable `testID`s). Serial operation is one e2e at a time on `:8081`; slot operation is one session per supported nonreserved slot ([§ e2e slots](#e2e-slots)). E4 will own parallel orchestration. No source edits during a run.
+Device driver: Appium 3 + WebdriverIO in `tooling/appium/` ([§ Appium](#appium-scaffold)). Specs: `tooling/appium/test/specs/**/*.ts`. App: `RNGoogleMobileAdsExample/` (format gallery + stable `testID`s). Serial operation is one e2e at a time on `:8081`; manual slot operation is one session per supported nonreserved slot, while the local parallel owner fixes three one-worker sessions to slots `1`, `2`, and `4` ([§ parallel Appium](#parallel-appium)). No source edits during a run.
 
 There is no separate macOS-app e2e target. iOS e2e is `yarn tests:ios:pod:install` / `yarn tests:ios:run` (install) then `yarn tests:appium:ios` (local Mac or CI `macos-15`; the required WDA prebuild comes first: [§ prebuilt WDA](#ios-wda-prebuilt-validation)).
 
@@ -122,20 +168,20 @@ Every collected attempt emits one stable `[request-outcome-attempt]` JSON line w
 
 Cumulative aggregate from the [request-outcome contracts](#appium-scaffold) above. It is durable because these counts are the input that selects the acceptance contract each format can hold — see [documentation policy § cumulative verification-evidence tables](../documentation-policy.md#verification-evidence-tables) for why counts live here and why logs, run identifiers, and dates do not.
 
-**Lower bound, not a census.** Every cell counts only attempts whose classification is verified and non-overlapping across sessions, so totals only ever grow. Absence of a count is not evidence that an outcome cannot occur. Every subsequent qualifying run feeds this sample. The published table is the snapshot at the last implementation or documentation pass before independent review; runs taken while that tree is frozen accumulate for the next permitted documentation pass and do not mutate the table under review.
+**Lower bound, not a census.** Every cell counts only attempts whose classification is verified and non-overlapping across sessions, so totals only ever grow. Absence of a count is not evidence that an outcome cannot occur. Every subsequent qualifying run feeds this sample. The published table is the snapshot at the last implementation or documentation pass before independent review; runs taken while that tree is frozen accumulate for the next permitted documentation pass and do not mutate the table under review. The four request-outcome contracts live only in `formats.smoke.a-primary`; parallel slots `2` and `4` run `b-secondary` / `c-tertiary` and do not collect them ([§ parallel Appium](#parallel-appium)).
 
 | format | platform | attempts | loaded | no-fill | internal-error(fingerprinted) | other-error | current-acceptance |
 |--------|----------|----------|--------|---------|-------------------------------|-------------|--------------------|
-| Banner | android | 14 | 14 | 0 | 0 | 0 | collect |
-| Banner | ios | 7 | 7 | 0 | 0 | 0 | collect |
-| Native | android | 133 | 1 | 0 | 99 (+33 unfingerprinted) | 0 | collect |
-| Native | ios | 7 | 7 | 0 | 0 | 0 | collect |
-| Interstitial | android | 15 | 15 | 0 | 0 | 0 | collect |
-| Interstitial | ios | 7 | 7 | 0 | 0 | 0 | collect |
-| GAM Interstitial | android | 16 | 14 | 2 | 0 | 0 | collect |
-| GAM Interstitial | ios | 7 | 7 | 0 | 0 | 0 | collect |
+| Banner | android | 19 | 19 | 0 | 0 | 0 | collect |
+| Banner | ios | 11 | 11 | 0 | 0 | 0 | collect |
+| Native | android | 183 | 1 | 0 | 140 (+42 unfingerprinted) | 0 | collect |
+| Native | ios | 11 | 11 | 0 | 0 | 0 | collect |
+| Interstitial | android | 20 | 20 | 0 | 0 | 0 | collect |
+| Interstitial | ios | 11 | 11 | 0 | 0 | 0 | collect |
+| GAM Interstitial | android | 21 | 19 | 2 | 0 | 0 | collect |
+| GAM Interstitial | ios | 11 | 11 | 0 | 0 | 0 | collect |
 
-`internal-error(fingerprinted)` counts only attempts whose structured fingerprint is `matched` under the raw-stream adjacency contract above. `(+N unfingerprinted)` are collector `internal-error` attempts that are not `matched` (no signature; blank, whitespace, malformed, or other non-Ads interleaving; signature without the adjacent same-PID failure; or iOS `unavailable`); they are real internal errors and are not counted as fingerprinted. Outcome columns sum to `attempts` in each row (`99 (+33)` is 132).
+`internal-error(fingerprinted)` counts only attempts whose structured fingerprint is `matched` under the raw-stream adjacency contract above. `(+N unfingerprinted)` are collector `internal-error` attempts that are not `matched` (no signature; blank, whitespace, malformed, or other non-Ads interleaving; signature without the adjacent same-PID failure; or iOS `unavailable`); they are real internal errors and are not counted as fingerprinted. Outcome columns sum to `attempts` in each row (`140 (+42)` is 182, plus one loaded Native attempt is 183).
 
 That Native signature is Google serving a malformed native creative, not a local defect: it reproduced on API 29 **and** API 36 `google_apis`, and with both `TestIds.NATIVE` and `GAM_NATIVE`, so it is neither emulator-image- nor ad-unit-specific. The same Native contract has also loaded, and the official GAM interstitial test unit has returned `no-fill` twice in a session where the standard Interstitial loaded — so these are intermittent server-side outcomes that any per-format acceptance has to tolerate.
 

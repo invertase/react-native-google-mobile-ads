@@ -22,7 +22,6 @@ export const config: Options.Testrunner = {
   ...shared,
   // Must remain longer than wdaLaunchTimeout so WDIO cannot terminate WDA's xcodebuild first.
   connectionRetryTimeout: IOS_SESSION_RETRY_TIMEOUT_MS,
-  specs: ['./test/specs/**/*.ts'],
   capabilities: [
     {
       platformName: 'iOS',
@@ -31,6 +30,12 @@ export const config: Options.Testrunner = {
       'appium:udid': requireIosUdid(),
       'appium:platformVersion': process.env.RNGMA_IOS_VERSION,
       ...iosMetroProcessArguments(runtime),
+      ...(runtime.slotResources
+        ? {
+            'appium:wdaLocalPort': runtime.slotResources.automationPort,
+            'appium:mjpegServerPort': runtime.slotResources.mjpegPort,
+          }
+        : {}),
       'appium:wdaLaunchTimeout': WDA_LAUNCH_TIMEOUT_MS,
       ...iosPrebuiltWdaCapabilities(),
       'appium:app': iosApp,

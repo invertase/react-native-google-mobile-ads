@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { flushCoverageFromApp } from './src/flushCoverage.ts';
 import { platformForSharedConfig, runtimeResources } from './src/slots.ts';
+import { selectedWdioSpecs } from './src/wdioSpecs.ts';
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 const appiumHome = path.join(packageRoot, '.appium-home');
@@ -13,7 +14,7 @@ const APPIUM_PORT = runtimeResources(platformForSharedConfig()).appiumPort;
  */
 export const config: Options.Testrunner = {
   runner: 'local',
-  specs: ['./test/specs/**/*.ts'],
+  specs: selectedWdioSpecs(),
   exclude: [],
   maxInstances: 1,
   logLevel: 'warn',

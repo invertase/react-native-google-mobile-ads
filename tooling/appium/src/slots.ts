@@ -21,6 +21,8 @@ export type SlotResources = {
   basePort: number;
   metroPort: number;
   appiumPort: number;
+  automationPort: number;
+  mjpegPort: number;
   androidConsolePort: number;
   androidSerial: string;
   androidAvdName: string;
@@ -58,6 +60,8 @@ export function slotResources(slot: number, platform: SlotPlatform): SlotResourc
     basePort,
     metroPort: basePort + 7,
     appiumPort: basePort + 13,
+    automationPort: basePort + 14,
+    mjpegPort: basePort + 15,
     androidConsolePort,
     androidSerial: `emulator-${androidConsolePort}`,
     androidAvdName: `TestingAVD-${slot}`,
@@ -200,5 +204,13 @@ export function slotAndroidApkPath(slot: number): string {
   return path.join(
     repoRoot(),
     `RNGoogleMobileAdsExample/android/app/build/outputs/apk/debug/slots/slot-${slot}/app-debug.apk`,
+  );
+}
+
+export function slotIosAppPath(slot: number): string {
+  slotResources(slot, 'ios');
+  return path.join(
+    repoRoot(),
+    `RNGoogleMobileAdsExample/ios/build/slots/slot-${slot}/ReactTestApp.app`,
   );
 }
