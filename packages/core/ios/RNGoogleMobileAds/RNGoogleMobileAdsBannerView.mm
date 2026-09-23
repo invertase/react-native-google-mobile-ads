@@ -3,6 +3,7 @@
 // This guard prevent the code from being compiled in the old architecture
 #ifdef RCT_NEW_ARCH_ENABLED
 #import "RNGoogleMobileAdsBannerView.h"
+#import "RNGoogleMobileAdsBannerEventMapping.h"
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
 
@@ -268,28 +269,34 @@ using namespace facebook::react;
 
 - (void)bannerViewWillPresentScreen:(GADBannerView *)bannerView {
   if (_eventEmitter != nullptr) {
+    NSString *type = [RNGoogleMobileAdsBannerEventMapping
+        nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackWillPresentScreen];
     std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
         _eventEmitter)
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
-            .type = "onAdOpened"});
+            .type = std::string([type UTF8String])});
   }
 }
 
 - (void)bannerViewDidRecordImpression:(GADBannerView *)bannerView {
   if (_eventEmitter != nullptr) {
+    NSString *type = [RNGoogleMobileAdsBannerEventMapping
+        nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackDidRecordImpression];
     std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
         _eventEmitter)
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
-            .type = "onAdImpression"});
+            .type = std::string([type UTF8String])});
   }
 }
 
 - (void)bannerViewDidRecordClick:(GADBannerView *)bannerView {
   if (_eventEmitter != nullptr) {
+    NSString *type = [RNGoogleMobileAdsBannerEventMapping
+        nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackDidRecordClick];
     std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
         _eventEmitter)
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
-            .type = "onAdClicked"});
+            .type = std::string([type UTF8String])});
   }
 }
 
@@ -299,10 +306,12 @@ using namespace facebook::react;
 
 - (void)bannerViewDidDismissScreen:(GADBannerView *)bannerView {
   if (_eventEmitter != nullptr) {
+    NSString *type = [RNGoogleMobileAdsBannerEventMapping
+        nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackDidDismissScreen];
     std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
         _eventEmitter)
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent{
-            .type = "onAdClosed"});
+            .type = std::string([type UTF8String])});
   }
 }
 

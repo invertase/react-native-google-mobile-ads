@@ -72,11 +72,11 @@ View the [`RequestOptions`](https://github.com/invertase/react-native-google-mob
 
 The component also exposes props for listening to user, lifecycle, and revenue events:
 
-- `onAdClosed`
+- `onAdClosed` &mdash; Full-screen overlay from a banner click was dismissed.
 - `onAdFailedToLoad`
-- `onAdOpened`
+- `onAdOpened` &mdash; A full-screen overlay is about to present after a click. Not every click presents an overlay (especially on iOS); use `onAdClicked` to observe every recorded tap.
 - `onAdImpression`
-- `onAdClicked`
+- `onAdClicked` &mdash; A click was recorded. Prefer this when counting taps or hiding the banner after N clicks.
 - `onPaid` &mdash; On [impression-level ad revenue](https://support.google.com/admob/answer/11322405?hl=en) events.
 
 Use `onPaid` to forward impression-level revenue to your telemetry pipeline. See
