@@ -166,10 +166,7 @@ export function AdPoolProvider(props: AdPoolProviderProps): React.ReactElement {
       const signature = configSignature(config);
       const previous = owned.get(config.poolId);
       if (previous && previous.signature === signature) {
-        if (
-          getRegisteredAdPool(config.poolId) ||
-          pendingCreatesRef.current.has(config.poolId)
-        ) {
+        if (getRegisteredAdPool(config.poolId) || pendingCreatesRef.current.has(config.poolId)) {
           continue;
         }
       } else {

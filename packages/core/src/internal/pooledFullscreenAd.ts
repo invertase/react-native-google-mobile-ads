@@ -219,7 +219,7 @@ export function createPooledFullscreenAd(
       showRequested = true;
       return ensureMobileAdsInitialized()
         .then(() => bridge.show(options.requestId, options.adUnitId, validated))
-        .catch(error => {
+        .catch((error: unknown) => {
           showRequested = false;
           throw error;
         });
