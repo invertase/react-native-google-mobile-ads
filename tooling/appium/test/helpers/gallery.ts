@@ -795,6 +795,13 @@ async function waitForPoolRegistryReady(formatId: string, timeoutMs = 45000): Pr
   );
 }
 
+function poolPollActionId(formatId: string): string {
+  if (formatId === AppiumTestIds.format.poolInterstitialImperative) {
+    return AppiumTestIds.action.reload(formatId);
+  }
+  return AppiumTestIds.action.load(formatId);
+}
+
 async function observePoolFilledOutcome(
   formatId: string,
   attempt: number,
@@ -806,7 +813,7 @@ async function observePoolFilledOutcome(
   fingerprint: RequestFingerprint;
 }> {
   const testId = AppiumTestIds.action.loaded(formatId);
-  const pollActionId = AppiumTestIds.action.load(formatId);
+  const pollActionId = poolPollActionId(formatId);
   let lastSeen = '';
   const marker = await findByTestId(testId);
   if (!(await marker.isExisting())) {
@@ -1123,6 +1130,27 @@ async function dismissChromeFirstRunIfPresent(): Promise<boolean> {
   return true;
 }
 
+async function isAndroidExampleAppForeground(): Promise<boolean> {
+  const focus = await androidWindowFocusDump();
+  return focus.includes(EXAMPLE_ANDROID_PACKAGE);
+}
+
+/** One-shot relaunch when utility dismiss left the launcher focused — not for tight poll loops. */
+async function bringExampleAppForwardOnceIfNeeded(reason: string): Promise<void> {
+  if (await isAndroidAdActivityForeground()) {
+    return;
+  }
+  if (await isAndroidExampleAppForeground()) {
+    return;
+  }
+  logAndroidHostTrace('utility.bringAppForwardOnce', {
+    reason,
+    focus: androidFocusSnippet(await androidWindowFocusDump()),
+  });
+  await driver.activateApp(EXAMPLE_ANDROID_PACKAGE);
+  await sleep(600);
+}
+
 async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
   if (!isAndroid()) {
     return;
@@ -1266,55 +1294,67 @@ async function dismissAndroidAppOpenFeedIfPresent(): Promise<void> {
 }
 
 async function isAndroidAdInspectorVisible(): Promise<boolean> {
-  const el = await $('android=new UiSelector().textContains("Ad Inspector")');
-  return (
-    (await el.isExisting().catch(() => false)) &&
-    (await el.isDisplayed().catch(() => false))
-  );
+  if (!(await isAndroidAdActivityForeground())) {
+    return false;
+  }
+  try {
+    const els = await $$('android=new UiSelector().textContains("Ad Inspector")');
+    const limit = Math.min(els.length, 3);
+    for (let index = 0; index < limit; index += 1) {
+      if (await els[index]!.isDisplayed().catch(() => false)) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
 }
 
 async function dismissAndroidAdInspectorIfPresent(): Promise<void> {
-  if (!(await isAndroidAdInspectorVisible())) {
+  if (!(await isAndroidAdActivityForeground())) {
     return;
   }
-  for (const fragment of [
-    'descriptionContains("Close Ad Inspector")',
-    'descriptionContains("Close ad inspector")',
-  ]) {
-    if (await tapAndroidSelectorIfDisplayed(`android=new UiSelector().${fragment}`)) {
-      await sleep(500);
-      if (!(await isAndroidAdInspectorVisible())) {
-        return;
+  let attempts = 0;
+  logAndroidHostTrace('adInspector.dismiss.begin', {
+    adActivity: await isAndroidAdActivityForeground(),
+    visible: await isAndroidAdInspectorVisible(),
+  });
+  await driver.waitUntil(
+    async () => {
+      if (!(await isAndroidAdActivityForeground())) {
+        logAndroidHostTrace('adInspector.dismiss.success', { attempts });
+        return true;
       }
-    }
-  }
-  const { width, height } = await driver.getWindowRect();
-  const minX = width * 0.78;
-  const maxY = height * 0.14;
-  const clickables = await $$('android=new UiSelector().clickable(true)');
-  for (const control of clickables) {
-    if (!(await control.isDisplayed().catch(() => false))) {
-      continue;
-    }
-    const rect = await control.getLocation();
-    const size = await control.getSize();
-    const centerX = rect.x + size.width / 2;
-    const centerY = rect.y + size.height / 2;
-    if (
-      centerX >= minX &&
-      centerY <= maxY &&
-      size.width <= 120 &&
-      size.height <= 120
-    ) {
-      await control.click();
-      await sleep(500);
-      if (!(await isAndroidAdInspectorVisible())) {
-        return;
+      attempts += 1;
+      for (const fragment of [
+        'descriptionContains("Close Ad Inspector")',
+        'descriptionContains("Close ad inspector")',
+        'descriptionContains("Navigate up")',
+        'descriptionContains("Close")',
+      ]) {
+        await tapAndroidSelectorIfDisplayed(`android=new UiSelector().${fragment}`);
       }
-    }
-  }
-  await tapAndroidShellFraction(0.94, 0.07);
-  await sleep(500);
+      await tapAndroidInterstitialCloseAttempt();
+      if (attempts >= 4 && attempts % 2 === 0) {
+        try {
+          await driver.back();
+        } catch {
+          await driver.execute('mobile: shell', {
+            command: 'input',
+            args: ['keyevent', '4'],
+          });
+        }
+      }
+      await sleep(450);
+      return false;
+    },
+    {
+      timeout: 45000,
+      interval: 400,
+      timeoutMsg: 'Ad Inspector did not dismiss from AdActivity',
+    },
+  );
 }
 
 async function isAndroidAdActivityForeground(): Promise<boolean> {
@@ -1459,6 +1499,18 @@ async function isAndroidDebugModePickerVisible(): Promise<boolean> {
   );
 }
 
+/** Debug Menu picker dismiss often skips AppState inactive; HOME + relaunch satisfies the example contract. */
+async function nudgeAndroidAppStateForUtilityClose(): Promise<void> {
+  await driver.execute('mobile: shell', {
+    command: 'input',
+    args: ['keyevent', '3'],
+  });
+  await sleep(500);
+  await driver.activateApp(EXAMPLE_ANDROID_PACKAGE);
+  await sleep(600);
+  await ensureExampleAppInForeground();
+}
+
 /** Debug Menu opens a modal picker; dismiss the scrim (not the list) before backing out of SDK UI. */
 async function dismissAndroidDebugModePickerIfPresent(): Promise<void> {
   if (!(await isAndroidDebugModePickerVisible())) {
@@ -1533,18 +1585,12 @@ async function tapAndroidFullscreenCloseWithRetries(): Promise<void> {
 }
 
 async function dismissAndroidUtilitySurface(formatId: string): Promise<void> {
-  await ensureExampleAppInForeground();
   if (formatId === AppiumTestIds.format.adInspector) {
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      await dismissAndroidAdInspectorIfPresent();
-      if (!(await isAndroidAdInspectorVisible())) {
-        break;
-      }
-      await sleep(400);
-    }
-    await ensureExampleAppInForeground();
+    await dismissAndroidAdInspectorIfPresent();
+    await bringExampleAppForwardOnceIfNeeded('dismissAndroidUtilitySurface.adInspector');
     return;
   }
+  await ensureExampleAppInForeground();
   if (formatId === AppiumTestIds.format.debugMenu) {
     for (let attempt = 0; attempt < 6; attempt += 1) {
       await dismissAndroidDebugModePickerIfPresent();
@@ -1553,17 +1599,8 @@ async function dismissAndroidUtilitySurface(formatId: string): Promise<void> {
       }
       await sleep(300);
     }
-    for (let attempt = 0; attempt < 4; attempt += 1) {
-      const text = await utilityLifecycleText(formatId);
-      if (text.includes(UTILITY_LIFECYCLE_CLOSED)) {
-        return;
-      }
-      await driver.execute('mobile: shell', {
-        command: 'input',
-        args: ['keyevent', '4'],
-      });
-      await sleep(600);
-      await ensureExampleAppInForeground();
+    if (!(await utilityLifecycleText(formatId)).includes(UTILITY_LIFECYCLE_CLOSED)) {
+      await nudgeAndroidAppStateForUtilityClose();
     }
     return;
   }
@@ -1760,6 +1797,12 @@ async function assertUtilityOpenCloseLifecycle(
   if (isAndroid()) {
     await driver.waitUntil(
       async () => {
+        const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
+        if (await el.isExisting().catch(() => false)) {
+          if ((await elementText(el)).includes(UTILITY_LIFECYCLE_OPENED)) {
+            return true;
+          }
+        }
         if (
           formatId === AppiumTestIds.format.adInspector &&
           (await isAndroidAdInspectorVisible())
@@ -1772,11 +1815,7 @@ async function assertUtilityOpenCloseLifecycle(
         ) {
           return true;
         }
-        const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
-        if (!(await el.isExisting().catch(() => false))) {
-          return false;
-        }
-        return (await elementText(el)).includes(UTILITY_LIFECYCLE_OPENED);
+        return false;
       },
       {
         timeout: 90000,
@@ -1793,17 +1832,30 @@ async function assertUtilityOpenCloseLifecycle(
   }
   if (isAndroid()) {
     await dismissAndroidUtilitySurface(formatId);
+    let broughtExampleAppForwardForClose = false;
     await driver.waitUntil(
       async () => {
-        if (
-          formatId === AppiumTestIds.format.debugMenu &&
-          (await isAndroidDebugModePickerVisible())
-        ) {
-          await dismissAndroidDebugModePickerIfPresent();
+        if (formatId === AppiumTestIds.format.adInspector && (await isAndroidAdActivityForeground())) {
+          await dismissAndroidAdInspectorIfPresent();
           return false;
+        }
+        if (formatId === AppiumTestIds.format.debugMenu) {
+          await recoverAndroidTestHost('assertUtilityOpenCloseLifecycle.close');
+          if (await isAndroidDebugModePickerVisible()) {
+            await dismissAndroidDebugModePickerIfPresent();
+            return false;
+          }
         }
         const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
         if (!(await el.isExisting().catch(() => false))) {
+          if (formatId === AppiumTestIds.format.adInspector) {
+            if (!broughtExampleAppForwardForClose) {
+              broughtExampleAppForwardForClose = true;
+              await bringExampleAppForwardOnceIfNeeded('assertUtilityOpenCloseLifecycle.close');
+            }
+          } else {
+            await recoverAndroidTestHost('assertUtilityOpenCloseLifecycle.close');
+          }
           return false;
         }
         return (await elementText(el)).includes(UTILITY_LIFECYCLE_CLOSED);
