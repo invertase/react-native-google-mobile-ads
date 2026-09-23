@@ -17,7 +17,9 @@
 
 import { EmitterSubscription } from 'react-native';
 
+import { getAdCapabilities } from '../capabilities/getAdCapabilities';
 import { AdFormat } from '../types/AdFormat';
+import { createPoolAdError } from '../validateAdPoolConfig';
 import { adErrorFromNativeEvent } from './adErrorFromNativeEvent';
 import { EmulatedAdPool, createEmulatedDisplayPool } from './emulatedAdPool';
 import { allocateFullscreenRequestId, createPooledFullscreenAd } from './pooledFullscreenAd';
@@ -33,7 +35,6 @@ import type {
 } from '../types/AdPool';
 import type { FullscreenAdFormat } from '../types/FullscreenAdFormat';
 import type { ResponseInfo } from '../types/ResponseInfo';
-import { createPoolAdError } from '../validateAdPoolConfig';
 
 /** Registered pools expose notifyDegraded for create-time loud-degrade events. */
 export type RegisteredAdPool = AdPool & { notifyDegraded(): void };
@@ -158,12 +159,29 @@ export class SdkManagedAdPool implements AdPool {
     if (this.destroyed) {
       return null;
     }
-    const info = await NativeGoogleMobileAdsPoolModule.poolPeekResponseInfo(
-      this.poolId,
-      this.format,
-      this.generation,
-    );
-    return (info as ResponseInfo | null) ?? null;
+    if (getAdCapabilities().poolResponseInfoPeek === 'unavailable') {
+      throw createPoolAdError(
+        'pool/peek-unsupported',
+        'Classic Android has no pool ResponseInfo peek API',
+      );
+    }
+    try {
+      const info = await NativeGoogleMobileAdsPoolModule.poolPeekResponseInfo(
+        this.poolId,
+        this.format,
+        this.generation,
+      );
+      return (info as ResponseInfo | null) ?? null;
+    } catch (error) {
+      if (error && typeof error === 'object' && 'userInfo' in error) {
+        const native = error as { userInfo: { code: string; message: string } };
+        throw adErrorFromNativeEvent(
+          { code: native.userInfo.code, message: native.userInfo.message },
+          'googleMobileAds/pool',
+        );
+      }
+      throw error;
+    }
   }
 
   async poll(): Promise<PollResult> {
