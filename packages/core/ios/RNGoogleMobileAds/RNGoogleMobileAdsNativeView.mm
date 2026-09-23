@@ -18,6 +18,7 @@
 #import "RNGoogleMobileAdsNativeView.h"
 #import "RNGoogleMobileAdsMediaView.h"
 #import "RNGoogleMobileAdsNativeAdRegistry.h"
+#import "RNGoogleMobileAdsNativeAssetInteraction.h"
 
 #ifdef RCT_NEW_ARCH_ENABLED
 #import <RNGoogleMobileAdsSpec/ComponentDescriptors.h>
@@ -42,6 +43,8 @@ using namespace facebook::react;
   __weak GADNativeAd *_nativeAd;
   GADNativeAdView *_nativeAdView;
   dispatch_block_t _debouncedReload;
+  // Weak: asset views may already be gone when we tear down (#896 Fabric recycle).
+  NSHashTable<UIView *> *_assetViewsDisabled;
 }
 
 #ifdef RCT_NEW_ARCH_ENABLED
@@ -78,6 +81,10 @@ using namespace facebook::react;
 
 - (void)unmountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView
                             index:(NSInteger)index {
+  // Restore before the child re-enters Fabric's component-view recycle pool (#896).
+  [RNGoogleMobileAdsNativeAssetInteraction
+      restoreInteractionOnTrackedAssetViews:_assetViewsDisabled
+                                  inSubtree:childComponentView];
   [childComponentView removeFromSuperview];
 }
 
@@ -177,7 +184,17 @@ using namespace facebook::react;
     };
     NSString *property = viewMappings[assetType];
     if (property) {
-      view.userInteractionEnabled = NO;
+      UIView *previous = [_nativeAdView valueForKey:property];
+      if (previous != nil && previous != view) {
+        previous.userInteractionEnabled = YES;
+        [self->_assetViewsDisabled removeObject:previous];
+      }
+      if (self->_assetViewsDisabled == nil) {
+        self->_assetViewsDisabled = [NSHashTable weakObjectsHashTable];
+      }
+      [RNGoogleMobileAdsNativeAssetInteraction
+          disableInteractionOnAssetView:view
+                             trackingIn:self->_assetViewsDisabled];
       [_nativeAdView setValue:view forKey:property];
       [self reloadAd];
     }
@@ -188,9 +205,16 @@ using namespace facebook::react;
   if (_debouncedReload != nil) {
     dispatch_block_cancel(_debouncedReload);
   }
+  // Weak self: accessing ivars in a block otherwise retains self and prevents
+  // dealloc (and thus #896 restore on teardown).
+  __weak __typeof(self) weakSelf = self;
   _debouncedReload = dispatch_block_create(DISPATCH_BLOCK_NO_QOS_CLASS, ^{
-    if (_nativeAd != nil) {
-      _nativeAdView.nativeAd = _nativeAd;
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf == nil) {
+      return;
+    }
+    if (strongSelf->_nativeAd != nil) {
+      strongSelf->_nativeAdView.nativeAd = strongSelf->_nativeAd;
     }
   });
   dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC);
@@ -198,6 +222,8 @@ using namespace facebook::react;
 }
 
 - (void)dealloc {
+  [RNGoogleMobileAdsNativeAssetInteraction
+      restoreInteractionOnTrackedAssetViews:_assetViewsDisabled];
   _nativeAdView = nil;
   if (_debouncedReload != nil) {
     dispatch_block_cancel(_debouncedReload);
@@ -219,10 +245,8 @@ RCT_EXPORT_VIEW_PROPERTY(responseId, NSString)
   return [[RNGoogleMobileAdsNativeView alloc] initWithBridge:self.bridge];
 }
 
-RCT_EXPORT_METHOD(registerAsset
-                  : (nonnull NSNumber *)reactTag assetType
-                  : (nonnull NSString *)assetType assetReactTag
-                  : (nonnull NSNumber *)assetReactTag) {
+RCT_EXPORT_METHOD(registerAsset : (nonnull NSNumber *)reactTag assetType : (nonnull NSString *)
+                      assetType assetReactTag : (nonnull NSNumber *)assetReactTag) {
   [self.bridge.uiManager
       addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
         RNGoogleMobileAdsNativeView *view = viewRegistry[reactTag];
