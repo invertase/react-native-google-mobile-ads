@@ -2,6 +2,7 @@ import type { PublicApiExport, PublicApiKind } from './publicApiMatrix.ts';
 import { AppiumTestIds } from './testIds.ts';
 import {
   REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
+  SDK_UTILITY_SURFACE_CONTRACTS,
   SMOKE_BANNER_VARIANT,
   SMOKE_GAM_BANNER_VARIANT,
 } from './formats.ts';
@@ -31,6 +32,7 @@ export type E2eOutcomeDisposition = DispositionBase & {
     | 'rendered-nonzero-view'
     | 'hook-state-transition'
     | 'lifecycle-event'
+    | 'utility-open-close'
     | 'structured-unsupported-result';
   assertion: string;
 };
@@ -96,7 +98,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
   lower(
     'AdPoolPresets.display',
     'function',
-    'Display preset configs are validated in Jest and consumed by future multi-format gallery work; the current pool Appium contracts cover fullscreen preload only.',
+    'Display preset configs are validated in Jest and consumed by the multi-format gallery surfaces; successful competitive native-or-banner outcomes are dispositioned on those multi-format contracts.',
   ),
   lower(
     'AdPoolPresets.fullscreen',
@@ -209,11 +211,18 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
       'After a loaded request outcome, the Banner wrapper and a displayed native descendant both have nonzero width and height.',
   }),
   staticToken('BannerAdSize'),
-  lower(
-    'default',
-    'function',
-    'The default MobileAds factory is covered by Jest native-module delegation tests. Inspector/debug is navigation-only today; any future Appium assertion is capped at root-appears-and-closes, never ad delivery.',
-  ),
+  outcome('default', 'function', {
+    contractId: AppiumTestIds.format.debugMenu,
+    exampleComponent: 'DebugMenuFormat',
+    screenTestId: AppiumTestIds.format.debugMenu,
+    screenTestIdExpression: 'AppiumTestIds.format.debugMenu',
+    assertionTestId: AppiumTestIds.action.lifecycle(AppiumTestIds.format.debugMenu),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.lifecycle(AppiumTestIds.format.debugMenu)',
+    success: 'utility-open-close',
+    assertion:
+      'MobileAds().openDebugMenu opens the native Debug Menu root UI, the Utility lifecycle marker reports opened, then after system back the marker reports closed without asserting SDK version metadata or ad delivery.',
+  }),
   lower(
     'GAMAdEventType',
     'const/preset',
@@ -228,7 +237,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertionTestIdExpression: 'AppiumTestIds.action.rendered(formatId)',
     success: 'rendered-nonzero-view',
     assertion:
-      'After a loaded GAM banner request outcome, the rendered wrapper and a displayed native descendant both have nonzero width and height.',
+      'After a loaded GAM banner request outcome, the rendered wrapper and a displayed native descendant both have nonzero width and height; manual impression recording is not a blocking success condition because the SDK exposes no acknowledgement callback.',
   }),
   staticToken('GAMBannerAdSize'),
   outcome('GAMInterstitialAd', 'class', {
@@ -255,7 +264,11 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertion:
       'getAdCapabilities publishes poolResponseInfoPeek and rewarded-interstitial preload support on the loaded marker, and the peek probe reports structured unsupported pool/peek-unsupported on Android classic rather than faking peek success.',
   }),
-  staticToken('InitializationState'),
+  lower(
+    'InitializationState',
+    'const/preset',
+    'MobileAds.initialize runs during gallery startup and debug-menu pre-init, but the example never renders adapter initialization state, so Jest owns enum mapping while downstream ad contracts prove initialization indirectly.',
+  ),
   outcome('InterstitialAd', 'class', {
     contractId: AppiumTestIds.format.interstitial,
     exampleComponent: 'LoadableAdControls',
@@ -268,15 +281,50 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
       'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives.',
   }),
   staticToken('MaxAdContentRating'),
+  outcome('MobileAds', 'function', {
+    contractId: AppiumTestIds.format.adInspector,
+    exampleComponent: 'AdInspectorFormat',
+    screenTestId: AppiumTestIds.format.adInspector,
+    screenTestIdExpression: 'AppiumTestIds.format.adInspector',
+    assertionTestId: AppiumTestIds.action.lifecycle(AppiumTestIds.format.adInspector),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.lifecycle(AppiumTestIds.format.adInspector)',
+    success: 'utility-open-close',
+    assertion:
+      'MobileAds().openAdInspector opens the native Ad Inspector root UI, the Utility lifecycle marker reports opened, then after system back the marker reports closed without asserting SDK version metadata or ad delivery.',
+  }),
   lower(
-    'MobileAds',
-    'function',
-    'Jest covers initialization and native-module delegation. Inspector/debug is navigation-only today; any future Appium assertion is capped at root-appears-and-closes and cannot claim an ad outcome.',
+    'MultiFormatAdPresets',
+    'namespace/object',
+    'Preset builders are exercised through the multi-format gallery request and hook surfaces; no independent device outcome exists beyond those competitive load flows.',
   ),
-  absent('MultiFormatAdPresets', 'namespace/object'),
-  absent('MultiFormatAdPresets.nativeOrBanner', 'function'),
-  absent('MultiFormatAdRequest', 'class'),
-  absent('MultiFormatBannerAdView', 'component'),
+  lower(
+    'MultiFormatAdPresets.nativeOrBanner',
+    'function',
+    'The nativeOrBanner preset is applied on the gallery MultiFormatAdRequest and useMultiFormatAd screens with TestIds.GAM_NATIVE; successful winner render outcomes are dispositioned on those contracts.',
+  ),
+  outcome('MultiFormatAdRequest', 'class', {
+    contractId: AppiumTestIds.format.multiFormatRequest,
+    exampleComponent: 'MultiFormatRequestFormat',
+    screenTestId: AppiumTestIds.format.multiFormatRequest,
+    screenTestIdExpression: 'formatId',
+    assertionTestId: AppiumTestIds.action.rendered(AppiumTestIds.format.multiFormatRequest),
+    assertionTestIdExpression: 'AppiumTestIds.action.rendered(formatId)',
+    success: 'rendered-nonzero-view',
+    assertion:
+      'A fresh Load issues a GAM multi-format request, reaches the structured loaded lifecycle outcome with a documented winner format, then the native arm renders a displayed NativeAdView with nonzero width and height or the banner arm renders a displayed MultiFormatBannerAdView subtree with nonzero width and height.',
+  }),
+  outcome('MultiFormatBannerAdView', 'component', {
+    contractId: AppiumTestIds.format.multiFormatRequest,
+    exampleComponent: 'MultiFormatRequestFormat',
+    screenTestId: AppiumTestIds.format.multiFormatRequest,
+    screenTestIdExpression: 'formatId',
+    assertionTestId: AppiumTestIds.action.rendered(AppiumTestIds.format.multiFormatRequest),
+    assertionTestIdExpression: 'AppiumTestIds.action.rendered(formatId)',
+    success: 'rendered-nonzero-view',
+    assertion:
+      'When the competitive multi-format request selects the banner winner, MultiFormatBannerAdView is displayed with nonzero width and height on the imperative gallery surface without issuing a second ad request.',
+  }),
   outcome('NativeAd', 'class', {
     contractId: AppiumTestIds.format.native,
     exampleComponent: 'NativeComponent',
@@ -405,7 +453,17 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertion:
       'Auto-load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives.',
   }),
-  absent('useMultiFormatAd', 'hook'),
+  outcome('useMultiFormatAd', 'hook', {
+    contractId: AppiumTestIds.format.multiFormatHook,
+    exampleComponent: 'MultiFormatHookFormat',
+    screenTestId: AppiumTestIds.format.multiFormatHook,
+    screenTestIdExpression: 'formatId',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.multiFormatHook),
+    assertionTestIdExpression: 'AppiumTestIds.action.loaded(formatId)',
+    success: 'hook-state-transition',
+    assertion:
+      'Auto-load drives a hook state transition to loaded with a documented winner format, then the native arm renders a displayed NativeAdView with nonzero width and height or the banner arm renders a displayed MultiFormatBannerAdView subtree with nonzero width and height.',
+  }),
   outcome('usePooledAd', 'hook', {
     contractId: AppiumTestIds.format.poolInterstitialProvider,
     exampleComponent: 'PooledInterstitialProviderInner',
@@ -544,6 +602,9 @@ export function validatePublicApiContracts(
           !/\bloaded\b.*\blifecycle\b|\blifecycle\b.*\bloaded\b/i.test(contract.assertion)) ||
         (contract.success === 'hook-state-transition' &&
           !/\bstate transition\b/i.test(contract.assertion)) ||
+        (contract.success === 'utility-open-close' &&
+          (!/\bopened\b.*\bclosed\b|\bclosed\b.*\bopened\b/i.test(contract.assertion) ||
+            /\bversion\b/i.test(contract.assertion))) ||
         (contract.success === 'structured-unsupported-result' &&
           !/\bstructured\b.*\bunsupported\b|\bunsupported\b.*\bstructured\b/i.test(
             contract.assertion,
@@ -551,9 +612,10 @@ export function validatePublicApiContracts(
       ) {
         errors.push(`e2e-outcome ${contract.api} has a presence-only success assertion`);
       }
-      const knownContract = REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.find(
-        candidate => candidate.id === contract.contractId,
-      );
+      const knownContract = [
+        ...REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
+        ...SDK_UTILITY_SURFACE_CONTRACTS,
+      ].find(candidate => candidate.id === contract.contractId);
       if (!knownContract) {
         errors.push(`e2e-outcome ${contract.api} references unknown contract ${contract.contractId}`);
       } else {
@@ -563,7 +625,9 @@ export function validatePublicApiContracts(
         const expectedAssertionTestId =
           contract.success === 'rendered-nonzero-view'
             ? AppiumTestIds.action.rendered(knownContract.id)
-            : AppiumTestIds.action.loaded(knownContract.id);
+            : contract.success === 'utility-open-close'
+              ? AppiumTestIds.action.lifecycle(knownContract.id)
+              : AppiumTestIds.action.loaded(knownContract.id);
         if (contract.assertionTestId !== expectedAssertionTestId) {
           errors.push(`e2e-outcome ${contract.api} references missing assertion testID`);
         }

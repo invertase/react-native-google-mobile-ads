@@ -41,6 +41,9 @@ import MobileAds, {
   GAMInterstitialAd,
   InterstitialAd,
   type MobileAd,
+  MultiFormatAdPresets,
+  MultiFormatAdRequest,
+  MultiFormatBannerAdView,
   NativeAd,
   NativeAdEventType,
   NativeAdView,
@@ -58,9 +61,12 @@ import MobileAds, {
   useAdPool,
   useAppOpenAd,
   useInterstitialAd,
+  useMultiFormatAd,
   usePooledAd,
   useRewardedAd,
   useRewardedInterstitialAd,
+  type MultiFormatAdHandle,
+  type MultiFormatBannerAdHandle,
 } from 'react-native-google-mobile-ads';
 
 type GallerySection = 'all' | 'formats' | 'hooks' | 'pools' | 'debug';
@@ -114,12 +120,55 @@ function requestOutcomeLabel(state: RequestState): string {
 }
 
 type ShowLifecyclePhase = 'idle' | 'opened' | 'closed';
+type UtilityLifecyclePhase = 'idle' | 'opened' | 'closed';
 
 function showLifecycleLabel(phase: ShowLifecyclePhase): string {
   return `Show lifecycle: ${phase}`;
 }
 
+function utilityLifecycleLabel(phase: UtilityLifecyclePhase): string {
+  return `Utility lifecycle: ${phase}`;
+}
+
 const POOL_PROVIDER_INTERSTITIAL_ID = 'appium-gallery-pool-interstitial-provider';
+
+const GAM_MULTI_FORMAT_CONFIG = {
+  adUnitId: TestIds.GAM_NATIVE,
+  requestOptions: MultiFormatAdPresets.nativeOrBanner([BannerAdSize.MEDIUM_RECTANGLE]),
+};
+
+function multiFormatWinnerLabel(handle: MultiFormatAdHandle | undefined): string | null {
+  if (!handle) {
+    return null;
+  }
+  return handle.format === AdFormat.NATIVE ? 'native' : 'banner';
+}
+
+function MultiFormatWinnerRender(props: {
+  formatId: string;
+  renderedTestId: string;
+  handle: MultiFormatAdHandle | null;
+}) {
+  if (!props.handle) {
+    return null;
+  }
+  if (props.handle.format === AdFormat.NATIVE) {
+    const nativeAd = props.handle.ad;
+    return (
+      <NativeAdView nativeAd={nativeAd} testID={props.renderedTestId}>
+        <View style={{ padding: 16, gap: 8 }}>
+          <NativeAsset assetType={NativeAssetType.HEADLINE}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
+          </NativeAsset>
+        </View>
+      </NativeAdView>
+    );
+  }
+  const bannerHandle = props.handle as MultiFormatBannerAdHandle;
+  return (
+    <MultiFormatBannerAdView handle={bannerHandle} testID={props.renderedTestId} />
+  );
+}
 
 function poolOutcomeLabel(fields: {
   poolStatus: string;
@@ -962,6 +1011,130 @@ function PooledInterstitialImperativeFormat() {
   );
 }
 
+function MultiFormatRequestFormat() {
+  const formatId = AppiumTestIds.format.multiFormatRequest;
+  const renderedTestId = AppiumTestIds.action.rendered(formatId);
+  const requestRef = useRef<MultiFormatAdRequest | null>(null);
+  const winnerHandleRef = useRef<MultiFormatAdHandle | null>(null);
+  const [requestState, setRequestState] = useState<RequestState>(() => freshRequestState(0));
+  const [winnerHandle, setWinnerHandle] = useState<MultiFormatAdHandle | null>(null);
+
+  useEffect(() => {
+    return () => {
+      requestRef.current?.destroy();
+      requestRef.current = null;
+      winnerHandleRef.current?.destroy();
+      winnerHandleRef.current = null;
+    };
+  }, []);
+
+  const runLoad = async (attempt: number) => {
+    setRequestState(freshRequestState(attempt));
+    winnerHandleRef.current?.destroy();
+    winnerHandleRef.current = null;
+    setWinnerHandle(null);
+    requestRef.current?.destroy();
+    const request = MultiFormatAdRequest.create(GAM_MULTI_FORMAT_CONFIG);
+    requestRef.current = request;
+    try {
+      const result = await request.load();
+      if (result.ads.length > 0 && result.errors.length === 0) {
+        const handle = result.ads[0]!;
+        const winner = multiFormatWinnerLabel(handle);
+        winnerHandleRef.current = handle;
+        setWinnerHandle(handle);
+        setRequestState(current => ({
+          ...current,
+          outcome: winner
+            ? `${REQUEST_OUTCOME_LOADED}; winner=${winner}`
+            : REQUEST_OUTCOME_LOADED,
+        }));
+        return;
+      }
+      if (result.errors.length > 0) {
+        setRequestState(current => ({
+          ...current,
+          outcome: requestErrorOutcome(result.errors[0]),
+        }));
+        return;
+      }
+      setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_NO_FILL }));
+    } catch (error) {
+      setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
+    }
+  };
+
+  return (
+    <View style={styles.testSpacing} testID={formatId}>
+      <Button
+        title="Load GAM multi-format"
+        testID={AppiumTestIds.action.load(formatId)}
+        onPress={() => {
+          void runLoad(requestState.attempt + 1);
+        }}
+      />
+      <Text testID={AppiumTestIds.action.loaded(formatId)}>{requestOutcomeLabel(requestState)}</Text>
+      <MultiFormatWinnerRender
+        formatId={formatId}
+        renderedTestId={renderedTestId}
+        handle={winnerHandle}
+      />
+    </View>
+  );
+}
+
+function MultiFormatHookFormat() {
+  const formatId = AppiumTestIds.format.multiFormatHook;
+  const renderedTestId = AppiumTestIds.action.rendered(formatId);
+  const [requestState, setRequestState] = useState<RequestState>(() => freshRequestState(1));
+  const multi = useMultiFormatAd({
+    ...GAM_MULTI_FORMAT_CONFIG,
+    autoLoad: true,
+  });
+
+  useEffect(() => {
+    if (multi.status === 'idle' || multi.status === 'loading') {
+      return;
+    }
+    if (multi.status === 'loaded' || multi.status === 'loaded-partial') {
+      const handle = multi.ads[0];
+      const winner = multiFormatWinnerLabel(handle);
+      setRequestState(current => ({
+        ...current,
+        outcome: winner
+          ? `${REQUEST_OUTCOME_LOADED}; winner=${winner}`
+          : REQUEST_OUTCOME_LOADED,
+      }));
+      return;
+    }
+    if (multi.status === 'no-fill') {
+      setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_NO_FILL }));
+      return;
+    }
+    if (multi.status === 'error') {
+      setRequestState(current => ({
+        ...current,
+        outcome: requestErrorOutcome(multi.errors[0]),
+      }));
+    }
+  }, [multi.status, multi.ads, multi.errors]);
+
+  const winnerHandle =
+    multi.status === 'loaded' || multi.status === 'loaded-partial' ? multi.ads[0] ?? null : null;
+
+  return (
+    <View style={styles.testSpacing} testID={formatId}>
+      <Text testID={AppiumTestIds.action.loaded(formatId)}>{requestOutcomeLabel(requestState)}</Text>
+      <Text>Hook status: {multi.status}</Text>
+      <MultiFormatWinnerRender
+        formatId={formatId}
+        renderedTestId={renderedTestId}
+        handle={winnerHandle}
+      />
+    </View>
+  );
+}
+
 function PoolCapabilityGatesFormat() {
   const caps = getAdCapabilities();
   const [gateNote, setGateNote] = useState('gates=idle');
@@ -1443,6 +1616,12 @@ function buildGalleryEntries(): GalleryEntry[] {
     render: () => <NativeComponent />,
   });
   entries.push({
+    id: AppiumTestIds.format.multiFormatRequest,
+    title: 'Multi-Format Request',
+    section: 'formats',
+    render: () => <MultiFormatRequestFormat />,
+  });
+  entries.push({
     id: AppiumTestIds.format.adInspector,
     title: 'Ad Inspector',
     section: 'debug',
@@ -1477,6 +1656,12 @@ function buildGalleryEntries(): GalleryEntry[] {
     title: 'RWI Hook',
     section: 'hooks',
     render: () => <RewardedInterstitialHookFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.multiFormatHook,
+    title: 'Multi-Format Hook',
+    section: 'hooks',
+    render: () => <MultiFormatHookFormat />,
   });
   entries.push({
     id: AppiumTestIds.format.poolInterstitialProvider,

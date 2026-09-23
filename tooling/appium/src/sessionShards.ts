@@ -2,8 +2,10 @@ import {
   NATIVE_RNGMA_TESTING_PROBE,
   NAVIGATION_SMOKE_CASES,
   REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
+  SDK_UTILITY_SURFACE_CONTRACTS,
   type NavigationSmokeCase,
   type RepresentativeRequestOutcomeContract,
+  type SdkUtilitySurfaceContract,
 } from './formats.ts';
 
 /**
@@ -45,6 +47,12 @@ export type SmokeShardCase =
       id: string;
       testTitle: string;
       probe: typeof NATIVE_RNGMA_TESTING_PROBE;
+    }
+  | {
+      kind: 'utility-surface';
+      id: string;
+      testTitle: string;
+      utility: SdkUtilitySurfaceContract;
     };
 
 export type SmokeShard = {
@@ -75,6 +83,14 @@ export const SMOKE_CASES: readonly SmokeShardCase[] = [
       id: navigation.id,
       testTitle: `opens ${navigation.title}`,
       navigation,
+    }),
+  ),
+  ...SDK_UTILITY_SURFACE_CONTRACTS.map(
+    (utility): SmokeShardCase => ({
+      kind: 'utility-surface',
+      id: utility.id,
+      testTitle: `proves ${utility.title}`,
+      utility,
     }),
   ),
   {

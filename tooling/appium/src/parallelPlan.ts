@@ -28,12 +28,17 @@ export type ParallelAssignment = {
 /** Positional product default; `RNGMA_E2E_PARALLEL_SLOTS` replaces it wholesale. */
 const DEFAULT_PARALLEL_SLOTS = [1, 2, 4] as const;
 
-export const PARALLEL_ASSIGNMENTS: readonly ParallelAssignment[] = SMOKE_SHARDS.map(shard => ({
-  label: shard.id,
-  slot: DEFAULT_PARALLEL_SLOTS[SHARD_POSITIONS.indexOf(shard.position)]!,
-  spec: smokeSpecPath(shard.id),
-  testCount: shard.testCount,
-}));
+/** Parallel runs only the first derived wave; later waves stay serial-only until orchestrated. */
+export const PARALLEL_WAVE_ZERO_SHARDS = SMOKE_SHARDS.filter(shard => shard.wave === 0);
+
+export const PARALLEL_ASSIGNMENTS: readonly ParallelAssignment[] = PARALLEL_WAVE_ZERO_SHARDS.map(
+  shard => ({
+    label: shard.id,
+    slot: DEFAULT_PARALLEL_SLOTS[SHARD_POSITIONS.indexOf(shard.position)]!,
+    spec: smokeSpecPath(shard.id),
+    testCount: shard.testCount,
+  }),
+);
 
 export const PARALLEL_SLOTS_ENV = 'RNGMA_E2E_PARALLEL_SLOTS';
 
@@ -88,12 +93,13 @@ export function validateParallelAssignments(
   if (new Set(slots).size !== slots.length) {
     throw new Error('Parallel mapping contains a duplicate slot.');
   }
+  const expectedSpecs = PARALLEL_WAVE_ZERO_SHARDS.map(shard => smokeSpecPath(shard.id));
   const specs = assignments.map(entry => entry.spec);
   if (
-    new Set(specs).size !== WDIO_SMOKE_SPECS.length ||
-    WDIO_SMOKE_SPECS.some(spec => !specs.includes(spec))
+    new Set(specs).size !== expectedSpecs.length ||
+    expectedSpecs.some(spec => !specs.includes(spec))
   ) {
-    throw new Error('Parallel mapping must contain every smoke spec exactly once.');
+    throw new Error('Parallel mapping must contain every first-wave smoke spec exactly once.');
   }
   for (const [index, entry] of assignments.entries()) {
     const locked = PARALLEL_ASSIGNMENTS[index];

@@ -188,15 +188,24 @@ test('bounded-retry request-outcome contracts may span positional shards when th
   );
 });
 
-test('exactly one wave is assignable today, and unknown shards are rejected', () => {
-  // Parallel pairing is one wave of positional slots; a second derived wave has
-  // no orchestrator support yet and must fail loudly here first.
-  assert.equal(SMOKE_SHARDS.length, SHARD_POSITIONS.length);
+test('parallel pairing covers the first derived wave and rejects unknown shards', () => {
+  const waveZero = SMOKE_SHARDS.filter(shard => shard.wave === 0);
+  assert.equal(waveZero.length, SHARD_POSITIONS.length);
   assert.deepEqual(
-    SMOKE_SHARDS.map(shard => shard.id),
+    waveZero.map(shard => shard.id),
     [...SHARD_POSITIONS],
   );
-  assert.throws(() => smokeShard('a-primary-w2'), /Unknown smoke shard/);
+  assert.ok(SMOKE_SHARDS.length >= SHARD_POSITIONS.length);
+  const waveCount = SMOKE_SHARDS.length / SHARD_POSITIONS.length;
+  assert.equal(
+    Math.ceil(SMOKE_CASES.length / ((SESSION_TEST_CAP - SESSION_PREAMBLE_TESTS) * SHARD_POSITIONS.length)),
+    waveCount,
+  );
+  if (waveCount === 1) {
+    assert.throws(() => smokeShard('a-primary-w2'), /Unknown smoke shard/);
+  } else {
+    assert.ok(SMOKE_SHARDS.some(shard => shard.id === 'a-primary-w2'));
+  }
 });
 
 test('each derived shard has its own spec file that runs that shard', () => {

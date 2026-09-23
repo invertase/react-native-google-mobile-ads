@@ -55,8 +55,9 @@ export type RepresentativeRequestPath =
   | 'fullscreen'
   | 'gam'
   | 'hook'
-  | 'pool';
-export type RepresentativeRenderProof = 'banner' | 'native' | 'none';
+  | 'pool'
+  | 'multi-format';
+export type RepresentativeRenderProof = 'banner' | 'native' | 'native-or-banner' | 'none';
 
 export type RepresentativeRequestRetry = 'default' | 'remount';
 
@@ -78,6 +79,8 @@ export type RepresentativeRequestOutcomeContract = {
   poolShowClose?: boolean;
   /** Capability gate surfaces report structured unsupported results instead of ad fill. */
   structuredUnsupportedGate?: 'peek' | 'rwi-preload';
+  /** Multi-format hook surfaces auto-load on mount; retries remount the screen. */
+  multiFormatHookAutoLoad?: boolean;
   actionId?: string;
   requiresAppRestart?: boolean;
 };
@@ -90,22 +93,42 @@ export const NAVIGATION_SMOKE_CASES: readonly NavigationSmokeCase[] = [
     contract: 'navigation',
   },
   {
-    id: AppiumTestIds.format.adInspector,
-    title: 'Ad Inspector',
-    containerId: AppiumTestIds.format.adInspector,
-    contract: 'navigation',
-  },
-  {
     id: AppiumTestIds.format.consent,
     title: 'Consent',
     containerId: AppiumTestIds.format.consent,
     contract: 'navigation',
   },
+];
+
+/** MobileAds utility surfaces: open native root UI and dismiss without ad-fill claims. */
+export type SdkUtilitySurfaceContract = {
+  id: string;
+  title: string;
+  galleryTitle: string;
+  containerId: string;
+  contract: 'utility-surface';
+  actionId: string;
+  actionAccessibilityLabel: string;
+};
+
+export const SDK_UTILITY_SURFACE_CONTRACTS: readonly SdkUtilitySurfaceContract[] = [
+  {
+    id: AppiumTestIds.format.adInspector,
+    title: 'Ad Inspector open-close utility surface',
+    galleryTitle: 'Ad Inspector',
+    containerId: AppiumTestIds.format.adInspector,
+    contract: 'utility-surface',
+    actionId: AppiumTestIds.action.show(AppiumTestIds.format.adInspector),
+    actionAccessibilityLabel: 'Show Ad Inspector',
+  },
   {
     id: AppiumTestIds.format.debugMenu,
-    title: 'Debug Menu',
+    title: 'Debug Menu open-close utility surface',
+    galleryTitle: 'Debug Menu',
     containerId: AppiumTestIds.format.debugMenu,
-    contract: 'navigation',
+    contract: 'utility-surface',
+    actionId: AppiumTestIds.action.show(AppiumTestIds.format.debugMenu),
+    actionAccessibilityLabel: 'Show Ad Debug Menu',
   },
 ];
 
@@ -292,6 +315,26 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     structuredUnsupportedGate: 'rwi-preload',
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.poolRwiPreloadGate),
   },
+  {
+    id: AppiumTestIds.format.multiFormatRequest,
+    title: 'GAM multi-format imperative load reaches loaded then winner render proof',
+    galleryTitle: 'Multi-Format Request',
+    containerId: AppiumTestIds.format.multiFormatRequest,
+    contract: 'request-outcome',
+    path: 'multi-format',
+    renderProof: 'native-or-banner',
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.multiFormatRequest),
+  },
+  {
+    id: AppiumTestIds.format.multiFormatHook,
+    title: 'GAM multi-format hook auto-load reaches loaded then winner render proof',
+    galleryTitle: 'Multi-Format Hook',
+    containerId: AppiumTestIds.format.multiFormatHook,
+    contract: 'request-outcome',
+    path: 'multi-format',
+    renderProof: 'native-or-banner',
+    multiFormatHookAutoLoad: true,
+  },
   ] as const;
 
 /** Pattern C probe contract remains distinct from ad-fill assertions. */
@@ -322,6 +365,7 @@ const HOOK_FORMAT_IDS = new Set<string>([
   AppiumTestIds.format.rewardedHook,
   AppiumTestIds.format.interstitialHook,
   AppiumTestIds.format.rewardedInterstitialHook,
+  AppiumTestIds.format.multiFormatHook,
 ]);
 
 const POOL_FORMAT_IDS = new Set<string>([

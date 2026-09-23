@@ -6,6 +6,7 @@ import {
   navigateToFormat,
   proveProbeStatus,
   proveRepresentativeRequestOutcome,
+  proveSdkUtilitySurface,
   waitForGalleryHome,
 } from './gallery.ts';
 
@@ -37,6 +38,9 @@ export function describeSmokeShard(id: ShardId): void {
             return;
           case 'request-outcome':
             await proveRepresentativeRequestOutcome(smokeCase.contract);
+            return;
+          case 'utility-surface':
+            await proveSdkUtilitySurface(smokeCase.utility);
             return;
           case 'probe':
             await proveProbeStatus({

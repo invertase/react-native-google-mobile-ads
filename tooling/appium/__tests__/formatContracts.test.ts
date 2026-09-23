@@ -104,6 +104,8 @@ test('locks representative request-outcome contracts for classic ad success path
       AppiumTestIds.format.poolInterstitialImperative,
       AppiumTestIds.format.poolCapabilityGates,
       AppiumTestIds.format.poolRwiPreloadGate,
+      AppiumTestIds.format.multiFormatRequest,
+      AppiumTestIds.format.multiFormatHook,
     ],
   );
   assert.deepEqual(
@@ -178,7 +180,7 @@ test('locks the acceptance matrix for every format path and platform', () => {
           });
           const accepted =
             classification === 'loaded' ||
-            (path === 'native' &&
+            ((path === 'native' || path === 'multi-format') &&
               platform === 'android' &&
               classification === 'internal-error' &&
               fingerprintStatus === 'matched');

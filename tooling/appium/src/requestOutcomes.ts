@@ -30,7 +30,8 @@ export type RepresentativeRequestPath =
   | 'fullscreen'
   | 'gam'
   | 'hook'
-  | 'pool';
+  | 'pool'
+  | 'multi-format';
 export type RepresentativeRequestAcceptance = {
   status: 'accepted' | 'retry';
   reason: 'loaded' | 'android-native-matched-fingerprint' | 'outcome-not-accepted';
@@ -227,7 +228,7 @@ export function evaluateRepresentativeRequestAttempt(options: {
     return { status: 'accepted', reason: 'loaded' };
   }
   if (
-    path === 'native' &&
+    (path === 'native' || path === 'multi-format') &&
     platform === 'android' &&
     attempt.classification === 'internal-error' &&
     attempt.fingerprint.status === 'matched'
@@ -259,6 +260,12 @@ export function representativeRequestOperation(
     return attempt === 1 ? 'auto-load' : 'remount';
   }
   if (path === 'hook') {
+    if (hookAutoLoad) {
+      return attempt === 1 ? 'auto-load' : 'remount';
+    }
+    return 'load';
+  }
+  if (path === 'multi-format') {
     if (hookAutoLoad) {
       return attempt === 1 ? 'auto-load' : 'remount';
     }
