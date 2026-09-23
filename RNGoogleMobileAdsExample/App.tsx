@@ -132,6 +132,12 @@ function utilityLifecycleLabel(phase: UtilityLifecyclePhase): string {
 }
 
 const POOL_PROVIDER_INTERSTITIAL_ID = 'appium-gallery-pool-interstitial-provider';
+const POOL_PROVIDER_POOLS = [
+  AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
+    poolId: POOL_PROVIDER_INTERSTITIAL_ID,
+    bufferSize: 1,
+  }),
+];
 
 const GAM_MULTI_FORMAT_CONFIG = {
   adUnitId: TestIds.GAM_NATIVE,
@@ -190,6 +196,28 @@ function poolOutcomeLabel(fields: {
     parts.push(fields.extra);
   }
   return parts.join('; ');
+}
+
+const POOL_GATE_POLL_TIMEOUT_MS = 120_000;
+const POOL_GATE_POLL_INTERVAL_MS = 300;
+
+/** Imperative pools often need several poll() calls before the preloader reports filled. */
+async function pollPoolUntilFilledOrError(
+  pool: { poll(): Promise<{ status: string }> },
+  timeoutMs = POOL_GATE_POLL_TIMEOUT_MS,
+): Promise<{ status: string }> {
+  const deadline = Date.now() + timeoutMs;
+  let last: { status: string } = { status: 'empty' };
+  while (Date.now() < deadline) {
+    last = await pool.poll();
+    if (last.status === 'filled' || last.status === 'error') {
+      return last;
+    }
+    await new Promise<void>(resolve => {
+      setTimeout(resolve, POOL_GATE_POLL_INTERVAL_MS);
+    });
+  }
+  return last.status === 'empty' ? { status: 'timeout' } : last;
 }
 
 function hookLifecycleLabel(fields: {
@@ -256,11 +284,31 @@ function invokeCoverageFlush(): void {
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+  const [poolProviderPools, setPoolProviderPools] = useState<typeof POOL_PROVIDER_POOLS>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const ready = () => {
+      if (!cancelled) {
+        setPoolProviderPools(POOL_PROVIDER_POOLS);
+      }
+    };
+    if (Platform.OS === 'android') {
+      void MobileAds().initialize().finally(ready);
+    } else {
+      ready();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
+      <AdPoolProvider pools={poolProviderPools}>
+        <AppContent />
+      </AdPoolProvider>
     </SafeAreaProvider>
   );
 }
@@ -904,16 +952,7 @@ function PooledInterstitialProviderInner() {
 function PooledInterstitialProviderFormat() {
   return (
     <View style={styles.testSpacing} testID={AppiumTestIds.format.poolInterstitialProvider}>
-      <AdPoolProvider
-        pools={[
-          AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
-            poolId: POOL_PROVIDER_INTERSTITIAL_ID,
-            bufferSize: 1,
-          }),
-        ]}
-      >
-        <PooledInterstitialProviderInner />
-      </AdPoolProvider>
+      <PooledInterstitialProviderInner />
     </View>
   );
 }
@@ -1161,7 +1200,7 @@ function PoolCapabilityGatesFormat() {
                   bufferSize: 1,
                 }),
               );
-              const poll = await pool.poll();
+              const poll = await pollPoolUntilFilledOrError(pool);
               if (poll.status !== 'filled') {
                 throw new Error(`peek gate expected filled poll, received ${poll.status}`);
               }
