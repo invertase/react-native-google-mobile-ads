@@ -9,12 +9,14 @@ import {
   SMOKE_GAM_BANNER_VARIANT,
 } from '../src/formats.ts';
 import {
+  classifyHookLoadOutcome,
   classifyRequestOutcome,
   evaluateRepresentativeRequestAttempt,
   formatRequestOutcomeAttempt,
   hasNonzeroRectangle,
   nativeFingerprintFromAndroidLog,
   representativeRequestBackoffMs,
+  representativeRequestOperation,
   requestIdFromText,
   runRepresentativeRequestOutcomeContract,
   REPRESENTATIVE_REQUEST_MAX_ATTEMPTS,
@@ -92,6 +94,10 @@ test('locks representative request-outcome contracts for classic ad success path
       AppiumTestIds.format.rewarded,
       AppiumTestIds.format.rewardedInterstitial,
       AppiumTestIds.format.gamInterstitial,
+      AppiumTestIds.format.appOpenHook,
+      AppiumTestIds.format.interstitialHook,
+      AppiumTestIds.format.rewardedHook,
+      AppiumTestIds.format.rewardedInterstitialHook,
     ],
   );
   assert.deepEqual(
@@ -104,6 +110,17 @@ test('locks representative request-outcome contracts for classic ad success path
       AppiumTestIds.format.rewarded,
       AppiumTestIds.format.rewardedInterstitial,
       AppiumTestIds.format.gamInterstitial,
+    ],
+  );
+  assert.deepEqual(
+    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.filter(contract => contract.hookLifecycle).map(
+      contract => contract.id,
+    ),
+    [
+      AppiumTestIds.format.appOpenHook,
+      AppiumTestIds.format.interstitialHook,
+      AppiumTestIds.format.rewardedHook,
+      AppiumTestIds.format.rewardedInterstitialHook,
     ],
   );
 });
@@ -161,6 +178,13 @@ test('render rectangle proof rejects zero dimensions', () => {
   assert.equal(hasNonzeroRectangle({ width: 320, height: 50 }), true);
   assert.equal(hasNonzeroRectangle({ width: 0, height: 50 }), false);
   assert.equal(hasNonzeroRectangle({ width: 320, height: 0 }), false);
+});
+
+test('classifies terminal hook load markers from hook status text', () => {
+  assert.equal(classifyHookLoadOutcome('Status: loaded'), 'loaded');
+  assert.equal(classifyHookLoadOutcome('Status: no-fill'), 'no-fill');
+  assert.equal(classifyHookLoadOutcome('Status: error'), 'other-error');
+  assert.equal(classifyHookLoadOutcome('Status: loading'), undefined);
 });
 
 test('classifies terminal outcomes and leaves non-terminal markers unclassified', () => {
@@ -540,6 +564,32 @@ test('fullscreen and GAM runtime load every attempt before observing', async () 
   }
 });
 
+test('hook auto-load runtime remounts between rejected hook load attempts', async () => {
+  const calls: string[] = [];
+  await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.interstitialHook,
+    platform: 'android',
+    path: 'hook',
+    hookAutoLoad: true,
+    maxAttempts: 2,
+    runtime: runtimeRecorder(calls, [
+      observedRequest(1, 'no-fill'),
+      observedRequest(2, 'loaded'),
+    ]),
+    sleep: async () => {},
+    emit: () => {},
+  });
+  assert.deepEqual(calls, [
+    'navigate',
+    'observe:1',
+    'back',
+    'navigate',
+    'observe:2',
+    'back',
+  ]);
+  assert.ok(!calls.includes('load'));
+});
+
 test('remount retry revisits the format screen instead of tapping Load', async () => {
   const calls: string[] = [];
   await runRepresentativeRequestOutcomeContract({
@@ -565,6 +615,12 @@ test('remount retry revisits the format screen instead of tapping Load', async (
   ]);
   assert.ok(!calls.includes('load'));
   assert.ok(!calls.includes('reload'));
+});
+
+test('GAM banner remount retry auto-loads instead of tapping Load', () => {
+  assert.equal(representativeRequestOperation('gam', 1, 'remount'), 'auto-load');
+  assert.equal(representativeRequestOperation('gam', 2, 'remount'), 'remount');
+  assert.equal(representativeRequestOperation('gam', 2, 'default'), 'load');
 });
 
 test('Native fingerprint requires the exact adjacent same-process GMA sequence', () => {
@@ -680,6 +736,8 @@ test('retires blanket per-attempt acceptance and locks real render probes', () =
   );
   assert.match(gallerySource, /attempt\.classification !== 'loaded'/);
   assert.match(gallerySource, /\[show-close-proof\]/);
+  assert.match(gallerySource, /\[hook-lifecycle-proof\]/);
+  assert.match(gallerySource, /classifyHookLoadOutcome/);
   assert.match(gallerySource, /format\.renderProof === 'banner'/);
   assert.match(gallerySource, /root\.\$\$\('\.\/\/\*'\)/);
   assert.match(gallerySource, /hasNonzeroRectangle\(size\)/);
