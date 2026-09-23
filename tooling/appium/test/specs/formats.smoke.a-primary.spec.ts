@@ -9,10 +9,14 @@ import {
   proveRepresentativeRequestOutcome,
   waitForGalleryHome,
 } from '../helpers/gallery.ts';
+import { STARTUP_READY_MARKER } from '../../src/startupSupervisor.ts';
 
 describe('GMA gallery navigation smoke and representative request outcomes (primary)', () => {
   before(async () => {
     await waitForGalleryHome();
+    console.log(
+      `${STARTUP_READY_MARKER} ${JSON.stringify({ platform: driver.isAndroid ? 'android' : 'ios', spec: 'a-primary' })}`,
+    );
   });
 
   it('shows gallery home with stable root testID', async () => {

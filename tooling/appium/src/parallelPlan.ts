@@ -148,7 +148,9 @@ export function createParallelPlan(
       automationPort: runtime.slotResources!.automationPort,
       mjpegPort: runtime.slotResources!.mjpegPort,
       device,
-      logPath: `/tmp/rngma-e2e-${platform}-slot-${assignment.slot}-${assignment.label}.log`,
+      // The orchestrator must replace this with its invocation-scoped path
+      // before any child is spawned.
+      logPath: '',
       ...(platform === 'android'
         ? { androidApkPath: slotAndroidApkPath(assignment.slot) }
         : { iosAppPath: slotIosAppPath(assignment.slot) }),

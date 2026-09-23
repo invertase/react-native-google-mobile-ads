@@ -1,8 +1,8 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
-import { createServer } from 'node:net';
+import { createConnection, createServer } from 'node:net';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   bootAndPersistSelectedSimulator,
   DEFAULT_IOS_DEVICE_NAME,
@@ -25,6 +25,21 @@ import { iosAppBundleResolution, iosAppPath } from '../src/formats.ts';
 import { runtimeResources, type RuntimeResources } from '../src/slots.ts';
 import { androidSlotBootCommand } from '../src/commands.ts';
 import { isParallelParentChild } from '../src/parentContract.ts';
+import {
+  armAbortSignals,
+  spawnOwned,
+  stopAndDrain,
+} from '../src/ownedProcess.ts';
+import {
+  ANDROID_DEVICE_HARD_FAILURES,
+  androidDeviceLogCommand,
+  invocationPaths,
+  iosDeviceLogCommand,
+  StartupSupervisor,
+  waitForMetroReadiness,
+  type InvocationPaths,
+} from '../src/startupSupervisor.ts';
+import type { RunningCommand } from '../src/parallelOrchestrator.ts';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '../../..');
@@ -72,6 +87,134 @@ async function checkAppiumPort(port: number): Promise<void> {
     'Identify the listener and stop it only if this task owns it; otherwise obtain an explicit ownership transfer.',
   );
   process.exit(1);
+}
+
+function isListening(port: number): Promise<boolean> {
+  return new Promise(resolve => {
+    const socket = createConnection({ host: '127.0.0.1', port });
+    socket.once('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once('error', () => resolve(false));
+  });
+}
+
+type WdioOwnedOptions = {
+  listen?: (port: number) => Promise<boolean>;
+  paths?: InvocationPaths;
+  signalSource?: Parameters<typeof armAbortSignals>[2];
+  spawn?: (
+    bin: string,
+    args: string[],
+    options: { cwd: string; env?: NodeJS.ProcessEnv; logPath: string },
+  ) => RunningCommand;
+  drain?: typeof stopAndDrain;
+};
+
+export async function runWdioOwned(
+  target: 'android' | 'ios',
+  runtime: RuntimeResources,
+  env: NodeJS.ProcessEnv,
+  exactTarget: string,
+  options: WdioOwnedOptions = {},
+): Promise<number> {
+  const paths = options.paths ?? invocationPaths();
+  const source = `serial-${target}`;
+  const startup = new StartupSupervisor([source]);
+  const drain = options.drain ?? stopAndDrain;
+  const owned: RunningCommand[] = [];
+  let draining: Promise<void> | undefined;
+  const drainOwned = () => {
+    draining ??= drain(owned);
+    return draining;
+  };
+  const controller = new AbortController();
+  startup.onFailure(() => void drainOwned());
+  const disarm = armAbortSignals(
+    controller,
+    signal => {
+      const abortCount = startup.abortCount;
+      startup.recordFailure('Operator stop', new Error(`received ${signal}`));
+      if (startup.abortCount === abortCount) void drainOwned();
+    },
+    options.signalSource,
+  );
+  let monitoring = true;
+  try {
+    if (!(await (options.listen ?? isListening)(runtime.metroPort))) {
+      throw new Error(
+        `External Metro 127.0.0.1:${runtime.metroPort} is not listening; start the named packager owner first.`,
+      );
+    }
+    if (controller.signal.aborted) {
+      throw new Error('Serial Appium owner was interrupted before WDIO spawn.');
+    }
+    startup.recordLine('metro', 'Dev server ready');
+    await waitForMetroReadiness(startup, async () => undefined);
+    const wdio = (options.spawn ?? spawnOwned)(
+      'yarn',
+      ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`],
+      {
+        cwd: path.join(repoRoot, 'tooling/appium'),
+        env,
+        logPath: paths.child(target, 'serial'),
+      },
+    );
+    owned.push(wdio);
+    wdio.onLine(line => startup.recordLine(source, line));
+    void wdio.completion.then(
+      code => startup.recordProcessExit(source, code),
+      () => startup.recordProcessExit(source, 1),
+    );
+    void (async () => {
+      while (monitoring && startup.phase !== 'complete') {
+        if (!(await (options.listen ?? isListening)(runtime.metroPort))) {
+          startup.recordExternalMetroHealthLoss(runtime.metroPort);
+          return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+    })();
+    await Promise.race([startup.waitForWorkers(), startup.failure]);
+    console.log(
+      `[e2e-startup] invocation=${paths.id} phase=worker-session-ready children=1/1 child=${paths.child(target, 'serial')}`,
+    );
+    const tailCommand =
+      target === 'android'
+        ? androidDeviceLogCommand(exactTarget)
+        : iosDeviceLogCommand(exactTarget);
+    const tail = (options.spawn ?? spawnOwned)(tailCommand.bin, tailCommand.args, {
+      cwd: repoRoot,
+      env,
+      logPath: paths.device(target, 'serial'),
+    });
+    owned.push(tail);
+    console.log(
+      `[e2e-startup] invocation=${paths.id} phase=device-tail platform=${target} target=${exactTarget} command=${JSON.stringify([tailCommand.bin, ...tailCommand.args])} log=${paths.device(target, 'serial')}`,
+    );
+    tail.onLine(line =>
+      startup.recordLine(
+        `device:${source}`,
+        line,
+        target === 'android' ? ANDROID_DEVICE_HARD_FAILURES : undefined,
+      ),
+    );
+    void tail.completion.then(
+      code => startup.recordProcessExit(`device:${source}`, code),
+      error => startup.recordFailure(`device:${source} failed to start`, error),
+    );
+    await Promise.race([startup.waitForApps(), startup.failure]);
+    monitoring = false;
+    console.log(
+      `[e2e-startup] invocation=${paths.id} phase=app-ready children=1/1 child=${paths.child(target, 'serial')} device=${paths.device(target, 'serial')}`,
+    );
+    return await wdio.completion;
+  } finally {
+    monitoring = false;
+    disarm();
+    await drainOwned();
+  }
 }
 
 function bootSlotAndroid(runtime: RuntimeResources, avdNames: string[]): void {
@@ -399,8 +542,7 @@ async function main(): Promise<void> {
       `Android device ${androidUdid} reaches this checkout's Metro through tcp:${runtime.metroPort}.`,
     );
   }
-  const result = spawnSync('yarn', ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`], {
-    env: {
+  const wdioEnv = {
       ...process.env,
       ...(androidUdid ? { RNGMA_ANDROID_UDID: androidUdid } : {}),
       ...(iosUdid ? { RNGMA_IOS_UDID: iosUdid } : {}),
@@ -410,16 +552,27 @@ async function main(): Promise<void> {
         target === 'ios' && runtime.slotResources
           ? runtime.slotResources.iosSimulatorName
           : process.env.RNGMA_IOS_DEVICE,
-    },
-    stdio: 'inherit',
-  });
-  if (result.error) {
-    throw result.error;
+    };
+  const exactTarget = target === 'android' ? androidUdid! : iosUdid!;
+  if (isParallelParentChild()) {
+    const child = spawnSync(
+      'yarn',
+      ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`],
+      { cwd: path.join(repoRoot, 'tooling/appium'), env: wdioEnv, stdio: 'inherit' },
+    );
+    if (child.error) throw child.error;
+    process.exitCode = child.status ?? 1;
+    return;
   }
-  process.exit(result.status ?? 1);
+  process.exitCode = await runWdioOwned(target, runtime, wdioEnv, exactTarget);
 }
 
-main().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+) {
+  main().catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
+}

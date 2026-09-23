@@ -17,7 +17,9 @@ export const config: Options.Testrunner = {
   specs: selectedWdioSpecs(),
   exclude: [],
   maxInstances: 1,
-  logLevel: 'warn',
+  // Startup ownership consumes WDIO/Appium's session-created evidence before
+  // allowing the slower app/JS readiness phase to begin.
+  logLevel: 'info',
   bail: 1,
   waitforTimeout: 15000,
   connectionRetryTimeout: 120000,

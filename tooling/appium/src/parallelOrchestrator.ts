@@ -5,6 +5,16 @@ import {
 } from './parallelPlan.ts';
 import { PARALLEL_PARENT_CONTRACT } from './parentContract.ts';
 import { serialAndroidApkPath } from './slots.ts';
+import {
+  ANDROID_DEVICE_HARD_FAILURES,
+  PROCESS_DRAIN_TIMEOUT_MS,
+  StartupSupervisor,
+  androidDeviceLogCommand,
+  invocationPaths,
+  iosDeviceLogCommand,
+  waitForMetroReadiness,
+  type InvocationPaths,
+} from './startupSupervisor.ts';
 
 export type ChildCommand = {
   script: string;
@@ -12,21 +22,24 @@ export type ChildCommand = {
   env: NodeJS.ProcessEnv;
   logPath?: string;
   role: string;
+  bin?: string;
 };
 
 export type RunningCommand = {
   completion: Promise<number>;
   stop(): Promise<void>;
+  onLine(listener: (line: string) => void): () => void;
 };
 
 export type ParallelRunner = {
   assertPortsFree(ports: number[]): Promise<void>;
   assertPortListening(port: number): Promise<void>;
   start(command: ChildCommand): RunningCommand;
-  waitForPort(port: number, owner: RunningCommand): Promise<void>;
+  waitForPort(port: number, owner: RunningCommand, signal: AbortSignal): Promise<void>;
   freshEnvFile(path: string): Promise<void>;
   readEnvFile(path: string): Promise<Record<string, string>>;
   copyFile(source: string, destination: string): Promise<void>;
+  monitorPort?(port: number): RunningCommand;
 };
 
 /** Stable summary code for signal interruption, child-signal death, and sibling cancellation. */
@@ -65,6 +78,8 @@ export type ParallelRunSummary = {
   platform: ParallelPlatform;
   totalTests: number;
   slots: SlotResult[];
+  invocationId?: string;
+  logRoot?: string;
 };
 
 export type CombinedParallelRunSummary = {
@@ -88,6 +103,8 @@ function cleanBaseEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     'RNGMA_IOS_VERSION',
     'RNGMA_IOS_APP',
     'RNGMA_WDA_PREBUILT',
+    'RNGMA_E2E_INVOCATION_ID',
+    'RNGMA_E2E_LOG_ROOT',
   ]) {
     delete clean[name];
   }
@@ -112,10 +129,6 @@ function named(
   return { script, env, role, ...(args ? { args } : {}), ...(logPath ? { logPath } : {}) };
 }
 
-function envFile(platform: ParallelPlatform, slot: number): string {
-  return `/tmp/rngma-e2e-${platform}-slot-${slot}-selected.env`;
-}
-
 class ParallelAbortError extends Error {}
 
 type AbortContext = {
@@ -125,6 +138,17 @@ type AbortContext = {
   throwIfAborted(): void;
   stopActive(): Promise<void>;
 };
+
+async function stopAndDrainCommand(child: RunningCommand): Promise<void> {
+  let timer: NodeJS.Timeout | undefined;
+  await Promise.race([
+    Promise.allSettled([child.stop(), child.completion]).then(() => undefined),
+    new Promise<void>(resolve => {
+      timer = setTimeout(resolve, PROCESS_DRAIN_TIMEOUT_MS);
+    }),
+  ]);
+  if (timer) clearTimeout(timer);
+}
 
 function slotResult(
   entry: ParallelPlanEntry,
@@ -152,6 +176,8 @@ function summaryWith(
     slots: plan.map(
       entry => results.get(entry.slot) ?? slotResult(entry, 'cancelled', CANCELLED_EXIT_CODE),
     ),
+    invocationId: plan[0]?.env.RNGMA_E2E_INVOCATION_ID,
+    logRoot: plan[0]?.env.RNGMA_E2E_LOG_ROOT,
   };
 }
 
@@ -216,12 +242,84 @@ function startLongLived(
   };
 }
 
+function superviseLines(
+  startup: StartupSupervisor,
+  source: string,
+  child: RunningCommand,
+): void {
+  child.onLine(line => startup.recordLine(source, line));
+  void child.completion.then(
+    code => startup.recordProcessExit(source, code),
+    () => startup.recordProcessExit(source, UNKNOWN_FAILURE_EXIT_CODE),
+  );
+}
+
+function deviceTailCommand(
+  platform: ParallelPlatform,
+  entry: ParallelPlanEntry,
+  paths: InvocationPaths,
+): ChildCommand {
+  const target =
+    platform === 'android'
+      ? androidDeviceLogCommand(entry.device)
+      : iosDeviceLogCommand(entry.env.RNGMA_IOS_UDID!);
+  return {
+    bin: target.bin,
+    script: target.bin,
+    args: target.args,
+    env: entry.env,
+    role: `${platform} slot ${entry.slot} exact-device startup log`,
+    logPath: paths.device(platform, `slot-${entry.slot}-${entry.label}`),
+  };
+}
+
+async function closeStartupBarrier(
+  platform: ParallelPlatform,
+  appiums: LongLivedChild[],
+  runner: ParallelRunner,
+  context: AbortContext,
+  startup: StartupSupervisor,
+  paths: InvocationPaths,
+): Promise<RunningCommand[]> {
+  for (const item of appiums) superviseLines(startup, item.entry.label, item.child);
+  await Promise.race([startup.waitForWorkers(), startup.failure]);
+  console.log(
+    `[e2e-startup] invocation=${paths.id} phase=worker-session-ready children=${appiums.length}/${appiums.length}`,
+  );
+  const tails = appiums.map(item => {
+    const command = deviceTailCommand(platform, item.entry, paths);
+    const tail = runner.start(command);
+    context.active.add(tail);
+    console.log(
+      `[e2e-startup] invocation=${paths.id} phase=device-tail platform=${platform} slot=${item.entry.slot} target=${platform === 'android' ? item.entry.device : item.entry.env.RNGMA_IOS_UDID} command=${JSON.stringify([command.bin, ...(command.args ?? [])])} log=${command.logPath}`,
+    );
+    tail.onLine(line =>
+      startup.recordLine(
+        `device:${item.entry.label}`,
+        line,
+        platform === 'android' ? ANDROID_DEVICE_HARD_FAILURES : undefined,
+      ),
+    );
+    void tail.completion.then(
+      code => startup.recordProcessExit(`device:${item.entry.label}`, code),
+      error => startup.recordFailure(`device:${item.entry.label} failed to start`, error),
+    );
+    return tail;
+  });
+  await Promise.race([startup.waitForApps(), startup.failure]);
+  console.log(
+    `[e2e-startup] invocation=${paths.id} phase=app-ready children=${appiums.length}/${appiums.length}`,
+  );
+  return tails;
+}
+
 async function runConcurrentPhase(
   platform: ParallelPlatform,
   plan: ParallelPlanEntry[],
   runner: ParallelRunner,
   context: AbortContext,
   metroMode: 'owner' | 'external',
+  paths: InvocationPaths,
 ): Promise<ParallelRunSummary> {
   context.throwIfAborted();
   const metroEntry = plan[0]!;
@@ -237,28 +335,38 @@ async function runConcurrentPhase(
               childEnv(metroEntry),
               `worktree Metro owner slot ${metroEntry.slot} packager`,
               undefined,
-              `/tmp/rngma-e2e-worktree-metro-${metroEntry.metroPort}.log`,
+              paths.metro,
             ),
           ),
         ]
       : [];
+  const startup = new StartupSupervisor(plan.map(entry => entry.label));
+  startup.onFailure(() => void context.stopActive());
 
   try {
     if (metroMode === 'owner') {
       await Promise.all(
         packagers.map(async item => {
-          const ready = runner.waitForPort(item.entry.metroPort, item.child).then(
-            () => ({ kind: 'ready' as const }),
-            error => ({
-              kind: 'error' as const,
-              error: error instanceof Error ? error : new Error(String(error)),
-            }),
+          superviseLines(startup, 'metro', item.child);
+          const readiness = waitForMetroReadiness(startup, signal =>
+            runner.waitForPort(item.entry.metroPort, item.child, signal),
           );
-          const outcome = await Promise.race([
-            ready,
-            item.outcome,
-            context.aborted.then(() => ({ kind: 'aborted' as const })),
-          ]);
+          const outcome = await (async () => {
+            try {
+              return await Promise.race([
+                readiness.then(() => ({ kind: 'tcp-ready' as const })),
+                item.outcome,
+                startup.failure,
+                context.aborted.then(() => ({ kind: 'aborted' as const })),
+              ]);
+            } catch (error) {
+              const results = new Map<number, SlotResult>([
+                [item.entry.slot, slotResult(item.entry, 'fail', UNKNOWN_FAILURE_EXIT_CODE)],
+              ]);
+              throw withSummary(error, platform, plan, results);
+            }
+          })();
+          if (outcome instanceof Error) throw outcome;
           if (outcome.kind === 'aborted') context.throwIfAborted();
           if (outcome.kind === 'error') {
             const results = new Map<number, SlotResult>([
@@ -277,10 +385,27 @@ async function runConcurrentPhase(
               results,
             );
           }
+          console.log(
+            `[e2e-startup] invocation=${paths.id} phase=metro-ready log=${paths.metro}`,
+          );
         }),
       );
     } else {
       await runner.assertPortListening(metroEntry.metroPort);
+      startup.recordLine('metro', 'Dev server ready');
+      await waitForMetroReadiness(startup, async () => undefined);
+      console.log(
+        `[e2e-startup] invocation=${paths.id} phase=external-metro-ready endpoint=127.0.0.1:${metroEntry.metroPort}`,
+      );
+      const health = runner.monitorPort?.(metroEntry.metroPort);
+      if (health) {
+        context.active.add(health);
+        void health.completion.then(code => {
+          if (code !== CANCELLED_EXIT_CODE) {
+            startup.recordExternalMetroHealthLoss(metroEntry.metroPort);
+          }
+        });
+      }
     }
     context.throwIfAborted();
   } catch (error) {
@@ -305,6 +430,13 @@ async function runConcurrentPhase(
       ),
     );
   });
+
+  try {
+    await closeStartupBarrier(platform, appiums, runner, context, startup, paths);
+  } catch (error) {
+    await context.stopActive();
+    throw withSummary(error, platform, plan);
+  }
 
   return new Promise<ParallelRunSummary>((resolve, reject) => {
     let settled = false;
@@ -376,6 +508,7 @@ async function preparePlatform(
   runner: ParallelRunner,
   context: AbortContext,
   parentEnv: NodeJS.ProcessEnv,
+  paths: InvocationPaths,
 ): Promise<void> {
   context.throwIfAborted();
   if (platform === 'ios') {
@@ -410,7 +543,7 @@ async function preparePlatform(
   const selected = new Map<number, Record<string, string>>();
   for (const entry of plan) {
     context.throwIfAborted();
-    const file = envFile(platform, entry.slot);
+    const file = paths.selection(entry.slot);
     await runner.freshEnvFile(file);
     context.throwIfAborted();
     await runOwnedCommand(
@@ -487,7 +620,9 @@ export async function runParallelE2e(
     stopActive() {
       const pending = [...active].filter(child => !stopped.has(child));
       for (const child of pending) stopped.add(child);
-      const current = Promise.allSettled(pending.map(child => child.stop())).then(() => undefined);
+      const current = Promise.allSettled(
+        pending.map(stopAndDrainCommand),
+      ).then(() => undefined);
       stopping = stopping ? Promise.allSettled([stopping, current]).then(() => undefined) : current;
       return stopping;
     },
@@ -506,7 +641,13 @@ export async function runParallelE2e(
   try {
     context.throwIfAborted();
     const parentEnv = options.env ?? process.env;
+    const paths = invocationPaths();
     plan = createParallelPlan(platform, parentEnv);
+    for (const entry of plan) {
+      entry.env.RNGMA_E2E_INVOCATION_ID = paths.id;
+      entry.env.RNGMA_E2E_LOG_ROOT = paths.root;
+      entry.logPath = paths.child(platform, `slot-${entry.slot}-${entry.label}`);
+    }
     const metroMode = options.metroMode ?? 'owner';
     const servicePorts = plan.flatMap(entry => [
       entry.appiumPort,
@@ -520,10 +661,10 @@ export async function runParallelE2e(
     if (metroMode === 'external') {
       await runner.assertPortListening(metroPort);
     }
-    await preparePlatform(platform, plan, runner, context, parentEnv);
+    await preparePlatform(platform, plan, runner, context, parentEnv, paths);
 
     context.throwIfAborted();
-    return await runConcurrentPhase(platform, plan, runner, context, metroMode);
+    return await runConcurrentPhase(platform, plan, runner, context, metroMode, paths);
   } catch (error) {
     await context.stopActive();
     if (plan.length > 0 && !(error && typeof error === 'object' && 'summary' in error)) {
@@ -567,6 +708,8 @@ async function runCombinedSessions(
   runner: ParallelRunner,
   context: AbortContext,
   metro: LongLivedChild,
+  startup: StartupSupervisor,
+  paths: InvocationPaths,
 ): Promise<CombinedParallelRunSummary> {
   context.throwIfAborted();
   const sessions = (['android', 'ios'] as const).flatMap(platform =>
@@ -589,6 +732,41 @@ async function runCombinedSessions(
         ),
       };
     }),
+  );
+
+  for (const { platform, item } of sessions) {
+    superviseLines(startup, `${platform}:${item.entry.label}`, item.child);
+  }
+  await Promise.race([startup.waitForWorkers(), startup.failure]);
+  console.log(
+    `[e2e-startup] invocation=${paths.id} phase=worker-session-ready children=${sessions.length}/${sessions.length}`,
+  );
+  for (const { platform, item } of sessions) {
+    const command = deviceTailCommand(platform, item.entry, paths);
+    const tail = runner.start(command);
+    context.active.add(tail);
+    console.log(
+      `[e2e-startup] invocation=${paths.id} phase=device-tail platform=${platform} slot=${item.entry.slot} target=${platform === 'android' ? item.entry.device : item.entry.env.RNGMA_IOS_UDID} command=${JSON.stringify([command.bin, ...(command.args ?? [])])} log=${command.logPath}`,
+    );
+    tail.onLine(line =>
+      startup.recordLine(
+        `device:${platform}:${item.entry.label}`,
+        line,
+        platform === 'android' ? ANDROID_DEVICE_HARD_FAILURES : undefined,
+      ),
+    );
+    void tail.completion.then(
+      code => startup.recordProcessExit(`device:${platform}:${item.entry.label}`, code),
+      error =>
+        startup.recordFailure(
+          `device:${platform}:${item.entry.label} failed to start`,
+          error,
+        ),
+    );
+  }
+  await Promise.race([startup.waitForApps(), startup.failure]);
+  console.log(
+    `[e2e-startup] invocation=${paths.id} phase=app-ready children=${sessions.length}/${sessions.length}`,
   );
 
   return new Promise<CombinedParallelRunSummary>((resolve, reject) => {
@@ -696,7 +874,9 @@ export async function runCombinedParallelE2e(
     stopActive() {
       const pending = [...active].filter(child => !stopped.has(child));
       for (const child of pending) stopped.add(child);
-      const current = Promise.allSettled(pending.map(child => child.stop())).then(() => undefined);
+      const current = Promise.allSettled(
+        pending.map(stopAndDrainCommand),
+      ).then(() => undefined);
       stopping = stopping ? Promise.allSettled([stopping, current]).then(() => undefined) : current;
       return stopping;
     },
@@ -715,8 +895,19 @@ export async function runCombinedParallelE2e(
   try {
     context.throwIfAborted();
     const parentEnv = options.env ?? process.env;
+    const paths = invocationPaths();
     androidPlan = createParallelPlan('android', parentEnv);
     iosPlan = createParallelPlan('ios', parentEnv);
+    for (const entry of androidPlan) {
+      entry.env.RNGMA_E2E_INVOCATION_ID = paths.id;
+      entry.env.RNGMA_E2E_LOG_ROOT = paths.root;
+      entry.logPath = paths.child('android', `slot-${entry.slot}-${entry.label}`);
+    }
+    for (const entry of iosPlan) {
+      entry.env.RNGMA_E2E_INVOCATION_ID = paths.id;
+      entry.env.RNGMA_E2E_LOG_ROOT = paths.root;
+      entry.logPath = paths.child('ios', `slot-${entry.slot}-${entry.label}`);
+    }
     const metroEntry = androidPlan[0]!;
     const ports = new Set([
       metroEntry.metroPort,
@@ -735,12 +926,21 @@ export async function runCombinedParallelE2e(
         childEnv(metroEntry),
         `worktree Metro owner slot ${metroEntry.slot} packager`,
         undefined,
-        `/tmp/rngma-e2e-worktree-metro-${metroEntry.metroPort}.log`,
+        paths.metro,
       ),
     );
-    const readiness = runner.waitForPort(metroEntry.metroPort, metro.child);
+    const startup = new StartupSupervisor([
+      ...androidPlan.map(entry => `android:${entry.label}`),
+      ...iosPlan.map(entry => `ios:${entry.label}`),
+    ]);
+    startup.onFailure(() => void context.stopActive());
+    superviseLines(startup, 'metro', metro.child);
+    const readiness = waitForMetroReadiness(startup, signal =>
+      runner.waitForPort(metroEntry.metroPort, metro.child, signal),
+    );
     const readyOutcome = await Promise.race([
       readiness.then(() => ({ kind: 'ready' as const })),
+      startup.failure,
       metro.outcome,
       context.aborted.then(() => ({ kind: 'aborted' as const })),
     ]);
@@ -751,14 +951,18 @@ export async function runCombinedParallelE2e(
         `Worktree Metro owner exited before readiness with code ${readyOutcome.code}.`,
       );
     }
+    console.log(
+      `[e2e-startup] invocation=${paths.id} phase=metro-ready log=${paths.metro}`,
+    );
     context.throwIfAborted();
 
     const preparations = Promise.all([
-      preparePlatform('android', androidPlan, runner, context, parentEnv),
-      preparePlatform('ios', iosPlan, runner, context, parentEnv),
+      preparePlatform('android', androidPlan, runner, context, parentEnv, paths),
+      preparePlatform('ios', iosPlan, runner, context, parentEnv, paths),
     ]);
     const prepOutcome = await Promise.race([
       preparations.then(() => ({ kind: 'prepared' as const })),
+      startup.failure,
       metro.outcome,
       context.aborted.then(() => ({ kind: 'aborted' as const })),
     ]);
@@ -778,6 +982,8 @@ export async function runCombinedParallelE2e(
       runner,
       context,
       metro,
+      startup,
+      paths,
     );
   } catch (error) {
     await context.stopActive();

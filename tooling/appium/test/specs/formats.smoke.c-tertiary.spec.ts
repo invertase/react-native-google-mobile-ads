@@ -2,6 +2,7 @@ import {
   NATIVE_RNGMA_TESTING_PROBE,
   NAVIGATION_SMOKE_TERTIARY,
 } from '../../src/formats.ts';
+import { STARTUP_READY_MARKER } from '../../src/startupSupervisor.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
 import {
   assertDisplayed,
@@ -13,6 +14,9 @@ import {
 describe('GMA gallery navigation smoke and probe status (tertiary)', () => {
   before(async () => {
     await waitForGalleryHome();
+    console.log(
+      `${STARTUP_READY_MARKER} ${JSON.stringify({ platform: driver.isAndroid ? 'android' : 'ios', spec: 'c-tertiary' })}`,
+    );
   });
 
   it('shows gallery home with stable root testID', async () => {

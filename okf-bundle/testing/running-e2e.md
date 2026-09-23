@@ -145,7 +145,7 @@ RNGMA_E2E_PARALLEL_SLOTS=1,4,5 yarn tests:appium:ios:parallel:external
 
 Wait for both Shell B and Shell C to exit. Only then return to Shell A and interrupt its foreground named packager with Ctrl-C. The external parents require `13007` to be listening before any preparation and again before Appium, never start or stop it, and own only their platform-specific children. The standalone owner is the only process allowed to bind or stop Metro and therefore outlives both consumers without ad-hoc process discovery or cleanup.
 
-Each Appium/collector stream is preserved separately at `/tmp/rngma-e2e-<platform>-slot-<N>-<label>.log`; the owned Metro log is `/tmp/rngma-e2e-worktree-metro-<port>.log`. Logs are replaced for a new invocation. Abort handling is armed before planning or mutation; every spawn and await checks it, task-owned children are cancelled once, and the run never continues after abort. The owner parent waits up to 120 seconds for Metro and fails immediately if it exits before readiness. Port, preparation, Metro-readiness, Appium, or unexpected owner failure stops started task-owned children and exits nonzero. A successful run prints all three passing rows and total `25`, then an owner parent stops its one Metro; an external parent never does. Every summary retains slot/spec/tests/status/numeric exit/log. Release interrupted slots individually; release the shared Metro only from its explicit owner slot scope.
+Each invocation creates a new `/tmp/rngma-e2e/<invocation-id>/` tree; it never truncates evidence from an earlier invocation. The tree holds `metro.log`, one platform/slot/label child log per Appium stream, and exact-device startup logs. Parallel summaries print the invocation ID and log root, and each result row retains slot/spec/tests/status/numeric exit/log. Startup failure and cleanup semantics are canonical in [§ enforced startup supervision](#enforced-startup-supervision). A successful run prints all three passing rows and total `25`, then an owner parent stops its one Metro; an external parent never does. Release interrupted slots individually; release the shared Metro only from its explicit owner slot scope.
 
 These parallel commands are local-only. GitHub Actions remains on the serial commands and serial `8081`/`4725` resources documented in [CI workflows](../ci-workflows/index.md#workflows).
 
@@ -165,13 +165,13 @@ These parallel commands are local-only. GitHub Actions remains on the serial com
 
 That artifact is gitignored but survives between runs, so later `yarn tests:appium:ios` runs on the same selection reuse it; re-run step 3 after removing the path or selecting a different simulator runtime. Keep `RNGMA_IOS_UDID` / `RNGMA_IOS_VERSION` exported for step 4 so Appium targets the same simulator and runtime the artifact was built for.
 
-When those named scripts are the e2e gate, `tee` `yarn tests:appium:android` to a unique `/tmp/rngma-e2e-android-*.log` and `yarn tests:appium:ios` to a unique `/tmp/rngma-e2e-ios-*.log`. Redirect/`tee` of the **same** named yarn script is allowed; do not add other wrappers.
+The long-running named owners preserve their own invocation-unique logs under the printed `/tmp/rngma-e2e/<invocation-id>/` root. Redirect/`tee` of the **same** named yarn script to an additional unique operator-selected path remains allowed; do not add other wrappers.
 
 Device driver: Appium 3 + WebdriverIO in `tooling/appium/` ([§ Appium](#appium-scaffold)). Specs: `tooling/appium/test/specs/**/*.ts`. App: `RNGoogleMobileAdsExample/` (format gallery + stable `testID`s). Serial operation is one e2e at a time on `:8081`; manual slot operation is one session per supported nonreserved slot; a single-platform parallel owner runs three positionally mapped one-worker sessions on the three configured slots, while the preferred combined owner runs six (three per platform) after the documented session barrier ([§ parallel Appium](#parallel-appium)). No source edits during a run.
 
 There is no separate macOS-app e2e target. iOS e2e is `yarn tests:ios:pod:install` / `yarn tests:ios:run` (install) then `yarn tests:appium:ios` (local Mac or CI `macos-15`; the required WDA prebuild comes first: [§ prebuilt WDA](#ios-wda-prebuilt-validation)).
 
-GitHub Actions fails when the app install or Appium suite fails; artifact uploads remain unconditional. Local gates still require counts + `/tmp/rngma-e2e-*.log`, or triaged `simulator_log` / `adb_logs`.
+GitHub Actions fails when the app install or Appium suite fails; artifact uploads remain unconditional. Local gates still require counts plus the printed invocation log root (or an additional unique tee), or triaged `simulator_log` / `adb_logs`.
 
 <a id="appium-scaffold"></a>
 
@@ -272,9 +272,27 @@ Before Android Appium, inventory AVDs with `emulator -list-avds`. Serial mode pr
 
 Before taking any e2e slot required by this task, determine whether another task owns it. If the slot is occupied and this task has no explicit ownership transfer, ask the user whether this task may take it. Without authorization, do not stop or otherwise displace the owner. Once ownership is transferred, take the slot and continue.
 
-Serial ports `:8081` and `:4725`, or the selected slot's computed Metro/Appium ports, are e2e resources, not the ownership rule itself. Metro must be **this** checkout (`RNGoogleMobileAdsExample/`), and its selected port must be free before `yarn tests:packager:reset-cache`. The canonical Appium command fails preflight if its selected listener port is occupied; identify the listener and stop it only when this task owns it. Never launch WDIO into an occupied Appium port. The TCP probe is an early guard that closes before Appium spawns, so a race remains; Appium startup output is authoritative and must still be watched for `EADDRINUSE`. Revert `.only` before area-focused/full.
+Serial ports `:8081` and `:4725`, or the selected slot's computed Metro/Appium ports, are e2e resources, not the ownership rule itself. Metro must be **this** checkout (`RNGoogleMobileAdsExample/`), and its selected port must be free before `yarn tests:packager:reset-cache`. The canonical Appium command fails preflight if its selected listener port is occupied; identify the listener and stop it only when this task owns it. Never launch WDIO into an occupied Appium port. The TCP probe is an early guard that closes before Appium spawns, so a race remains; the startup supervisor below treats Appium's later `EADDRINUSE` output as authoritative. Revert `.only` before area-focused/full.
 
-**Startup log watch is blocking.** Read the live tee closely and continuously from command launch through preflight and Appium session creation. Do not switch to a slow polling cadence until `Execution of … workers started` appears. Most host failures are immediate: stop and diagnose on preflight rejection, `EADDRINUSE`, Appium `onPrepare` failure, `ECONNREFUSED`, or failure to create the first WebDriver session. Do not wait for the suite timeout, and do not retry until the logged cause is corrected and task-owned listeners are cleaned up.
+<a id="enforced-startup-supervision"></a>
+
+### Enforced startup supervision
+
+The long-running owners enforce startup themselves: standalone Metro; serial or manual-slot Android/iOS Appium; single-platform owner or external-consumer parallel; and combined parallel. Startup advances only through these positive barriers:
+
+1. **Metro — 120 seconds:** task-owned Metro requires both its TCP listener and `Dev server ready`. An external consumer requires the already-supervised named Metro owner to be listening and monitors that listener through startup.
+2. **Worker/session — 60 seconds:** every Appium child must emit both WDIO worker-start evidence (`Execution of … workers started`) and evidence that its WebDriver/Appium session was created.
+3. **App — 120 seconds:** every child must emit `[e2e-startup-ready]`; each smoke spec emits it only after `waitForGalleryHome()` succeeds.
+
+During those phases, determinative hard markers abort immediately instead of waiting out the ceiling. The shared registry covers Metro transform/React bootstrap failures, wrong-target or preflight rejection, listener/connectivity failures, Appium prepare/session-creation failures, premature owner/child exit, and loss of external Metro health. It deliberately does **not** classify ordinary ad-serving outcomes (`no-fill` or representative `internal-error`), ordinary load latency, stale-element warnings, Watchman recrawl, or Gradle `UP-TO-DATE` as startup failures.
+
+After every child's worker and session positives, device startup diagnostics tail only the exact target. Android uses the selected serial with no history (`-T 0`) and the tag allowlist `ReactNative:V ReactNativeJS:V AndroidRuntime:E *:S`; device-sourced lines can trigger only the bundle/connectivity hard markers. iOS uses the selected UDID and filters to `ReactTestApp`. Global or unrelated-device tails are forbidden. Each owner writes a fresh `/tmp/rngma-e2e/<invocation-id>/` tree and prints its invocation ID and paths; a later invocation never replaces that evidence.
+
+Failure or interruption aborts the owned process tree once. The owner sends SIGTERM, escalates remaining processes to SIGKILL after 5 seconds, and drains its owned children before printing summaries or exiting; the drain ceiling is 30 seconds, after which residual PIDs are reported explicitly.
+
+**Boundary:** build, Codegen, CocoaPods, device selection/install, and WDA prebuild steps are not covered by these startup phase ceilings. A silent stalled Gradle or `xcodebuild`/pod step remains operator-visible and must be diagnosed rather than mistaken for a supervised wait.
+
+Operator watching is residual, not the startup mechanism: keep the foreground named owner visible, especially during uncovered preparation steps, and act on diagnostics the owner reports. Do not retry until the logged cause is corrected and task-owned listeners are cleaned up.
 
 Interrupted Shell: log footer `N passing`/`N failing` = complete. An open tee or missing footer is **not** success — inspect its startup and last output first, recover task-owned Metro/Appium resources, then re-run the **same** command only after correcting the logged cause.
 
@@ -284,7 +302,7 @@ Interrupted Shell: log footer `N passing`/`N failing` = complete. An open tee or
 
 1. Confirm [pre-flight](#pre-flight).
 2. Same failure twice on the canonical command → narrow to one file or `.only` (`unit-focused` only).
-3. Read `/tmp/rngma-e2e-ios-*.log` / `/tmp/rngma-e2e-android-*.log` (CI: `simulator_log` / `adb_logs` — [CI workflows](../ci-workflows/index.md)).
+3. Read the printed `/tmp/rngma-e2e/<invocation-id>/` tree or additional unique tee (CI: `simulator_log` / `adb_logs` — [CI workflows](../ci-workflows/index.md)).
 4. Revert `.only` and extra native logging before area-focused review or commit.
 
 Do not invent harness override files or debug flags from other repos.
