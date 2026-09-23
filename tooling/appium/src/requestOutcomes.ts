@@ -24,7 +24,7 @@ export type RequestOutcomeAttempt = {
   fingerprint: RequestFingerprint;
 };
 
-export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam';
+export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam' | 'hook';
 export type RepresentativeRequestAcceptance = {
   status: 'accepted' | 'retry';
   reason: 'loaded' | 'android-native-matched-fingerprint' | 'outcome-not-accepted';
@@ -61,6 +61,22 @@ export function classifyRequestOutcome(
   }
   if (outcome === 'error') {
     return text.includes('Request error: internal-error') ? 'internal-error' : 'other-error';
+  }
+  return undefined;
+}
+
+/** Terminal hook load markers use `Status: …` on the hook status testID. */
+export function classifyHookLoadOutcome(
+  text: string,
+): RequestOutcomeClassification | undefined {
+  if (/\bStatus:\s*loaded\b/.test(text)) {
+    return 'loaded';
+  }
+  if (/\bStatus:\s*no-fill\b/.test(text)) {
+    return 'no-fill';
+  }
+  if (/\bStatus:\s*error\b/.test(text)) {
+    return 'other-error';
   }
   return undefined;
 }
@@ -180,6 +196,7 @@ export function representativeRequestOperation(
   path: RepresentativeRequestPath,
   attempt: number,
   retry: RepresentativeRequestRetry = 'default',
+  hookAutoLoad = false,
 ): RepresentativeRequestOperation {
   if (attempt < 1) {
     throw new Error(`Request attempt must be positive, received ${attempt}`);
@@ -190,8 +207,17 @@ export function representativeRequestOperation(
   if (path === 'banner') {
     return attempt === 1 ? 'auto-load' : 'reload';
   }
+  if (path === 'gam' && retry === 'remount') {
+    return attempt === 1 ? 'auto-load' : 'remount';
+  }
   if (path === 'native') {
     return attempt === 1 ? 'auto-load' : 'remount';
+  }
+  if (path === 'hook') {
+    if (hookAutoLoad) {
+      return attempt === 1 ? 'auto-load' : 'remount';
+    }
+    return 'load';
   }
   return 'load';
 }
@@ -312,14 +338,26 @@ export async function runRepresentativeRequestOutcomeContract(options: {
   platform: 'android' | 'ios';
   path: RepresentativeRequestPath;
   retry?: RepresentativeRequestRetry;
+  /** Hook screens that auto-load on mount (no explicit Load control). */
+  hookAutoLoad?: boolean;
   runtime: RepresentativeRequestRuntime;
   sleep?: (delayMs: number) => Promise<void>;
   emit?: (line: string) => void;
   maxAttempts?: number;
   onAccepted?: (attempt: RequestOutcomeAttempt) => Promise<void>;
 }): Promise<readonly RequestOutcomeAttempt[]> {
-  const { format, platform, path, retry = 'default', runtime, sleep, emit, maxAttempts, onAccepted } =
-    options;
+  const {
+    format,
+    platform,
+    path,
+    retry = 'default',
+    hookAutoLoad = false,
+    runtime,
+    sleep,
+    emit,
+    maxAttempts,
+    onAccepted,
+  } = options;
   const attempts = await collectRepresentativeRequestOutcomes({
     format,
     platform,
@@ -338,7 +376,7 @@ export async function runRepresentativeRequestOutcomeContract(options: {
         return runtime.observe(1);
       }
 
-      const operation = representativeRequestOperation(path, attempt, retry);
+      const operation = representativeRequestOperation(path, attempt, retry, hookAutoLoad);
       if (attempt === 1) {
         await runtime.navigate();
         if (operation === 'load') {
