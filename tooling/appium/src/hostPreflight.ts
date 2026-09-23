@@ -98,7 +98,30 @@ export function bootAndPersistSelectedSimulator(
   appendFile: GithubEnvAppend,
 ): void {
   if (selected.state !== 'Booted') {
-    execFile('xcrun', ['simctl', 'boot', selected.udid]);
+    try {
+      execFile('xcrun', ['simctl', 'boot', selected.udid]);
+    } catch (error) {
+      // Inventory can race with a concurrent boot. simctl exits non-zero when
+      // already Booted (often status 149); continue to bootstatus which confirms.
+      const detail = [
+        error instanceof Error ? error.message : String(error),
+        error && typeof error === 'object' && 'stderr' in error
+          ? String((error as { stderr?: unknown }).stderr ?? '')
+          : '',
+        error && typeof error === 'object' && 'status' in error
+          ? `status=${String((error as { status?: unknown }).status)}`
+          : '',
+      ].join('\n');
+      const alreadyBooted =
+        /Unable to boot device in current state: Booted|current state: Booted/i.test(detail) ||
+        (error &&
+          typeof error === 'object' &&
+          'status' in error &&
+          Number((error as { status?: unknown }).status) === 149);
+      if (!alreadyBooted) {
+        throw error;
+      }
+    }
   }
   execFile('xcrun', ['simctl', 'bootstatus', selected.udid, '-b']);
   appendFile(

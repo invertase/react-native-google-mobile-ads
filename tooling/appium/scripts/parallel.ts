@@ -187,6 +187,7 @@ export class NodeParallelRunner implements ParallelRunner {
   }
 
   async freshEnvFile(file: string): Promise<void> {
+    await fs.mkdir(path.dirname(file), { recursive: true });
     await fs.rm(file, { force: true });
     await fs.writeFile(file, '', { flag: 'wx' });
   }
@@ -209,6 +210,61 @@ export class NodeParallelRunner implements ParallelRunner {
     await fs.mkdir(path.dirname(destination), { recursive: true });
     await fs.copyFile(source, destination);
     console.log(`[parallel] copied Android APK ${source} -> ${destination}`);
+  }
+
+  async installIosApp(udid: string, appPath: string): Promise<void> {
+    console.log(`[parallel] installing iOS app on ${udid}: ${appPath}`);
+    await new Promise<void>((resolve, reject) => {
+      const boot = spawn('xcrun', ['simctl', 'boot', udid], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      boot.once('error', reject);
+      boot.once('close', () => {
+        // Already-Booted is a non-zero exit; continue to bootstatus either way.
+        const status = spawn('xcrun', ['simctl', 'bootstatus', udid, '-b'], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+        });
+        let statusErr = '';
+        status.stderr?.on('data', chunk => {
+          statusErr += String(chunk);
+        });
+        status.once('error', reject);
+        status.once('close', (statusCode, statusSignal) => {
+          if (statusSignal || statusCode !== 0) {
+            reject(
+              new Error(
+                `simctl bootstatus ${udid} failed${statusErr ? `: ${statusErr.trim()}` : ''}`,
+              ),
+            );
+            return;
+          }
+          const child = spawn('xcrun', ['simctl', 'install', udid, appPath], {
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+          let stderr = '';
+          child.stderr?.on('data', chunk => {
+            stderr += String(chunk);
+          });
+          child.once('error', reject);
+          child.once('close', (code, signal) => {
+            if (signal) {
+              reject(new Error(`simctl install ${udid} terminated by ${signal}`));
+              return;
+            }
+            if (code !== 0) {
+              reject(
+                new Error(
+                  `simctl install ${udid} exited with code ${code}${stderr ? `: ${stderr.trim()}` : ''}`,
+                ),
+              );
+              return;
+            }
+            resolve();
+          });
+        });
+      });
+    });
+    console.log(`[parallel] installed iOS app on ${udid}`);
   }
 }
 
