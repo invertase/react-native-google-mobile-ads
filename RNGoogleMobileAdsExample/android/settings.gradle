@@ -6,6 +6,11 @@ pluginManagement {
     }
 }
 
+plugins {
+    // Gradle 10 requires explicit toolchain download repositories when auto-provisioning JDKs.
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+
 rootProject.name = "RNGoogleMobileAdsExample"
 
 apply(from: {
