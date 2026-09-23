@@ -38,9 +38,8 @@ export const SMOKE_GAM_BANNER_VARIANT = AppiumTestIds.gamBannerVariant('Anchored
 export const SMOKE_GAM_FLUID_VARIANT = AppiumTestIds.gamBannerVariant('Fluid');
 
 /**
- * Navigation/container smoke is split across three WDIO sessions because Android
- * UiAutomator2 destabilizes after ~15 tests in a single session. These cases do
- * not claim that an ad loaded.
+ * Navigation/container smoke cases do not claim that an ad loaded. Session
+ * splitting is derived in `sessionShards.ts`, not declared here.
  */
 export type NavigationSmokeCase = {
   id: string;
@@ -65,7 +64,7 @@ export type RepresentativeRequestOutcomeContract = {
   requiresAppRestart?: boolean;
 };
 
-export const NAVIGATION_SMOKE_PRIMARY: NavigationSmokeCase[] = [
+export const NAVIGATION_SMOKE_CASES: readonly NavigationSmokeCase[] = [
   {
     id: SMOKE_BANNER_VARIANT,
     title: 'Banner Banner',
@@ -126,9 +125,6 @@ export const NAVIGATION_SMOKE_PRIMARY: NavigationSmokeCase[] = [
     containerId: AppiumTestIds.format.native,
     contract: 'navigation',
   },
-];
-
-export const NAVIGATION_SMOKE_SECONDARY: NavigationSmokeCase[] = [
   {
     id: AppiumTestIds.format.adInspector,
     title: 'Ad Inspector',
@@ -159,9 +155,6 @@ export const NAVIGATION_SMOKE_SECONDARY: NavigationSmokeCase[] = [
     containerId: AppiumTestIds.format.debugMenu,
     contract: 'navigation',
   },
-];
-
-export const NAVIGATION_SMOKE_TERTIARY: NavigationSmokeCase[] = [
   {
     id: AppiumTestIds.format.interstitialHook,
     title: 'INT Hook',

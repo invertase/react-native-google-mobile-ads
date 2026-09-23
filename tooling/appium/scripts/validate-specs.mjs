@@ -7,10 +7,10 @@ Object.assign(globalThis, {
   it: noOp,
 });
 
-await Promise.all([
-  import('../test/specs/formats.smoke.a-primary.spec.ts'),
-  import('../test/specs/formats.smoke.b-secondary.spec.ts'),
-  import('../test/specs/formats.smoke.c-tertiary.spec.ts'),
-]);
+const { SMOKE_SHARDS } = await import('../src/sessionShards.ts');
 
-console.log('OK: Appium smoke specs parse and register');
+await Promise.all(
+  SMOKE_SHARDS.map(shard => import(`../test/specs/formats.smoke.${shard.id}.spec.ts`)),
+);
+
+console.log(`OK: ${SMOKE_SHARDS.length} Appium smoke specs parse and register`);

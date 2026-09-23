@@ -2,9 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
-  NAVIGATION_SMOKE_PRIMARY,
-  NAVIGATION_SMOKE_SECONDARY,
-  NAVIGATION_SMOKE_TERTIARY,
+  NAVIGATION_SMOKE_CASES,
   NATIVE_RNGMA_TESTING_PROBE,
   REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
   SMOKE_BANNER_VARIANT,
@@ -609,14 +607,12 @@ test('Native fingerprint requires the exact adjacent same-process GMA sequence',
 });
 
 test('broad format coverage remains navigation/container-only', () => {
-  const navigationCases = [
-    ...NAVIGATION_SMOKE_PRIMARY,
-    ...NAVIGATION_SMOKE_SECONDARY,
-    ...NAVIGATION_SMOKE_TERTIARY,
-  ];
-  assert.equal(navigationCases.length, 17);
-  assert.ok(navigationCases.every(contract => contract.contract === 'navigation'));
-  assert.ok(navigationCases.every(contract => !contract.requiresAppRestart));
+  assert.ok(NAVIGATION_SMOKE_CASES.every(contract => contract.contract === 'navigation'));
+  assert.ok(NAVIGATION_SMOKE_CASES.every(contract => !contract.requiresAppRestart));
+  assert.equal(
+    new Set(NAVIGATION_SMOKE_CASES.map(contract => contract.id)).size,
+    NAVIGATION_SMOKE_CASES.length,
+  );
 });
 
 test('retires blanket per-attempt acceptance and locks real render probes', () => {

@@ -1,12 +1,17 @@
+import { SMOKE_SHARDS, type ShardId } from './sessionShards.ts';
+
 const SPEC_ROOT = './test/specs/';
 
-export const WDIO_SMOKE_SPECS = [
-  `${SPEC_ROOT}formats.smoke.a-primary.spec.ts`,
-  `${SPEC_ROOT}formats.smoke.b-secondary.spec.ts`,
-  `${SPEC_ROOT}formats.smoke.c-tertiary.spec.ts`,
-] as const;
+export type WdioSmokeSpec = `${typeof SPEC_ROOT}formats.smoke.${string}.spec.ts`;
 
-export type WdioSmokeSpec = (typeof WDIO_SMOKE_SPECS)[number];
+/** One spec file per derived shard, named by that shard's generated id. */
+export function smokeSpecPath(id: ShardId): WdioSmokeSpec {
+  return `${SPEC_ROOT}formats.smoke.${id}.spec.ts`;
+}
+
+export const WDIO_SMOKE_SPECS: readonly WdioSmokeSpec[] = SMOKE_SHARDS.map(shard =>
+  smokeSpecPath(shard.id),
+);
 
 export function selectedWdioSpecs(
   env: NodeJS.ProcessEnv = process.env,

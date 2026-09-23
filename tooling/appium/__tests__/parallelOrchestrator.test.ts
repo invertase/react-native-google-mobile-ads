@@ -24,8 +24,26 @@ import {
   type RunningCommand,
 } from '../src/parallelOrchestrator.ts';
 import { isParallelParentChild } from '../src/parentContract.ts';
+import {
+  SESSION_TEST_CAP,
+  SMOKE_SHARDS,
+  SMOKE_SHARD_TEST_TOTAL,
+} from '../src/sessionShards.ts';
 import { serialAndroidApkPath, slotAndroidApkPath } from '../src/slots.ts';
 import { WDIO_SMOKE_SPECS, selectedWdioSpecs } from '../src/wdioSpecs.ts';
+
+/** Expected summary rows when the first slot settles one way and siblings cancel. */
+function expectedSlotRows(
+  first: { status: string; exitCode: number },
+): Array<{ slot: number; spec: string; testCount: number; status: string; exitCode: number }> {
+  return PARALLEL_ASSIGNMENTS.map((assignment, index) => ({
+    slot: assignment.slot,
+    spec: assignment.spec,
+    testCount: assignment.testCount,
+    status: index === 0 ? first.status : 'cancelled',
+    exitCode: index === 0 ? first.exitCode : CANCELLED_EXIT_CODE,
+  }));
+}
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -236,11 +254,12 @@ test('parallel plan maps configured 1/4/5 slots to one Metro and positional spec
   );
   assert.deepEqual(
     android.map(item => item.testCount),
-    [15, 6, 4],
+    SMOKE_SHARDS.map(shard => shard.testCount),
   );
+  assert.ok(android.every(item => item.testCount <= SESSION_TEST_CAP));
   assert.equal(
     android.reduce((sum, item) => sum + item.testCount, 0),
-    25,
+    SMOKE_SHARD_TEST_TOTAL,
   );
   assert.deepEqual(
     android.map(item => item.metroPort),
@@ -313,7 +332,7 @@ test('parallel mapping rejects forbidden, duplicate, and missing entries', () =>
   const alternateOperationalSlot = copy();
   alternateOperationalSlot[2]!.slot = 5;
   assert.doesNotThrow(() => validateParallelAssignments(alternateOperationalSlot));
-  assert.throws(() => validateParallelAssignments(copy().slice(0, 2)), /exactly three/);
+  assert.throws(() => validateParallelAssignments(copy().slice(0, 2)), /exactly one wave/);
   const missingSpec = copy();
   missingSpec[2]!.spec = missingSpec[1]!.spec;
   assert.throws(() => validateParallelAssignments(missingSpec), /every smoke spec/);
@@ -415,7 +434,7 @@ test('Android builds once and fans the same APK out before concurrent children',
   const summary = await runParallelE2e('android', runner, {
     env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,5' },
   });
-  assert.equal(summary.totalTests, 25);
+  assert.equal(summary.totalTests, SMOKE_SHARD_TEST_TOTAL);
   assert.ok(summary.slots.every(result => result.status === 'pass'));
   assert.deepEqual(
     summary.slots.map(result => result.exitCode),
@@ -667,16 +686,15 @@ test('combined barrier launches all six Appium children only after both preps', 
   for (const child of appiums) child.deferred.resolve(0);
 
   const summary = await run;
-  assert.equal(summary.android.totalTests, 25);
-  assert.equal(summary.ios.totalTests, 25);
-  assert.deepEqual(
-    summary.android.slots.map(item => item.testCount),
-    [15, 6, 4],
-  );
-  assert.deepEqual(
-    summary.ios.slots.map(item => item.testCount),
-    [15, 6, 4],
-  );
+  assert.equal(summary.android.totalTests, SMOKE_SHARD_TEST_TOTAL);
+  assert.equal(summary.ios.totalTests, SMOKE_SHARD_TEST_TOTAL);
+  for (const platform of [summary.android, summary.ios]) {
+    assert.deepEqual(
+      platform.slots.map(item => item.testCount),
+      SMOKE_SHARDS.map(shard => shard.testCount),
+    );
+    assert.ok(platform.slots.every(item => item.testCount <= SESSION_TEST_CAP));
+  }
   assert.equal(metroChildren[0]?.stops, 1);
 });
 
@@ -737,8 +755,8 @@ test('combined Appium failure cancels sibling platform and Metro once', async ()
   failed.deferred.resolve(9);
   await assert.rejects(run, error => {
     const summary = (error as { summary?: CombinedParallelRunSummary }).summary;
-    assert.equal(summary?.android.totalTests, 25);
-    assert.equal(summary?.ios.totalTests, 25);
+    assert.equal(summary?.android.totalTests, SMOKE_SHARD_TEST_TOTAL);
+    assert.equal(summary?.ios.totalTests, SMOKE_SHARD_TEST_TOTAL);
     assert.equal(summary?.android.slots[0]?.exitCode, 9);
     assert.ok(summary?.ios.slots.every(item => item.exitCode === CANCELLED_EXIT_CODE));
     return true;
@@ -968,29 +986,7 @@ test('SIGTERM child completion fails slot 1 with 130 and cancels siblings at 130
         status: item.status,
         exitCode: item.exitCode,
       })),
-      [
-        {
-          slot: 1,
-          spec: WDIO_SMOKE_SPECS[0],
-          testCount: 15,
-          status: 'fail',
-          exitCode: CANCELLED_EXIT_CODE,
-        },
-        {
-          slot: 2,
-          spec: WDIO_SMOKE_SPECS[1],
-          testCount: 6,
-          status: 'cancelled',
-          exitCode: CANCELLED_EXIT_CODE,
-        },
-        {
-          slot: 4,
-          spec: WDIO_SMOKE_SPECS[2],
-          testCount: 4,
-          status: 'cancelled',
-          exitCode: CANCELLED_EXIT_CODE,
-        },
-      ],
+      expectedSlotRows({ status: 'fail', exitCode: CANCELLED_EXIT_CODE }),
     );
     assert.ok(summary?.slots.every(item => item.logPath.includes(`slot-${item.slot}`)));
     return true;
@@ -1056,29 +1052,7 @@ test('packager readiness rejection fails slot 1 with 1 and cancels siblings at 1
           status: item.status,
           exitCode: item.exitCode,
         })),
-        [
-          {
-            slot: 1,
-            spec: WDIO_SMOKE_SPECS[0],
-            testCount: 15,
-            status: 'fail',
-            exitCode: UNKNOWN_FAILURE_EXIT_CODE,
-          },
-          {
-            slot: 2,
-            spec: WDIO_SMOKE_SPECS[1],
-            testCount: 6,
-            status: 'cancelled',
-            exitCode: CANCELLED_EXIT_CODE,
-          },
-          {
-            slot: 4,
-            spec: WDIO_SMOKE_SPECS[2],
-            testCount: 4,
-            status: 'cancelled',
-            exitCode: CANCELLED_EXIT_CODE,
-          },
-        ],
+        expectedSlotRows({ status: 'fail', exitCode: UNKNOWN_FAILURE_EXIT_CODE }),
       );
       assert.match(
         summary?.slots[0]?.logPath ?? '',

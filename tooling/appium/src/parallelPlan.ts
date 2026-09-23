@@ -1,4 +1,9 @@
 import {
+  SHARD_POSITIONS,
+  SMOKE_SHARDS,
+  type ShardId,
+} from './sessionShards.ts';
+import {
   assertRngmaSlotAllowed,
   parseSlot,
   runtimeResources,
@@ -6,6 +11,7 @@ import {
   slotIosAppPath,
 } from './slots.ts';
 import {
+  smokeSpecPath,
   WDIO_SMOKE_SPECS,
   type WdioSmokeSpec,
 } from './wdioSpecs.ts';
@@ -13,39 +19,30 @@ import {
 export type ParallelPlatform = 'android' | 'ios';
 
 export type ParallelAssignment = {
-  label: 'a-primary' | 'b-secondary' | 'c-tertiary';
+  label: ShardId;
   slot: number;
   spec: WdioSmokeSpec;
   testCount: number;
 };
 
-export const PARALLEL_ASSIGNMENTS: readonly ParallelAssignment[] = [
-  {
-    label: 'a-primary',
-    slot: 1,
-    spec: WDIO_SMOKE_SPECS[0],
-    testCount: 15,
-  },
-  {
-    label: 'b-secondary',
-    slot: 2,
-    spec: WDIO_SMOKE_SPECS[1],
-    testCount: 6,
-  },
-  {
-    label: 'c-tertiary',
-    slot: 4,
-    spec: WDIO_SMOKE_SPECS[2],
-    testCount: 4,
-  },
-] as const;
+/** Positional product default; `RNGMA_E2E_PARALLEL_SLOTS` replaces it wholesale. */
+const DEFAULT_PARALLEL_SLOTS = [1, 2, 4] as const;
+
+export const PARALLEL_ASSIGNMENTS: readonly ParallelAssignment[] = SMOKE_SHARDS.map(shard => ({
+  label: shard.id,
+  slot: DEFAULT_PARALLEL_SLOTS[SHARD_POSITIONS.indexOf(shard.position)]!,
+  spec: smokeSpecPath(shard.id),
+  testCount: shard.testCount,
+}));
 
 export const PARALLEL_SLOTS_ENV = 'RNGMA_E2E_PARALLEL_SLOTS';
 
 export function parseParallelSlots(value: string | undefined): number[] {
-  const raw = value == null ? ['1', '2', '4'] : value.split(',');
-  if (raw.length !== 3) {
-    throw new Error(`${PARALLEL_SLOTS_ENV} must contain exactly three comma-separated slots.`);
+  const raw = value == null ? DEFAULT_PARALLEL_SLOTS.map(String) : value.split(',');
+  if (raw.length !== SHARD_POSITIONS.length) {
+    throw new Error(
+      `${PARALLEL_SLOTS_ENV} must contain exactly ${SHARD_POSITIONS.length} comma-separated slots.`,
+    );
   }
   const slots = raw.map(item => {
     if (item === '') {
@@ -77,8 +74,12 @@ export type ParallelPlanEntry = ParallelAssignment & {
 export function validateParallelAssignments(
   assignments: readonly ParallelAssignment[],
 ): void {
-  if (assignments.length !== WDIO_SMOKE_SPECS.length) {
-    throw new Error('Parallel mapping must contain exactly three assignments.');
+  // Parallel pairing covers one wave; more derived shards than positions means
+  // the orchestrator needs wave support before those sessions can be assigned.
+  if (assignments.length !== SHARD_POSITIONS.length) {
+    throw new Error(
+      `Parallel mapping must contain exactly one wave of ${SHARD_POSITIONS.length} assignments.`,
+    );
   }
   const slots = assignments.map(entry => entry.slot);
   if (slots.some(slot => slot === 0 || slot === 3)) {
