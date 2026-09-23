@@ -208,6 +208,7 @@ rootProject.ext {
   reactNative.versions = (reactNative.versions ?: [:]) + [
     googleMobileAds: [
       sdk: '25.4.0',
+      nextGenSdk: '1.4.0',
     ],
     ads: [
       consent: '4.0.0',
@@ -218,8 +219,10 @@ rootProject.ext {
 ```
 
 The app map wins over the package defaults
-(`sdkVersions.android.googleMobileAds` and `sdkVersions.android.googleUmp`).
-
+(`sdkVersions.android.googleMobileAds`,
+`sdkVersions.android.googleMobileAdsNextGen`, and
+`sdkVersions.android.googleUmp`). Include `nextGenSdk` only when you need to
+override the Next-Gen pin; classic builds ignore it.
 On iOS, set either Podfile globals before declaring the React Native pods:
 
 ```ruby
@@ -247,9 +250,11 @@ resolved native dependency graph. Release tooling continues to validate the pack
 default pins in the example `Podfile.lock`; app-local overrides do not change that
 invariant.
 
-These controls only select versions of the existing native dependencies. They do not
-select a different ads backend. Any Next-Gen coordinate, configuration key, or backend
-switch requires a separate design and is not implemented in v17.
+These controls only select versions of the **already chosen** Android backend
+(classic `play-services-ads` or Next-Gen `ads-mobile-sdk`). They do not flip
+classic ↔ Next-Gen. Backend selection is a separate build-time flag — see
+[GMA Next-Gen SDK (Android)](/next-gen-sdk) (v17 classic default / Next-Gen
+opt-in; v18 flips the default).
 
 ## Troubleshooting
 
@@ -306,6 +311,7 @@ Account approval, new units, test devices, and `applicationId` issues still domi
 
 ## Related guides
 
+- [GMA Next-Gen SDK (Android)](/next-gen-sdk) — Android classic / Next-Gen build-time selection
 - [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics)
 - [Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes)
 - [Displaying Ads](/displaying-ads)

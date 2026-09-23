@@ -117,3 +117,50 @@ generates only example/probe app-source metadata. Commands:
 The generated directories remain package source and must never be patched by
 hand. CocoaPods preserves their package-local header layout, and the npm
 package's existing `android/` and `ios/` entries publish both trees.
+
+<a id="gma-ad-5"></a>
+
+## GMA-AD-5 — Dual Android GMA backends (classic + Next-Gen) — **Accepted**
+
+Android links **exactly one** Google Mobile Ads SDK per app build. Classic
+`com.google.android.gms:play-services-ads` and Next-Gen
+`com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk` cannot coexist:
+types, builders, initialization, callbacks, views, and preload APIs differ. The
+split is an **SDK axis**, orthogonal to React Native New Architecture (already
+required in v17).
+
+**Selection.** Build-time only via Expo plugin `androidSdk`, bare
+`app.json` `android_sdk`, or Gradle `RNGMA_ANDROID_BACKEND` /
+`-PRNGMA_ANDROID_BACKEND`. Accepted values: `classic`, `legacy` (synonym →
+classic), `nextgen`. Internal source sets and the JS capability value stay
+`classic` / `android-classic`. **v17** defaults to classic (Next-Gen opt-in);
+**v18** flips the default to Next-Gen with classic retained as the same-toggle
+escape hatch. User-facing guide: [`docs/next-gen-sdk.mdx`](../docs/next-gen-sdk.mdx).
+
+**Layout.** Shared-first source sets: backend-neutral RN plumbing lives in
+`packages/core/android/src/main`; SDK-coupled implementations live in
+`src/classic` and `src/nextgen`. JVM tests: neutral `src/test`; coupled
+`src/testClassic` / `src/testNextgen`. Commands:
+[agent command policy](testing/agent-command-policy.md).
+
+**Exclusion.** When Next-Gen is selected, core depends on `ads-mobile-sdk` and
+excludes classic `play-services-ads` / `play-services-ads-lite`. Scoped AdMob
+mediation adapter packages read `rootProject.ext.rngmaAndroidBackend` and apply
+the same classic exclusions on their `com.google.ads.mediation:*` dependencies
+so adapters cannot reintroduce classic transitively.
+
+**Detection.** One JS contract: native `getConstants().backend` → public
+`getAdCapabilities().backend` (`ios` | `android-classic` | `android-next-gen`).
+No Android-only public JS property. Native brownfield code may use the stable
+Kotlin accessor `ReactNativeGoogleMobileAds.backend`.
+
+**GAM.** Google Ad Manager unit IDs and request fields load through the same
+Next-Gen builders as AdMob; do not add a GAM rejection path.
+
+**Mediation hosts.** AdMob-hosted adapters are supported under Next-Gen.
+Non-AdMob mediation hosts (for example MAX) cannot select Next-Gen — document
+only; do not invent a dual-host bridge.
+
+**Pinned formats.** Picture-in-Picture, dedicated `IconAd`, and swipeable
+interstitial are out of scope for the initial dual-backend ingest; follow-on
+queues own them.

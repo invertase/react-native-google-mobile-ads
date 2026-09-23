@@ -4,10 +4,10 @@ Single-file reference for the public TypeScript surface of `react-native-google-
 Covers today’s source-compatible shims plus the additive v17 types and runtime
 (`getAdCapabilities`, `AdPools`, `MultiFormatAdRequest`, `MultiFormatBannerAdView`, presets, and hooks).
 
-> **Status:** tip-wired on classic backends. Additive surfaces validate and call
-> through to native or library-managed implementations as documented below.
-> Type and ownership contracts in this file remain the publisher SoT; recipe
-> guides teach the same behavior.
+> **Status:** tip-wired on iOS and both Android backends (classic and Next-Gen).
+> Additive surfaces validate and call through to native or library-managed
+> implementations as documented below. Type and ownership contracts in this file
+> remain the publisher SoT; recipe guides teach the same behavior.
 
 ---
 
@@ -74,10 +74,10 @@ Use this when the UI can show either shape. Skip it when you already know you on
 
 A **pool** is a named buffer of ads for a placement (`poolId` + formats + unit). When you need an ad, you **`poll()`** one out; the pool is designed to refill in the background. Depending on the **backend and formats**, that buffer may:
 
-- **preload** via the platform SDK preloader when Google supports it, which today means interstitial, rewarded and app open on both classic backends, plus **rewarded interstitial on iOS only**: Android's preload registry has no slot for that format and rejects it,
+- **preload** via the platform SDK preloader when Google supports it, which today means interstitial, rewarded and app open on iOS and both Android backends, plus **rewarded interstitial on iOS only**: Android's preload registry has no slot for that format and rejects it,
 - hold **more than one** ready ad **on those fullscreen formats**, where Google recommends a buffer of 2 per preload ID under an app-wide cap the SDK resolves at runtime from server-delivered settings, which is why `maxManagedPoolAds` is reported as `null` rather than a number,
 - or fill using **multi-format requests** inside the pool when the formats are native/banner and that is the honest way to request them,
-- or run as a depth-1 self-refill when there is no SDK display preloader. That is the case for **banner and native on both classic backends**: neither iOS nor classic Android ships a display preloader. Create still reports `degraded: true` with reason `'pool/emulated-no-sdk-preloader'`, matching `getAdCapabilities().displayPreload === 'emulated'`. The token `emulated` is a capability / reason value, not a field on `AdPool` or `resolved`.
+- or run as a depth-1 self-refill when there is no SDK display preloader. That is the case for **banner and native on every current backend**: neither iOS nor Android (classic or Next-Gen) ships a display preloader. Create still reports `degraded: true` with reason `'pool/emulated-no-sdk-preloader'`, matching `getAdCapabilities().displayPreload === 'emulated'`. The token `emulated` is a capability / reason value, not a field on `AdPool` or `resolved`.
 
 So buffer depth greater than 1 is a **fullscreen** capability today. A display pool asking for depth clamps to 1 and tells you it did; see the degrade example below.
 
@@ -369,7 +369,7 @@ type AdCapabilities = {
   multiCountNative: CapabilitySupport;
   /**
    * SDK-managed pool peek API only. Classic Android: unavailable.
-   * Classic iOS: supported. Library-managed (emulated) pools peek without this gate.
+   * iOS and Android Next-Gen: supported. Library-managed (emulated) pools peek without this gate.
    */
   poolResponseInfoPeek: CapabilitySupport;
   maxManagedPoolAds: number | null; // always null: cap is server-delivered
@@ -380,11 +380,15 @@ function getAdCapabilities(): AdCapabilities;
 ```
 
 - Synchronous; safe before `initialize()`.
-- Returns a **static snapshot for this binary** (platform + linked SDK version pins from package metadata). Classic backends today: every listed format is `supported`; `fullscreenPreload` / per-format preload are mostly `experimental` (iOS Beta / Android limited-alpha); Android classic `fullscreenPreloadFormats[REWARDED_INTERSTITIAL]` is `unavailable`; `displayPreload` is `emulated`; `multiCountNative` is `unavailable`; `poolResponseInfoPeek` is `supported` on iOS and `unavailable` on classic Android; `maxManagedPoolAds` is always `null`; `mediation` is `unknown` until detection lands.
+- Returns a **static snapshot for this binary** (platform + linked SDK version pins from package metadata). `backend` is `'ios'`, `'android-classic'`, or `'android-next-gen'` (Android selection is build-time — [GMA Next-Gen SDK](/next-gen-sdk)).
+- **Formats / multi-format:** every listed format is `supported`; `multiFormatNativeBanner` is `supported`; `multiCountNative` is `unavailable`; `maxManagedPoolAds` is always `null`; `mediation` is `unknown` until detection lands.
+- **Fullscreen preload:** iOS and Android classic report `experimental` (iOS Beta / Android limited-alpha). Android Next-Gen reports `supported` for App Open / Interstitial / Rewarded. `fullscreenPreloadFormats[REWARDED_INTERSTITIAL]` is `experimental` on iOS and `unavailable` on both Android backends.
+- **Display preload:** `emulated` on all backends (library-managed depth-1 when no SDK display preloader).
+- **`poolResponseInfoPeek`:** `supported` on iOS and Android Next-Gen; `unavailable` on Android classic.
 - Prefer **presets** for common cases; do not re-implement capability matrices in app code.
-- Gate rewarded interstitial pooling with `fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]` before `AdPools.create`: on Android classic that format is `unavailable` and create hard-errors with reason `'pool/format-preload-unsupported'`.
-- **`peekResponseInfo` vs `poolResponseInfoPeek`:** the capability describes the **SDK-managed** (classic fullscreen) peek API. On classic Android that capability is `unavailable`, and SDK-managed pools hard-error `'pool/peek-unsupported'`. Classic iOS is `supported`. **Library-managed (emulated) display pools** peek the library’s own buffer head and do **not** consult `poolResponseInfoPeek` — they resolve `ResponseInfo | null` from the held slot on both platforms. Do not treat a successful Android peek on an emulated pool as proof that the SDK peek capability is supported. A resolved `null` means empty head, never “unsupported”.
-- Classic fullscreen preload may report `experimental` while upstream preload APIs remain beta. `experimental` means maturity, not a veto of a supported path.
+- Gate rewarded interstitial pooling with `fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]` before `AdPools.create`: on Android that format is `unavailable` and create hard-errors with reason `'pool/format-preload-unsupported'`.
+- **`peekResponseInfo` vs `poolResponseInfoPeek`:** the capability describes the **SDK-managed** fullscreen peek API. On classic Android that capability is `unavailable`, and SDK-managed pools hard-error `'pool/peek-unsupported'`. iOS and Android Next-Gen are `supported`. **Library-managed (emulated) display pools** peek the library’s own buffer head and do **not** consult `poolResponseInfoPeek` — they resolve `ResponseInfo | null` from the held slot on every backend. Do not treat a successful Android peek on an emulated pool as proof that the SDK peek capability is supported. A resolved `null` means empty head, never “unsupported”.
+- Classic / iOS fullscreen preload may report `experimental` while upstream preload APIs remain beta. `experimental` means maturity, not a veto of a supported path.
 - **Anti-pattern:** do not pre-flight-branch on the full capability matrix before every call. Use presets / hard-errors at `create()`, and reserve capability reads for UI gating or diagnostics.
 
 ---
@@ -612,11 +616,10 @@ type PollResult =
   | { status: 'no-fill'; error: AdErrorPayload } // routine ad-server outcome
   | { status: 'error'; error: AdErrorPayload }; // network or internal failure
 
-// Buffer readiness. `observedCount` is always present: both classic platforms
-// expose a count for SDK-managed preloaders (`getNumAdsAvailable` /
-// `numberOfAdsAvailableWithPreloadID:`), and library-managed pools know their
-// own buffer depth. Both fields are upper bounds (no expiry sweep on Android
-// V2; iOS sweep UNKNOWN).
+// Buffer readiness. `observedCount` is always present: iOS and both Android
+// backends expose a count for SDK-managed preloaders, and library-managed
+// pools know their own buffer depth. Both fields are upper bounds (no expiry
+// sweep on Android V2; iOS sweep UNKNOWN).
 type AdPoolAvailability = {
   available: boolean; // observedCount > 0
   observedCount: number;
@@ -691,7 +694,7 @@ On a pool the library manages itself, an eviction and its replacement are correl
 
 `AdPool.getAvailability()` returns `{ available, observedCount }`. The count is **required**, not optional:
 
-- **SDK-managed pools:** both classic platforms expose it (Android `getNumAdsAvailable(preloadId)` and iOS `numberOfAdsAvailableWithPreloadID:`).
+- **SDK-managed pools:** iOS and both Android backends expose a count (classic Android `getNumAdsAvailable(preloadId)`, Next-Gen equivalents, and iOS `numberOfAdsAvailableWithPreloadID:`).
 - **Library-managed (emulated) pools:** the library reports its own buffer depth.
 
 `available` is `observedCount > 0`. Neither field sweeps for expiry on the Android V2 path, so both are **upper bounds** (an ad past the platform TTL can still be counted until the next sweep). Whether iOS sweeps is UNKNOWN. Prefer this snapshot (or the hook's live `available` / `observedCount`) over assuming a retained depth equal to `bufferSize`: the SDK may optimize cache order, and the app-wide cap is server-delivered (`maxManagedPoolAds` reports `null`).
@@ -757,7 +760,7 @@ MultiFormatAdPresets.nativeOrBanner(
 
 Presets return plain configuration objects. `AdPools.create` and `MultiFormatAdRequest.create` validate them like hand-written configs.
 
-`AdPoolPresets.fullscreen` accepts rewarded interstitial in the type for cross-platform presets, but create hard-errors on Android classic when that format's preload capability is `unavailable`. Check `fullscreenPreloadFormats` first, or catch `'pool/format-preload-unsupported'`.
+`AdPoolPresets.fullscreen` accepts rewarded interstitial in the type for cross-platform presets, but create hard-errors on both Android backends when that format's preload capability is `unavailable`. Check `fullscreenPreloadFormats` first, or catch `'pool/format-preload-unsupported'`.
 
 Both pool presets take the same `AdPoolPresetOverrides` bag, spread over the preset defaults. That bag deliberately omits `formats` and `adUnitId`: those come from the positional parameters, so `display()` cannot be handed `formats: [INTERSTITIAL]` or a different unit at the type level. Fullscreen is the only family where `bufferSize` above 1 is meaningful. Preset default depth is `1` (create under a tight app-wide cap); Google recommends `2` per preload ID. See [Buffer depth greater than 1](#buffer-depth-greater-than-1-a-fullscreen-capability) for the opt-in call and resolved fields.
 
@@ -1358,7 +1361,7 @@ export function AppWithDisplayPool() {
 
 #### What a loud degrade looks like
 
-Ask a **display** pool for depth and it clamps to 1, because neither classic backend ships an SDK display preloader. The pool still works; it tells you what it did rather than failing or pretending:
+Ask a **display** pool for depth and it clamps to 1, because no current backend ships an SDK display preloader (display preload stays `emulated` everywhere). The pool still works; it tells you what it did rather than failing or pretending:
 
 ```ts
 import { AdPoolPresets, AdPools, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
@@ -1458,7 +1461,7 @@ Holding a polled ad across a long session is the consumer's risk (the pool canno
 
 #### Buffer depth greater than 1: a fullscreen capability
 
-Fullscreen formats have a real SDK preloader on both classic backends, so they can hold more than one ready ad. `AdPoolPresets.fullscreen` takes the override bag directly, so this is the one preset call where `bufferSize` is worth passing:
+Fullscreen formats have a real SDK preloader on iOS and both Android backends, so they can hold more than one ready ad. `AdPoolPresets.fullscreen` takes the override bag directly, so this is the one preset call where `bufferSize` is worth passing:
 
 ```ts
 import { AdFormat, AdPoolPresets, AdPools, TestIds } from 'react-native-google-mobile-ads';
@@ -1767,7 +1770,7 @@ ad.addAdEventListener(AdEventType.PAID, paid => {
 ad.load();
 ```
 
-Same `responseInfo` field exists on `NativeAd`, multi-format handles, and pooled ads after load. `peekResponseInfo()` on a pool is a **non-reserving** snapshot (racy, do not treat it as a poll). It reports the head of the buffer only and carries no time information, so it is not an age check. **SDK-managed** (classic fullscreen) pools are gated by `getAdCapabilities().poolResponseInfoPeek`: classic Android has no SDK peek API (`unavailable` → hard-error `'pool/peek-unsupported'`); classic iOS supports a head peek. **Library-managed (emulated) display pools** peek the library buffer without that capability gate on both platforms. On either path, resolved `null` means the head is empty; it must not be read as "peek unsupported".
+Same `responseInfo` field exists on `NativeAd`, multi-format handles, and pooled ads after load. `peekResponseInfo()` on a pool is a **non-reserving** snapshot (racy, do not treat it as a poll). It reports the head of the buffer only and carries no time information, so it is not an age check. **SDK-managed** fullscreen pools are gated by `getAdCapabilities().poolResponseInfoPeek`: classic Android has no SDK peek API (`unavailable` → hard-error `'pool/peek-unsupported'`); iOS and Android Next-Gen support a head peek. **Library-managed (emulated) display pools** peek the library buffer without that capability gate on every backend. On either path, resolved `null` means the head is empty; it must not be read as "peek unsupported".
 
 ---
 

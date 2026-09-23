@@ -175,10 +175,10 @@ export function MultiFormatFeedSlot({ consentReady }: { consentReady: boolean })
 
 ## Recipe: display pool (native + banner, depth 1)
 
-Classic backends have **no** SDK display preloader. `AdPoolPresets.display` still
-creates a usable pool: the library fills depth **1** via the same count-1
-multi-format request, reports `degraded: true` with
-`'pool/emulated-no-sdk-preloader'`, and matches
+Neither iOS nor Android (classic or Next-Gen) ships an SDK display preloader for
+banner / native in the current pins. `AdPoolPresets.display` still creates a usable
+pool: the library fills depth **1** via the same count-1 multi-format request,
+reports `degraded: true` with `'pool/emulated-no-sdk-preloader'`, and matches
 `getAdCapabilities().displayPreload === 'emulated'`.
 
 ```tsx
@@ -255,16 +255,20 @@ export function AppWithDisplayPool() {
   Give each placement its own pool, or make a single owner poll and pass the ad down.
 - Mixing fullscreen and display formats in one pool is a **hard error**.
 
-## What ships today (classic)
+## What ships today
 
-| Surface                     | Behavior on tip                                                                                                                                              |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Fullscreen pools            | SDK-managed preload (iOS Beta / Android limited-alpha maturity → `experimental`)                                                                             |
-| Rewarded interstitial pools | **iOS only.** Android create hard-errors (`pool/format-preload-unsupported`)                                                                                 |
-| Display pools               | Library-emulated depth 1; `displayPreload: 'emulated'`                                                                                                       |
-| Multi-format                | GAM native ± banner, count 1                                                                                                                                 |
-| `maxManagedPoolAds`         | Always `null` (server-delivered). Documented classic default app-wide cap is **6**                                                                           |
-| `poolResponseInfoPeek`      | SDK-managed peek: iOS supported; Android classic **unavailable** (`pool/peek-unsupported`). Emulated display pools peek the library buffer without that gate |
+Capabilities come from `getAdCapabilities()` for the **linked** backend
+(`ios` / `android-classic` / `android-next-gen`). Android Next-Gen is a build-time
+opt-in in v17 — see [GMA Next-Gen SDK (Android)](/next-gen-sdk).
+
+| Surface                     | Behavior on tip                                                                                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fullscreen pools            | SDK-managed preload — iOS and Android classic: `experimental` (iOS Beta / Android limited-alpha); Android Next-Gen (`android-next-gen`): App Open / Interstitial / Rewarded are `supported`          |
+| Rewarded interstitial pools | **iOS only.** Both Android backends create hard-error (`pool/format-preload-unsupported`)                                                                                                            |
+| Display pools               | Library-emulated depth 1 on every backend; `displayPreload: 'emulated'`                                                                                                                              |
+| Multi-format                | GAM native ± banner, count 1                                                                                                                                                                         |
+| `maxManagedPoolAds`         | Always `null` (server-delivered). Documented classic default app-wide cap is **6**                                                                                                                   |
+| `poolResponseInfoPeek`      | SDK-managed peek: iOS and Android Next-Gen `supported`; Android classic **unavailable** (`pool/peek-unsupported`). Emulated display pools peek the library buffer without that gate on every backend |
 
 Pooling improves readiness and may let the SDK optimize cache order among already-won
 ads. It is **not** evidence of yield lift. Do not claim that buffering or multi-format
@@ -320,7 +324,7 @@ try {
     console.warn(pool.resolved.degradeReasons);
   }
 } catch (e) {
-  // e.g. rewarded interstitial on Android classic → pool/format-preload-unsupported
+  // e.g. rewarded interstitial on either Android backend → pool/format-preload-unsupported
 }
 ```
 
