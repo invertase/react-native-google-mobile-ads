@@ -24,6 +24,7 @@ import {
   type RunningCommand,
 } from '../src/parallelOrchestrator.ts';
 import { isParallelParentChild } from '../src/parentContract.ts';
+import { IOS_WDA_RUNNER_APP_PATH } from '../src/hostPreflight.ts';
 import {
   SESSION_TEST_CAP,
   SMOKE_SHARDS,
@@ -243,6 +244,10 @@ class MockRunner implements ParallelRunner {
     if (error) throw error;
     const held = this.heldCopies.get(destination);
     if (held) await held.promise;
+  }
+
+  async installIosApp(udid: string, appPath: string): Promise<void> {
+    this.events.push(`install-ios:${udid}:${appPath}`);
   }
 }
 
@@ -890,6 +895,14 @@ test('iOS isolates selections, builds serially, and prebuilds WDA once', async (
   assert.equal(
     runner.commands.filter(item => item.script === 'tests:appium:ios:prebuild-wda').length,
     1,
+  );
+  assert.deepEqual(
+    runner.events.filter(item => item.startsWith('install-ios:')),
+    [
+      `install-ios:udid-1:${IOS_WDA_RUNNER_APP_PATH}`,
+      `install-ios:udid-2:${IOS_WDA_RUNNER_APP_PATH}`,
+      `install-ios:udid-4:${IOS_WDA_RUNNER_APP_PATH}`,
+    ],
   );
   const appiums = runner.commands.filter(item => item.role.endsWith('Appium'));
   assert.ok(

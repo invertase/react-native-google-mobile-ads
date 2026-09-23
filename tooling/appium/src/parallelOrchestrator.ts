@@ -4,11 +4,14 @@ import {
   type ParallelPlatform,
 } from './parallelPlan.ts';
 import { PARALLEL_PARENT_CONTRACT } from './parentContract.ts';
+import { IOS_WDA_RUNNER_APP_PATH } from './hostPreflight.ts';
 import { serialAndroidApkPath } from './slots.ts';
 import {
   ANDROID_DEVICE_HARD_FAILURES,
+  IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS,
   PROCESS_DRAIN_TIMEOUT_MS,
   StartupSupervisor,
+  WORKER_STARTUP_TIMEOUT_MS,
   androidDeviceLogCommand,
   invocationPaths,
   iosDeviceLogCommand,
@@ -42,6 +45,12 @@ export type ParallelRunner = {
   freshEnvFile(path: string): Promise<void>;
   readEnvFile(path: string): Promise<Record<string, string>>;
   copyFile(source: string, destination: string): Promise<void>;
+  /**
+   * Install a prebuilt .app onto an exact simulator before concurrent Appium
+   * session create. Used for WebDriverAgent so three XCUITest sessions do not
+   * contend on first-time WDA install inside the 60s worker/session barrier.
+   */
+  installIosApp(udid: string, appPath: string): Promise<void>;
   monitorPort?(port: number): RunningCommand;
   /** Test seam: skip real Metro bundle prefetch in mock orchestrator runs. */
   probeExternalMetroBundle?: MetroPackagerProbe;
@@ -345,7 +354,11 @@ async function runConcurrentPhase(
           ),
         ]
       : [];
-  const startup = new StartupSupervisor(plan.map(entry => entry.label));
+  const startup = new StartupSupervisor(
+    plan.map(entry => entry.label),
+    undefined,
+    platform === 'ios' ? IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS : undefined,
+  );
   startup.onFailure(() => void context.stopActive());
 
   try {
@@ -597,6 +610,15 @@ async function preparePlatform(
     named('tests:appium:ios:prebuild-wda', childEnv(first), 'shared WDA prebuild'),
   );
   context.throwIfAborted();
+  // Pre-install the shared WDA runner on every selected simulator before the
+  // concurrent Appium barrier. Concurrent first-time installs routinely exceed
+  // the 60s worker/session ceiling (sessions=2/3) even when the artifact exists.
+  for (const entry of plan) {
+    context.throwIfAborted();
+    const selection = selected.get(entry.slot)!;
+    await runner.installIosApp(selection.RNGMA_IOS_UDID!, IOS_WDA_RUNNER_APP_PATH);
+    context.throwIfAborted();
+  }
 }
 
 export async function runParallelE2e(
@@ -937,10 +959,19 @@ export async function runCombinedParallelE2e(
         paths.metro,
       ),
     );
-    const startup = new StartupSupervisor([
-      ...androidPlan.map(entry => `android:${entry.label}`),
-      ...iosPlan.map(entry => `ios:${entry.label}`),
-    ]);
+    const startup = new StartupSupervisor(
+      [
+        ...androidPlan.map(entry => `android:${entry.label}`),
+        ...iosPlan.map(entry => `ios:${entry.label}`),
+      ],
+      undefined,
+      {
+        // Combined parallel: Android remains on the serial 60s ceiling; only
+        // iOS children receive the longer XCUITest contention allowance.
+        defaultMs: WORKER_STARTUP_TIMEOUT_MS,
+        byPrefix: { 'ios:': IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS },
+      },
+    );
     startup.onFailure(() => void context.stopActive());
     superviseLines(startup, 'metro', metro.child);
     const readiness = waitForMetroReadiness(startup, signal =>

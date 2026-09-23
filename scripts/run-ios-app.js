@@ -19,6 +19,22 @@ function parseUdid(args) {
   return udid;
 }
 
+/** Boot if Shutdown (simctl boot is a no-op error when already Booted), then wait for ready. */
+function ensureSimulatorBooted(udid) {
+  try {
+    execFileSync('xcrun', ['simctl', 'boot', udid], { stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (error) {
+    const stderr = String(error.stderr || error.message || '');
+    if (!/current state: Booted|Unable to boot device in current state: Booted/i.test(stderr)) {
+      // Already booted is fine; any other boot failure still needs bootstatus/install to surface.
+      if (!/Booted/i.test(stderr)) {
+        console.warn(`simctl boot ${udid}: ${stderr.trim() || 'non-zero exit'}`);
+      }
+    }
+  }
+  execFileSync('xcrun', ['simctl', 'bootstatus', udid, '-b'], { stdio: 'inherit' });
+}
+
 function run(args = process.argv.slice(2)) {
   const udid = parseUdid(args);
   const executablePath = resolve(appPath, 'ReactTestApp');
@@ -33,6 +49,8 @@ function run(args = process.argv.slice(2)) {
     { encoding: 'utf8' },
   ).trim();
 
+  ensureSimulatorBooted(udid);
+
   execFileSync('xcrun', ['simctl', 'install', udid, appPath], {
     stdio: 'inherit',
   });
@@ -41,7 +59,7 @@ function run(args = process.argv.slice(2)) {
   });
 }
 
-module.exports = { appPath, parseUdid, run };
+module.exports = { appPath, parseUdid, run, ensureSimulatorBooted };
 
 if (require.main === module) {
   try {
