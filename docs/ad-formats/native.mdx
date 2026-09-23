@@ -294,6 +294,9 @@ const NativeComponent = ({ consentReady }: { consentReady: boolean }) => {
       <NativeAsset assetType={NativeAssetType.HEADLINE}>
         <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
       </NativeAsset>
+      <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+        <Text style={{ padding: 8 }}>{nativeAd.callToAction}</Text>
+      </NativeAsset>
       {/* Always display an ad attribution. */}
       <Text>Sponsored</Text>
       <NativeMediaView />
@@ -377,8 +380,8 @@ Wrapping the asset view with another view can interfere with these tasks.
 Do:
 
 ```tsx
-<NativeAsset assetType={NativeAssetType.CTA}>
-  <Text style={{ padding: 8 }}>{nativeAd.cta}</Text>
+<NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+  <Text style={{ padding: 8 }}>{nativeAd.callToAction}</Text>
 </NativeAsset>
 <NativeAsset assetType={NativeAssetType.ICON}>
   <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} style={{ borderRadius: 8 }} />
@@ -388,9 +391,9 @@ Do:
 Don't:
 
 ```tsx
-<NativeAsset assetType={NativeAssetType.CTA}>
+<NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
   <TouchableOpacity style={{ padding: 8 }}>
-    <Text>{nativeAd.cta}</Text>
+    <Text>{nativeAd.callToAction}</Text>
   </TouchableOpacity>
 </NativeAsset>
 <NativeAsset assetType={NativeAssetType.ICON}>
@@ -399,6 +402,12 @@ Don't:
   </View>
 </NativeAsset>
 ```
+
+<Info>
+  Use `NativeAssetType.CALL_TO_ACTION` (wire value `'callToAction'`) and `nativeAd.callToAction`.
+  There is no `NativeAssetType.CTA` or `nativeAd.cta` — those names never register the view with the
+  SDK, so the button appears but does not open the click URL.
+</Info>
 
 ### FlatList and preloaded native ads
 
