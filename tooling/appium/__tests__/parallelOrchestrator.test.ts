@@ -337,7 +337,7 @@ test('parallel mapping rejects forbidden, duplicate, and missing entries', () =>
   assert.throws(() => validateParallelAssignments(copy().slice(0, 2)), /exactly one wave/);
   const missingSpec = copy();
   missingSpec[2]!.spec = missingSpec[1]!.spec;
-  assert.throws(() => validateParallelAssignments(missingSpec), /every smoke spec/);
+  assert.throws(() => validateParallelAssignments(missingSpec), /first-wave smoke spec/);
 });
 
 test('parallel slot configuration rejects malformed, forbidden, duplicate, and conflicting input', () => {

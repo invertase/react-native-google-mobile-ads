@@ -5,6 +5,7 @@ import {
   tapByTestId,
 } from '../test/helpers/gallery.ts';
 import { FLUSH_TEARDOWN_SECTION } from './formats.ts';
+import { nativeCoverageCheckpointSummary } from './nativeCoverageCheckpoints.ts';
 import { AppiumTestIds } from './testIds.ts';
 
 /**
@@ -30,7 +31,10 @@ export async function flushCoverageFromApp(): Promise<void> {
     await tapByTestId(AppiumTestIds.flushCoverage);
     // Allow native dump + optional JS coverage write to finish.
     await driver.pause(750);
-    console.log('[native-coverage] Appium teardown tapped Flush coverage');
+    const { checkpointCount, deviceGapCount } = nativeCoverageCheckpointSummary();
+    console.log(
+      `[native-coverage] Appium teardown tapped Flush coverage (${checkpointCount} Jacoco checkpoints; ${deviceGapCount} documented device gaps)`,
+    );
   } catch (error) {
     console.warn('[native-coverage] Appium teardown flush skipped:', error);
   }

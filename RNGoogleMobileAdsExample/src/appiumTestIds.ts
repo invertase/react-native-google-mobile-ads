@@ -42,6 +42,8 @@ export const AppiumTestIds = {
     poolInterstitialImperative: 'gma.format.pool-interstitial-imperative',
     poolCapabilityGates: 'gma.format.pool-capability-gates',
     poolRwiPreloadGate: 'gma.format.pool-rwi-preload-gate',
+    multiFormatRequest: 'gma.format.multi-format-request',
+    multiFormatHook: 'gma.format.multi-format-hook',
   },
   /** Home-screen flush control — Appium session teardown taps this before pull. */
   flushCoverage: 'gma.debug.flushCoverage',

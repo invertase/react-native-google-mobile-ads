@@ -5,6 +5,7 @@ import {
   type GallerySectionId,
   type NavigationSmokeCase,
   type RepresentativeRequestOutcomeContract,
+  type SdkUtilitySurfaceContract,
 } from '../../src/formats.ts';
 import {
   classifyHookLoadOutcome,
@@ -954,6 +955,8 @@ const SHOW_LIFECYCLE_OPENED = 'Show lifecycle: opened';
 const SHOW_LIFECYCLE_CLOSED = 'Show lifecycle: closed';
 const HOOK_LIFECYCLE_SHOWING = 'status=showing';
 const HOOK_LIFECYCLE_CLOSED = 'status=closed';
+const UTILITY_LIFECYCLE_OPENED = 'Utility lifecycle: opened';
+const UTILITY_LIFECYCLE_CLOSED = 'Utility lifecycle: closed';
 
 /** Dismiss a fullscreen test creative without tapping in-ad UI (system back). */
 async function dismissFullscreenAdWithoutCreativeTap(): Promise<void> {
@@ -986,6 +989,30 @@ async function assertShowCloseLifecycle(formatId: string): Promise<void> {
       platform: isAndroid() ? 'android' : 'ios',
       opened: SHOW_LIFECYCLE_OPENED,
       closed: SHOW_LIFECYCLE_CLOSED,
+    })}`,
+  );
+}
+
+/** Hook screens publish `Hook lifecycle:` markers; reward/paid delivery stays non-blocking. */
+async function assertUtilityOpenCloseLifecycle(formatId: string): Promise<void> {
+  await tapFormatAction(AppiumTestIds.action.show(formatId));
+  await waitForTestIdTextContaining(
+    AppiumTestIds.action.lifecycle(formatId),
+    UTILITY_LIFECYCLE_OPENED,
+    90000,
+  );
+  await dismissFullscreenAdWithoutCreativeTap();
+  await waitForTestIdTextContaining(
+    AppiumTestIds.action.lifecycle(formatId),
+    UTILITY_LIFECYCLE_CLOSED,
+    90000,
+  );
+  console.log(
+    `[utility-open-close-proof] ${JSON.stringify({
+      format: formatId,
+      platform: isAndroid() ? 'android' : 'ios',
+      opened: UTILITY_LIFECYCLE_OPENED,
+      closed: UTILITY_LIFECYCLE_CLOSED,
     })}`,
   );
 }
@@ -1107,6 +1134,16 @@ async function runFormatContract(opts: {
   });
 }
 
+/** Prove MobileAds utility surfaces open and close without SDK version or ad-fill claims. */
+export async function proveSdkUtilitySurface(contract: SdkUtilitySurfaceContract): Promise<void> {
+  await withInstrumentationRecovery(async () => {
+    await openFormat(contract.id, contract.galleryTitle);
+    await assertDisplayed(contract.containerId);
+    await assertUtilityOpenCloseLifecycle(contract.id);
+    await backToGallery();
+  });
+}
+
 /** Broad gallery contract: navigation and container presence only, never ad fill. */
 export async function navigateToFormat(format: NavigationSmokeCase): Promise<void> {
   await runFormatContract({
@@ -1129,7 +1166,9 @@ export async function proveRepresentativeRequestOutcome(
     platform: isAndroid() ? 'android' : 'ios',
     path: format.path,
     retry: format.retry ?? 'default',
-    hookAutoLoad: format.path === 'hook' && !format.actionId,
+    hookAutoLoad:
+      (format.path === 'hook' && !format.actionId) ||
+      (format.path === 'multi-format' && format.multiFormatHookAutoLoad === true),
     runtime: {
       navigate: async () => {
         await openFormatStrict(format.id, format.galleryTitle);
@@ -1191,6 +1230,41 @@ export async function proveRepresentativeRequestOutcome(
             rectangle,
           })}`,
         );
+      }
+      if (format.renderProof === 'native-or-banner') {
+        const loadedEl = await findByTestId(AppiumTestIds.action.loaded(format.id));
+        const loadedText = await loadedEl.getText();
+        const winner = /winner=(native|banner)/.exec(loadedText)?.[1];
+        if (winner !== 'native' && winner !== 'banner') {
+          throw new Error(
+            `[render-proof] ${format.id}: loaded marker omitted winner=native|banner (text=${JSON.stringify(loadedText)})`,
+          );
+        }
+        if (winner === 'native') {
+          const rectangle = await assertRenderedRectangle(
+            AppiumTestIds.action.rendered(format.id),
+          );
+          console.log(
+            `[render-proof] ${JSON.stringify({
+              format: format.id,
+              platform: isAndroid() ? 'android' : 'ios',
+              winner,
+              rectangle,
+            })}`,
+          );
+        } else {
+          const evidence = await assertRenderedBannerSubtree(
+            AppiumTestIds.action.rendered(format.id),
+          );
+          console.log(
+            `[render-proof] ${JSON.stringify({
+              format: format.id,
+              platform: isAndroid() ? 'android' : 'ios',
+              winner,
+              ...evidence,
+            })}`,
+          );
+        }
       }
       if (format.hookLifecycle) {
         await assertHookShowCloseLifecycle(format.id);
