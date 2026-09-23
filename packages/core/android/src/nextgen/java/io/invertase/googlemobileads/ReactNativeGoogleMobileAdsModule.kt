@@ -50,6 +50,7 @@ class ReactNativeGoogleMobileAdsModule(
       // getVersion() throws before Next-Gen initialization; the selected dependency version is
       // generated into BuildConfig so module construction remains safe.
       "sdkVersion" to BuildConfig.GOOGLE_MOBILE_ADS_SDK_VERSION,
+      "backend" to ReactNativeGoogleMobileAds.backend,
     )
 
   private fun buildRequestConfiguration(requestConfiguration: ReadableMap): RequestConfiguration {

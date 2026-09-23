@@ -79,15 +79,17 @@ describe('native SDK version overrides', () => {
 
   it('reports the actually linked SDK through synchronous native constants', () => {
     expect(androidModule).toContain('"sdkVersion" to MobileAds.getVersion().toString()');
+    expect(androidModule).toContain('"backend" to ReactNativeGoogleMobileAds.backend');
     expect(iosModule).toContain(
       'GADVersionNumber version = GADMobileAds.sharedInstance.versionNumber',
     );
     expect(iosModule).toContain('[NSString stringWithFormat:@"%ld.%ld.%ld"');
+    expect(iosModule).toContain('@"backend" : @"ios"');
     expect(iosModule).not.toContain('GADGetStringFromVersionNumber');
-    expect(capabilitySource).toContain(
-      'const { sdkVersion } = NativeGoogleMobileAdsModule.getConstants();',
-    );
+    expect(capabilitySource).toContain('NativeGoogleMobileAdsModule.getConstants()');
+    expect(capabilitySource).toContain('backend:');
     expect(capabilitySource).not.toMatch(/25\.4\.0|13\.6\.0|SDK_VERSION/);
+    expect(capabilitySource).not.toContain("backend = isIos ? 'ios' : 'android-classic'");
   });
 
   it('does not add SDK override fields to the Expo plugin', () => {
