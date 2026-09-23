@@ -14,6 +14,7 @@ export const AppiumTestIds = {
     all: 'gma.gallery.section.all',
     formats: 'gma.gallery.section.formats',
     hooks: 'gma.gallery.section.hooks',
+    pools: 'gma.gallery.section.pools',
     debug: 'gma.gallery.section.debug',
   },
   format: {
@@ -37,6 +38,10 @@ export const AppiumTestIds = {
     flushCoverage: 'gma.format.flush-coverage',
     /** Pattern C NativeRNGMATesting probe ping (debug gallery). */
     nativeRngmaTesting: 'gma.format.native-rngma-testing',
+    poolInterstitialProvider: 'gma.format.pool-interstitial-provider',
+    poolInterstitialImperative: 'gma.format.pool-interstitial-imperative',
+    poolCapabilityGates: 'gma.format.pool-capability-gates',
+    poolRwiPreloadGate: 'gma.format.pool-rwi-preload-gate',
   },
   /** Home-screen flush control — Appium session teardown taps this before pull. */
   flushCoverage: 'gma.debug.flushCoverage',

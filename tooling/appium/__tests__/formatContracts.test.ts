@@ -10,6 +10,8 @@ import {
 } from '../src/formats.ts';
 import {
   classifyHookLoadOutcome,
+  classifyPoolFilledOutcome,
+  classifyPoolStructuredUnsupportedGate,
   classifyRequestOutcome,
   evaluateRepresentativeRequestAttempt,
   formatRequestOutcomeAttempt,
@@ -98,6 +100,10 @@ test('locks representative request-outcome contracts for classic ad success path
       AppiumTestIds.format.interstitialHook,
       AppiumTestIds.format.rewardedHook,
       AppiumTestIds.format.rewardedInterstitialHook,
+      AppiumTestIds.format.poolInterstitialProvider,
+      AppiumTestIds.format.poolInterstitialImperative,
+      AppiumTestIds.format.poolCapabilityGates,
+      AppiumTestIds.format.poolRwiPreloadGate,
     ],
   );
   assert.deepEqual(
@@ -121,6 +127,15 @@ test('locks representative request-outcome contracts for classic ad success path
       AppiumTestIds.format.interstitialHook,
       AppiumTestIds.format.rewardedHook,
       AppiumTestIds.format.rewardedInterstitialHook,
+    ],
+  );
+  assert.deepEqual(
+    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.filter(contract => contract.poolShowClose).map(
+      contract => contract.id,
+    ),
+    [
+      AppiumTestIds.format.poolInterstitialProvider,
+      AppiumTestIds.format.poolInterstitialImperative,
     ],
   );
 });
@@ -178,6 +193,27 @@ test('render rectangle proof rejects zero dimensions', () => {
   assert.equal(hasNonzeroRectangle({ width: 320, height: 50 }), true);
   assert.equal(hasNonzeroRectangle({ width: 0, height: 50 }), false);
   assert.equal(hasNonzeroRectangle({ width: 320, height: 0 }), false);
+});
+
+test('classifies terminal pooled fill markers from pool status text', () => {
+  assert.equal(
+    classifyPoolFilledOutcome('poolStatus=ready; pooledStatus=filled; available=true'),
+    'loaded',
+  );
+  assert.equal(
+    classifyPoolStructuredUnsupportedGate(
+      'peek=structured-unsupported reason=pool/peek-unsupported',
+      'peek',
+    ),
+    'loaded',
+  );
+  assert.equal(
+    classifyPoolStructuredUnsupportedGate(
+      'rwi=structured-unsupported reason=pool/format-preload-unsupported',
+      'rwi-preload',
+    ),
+    'loaded',
+  );
 });
 
 test('classifies terminal hook load markers from hook status text', () => {
@@ -738,6 +774,8 @@ test('retires blanket per-attempt acceptance and locks real render probes', () =
   assert.match(gallerySource, /\[show-close-proof\]/);
   assert.match(gallerySource, /\[hook-lifecycle-proof\]/);
   assert.match(gallerySource, /classifyHookLoadOutcome/);
+  assert.match(gallerySource, /classifyPoolFilledOutcome/);
+  assert.match(gallerySource, /observePoolFilledOutcome/);
   assert.match(gallerySource, /format\.renderProof === 'banner'/);
   assert.match(gallerySource, /root\.\$\$\('\.\/\/\*'\)/);
   assert.match(gallerySource, /hasNonzeroRectangle\(size\)/);
