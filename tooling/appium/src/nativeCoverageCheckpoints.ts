@@ -9,9 +9,10 @@ import {
 import { AppiumTestIds } from './testIds.ts';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+/** Classic backend sources (Next-Gen mirrors the same filenames under `src/nextgen/`). */
 const androidProductRoot = path.join(
   repositoryRoot,
-  'packages/core/android/src/main/java/io/invertase/googlemobileads',
+  'packages/core/android/src/classic/java/io/invertase/googlemobileads',
 );
 const iosProductRoot = path.join(repositoryRoot, 'packages/core/ios/RNGoogleMobileAds');
 
