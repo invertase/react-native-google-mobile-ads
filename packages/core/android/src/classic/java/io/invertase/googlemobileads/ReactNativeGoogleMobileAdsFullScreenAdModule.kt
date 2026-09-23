@@ -39,10 +39,14 @@ import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
 import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_APP_EVENT
 import io.invertase.googlemobileads.common.ReactNativeModule
 
-abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
+abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
   reactContext: ReactApplicationContext?,
   moduleName: String,
 ) : ReactNativeModule(reactContext, moduleName) {
+  init {
+    FullscreenAdModuleRefs.register(this)
+  }
+
   private val slots = FullscreenRequestSlotTracker<T>()
 
   abstract fun getAdEventName(): String
@@ -175,16 +179,28 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
   fun adoptPolledAd(
     requestId: Int,
     adUnitId: String,
-    ad: T & Any,
+    ad: T,
   ) {
     slots.adopt(requestId, ad)
     wirePresentingCallbacks(requestId, adUnitId, ad, Arguments.createMap())
   }
 
+  /** Pool poll passes a concrete preloader ad; star-projection entry for shared helpers. */
+  @Suppress("UNCHECKED_CAST")
+  internal fun adoptPolledAdAny(
+    requestId: Int,
+    adUnitId: String,
+    ad: Any,
+  ) {
+    val typed = ad as T
+    slots.adopt(requestId, typed)
+    wirePresentingCallbacks(requestId, adUnitId, typed, Arguments.createMap())
+  }
+
   private fun wirePresentingCallbacks(
     requestId: Int,
     adUnitId: String,
-    ad: T & Any,
+    ad: T,
     adRequestOptions: ReadableMap,
   ) {
     val adHelper = ReactNativeGoogleMobileAdsAdHelper(ad)
@@ -287,6 +303,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
   }
 
   override fun invalidate() {
+    FullscreenAdModuleRefs.unregister(name)
     slots.clear()
     super.invalidate()
   }
@@ -297,7 +314,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T>(
     private val adUnitId: String,
     private val adRequestOptions: ReadableMap,
   ) : AdLoadCallback<T>() {
-    override fun onAdLoaded(ad: T & Any) {
+    override fun onAdLoaded(ad: T) {
       try {
         if (!slots.tryCommit(requestId, generation, ad)) {
           // Destroyed or superseded while loading — drop without emitting LOADED.

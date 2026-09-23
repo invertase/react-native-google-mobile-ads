@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { AdEventType } from '../AdEventType';
 import { getRegisteredAdPool } from '../internal/adPoolRegistry';
 import type { AdError } from '../types/AdError';
 import { AdFormat } from '../types/AdFormat';
@@ -303,8 +304,10 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
             const fullscreen = result.ad;
             const originalShow = fullscreen.show.bind(fullscreen);
             fullscreen.show = async (options?: AdShowOptions) => {
-              await originalShow(options);
-              if (adRef.current === fullscreen && ownedByHookRef.current) {
+              const consumeIfOwned = () => {
+                if (adRef.current !== fullscreen || !ownedByHookRef.current) {
+                  return;
+                }
                 try {
                   fullscreen.destroy();
                 } catch {
@@ -319,6 +322,16 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
                   error: null,
                 }));
                 void refreshAvailability(poolIdRef.current);
+              };
+              const offClosed = fullscreen.addAdEventListener(AdEventType.CLOSED, () => {
+                offClosed();
+                consumeIfOwned();
+              });
+              try {
+                await originalShow(options);
+              } catch (error) {
+                offClosed();
+                throw error;
               }
             };
           }

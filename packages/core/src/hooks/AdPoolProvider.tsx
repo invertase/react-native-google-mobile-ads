@@ -16,6 +16,7 @@
  */
 
 import * as React from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { AdPools } from '../AdPools';
 import { getRegisteredAdPool, unregisterAdPool } from '../internal/adPoolRegistry';
@@ -75,8 +76,74 @@ function configSignature(config: AdPoolConfig): string {
 export function AdPoolProvider(props: AdPoolProviderProps): React.ReactElement {
   const { pools, children } = props;
   const ownedRef = React.useRef<Map<string, OwnedEntry>>(new Map());
+  const pendingCreatesRef = React.useRef(new Set<string>());
+  const createAttemptsRef = React.useRef(new Map<string, number>());
+  const retryTimersRef = React.useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const mountedRef = React.useRef(true);
+  const poolsRef = React.useRef(pools);
+  poolsRef.current = pools;
+  const poolsSignature = pools.map(config => configSignature(config)).join('\0');
+
+  const kickCreate = React.useCallback((config: AdPoolConfig, signature: string) => {
+    const poolId = config.poolId;
+    if (
+      !mountedRef.current ||
+      getRegisteredAdPool(poolId) ||
+      pendingCreatesRef.current.has(poolId)
+    ) {
+      return;
+    }
+    const owned = ownedRef.current;
+    const entry = owned.get(poolId);
+    if (!entry || entry.signature !== signature) {
+      return;
+    }
+    const attempts = createAttemptsRef.current.get(poolId) ?? 0;
+    if (attempts >= 16) {
+      return;
+    }
+    createAttemptsRef.current.set(poolId, attempts + 1);
+    pendingCreatesRef.current.add(poolId);
+    void AdPools.create(config)
+      .catch(() => {
+        // Error surfaces via useAdPool status; registry may lack the id.
+      })
+      .finally(() => {
+        pendingCreatesRef.current.delete(poolId);
+        if (!mountedRef.current || getRegisteredAdPool(poolId)) {
+          return;
+        }
+        const delay = Math.min(200 * (attempts + 1), 2000);
+        const existing = retryTimersRef.current.get(poolId);
+        if (existing) {
+          clearTimeout(existing);
+        }
+        retryTimersRef.current.set(
+          poolId,
+          setTimeout(() => {
+            retryTimersRef.current.delete(poolId);
+            kickCreate(config, signature);
+          }, delay),
+        );
+      });
+  }, []);
+
+  const kickMissingOwnedPools = React.useCallback(() => {
+    const owned = ownedRef.current;
+    for (const entry of owned.values()) {
+      kickCreate(entry.config, entry.signature);
+    }
+  }, [kickCreate]);
 
   React.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const pools = poolsRef.current;
     const nextIds = new Set(pools.map(p => p.poolId));
     const owned = ownedRef.current;
 
@@ -84,6 +151,12 @@ export function AdPoolProvider(props: AdPoolProviderProps): React.ReactElement {
     for (const poolId of Array.from(owned.keys())) {
       if (!nextIds.has(poolId)) {
         owned.delete(poolId);
+        createAttemptsRef.current.delete(poolId);
+        const timer = retryTimersRef.current.get(poolId);
+        if (timer) {
+          clearTimeout(timer);
+          retryTimersRef.current.delete(poolId);
+        }
         unregisterAdPool(poolId);
       }
     }
@@ -92,23 +165,46 @@ export function AdPoolProvider(props: AdPoolProviderProps): React.ReactElement {
     for (const config of pools) {
       const signature = configSignature(config);
       const previous = owned.get(config.poolId);
-      if (previous && previous.signature === signature && getRegisteredAdPool(config.poolId)) {
-        continue;
+      if (previous && previous.signature === signature) {
+        if (
+          getRegisteredAdPool(config.poolId) ||
+          pendingCreatesRef.current.has(config.poolId)
+        ) {
+          continue;
+        }
+      } else {
+        createAttemptsRef.current.delete(config.poolId);
       }
       owned.set(config.poolId, { config, signature });
-      void AdPools.create(config).catch(() => {
-        // Error surfaces via useAdPool status; registry may lack the id.
-      });
+      kickCreate(config, signature);
     }
-  }, [pools]);
+  }, [kickCreate, poolsSignature]);
+
+  React.useEffect(() => {
+    const onAppState = (state: AppStateStatus) => {
+      if (state === 'active') {
+        kickMissingOwnedPools();
+      }
+    };
+    const sub = AppState.addEventListener('change', onAppState);
+    return () => {
+      sub.remove();
+    };
+  }, [kickMissingOwnedPools]);
 
   React.useEffect(() => {
     return () => {
       const owned = ownedRef.current;
       for (const poolId of Array.from(owned.keys())) {
+        const timer = retryTimersRef.current.get(poolId);
+        if (timer) {
+          clearTimeout(timer);
+        }
         unregisterAdPool(poolId);
       }
       owned.clear();
+      createAttemptsRef.current.clear();
+      retryTimersRef.current.clear();
     };
   }, []);
 

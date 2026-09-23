@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import RNGoogleMobileAdsModule from './specs/modules/NativeGoogleMobileAdsModule';
 import { validateAdRequestConfiguration } from './validateAdRequestConfiguration';
 import { SharedEventEmitter } from './internal/SharedEventEmitter';
@@ -7,6 +9,17 @@ import { RequestConfiguration } from './types/RequestConfiguration';
 import { version } from './version';
 
 const NATIVE_MODULE_EVENT_SUBSCRIPTIONS: Record<string, unknown> = {};
+
+let androidInitializePromise: Promise<void> | null = null;
+
+/** Coalesced Android GMA init; pool preload/show hard-fail without it. */
+export function ensureMobileAdsInitialized(): Promise<void> {
+  if (Platform.OS !== 'android') {
+    return Promise.resolve();
+  }
+  androidInitializePromise ??= RNGoogleMobileAdsModule.initialize().then(() => undefined);
+  return androidInitializePromise;
+}
 
 const nativeEvents = [
   'google_mobile_ads_app_open_event',

@@ -45,6 +45,10 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Ad>(
   reactContext: ReactApplicationContext?,
   moduleName: String,
 ) : ReactNativeModule(reactContext, moduleName) {
+  init {
+    FullscreenAdModuleRefs.register(this)
+  }
+
   private val slots = FullscreenRequestSlotTracker<T>()
 
   abstract fun getAdEventName(): String
@@ -191,6 +195,15 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Ad>(
       return
     }
     wireCallbacks(requestId, adUnitId, ad, null)
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  internal fun adoptPolledAdAny(
+    requestId: Int,
+    adUnitId: String,
+    ad: Any,
+  ) {
+    adoptPolledAd(requestId, adUnitId, ad as T)
   }
 
   private fun sendRewardEvent(
@@ -419,6 +432,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Ad>(
   protected open fun createEventMap(): WritableMap = Arguments.createMap()
 
   override fun invalidate() {
+    FullscreenAdModuleRefs.unregister(name)
     slots.clear()
     super.invalidate()
   }

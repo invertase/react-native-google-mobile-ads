@@ -3,6 +3,7 @@ import { act, render } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 
 import {
+  AdEventType,
   AdFormat,
   AdPoolPresets,
   AdPoolProvider,
@@ -453,7 +454,11 @@ describe('FEAT-05 pool coverage arms', () => {
     expect(first?.status).toBe('filled');
 
     await act(async () => {
-      await pooledHook!.ad!.show();
+      const showPromise = pooledHook!.ad!.show();
+      SharedEventEmitter.emit(`google_mobile_ads_interstitial_event:sig-unit:0`, {
+        body: { type: AdEventType.CLOSED },
+      });
+      await showPromise;
     });
     expect(pooledHook!.status).toBe('consumed');
 

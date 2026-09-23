@@ -35,6 +35,18 @@ class PoolModuleSmokeTest {
   }
 
   @Test
+  fun fullscreenModuleRefsResolvePrefersRegistrationOverLegacy() {
+    val legacy = ReactNativeGoogleMobileAdsInterstitialModule(null)
+    assertEquals(
+      legacy,
+      FullscreenAdModuleRefs.resolve(
+        ReactNativeGoogleMobileAdsInterstitialModule.NAME,
+      ) { null },
+    )
+    legacy.invalidate()
+  }
+
+  @Test
   fun slotTrackerAdoptCommitsAd() {
     val tracker = FullscreenRequestSlotTracker<String>()
     val generation = tracker.adopt(7, "polled-ad")

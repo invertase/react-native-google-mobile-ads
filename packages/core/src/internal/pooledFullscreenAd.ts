@@ -17,6 +17,7 @@
 
 import { EmitterSubscription } from 'react-native';
 
+import { ensureMobileAdsInitialized } from '../MobileAds';
 import { AdEventType } from '../AdEventType';
 import { GAMAdEventType } from '../GAMAdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
@@ -166,6 +167,12 @@ export function createPooledFullscreenAd(
       }
 
       let payload: AdEventPayload<EventType>;
+      if (type === AdEventType.ERROR) {
+        showRequested = false;
+      }
+      if (type === AdEventType.CLOSED) {
+        showRequested = false;
+      }
       if (error) {
         payload = adErrorFromNativeEvent(
           error,
@@ -210,7 +217,12 @@ export function createPooledFullscreenAd(
       }
       const validated = validateAdShowOptions(showOptions);
       showRequested = true;
-      return bridge.show(options.requestId, options.adUnitId, validated);
+      return ensureMobileAdsInitialized()
+        .then(() => bridge.show(options.requestId, options.adUnitId, validated))
+        .catch(error => {
+          showRequested = false;
+          throw error;
+        });
     },
     addAdEventListener<T extends EventType>(type: T, listener: AdEventListener<T>): () => void {
       if (destroyed) {
