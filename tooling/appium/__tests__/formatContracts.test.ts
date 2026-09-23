@@ -784,6 +784,8 @@ test('retires blanket per-attempt acceptance and locks real render probes', () =
   assert.match(gallerySource, /\[render-proof\]/);
   assert.match(gallerySource, /descendantType/);
   assert.match(gallerySource, /emitStatusLabel: 'probe-seam'/);
+  assert.match(gallerySource, /\[utility-open-close-proof\]/);
+  assert.match(gallerySource, /proveSdkUtilitySurface/);
 });
 
 test('deterministic NativeRNGMATesting seam requires exact state markers', () => {

@@ -215,13 +215,12 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     contractId: AppiumTestIds.format.debugMenu,
     exampleComponent: 'DebugMenuFormat',
     screenTestId: AppiumTestIds.format.debugMenu,
-    screenTestIdExpression: 'AppiumTestIds.format.debugMenu',
+    screenTestIdExpression: 'formatId',
     assertionTestId: AppiumTestIds.action.lifecycle(AppiumTestIds.format.debugMenu),
-    assertionTestIdExpression:
-      'AppiumTestIds.action.lifecycle(AppiumTestIds.format.debugMenu)',
+    assertionTestIdExpression: 'AppiumTestIds.action.lifecycle(formatId)',
     success: 'utility-open-close',
     assertion:
-      'MobileAds().openDebugMenu opens the native Debug Menu root UI, the Utility lifecycle marker reports opened, then after system back the marker reports closed without asserting SDK version metadata or ad delivery.',
+      'MobileAds().openDebugMenu opens the native Debug Menu root UI, the Utility lifecycle marker reports opened, then after system back the marker reports closed without asserting SDK internals or ad delivery.',
   }),
   lower(
     'GAMAdEventType',
@@ -285,13 +284,12 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     contractId: AppiumTestIds.format.adInspector,
     exampleComponent: 'AdInspectorFormat',
     screenTestId: AppiumTestIds.format.adInspector,
-    screenTestIdExpression: 'AppiumTestIds.format.adInspector',
+    screenTestIdExpression: 'formatId',
     assertionTestId: AppiumTestIds.action.lifecycle(AppiumTestIds.format.adInspector),
-    assertionTestIdExpression:
-      'AppiumTestIds.action.lifecycle(AppiumTestIds.format.adInspector)',
+    assertionTestIdExpression: 'AppiumTestIds.action.lifecycle(formatId)',
     success: 'utility-open-close',
     assertion:
-      'MobileAds().openAdInspector opens the native Ad Inspector root UI, the Utility lifecycle marker reports opened, then after system back the marker reports closed without asserting SDK version metadata or ad delivery.',
+      'MobileAds().openAdInspector opens the native Ad Inspector root UI, the Utility lifecycle marker reports opened, then after system back the marker reports closed without asserting SDK internals or ad delivery.',
   }),
   lower(
     'MultiFormatAdPresets',
