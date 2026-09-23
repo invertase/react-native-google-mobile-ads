@@ -2,12 +2,9 @@ package io.invertase.googlemobileads;
 
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.ViewGroup;
-import com.facebook.react.bridge.ReactContext;
 import com.google.android.libraries.ads.mobile.sdk.banner.AdSize;
 import io.invertase.googlemobileads.common.ReactNativeAdView;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,12 +47,9 @@ final class ReactNativeGoogleMobileAdsBannerSize {
 
   private static AdSize adaptive(String value, ViewGroup view) {
     try {
-      Display display =
-          Objects.requireNonNull(((ReactContext) view.getContext()).getCurrentActivity())
-              .getWindowManager()
-              .getDefaultDisplay();
-      DisplayMetrics metrics = new DisplayMetrics();
-      display.getMetrics(metrics);
+      // Resources.getDisplayMetrics() — not WindowManager.getDefaultDisplay()/Display.getMetrics()
+      // (both @Deprecated in android.jar API 30+).
+      DisplayMetrics metrics = view.getContext().getResources().getDisplayMetrics();
       ReactNativeAdView reactView = (ReactNativeAdView) view;
       int screenWidth = (int) (metrics.widthPixels / metrics.density);
       int width =
@@ -72,11 +66,12 @@ final class ReactNativeGoogleMobileAdsBannerSize {
           resolved =
               AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(view.getContext(), width);
         }
-      } else if ("LARGE_ANCHORED_ADAPTIVE_BANNER".equals(value)) {
-        resolved = AdSize.getLargeAnchoredAdaptiveBannerAdSize(view.getContext(), width);
       } else {
-        resolved =
-            AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(view.getContext(), width);
+        // Intentional alias: both ANCHORED_ADAPTIVE_BANNER and LARGE_ANCHORED_ADAPTIVE_BANNER
+        // resolve via LargeAnchored. ads-mobile-sdk 1.4.0 deprecates the 50dp-capped
+        // getCurrentOrientationAnchoredAdaptiveBannerAdSize (and portrait/landscape variants);
+        // only getLargeAnchored* remain. Matches TS @deprecated ANCHORED → LARGE.
+        resolved = AdSize.getLargeAnchoredAdaptiveBannerAdSize(view.getContext(), width);
       }
       Log.d(
           TAG,

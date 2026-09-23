@@ -9,7 +9,6 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.PixelUtil;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
@@ -27,6 +26,7 @@ import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError;
 import io.invertase.googlemobileads.common.ReactNativeAdView;
 import io.invertase.googlemobileads.common.SharedUtils;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
@@ -63,8 +63,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @Override
   public Map<String, Object> getExportedCustomDirectEventTypeConstants() {
-    return MapBuilder.of(
-        OnNativeEvent.EVENT_NAME, MapBuilder.of("registrationName", "onNativeEvent"));
+    Map<String, Object> registration = new HashMap<>();
+    registration.put("registrationName", "onNativeEvent");
+    Map<String, Object> constants = new HashMap<>();
+    constants.put(OnNativeEvent.EVENT_NAME, registration);
+    return constants;
   }
 
   @Override
@@ -207,16 +210,14 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
             view.getSizes(),
             view.getRequestOptions(),
             view.getManualImpressionsEnabled());
-    Activity activity = ((ReactContext) view.getContext()).getCurrentActivity();
-    if (activity == null) return;
-    BannerAd.load(
+    // BannerAd.load is @Deprecated ("Use AdView.loadAd() or BannerAdPreloader instead.").
+    adView.loadAd(
         request,
         new AdLoadCallback<BannerAd>() {
           @Override
           public void onAdLoaded(BannerAd ad) {
             view.post(
                 () -> {
-                  adView.registerBannerAd(ad, activity);
                   ad.setAdEventCallback(buildEventCallback(view, ad));
                   AdSize size = ad.getAdSize();
                   int width;
@@ -314,8 +315,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     event.putString("type", type);
     if (payload != null) event.merge(payload);
     ThemedReactContext context = (ThemedReactContext) view.getContext();
-    EventDispatcher dispatcher =
-        UIManagerHelper.getEventDispatcherForReactTag(context, view.getId());
+    EventDispatcher dispatcher = UIManagerHelper.getEventDispatcher(context);
     if (dispatcher != null) {
       dispatcher.dispatchEvent(
           new OnNativeEvent(UIManagerHelper.getSurfaceId(view), view.getId(), event));

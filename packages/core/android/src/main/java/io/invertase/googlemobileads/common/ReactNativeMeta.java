@@ -76,13 +76,13 @@ public class ReactNativeMeta {
 
     for (String key : metaData.keySet()) {
       if (key.startsWith(META_PREFIX)) {
-        Object value = metaData.get(key);
-        if (value == null) {
-          map.putNull(key);
-        } else if (value instanceof String) {
-          map.putString(key, (String) value);
-        } else if (value instanceof Boolean) {
-          map.putBoolean(key, (Boolean) value);
+        // Prefer typed Bundle getters — BaseBundle.get(String) is @Deprecated (API 33+).
+        // Manifest meta for this prefix is String or boolean (see getStringValue/getBooleanValue).
+        String asString = metaData.getString(key);
+        if (asString != null) {
+          map.putString(key, asString);
+        } else {
+          map.putBoolean(key, metaData.getBoolean(key));
         }
       }
     }

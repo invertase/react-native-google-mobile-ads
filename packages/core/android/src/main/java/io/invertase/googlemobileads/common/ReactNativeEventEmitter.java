@@ -132,7 +132,7 @@ public class ReactNativeEventEmitter {
 
   @MainThread
   private boolean emit(final NativeEvent event) {
-    if (!jsReady || reactContext == null || !reactContext.hasActiveCatalystInstance()) {
+    if (!jsReady || reactContext == null || !reactContext.hasActiveReactInstance()) {
       return false;
     }
 

@@ -26,7 +26,6 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.PixelUtil;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
@@ -46,6 +45,7 @@ import com.google.android.gms.ads.admanager.AppEventListener;
 import io.invertase.googlemobileads.common.ReactNativeAdView;
 import io.invertase.googlemobileads.common.SharedUtils;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
@@ -82,9 +82,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @Override
   public Map<String, Object> getExportedCustomDirectEventTypeConstants() {
-    MapBuilder.Builder<String, Object> builder = MapBuilder.builder();
-    builder.put(OnNativeEvent.EVENT_NAME, MapBuilder.of("registrationName", "onNativeEvent"));
-    return builder.build();
+    Map<String, Object> registration = new HashMap<>();
+    registration.put("registrationName", "onNativeEvent");
+    Map<String, Object> constants = new HashMap<>();
+    constants.put(OnNativeEvent.EVENT_NAME, registration);
+    return constants;
   }
 
   @Override
@@ -367,8 +369,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     }
 
     ThemedReactContext themedReactContext = ((ThemedReactContext) reactViewGroup.getContext());
-    EventDispatcher eventDispatcher =
-        UIManagerHelper.getEventDispatcherForReactTag(themedReactContext, reactViewGroup.getId());
+    EventDispatcher eventDispatcher = UIManagerHelper.getEventDispatcher(themedReactContext);
     if (eventDispatcher != null) {
       eventDispatcher.dispatchEvent(
           new OnNativeEvent(

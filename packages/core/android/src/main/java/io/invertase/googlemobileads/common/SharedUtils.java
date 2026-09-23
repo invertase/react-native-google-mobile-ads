@@ -22,7 +22,6 @@ import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.net.Uri;
-import android.os.Build;
 import android.util.Log;
 import com.facebook.react.bridge.*;
 import com.facebook.react.bridge.WritableNativeMap;
@@ -125,23 +124,12 @@ public class SharedUtils {
 
       if (backgroundActivities.size() != 0) {
         String currentActivity = "";
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-          List<ActivityManager.AppTask> taskInfo = activityManager.getAppTasks();
-          if (taskInfo.size() > 0) {
-            ActivityManager.RecentTaskInfo task = taskInfo.get(0).getTaskInfo();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-              currentActivity = task.baseActivity.getShortClassName();
-            } else {
-              currentActivity =
-                  task.origActivity != null
-                      ? task.origActivity.getShortClassName()
-                      : task.baseIntent.getComponent().getShortClassName();
-            }
-          }
-        } else {
-          List<ActivityManager.RunningTaskInfo> taskInfo = activityManager.getRunningTasks(1);
-          if (taskInfo.size() > 0) {
-            currentActivity = taskInfo.get(0).topActivity.getShortClassName();
+        // minSdk 24+: AppTask path only (ActivityManager.getRunningTasks is @Deprecated).
+        List<ActivityManager.AppTask> taskInfo = activityManager.getAppTasks();
+        if (taskInfo.size() > 0) {
+          ActivityManager.RecentTaskInfo task = taskInfo.get(0).getTaskInfo();
+          if (task.baseActivity != null) {
+            currentActivity = task.baseActivity.getShortClassName();
           }
         }
 

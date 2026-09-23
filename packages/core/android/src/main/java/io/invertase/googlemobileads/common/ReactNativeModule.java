@@ -80,7 +80,7 @@ public class ReactNativeModule extends ReactContextBaseJavaModule implements Con
   }
 
   public Activity getActivity() {
-    return getCurrentActivity();
+    return getReactApplicationContext().getCurrentActivity();
   }
 
   @Nonnull

@@ -19,10 +19,8 @@ package io.invertase.googlemobileads;
 
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.view.Display;
 import android.view.ViewGroup;
 import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
@@ -47,13 +45,9 @@ public class ReactNativeGoogleMobileAdsCommon {
   static AdSize getAdSizeForAdaptiveBanner(String preDefinedAdSize, ViewGroup reactViewGroup) {
 
     try {
-      Display display =
-          Objects.requireNonNull(((ReactContext) reactViewGroup.getContext()).getCurrentActivity())
-              .getWindowManager()
-              .getDefaultDisplay();
-
-      DisplayMetrics outMetrics = new DisplayMetrics();
-      display.getMetrics(outMetrics);
+      // Resources.getDisplayMetrics() — not WindowManager.getDefaultDisplay()/Display.getMetrics()
+      // (both @Deprecated in android.jar API 30+).
+      DisplayMetrics outMetrics = reactViewGroup.getContext().getResources().getDisplayMetrics();
 
       // Get custom width if set, otherwise use device width
       float customWidth = ((ReactNativeAdView) reactViewGroup).getAdWidth();
@@ -69,11 +63,11 @@ public class ReactNativeGoogleMobileAdsCommon {
         return AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(
             reactViewGroup.getContext(), adWidth);
       }
-      if ("LARGE_ANCHORED_ADAPTIVE_BANNER".equals(preDefinedAdSize)) {
-        return AdSize.getLargeAnchoredAdaptiveBannerAdSize(reactViewGroup.getContext(), adWidth);
-      }
-      return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-          reactViewGroup.getContext(), adWidth);
+      // Intentional alias: both ANCHORED_ADAPTIVE_BANNER and LARGE_ANCHORED_ADAPTIVE_BANNER
+      // resolve via LargeAnchored. play-services-ads-api 25.4.0 deprecates the 50dp-capped
+      // getCurrentOrientationAnchoredAdaptiveBannerAdSize (and portrait/landscape variants);
+      // only getLargeAnchored* remain. Matches TS @deprecated ANCHORED → LARGE.
+      return AdSize.getLargeAnchoredAdaptiveBannerAdSize(reactViewGroup.getContext(), adWidth);
     } catch (Exception e) {
       return AdSize.BANNER;
     }
@@ -300,11 +294,16 @@ public class ReactNativeGoogleMobileAdsCommon {
         Object value = entry.getValue();
 
         if (value instanceof String) {
-          String finalValue = (String) value;
-          builder.addCustomTargeting(key, finalValue);
-        } else {
-          ArrayList finalValue = (ArrayList) value;
-          builder.addCustomTargeting(key, finalValue);
+          builder.addCustomTargeting(key, (String) value);
+        } else if (value instanceof List) {
+          List<?> raw = (List<?>) value;
+          List<String> strings = new ArrayList<>(raw.size());
+          for (Object item : raw) {
+            if (item instanceof String) {
+              strings.add((String) item);
+            }
+          }
+          builder.addCustomTargeting(key, strings);
         }
       }
     }
