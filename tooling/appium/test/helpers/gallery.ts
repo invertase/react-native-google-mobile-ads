@@ -993,9 +993,11 @@ async function assertShowCloseLifecycle(formatId: string): Promise<void> {
   );
 }
 
-/** Hook screens publish `Hook lifecycle:` markers; reward/paid delivery stays non-blocking. */
-async function assertUtilityOpenCloseLifecycle(formatId: string): Promise<void> {
-  await tapFormatAction(AppiumTestIds.action.show(formatId));
+async function assertUtilityOpenCloseLifecycle(
+  formatId: string,
+  actionAccessibilityLabel?: string,
+): Promise<void> {
+  await tapFormatAction(AppiumTestIds.action.show(formatId), actionAccessibilityLabel);
   await waitForTestIdTextContaining(
     AppiumTestIds.action.lifecycle(formatId),
     UTILITY_LIFECYCLE_OPENED,
@@ -1139,7 +1141,7 @@ export async function proveSdkUtilitySurface(contract: SdkUtilitySurfaceContract
   await withInstrumentationRecovery(async () => {
     await openFormat(contract.id, contract.galleryTitle);
     await assertDisplayed(contract.containerId);
-    await assertUtilityOpenCloseLifecycle(contract.id);
+    await assertUtilityOpenCloseLifecycle(contract.id, contract.actionAccessibilityLabel);
     await backToGallery();
   });
 }

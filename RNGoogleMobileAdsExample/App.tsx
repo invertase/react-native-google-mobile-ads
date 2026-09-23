@@ -10,6 +10,7 @@
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AppState,
   Button,
   Image,
   Platform,
@@ -1273,13 +1274,24 @@ function AppOpenHookFormat() {
 }
 
 function AdInspectorFormat() {
+  const formatId = AppiumTestIds.format.adInspector;
+  const [utilityPhase, setUtilityPhase] = useState<UtilityLifecyclePhase>('idle');
+
   return (
-    <View style={styles.testSpacing} testID={AppiumTestIds.format.adInspector}>
+    <View style={styles.testSpacing} testID={formatId}>
+      <Text testID={AppiumTestIds.action.lifecycle(formatId)}>
+        {utilityLifecycleLabel(utilityPhase)}
+      </Text>
       <Button
         title="Show Ad Inspector"
-        testID={AppiumTestIds.action.show(AppiumTestIds.format.adInspector)}
+        testID={AppiumTestIds.action.show(formatId)}
         onPress={() => {
-          MobileAds().openAdInspector();
+          setUtilityPhase('opened');
+          void MobileAds()
+            .openAdInspector()
+            .finally(() => {
+              setUtilityPhase('closed');
+            });
         }}
       />
     </View>
@@ -1394,6 +1406,9 @@ function GAMInterstitialFormat() {
 }
 
 function DebugMenuFormat() {
+  const formatId = AppiumTestIds.format.debugMenu;
+  const [utilityPhase, setUtilityPhase] = useState<UtilityLifecyclePhase>('idle');
+
   useEffect(() => {
     // Android requires SDK initialization before opening the Debug Menu
     if (Platform.OS === 'android') {
@@ -1401,12 +1416,32 @@ function DebugMenuFormat() {
     }
   }, []);
 
+  useEffect(() => {
+    if (utilityPhase !== 'opened') {
+      return undefined;
+    }
+    let sawNonActive = false;
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'inactive' || nextState === 'background') {
+        sawNonActive = true;
+      }
+      if (sawNonActive && nextState === 'active') {
+        setUtilityPhase('closed');
+      }
+    });
+    return () => subscription.remove();
+  }, [utilityPhase]);
+
   return (
-    <View style={styles.testSpacing} testID={AppiumTestIds.format.debugMenu}>
+    <View style={styles.testSpacing} testID={formatId}>
+      <Text testID={AppiumTestIds.action.lifecycle(formatId)}>
+        {utilityLifecycleLabel(utilityPhase)}
+      </Text>
       <Button
         title="Show Ad Debug Menu"
-        testID={AppiumTestIds.action.show(AppiumTestIds.format.debugMenu)}
+        testID={AppiumTestIds.action.show(formatId)}
         onPress={() => {
+          setUtilityPhase('opened');
           MobileAds().openDebugMenu(TestIds.BANNER);
         }}
       />

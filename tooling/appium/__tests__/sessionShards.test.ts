@@ -8,6 +8,7 @@ import {
   NAVIGATION_SMOKE_CASES,
   NATIVE_RNGMA_TESTING_PROBE,
   REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
+  SDK_UTILITY_SURFACE_CONTRACTS,
 } from '../src/formats.ts';
 import { PARALLEL_ASSIGNMENTS } from '../src/parallelPlan.ts';
 import {
@@ -48,7 +49,10 @@ function requestOutcomeCaseIds(): string[] {
 test('every smoke case comes from the contract inventories, once', () => {
   assert.equal(
     SMOKE_CASES.length,
-    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.length + NAVIGATION_SMOKE_CASES.length + 1,
+    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.length +
+      NAVIGATION_SMOKE_CASES.length +
+      SDK_UTILITY_SURFACE_CONTRACTS.length +
+      1,
   );
   assert.deepEqual(
     requestOutcomeCaseIds(),
@@ -61,22 +65,39 @@ test('every smoke case comes from the contract inventories, once', () => {
     [...NAVIGATION_SMOKE_CASES],
   );
   assert.deepEqual(
+    SMOKE_CASES.flatMap(smokeCase =>
+      smokeCase.kind === 'utility-surface' ? [smokeCase.utility] : [],
+    ),
+    [...SDK_UTILITY_SURFACE_CONTRACTS],
+  );
+  assert.deepEqual(
     SMOKE_CASES.flatMap(smokeCase => (smokeCase.kind === 'probe' ? [smokeCase.probe] : [])),
     [NATIVE_RNGMA_TESTING_PROBE],
   );
   assert.ok(SMOKE_CASES.every(smokeCase => smokeCase.testTitle.trim().length > 0));
 });
 
-test('request-outcome shard cases cover every contracts.ts e2e-outcome behavior', () => {
+test('smoke cases cover every contracts.ts e2e-outcome behavior', () => {
   const dispositioned = new Set(
     PUBLIC_API_CONTRACTS.flatMap(contract =>
       contract.disposition === 'e2e-outcome' ? [contract.contractId] : [],
     ),
   );
+  const smokeContractIds = new Set(
+    SMOKE_CASES.flatMap(smokeCase => {
+      if (smokeCase.kind === 'request-outcome') {
+        return [smokeCase.id];
+      }
+      if (smokeCase.kind === 'utility-surface') {
+        return [smokeCase.id];
+      }
+      return [];
+    }),
+  );
   for (const contractId of dispositioned) {
     assert.ok(
-      requestOutcomeCaseIds().includes(contractId),
-      `missing request-outcome smoke case for ${contractId}`,
+      smokeContractIds.has(contractId),
+      `missing smoke case for e2e-outcome contract ${contractId}`,
     );
   }
 });
