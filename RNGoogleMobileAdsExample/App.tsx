@@ -999,13 +999,17 @@ function PooledInterstitialImperativeFormat() {
         onPress={() => {
           void (async () => {
             const id = `appium-imperative-pool-${Date.now()}`;
-            await AdPools.create(
-              AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
-                poolId: id,
-                bufferSize: 1,
-              }),
-            );
-            setPoolId(id);
+            try {
+              await AdPools.create(
+                AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
+                  poolId: id,
+                  bufferSize: 1,
+                }),
+              );
+              setPoolId(id);
+            } catch (error) {
+              console.error(error);
+            }
           })();
         }}
       />
@@ -1459,12 +1463,8 @@ function DebugMenuFormat() {
     if (utilityPhase !== 'opened') {
       return undefined;
     }
-    let sawNonActive = false;
     const subscription = AppState.addEventListener('change', nextState => {
-      if (nextState === 'inactive' || nextState === 'background') {
-        sawNonActive = true;
-      }
-      if (sawNonActive && nextState === 'active') {
+      if (nextState === 'background' || nextState === 'inactive') {
         setUtilityPhase('closed');
       }
     });
