@@ -290,33 +290,60 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'TestIds is a static inventory of Google test-unit strings; successful requests using selected IDs are dispositioned on the corresponding ad APIs.',
   ),
   absent('useAdPool', 'hook'),
-  lower(
-    'useAppOpenAd',
-    'hook',
-    'The App Open hook screen exposes hook status and lifecycle markers via stable testIDs. Jest covers state transitions and listener cleanup; Appium does not show an App Open creative or assert hook state transitions yet.',
-  ),
+  outcome('useAppOpenAd', 'hook', {
+    contractId: AppiumTestIds.format.appOpenHook,
+    exampleComponent: 'AppOpenHookFormat',
+    screenTestId: AppiumTestIds.format.appOpenHook,
+    screenTestIdExpression: 'AppiumTestIds.format.appOpenHook',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.appOpenHook),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.appOpenHook)',
+    success: 'hook-state-transition',
+    assertion:
+      'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives.',
+  }),
   lower(
     'useForeground',
     'hook',
     'Jest drives deterministic AppState transitions and listener cleanup; device foreground timing is not asserted as an ad-success outcome.',
   ),
-  lower(
-    'useInterstitialAd',
-    'hook',
-    'The interstitial hook screen exposes hook status and lifecycle markers via stable testIDs. Jest covers load/status/listener transitions; no hook state transition is currently asserted by Appium.',
-  ),
+  outcome('useInterstitialAd', 'hook', {
+    contractId: AppiumTestIds.format.interstitialHook,
+    exampleComponent: 'InterstitialHookFormat',
+    screenTestId: AppiumTestIds.format.interstitialHook,
+    screenTestIdExpression: 'AppiumTestIds.format.interstitialHook',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.interstitialHook),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.interstitialHook)',
+    success: 'hook-state-transition',
+    assertion:
+      'Auto-load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives.',
+  }),
   absent('useMultiFormatAd', 'hook'),
   absent('usePooledAd', 'hook'),
-  lower(
-    'useRewardedAd',
-    'hook',
-    'The rewarded hook screen exposes hook status, earned flags, and lifecycle markers via stable testIDs. Jest covers load/reward/status transitions; Appium does not show a creative to earn a reward or assert hook transitions yet.',
-  ),
-  lower(
-    'useRewardedInterstitialAd',
-    'hook',
-    'The rewarded interstitial hook screen exposes hook status, earned flags, and lifecycle markers via stable testIDs. Jest covers load/reward/status transitions; Appium does not show a creative to earn a reward or assert hook transitions yet.',
-  ),
+  outcome('useRewardedAd', 'hook', {
+    contractId: AppiumTestIds.format.rewardedHook,
+    exampleComponent: 'RewardedHookFormat',
+    screenTestId: AppiumTestIds.format.rewardedHook,
+    screenTestIdExpression: 'AppiumTestIds.format.rewardedHook',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedHook),
+    assertionTestIdExpression: 'AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedHook)',
+    success: 'hook-state-transition',
+    assertion:
+      'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives; paid-event and earned-reward delivery are not blocking success conditions.',
+  }),
+  outcome('useRewardedInterstitialAd', 'hook', {
+    contractId: AppiumTestIds.format.rewardedInterstitialHook,
+    exampleComponent: 'RewardedInterstitialHookFormat',
+    screenTestId: AppiumTestIds.format.rewardedInterstitialHook,
+    screenTestIdExpression: 'AppiumTestIds.format.rewardedInterstitialHook',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedInterstitialHook),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedInterstitialHook)',
+    success: 'hook-state-transition',
+    assertion:
+      'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives; paid-event and earned-reward delivery are not blocking success conditions.',
+  }),
 ] as const;
 
 export function dispositionSummary(
