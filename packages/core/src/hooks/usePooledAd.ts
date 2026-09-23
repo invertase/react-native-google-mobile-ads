@@ -84,6 +84,20 @@ function isDisplayPooledAd(ad: PooledAd): boolean {
   return ad.format === AdFormat.BANNER || ad.format === AdFormat.NATIVE;
 }
 
+const hookWrappedShowKey = Symbol('rngmaHookWrappedShow');
+
+type HookWrappedFullscreen = PooledAd & {
+  [hookWrappedShowKey]?: (options?: AdShowOptions) => Promise<void>;
+};
+
+function restoreHookWrappedShow(ad: PooledAd): void {
+  const original = (ad as HookWrappedFullscreen)[hookWrappedShowKey];
+  if (original) {
+    ad.show = original;
+    delete (ad as HookWrappedFullscreen)[hookWrappedShowKey];
+  }
+}
+
 /**
  * Poll-on-demand against a pool. Never polls during render.
  */
@@ -303,6 +317,7 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
           ) {
             const fullscreen = result.ad;
             const originalShow = fullscreen.show.bind(fullscreen);
+            (fullscreen as HookWrappedFullscreen)[hookWrappedShowKey] = originalShow;
             fullscreen.show = async (options?: AdShowOptions) => {
               const consumeIfOwned = () => {
                 if (adRef.current !== fullscreen || !ownedByHookRef.current) {
@@ -378,6 +393,7 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
       return null;
     }
     ownedByHookRef.current = false;
+    restoreHookWrappedShow(ad);
     clearStaleSub();
     adRef.current = null;
     setState(prev => ({
