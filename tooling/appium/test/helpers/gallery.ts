@@ -7,6 +7,7 @@ import {
   type RepresentativeRequestOutcomeContract,
 } from '../../src/formats.ts';
 import {
+  classifyHookLoadOutcome,
   classifyRequestOutcome,
   hasNonzeroRectangle,
   nativeFingerprintFromAndroidLog,
@@ -700,6 +701,63 @@ export async function waitForTestIdTextContaining(
   }
 }
 
+async function observeHookLoadOutcome(
+  formatId: string,
+  attempt: number,
+  timeoutMs = 10000,
+): Promise<{
+  requestId: number;
+  classification: RequestOutcomeClassification;
+  detail: string;
+  fingerprint: RequestFingerprint;
+}> {
+  const testId = AppiumTestIds.action.loaded(formatId);
+  let lastSeen = '';
+  const marker = await findByTestId(testId);
+  if (!(await marker.isExisting())) {
+    throw new Error(`[hook-lifecycle] ${formatId}: required marker ${testId} is missing`);
+  }
+  try {
+    await driver.waitUntil(
+      async () => {
+        const el = await findByTestId(testId);
+        if (!(await el.isExisting())) {
+          throw new Error(`[hook-lifecycle] ${formatId}: marker ${testId} disappeared`);
+        }
+        lastSeen = await elementText(el);
+        return classifyHookLoadOutcome(lastSeen) !== undefined;
+      },
+      {
+        timeout: timeoutMs,
+        timeoutMsg: `testID ${testId} did not report terminal hook load attempt ${attempt} (lastSeen=${JSON.stringify(lastSeen)})`,
+      },
+    );
+    const classification = classifyHookLoadOutcome(lastSeen);
+    if (!classification) {
+      throw new Error(`[hook-lifecycle] ${formatId}: wait completed without a terminal hook load outcome`);
+    }
+    return {
+      requestId: attempt,
+      classification,
+      detail: lastSeen,
+      fingerprint: { status: 'not-applicable', evidence: 'hook-status-marker' },
+    };
+  } catch (error) {
+    let snippet = 'page source unavailable';
+    try {
+      const dump = await driver.getPageSource();
+      const index = dump.indexOf(testId);
+      snippet =
+        index >= 0
+          ? dump.slice(Math.max(0, index - 120), index + 320).replace(/\s+/g, ' ')
+          : 'testID absent from page source';
+    } catch {
+      // Preserve the original WebDriver failure; page source is diagnostics only.
+    }
+    throw new Error(`${String(error)} | pageSource=${snippet}`, { cause: error });
+  }
+}
+
 async function observeRepresentativeRequestOutcome(
   formatId: string,
   path: RepresentativeRequestOutcomeContract['path'],
@@ -799,6 +857,8 @@ async function collectRequestFingerprint(
 /** Tap a format action without using gallery UiScrollable (format detail is not the gallery list). */
 const SHOW_LIFECYCLE_OPENED = 'Show lifecycle: opened';
 const SHOW_LIFECYCLE_CLOSED = 'Show lifecycle: closed';
+const HOOK_LIFECYCLE_SHOWING = 'status=showing';
+const HOOK_LIFECYCLE_CLOSED = 'status=closed';
 
 /** Dismiss a fullscreen test creative without tapping in-ad UI (system back). */
 async function dismissFullscreenAdWithoutCreativeTap(): Promise<void> {
@@ -831,6 +891,30 @@ async function assertShowCloseLifecycle(formatId: string): Promise<void> {
       platform: isAndroid() ? 'android' : 'ios',
       opened: SHOW_LIFECYCLE_OPENED,
       closed: SHOW_LIFECYCLE_CLOSED,
+    })}`,
+  );
+}
+
+/** Hook screens publish `Hook lifecycle:` markers; reward/paid delivery stays non-blocking. */
+async function assertHookShowCloseLifecycle(formatId: string): Promise<void> {
+  await tapFormatAction(AppiumTestIds.action.show(formatId));
+  await waitForTestIdTextContaining(
+    AppiumTestIds.action.lifecycle(formatId),
+    HOOK_LIFECYCLE_SHOWING,
+    90000,
+  );
+  await dismissFullscreenAdWithoutCreativeTap();
+  await waitForTestIdTextContaining(
+    AppiumTestIds.action.lifecycle(formatId),
+    HOOK_LIFECYCLE_CLOSED,
+    90000,
+  );
+  console.log(
+    `[hook-lifecycle-proof] ${JSON.stringify({
+      format: formatId,
+      platform: isAndroid() ? 'android' : 'ios',
+      showing: HOOK_LIFECYCLE_SHOWING,
+      closed: HOOK_LIFECYCLE_CLOSED,
     })}`,
   );
 }
@@ -950,6 +1034,7 @@ export async function proveRepresentativeRequestOutcome(
     platform: isAndroid() ? 'android' : 'ios',
     path: format.path,
     retry: format.retry ?? 'default',
+    hookAutoLoad: format.path === 'hook' && !format.actionId,
     runtime: {
       navigate: async () => {
         await openFormatStrict(format.id, format.galleryTitle);
@@ -965,7 +1050,9 @@ export async function proveRepresentativeRequestOutcome(
         await tapFormatAction(format.actionId);
       },
       observe: uiAttempt =>
-        observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt),
+        format.path === 'hook'
+          ? observeHookLoadOutcome(format.id, uiAttempt)
+          : observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt),
     },
     onAccepted: async attempt => {
       if (attempt.classification !== 'loaded') {
@@ -995,7 +1082,9 @@ export async function proveRepresentativeRequestOutcome(
           })}`,
         );
       }
-      if (format.showClose) {
+      if (format.hookLifecycle) {
+        await assertHookShowCloseLifecycle(format.id);
+      } else if (format.showClose) {
         await assertShowCloseLifecycle(format.id);
       }
     },

@@ -49,7 +49,7 @@ export type NavigationSmokeCase = {
   requiresAppRestart?: boolean;
 };
 
-export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam';
+export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam' | 'hook';
 export type RepresentativeRenderProof = 'banner' | 'native' | 'none';
 
 export type RepresentativeRequestRetry = 'default' | 'remount';
@@ -66,6 +66,8 @@ export type RepresentativeRequestOutcomeContract = {
   retry?: RepresentativeRequestRetry;
   /** After an accepted loaded outcome, tap Show and dismiss without clicking ad creatives. */
   showClose?: boolean;
+  /** After an accepted loaded outcome, assert Hook lifecycle markers (showing/closed; reward non-blocking). */
+  hookLifecycle?: boolean;
   actionId?: string;
   requiresAppRestart?: boolean;
 };
@@ -90,33 +92,9 @@ export const NAVIGATION_SMOKE_CASES: readonly NavigationSmokeCase[] = [
     contract: 'navigation',
   },
   {
-    id: AppiumTestIds.format.appOpenHook,
-    title: 'App Open Hook',
-    containerId: AppiumTestIds.format.appOpenHook,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.rewardedHook,
-    title: 'RWD Hook',
-    containerId: AppiumTestIds.format.rewardedHook,
-    contract: 'navigation',
-  },
-  {
     id: AppiumTestIds.format.debugMenu,
     title: 'Debug Menu',
     containerId: AppiumTestIds.format.debugMenu,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.interstitialHook,
-    title: 'INT Hook',
-    containerId: AppiumTestIds.format.interstitialHook,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.rewardedInterstitialHook,
-    title: 'RWI Hook',
-    containerId: AppiumTestIds.format.rewardedInterstitialHook,
     contract: 'navigation',
   },
 ];
@@ -216,6 +194,49 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     renderProof: 'none',
     showClose: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.gamInterstitial),
+  },
+  {
+    id: AppiumTestIds.format.appOpenHook,
+    title: 'App Open hook load reaches loaded then hook show-close lifecycle',
+    galleryTitle: 'App Open Hook',
+    containerId: AppiumTestIds.format.appOpenHook,
+    contract: 'request-outcome',
+    path: 'hook',
+    renderProof: 'none',
+    hookLifecycle: true,
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.appOpenHook),
+  },
+  {
+    id: AppiumTestIds.format.interstitialHook,
+    title: 'Interstitial hook auto-load reaches loaded then hook show-close lifecycle',
+    galleryTitle: 'INT Hook',
+    containerId: AppiumTestIds.format.interstitialHook,
+    contract: 'request-outcome',
+    path: 'hook',
+    renderProof: 'none',
+    hookLifecycle: true,
+  },
+  {
+    id: AppiumTestIds.format.rewardedHook,
+    title: 'Rewarded hook load reaches loaded then hook show-close lifecycle',
+    galleryTitle: 'RWD Hook',
+    containerId: AppiumTestIds.format.rewardedHook,
+    contract: 'request-outcome',
+    path: 'hook',
+    renderProof: 'none',
+    hookLifecycle: true,
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.rewardedHook),
+  },
+  {
+    id: AppiumTestIds.format.rewardedInterstitialHook,
+    title: 'Rewarded Interstitial hook load reaches loaded then hook show-close lifecycle',
+    galleryTitle: 'RWI Hook',
+    containerId: AppiumTestIds.format.rewardedInterstitialHook,
+    contract: 'request-outcome',
+    path: 'hook',
+    renderProof: 'none',
+    hookLifecycle: true,
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.rewardedInterstitialHook),
   },
   ] as const;
 
