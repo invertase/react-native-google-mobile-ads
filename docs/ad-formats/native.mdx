@@ -400,6 +400,10 @@ Don't:
 </NativeAsset>
 ```
 
+### FlatList and preloaded native ads
+
+You can preload several `NativeAd` instances and render them from a `FlatList` (or similar recycled list). When a cell reuses the same `NativeAdView` tree for a different ad, `NativeAsset` re-registers its views whenever `nativeAd.responseId` changes so SDK click handling stays attached. Prefer a stable `key` per ad (for example `nativeAd.responseId`) when the row should remount instead of rebind.
+
 ### Not implemented features
 
 These features are not implemented in the current version:

@@ -40,7 +40,10 @@ export type NativeAssetProps = {
 
 export const NativeAsset = (props: NativeAssetProps) => {
   const { assetType, children } = props;
-  const { viewRef } = useContext(NativeAdContext);
+  // responseId: FlatList (and similar) may reuse the NativeAdView/NativeAsset tree while
+  // swapping a preloaded NativeAd — one-shot mount registration leaves clicks dead (#735).
+  const { nativeAd, viewRef } = useContext(NativeAdContext);
+  const responseId = nativeAd.responseId;
   const ref = useRef<React.Component>(null);
 
   useEffect(() => {
@@ -52,7 +55,7 @@ export const NativeAsset = (props: NativeAssetProps) => {
     if (reactTag) {
       Commands.registerAsset(viewRef.current, assetType, reactTag);
     }
-  }, [viewRef]);
+  }, [viewRef, assetType, responseId]);
 
   if (!React.isValidElement(children)) {
     return null;
