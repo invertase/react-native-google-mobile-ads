@@ -17,7 +17,7 @@ package io.invertase.googlemobileads
  *
  */
 
-import com.facebook.react.TurboReactPackage
+import com.facebook.react.BaseReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.model.ReactModuleInfo
@@ -25,7 +25,7 @@ import com.facebook.react.module.model.ReactModuleInfoProvider
 import com.facebook.react.uimanager.ViewManager
 
 @SuppressWarnings("unused")
-class ReactNativeGoogleMobileAdsPackage : TurboReactPackage() {
+class ReactNativeGoogleMobileAdsPackage : BaseReactPackage() {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> =
     listOf(
       ReactNativeGoogleMobileAdsBannerAdViewManager(),

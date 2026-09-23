@@ -316,6 +316,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     ThemedReactContext context = (ThemedReactContext) view.getContext();
     EventDispatcher dispatcher =
         UIManagerHelper.getEventDispatcherForReactTag(context, view.getId());
-    if (dispatcher != null) dispatcher.dispatchEvent(new OnNativeEvent(view.getId(), event));
+    if (dispatcher != null) {
+      dispatcher.dispatchEvent(
+          new OnNativeEvent(UIManagerHelper.getSurfaceId(view), view.getId(), event));
+    }
   }
 }

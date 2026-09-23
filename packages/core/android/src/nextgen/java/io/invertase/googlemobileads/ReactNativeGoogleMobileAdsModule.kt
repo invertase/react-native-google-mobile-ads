@@ -88,42 +88,30 @@ class ReactNativeGoogleMobileAdsModule(
       }
     }
 
+    // Next-Gen RequestConfiguration: setTagForChildDirectedTreatment /
+    // setTagForUnderAgeOfConsent are deprecated; use setAgeRestrictedTreatment.
     if (requestConfiguration.hasKey("ageRestrictedTreatment")) {
       when (requestConfiguration.getString("ageRestrictedTreatment")) {
-        "CHILD" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.CHILD)
-        "TEEN" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.TEEN)
-        "UNSPECIFIED" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.UNSPECIFIED)
+        "child", "CHILD" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.CHILD)
+        "teen", "TEEN" -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.TEEN)
+        "unspecified", "UNSPECIFIED" ->
+          builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.UNSPECIFIED)
       }
-    }
-
-    @Suppress("DEPRECATION")
-    if (requestConfiguration.hasKey("tagForChildDirectedTreatment")) {
-      builder.setTagForChildDirectedTreatment(
-        if (requestConfiguration.getBoolean("tagForChildDirectedTreatment")) {
-          RequestConfiguration.TagForChildDirectedTreatment.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE
-        } else {
-          RequestConfiguration.TagForChildDirectedTreatment.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE
-        },
-      )
     } else {
-      builder.setTagForChildDirectedTreatment(
-        RequestConfiguration.TagForChildDirectedTreatment.TAG_FOR_CHILD_DIRECTED_TREATMENT_UNSPECIFIED,
-      )
-    }
-
-    @Suppress("DEPRECATION")
-    if (requestConfiguration.hasKey("tagForUnderAgeOfConsent")) {
-      builder.setTagForUnderAgeOfConsent(
-        if (requestConfiguration.getBoolean("tagForUnderAgeOfConsent")) {
-          RequestConfiguration.TagForUnderAgeOfConsent.TAG_FOR_UNDER_AGE_OF_CONSENT_TRUE
-        } else {
-          RequestConfiguration.TagForUnderAgeOfConsent.TAG_FOR_UNDER_AGE_OF_CONSENT_FALSE
-        },
-      )
-    } else {
-      builder.setTagForUnderAgeOfConsent(
-        RequestConfiguration.TagForUnderAgeOfConsent.TAG_FOR_UNDER_AGE_OF_CONSENT_UNSPECIFIED,
-      )
+      val tfcd =
+        requestConfiguration
+          .takeIf { it.hasKey("tagForChildDirectedTreatment") }
+          ?.getBoolean("tagForChildDirectedTreatment")
+      val tfua =
+        requestConfiguration
+          .takeIf { it.hasKey("tagForUnderAgeOfConsent") }
+          ?.getBoolean("tagForUnderAgeOfConsent")
+      when {
+        tfcd == true -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.CHILD)
+        tfua == true -> builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.TEEN)
+        tfcd != null || tfua != null ->
+          builder.setAgeRestrictedTreatment(AgeRestrictedTreatment.UNSPECIFIED)
+      }
     }
 
     return builder.build()

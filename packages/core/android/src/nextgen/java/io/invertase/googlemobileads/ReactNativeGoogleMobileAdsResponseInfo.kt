@@ -63,14 +63,30 @@ object ReactNativeGoogleMobileAdsResponseInfo {
     }
     val extras = linkedMapOf<String, String>()
     for ((nativeKey, jsKey) in EXTRAS_ALLOWLIST) {
-      if (!bundle.containsKey(nativeKey)) {
-        continue
-      }
-      val raw = bundle.get(nativeKey) ?: continue
-      val asString = emptyToNull(raw.toString()) ?: continue
+      val asString = emptyToNull(allowlistedExtraRaw(bundle, nativeKey)) ?: continue
       extras[jsKey] = asString
     }
     return extras
+  }
+
+  /**
+   * Read an allowlisted extra as text without the deprecated untyped [Bundle.get] on the
+   * common string path. Falls back to [Bundle.get] only when a non-string value is present:
+   * platform `BaseBundle.get(String)` is `@Deprecated` (API 33+) with no untyped replacement.
+   */
+  private fun allowlistedExtraRaw(
+    bundle: Bundle,
+    key: String,
+  ): String? {
+    if (!bundle.containsKey(key)) {
+      return null
+    }
+    bundle.getString(key)?.let {
+      return it
+    }
+    @Suppress("DEPRECATION")
+    val raw = bundle.get(key) ?: return null
+    return raw.toString()
   }
 
   private fun adapterErrorMap(adError: MediationAdError?): Map<String, Any?>? {
