@@ -57,28 +57,44 @@ class ReactNativeGoogleMobileAdsNativeModule(
     promise: Promise,
   ) {
     val request = buildRequest(adUnitId, requestOptions, listOf(NativeAd.NativeAdType.NATIVE))
+    // Static NativeAdLoader.load — AdLoader GC N/A; still gate dual callbacks (parity w/ classic).
+    val settled = ReactNativeGoogleMobileAdsNativeAdLoad.OnceOnlySettle()
     NativeAdLoader.load(
       request,
       object : NativeAdLoaderCallback {
         override fun onNativeAdLoaded(ad: NativeAd) {
-          val responseId = ReactNativeGoogleMobileAdsResponseInfo.emptyToNull(ad.getResponseInfo().responseId)
-          if (responseId == null) {
-            val error =
-              ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(
-                "internal-error",
-                "Failed to get a valid response ID from the loaded ad.",
-                "load",
-              )
-            promise.reject(error.getString("code"), error.getString("message"), error)
+          if (!settled.trySettle()) {
             ad.destroy()
             return
           }
-          bindNativeAd(ad)
-          nativeAds[responseId] = ad
-          promise.resolve(nativeAdToWritableMap(ad, responseId))
+          when (
+            val outcome =
+              ReactNativeGoogleMobileAdsNativeAdLoad.outcomeForLoadedResponseId(
+                ad.getResponseInfo().responseId,
+              )
+          ) {
+            is ReactNativeGoogleMobileAdsNativeAdLoad.Outcome.Reject -> {
+              ad.destroy()
+              val error =
+                ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(
+                  outcome.code,
+                  outcome.message,
+                  "load",
+                )
+              promise.reject(error.getString("code"), error.getString("message"), error)
+            }
+            is ReactNativeGoogleMobileAdsNativeAdLoad.Outcome.Resolve -> {
+              bindNativeAd(ad)
+              nativeAds[outcome.responseId] = ad
+              promise.resolve(nativeAdToWritableMap(ad, outcome.responseId))
+            }
+          }
         }
 
         override fun onAdFailedToLoad(error: LoadAdError) {
+          if (!settled.trySettle()) {
+            return
+          }
           val payload = ReactNativeGoogleMobileAdsCommon.loadAdErrorToMap(error)
           promise.reject(payload.getString("code"), payload.getString("message"), payload)
         }
@@ -340,28 +356,49 @@ class ReactNativeGoogleMobileAdsNativeModule(
   ): WritableMap {
     val data = Arguments.createMap()
     data.putString("responseId", responseId)
-    data.putString("advertiser", ad.advertiser)
-    data.putString("body", ad.body)
-    data.putString("callToAction", ad.callToAction)
-    data.putString("headline", ad.headline)
-    data.putString("price", ad.price)
-    data.putString("store", ad.store)
+    putNullableString(data, "advertiser", ad.advertiser)
+    putNullableString(data, "body", ad.body)
+    putNullableString(data, "callToAction", ad.callToAction)
+    putNullableString(data, "headline", ad.headline)
+    putNullableString(data, "price", ad.price)
+    putNullableString(data, "store", ad.store)
     ad.starRating?.let { data.putDouble("starRating", it) } ?: data.putNull("starRating")
     ad.icon?.let {
       val icon = Arguments.createMap()
       icon.putDouble("scale", it.scale)
-      icon.putString("url", it.uri?.toString())
+      putNullableString(icon, "url", it.uri?.toString())
       data.putMap("icon", icon)
     } ?: data.putNull("icon")
+    ad.image?.let {
+      val imageArray = Arguments.createArray()
+      val row = Arguments.createMap()
+      putNullableString(row, "url", it.uri?.toString())
+      row.putDouble("scale", it.scale)
+      imageArray.pushMap(row)
+      data.putArray("images", imageArray)
+    } ?: data.putNull("images")
     val media = Arguments.createMap()
     media.putDouble("aspectRatio", ad.mediaContent.aspectRatio.toDouble())
     media.putBoolean("hasVideoContent", ad.mediaContent.hasVideoContent)
     media.putDouble("duration", ad.mediaContent.duration.toDouble())
     data.putMap("mediaContent", media)
+    data.putNull("extras")
     ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(ad.getResponseInfo())?.let {
       data.putMap("responseInfo", it)
     }
     return data
+  }
+
+  private fun putNullableString(
+    map: WritableMap,
+    key: String,
+    value: String?,
+  ) {
+    if (value == null) {
+      map.putNull(key)
+    } else {
+      map.putString(key, value)
+    }
   }
 
   private fun rejectInitializationFailure(

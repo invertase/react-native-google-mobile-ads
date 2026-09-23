@@ -29,19 +29,26 @@ object NextGenMobileAdsGate {
 
   private var initializationFailure: Failure? = null
 
+  /**
+   * When false (after [resetForTests]), ignore [MobileAds.isInitialized] so Robolectric suites
+   * can assert queue-before-init without SDK class-load pollution.
+   */
+  @Volatile
+  private var trustSdkInitializedFlag = true
+
   fun runWhenInitialized(
     onFailure: (Failure) -> Unit = ::logFailure,
     action: () -> Unit,
   ) {
     val pendingAction = PendingAction(action, onFailure)
-    if (initializationCompleted || MobileAds.isInitialized) {
+    if (isReady()) {
       execute(pendingAction)
       return
     }
     var runImmediately = false
     var failure: Failure? = null
     synchronized(lock) {
-      if (initializationCompleted || MobileAds.isInitialized) {
+      if (isReady()) {
         runImmediately = true
       } else {
         failure = initializationFailure
@@ -77,6 +84,7 @@ object NextGenMobileAdsGate {
           return
         }
         initializationCompleted = true
+        trustSdkInitializedFlag = true
         val copy = pending.toList()
         pending.clear()
         copy
@@ -109,8 +117,11 @@ object NextGenMobileAdsGate {
       pending.clear()
       initializationCompleted = false
       initializationFailure = null
+      trustSdkInitializedFlag = false
     }
   }
+
+  private fun isReady(): Boolean = initializationCompleted || (trustSdkInitializedFlag && MobileAds.isInitialized)
 
   private fun execute(pendingAction: PendingAction) {
     try {
