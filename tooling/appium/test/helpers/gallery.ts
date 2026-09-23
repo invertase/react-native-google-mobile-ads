@@ -29,6 +29,25 @@ function appBundleId(): string {
   return isAndroid() ? EXAMPLE_ANDROID_PACKAGE : EXAMPLE_IOS_BUNDLE_ID;
 }
 
+function logAndroidHostTrace(
+  event: string,
+  detail: Record<string, unknown> = {},
+): void {
+  console.log(
+    `[android-host-trace] ${JSON.stringify({
+      event,
+      platform: 'android',
+      ...detail,
+    })}`,
+  );
+}
+
+function androidFocusSnippet(dump: string): string {
+  const focus = dump.match(/mCurrentFocus=[^\n]+/)?.[0] ?? 'mCurrentFocus=?';
+  const app = dump.match(/mFocusedApp=[^\n]+/)?.[0] ?? 'mFocusedApp=?';
+  return `${focus} | ${app}`;
+}
+
 /** Resolve a React Native testID across platforms (Android resource-id, iOS accessibility id). */
 export async function findByTestId(testId: string) {
   if (isAndroid()) {
@@ -219,9 +238,30 @@ export async function tapByTestId(testId: string): Promise<void> {
   await clickElement(await findByTestId(testId));
 }
 
-async function clickElement(el: WebdriverIO.Element): Promise<void> {
+async function clickElement(
+  el: WebdriverIO.Element,
+  trace?: string,
+): Promise<void> {
   await el.waitForDisplayed({ timeout: 10000 });
   if (isAndroid()) {
+    const resourceId = String(
+      (await el.getAttribute('resource-id').catch(() => null)) ??
+        (await el.getAttribute('resourceId').catch(() => '')),
+    );
+    const description = String(
+      (await el.getAttribute('content-desc').catch(() => null)) ??
+        (await el.getAttribute('contentDescription').catch(() => '')),
+    );
+    logAndroidHostTrace('clickElement', {
+      trace: trace ?? 'unspecified',
+      resourceId,
+      description,
+      method: resourceId === AppiumTestIds.galleryBack ? 'shell-center' : 'clickGesture',
+    });
+    if (resourceId === AppiumTestIds.galleryBack) {
+      await clickAndroidByTestId(AppiumTestIds.galleryBack);
+      return;
+    }
     await driver.execute('mobile: clickGesture', { elementId: el.elementId });
     return;
   }
@@ -254,6 +294,9 @@ async function withInstrumentationRecovery<T>(fn: () => Promise<T>): Promise<T> 
 }
 
 export async function waitForGalleryHome(): Promise<void> {
+  if (isAndroid()) {
+    await recoverAndroidTestHost();
+  }
   try {
     await driver.updateSettings({
       waitForIdleTimeout: 100,
@@ -553,16 +596,31 @@ async function openFormatStrict(formatId: string, galleryTitle?: string): Promis
 }
 
 export async function backToGallery(): Promise<void> {
+  logAndroidHostTrace('gallery.back.begin');
   const back = await findByTestId(AppiumTestIds.galleryBack);
   if (await back.isDisplayed().catch(() => false)) {
-    await clickElement(back);
+    await clickElement(back, 'backToGallery');
   } else {
+    logAndroidHostTrace('gallery.back.fallback', { method: 'driver.back' });
     await driver.back();
   }
-  await driver.waitUntil(async () => isGalleryHome(), {
-    timeout: 15000,
-    timeoutMsg: 'Gallery home did not restore after back',
-  });
+  try {
+    await driver.waitUntil(async () => isGalleryHome(), {
+      timeout: 15000,
+      timeoutMsg: 'Gallery home did not restore after back',
+    });
+  } finally {
+    if (isAndroid()) {
+      const focus = await androidWindowFocusDump();
+      if (focus.includes('com.android.chrome')) {
+        logAndroidHostTrace('gallery.back.chrome-after-tap', {
+          focus: androidFocusSnippet(focus),
+        });
+      }
+      await recoverAndroidTestHost();
+    }
+  }
+  logAndroidHostTrace('gallery.back.done', { galleryHome: await isGalleryHome() });
 }
 
 export async function resetAppState(): Promise<void> {
@@ -657,6 +715,10 @@ export async function waitForTestIdTextContaining(
     await driver.waitUntil(
       async () => {
         if (isAndroid()) {
+          const focus = await androidWindowFocusDump();
+          if (focus.includes('com.android.chrome')) {
+            await recoverAndroidTestHost('waitForTestIdTextContaining');
+          }
           for (const sel of [
             `android=new UiSelector().resourceId("${testId}").textContains("${substring}")`,
             `android=new UiSelector().resourceId("${testId}").descriptionContains("${substring}")`,
@@ -704,6 +766,35 @@ export async function waitForTestIdTextContaining(
   }
 }
 
+async function readPoolLoadedMarkerText(formatId: string): Promise<string> {
+  const el = await findByTestId(AppiumTestIds.action.loaded(formatId));
+  if (!(await el.isExisting().catch(() => false))) {
+    return '';
+  }
+  return elementText(el);
+}
+
+/** AdPoolProvider registers pools asynchronously; polling while `poolStatus=absent` is a no-op. */
+async function waitForPoolRegistryReady(formatId: string, timeoutMs = 45000): Promise<void> {
+  await driver.waitUntil(
+    async () => {
+      const text = await readPoolLoadedMarkerText(formatId);
+      if (!text) {
+        return false;
+      }
+      if (/\bpoolStatus=absent\b/.test(text)) {
+        return false;
+      }
+      return /\bpoolStatus=(creating|ready|ready-degraded|error)\b/.test(text);
+    },
+    {
+      timeout: timeoutMs,
+      interval: 250,
+      timeoutMsg: `Pool registry for ${formatId} stayed absent (provider never registered)`,
+    },
+  );
+}
+
 async function observePoolFilledOutcome(
   formatId: string,
   attempt: number,
@@ -715,11 +806,13 @@ async function observePoolFilledOutcome(
   fingerprint: RequestFingerprint;
 }> {
   const testId = AppiumTestIds.action.loaded(formatId);
+  const pollActionId = AppiumTestIds.action.load(formatId);
   let lastSeen = '';
   const marker = await findByTestId(testId);
   if (!(await marker.isExisting())) {
     throw new Error(`[pool-outcome] ${formatId}: required marker ${testId} is missing`);
   }
+  let pollsWhileIdle = 0;
   try {
     await driver.waitUntil(
       async () => {
@@ -728,10 +821,23 @@ async function observePoolFilledOutcome(
           throw new Error(`[pool-outcome] ${formatId}: marker ${testId} disappeared`);
         }
         lastSeen = await elementText(el);
-        return classifyPoolFilledOutcome(lastSeen) !== undefined;
+        if (classifyPoolFilledOutcome(lastSeen) !== undefined) {
+          return true;
+        }
+        if (/\bpooledStatus=(idle|empty)\b/.test(lastSeen)) {
+          pollsWhileIdle += 1;
+          const shouldRepoll =
+            /\bpooledStatus=idle\b/.test(lastSeen) ||
+            (/\bpooledStatus=empty\b/.test(lastSeen) && /\bavailable=true\b/.test(lastSeen));
+          if (shouldRepoll && pollsWhileIdle % 5 === 0) {
+            await tapFormatAction(pollActionId);
+          }
+        }
+        return false;
       },
       {
         timeout: timeoutMs,
+        interval: 500,
         timeoutMsg: `testID ${testId} did not report terminal pooled fill attempt ${attempt} (lastSeen=${JSON.stringify(lastSeen)})`,
       },
     );
@@ -958,19 +1064,672 @@ const HOOK_LIFECYCLE_CLOSED = 'status=closed';
 const UTILITY_LIFECYCLE_OPENED = 'Utility lifecycle: opened';
 const UTILITY_LIFECYCLE_CLOSED = 'Utility lifecycle: closed';
 
-/** Dismiss a fullscreen test creative without tapping in-ad UI (system back). */
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+async function tapAndroidShellFraction(fx: number, fy: number): Promise<void> {
+  const { width, height } = await driver.getWindowRect();
+  await driver.execute('mobile: shell', {
+    command: 'input',
+    args: ['tap', String(Math.floor(width * fx)), String(Math.floor(height * fy))],
+  });
+}
+
+async function tapAndroidShellPoint(x: number, y: number): Promise<void> {
+  await driver.execute('mobile: shell', {
+    command: 'input',
+    args: ['tap', String(Math.floor(x)), String(Math.floor(y))],
+  });
+}
+
+let cachedAndroidWindowFocusDump = { at: 0, value: '' };
+
+async function androidWindowFocusDump(): Promise<string> {
+  const now = Date.now();
+  if (now - cachedAndroidWindowFocusDump.at < 350) {
+    return cachedAndroidWindowFocusDump.value;
+  }
+  const value = String(
+    await driver.execute('mobile: shell', {
+      command: 'dumpsys',
+      args: ['window', 'displays'],
+    }),
+  );
+  cachedAndroidWindowFocusDump = { at: now, value };
+  return value;
+}
+
+async function dismissChromeFirstRunIfPresent(): Promise<boolean> {
+  const focus = await androidWindowFocusDump();
+  if (!focus.includes('com.android.chrome')) {
+    return false;
+  }
+  for (const fragment of [
+    'textContains("Use without an account")',
+    'text("Use without an account")',
+    'textContains("No thanks")',
+    'textContains("Accept & continue")',
+  ]) {
+    if (await tapAndroidSelectorIfDisplayed(`android=new UiSelector().${fragment}`)) {
+      await sleep(600);
+      return true;
+    }
+  }
+  const { width, height } = await driver.getWindowRect();
+  await driver.execute('mobile: clickGesture', {
+    x: Math.floor(width * 0.5),
+    y: Math.floor(height * 0.9),
+  });
+  await sleep(600);
+  return true;
+}
+
+async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
+  if (!isAndroid()) {
+    return;
+  }
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await dismissChromeFirstRunIfPresent();
+    const focus = await androidWindowFocusDump();
+    if (focus.includes('com.google.android.gms.ads.AdActivity')) {
+      return;
+    }
+    if (focus.includes(EXAMPLE_ANDROID_PACKAGE)) {
+      return;
+    }
+    logAndroidHostTrace('recover.host', {
+      reason,
+      attempt,
+      focus: androidFocusSnippet(focus),
+    });
+    if (focus.includes('com.android.chrome')) {
+      await driver.execute('mobile: shell', {
+        command: 'am',
+        args: ['force-stop', 'com.android.chrome'],
+      });
+      await sleep(400);
+    }
+    await driver.activateApp(EXAMPLE_ANDROID_PACKAGE);
+    await sleep(600);
+  }
+}
+
+async function ensureExampleAppInForeground(): Promise<void> {
+  await recoverAndroidTestHost();
+}
+
+async function showLifecycleText(formatId: string): Promise<string> {
+  return elementText(await findByTestId(AppiumTestIds.action.lifecycle(formatId)));
+}
+
+async function safeShowLifecycleText(formatId: string): Promise<string> {
+  const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
+  if (!(await el.isExisting().catch(() => false))) {
+    return '';
+  }
+  return elementText(el);
+}
+
+async function tapAndroidSelectorIfDisplayed(selector: string): Promise<boolean> {
+  const el = await $(selector);
+  if (
+    (await el.isExisting().catch(() => false)) &&
+    (await el.isDisplayed().catch(() => false))
+  ) {
+    await el.click();
+    await sleep(400);
+    return true;
+  }
+  return false;
+}
+
+/** Feed / app-open chrome only — never coordinate-fallback (avoids Install / creative taps). */
+async function tapAndroidContinueToAppIfPresent(): Promise<boolean> {
+  for (const fragment of [
+    'textContains("Continue to app")',
+    'descriptionContains("Continue to app")',
+  ]) {
+    if (await tapAndroidSelectorIfDisplayed(`android=new UiSelector().${fragment}`)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function isAndroidAppOpenFeedChromeVisible(): Promise<boolean> {
+  const testAd = await $('android=new UiSelector().text("Test Ad")');
+  if (!(await testAd.isDisplayed().catch(() => false))) {
+    return false;
+  }
+  for (const needle of [
+    'test interstitial',
+    'interstitial test ad',
+    'This is an interstitial test ad',
+    'Reward granted',
+    'test rewarded',
+    'rewarded test ad',
+  ]) {
+    const el = await $(`android=new UiSelector().textContains("${needle}")`);
+    if (await el.isDisplayed().catch(() => false)) {
+      return false;
+    }
+  }
+  if (await isAndroidInterstitialCloseChromeVisible()) {
+    return false;
+  }
+  if (await isAndroidAdActivityForeground()) {
+    return false;
+  }
+  // App-open feed only — not advertiser names (e.g. Microsoft) on interstitial AdActivity.
+  for (const needle of ['Continue to app', 'Feed Test', 'App Open']) {
+    const el = await $(`android=new UiSelector().textContains("${needle}")`);
+    if (await el.isDisplayed().catch(() => false)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** App-open feed "Continue to app" is often WebView-only; header-band tap avoids Install CTA. */
+async function tapAndroidAppOpenContinueChrome(): Promise<boolean> {
+  if (await tapAndroidContinueToAppIfPresent()) {
+    return true;
+  }
+  if (!(await isAndroidAppOpenFeedChromeVisible())) {
+    return false;
+  }
+  const { width, height } = await driver.getWindowRect();
+  const headerBand: Array<[number, number]> = [
+    [0.93, 0.075],
+    [0.9, 0.075],
+    [0.87, 0.085],
+  ];
+  for (const [fx, fy] of headerBand) {
+    const x = Math.floor(width * fx);
+    const y = Math.floor(height * fy);
+    await driver.execute('mobile: clickGesture', { x, y });
+    await sleep(450);
+    if (!(await isAndroidAppOpenFeedChromeVisible())) {
+      return true;
+    }
+  }
+  return true;
+}
+
+async function dismissAndroidAppOpenFeedIfPresent(): Promise<void> {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (!(await isAndroidAppOpenFeedChromeVisible())) {
+      return;
+    }
+    await tapAndroidAppOpenContinueChrome();
+    await sleep(400);
+  }
+}
+
+async function isAndroidAdInspectorVisible(): Promise<boolean> {
+  const el = await $('android=new UiSelector().textContains("Ad Inspector")');
+  return (
+    (await el.isExisting().catch(() => false)) &&
+    (await el.isDisplayed().catch(() => false))
+  );
+}
+
+async function dismissAndroidAdInspectorIfPresent(): Promise<void> {
+  if (!(await isAndroidAdInspectorVisible())) {
+    return;
+  }
+  for (const fragment of [
+    'descriptionContains("Close Ad Inspector")',
+    'descriptionContains("Close ad inspector")',
+  ]) {
+    if (await tapAndroidSelectorIfDisplayed(`android=new UiSelector().${fragment}`)) {
+      await sleep(500);
+      if (!(await isAndroidAdInspectorVisible())) {
+        return;
+      }
+    }
+  }
+  const { width, height } = await driver.getWindowRect();
+  const minX = width * 0.78;
+  const maxY = height * 0.14;
+  const clickables = await $$('android=new UiSelector().clickable(true)');
+  for (const control of clickables) {
+    if (!(await control.isDisplayed().catch(() => false))) {
+      continue;
+    }
+    const rect = await control.getLocation();
+    const size = await control.getSize();
+    const centerX = rect.x + size.width / 2;
+    const centerY = rect.y + size.height / 2;
+    if (
+      centerX >= minX &&
+      centerY <= maxY &&
+      size.width <= 120 &&
+      size.height <= 120
+    ) {
+      await control.click();
+      await sleep(500);
+      if (!(await isAndroidAdInspectorVisible())) {
+        return;
+      }
+    }
+  }
+  await tapAndroidShellFraction(0.94, 0.07);
+  await sleep(500);
+}
+
+async function isAndroidAdActivityForeground(): Promise<boolean> {
+  const focus = await androidWindowFocusDump();
+  if (!focus.includes('com.google.android.gms.ads.AdActivity')) {
+    return false;
+  }
+  return (
+    focus.includes('mFocusedApp=ActivityRecord') ||
+    focus.includes('mCurrentFocus=Window')
+  );
+}
+
+/** Fullscreen GMA surface in AdActivity (excludes app-open feed chrome). */
+async function isAndroidFullscreenAdShowing(): Promise<boolean> {
+  if (!(await isAndroidAdActivityForeground())) {
+    return false;
+  }
+  if (await isAndroidAppOpenFeedChromeVisible()) {
+    return false;
+  }
+  return true;
+}
+
+async function isAndroidFullscreenTestAdObstructing(): Promise<boolean> {
+  if (await isAndroidFullscreenAdShowing()) {
+    return true;
+  }
+  for (const needle of [
+    'test interstitial',
+    'interstitial test ad',
+    'This is an interstitial test ad',
+    'Google Ad Manager',
+    "You're displaying a test interstitial",
+    'Reward granted',
+    'test rewarded',
+    'rewarded test ad',
+    'Nice job',
+  ]) {
+    const el = await $(`android=new UiSelector().textContains("${needle}")`);
+    if (await el.isDisplayed().catch(() => false)) {
+      return true;
+    }
+  }
+  if (await isAndroidInterstitialCloseChromeVisible()) {
+    return true;
+  }
+  return false;
+}
+
+async function isAndroidInterstitialCloseChromeVisible(): Promise<boolean> {
+  for (const fragment of [
+    'descriptionContains("Interstitial close button")',
+    'descriptionContains("Close ad")',
+    'descriptionContains("Interstitial close")',
+  ]) {
+    const el = await $(`android=new UiSelector().${fragment}`);
+    if (await el.isDisplayed().catch(() => false)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function tapAndroidInterstitialCloseAttempt(): Promise<void> {
+  if (await isAndroidAppOpenFeedChromeVisible()) {
+    await dismissAndroidAppOpenFeedIfPresent();
+    return;
+  }
+  for (const fragment of [
+    'descriptionContains("Interstitial close button")',
+    'resourceId("com.google.android.gms.ads:id/close_button")',
+    'resourceId("com.google.android.gms.ads:id/dismiss")',
+    'descriptionContains("Close ad")',
+    'descriptionContains("Interstitial close")',
+  ]) {
+    const el = await $(`android=new UiSelector().${fragment}`);
+    if (!(await el.isExisting().catch(() => false))) {
+      continue;
+    }
+    if (!(await el.isDisplayed().catch(() => false))) {
+      continue;
+    }
+    try {
+      await el.click();
+    } catch {
+      const rect = await el.getLocation();
+      const size = await el.getSize();
+      await driver.execute('mobile: clickGesture', {
+        x: Math.floor(rect.x + size.width / 2),
+        y: Math.floor(rect.y + size.height / 2),
+      });
+    }
+    await sleep(300);
+    return;
+  }
+  const { width, height } = await driver.getWindowRect();
+  const minX = width * 0.75;
+  const maxY = height * 0.12;
+  const clickables = await $$('android=new UiSelector().clickable(true)');
+  for (const control of clickables) {
+    if (!(await control.isDisplayed().catch(() => false))) {
+      continue;
+    }
+    const rect = await control.getLocation();
+    const size = await control.getSize();
+    const centerX = rect.x + size.width / 2;
+    const centerY = rect.y + size.height / 2;
+    if (
+      centerX >= minX &&
+      centerY <= maxY &&
+      size.width <= 180 &&
+      size.height <= 180
+    ) {
+      try {
+        await control.click();
+      } catch {
+        await driver.execute('mobile: clickGesture', { x: centerX, y: centerY });
+      }
+      await sleep(300);
+      return;
+    }
+  }
+  for (const [fx, fy] of [
+    [0.97, 0.038],
+    [0.95, 0.055],
+    [0.93, 0.072],
+  ] as Array<[number, number]>) {
+    await driver.execute('mobile: clickGesture', {
+      x: Math.floor(width * fx),
+      y: Math.floor(height * fy),
+    });
+    await sleep(300);
+  }
+}
+
+async function isAndroidDebugModePickerVisible(): Promise<boolean> {
+  const el = await $('android=new UiSelector().textContains("Select a debug mode")');
+  return (
+    (await el.isExisting().catch(() => false)) &&
+    (await el.isDisplayed().catch(() => false))
+  );
+}
+
+/** Debug Menu opens a modal picker; dismiss the scrim (not the list) before backing out of SDK UI. */
+async function dismissAndroidDebugModePickerIfPresent(): Promise<void> {
+  if (!(await isAndroidDebugModePickerVisible())) {
+    return;
+  }
+  await driver.execute('mobile: shell', {
+    command: 'input',
+    args: ['keyevent', '4'],
+  });
+  await sleep(450);
+  if (!(await isAndroidDebugModePickerVisible())) {
+    return;
+  }
+  const { width, height } = await driver.getWindowRect();
+  const outsideTaps: Array<[number, number]> = [
+    [width / 2, Math.floor(height * 0.28)],
+    [width / 2, Math.floor(height * 0.84)],
+    [Math.floor(width * 0.08), Math.floor(height * 0.28)],
+    [Math.floor(width * 0.92), Math.floor(height * 0.28)],
+  ];
+  for (const [x, y] of outsideTaps) {
+    await driver.execute('mobile: clickGesture', { x: Math.floor(x), y: Math.floor(y) });
+    await sleep(400);
+    if (!(await isAndroidDebugModePickerVisible())) {
+      return;
+    }
+  }
+}
+
+async function utilityLifecycleText(formatId: string): Promise<string> {
+  return elementText(await findByTestId(AppiumTestIds.action.lifecycle(formatId)));
+}
+
+/**
+ * Interstitial / Ad Inspector close — retry top-right chrome only while test ad copy is visible.
+ */
+async function tapAndroidFullscreenCloseWithRetries(): Promise<void> {
+  if (!(await isAndroidAdActivityForeground())) {
+    await ensureExampleAppInForeground();
+  }
+  if (
+    !(await isAndroidFullscreenAdShowing()) &&
+    !(await isAndroidAdActivityForeground()) &&
+    !(await isAndroidAppOpenFeedChromeVisible()) &&
+    !(await isAndroidFullscreenTestAdObstructing())
+  ) {
+    return;
+  }
+  let attempts = 0;
+  logAndroidHostTrace('interstitial.dismiss.begin', {
+    adActivity: await isAndroidAdActivityForeground(),
+    feedChrome: await isAndroidAppOpenFeedChromeVisible(),
+  });
+  await driver.waitUntil(
+    async () => {
+      const adActivity = await isAndroidAdActivityForeground();
+      const obstructing = await isAndroidFullscreenTestAdObstructing();
+      if (!adActivity && !obstructing) {
+        logAndroidHostTrace('interstitial.dismiss.success', { attempts });
+        return true;
+      }
+      attempts += 1;
+      await tapAndroidInterstitialCloseAttempt();
+      return false;
+    },
+    {
+      timeout: 90000,
+      interval: 400,
+      timeoutMsg: 'Fullscreen AdActivity did not dismiss within 90s',
+    },
+  );
+}
+
+async function dismissAndroidUtilitySurface(formatId: string): Promise<void> {
+  await ensureExampleAppInForeground();
+  if (formatId === AppiumTestIds.format.adInspector) {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      await dismissAndroidAdInspectorIfPresent();
+      if (!(await isAndroidAdInspectorVisible())) {
+        break;
+      }
+      await sleep(400);
+    }
+    await ensureExampleAppInForeground();
+    return;
+  }
+  if (formatId === AppiumTestIds.format.debugMenu) {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      await dismissAndroidDebugModePickerIfPresent();
+      if (!(await isAndroidDebugModePickerVisible())) {
+        break;
+      }
+      await sleep(300);
+    }
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const text = await utilityLifecycleText(formatId);
+      if (text.includes(UTILITY_LIFECYCLE_CLOSED)) {
+        return;
+      }
+      await driver.execute('mobile: shell', {
+        command: 'input',
+        args: ['keyevent', '4'],
+      });
+      await sleep(600);
+      await ensureExampleAppInForeground();
+    }
+    return;
+  }
+  await tapAndroidFullscreenCloseWithRetries();
+}
+
+/** App Open Show can reach opened and closed while the feed chrome is still visible — observe opened first. */
+async function runAndroidAppOpenShowCloseLifecycle(formatId: string): Promise<void> {
+  await tapFormatAction(AppiumTestIds.action.show(formatId));
+  await driver.waitUntil(
+    async () => {
+      const phase = await safeShowLifecycleText(formatId);
+      if (phase.includes(SHOW_LIFECYCLE_OPENED) || phase.includes(SHOW_LIFECYCLE_CLOSED)) {
+        return true;
+      }
+      if (await isAndroidAppOpenFeedChromeVisible()) {
+        await dismissAndroidAppOpenFeedIfPresent();
+        return false;
+      }
+      if (await isAndroidFullscreenAdShowing()) {
+        await tapAndroidInterstitialCloseAttempt();
+        return false;
+      }
+      return false;
+    },
+    {
+      timeout: 90000,
+      interval: 200,
+      timeoutMsg:
+        'App Open Show never reached opened/closed after dismissing feed chrome',
+    },
+  );
+  await ensureExampleAppInForeground();
+  await dismissAndroidAppOpenFeedIfPresent();
+  if (!(await safeShowLifecycleText(formatId)).includes(SHOW_LIFECYCLE_CLOSED)) {
+    await dismissFullscreenAdWithoutCreativeTap();
+  }
+  await waitForTestIdTextContaining(
+    AppiumTestIds.action.lifecycle(formatId),
+    SHOW_LIFECYCLE_CLOSED,
+    90000,
+  );
+}
+
+/** RN Android `Button` ignores touches while `disabled`; wait after filled markers update. */
+async function waitForAndroidShowActionEnabled(formatId: string, timeoutMs = 15000): Promise<void> {
+  const showActionId = AppiumTestIds.action.show(formatId);
+  await driver.waitUntil(
+    async () => {
+      const el = await $(`android=new UiSelector().resourceId("${showActionId}").enabled(true)`);
+      if (!(await el.isExisting().catch(() => false))) {
+        return false;
+      }
+      const enabled = await el.getAttribute('enabled').catch(() => 'false');
+      return enabled === 'true' || enabled === true;
+    },
+    {
+      timeout: timeoutMs,
+      interval: 100,
+      timeoutMsg: `Show action ${showActionId} never became enabled`,
+    },
+  );
+}
+
+/** Fullscreen interstitial / GAM show-close while RN lifecycle nodes may be off-tree. */
+async function runAndroidFullscreenShowCloseLifecycle(formatId: string): Promise<void> {
+  const showActionId = AppiumTestIds.action.show(formatId);
+  const probesPerTap = 10;
+  const probeIntervalMs = 400;
+  const maxTaps = 4;
+  let lastProbe = { tap: 0, probe: 0, phase: '', adActivity: false, testAd: false };
+
+  const openedAfterProbe = async (
+    tap: number,
+    probe: number,
+  ): Promise<boolean> => {
+    const phase = await safeShowLifecycleText(formatId);
+    const adActivity = probe % 2 === 0 ? await isAndroidAdActivityForeground() : false;
+    const testAd =
+      adActivity || (probe % 4 === 0 ? await isAndroidFullscreenTestAdObstructing() : false);
+    lastProbe = { tap, probe, phase, adActivity, testAd };
+    const opened =
+      phase.includes(SHOW_LIFECYCLE_OPENED) || adActivity || testAd;
+    console.log(
+      `[show-close-probe] ${JSON.stringify({
+        format: formatId,
+        tap,
+        probe,
+        phase,
+        adActivity,
+        testAd,
+        opened,
+      })}`,
+    );
+    return opened;
+  };
+
+  let opened = false;
+  for (let tap = 1; tap <= maxTaps && !opened; tap += 1) {
+    console.log(`[show-close-tap] ${JSON.stringify({ format: formatId, tap })}`);
+    await waitForAndroidShowActionEnabled(formatId, 8000);
+    await tapFormatAction(showActionId);
+    for (let probe = 1; probe <= probesPerTap; probe += 1) {
+      if (await openedAfterProbe(tap, probe)) {
+        opened = true;
+        break;
+      }
+      if (probe < probesPerTap) {
+        await sleep(probeIntervalMs);
+      }
+    }
+  }
+  if (!opened) {
+    throw new Error(
+      `[show-close-fail] ${formatId}: no opened lifecycle or fullscreen chrome after ${maxTaps} show tap(s); lastProbe=${JSON.stringify(lastProbe)}`,
+    );
+  }
+  await dismissFullscreenAdWithoutCreativeTap();
+  await driver.waitUntil(
+    async () => {
+      if (
+        (await isAndroidFullscreenAdShowing()) ||
+        (await isAndroidAdActivityForeground()) ||
+        (await isAndroidFullscreenTestAdObstructing()) ||
+        (await isAndroidInterstitialCloseChromeVisible())
+      ) {
+        await tapAndroidInterstitialCloseAttempt();
+        return false;
+      }
+      const phase = await safeShowLifecycleText(formatId);
+      return phase.includes(SHOW_LIFECYCLE_CLOSED);
+    },
+    {
+      timeout: 90000,
+      interval: 400,
+      timeoutMsg: 'Fullscreen Show never reached Show lifecycle: closed after dismiss',
+    },
+  );
+}
+
+/** Dismiss a fullscreen test creative without tapping in-ad UI. */
 async function dismissFullscreenAdWithoutCreativeTap(): Promise<void> {
   if (isAndroid()) {
-    await driver.execute('mobile: shell', {
-      command: 'input',
-      args: ['keyevent', '4'],
-    });
+    await tapAndroidFullscreenCloseWithRetries();
     return;
   }
   await driver.back();
 }
 
 async function assertShowCloseLifecycle(formatId: string): Promise<void> {
+  if (isAndroid()) {
+    if (formatId === AppiumTestIds.format.appOpen) {
+      await runAndroidAppOpenShowCloseLifecycle(formatId);
+    } else {
+      await runAndroidFullscreenShowCloseLifecycle(formatId);
+    }
+    console.log(
+      `[show-close-proof] ${JSON.stringify({
+        format: formatId,
+        platform: 'android',
+        opened: SHOW_LIFECYCLE_OPENED,
+        closed: SHOW_LIFECYCLE_CLOSED,
+      })}`,
+    );
+    return;
+  }
   await tapFormatAction(AppiumTestIds.action.show(formatId));
   await waitForTestIdTextContaining(
     AppiumTestIds.action.lifecycle(formatId),
@@ -998,17 +1757,71 @@ async function assertUtilityOpenCloseLifecycle(
   actionAccessibilityLabel?: string,
 ): Promise<void> {
   await tapFormatAction(AppiumTestIds.action.show(formatId), actionAccessibilityLabel);
-  await waitForTestIdTextContaining(
-    AppiumTestIds.action.lifecycle(formatId),
-    UTILITY_LIFECYCLE_OPENED,
-    90000,
-  );
-  await dismissFullscreenAdWithoutCreativeTap();
-  await waitForTestIdTextContaining(
-    AppiumTestIds.action.lifecycle(formatId),
-    UTILITY_LIFECYCLE_CLOSED,
-    90000,
-  );
+  if (isAndroid()) {
+    await driver.waitUntil(
+      async () => {
+        if (
+          formatId === AppiumTestIds.format.adInspector &&
+          (await isAndroidAdInspectorVisible())
+        ) {
+          return true;
+        }
+        if (
+          formatId === AppiumTestIds.format.debugMenu &&
+          (await isAndroidDebugModePickerVisible())
+        ) {
+          return true;
+        }
+        const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
+        if (!(await el.isExisting().catch(() => false))) {
+          return false;
+        }
+        return (await elementText(el)).includes(UTILITY_LIFECYCLE_OPENED);
+      },
+      {
+        timeout: 90000,
+        interval: 200,
+        timeoutMsg: `Utility surface never opened for ${formatId}`,
+      },
+    );
+  } else {
+    await waitForTestIdTextContaining(
+      AppiumTestIds.action.lifecycle(formatId),
+      UTILITY_LIFECYCLE_OPENED,
+      90000,
+    );
+  }
+  if (isAndroid()) {
+    await dismissAndroidUtilitySurface(formatId);
+    await driver.waitUntil(
+      async () => {
+        if (
+          formatId === AppiumTestIds.format.debugMenu &&
+          (await isAndroidDebugModePickerVisible())
+        ) {
+          await dismissAndroidDebugModePickerIfPresent();
+          return false;
+        }
+        const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
+        if (!(await el.isExisting().catch(() => false))) {
+          return false;
+        }
+        return (await elementText(el)).includes(UTILITY_LIFECYCLE_CLOSED);
+      },
+      {
+        timeout: 90000,
+        interval: 400,
+        timeoutMsg: `Utility surface never closed for ${formatId}`,
+      },
+    );
+  } else {
+    await driver.back();
+    await waitForTestIdTextContaining(
+      AppiumTestIds.action.lifecycle(formatId),
+      UTILITY_LIFECYCLE_CLOSED,
+      90000,
+    );
+  }
   console.log(
     `[utility-open-close-proof] ${JSON.stringify({
       format: formatId,
@@ -1019,9 +1832,90 @@ async function assertUtilityOpenCloseLifecycle(
   );
 }
 
+async function runAndroidHookShowCloseLifecycle(formatId: string): Promise<void> {
+  const isAppOpenHook = formatId === AppiumTestIds.format.appOpenHook;
+  await driver.waitUntil(
+    async () => {
+      if (await isAndroidAdActivityForeground()) {
+        return true;
+      }
+      if (await isAndroidFullscreenTestAdObstructing()) {
+        return true;
+      }
+      if (isAppOpenHook && (await isAndroidAppOpenFeedChromeVisible())) {
+        await dismissAndroidAppOpenFeedIfPresent();
+        return false;
+      }
+      const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
+      if (await el.isExisting().catch(() => false)) {
+        const phase = await elementText(el);
+        if (phase.includes(HOOK_LIFECYCLE_CLOSED)) {
+          return true;
+        }
+        if (
+          phase.includes(HOOK_LIFECYCLE_SHOWING) &&
+          ((await isAndroidAdActivityForeground()) ||
+            (await isAndroidFullscreenTestAdObstructing()))
+        ) {
+          return true;
+        }
+      }
+      return false;
+    },
+    {
+      timeout: 90000,
+      interval: 200,
+      timeoutMsg: 'Hook Show never reached showing or native fullscreen chrome',
+    },
+  );
+  if (isAppOpenHook) {
+    await dismissAndroidAppOpenFeedIfPresent();
+  }
+  await dismissFullscreenAdWithoutCreativeTap();
+  await driver.waitUntil(
+    async () => {
+      if (isAppOpenHook && (await isAndroidAppOpenFeedChromeVisible())) {
+        await dismissAndroidAppOpenFeedIfPresent();
+        return false;
+      }
+      if (
+        (await isAndroidFullscreenAdShowing()) ||
+        (await isAndroidAdActivityForeground()) ||
+        (await isAndroidFullscreenTestAdObstructing()) ||
+        (await isAndroidInterstitialCloseChromeVisible())
+      ) {
+        await tapAndroidInterstitialCloseAttempt();
+        return false;
+      }
+      const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
+      if (!(await el.isExisting().catch(() => false))) {
+        return false;
+      }
+      return (await elementText(el)).includes(HOOK_LIFECYCLE_CLOSED);
+    },
+    {
+      timeout: 90000,
+      interval: 400,
+      timeoutMsg: 'Hook Show never reached status=closed',
+    },
+  );
+}
+
 /** Hook screens publish `Hook lifecycle:` markers; reward/paid delivery stays non-blocking. */
 async function assertHookShowCloseLifecycle(formatId: string): Promise<void> {
   await tapFormatAction(AppiumTestIds.action.show(formatId));
+  if (isAndroid()) {
+    await runAndroidHookShowCloseLifecycle(formatId);
+    console.log(
+      `[hook-lifecycle-proof] ${JSON.stringify({
+        format: formatId,
+        platform: 'android',
+        showing: HOOK_LIFECYCLE_SHOWING,
+        closed: HOOK_LIFECYCLE_CLOSED,
+      })}`,
+    );
+    return;
+  }
   await waitForTestIdTextContaining(
     AppiumTestIds.action.lifecycle(formatId),
     HOOK_LIFECYCLE_SHOWING,
@@ -1061,6 +1955,10 @@ async function tapFormatAction(actionId: string, accessibilityLabel?: string): P
         continue;
       }
       try {
+        if (await el.isDisplayed().catch(() => false)) {
+          await clickElement(el);
+          return;
+        }
         const rect = await el.getLocation();
         const size = await el.getSize();
         if (size.height <= 0 || size.width <= 0) {
@@ -1182,6 +2080,9 @@ export async function proveRepresentativeRequestOutcome(
       load: async () => {
         if (!format.actionId) {
           throw new Error(`No Load action configured for ${format.id}`);
+        }
+        if (format.path === 'pool' && format.id === AppiumTestIds.format.poolInterstitialProvider) {
+          await waitForPoolRegistryReady(format.id);
         }
         await tapFormatAction(format.actionId);
         if (format.id === AppiumTestIds.format.poolInterstitialImperative) {

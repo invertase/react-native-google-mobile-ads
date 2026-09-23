@@ -100,6 +100,9 @@ export function classifyPoolStructuredUnsupportedGate(
     if (/\bpeek=ok\b/.test(text)) {
       return 'loaded';
     }
+    if (/\bpeek=error\b/.test(text)) {
+      return 'other-error';
+    }
   }
   if (gate === 'rwi-preload') {
     if (/\brwi=structured-unsupported reason=pool\/format-preload-unsupported\b/.test(text)) {
@@ -107,6 +110,9 @@ export function classifyPoolStructuredUnsupportedGate(
     }
     if (/\brwi=created\b/.test(text)) {
       return 'loaded';
+    }
+    if (/\brwi=error\b/.test(text)) {
+      return 'other-error';
     }
   }
   return undefined;
