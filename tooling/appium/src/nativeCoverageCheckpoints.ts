@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PUBLIC_API_CONTRACTS } from './contracts.ts';
-import { REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS } from './formats.ts';
+import {
+  REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
+  SDK_UTILITY_SURFACE_CONTRACTS,
+} from './formats.ts';
+import { AppiumTestIds } from './testIds.ts';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const androidProductRoot = path.join(
@@ -29,11 +33,11 @@ function ios(...segments: string[]): string {
 }
 
 /**
- * Device-run Jacoco/LLVM checkpoints for each request-outcome contract.
+ * Device-run Jacoco/LLVM checkpoints for each executable Appium contract.
  * Behavioral proof stays in Appium assertions; this registry only names native
  * product files agents should diff in pull/report artifacts (coverage-design).
  */
-export const NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckpoint[] = [
+const REQUEST_OUTCOME_NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckpoint[] = [
   {
     contractId: REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS[0].id,
     androidSources: [
@@ -225,15 +229,35 @@ export const NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckpoint[] = 
   },
 ] as const;
 
+const UTILITY_NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckpoint[] = [
+  {
+    contractId: AppiumTestIds.format.adInspector,
+    androidSources: [android('ReactNativeGoogleMobileAdsModule.kt')],
+    iosSources: [ios('RNGoogleMobileAdsModule.mm')],
+    jacocoExpectation:
+      'Ad Inspector open/close executes MobileAds module inspector entry points without requiring ad inventory or creative interaction.',
+  },
+  {
+    contractId: AppiumTestIds.format.debugMenu,
+    androidSources: [android('ReactNativeGoogleMobileAdsModule.kt')],
+    iosSources: [ios('RNGoogleMobileAdsModule.mm')],
+    jacocoExpectation:
+      'Debug Menu open/close executes MobileAds module debug-menu entry points after initialize on Android without asserting SDK internals.',
+  },
+] as const;
+
+export const NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckpoint[] = [
+  ...REQUEST_OUTCOME_NATIVE_COVERAGE_CHECKPOINTS,
+  ...UTILITY_NATIVE_COVERAGE_CHECKPOINTS,
+] as const;
+
+export const EXECUTABLE_E2E_CONTRACT_IDS: readonly string[] = [
+  ...REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.map(contract => contract.id),
+  ...SDK_UTILITY_SURFACE_CONTRACTS.map(contract => contract.id),
+] as const;
+
 /** Gaps that remain honest dispositions or navigation-only until a device proof run closes native coverage. */
 export const DEVICE_NATIVE_COVERAGE_GAPS = [
-  {
-    id: 'utility-surfaces',
-    summary:
-      'MobileAds/default, Ad Inspector, and Debug Menu still disposition lower-layer until utility open/close contracts land (E9 sub-item 8).',
-    deviceProof:
-      'After utility contracts exist, expect ReactNativeGoogleMobileAdsModule / RNGoogleMobileAdsModule inspector and debug entry points in Jacoco/LCOV diff.',
-  },
   {
     id: 'gam-banner-fluid',
     summary:
@@ -283,21 +307,21 @@ export function nativeCoverageCheckpointSummary(): {
 
 export function validateNativeCoverageCheckpoints(): string[] {
   const errors: string[] = [];
-  const outcomeIds = REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.map(contract => contract.id);
+  const executableIds = [...EXECUTABLE_E2E_CONTRACT_IDS];
   const checkpointIds = NATIVE_COVERAGE_CHECKPOINTS.map(checkpoint => checkpoint.contractId);
 
-  if (checkpointIds.length !== outcomeIds.length) {
+  if (checkpointIds.length !== executableIds.length) {
     errors.push(
-      `checkpoint count ${checkpointIds.length} does not match request-outcome contract count ${outcomeIds.length}`,
+      `checkpoint count ${checkpointIds.length} does not match executable contract count ${executableIds.length}`,
     );
   }
-  for (const contractId of outcomeIds) {
+  for (const contractId of executableIds) {
     if (!checkpointIds.includes(contractId)) {
-      errors.push(`missing native coverage checkpoint for request-outcome contract ${contractId}`);
+      errors.push(`missing native coverage checkpoint for executable contract ${contractId}`);
     }
   }
   for (const contractId of checkpointIds) {
-    if (!outcomeIds.includes(contractId)) {
+    if (!executableIds.includes(contractId)) {
       errors.push(`stale native coverage checkpoint references unknown contract ${contractId}`);
     }
   }
