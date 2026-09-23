@@ -127,6 +127,33 @@ describe('NativeAsset registerAsset lifetime (#735 FlatList rebind)', () => {
     second.destroy();
   });
 
+  it('registers CALL_TO_ACTION with wire value callToAction (#724)', async () => {
+    // Docs historically showed NativeAssetType.CTA / nativeAd.cta — neither exists.
+    // Wrong assetType never reaches GMA callToActionView, so the button appears dead.
+    expect(NativeAssetType.CALL_TO_ACTION).toBe('callToAction');
+    expect((NativeAssetType as Record<string, string>).CTA).toBeUndefined();
+
+    const ad = await loadNativeAd('cta-wire-ad');
+    render(
+      <NativeAdView nativeAd={ad}>
+        <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+          <Text>{ad.callToAction}</Text>
+        </NativeAsset>
+      </NativeAdView>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(Commands.registerAsset).toHaveBeenCalledWith(
+      expect.anything(),
+      'callToAction',
+      4242,
+    );
+    ad.destroy();
+  });
+
   it('skips registerAsset when the host NativeAdView ref is not attached yet', async () => {
     const ad = await loadNativeAd('flatlist-ad-no-host');
     const emptyViewRef = { current: null };
