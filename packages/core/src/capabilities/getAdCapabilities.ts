@@ -15,31 +15,38 @@
  *
  */
 
-import { Platform } from 'react-native';
-
 import NativeGoogleMobileAdsModule from '../specs/modules/NativeGoogleMobileAdsModule';
 import { AdFormat } from '../types/AdFormat';
+import type { AdBackend } from '../types/AdBackend';
 import type { CapabilitySupport } from '../types/CapabilitySupport';
 import type { AdCapabilities } from '../types/AdCapabilities';
 
 const supported: CapabilitySupport = 'supported';
 const experimental: CapabilitySupport = 'experimental';
 const unavailable: CapabilitySupport = 'unavailable';
-
-const { sdkVersion } = NativeGoogleMobileAdsModule.getConstants();
+const emulated: CapabilitySupport = 'emulated';
 
 /**
  * Returns the static capability snapshot for this binary.
  *
  * Classic fullscreen preload is experimental (iOS Beta / Android limited-alpha).
  * Android classic has no rewarded-interstitial preloader and no peek API.
- * Display preload is library-emulated depth-1 (no classic SDK display preloader).
+ * Android next-gen wires AppOpen/Interstitial/Rewarded preloaders + peek; RWI and
+ * display preload remain unavailable / library-emulated.
  * `maxManagedPoolAds` stays null (server-delivered; documented default is 6).
  */
 export function getAdCapabilities(): AdCapabilities {
-  const isIos = Platform.OS === 'ios';
-  const backend = isIos ? 'ios' : 'android-classic';
-  const emulated: CapabilitySupport = 'emulated';
+  const { sdkVersion, backend: backendRaw } = NativeGoogleMobileAdsModule.getConstants();
+  const backend = backendRaw as AdBackend;
+  const isIos = backend === 'ios';
+  const isAndroidNextGen = backend === 'android-next-gen';
+
+  const classicFullscreen: CapabilitySupport = experimental;
+  const nextGenFullscreen: CapabilitySupport = supported;
+  const fullscreenPreload = isAndroidNextGen ? nextGenFullscreen : classicFullscreen;
+  const fullscreenFormatSupport = fullscreenPreload;
+  // Android classic and next-gen both lack RewardedInterstitialAdPreloader.
+  const rewardedInterstitialPreload: CapabilitySupport = isIos ? experimental : unavailable;
 
   return {
     backend,
@@ -53,17 +60,17 @@ export function getAdCapabilities(): AdCapabilities {
       [AdFormat.NATIVE]: supported,
     },
     multiFormatNativeBanner: supported,
-    fullscreenPreload: experimental,
+    fullscreenPreload,
     fullscreenPreloadFormats: {
-      [AdFormat.APP_OPEN]: experimental,
-      [AdFormat.INTERSTITIAL]: experimental,
-      [AdFormat.REWARDED]: experimental,
-      // Android classic has no RewardedInterstitialAdPreloader.
-      [AdFormat.REWARDED_INTERSTITIAL]: isIos ? experimental : unavailable,
+      [AdFormat.APP_OPEN]: fullscreenFormatSupport,
+      [AdFormat.INTERSTITIAL]: fullscreenFormatSupport,
+      [AdFormat.REWARDED]: fullscreenFormatSupport,
+      [AdFormat.REWARDED_INTERSTITIAL]: rewardedInterstitialPreload,
     },
+    // NG-2 did not wire native display preloaders; keep library-emulated depth-1.
     displayPreload: emulated,
     multiCountNative: unavailable,
-    poolResponseInfoPeek: isIos ? supported : unavailable,
+    poolResponseInfoPeek: isIos || isAndroidNextGen ? supported : unavailable,
     maxManagedPoolAds: null,
     mediation: 'unknown',
   };

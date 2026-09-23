@@ -534,11 +534,12 @@ private:
 
 #pragma mark - NativeGoogleMobileAdsModuleNativeGoogleMobileAdsConstants
 
-template <typename P0>
+template <typename P0, typename P1>
 struct NativeGoogleMobileAdsModuleNativeGoogleMobileAdsConstants {
-  P0 sdkVersion;
+  P0 sdkVersion{};
+  P1 backend;
   bool operator==(const NativeGoogleMobileAdsModuleNativeGoogleMobileAdsConstants &other) const {
-    return sdkVersion == other.sdkVersion;
+    return sdkVersion == other.sdkVersion && backend == other.backend;
   }
 };
 
@@ -551,12 +552,16 @@ struct NativeGoogleMobileAdsModuleNativeGoogleMobileAdsConstantsBridging {
       const jsi::Object &value,
       const std::shared_ptr<CallInvoker> &jsInvoker) {
     T result{
-      bridging::fromJs<decltype(types.sdkVersion)>(rt, value.getProperty(rt, "sdkVersion"), jsInvoker)};
+      bridging::fromJs<decltype(types.sdkVersion)>(rt, value.getProperty(rt, "sdkVersion"), jsInvoker),
+      bridging::fromJs<decltype(types.backend)>(rt, value.getProperty(rt, "backend"), jsInvoker)};
     return result;
   }
 
 #ifdef DEBUG
   static jsi::String sdkVersionToJs(jsi::Runtime &rt, decltype(types.sdkVersion) value) {
+    return bridging::toJs(rt, value);
+  }
+  static jsi::String backendToJs(jsi::Runtime &rt, decltype(types.backend) value) {
     return bridging::toJs(rt, value);
   }
 #endif
@@ -567,6 +572,7 @@ struct NativeGoogleMobileAdsModuleNativeGoogleMobileAdsConstantsBridging {
       const std::shared_ptr<CallInvoker> &jsInvoker) {
     auto result = facebook::jsi::Object(rt);
     result.setProperty(rt, "sdkVersion", bridging::toJs(rt, value.sdkVersion, jsInvoker));
+    result.setProperty(rt, "backend", bridging::toJs(rt, value.backend, jsInvoker));
     return result;
   }
 };

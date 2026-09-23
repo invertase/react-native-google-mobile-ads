@@ -133,7 +133,7 @@ switch (requestedAndroidBackend) {
     )
 }
 rootProject.ext.rngmaAndroidBackend = androidBackend
-def androidBackendName = androidBackend == "classic" ? "android-classic" : "android-nextgen"
+def androidBackendName = androidBackend == "classic" ? "android-classic" : "android-next-gen"
 
 def appJSONGoogleMobileAdsAppIDString = ""
 def appJSONGoogleMobileAdsDelayAppMeasurementInitBool = false

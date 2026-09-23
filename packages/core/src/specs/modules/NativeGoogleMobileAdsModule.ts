@@ -23,6 +23,7 @@ import { AdapterStatus } from '../../types';
 
 export type NativeGoogleMobileAdsConstants = {
   sdkVersion: string;
+  backend: string;
 };
 
 export interface Spec extends TurboModule {
