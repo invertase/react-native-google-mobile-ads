@@ -1,22 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS } from '../src/formats.ts';
 import {
   DEVICE_NATIVE_COVERAGE_GAPS,
+  EXECUTABLE_E2E_CONTRACT_IDS,
   nativeCoverageCheckpointSummary,
   NATIVE_COVERAGE_CHECKPOINTS,
   validateNativeCoverageCheckpoints,
 } from '../src/nativeCoverageCheckpoints.ts';
 
-test('every request-outcome contract has a Jacoco checkpoint with existing native sources', () => {
+test('every executable Appium contract has a Jacoco checkpoint with existing native sources', () => {
   assert.deepEqual(validateNativeCoverageCheckpoints(), []);
-  assert.equal(
-    NATIVE_COVERAGE_CHECKPOINTS.length,
-    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.length,
-  );
+  assert.equal(NATIVE_COVERAGE_CHECKPOINTS.length, EXECUTABLE_E2E_CONTRACT_IDS.length);
   const summary = nativeCoverageCheckpointSummary();
-  assert.equal(summary.checkpointCount, REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.length);
-  assert.deepEqual(summary.contractIds, REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.map(c => c.id));
+  assert.equal(summary.checkpointCount, EXECUTABLE_E2E_CONTRACT_IDS.length);
+  assert.deepEqual(summary.contractIds, EXECUTABLE_E2E_CONTRACT_IDS);
   console.log(
     `[native-coverage-checkpoints] ${JSON.stringify({
       checkpoints: summary.checkpointCount,

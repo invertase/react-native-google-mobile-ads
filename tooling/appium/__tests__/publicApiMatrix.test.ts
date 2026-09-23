@@ -117,7 +117,7 @@ test('missing example screens and testIDs fail', () => {
 });
 
 test('generic reasons fail for both reason-gated categories', () => {
-  for (const api of ['MobileAds', 'SDK_VERSION']) {
+  for (const api of ['AdEventType', 'SDK_VERSION']) {
     const contracts = clonedContracts();
     const contract = contracts.find(candidate => candidate.api === api);
     assert.ok(contract && contract.disposition !== 'e2e-outcome');
