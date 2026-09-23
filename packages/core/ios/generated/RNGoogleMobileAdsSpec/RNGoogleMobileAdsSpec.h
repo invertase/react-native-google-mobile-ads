@@ -196,6 +196,7 @@ namespace JS {
 
         struct Input {
           RCTRequired<NSString *> sdkVersion;
+          RCTRequired<NSString *> backend;
         };
 
         /** Initialize with a set of values */
@@ -457,6 +458,8 @@ inline JS::NativeGoogleMobileAdsModule::Constants::Builder::Builder(const Input 
   NSMutableDictionary *d = [NSMutableDictionary new];
   auto sdkVersion = i.sdkVersion.get();
   d[@"sdkVersion"] = sdkVersion;
+  auto backend = i.backend.get();
+  d[@"backend"] = backend;
   return d;
 }) {}
 inline JS::NativeGoogleMobileAdsModule::Constants::Builder::Builder(Constants i) : _factory(^{

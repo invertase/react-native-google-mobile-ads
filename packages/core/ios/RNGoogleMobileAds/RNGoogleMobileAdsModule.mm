@@ -42,14 +42,14 @@ RCT_EXPORT_MODULE();
 
 - (NSDictionary *)getConstants {
 #if TARGET_OS_MACCATALYST
-  return @{@"sdkVersion" : @""};
+  return @{@"sdkVersion" : @"", @"backend" : @"ios"};
 #else
   GADVersionNumber version = GADMobileAds.sharedInstance.versionNumber;
   NSString *sdkVersion =
       [NSString stringWithFormat:@"%ld.%ld.%ld", static_cast<long>(version.majorVersion),
                                  static_cast<long>(version.minorVersion),
                                  static_cast<long>(version.patchVersion)];
-  return @{@"sdkVersion" : sdkVersion};
+  return @{@"sdkVersion" : sdkVersion, @"backend" : @"ios"};
 #endif
 }
 
@@ -60,16 +60,13 @@ RCT_EXPORT_METHOD(initialize : (RCTPromiseResolveBlock)resolve : (RCTPromiseReje
   [self initialize:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(setRequestConfiguration
-                  : (NSDictionary *)requestConfiguration
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(setRequestConfiguration : (NSDictionary *)requestConfiguration : (
+    RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
   [self setRequestConfiguration:requestConfiguration resolve:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(openAdInspector
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(openAdInspector : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)
+                      reject) {
   [self openAdInspector:resolve reject:reject];
 }
 

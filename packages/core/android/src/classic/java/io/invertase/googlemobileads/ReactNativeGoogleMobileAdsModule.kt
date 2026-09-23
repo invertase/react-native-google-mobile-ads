@@ -39,6 +39,7 @@ class ReactNativeGoogleMobileAdsModule(
   override fun getConstants(): Map<String, Any> =
     mapOf(
       "sdkVersion" to MobileAds.getVersion().toString(),
+      "backend" to ReactNativeGoogleMobileAds.backend,
     )
 
   private fun buildRequestConfiguration(requestConfiguration: ReadableMap): RequestConfiguration {

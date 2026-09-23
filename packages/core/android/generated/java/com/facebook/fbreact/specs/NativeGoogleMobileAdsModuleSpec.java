@@ -47,6 +47,7 @@ public abstract class NativeGoogleMobileAdsModuleSpec extends ReactContextBaseJa
     Map<String, Object> constants = getTypedExportedConstants();
     if (ReactBuildConfig.DEBUG || ReactBuildConfig.IS_INTERNAL_BUILD) {
       Set<String> obligatoryFlowConstants = new HashSet<>(Arrays.asList(
+          "backend",
           "sdkVersion"
       ));
       Set<String> optionalFlowConstants = new HashSet<>();

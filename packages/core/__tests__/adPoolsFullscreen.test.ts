@@ -1,6 +1,6 @@
-import { Platform } from 'react-native';
-
 import { AdFormat, AdPools, AdPoolPresets, BannerAdSize, getAdCapabilities } from '../src';
+import type { AdBackend } from '../src';
+import NativeGoogleMobileAdsModule from '../src/specs/modules/NativeGoogleMobileAdsModule';
 import { destroyAllAdPools } from '../src/internal/adPoolRegistry';
 import {
   createPoolAdError,
@@ -9,26 +9,37 @@ import {
   validateAdPoolConfig,
 } from '../src/validateAdPoolConfig';
 
+function mockBackend(backend: AdBackend) {
+  jest.mocked(NativeGoogleMobileAdsModule.getConstants).mockReturnValue({
+    sdkVersion: 'test-linked-sdk',
+    backend,
+  });
+}
+
 describe('FEAT-05 classic fullscreen AdPools', () => {
   afterEach(() => {
     destroyAllAdPools();
+    mockBackend('ios');
   });
 
   it('reports live classic capabilities with maxManagedPoolAds null and cap honesty 6', () => {
-    const caps = getAdCapabilities();
-    expect(caps.maxManagedPoolAds).toBeNull();
+    mockBackend('ios');
+    const iosCaps = getAdCapabilities();
+    expect(iosCaps.maxManagedPoolAds).toBeNull();
     expect(DOCUMENTED_APP_WIDE_POOL_CAP).toBe(6);
-    expect(caps.fullscreenPreload).toBe('experimental');
-    expect(caps.displayPreload).toBe('emulated');
-    if (Platform.OS === 'ios') {
-      expect(caps.backend).toBe('ios');
-      expect(caps.poolResponseInfoPeek).toBe('supported');
-      expect(caps.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]).toBe('experimental');
-    } else {
-      expect(caps.backend).toBe('android-classic');
-      expect(caps.poolResponseInfoPeek).toBe('unavailable');
-      expect(caps.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]).toBe('unavailable');
-    }
+    expect(iosCaps.fullscreenPreload).toBe('experimental');
+    expect(iosCaps.displayPreload).toBe('emulated');
+    expect(iosCaps.backend).toBe('ios');
+    expect(iosCaps.poolResponseInfoPeek).toBe('supported');
+    expect(iosCaps.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]).toBe('experimental');
+
+    mockBackend('android-classic');
+    const androidCaps = getAdCapabilities();
+    expect(androidCaps.backend).toBe('android-classic');
+    expect(androidCaps.poolResponseInfoPeek).toBe('unavailable');
+    expect(androidCaps.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]).toBe(
+      'unavailable',
+    );
   });
 
   it('validates fullscreen presets and defaults omitted bufferSize to Google default 2', () => {
@@ -63,40 +74,33 @@ describe('FEAT-05 classic fullscreen AdPools', () => {
   });
 
   it('hard-errors Android rewarded interstitial when unavailable', () => {
-    if (Platform.OS === 'ios') {
-      expect(
-        validateAdPoolConfig(
-          AdPoolPresets.fullscreen(AdFormat.REWARDED_INTERSTITIAL, 'unit'),
-        ).formats,
-      ).toEqual([AdFormat.REWARDED_INTERSTITIAL]);
-      return;
-    }
+    mockBackend('ios');
+    expect(
+      validateAdPoolConfig(AdPoolPresets.fullscreen(AdFormat.REWARDED_INTERSTITIAL, 'unit'))
+        .formats,
+    ).toEqual([AdFormat.REWARDED_INTERSTITIAL]);
+
+    mockBackend('android-classic');
     expect(() =>
       validateAdPoolConfig(AdPoolPresets.fullscreen(AdFormat.REWARDED_INTERSTITIAL, 'unit')),
     ).toThrow(/pool\/format-preload-unsupported/);
   });
 
-  it('creates, polls, and peeks according to platform capabilities', async () => {
+  it('creates, polls, and peeks according to backend capabilities', async () => {
+    mockBackend('ios');
     const config = AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, 'unit', {
       bufferSize: 2,
     });
-    const pool = await AdPools.create(config);
-    expect(pool.poolId).toBe(config.poolId);
-    expect(pool.resolved.effectiveBufferSize).toBe(2);
-    expect(AdPools.get(config.poolId)).toBe(pool);
+    const iosPool = await AdPools.create(config);
+    expect(iosPool.poolId).toBe(config.poolId);
+    expect(iosPool.resolved.effectiveBufferSize).toBe(2);
+    expect(AdPools.get(config.poolId)).toBe(iosPool);
 
-    const availability = await pool.getAvailability();
+    const availability = await iosPool.getAvailability();
     expect(availability.observedCount).toBeGreaterThanOrEqual(0);
+    await expect(iosPool.peekResponseInfo()).resolves.toBeNull();
 
-    if (Platform.OS === 'ios') {
-      await expect(pool.peekResponseInfo()).resolves.toBeNull();
-    } else {
-      await expect(pool.peekResponseInfo()).rejects.toMatchObject({
-        reason: 'pool/peek-unsupported',
-      });
-    }
-
-    const poll = await pool.poll();
+    const poll = await iosPool.poll();
     expect(['filled', 'empty']).toContain(poll.status);
     if (poll.status === 'filled') {
       expect(poll.ad.provenance).toBe('pool/sdk-managed-preloader');
@@ -104,9 +108,15 @@ describe('FEAT-05 classic fullscreen AdPools', () => {
       expect(typeof poll.ad.isStaleByPolicy).toBe('function');
       poll.ad.destroy();
     }
-
-    pool.destroy();
+    iosPool.destroy();
     expect(AdPools.get(config.poolId)).toBeNull();
+
+    mockBackend('android-classic');
+    const androidPool = await AdPools.create(config);
+    await expect(androidPool.peekResponseInfo()).rejects.toMatchObject({
+      reason: 'pool/peek-unsupported',
+    });
+    androidPool.destroy();
   });
 
   it('createPoolAdError carries structured reason', () => {

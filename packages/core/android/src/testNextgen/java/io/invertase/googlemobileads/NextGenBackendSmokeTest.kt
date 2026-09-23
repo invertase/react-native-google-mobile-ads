@@ -8,7 +8,7 @@ import org.junit.Test
 class NextGenBackendSmokeTest {
   @Test
   fun reportsSelectedBackend() {
-    assertEquals("android-nextgen", ReactNativeGoogleMobileAds.backend)
+    assertEquals("android-next-gen", ReactNativeGoogleMobileAds.backend)
   }
 
   @Test
