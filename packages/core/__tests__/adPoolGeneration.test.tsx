@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
 
 import { AdFormat, AdPoolPresets, AdPoolProvider, AdPools, BannerAdSize } from '../src';
 import { destroyAllAdPools, unregisterAdPool } from '../src/internal/adPoolRegistry';
@@ -22,9 +22,16 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve, reject };
 }
 
+/** AdPools.create schedules native start after ensureMobileAdsInitialized (two microtasks). */
+async function flushPoolCreateStart(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
 describe('ad pool generation ownership', () => {
-  afterEach(() => {
+  afterEach(async () => {
     destroyAllAdPools();
+    await flushPoolCreateStart();
     jest.clearAllMocks();
   });
 
@@ -68,12 +75,12 @@ describe('ad pool generation ownership', () => {
       );
       const config = AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, 'overlap-unit');
       const older = AdPools.create(config);
-      await Promise.resolve();
+      await flushPoolCreateStart();
       expect(starts.size).toBe(1);
       const firstGeneration = [...starts.keys()][0];
 
       const latest = AdPools.create(config);
-      await Promise.resolve();
+      await flushPoolCreateStart();
       expect(starts.size).toBe(2);
       const secondGeneration = [...starts.keys()].find(
         generation => generation !== firstGeneration,
@@ -124,9 +131,9 @@ describe('ad pool generation ownership', () => {
       poolId: 'same-id',
     };
     const older = AdPools.create(olderConfig);
-    await Promise.resolve();
+    await flushPoolCreateStart();
     const latest = AdPools.create(latestConfig);
-    await Promise.resolve();
+    await flushPoolCreateStart();
     expect(starts).toHaveLength(2);
     expect(NativeGoogleMobileAdsPoolModule.poolDestroy).toHaveBeenCalledWith(
       olderConfig.poolId,
@@ -166,9 +173,9 @@ describe('ad pool generation ownership', () => {
       .mockImplementationOnce(() => starts[1].promise);
     const config = AdPoolPresets.fullscreen(AdFormat.APP_OPEN, 'failure');
     const older = AdPools.create(config);
-    await Promise.resolve();
+    await flushPoolCreateStart();
     const latest = AdPools.create(config);
-    await Promise.resolve();
+    await flushPoolCreateStart();
     const failure = new Error('latest failed');
     starts[1].reject(failure);
     const latestExpectation = expect(latest).rejects.toBe(failure);
@@ -259,7 +266,7 @@ describe('ad pool generation ownership', () => {
     );
     const config = AdPoolPresets.fullscreen(AdFormat.REWARDED, 'destroy-pending');
     const abandoned = AdPools.create(config);
-    await Promise.resolve();
+    await flushPoolCreateStart();
     const abandonedExpectation = expect(abandoned).rejects.toMatchObject({
       reason: 'internal-error',
     });
@@ -285,7 +292,7 @@ describe('ad pool generation ownership', () => {
       poolId: 'unregister-pending',
     };
     const creation = AdPools.create(config);
-    await Promise.resolve();
+    await flushPoolCreateStart();
     const generation = (NativeGoogleMobileAdsPoolModule.poolStart as jest.Mock).mock.calls[0][2];
     const expectation = expect(creation).rejects.toMatchObject({ reason: 'internal-error' });
     unregisterAdPool(config.poolId);
@@ -303,7 +310,7 @@ describe('ad pool generation ownership', () => {
     (NativeGoogleMobileAdsPoolModule.poolStart as jest.Mock).mockReturnValueOnce(pending.promise);
     const config = AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, 'destroy-throws');
     const creation = AdPools.create(config);
-    await Promise.resolve();
+    await flushPoolCreateStart();
     const cancellation = expect(creation).rejects.toMatchObject({ reason: 'internal-error' });
     const nativeFailure = new Error('native destroy failed');
     (NativeGoogleMobileAdsPoolModule.poolDestroy as jest.Mock).mockImplementationOnce(() => {
@@ -333,7 +340,7 @@ describe('ad pool generation ownership', () => {
     const secondConfig = AdPoolPresets.fullscreen(AdFormat.REWARDED, 'destroy-all-second');
     const first = AdPools.create(firstConfig);
     const second = AdPools.create(secondConfig);
-    await Promise.resolve();
+    await flushPoolCreateStart();
     const firstCancellation = expect(first).rejects.toMatchObject({ reason: 'internal-error' });
     const secondCancellation = expect(second).rejects.toMatchObject({ reason: 'internal-error' });
     (NativeGoogleMobileAdsPoolModule.poolDestroy as jest.Mock).mockImplementation(() => {
@@ -415,12 +422,10 @@ describe('ad pool generation ownership', () => {
         </AdPoolProvider>
       </React.StrictMode>,
     );
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
+    await waitFor(() => {
+      expect(AdPools.get(config.poolId)).not.toBeNull();
     });
-    const live = AdPools.get(config.poolId);
-    expect(live).not.toBeNull();
+    const live = AdPools.get(config.poolId)!;
     const startCalls = (NativeGoogleMobileAdsPoolModule.poolStart as jest.Mock).mock.calls;
     expect(startCalls).toHaveLength(1);
     const liveGeneration = startCalls[startCalls.length - 1][2];
