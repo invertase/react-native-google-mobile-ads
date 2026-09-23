@@ -64,13 +64,13 @@ Do **not** delete `Podfile.lock` on routine `yarn tests:ios:pod:install` — ins
 
 ## Truthful e2e checks
 
-Android **Run Emulator Tests** and iOS **Install example on simulator** / **Build and Run Appium e2e** are hard-fail steps, so an Appium footer failure fails the workflow. iOS **Create Simulator Log** alone keeps `continue-on-error: true`; diagnostics must not hide or replace the test result. Artifact uploads use `if: always()`. Local gate evidence remains counts + unique `/tmp/rngma-e2e-*-*.log` tees ([running e2e § local commands](../testing/running-e2e.md#local-e2e-commands)), or triaged `simulator_log` / `adb_logs`.
+Android **Run Emulator Tests** and iOS **Install example on simulator** / **Build and Run Appium e2e** are hard-fail steps, so an Appium footer failure fails the workflow. iOS **Create Simulator Log** alone keeps `continue-on-error: true`; diagnostics must not hide or replace the test result. Artifact uploads use `if: always()`. Local gate evidence remains counts plus the named owner's invocation logs (or an additional unique tee) per [running e2e § local commands](../testing/running-e2e.md#local-e2e-commands), or triaged `simulator_log` / `adb_logs`.
 
 <a id="triage"></a>
 
 ## Triage
 
-- iOS e2e failure: download `simulator_log`, then the local unique `/tmp/rngma-e2e-ios-*.log` from [running e2e](../testing/running-e2e.md#local-e2e-commands).
-- Android e2e failure: download `adb_logs`, then the local unique `/tmp/rngma-e2e-android-*.log` from [running e2e](../testing/running-e2e.md#local-e2e-commands).
+- iOS e2e failure: download `simulator_log`, then inspect the local invocation logs from [running e2e](../testing/running-e2e.md#local-e2e-commands).
+- Android e2e failure: download `adb_logs`, then inspect the local invocation logs from [running e2e](../testing/running-e2e.md#local-e2e-commands).
 - Packager never healthy: Metro must be **this** checkout on `:8081` — [running e2e § pre-flight](../testing/running-e2e.md#pre-flight).
 - Grow platform pages here only after a failure mode is verified on **this** repo.

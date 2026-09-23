@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createServer, type Server } from 'node:net';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { NodeParallelRunner } from '../scripts/parallel.ts';
 import {
   PARALLEL_ASSIGNMENTS,
   createParallelPlan,
@@ -51,6 +53,40 @@ async function waitFor(predicate: () => boolean): Promise<void> {
   assert.fail('Timed out waiting for deterministic mock phase.');
 }
 
+async function listeningServer(): Promise<{ port: number; server: Server }> {
+  const server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen({ host: '127.0.0.1', port: 0 }, resolve);
+  });
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  return { port: address.port, server };
+}
+
+async function closeServer(server: Server): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    server.close(error => (error ? reject(error) : resolve()));
+  });
+}
+
+async function promptly<T>(promise: Promise<T>): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('monitorPort completion did not settle promptly')),
+          2_000,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 class MockRunner implements ParallelRunner {
   readonly events: string[] = [];
   readonly commands: ChildCommand[] = [];
@@ -58,9 +94,12 @@ class MockRunner implements ParallelRunner {
     command: ChildCommand;
     deferred: Deferred;
     stops: number;
+    emit(line: string): void;
   }> = [];
   appiumExitCode = 0;
   autoCompleteAppium = true;
+  autoAppiumStartup = true;
+  autoAppReady = true;
   afterPorts?: () => void;
   abortAfterRole?: { role: string; abort(): void };
   onStart?: (command: ChildCommand) => void;
@@ -92,24 +131,49 @@ class MockRunner implements ParallelRunner {
     this.commands.push(command);
     this.events.push(`start:${command.role}`);
     const pending = deferred();
-    const state = { command, deferred: pending, stops: 0 };
+    const listeners = new Set<(line: string) => void>();
+    const state = {
+      command,
+      deferred: pending,
+      stops: 0,
+      emit: (line: string) => {
+        this.events.push(`line:${command.role}:${line}`);
+        for (const listener of listeners) listener(line);
+      },
+    };
     this.children.push(state);
     this.onStart?.(command);
+    const running = {
+      completion: pending.promise,
+      stop: async () => {
+        state.stops += 1;
+        this.events.push(`stop:${command.role}`);
+        pending.resolve(CANCELLED_EXIT_CODE);
+      },
+      onLine: (listener: (line: string) => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
     if (this.heldRoles.has(command.role)) {
-      return {
-        completion: pending.promise,
-        stop: async () => {
-          state.stops += 1;
-          pending.resolve(CANCELLED_EXIT_CODE);
-        },
-      };
+      return running;
     }
     const configuredCode = this.commandExitCodes.get(command.role);
     if (configuredCode != null) {
       queueMicrotask(() => pending.resolve(configuredCode));
-    } else if (command.role.endsWith('Appium') && this.autoCompleteAppium) {
-      queueMicrotask(() => pending.resolve(this.appiumExitCode));
+    } else if (command.role.endsWith('Appium')) {
+      queueMicrotask(() => {
+        if (this.autoAppiumStartup) {
+          state.emit('Execution of 1 worker started');
+          state.emit('Appium session created successfully');
+          if (this.autoAppReady) state.emit('[e2e-startup-ready] {"ok":true}');
+        }
+        if (this.autoCompleteAppium) pending.resolve(this.appiumExitCode);
+      });
+    } else if (command.role.includes('exact-device startup log')) {
+      // Device tails are long-lived owners and finish only when stopped.
     } else if (command.role.endsWith('packager')) {
+      queueMicrotask(() => state.emit('Dev server ready'));
       const slot = Number(command.env.RNGMA_E2E_SLOT);
       const spawnError = this.packagerSpawnErrors.get(slot);
       if (spawnError) {
@@ -126,17 +190,12 @@ class MockRunner implements ParallelRunner {
         }
       });
     }
-    return {
-      completion: pending.promise,
-      stop: async () => {
-        state.stops += 1;
-        pending.resolve(CANCELLED_EXIT_CODE);
-      },
-    };
+    return running;
   }
 
-  async waitForPort(port: number): Promise<void> {
+  async waitForPort(port: number, _owner: RunningCommand, signal: AbortSignal): Promise<void> {
     await new Promise(resolve => setImmediate(resolve));
+    if (signal.aborted) return;
     const error = this.readinessErrors.get(port);
     if (error) throw error;
     this.events.push(`ready:${port}`);
@@ -203,7 +262,7 @@ test('parallel plan maps configured 1/4/5 slots to one Metro and positional spec
     android.map(item => item.device),
     ['emulator-5558', 'emulator-5564', 'emulator-5566'],
   );
-  assert.ok(android.every(item => item.logPath.includes(`slot-${item.slot}`)));
+  assert.ok(android.every(item => item.logPath === ''));
 
   const ios = createParallelPlan('ios', env);
   assert.deepEqual(
@@ -398,7 +457,64 @@ test('Android builds once and fans the same APK out before concurrent children',
     WDIO_SMOKE_SPECS,
   );
   assert.ok(appiums.every(item => item.logPath?.endsWith('.log')));
+  const tails = runner.commands.filter(item => item.role.includes('exact-device startup log'));
+  assert.equal(tails.length, 3);
+  assert.ok(
+    tails.every(
+      item =>
+        item.bin === 'adb' &&
+        item.args?.[0] === '-s' &&
+        item.args.includes('-T') &&
+        item.args.includes('ReactNativeJS:V'),
+    ),
+  );
   assert.ok(runner.commands.every(item => item.env.RNGMA_E2E_SLOT !== '3'));
+});
+
+test('worker-phase hard failure drains owners before rejecting with summary', async () => {
+  const runner = new MockRunner();
+  runner.autoCompleteAppium = false;
+  runner.autoAppiumStartup = false;
+  const run = runParallelE2e('android', runner, { env: {} });
+  await waitFor(
+    () => runner.children.filter(item => item.command.role.endsWith('Appium')).length === 3,
+  );
+  const appiums = runner.children.filter(item => item.command.role.endsWith('Appium'));
+  appiums[1]!.emit('Could not create a new session');
+  await assert.rejects(run, error => {
+    assert.match((error as Error).message, /session-create/);
+    assert.ok('summary' in (error as object));
+    assert.ok(
+      runner.events.filter(event => event.startsWith('stop:')).length >= 4,
+      'all active owners must stop before startup rejection is summarized',
+    );
+    return true;
+  });
+  assert.equal(
+    runner.commands.some(item => item.role.includes('exact-device startup log')),
+    false,
+  );
+});
+
+test('app-phase Android device bundle failure aborts after exact-target tails start', async () => {
+  const runner = new MockRunner();
+  runner.autoCompleteAppium = false;
+  runner.autoAppReady = false;
+  const run = runParallelE2e('android', runner, { env: {} });
+  await waitFor(
+    () =>
+      runner.children.filter(item => item.command.role.includes('exact-device startup log'))
+        .length === 3,
+  );
+  const tail = runner.children.find(item =>
+    item.command.role.includes('exact-device startup log'),
+  )!;
+  tail.emit('ReactNativeJS: unrelated ECONNREFUSED');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(runner.events.filter(event => event.startsWith('stop:')).length, 0);
+  tail.emit('ReactNativeJS: Unable to load script from Metro');
+  await assert.rejects(run, /unable-load-script/);
+  assert.ok(runner.children.every(item => item.stops <= 1));
 });
 
 test('Android starts one first-slot build for an alternate configured triple', async () => {
@@ -471,6 +587,39 @@ test('external Metro consumers require the shared listener and never own a packa
   assert.ok(children.every(item => item.env.RNGMA_E2E_METRO_SLOT === '1'));
 });
 
+test('real external-port monitor settles on cancellation and listener loss', async () => {
+  const runner = new NodeParallelRunner();
+
+  const cancelledListener = await listeningServer();
+  try {
+    const cancelled = runner.monitorPort(cancelledListener.port);
+    await cancelled.stop();
+    assert.equal(await promptly(cancelled.completion), CANCELLED_EXIT_CODE);
+  } finally {
+    await closeServer(cancelledListener.server);
+  }
+
+  const unhealthyListener = await listeningServer();
+  const unhealthy = runner.monitorPort(unhealthyListener.port);
+  await closeServer(unhealthyListener.server);
+  assert.equal(await promptly(unhealthy.completion), UNKNOWN_FAILURE_EXIT_CODE);
+});
+
+test('real Metro port waiter converts owner spawn rejection to exit failure', async () => {
+  const runner = new NodeParallelRunner();
+  const owner: RunningCommand = {
+    completion: Promise.reject(new Error('spawn ENOENT')),
+    stop: async () => undefined,
+    onLine: () => () => undefined,
+  };
+  await promptly(
+    assert.rejects(
+      runner.waitForPort(1, owner, new AbortController().signal),
+      /Packager exited with code 1 before port 1 opened/,
+    ),
+  );
+});
+
 test('combined barrier launches all six Appium children only after both preps', async () => {
   const runner = new MockRunner();
   runner.autoCompleteAppium = false;
@@ -510,6 +659,11 @@ test('combined barrier launches all six Appium children only after both preps', 
   assert.equal(appiums.filter(item => item.command.role.startsWith('android ')).length, 3);
   assert.equal(appiums.filter(item => item.command.role.startsWith('ios ')).length, 3);
   assert.ok(appiums.every(item => item.stops === 0));
+  await waitFor(
+    () =>
+      runner.children.filter(item => item.command.role.includes('exact-device startup log'))
+        .length === 6,
+  );
   for (const child of appiums) child.deferred.resolve(0);
 
   const summary = await run;
@@ -545,6 +699,28 @@ test('combined preparation failure cancels sibling prep and one Metro', async ()
     item => item.command.role.endsWith('packager') || item.command.role === 'shared codegen',
   );
   assert.ok(owned.every(item => item.stops === 1));
+});
+
+test('combined Metro hard marker during preparation preserves its diagnostic', async () => {
+  const runner = new MockRunner();
+  runner.heldRoles.add('shared codegen');
+  runner.heldRoles.add('shared Android build for Metro 13007');
+  runner.onStart = command => {
+    if (command.role !== 'shared codegen') return;
+    const metro = runner.children.find(item => item.command.role.endsWith('packager'));
+    metro?.emit('BUNDLE ./index.js failed with transform error');
+  };
+  await assert.rejects(
+    () =>
+      runCombinedParallelE2e(runner, {
+        env: { RNGMA_E2E_PARALLEL_SLOTS: '1,4,6' },
+      }),
+    /metro-transform/,
+  );
+  assert.equal(
+    runner.children.some(item => item.command.role.endsWith('Appium')),
+    false,
+  );
 });
 
 test('combined Appium failure cancels sibling platform and Metro once', async () => {
@@ -904,7 +1080,10 @@ test('packager readiness rejection fails slot 1 with 1 and cancels siblings at 1
           },
         ],
       );
-      assert.equal(summary?.slots[0]?.logPath, '/tmp/rngma-e2e-android-slot-1-a-primary.log');
+      assert.match(
+        summary?.slots[0]?.logPath ?? '',
+        /^\/tmp\/rngma-e2e\/[^/]+\/android-slot-1-a-primary\.log$/,
+      );
       return true;
     },
   );
@@ -1076,9 +1255,12 @@ test('signal cleanup stops every task-owned runtime child once with numeric canc
     return true;
   });
   const runtime = runner.children.filter(
-    item => item.command.role.endsWith('packager') || item.command.role.endsWith('Appium'),
+    item =>
+      item.command.role.endsWith('packager') ||
+      item.command.role.endsWith('Appium') ||
+      item.command.role.includes('exact-device startup log'),
   );
-  assert.equal(runtime.length, 4);
+  assert.equal(runtime.length, 7);
   assert.ok(runtime.every(item => item.stops === 1));
   assert.ok(
     runner.children.filter(item => !runtime.includes(item)).every(item => item.stops === 0),

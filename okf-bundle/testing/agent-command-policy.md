@@ -50,7 +50,7 @@ If a command is not listed (or linked) here, **do not run it**. E2e: [local e2e 
 | Native coverage (pull/report/assert) | From example cwd / workspace: `yarn workspace RNGoogleMobileAdsExample exec rn-coverage <args>` after device Appium + in-app flush — [coverage design § native agent collection](coverage-design.md#native-agent-collection) | copying RNFB coverage shell scripts; inventing root yarn wrappers that re-implement pull/export; running pull before Appium teardown flush |
 | `.only` scan | `rg '\.only\(' packages/core/src/ packages/core/plugin/ packages/core/__tests__/ tooling/appium/` | other grep as the gate |
 
-Redirect/`tee` of the **same** listed yarn script is allowed, as is setting documented `RNGMA_*` variables — including sourcing the `--github-env` file written by `yarn tests:appium:ios:select-and-boot` ([§ prebuilt validation](running-e2e.md#ios-wda-prebuilt-validation)). Do not add other wrappers.
+Redirect/`tee` of the **same** listed yarn script is allowed, as is setting documented `RNGMA_*` variables — including sourcing the `--github-env` file written by `yarn tests:appium:ios:select-and-boot` ([§ prebuilt validation](running-e2e.md#ios-wda-prebuilt-validation)). Long-running named owners [supervise their own startup](running-e2e.md#enforced-startup-supervision); do not wrap them in ad-hoc log-grep or monitor pipelines. Do not add other wrappers.
 
 <a id="prepare-must-finish-first"></a>
 

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { spawn, type ChildProcess } from 'node:child_process';
-import { createWriteStream, promises as fs } from 'node:fs';
+import { createWriteStream, mkdirSync, promises as fs } from 'node:fs';
 import { createConnection, createServer } from 'node:net';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
+  CANCELLED_EXIT_CODE,
+  UNKNOWN_FAILURE_EXIT_CODE,
   childSlotExitCode,
   runCombinedParallelE2e,
   runParallelE2e,
@@ -14,6 +16,10 @@ import {
   type RunningCommand,
 } from '../src/parallelOrchestrator.ts';
 import type { ParallelPlatform } from '../src/parallelPlan.ts';
+import {
+  armAbortSignals,
+  stopChildProcessTree,
+} from '../src/ownedProcess.ts';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -45,58 +51,59 @@ function portIsFree(port: number): Promise<boolean> {
 class NodeRunningCommand implements RunningCommand {
   readonly completion: Promise<number>;
   private stopping?: Promise<void>;
+  private readonly lineListeners = new Set<(line: string) => void>();
+  private stdoutRemainder = '';
+  private stderrRemainder = '';
 
   constructor(
     private readonly child: ChildProcess,
     command: ChildCommand,
   ) {
-    const log = command.logPath ? createWriteStream(command.logPath, { flags: 'w' }) : undefined;
+    const log = command.logPath ? createWriteStream(command.logPath, { flags: 'wx' }) : undefined;
+    const emitLines = (stream: 'stdout' | 'stderr', chunk: Buffer | string) => {
+      const complete = `${
+        stream === 'stdout' ? this.stdoutRemainder : this.stderrRemainder
+      }${String(chunk)}`.split(/\r?\n/);
+      const remainder = complete.pop() ?? '';
+      if (stream === 'stdout') this.stdoutRemainder = remainder;
+      else this.stderrRemainder = remainder;
+      for (const line of complete) {
+        for (const listener of this.lineListeners) listener(line);
+      }
+    };
     child.stdout?.on('data', chunk => {
       process.stdout.write(chunk);
       log?.write(chunk);
+      emitLines('stdout', chunk);
     });
     child.stderr?.on('data', chunk => {
       process.stderr.write(chunk);
       log?.write(chunk);
+      emitLines('stderr', chunk);
     });
     this.completion = new Promise((resolve, reject) => {
       child.once('error', reject);
-      child.once('exit', (code, signal) => {
-        log?.end();
-        resolve(childSlotExitCode(code, signal));
+      child.once('close', (code, signal) => {
+        const exitCode = childSlotExitCode(code, signal);
+        if (log) log.end(() => resolve(exitCode));
+        else resolve(exitCode);
       });
     });
+  }
+
+  onLine(listener: (line: string) => void): () => void {
+    this.lineListeners.add(listener);
+    return () => this.lineListeners.delete(listener);
   }
 
   stop(): Promise<void> {
     if (this.stopping) return this.stopping;
-    this.stopping = new Promise(resolve => {
-      if (this.child.exitCode != null || this.child.signalCode != null || !this.child.pid) {
-        resolve();
-        return;
-      }
-      const pid = this.child.pid;
-      const killGroup = (signal: NodeJS.Signals) => {
-        try {
-          process.kill(-pid, signal);
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'ESRCH') throw error;
-        }
-      };
-      killGroup('SIGTERM');
-      const timer = setTimeout(() => {
-        killGroup('SIGKILL');
-      }, 5_000);
-      this.child.once('exit', () => {
-        clearTimeout(timer);
-        resolve();
-      });
-    });
+    this.stopping = stopChildProcessTree(this.child);
     return this.stopping;
   }
 }
 
-class NodeParallelRunner implements ParallelRunner {
+export class NodeParallelRunner implements ParallelRunner {
   async assertPortsFree(ports: number[]): Promise<void> {
     for (const port of ports) {
       if (!(await portIsFree(port))) {
@@ -116,10 +123,13 @@ class NodeParallelRunner implements ParallelRunner {
   }
 
   start(command: ChildCommand): RunningCommand {
+    const bin = command.bin ?? 'yarn';
+    const args = command.bin ? command.args ?? [] : [command.script, ...(command.args ?? [])];
     console.log(
-      `[parallel] starting ${command.role}: yarn ${command.script} ${(command.args ?? []).join(' ')}`.trim(),
+      `[parallel] starting ${command.role}: ${bin} ${args.join(' ')}`.trim(),
     );
-    const child = spawn('yarn', [command.script, ...(command.args ?? [])], {
+    if (command.logPath) mkdirSync(path.dirname(command.logPath), { recursive: true });
+    const child = spawn(bin, args, {
       cwd: repoRoot,
       env: command.env,
       detached: true,
@@ -128,20 +138,52 @@ class NodeParallelRunner implements ParallelRunner {
     return new NodeRunningCommand(child, command);
   }
 
-  async waitForPort(port: number, owner: RunningCommand): Promise<void> {
-    let ownerExit: number | undefined;
-    void owner.completion.then(code => {
-      ownerExit = code;
+  monitorPort(port: number): RunningCommand {
+    let stopped = false;
+    let resolve!: (code: number) => void;
+    const completion = new Promise<number>(done => {
+      resolve = done;
     });
-    const deadline = Date.now() + 120_000;
-    while (Date.now() < deadline) {
+    void (async () => {
+      while (!stopped) {
+        if (!(await isListening(port))) {
+          resolve(1);
+          return;
+        }
+        await delay(250);
+      }
+      resolve(CANCELLED_EXIT_CODE);
+    })();
+    return {
+      completion,
+      stop: async () => {
+        stopped = true;
+      },
+      onLine: () => () => undefined,
+    };
+  }
+
+  async waitForPort(
+    port: number,
+    owner: RunningCommand,
+    signal: AbortSignal,
+  ): Promise<void> {
+    let ownerExit: number | undefined;
+    void owner.completion.then(
+      code => {
+        ownerExit = code;
+      },
+      () => {
+        ownerExit = UNKNOWN_FAILURE_EXIT_CODE;
+      },
+    );
+    while (!signal.aborted) {
       if (ownerExit != null) {
         throw new Error(`Packager exited with code ${ownerExit} before port ${port} opened.`);
       }
       if (await isListening(port)) return;
       await delay(100);
     }
-    throw new Error(`Timed out waiting for task-owned Metro port ${port}.`);
   }
 
   async freshEnvFile(file: string): Promise<void> {
@@ -181,8 +223,12 @@ function printSummary(summary: {
     status: string;
     exitCode: number;
   }>;
+  invocationId?: string;
+  logRoot?: string;
 }): void {
-  console.log(`[parallel-summary] platform=${summary.platform} total=${summary.totalTests}`);
+  console.log(
+    `[parallel-summary] platform=${summary.platform} total=${summary.totalTests} invocation=${summary.invocationId ?? 'unknown'} logRoot=${summary.logRoot ?? 'unknown'}`,
+  );
   for (const result of summary.slots) {
     console.log(
       `[parallel-summary] slot=${result.slot} spec=${result.spec} tests=${result.testCount} status=${result.status} exitCode=${result.exitCode} log=${result.logPath}`,
@@ -190,55 +236,61 @@ function printSummary(summary: {
   }
 }
 
-const platform = process.argv[2] as ParallelPlatform | 'both' | undefined;
-const metroArgument = process.argv[3] ?? '--metro=owner';
-if (
-  (platform !== 'android' && platform !== 'ios' && platform !== 'both') ||
-  (metroArgument !== '--metro=owner' && metroArgument !== '--metro=external') ||
-  (platform === 'both' && metroArgument !== '--metro=owner') ||
-  process.argv.length > 4
-) {
-  console.error('Usage: parallel.ts <android|ios> [--metro=owner|--metro=external] | both');
-  process.exit(1);
-}
-const metroMode = metroArgument.slice('--metro='.length) as 'owner' | 'external';
+function main(): void {
+  const platform = process.argv[2] as ParallelPlatform | 'both' | undefined;
+  const metroArgument = process.argv[3] ?? '--metro=owner';
+  if (
+    (platform !== 'android' && platform !== 'ios' && platform !== 'both') ||
+    (metroArgument !== '--metro=owner' && metroArgument !== '--metro=external') ||
+    (platform === 'both' && metroArgument !== '--metro=owner') ||
+    process.argv.length > 4
+  ) {
+    console.error('Usage: parallel.ts <android|ios> [--metro=owner|--metro=external] | both');
+    process.exit(1);
+  }
+  const metroMode = metroArgument.slice('--metro='.length) as 'owner' | 'external';
 
-const controller = new AbortController();
-const runner = new NodeParallelRunner();
-for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-  process.once(signal, () => {
-    controller.abort();
-  });
-}
+  const controller = new AbortController();
+  const runner = new NodeParallelRunner();
+  const disarm = armAbortSignals(controller);
 
-const run =
-  platform === 'both'
-    ? runCombinedParallelE2e(runner, { signal: controller.signal })
-    : runParallelE2e(platform, runner, { signal: controller.signal, metroMode });
+  const run =
+    platform === 'both'
+      ? runCombinedParallelE2e(runner, { signal: controller.signal })
+      : runParallelE2e(platform, runner, { signal: controller.signal, metroMode });
 
-run
-  .then(summary => {
-    if ('android' in summary) {
-      printSummary(summary.android);
-      printSummary(summary.ios);
-    } else {
-      printSummary(summary);
-    }
-  })
-  .catch(error => {
-    const summary = (
-      error as {
-        summary?: Parameters<typeof printSummary>[0] | CombinedParallelRunSummary;
-      }
-    ).summary;
-    if (summary) {
+  void run
+    .then(summary => {
       if ('android' in summary) {
         printSummary(summary.android);
         printSummary(summary.ios);
       } else {
         printSummary(summary);
       }
-    }
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exitCode = 1;
-  });
+    })
+    .catch(error => {
+      const summary = (
+        error as {
+          summary?: Parameters<typeof printSummary>[0] | CombinedParallelRunSummary;
+        }
+      ).summary;
+      if (summary) {
+        if ('android' in summary) {
+          printSummary(summary.android);
+          printSummary(summary.ios);
+        } else {
+          printSummary(summary);
+        }
+      }
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    })
+    .finally(disarm);
+}
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+) {
+  main();
+}
