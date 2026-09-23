@@ -52,6 +52,8 @@ export type NavigationSmokeCase = {
 export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam';
 export type RepresentativeRenderProof = 'banner' | 'native' | 'none';
 
+export type RepresentativeRequestRetry = 'default' | 'remount';
+
 export type RepresentativeRequestOutcomeContract = {
   id: string;
   title: string;
@@ -60,69 +62,19 @@ export type RepresentativeRequestOutcomeContract = {
   contract: 'request-outcome';
   path: RepresentativeRequestPath;
   renderProof: RepresentativeRenderProof;
+  /** Remount the format screen between retry attempts instead of tapping Load/Reload. */
+  retry?: RepresentativeRequestRetry;
+  /** After an accepted loaded outcome, tap Show and dismiss without clicking ad creatives. */
+  showClose?: boolean;
   actionId?: string;
   requiresAppRestart?: boolean;
 };
 
 export const NAVIGATION_SMOKE_CASES: readonly NavigationSmokeCase[] = [
   {
-    id: SMOKE_BANNER_VARIANT,
-    title: 'Banner Banner',
-    containerId: SMOKE_BANNER_VARIANT,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.collapsibleBanner,
-    title: 'Collapsible Banner',
-    containerId: AppiumTestIds.format.collapsibleBanner,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.gamInterstitial,
-    title: 'GAM Interstitial',
-    containerId: AppiumTestIds.format.gamInterstitial,
-    contract: 'navigation',
-  },
-  {
-    id: SMOKE_GAM_BANNER_VARIANT,
-    title: 'GAM Banner AnchoredAdaptiveBanner',
-    containerId: SMOKE_GAM_BANNER_VARIANT,
-    contract: 'navigation',
-  },
-  {
     id: SMOKE_GAM_FLUID_VARIANT,
     title: 'GAM Banner Fluid',
     containerId: SMOKE_GAM_FLUID_VARIANT,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.appOpen,
-    title: 'App Open',
-    containerId: AppiumTestIds.format.appOpen,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.interstitial,
-    title: 'Interstitial',
-    containerId: AppiumTestIds.format.interstitial,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.rewarded,
-    title: 'Rewarded',
-    containerId: AppiumTestIds.format.rewarded,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.rewardedInterstitial,
-    title: 'Rewarded Interstitial',
-    containerId: AppiumTestIds.format.rewardedInterstitial,
-    contract: 'navigation',
-  },
-  {
-    id: AppiumTestIds.format.native,
-    title: 'Native',
-    containerId: AppiumTestIds.format.native,
     contract: 'navigation',
   },
   {
@@ -169,7 +121,7 @@ export const NAVIGATION_SMOKE_CASES: readonly NavigationSmokeCase[] = [
   },
 ];
 
-/** Exactly one deterministic Google-test-ID request-outcome contract per representative path. */
+/** Deterministic Google-test-ID request-outcome contracts for classic ad success paths. */
 export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRequestOutcomeContract[] =
   [
   {
@@ -182,6 +134,26 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     renderProof: 'banner',
   },
   {
+    id: AppiumTestIds.format.collapsibleBanner,
+    title: 'Collapsible Banner auto-load request reaches a terminal outcome',
+    galleryTitle: 'Collapsible Banner',
+    containerId: AppiumTestIds.format.collapsibleBanner,
+    contract: 'request-outcome',
+    path: 'banner',
+    renderProof: 'banner',
+    retry: 'remount',
+  },
+  {
+    id: SMOKE_GAM_BANNER_VARIANT,
+    title: 'GAM AnchoredAdaptiveBanner auto-load request reaches a terminal outcome',
+    galleryTitle: 'GAM Banner AnchoredAdaptiveBanner',
+    containerId: SMOKE_GAM_BANNER_VARIANT,
+    contract: 'request-outcome',
+    path: 'gam',
+    renderProof: 'banner',
+    retry: 'remount',
+  },
+  {
     id: AppiumTestIds.format.native,
     title: 'Native request reaches a terminal outcome',
     galleryTitle: 'Native',
@@ -191,23 +163,58 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     renderProof: 'native',
   },
   {
+    id: AppiumTestIds.format.appOpen,
+    title: 'App Open load reaches loaded then show-close lifecycle',
+    galleryTitle: 'App Open',
+    containerId: AppiumTestIds.format.appOpen,
+    contract: 'request-outcome',
+    path: 'fullscreen',
+    renderProof: 'none',
+    showClose: true,
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.appOpen),
+  },
+  {
     id: AppiumTestIds.format.interstitial,
-    title: 'Interstitial request completes without showing',
+    title: 'Interstitial load reaches loaded then show-close lifecycle',
     galleryTitle: 'Interstitial',
     containerId: AppiumTestIds.format.interstitial,
     contract: 'request-outcome',
     path: 'fullscreen',
     renderProof: 'none',
+    showClose: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.interstitial),
   },
   {
+    id: AppiumTestIds.format.rewarded,
+    title: 'Rewarded load reaches loaded then show-close lifecycle',
+    galleryTitle: 'Rewarded',
+    containerId: AppiumTestIds.format.rewarded,
+    contract: 'request-outcome',
+    path: 'fullscreen',
+    renderProof: 'none',
+    showClose: true,
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.rewarded),
+  },
+  {
+    id: AppiumTestIds.format.rewardedInterstitial,
+    title: 'Rewarded Interstitial load reaches loaded then show-close lifecycle',
+    galleryTitle: 'Rewarded Interstitial',
+    containerId: AppiumTestIds.format.rewardedInterstitial,
+    contract: 'request-outcome',
+    path: 'fullscreen',
+    renderProof: 'none',
+    showClose: true,
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.rewardedInterstitial),
+  },
+  {
     id: AppiumTestIds.format.gamInterstitial,
-    title: 'GAM Interstitial request completes without showing',
+    title: 'GAM Interstitial load reaches loaded then show-close lifecycle',
     galleryTitle: 'GAM Interstitial',
     containerId: AppiumTestIds.format.gamInterstitial,
     contract: 'request-outcome',
     path: 'gam',
     renderProof: 'none',
+    showClose: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.gamInterstitial),
   },
   ] as const;
