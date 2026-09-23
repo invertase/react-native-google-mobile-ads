@@ -170,6 +170,10 @@ android {
     ]
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
     buildConfigField "String", "RNGMA_ANDROID_BACKEND", "\"${androidBackendName}\""
+    def selectedAdsSdkVersion = androidBackend == "classic"
+      ? ReactNative.ext.getVersion("googleMobileAds", "sdk")
+      : ReactNative.ext.getVersion("googleMobileAds", "nextGenSdk")
+    buildConfigField "String", "GOOGLE_MOBILE_ADS_SDK_VERSION", "\"${selectedAdsSdkVersion}\""
 
     sourceSets {
       main {

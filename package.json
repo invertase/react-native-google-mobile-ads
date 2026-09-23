@@ -61,7 +61,7 @@
     "tests:appium:release": "yarn workspace @invertase/rngma-appium release",
     "tests:appium:provision": "yarn workspace @invertase/rngma-appium provision",
     "tests:appium:android": "yarn workspace @invertase/rngma-appium appium:android",
-    "tests:appium:android:nextgen-smoke": "cross-env RNGMA_ANDROID_BACKEND=nextgen RNGMA_NEXTGEN_FAIL_FAST=1 RNGMA_WDIO_SPEC=./test/specs/nextgen.fail-fast.spec.ts yarn workspace @invertase/rngma-appium appium:android",
+    "tests:appium:android:nextgen": "cross-env RNGMA_ANDROID_BACKEND=nextgen yarn workspace @invertase/rngma-appium appium:android",
     "tests:appium:ios": "cross-env RNGMA_WDA_PREBUILT=1 yarn workspace @invertase/rngma-appium appium:ios",
     "tests:appium:parallel": "yarn workspace @invertase/rngma-appium appium:parallel",
     "tests:appium:android:parallel": "yarn workspace @invertase/rngma-appium appium:android:parallel",
