@@ -25,14 +25,14 @@ import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.ads.AdError;
-import com.google.android.libraries.ads.mobile.sdk.common.AdRequest;
 import com.google.android.libraries.ads.mobile.sdk.banner.AdSize;
 import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRequest;
+import com.google.android.libraries.ads.mobile.sdk.common.AdRequest;
 import com.google.android.libraries.ads.mobile.sdk.common.BaseRequestBuilder;
-import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAd;
-import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdRequest;
 import com.google.android.libraries.ads.mobile.sdk.common.FullScreenContentError;
 import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError;
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAd;
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdRequest;
 import io.invertase.googlemobileads.common.ReactNativeEventEmitter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -380,8 +380,7 @@ public final class ReactNativeGoogleMobileAdsCommon {
       }
     }
     if (options.hasKey("publisherProvidedSignals")) {
-      ReadableMap values =
-          Objects.requireNonNull(options.getMap("publisherProvidedSignals"));
+      ReadableMap values = Objects.requireNonNull(options.getMap("publisherProvidedSignals"));
       ReadableMapKeySetIterator iterator = values.keySetIterator();
       while (iterator.hasNextKey()) {
         String key = iterator.nextKey();
@@ -402,8 +401,7 @@ public final class ReactNativeGoogleMobileAdsCommon {
     }
     if (options.hasKey("neighboringContentUrls")) {
       HashSet<String> urls = new HashSet<>();
-      ReadableArray values =
-          Objects.requireNonNull(options.getArray("neighboringContentUrls"));
+      ReadableArray values = Objects.requireNonNull(options.getArray("neighboringContentUrls"));
       for (int index = 0; index < values.size(); index++) {
         urls.add(Objects.requireNonNull(values.getString(index)));
       }

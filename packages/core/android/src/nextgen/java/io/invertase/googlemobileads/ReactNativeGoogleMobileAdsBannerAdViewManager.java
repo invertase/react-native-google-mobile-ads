@@ -109,9 +109,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
             ? (float) config.getDouble("maxHeight")
             : 0);
     view.setAdWidth(
-        config.hasKey("width") && !config.isNull("width")
-            ? (float) config.getDouble("width")
-            : 0);
+        config.hasKey("width") && !config.isNull("width") ? (float) config.getDouble("width") : 0);
     if (config.hasKey("sizes") && !config.isNull("sizes")) {
       ReadableArray values = config.getArray("sizes");
       List<String> sizeNames = new ArrayList<>();
@@ -316,7 +314,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     event.putString("type", type);
     if (payload != null) event.merge(payload);
     ThemedReactContext context = (ThemedReactContext) view.getContext();
-    EventDispatcher dispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, view.getId());
+    EventDispatcher dispatcher =
+        UIManagerHelper.getEventDispatcherForReactTag(context, view.getId());
     if (dispatcher != null) dispatcher.dispatchEvent(new OnNativeEvent(view.getId(), event));
   }
 }
