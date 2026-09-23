@@ -27,6 +27,7 @@ import { getNativeRNGMATesting } from '@invertase/rngma-testing';
 import MobileAds, {
   AdEventType,
   AdFormat,
+  AdPoolProvider,
   AdPoolPresets,
   AdPools,
   AdsConsent,
@@ -53,13 +54,16 @@ import MobileAds, {
   RewardedAdEventType,
   RewardedInterstitialAd,
   TestIds,
+  getAdCapabilities,
+  useAdPool,
   useAppOpenAd,
   useInterstitialAd,
+  usePooledAd,
   useRewardedAd,
   useRewardedInterstitialAd,
 } from 'react-native-google-mobile-ads';
 
-type GallerySection = 'all' | 'formats' | 'hooks' | 'debug';
+type GallerySection = 'all' | 'formats' | 'hooks' | 'pools' | 'debug';
 
 type GalleryEntry = {
   id: string;
@@ -115,6 +119,29 @@ function showLifecycleLabel(phase: ShowLifecyclePhase): string {
   return `Show lifecycle: ${phase}`;
 }
 
+const POOL_PROVIDER_INTERSTITIAL_ID = 'appium-gallery-pool-interstitial-provider';
+
+function poolOutcomeLabel(fields: {
+  poolStatus: string;
+  pooledStatus: string;
+  available: boolean;
+  observedCount: number;
+  showPhase: ShowLifecyclePhase;
+  extra?: string;
+}): string {
+  const parts = [
+    `poolStatus=${fields.poolStatus}`,
+    `pooledStatus=${fields.pooledStatus}`,
+    `available=${fields.available}`,
+    `observed=${fields.observedCount}`,
+    showLifecycleLabel(fields.showPhase),
+  ];
+  if (fields.extra) {
+    parts.push(fields.extra);
+  }
+  return parts.join('; ');
+}
+
 function hookLifecycleLabel(fields: {
   status: string;
   impression: boolean;
@@ -136,6 +163,7 @@ const GALLERY_SECTION_CHIPS: Array<{ id: GallerySection; title: string }> = [
   { id: 'all', title: 'All' },
   { id: 'formats', title: 'Formats' },
   { id: 'hooks', title: 'Hooks' },
+  { id: 'pools', title: 'Pools' },
   { id: 'debug', title: 'Debug' },
 ];
 
@@ -753,6 +781,281 @@ function RewardedInterstitialHookFormat() {
   );
 }
 
+function PooledInterstitialProviderInner() {
+  const pool = useAdPool(POOL_PROVIDER_INTERSTITIAL_ID);
+  const pooled = usePooledAd(POOL_PROVIDER_INTERSTITIAL_ID);
+  const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
+  const showListenerRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      showListenerRef.current?.();
+      showListenerRef.current = null;
+    };
+  }, []);
+
+  return (
+    <View>
+      <Text
+        testID={AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialProvider)}
+      >
+        {poolOutcomeLabel({
+          poolStatus: pool.status,
+          pooledStatus: pooled.status,
+          available: pooled.available,
+          observedCount: pooled.observedCount,
+          showPhase,
+        })}
+      </Text>
+      <Text testID={AppiumTestIds.action.lifecycle(AppiumTestIds.format.poolInterstitialProvider)}>
+        {showLifecycleLabel(showPhase)}
+      </Text>
+      <Button
+        title="Poll pooled interstitial"
+        testID={AppiumTestIds.action.load(AppiumTestIds.format.poolInterstitialProvider)}
+        onPress={() => {
+          void pooled.poll();
+        }}
+      />
+      <Button
+        title="Show pooled interstitial"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.poolInterstitialProvider)}
+        disabled={pooled.status !== 'filled' || pooled.ad == null}
+        onPress={() => {
+          const ad = pooled.ad;
+          if (ad == null || !('show' in ad)) {
+            return;
+          }
+          setShowPhase('idle');
+          showListenerRef.current?.();
+          showListenerRef.current = ad.addAdEventsListener(({ type }) => {
+            if (type === AdEventType.OPENED) {
+              setShowPhase('opened');
+            }
+            if (type === AdEventType.CLOSED) {
+              setShowPhase('closed');
+            }
+          });
+          void ad.show();
+        }}
+      />
+      <Button
+        title="Release pooled ad"
+        testID={AppiumTestIds.action.reload(AppiumTestIds.format.poolInterstitialProvider)}
+        disabled={pooled.ad == null}
+        onPress={() => {
+          pooled.release();
+        }}
+      />
+    </View>
+  );
+}
+
+function PooledInterstitialProviderFormat() {
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.poolInterstitialProvider}>
+      <AdPoolProvider
+        pools={[
+          AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
+            poolId: POOL_PROVIDER_INTERSTITIAL_ID,
+            bufferSize: 1,
+          }),
+        ]}
+      >
+        <PooledInterstitialProviderInner />
+      </AdPoolProvider>
+    </View>
+  );
+}
+
+function PooledInterstitialImperativeFormat() {
+  const [poolId, setPoolId] = useState<string | null>(null);
+  const lookupPoolId = poolId ?? 'appium-imperative-pool-absent';
+  const pool = useAdPool(lookupPoolId);
+  const pooled = usePooledAd(lookupPoolId);
+  const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
+  const showListenerRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      showListenerRef.current?.();
+      showListenerRef.current = null;
+    };
+  }, []);
+
+  const registryHit = poolId != null && AdPools.get(poolId) != null;
+
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.poolInterstitialImperative}>
+      <Text
+        testID={AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialImperative)}
+      >
+        {poolId
+          ? poolOutcomeLabel({
+              poolStatus: pool.status,
+              pooledStatus: pooled.status,
+              available: pooled.available,
+              observedCount: pooled.observedCount,
+              showPhase,
+              extra: `registry=${registryHit}`,
+            })
+          : 'poolStatus=absent; pooledStatus=idle; available=false; observed=0; Show lifecycle: idle'}
+      </Text>
+      <Text testID={AppiumTestIds.action.lifecycle(AppiumTestIds.format.poolInterstitialImperative)}>
+        {showLifecycleLabel(showPhase)}
+      </Text>
+      <Button
+        title="Create interstitial pool"
+        testID={AppiumTestIds.action.load(AppiumTestIds.format.poolInterstitialImperative)}
+        onPress={() => {
+          void (async () => {
+            const id = `appium-imperative-pool-${Date.now()}`;
+            await AdPools.create(
+              AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
+                poolId: id,
+                bufferSize: 1,
+              }),
+            );
+            setPoolId(id);
+          })();
+        }}
+      />
+      <Button
+        title="Destroy all pools"
+        onPress={() => {
+          AdPools.destroyAll();
+          setPoolId(null);
+          setShowPhase('idle');
+        }}
+      />
+      <Button
+        title="Poll imperative pool"
+        testID={AppiumTestIds.action.reload(AppiumTestIds.format.poolInterstitialImperative)}
+        disabled={poolId == null}
+        onPress={() => {
+          void pooled.poll();
+        }}
+      />
+      <Button
+        title="Show imperative pool"
+        testID={AppiumTestIds.action.show(AppiumTestIds.format.poolInterstitialImperative)}
+        disabled={pooled.status !== 'filled' || pooled.ad == null}
+        onPress={() => {
+          const ad = pooled.ad;
+          if (ad == null || !('show' in ad)) {
+            return;
+          }
+          setShowPhase('idle');
+          showListenerRef.current?.();
+          showListenerRef.current = ad.addAdEventsListener(({ type }) => {
+            if (type === AdEventType.OPENED) {
+              setShowPhase('opened');
+            }
+            if (type === AdEventType.CLOSED) {
+              setShowPhase('closed');
+            }
+          });
+          void ad.show();
+        }}
+      />
+    </View>
+  );
+}
+
+function PoolCapabilityGatesFormat() {
+  const caps = getAdCapabilities();
+  const [gateNote, setGateNote] = useState('gates=idle');
+
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.poolCapabilityGates}>
+      <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.poolCapabilityGates)}>
+        {`peekCapability=${AdPools.getCapabilities().poolResponseInfoPeek}; rwiPreload=${getAdCapabilities().fullscreenPreloadFormats.rewardedInterstitial}; backend=${caps.backend}; ${gateNote}`}
+      </Text>
+      <Button
+        title="Probe SDK peek"
+        testID={AppiumTestIds.action.load(AppiumTestIds.format.poolCapabilityGates)}
+        onPress={() => {
+          void (async () => {
+            try {
+              setGateNote('peek=running');
+              if (Platform.OS === 'android') {
+                await MobileAds().initialize();
+              }
+              const pool = await AdPools.create(
+                AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
+                  poolId: `appium-peek-gate-${Date.now()}`,
+                  bufferSize: 1,
+                }),
+              );
+              const poll = await pool.poll();
+              if (poll.status !== 'filled') {
+                throw new Error(`peek gate expected filled poll, received ${poll.status}`);
+              }
+              try {
+                await pool.peekResponseInfo();
+                setGateNote('peek=ok');
+              } catch (error) {
+                const reason = (error as RequestError).reason ?? String(error);
+                if (reason === 'pool/peek-unsupported') {
+                  setGateNote(`peek=structured-unsupported reason=${reason}`);
+                } else {
+                  throw error;
+                }
+              } finally {
+                pool.destroy();
+              }
+            } catch (error) {
+              setGateNote(`peek=error: ${String(error)}`);
+            }
+          })();
+        }}
+      />
+    </View>
+  );
+}
+
+function PoolRwiPreloadGateFormat() {
+  const [gateNote, setGateNote] = useState('rwi=idle');
+
+  return (
+    <View style={styles.testSpacing} testID={AppiumTestIds.format.poolRwiPreloadGate}>
+      <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.poolRwiPreloadGate)}>
+        {`rwiPreload=${getAdCapabilities().fullscreenPreloadFormats.rewardedInterstitial}; ${gateNote}`}
+      </Text>
+      <Button
+        title="Probe RWI preload pool"
+        testID={AppiumTestIds.action.load(AppiumTestIds.format.poolRwiPreloadGate)}
+        onPress={() => {
+          void (async () => {
+            try {
+              setGateNote('rwi=running');
+              const pool = await AdPools.create(
+                AdPoolPresets.fullscreen(
+                  AdFormat.REWARDED_INTERSTITIAL,
+                  TestIds.REWARDED_INTERSTITIAL,
+                  {
+                    poolId: `appium-rwi-gate-${Date.now()}`,
+                    bufferSize: 1,
+                  },
+                ),
+              );
+              setGateNote(`rwi=created poolId=${pool.poolId}`);
+              pool.destroy();
+            } catch (error) {
+              const reason = (error as RequestError).reason ?? String(error);
+              if (reason === 'pool/format-preload-unsupported') {
+                setGateNote(`rwi=structured-unsupported reason=${reason}`);
+              } else {
+                setGateNote(`rwi=error: ${String(error)}`);
+              }
+            }
+          })();
+        }}
+      />
+    </View>
+  );
+}
+
 function AppOpenHookFormat() {
   const { load, show, error, status, clicked, impression } = useAppOpenAd({
     adUnitId: TestIds.APP_OPEN,
@@ -1005,53 +1308,9 @@ function NativeRNGMATestingFormat() {
               const loaded = await NativeRNGMATesting.getResponseInfoFixtureJson('loaded');
               const noFill = await NativeRNGMATesting.getResponseInfoFixtureJson('no-fill');
               const paid = await NativeRNGMATesting.getResponseInfoFixtureJson('paid-compact');
-              let poolStatus = 'not-started';
-              let poolProbeStage = 'create';
-              try {
-                if (Platform.OS === 'android') {
-                  poolProbeStage = 'initialize';
-                  await MobileAds().initialize();
-                  poolProbeStage = 'create';
-                }
-                const pool = await AdPools.create(
-                  AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
-                    // GMA retains preload ids process-wide; every probe must own a fresh id.
-                    poolId: `appium-native-coverage-pool-${Date.now()}`,
-                    bufferSize: 1,
-                  }),
-                );
-                const removePoolListener = pool.addListener(() => {});
-                try {
-                  poolProbeStage = 'availability';
-                  const availability = await pool.getAvailability();
-                  poolProbeStage = 'poll';
-                  const poll = await pool.poll();
-                  if (poll.status === 'error') {
-                    throw new Error(`pool poll failed: ${String(poll.error)}`);
-                  }
-                  try {
-                    poolProbeStage = 'peek';
-                    await pool.peekResponseInfo();
-                    poolStatus = `${availability.observedCount}/${poll.status}/peek`;
-                  } catch (error) {
-                    if (Platform.OS !== 'android') {
-                      throw error;
-                    }
-                    // Android classic intentionally reports peek unsupported.
-                    poolStatus = `${availability.observedCount}/${poll.status}/no-peek`;
-                  }
-                } finally {
-                  poolProbeStage = 'listener teardown';
-                  removePoolListener();
-                  poolProbeStage = 'destroy';
-                  pool.destroy();
-                }
-              } catch (error) {
-                throw new Error(`${poolProbeStage}: ${String(error)}`);
-              }
               // Fold P-expiry (TTL seam) + P-reparent-and (delayed attach) into gallery status.
               setStatus(
-                `ok ping=${ping} ttl=${ttl} cleared=${cleared} attach=${attach} pool=${poolStatus} fixtures=${[
+                `ok ping=${ping} ttl=${ttl} cleared=${cleared} attach=${attach} fixtures=${[
                     loaded,
                     noFill,
                     paid,
@@ -1218,6 +1477,30 @@ function buildGalleryEntries(): GalleryEntry[] {
     title: 'RWI Hook',
     section: 'hooks',
     render: () => <RewardedInterstitialHookFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.poolInterstitialProvider,
+    title: 'Pool INT Provider',
+    section: 'pools',
+    render: () => <PooledInterstitialProviderFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.poolInterstitialImperative,
+    title: 'Pool INT Imperative',
+    section: 'pools',
+    render: () => <PooledInterstitialImperativeFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.poolCapabilityGates,
+    title: 'Pool Capability Gates',
+    section: 'pools',
+    render: () => <PoolCapabilityGatesFormat />,
+  });
+  entries.push({
+    id: AppiumTestIds.format.poolRwiPreloadGate,
+    title: 'Pool RWI Preload Gate',
+    section: 'pools',
+    render: () => <PoolRwiPreloadGateFormat />,
   });
   entries.push({
     id: AppiumTestIds.format.debugMenu,

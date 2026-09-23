@@ -24,7 +24,13 @@ export type RequestOutcomeAttempt = {
   fingerprint: RequestFingerprint;
 };
 
-export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam' | 'hook';
+export type RepresentativeRequestPath =
+  | 'banner'
+  | 'native'
+  | 'fullscreen'
+  | 'gam'
+  | 'hook'
+  | 'pool';
 export type RepresentativeRequestAcceptance = {
   status: 'accepted' | 'retry';
   reason: 'loaded' | 'android-native-matched-fingerprint' | 'outcome-not-accepted';
@@ -66,6 +72,45 @@ export function classifyRequestOutcome(
 }
 
 /** Terminal hook load markers use `Status: …` on the hook status testID. */
+/** Terminal pooled-ad markers use `pooledStatus=` on the pool loaded testID. */
+export function classifyPoolFilledOutcome(
+  text: string,
+): RequestOutcomeClassification | undefined {
+  if (/\bpooledStatus=filled\b/.test(text)) {
+    return 'loaded';
+  }
+  if (/\bpooledStatus=no-fill\b/.test(text)) {
+    return 'no-fill';
+  }
+  if (/\bpooledStatus=error\b/.test(text)) {
+    return 'other-error';
+  }
+  return undefined;
+}
+
+export function classifyPoolStructuredUnsupportedGate(
+  text: string,
+  gate: 'peek' | 'rwi-preload',
+): RequestOutcomeClassification | undefined {
+  if (gate === 'peek') {
+    if (/\bpeek=structured-unsupported reason=pool\/peek-unsupported\b/.test(text)) {
+      return 'loaded';
+    }
+    if (/\bpeek=ok\b/.test(text)) {
+      return 'loaded';
+    }
+  }
+  if (gate === 'rwi-preload') {
+    if (/\brwi=structured-unsupported reason=pool\/format-preload-unsupported\b/.test(text)) {
+      return 'loaded';
+    }
+    if (/\brwi=created\b/.test(text)) {
+      return 'loaded';
+    }
+  }
+  return undefined;
+}
+
 export function classifyHookLoadOutcome(
   text: string,
 ): RequestOutcomeClassification | undefined {

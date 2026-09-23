@@ -49,7 +49,13 @@ export type NavigationSmokeCase = {
   requiresAppRestart?: boolean;
 };
 
-export type RepresentativeRequestPath = 'banner' | 'native' | 'fullscreen' | 'gam' | 'hook';
+export type RepresentativeRequestPath =
+  | 'banner'
+  | 'native'
+  | 'fullscreen'
+  | 'gam'
+  | 'hook'
+  | 'pool';
 export type RepresentativeRenderProof = 'banner' | 'native' | 'none';
 
 export type RepresentativeRequestRetry = 'default' | 'remount';
@@ -68,6 +74,10 @@ export type RepresentativeRequestOutcomeContract = {
   showClose?: boolean;
   /** After an accepted loaded outcome, assert Hook lifecycle markers (showing/closed; reward non-blocking). */
   hookLifecycle?: boolean;
+  /** After poll reaches filled, assert pooled fullscreen show-open/close lifecycle markers. */
+  poolShowClose?: boolean;
+  /** Capability gate surfaces report structured unsupported results instead of ad fill. */
+  structuredUnsupportedGate?: 'peek' | 'rwi-preload';
   actionId?: string;
   requiresAppRestart?: boolean;
 };
@@ -238,6 +248,50 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     hookLifecycle: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.rewardedInterstitialHook),
   },
+  {
+    id: AppiumTestIds.format.poolInterstitialProvider,
+    title: 'Pooled interstitial provider poll reaches filled then show-close lifecycle',
+    galleryTitle: 'Pool INT Provider',
+    containerId: AppiumTestIds.format.poolInterstitialProvider,
+    contract: 'request-outcome',
+    path: 'pool',
+    renderProof: 'none',
+    poolShowClose: true,
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.poolInterstitialProvider),
+  },
+  {
+    id: AppiumTestIds.format.poolInterstitialImperative,
+    title: 'Imperative interstitial pool create reaches filled then show-close lifecycle',
+    galleryTitle: 'Pool INT Imperative',
+    containerId: AppiumTestIds.format.poolInterstitialImperative,
+    contract: 'request-outcome',
+    path: 'pool',
+    renderProof: 'none',
+    poolShowClose: true,
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.poolInterstitialImperative),
+  },
+  {
+    id: AppiumTestIds.format.poolCapabilityGates,
+    title: 'Pool capability gates report structured unsupported peek on Android classic',
+    galleryTitle: 'Pool Capability Gates',
+    containerId: AppiumTestIds.format.poolCapabilityGates,
+    contract: 'request-outcome',
+    path: 'pool',
+    renderProof: 'none',
+    structuredUnsupportedGate: 'peek',
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.poolCapabilityGates),
+  },
+  {
+    id: AppiumTestIds.format.poolRwiPreloadGate,
+    title: 'Pool RWI preload gate reports structured unsupported on Android classic',
+    galleryTitle: 'Pool RWI Preload Gate',
+    containerId: AppiumTestIds.format.poolRwiPreloadGate,
+    contract: 'request-outcome',
+    path: 'pool',
+    renderProof: 'none',
+    structuredUnsupportedGate: 'rwi-preload',
+    actionId: AppiumTestIds.action.load(AppiumTestIds.format.poolRwiPreloadGate),
+  },
   ] as const;
 
 /** Pattern C probe contract remains distinct from ad-fill assertions. */
@@ -270,6 +324,13 @@ const HOOK_FORMAT_IDS = new Set<string>([
   AppiumTestIds.format.rewardedInterstitialHook,
 ]);
 
+const POOL_FORMAT_IDS = new Set<string>([
+  AppiumTestIds.format.poolInterstitialProvider,
+  AppiumTestIds.format.poolInterstitialImperative,
+  AppiumTestIds.format.poolCapabilityGates,
+  AppiumTestIds.format.poolRwiPreloadGate,
+]);
+
 const DEBUG_FORMAT_IDS = new Set<string>([
   AppiumTestIds.format.adInspector,
   AppiumTestIds.format.consent,
@@ -291,6 +352,9 @@ export const FLUSH_TEARDOWN_SECTION: Exclude<GallerySectionId, 'all'> = 'debug';
 export function gallerySectionForFormat(formatId: string): Exclude<GallerySectionId, 'all'> {
   if (HOOK_FORMAT_IDS.has(formatId)) {
     return 'hooks';
+  }
+  if (POOL_FORMAT_IDS.has(formatId)) {
+    return 'pools';
   }
   if (DEBUG_FORMAT_IDS.has(formatId)) {
     return 'debug';

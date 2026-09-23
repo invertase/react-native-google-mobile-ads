@@ -8,6 +8,8 @@ import {
 } from '../../src/formats.ts';
 import {
   classifyHookLoadOutcome,
+  classifyPoolFilledOutcome,
+  classifyPoolStructuredUnsupportedGate,
   classifyRequestOutcome,
   hasNonzeroRectangle,
   nativeFingerprintFromAndroidLog,
@@ -701,6 +703,99 @@ export async function waitForTestIdTextContaining(
   }
 }
 
+async function observePoolFilledOutcome(
+  formatId: string,
+  attempt: number,
+  timeoutMs = 120000,
+): Promise<{
+  requestId: number;
+  classification: RequestOutcomeClassification;
+  detail: string;
+  fingerprint: RequestFingerprint;
+}> {
+  const testId = AppiumTestIds.action.loaded(formatId);
+  let lastSeen = '';
+  const marker = await findByTestId(testId);
+  if (!(await marker.isExisting())) {
+    throw new Error(`[pool-outcome] ${formatId}: required marker ${testId} is missing`);
+  }
+  try {
+    await driver.waitUntil(
+      async () => {
+        const el = await findByTestId(testId);
+        if (!(await el.isExisting())) {
+          throw new Error(`[pool-outcome] ${formatId}: marker ${testId} disappeared`);
+        }
+        lastSeen = await elementText(el);
+        return classifyPoolFilledOutcome(lastSeen) !== undefined;
+      },
+      {
+        timeout: timeoutMs,
+        timeoutMsg: `testID ${testId} did not report terminal pooled fill attempt ${attempt} (lastSeen=${JSON.stringify(lastSeen)})`,
+      },
+    );
+    const classification = classifyPoolFilledOutcome(lastSeen);
+    if (!classification) {
+      throw new Error(`[pool-outcome] ${formatId}: wait completed without a terminal pooled fill outcome`);
+    }
+    return {
+      requestId: attempt,
+      classification,
+      detail: lastSeen,
+      fingerprint: { status: 'not-applicable', evidence: 'pool-status-marker' },
+    };
+  } catch (error) {
+    let snippet = 'page source unavailable';
+    try {
+      const dump = await driver.getPageSource();
+      const index = dump.indexOf(testId);
+      snippet =
+        index >= 0
+          ? dump.slice(Math.max(0, index - 120), index + 320).replace(/\s+/g, ' ')
+          : 'testID absent from page source';
+    } catch {
+      // Preserve the original WebDriver failure; page source is diagnostics only.
+    }
+    throw new Error(`${String(error)} | pageSource=${snippet}`, { cause: error });
+  }
+}
+
+async function observePoolStructuredUnsupportedGate(
+  formatId: string,
+  gate: 'peek' | 'rwi-preload',
+  attempt: number,
+  timeoutMs = 120000,
+): Promise<{
+  requestId: number;
+  classification: RequestOutcomeClassification;
+  detail: string;
+  fingerprint: RequestFingerprint;
+}> {
+  const testId = AppiumTestIds.action.loaded(formatId);
+  let lastSeen = '';
+  await driver.waitUntil(
+    async () => {
+      const el = await findByTestId(testId);
+      lastSeen = await elementText(el);
+      return classifyPoolStructuredUnsupportedGate(lastSeen, gate) !== undefined;
+    },
+    {
+      timeout: timeoutMs,
+      timeoutMsg: `testID ${testId} did not report terminal structured gate attempt ${attempt} (lastSeen=${JSON.stringify(lastSeen)})`,
+    },
+  );
+  const classification = classifyPoolStructuredUnsupportedGate(lastSeen, gate);
+  if (!classification) {
+    throw new Error(`[pool-gate] ${formatId}: wait completed without a terminal structured gate outcome`);
+  }
+  return {
+    requestId: attempt,
+    classification,
+    detail: lastSeen,
+    fingerprint: { status: 'not-applicable', evidence: `pool-gate-${gate}` },
+  };
+}
+
 async function observeHookLoadOutcome(
   formatId: string,
   attempt: number,
@@ -1048,11 +1143,26 @@ export async function proveRepresentativeRequestOutcome(
           throw new Error(`No Load action configured for ${format.id}`);
         }
         await tapFormatAction(format.actionId);
+        if (format.id === AppiumTestIds.format.poolInterstitialImperative) {
+          await tapFormatAction(AppiumTestIds.action.reload(format.id));
+        }
       },
-      observe: uiAttempt =>
-        format.path === 'hook'
-          ? observeHookLoadOutcome(format.id, uiAttempt)
-          : observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt),
+      observe: uiAttempt => {
+        if (format.structuredUnsupportedGate) {
+          return observePoolStructuredUnsupportedGate(
+            format.id,
+            format.structuredUnsupportedGate,
+            uiAttempt,
+          );
+        }
+        if (format.path === 'pool') {
+          return observePoolFilledOutcome(format.id, uiAttempt);
+        }
+        if (format.path === 'hook') {
+          return observeHookLoadOutcome(format.id, uiAttempt);
+        }
+        return observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt);
+      },
     },
     onAccepted: async attempt => {
       if (attempt.classification !== 'loaded') {
@@ -1084,6 +1194,8 @@ export async function proveRepresentativeRequestOutcome(
       }
       if (format.hookLifecycle) {
         await assertHookShowCloseLifecycle(format.id);
+      } else if (format.poolShowClose) {
+        await assertShowCloseLifecycle(format.id);
       } else if (format.showClose) {
         await assertShowCloseLifecycle(format.id);
       }

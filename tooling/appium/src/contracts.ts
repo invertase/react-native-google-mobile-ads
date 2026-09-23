@@ -88,15 +88,79 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'Fullscreen lifecycle and paid-event payload mapping are asserted in Jest; paid-event delivery is nondeterministic on Google test inventory and is not a blocking Appium success condition.',
   ),
   staticToken('AdFormat'),
-  absent('AdPoolPresets', 'namespace/object'),
-  absent('AdPoolPresets.display', 'function'),
-  absent('AdPoolPresets.fullscreen', 'function'),
-  absent('AdPoolProvider', 'component'),
-  absent('AdPools', 'namespace/object'),
-  absent('AdPools.create', 'function'),
-  absent('AdPools.destroyAll', 'function'),
-  absent('AdPools.get', 'function'),
-  absent('AdPools.getCapabilities', 'function'),
+  lower(
+    'AdPoolPresets',
+    'namespace/object',
+    'Preset config builders are exercised through the gallery pool provider and imperative create surfaces; no independent device outcome exists beyond those pool flows.',
+  ),
+  lower(
+    'AdPoolPresets.display',
+    'function',
+    'Display preset configs are validated in Jest and consumed by future multi-format gallery work; the current pool Appium contracts cover fullscreen preload only.',
+  ),
+  lower(
+    'AdPoolPresets.fullscreen',
+    'function',
+    'Fullscreen preset configs are consumed by AdPoolProvider and AdPools.create gallery surfaces; successful preload outcomes are dispositioned on those pool contracts.',
+  ),
+  outcome('AdPoolProvider', 'component', {
+    contractId: AppiumTestIds.format.poolInterstitialProvider,
+    exampleComponent: 'PooledInterstitialProviderInner',
+    screenTestId: AppiumTestIds.format.poolInterstitialProvider,
+    screenTestIdExpression: 'AppiumTestIds.format.poolInterstitialProvider',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialProvider),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialProvider)',
+    success: 'hook-state-transition',
+    assertion:
+      'AdPoolProvider registers the interstitial pool, useAdPool state transition reaches ready poolStatus, poll drives pooledStatus to filled, then Show advances the pooled lifecycle marker through opened and closed without tapping ad creatives.',
+  }),
+  lower(
+    'AdPools',
+    'namespace/object',
+    'The AdPools registry object is a namespace; each runtime member below carries its own disposition on the gallery pool surfaces.',
+  ),
+  outcome('AdPools.create', 'function', {
+    contractId: AppiumTestIds.format.poolInterstitialImperative,
+    exampleComponent: 'PooledInterstitialImperativeFormat',
+    screenTestId: AppiumTestIds.format.poolInterstitialImperative,
+    screenTestIdExpression: 'AppiumTestIds.format.poolInterstitialImperative',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialImperative),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialImperative)',
+    success: 'hook-state-transition',
+    assertion:
+      'AdPools.create registers an interstitial pool, poll drives a state transition to filled pooledStatus, then Show advances the pooled lifecycle marker through opened and closed without tapping ad creatives.',
+  }),
+  lower(
+    'AdPools.destroyAll',
+    'function',
+    'destroyAll is invoked from the imperative pool gallery control and tears down registry state; the blocking Appium success outcome is the filled pooled show-close path on the same screen.',
+  ),
+  outcome('AdPools.get', 'function', {
+    contractId: AppiumTestIds.format.poolInterstitialImperative,
+    exampleComponent: 'PooledInterstitialImperativeFormat',
+    screenTestId: AppiumTestIds.format.poolInterstitialImperative,
+    screenTestIdExpression: 'AppiumTestIds.format.poolInterstitialImperative',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialImperative),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialImperative)',
+    success: 'hook-state-transition',
+    assertion:
+      'After AdPools.create, AdPools.get reports registry=true on the imperative pool screen while poll drives a state transition to filled pooledStatus, then Show advances the pooled lifecycle marker through opened and closed without tapping ad creatives.',
+  }),
+  outcome('AdPools.getCapabilities', 'function', {
+    contractId: AppiumTestIds.format.poolCapabilityGates,
+    exampleComponent: 'PoolCapabilityGatesFormat',
+    screenTestId: AppiumTestIds.format.poolCapabilityGates,
+    screenTestIdExpression: 'AppiumTestIds.format.poolCapabilityGates',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.poolCapabilityGates),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.poolCapabilityGates)',
+    success: 'structured-unsupported-result',
+    assertion:
+      'The capability snapshot is published on the loaded marker, and the peek probe reports a structured unsupported pool/peek-unsupported result on Android classic while iOS reports a supported peek terminal outcome.',
+  }),
   parkedConsent('AdsConsent', 'namespace/object'),
   parkedConsent('AdsConsent.gatherConsent', 'function'),
   parkedConsent('AdsConsent.getConsentInfo', 'function'),
@@ -179,7 +243,18 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertion:
       'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives.',
   }),
-  absent('getAdCapabilities', 'function'),
+  outcome('getAdCapabilities', 'function', {
+    contractId: AppiumTestIds.format.poolCapabilityGates,
+    exampleComponent: 'PoolCapabilityGatesFormat',
+    screenTestId: AppiumTestIds.format.poolCapabilityGates,
+    screenTestIdExpression: 'AppiumTestIds.format.poolCapabilityGates',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.poolCapabilityGates),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.poolCapabilityGates)',
+    success: 'structured-unsupported-result',
+    assertion:
+      'getAdCapabilities publishes poolResponseInfoPeek and rewarded-interstitial preload support on the loaded marker, and the peek probe reports structured unsupported pool/peek-unsupported on Android classic rather than faking peek success.',
+  }),
   staticToken('InitializationState'),
   outcome('InterstitialAd', 'class', {
     contractId: AppiumTestIds.format.interstitial,
@@ -289,7 +364,18 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'const/preset',
     'TestIds is a static inventory of Google test-unit strings; successful requests using selected IDs are dispositioned on the corresponding ad APIs.',
   ),
-  absent('useAdPool', 'hook'),
+  outcome('useAdPool', 'hook', {
+    contractId: AppiumTestIds.format.poolInterstitialProvider,
+    exampleComponent: 'PooledInterstitialProviderInner',
+    screenTestId: AppiumTestIds.format.poolInterstitialProvider,
+    screenTestIdExpression: 'AppiumTestIds.format.poolInterstitialProvider',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialProvider),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialProvider)',
+    success: 'hook-state-transition',
+    assertion:
+      'useAdPool state transition surfaces ready poolStatus for the provider pool, poll drives pooledStatus to filled, then Show advances the pooled lifecycle marker through opened and closed without tapping ad creatives.',
+  }),
   outcome('useAppOpenAd', 'hook', {
     contractId: AppiumTestIds.format.appOpenHook,
     exampleComponent: 'AppOpenHookFormat',
@@ -320,7 +406,18 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
       'Auto-load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives.',
   }),
   absent('useMultiFormatAd', 'hook'),
-  absent('usePooledAd', 'hook'),
+  outcome('usePooledAd', 'hook', {
+    contractId: AppiumTestIds.format.poolInterstitialProvider,
+    exampleComponent: 'PooledInterstitialProviderInner',
+    screenTestId: AppiumTestIds.format.poolInterstitialProvider,
+    screenTestIdExpression: 'AppiumTestIds.format.poolInterstitialProvider',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialProvider),
+    assertionTestIdExpression:
+      'AppiumTestIds.action.loaded(AppiumTestIds.format.poolInterstitialProvider)',
+    success: 'hook-state-transition',
+    assertion:
+      'usePooledAd poll drives a state transition to filled, then Show advances the pooled lifecycle marker through opened and closed without tapping ad creatives.',
+  }),
   outcome('useRewardedAd', 'hook', {
     contractId: AppiumTestIds.format.rewardedHook,
     exampleComponent: 'RewardedHookFormat',
