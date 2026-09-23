@@ -20,12 +20,15 @@ package io.invertase.googlemobileads
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
+import io.invertase.googlemobileads.common.ReactNativeAdView
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
@@ -54,6 +57,50 @@ class ReactNativeGoogleMobileAdsCommonTest {
     assertEquals(AdSize.LEADERBOARD, ReactNativeGoogleMobileAdsCommon.stringToAdSize("LEADERBOARD"))
     assertEquals(AdSize.FLUID, ReactNativeGoogleMobileAdsCommon.stringToAdSize("FLUID"))
     assertEquals(AdSize.BANNER, ReactNativeGoogleMobileAdsCommon.stringToAdSize("unknown-size"))
+  }
+
+  /**
+   * Intentional alias: deprecated wire `ANCHORED_ADAPTIVE_BANNER` and
+   * `LARGE_ANCHORED_ADAPTIVE_BANNER` both resolve via
+   * [AdSize.getLargeAnchoredAdaptiveBannerAdSize] (TS already `@deprecated` ANCHORED → LARGE).
+   * Classic AdSize has no public `isLargeAnchored*` — assert size identity + large flag field.
+   */
+  @Test
+  fun anchoredAndLargeAnchoredWireValues_resolveViaLargeAnchored() {
+    val view = ReactNativeAdView(RuntimeEnvironment.getApplication())
+    val metrics = view.context.resources.displayMetrics
+    val adWidth = (metrics.widthPixels / metrics.density).toInt()
+    val expectedLarge = AdSize.getLargeAnchoredAdaptiveBannerAdSize(view.context, adWidth)
+    val deprecatedAnchored =
+      AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(view.context, adWidth)
+
+    for (wire in listOf("ANCHORED_ADAPTIVE_BANNER", "LARGE_ANCHORED_ADAPTIVE_BANNER")) {
+      val resolved = ReactNativeGoogleMobileAdsCommon.getAdSize(wire, view)
+      assertEquals(wire, expectedLarge, resolved)
+      assertTrue(wire, classicLargeAnchoredFlag(resolved))
+      assertFalse(wire, classicLegacyAnchoredFlag(resolved))
+      // LargeAnchored is a distinct size from the deprecated 50dp-capped API.
+      assertNotEquals(wire, deprecatedAnchored, resolved)
+    }
+
+    assertEquals(
+      ReactNativeGoogleMobileAdsCommon.getAdSize("ANCHORED_ADAPTIVE_BANNER", view),
+      ReactNativeGoogleMobileAdsCommon.getAdSize("LARGE_ANCHORED_ADAPTIVE_BANNER", view),
+    )
+  }
+
+  /** play-services-ads-api sets private `zzf` for LargeAnchored factories. */
+  private fun classicLargeAnchoredFlag(size: AdSize): Boolean {
+    val field = AdSize::class.java.getDeclaredField("zzf")
+    field.isAccessible = true
+    return field.getBoolean(size)
+  }
+
+  /** play-services-ads-api sets private `zze` for deprecated 50dp anchored factories. */
+  private fun classicLegacyAnchoredFlag(size: AdSize): Boolean {
+    val field = AdSize::class.java.getDeclaredField("zze")
+    field.isAccessible = true
+    return field.getBoolean(size)
   }
 
   @Test

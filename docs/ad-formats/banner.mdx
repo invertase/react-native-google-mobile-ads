@@ -56,6 +56,12 @@ function App() {
 The `size` prop takes a [`BannerAdSize`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/BannerAdSize.ts) type, and once the advert is available, will
 fill the space for the chosen size.
 
+Prefer [`BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/BannerAdSize.ts).
+[`BannerAdSize.ANCHORED_ADAPTIVE_BANNER`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/BannerAdSize.ts)
+is deprecated and, on Android, resolves to the same large anchored adaptive height as
+`LARGE_ANCHORED_ADAPTIVE_BANNER` (the SDK no longer exposes a non-deprecated anchored size
+capped at 50 density-independent pixels).
+
 <Info>
   If no inventory for the requested size is available, `onAdFailedToLoad` receives the load error.
 </Info>
