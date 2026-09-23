@@ -118,7 +118,7 @@ function restoreHookWrappedShow(ad: PooledAd): void {
   const original = wrapped[hookWrappedShowKey];
   if (original) {
     wrapped.show = original;
-    delete wrapped[hookWrappedShowKey];
+    wrapped[hookWrappedShowKey] = undefined;
   }
 }
 
@@ -336,7 +336,7 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
           if (isFullscreenPooledAd(result.ad)) {
             const fullscreen = result.ad as HookWrappedFullscreen;
             const originalShow = fullscreen.show.bind(fullscreen);
-            (fullscreen as HookWrappedFullscreen)[hookWrappedShowKey] = originalShow;
+            fullscreen[hookWrappedShowKey] = originalShow;
             fullscreen.show = async (options?: AdShowOptions) => {
               const consumeIfOwned = () => {
                 if (adRef.current !== fullscreen || !ownedByHookRef.current) {
