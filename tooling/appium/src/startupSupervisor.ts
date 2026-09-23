@@ -1,8 +1,24 @@
 import { randomUUID } from 'node:crypto';
+import { createConnection } from 'node:net';
 import path from 'node:path';
 
 export const STARTUP_READY_MARKER = '[e2e-startup-ready]';
 const METRO_READY_MARKER = 'Dev server ready';
+/** Authoritative Metro `/status` body when the RN packager is serving bundles. */
+export const METRO_PACKAGER_RUNNING_MARKER = 'packager-status:running';
+
+export type MetroBundlePlatform = 'android' | 'ios';
+
+/** Matches `.github/workflows/tests_e2e_{android,ios}.yml` Metro bundle probes. */
+export function metroBundleRequestUrl(port: number, platform: MetroBundlePlatform): string {
+  const params = new URLSearchParams({
+    platform,
+    dev: 'true',
+    minify: 'false',
+    inlineSourceMap: 'true',
+  });
+  return `http://127.0.0.1:${port}/index.bundle?${params.toString()}`;
+}
 export const METRO_STARTUP_TIMEOUT_MS = 120_000;
 export const WORKER_STARTUP_TIMEOUT_MS = 60_000;
 export const APP_STARTUP_TIMEOUT_MS = 120_000;
@@ -16,6 +32,12 @@ export type StartupClock = {
 };
 
 export type MetroTcpWaiter = (signal: AbortSignal) => Promise<void>;
+
+export type MetroPackagerProbe = (
+  port: number,
+  platform: MetroBundlePlatform,
+  signal: AbortSignal,
+) => Promise<boolean>;
 
 const realClock: StartupClock = {
   setTimeout: (callback, milliseconds) => setTimeout(callback, milliseconds),
@@ -274,6 +296,115 @@ export class StartupSupervisor {
     this.rejectFailure(error);
     for (const listener of this.listeners) listener(error);
   }
+}
+
+export async function probeMetroPackagerHttp(
+  port: number,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  if (signal?.aborted) {
+    return false;
+  }
+  const timeout = AbortSignal.timeout(2_000);
+  const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout;
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/status`, {
+      signal: requestSignal,
+    });
+    if (!response.ok) {
+      return false;
+    }
+    const body = (await response.text()).trim();
+    return body.includes(METRO_PACKAGER_RUNNING_MARKER);
+  } catch {
+    return false;
+  }
+}
+
+const METRO_BUNDLE_MIN_BYTES = 1024;
+const METRO_BUNDLE_FETCH_TIMEOUT_MS = 30_000;
+
+/**
+ * `/status` can be `running` while the first platform bundle is still compiling.
+ * Prefetch the bundle Metro will serve to the device (RNFB e2e pattern).
+ */
+export async function probeMetroPlatformBundle(
+  port: number,
+  platform: MetroBundlePlatform,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  if (signal?.aborted) {
+    return false;
+  }
+  if (!(await probeMetroPackagerHttp(port, signal))) {
+    return false;
+  }
+  const timeout = AbortSignal.timeout(METRO_BUNDLE_FETCH_TIMEOUT_MS);
+  const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout;
+  try {
+    const response = await fetch(metroBundleRequestUrl(port, platform), {
+      signal: requestSignal,
+    });
+    if (!response.ok) {
+      return false;
+    }
+    const body = await response.arrayBuffer();
+    return body.byteLength >= METRO_BUNDLE_MIN_BYTES;
+  } catch {
+    return false;
+  }
+}
+
+export type ExternalMetroReadinessOptions = {
+  platform: MetroBundlePlatform;
+  listen?: (port: number) => Promise<boolean>;
+  probe?: MetroPackagerProbe;
+  pollMs?: number;
+};
+
+/**
+ * External Metro consumers must not treat a bare TCP accept (or `/status` alone)
+ * as readiness. Poll until Metro serves the expected platform bundle, then
+ * satisfy the same AND barrier as an owned packager.
+ */
+export async function waitForExternalMetroReadiness(
+  startup: StartupSupervisor,
+  port: number,
+  options: ExternalMetroReadinessOptions,
+): Promise<void> {
+  const listen = options.listen ?? probeTcpListening;
+  const probe = options.probe ?? probeMetroPlatformBundle;
+  const pollMs = options.pollMs ?? 250;
+  const { platform } = options;
+  await waitForMetroReadiness(startup, async signal => {
+    while (!signal.aborted) {
+      if (!(await listen(port))) {
+        await delay(pollMs);
+        continue;
+      }
+      if (await probe(port, platform, signal)) {
+        startup.recordLine('metro', METRO_READY_MARKER);
+        return;
+      }
+      await delay(pollMs);
+    }
+    throw new Error(`External Metro readiness polling on 127.0.0.1:${port} was aborted.`);
+  });
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+function probeTcpListening(port: number): Promise<boolean> {
+  return new Promise(resolve => {
+    const socket = createConnection({ host: '127.0.0.1', port });
+    socket.once('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once('error', () => resolve(false));
+  });
 }
 
 /**

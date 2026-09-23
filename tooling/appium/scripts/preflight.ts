@@ -37,7 +37,9 @@ import {
   iosDeviceLogCommand,
   StartupSupervisor,
   waitForMetroReadiness,
+  waitForExternalMetroReadiness,
   type InvocationPaths,
+  type MetroPackagerProbe,
 } from '../src/startupSupervisor.ts';
 import type { RunningCommand } from '../src/parallelOrchestrator.ts';
 
@@ -102,6 +104,7 @@ function isListening(port: number): Promise<boolean> {
 
 type WdioOwnedOptions = {
   listen?: (port: number) => Promise<boolean>;
+  probeMetroPackager?: MetroPackagerProbe;
   paths?: InvocationPaths;
   signalSource?: Parameters<typeof armAbortSignals>[2];
   spawn?: (
@@ -150,8 +153,11 @@ export async function runWdioOwned(
     if (controller.signal.aborted) {
       throw new Error('Serial Appium owner was interrupted before WDIO spawn.');
     }
-    startup.recordLine('metro', 'Dev server ready');
-    await waitForMetroReadiness(startup, async () => undefined);
+    await waitForExternalMetroReadiness(startup, runtime.metroPort, {
+      platform: target,
+      listen: async () => true,
+      probe: options.probeMetroPackager,
+    });
     const wdio = (options.spawn ?? spawnOwned)(
       'yarn',
       ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`],
