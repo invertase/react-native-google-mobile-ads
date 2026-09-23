@@ -18,7 +18,9 @@ package io.invertase.googlemobileads
  */
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Looper
+import android.view.View
 import android.widget.FrameLayout
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.uimanager.UIManagerHelper
@@ -31,6 +33,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Collections
+import java.util.WeakHashMap
 
 @SuppressLint("ViewConstructor")
 class ReactNativeGoogleMobileAdsNativeAdView(
@@ -43,6 +47,8 @@ class ReactNativeGoogleMobileAdsNativeAdView(
   private var responseId: String? = null
   private var reloadJob: Job? = null
   private var destroyed = false
+  private val sdkOwnedAssetViews: MutableSet<View> =
+    Collections.newSetFromMap(WeakHashMap())
 
   init {
     // Exclude the ad view hierarchy from instance state saving/restoring. Mediation
@@ -80,25 +86,52 @@ class ReactNativeGoogleMobileAdsNativeAdView(
       val sdkNativeAdView = nativeAdView ?: return@runAfterInitialization
       val uiManager = UIManagerHelper.getUIManagerForReactTag(context, reactTag)
       val assetView = uiManager?.resolveView(reactTag) ?: return@runAfterInitialization
-      when (assetType) {
-        "advertiser" -> sdkNativeAdView.advertiserView = assetView
-        "body" -> sdkNativeAdView.bodyView = assetView
-        "callToAction" -> sdkNativeAdView.callToActionView = assetView
-        "headline" -> sdkNativeAdView.headlineView = assetView
-        "price" -> sdkNativeAdView.priceView = assetView
-        "store" -> sdkNativeAdView.storeView = assetView
-        "starRating" -> sdkNativeAdView.starRatingView = assetView
-        "icon" -> sdkNativeAdView.iconView = assetView
-        // Next-Gen renders the main image through MediaView; it has no imageView asset.
-        "image" -> Unit
-        "media" ->
-          (assetView as ReactNativeGoogleMobileAdsMediaView).whenSdkViewReady {
-            mediaView = it
-            reloadAd()
-          }
-      }
-      reloadAd()
+      registerResolvedAsset(sdkNativeAdView, assetType, assetView)
     }
+  }
+
+  /** Test / shared path after a view has been resolved from a React tag. */
+  internal fun registerResolvedAsset(
+    sdkNativeAdView: NativeAdView,
+    assetType: String,
+    assetView: View,
+  ) {
+    when (assetType) {
+      "advertiser" -> sdkNativeAdView.advertiserView = assetView
+      "body" -> sdkNativeAdView.bodyView = assetView
+      "callToAction" -> sdkNativeAdView.callToActionView = assetView
+      "headline" -> sdkNativeAdView.headlineView = assetView
+      "price" -> sdkNativeAdView.priceView = assetView
+      "store" -> sdkNativeAdView.storeView = assetView
+      "starRating" -> sdkNativeAdView.starRatingView = assetView
+      "icon" -> sdkNativeAdView.iconView = assetView
+      // Next-Gen renders the main image through MediaView; it has no imageView asset.
+      "image" -> {
+        reloadAd()
+        return
+      }
+      "media" -> {
+        (assetView as ReactNativeGoogleMobileAdsMediaView).whenSdkViewReady {
+          mediaView = it
+          reloadAd()
+        }
+        return
+      }
+      else -> {
+        reloadAd()
+        return
+      }
+    }
+    sdkOwnedAssetViews.add(assetView)
+    ReactNativeGoogleMobileAdsNativeAdClickOverlay.prepareAssetViewForSdkOwnedClicks(assetView)
+    reloadAd()
+  }
+
+  private fun reapplySdkOwnedClicks(sdkNativeAdView: NativeAdView) {
+    for (assetView in sdkOwnedAssetViews) {
+      ReactNativeGoogleMobileAdsNativeAdClickOverlay.prepareAssetViewForSdkOwnedClicks(assetView)
+    }
+    ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(sdkNativeAdView, viewGroup)
   }
 
   private fun reloadAd() {
@@ -108,6 +141,7 @@ class ReactNativeGoogleMobileAdsNativeAdView(
       CoroutineScope(Dispatchers.Main).launch {
         delay(100)
         nativeAd?.let { sdkNativeAdView.registerNativeAd(it, mediaView) }
+        reapplySdkOwnedClicks(sdkNativeAdView)
         sdkNativeAdView.rootView.requestLayout()
       }
   }
@@ -128,12 +162,13 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     if (nativeAdView != null) {
       return
     }
-    val sdkView = NativeAdView(context)
+    val sdkView = NativeAdView(sdkViewContext(context))
     (viewGroup.parent as? android.view.ViewGroup)?.removeView(viewGroup)
     sdkView.addView(viewGroup)
     removeAllViews()
     addView(sdkView)
     nativeAdView = sdkView
+    ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(sdkView, viewGroup)
   }
 
   override fun requestLayout() {
@@ -141,10 +176,17 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     post(measureAndLayout)
   }
 
+  internal fun ensureClickOverlayOnTop() {
+    nativeAdView?.let {
+      ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(it, viewGroup)
+    }
+  }
+
   fun destroy() {
     destroyed = true
     reloadJob?.cancel()
     reloadJob = null
+    sdkOwnedAssetViews.clear()
     nativeAdView?.let {
       it.removeView(viewGroup)
       it.destroy()
@@ -159,5 +201,10 @@ class ReactNativeGoogleMobileAdsNativeAdView(
         MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY),
       )
       layout(left, top, right, bottom)
+      ensureClickOverlayOnTop()
     }
+
+  companion object {
+    internal fun sdkViewContext(reactContext: ReactContext): Context = reactContext.currentActivity ?: reactContext
+  }
 }
