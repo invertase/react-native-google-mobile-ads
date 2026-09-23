@@ -797,6 +797,44 @@ async function collectRequestFingerprint(
 }
 
 /** Tap a format action without using gallery UiScrollable (format detail is not the gallery list). */
+const SHOW_LIFECYCLE_OPENED = 'Show lifecycle: opened';
+const SHOW_LIFECYCLE_CLOSED = 'Show lifecycle: closed';
+
+/** Dismiss a fullscreen test creative without tapping in-ad UI (system back). */
+async function dismissFullscreenAdWithoutCreativeTap(): Promise<void> {
+  if (isAndroid()) {
+    await driver.execute('mobile: shell', {
+      command: 'input',
+      args: ['keyevent', '4'],
+    });
+    return;
+  }
+  await driver.back();
+}
+
+async function assertShowCloseLifecycle(formatId: string): Promise<void> {
+  await tapFormatAction(AppiumTestIds.action.show(formatId));
+  await waitForTestIdTextContaining(
+    AppiumTestIds.action.lifecycle(formatId),
+    SHOW_LIFECYCLE_OPENED,
+    90000,
+  );
+  await dismissFullscreenAdWithoutCreativeTap();
+  await waitForTestIdTextContaining(
+    AppiumTestIds.action.lifecycle(formatId),
+    SHOW_LIFECYCLE_CLOSED,
+    90000,
+  );
+  console.log(
+    `[show-close-proof] ${JSON.stringify({
+      format: formatId,
+      platform: isAndroid() ? 'android' : 'ios',
+      opened: SHOW_LIFECYCLE_OPENED,
+      closed: SHOW_LIFECYCLE_CLOSED,
+    })}`,
+  );
+}
+
 async function tapFormatAction(actionId: string, accessibilityLabel?: string): Promise<void> {
   if (isAndroid()) {
     const selectors = [
@@ -911,6 +949,7 @@ export async function proveRepresentativeRequestOutcome(
     format: format.id,
     platform: isAndroid() ? 'android' : 'ios',
     path: format.path,
+    retry: format.retry ?? 'default',
     runtime: {
       navigate: async () => {
         await openFormatStrict(format.id, format.galleryTitle);
@@ -929,7 +968,10 @@ export async function proveRepresentativeRequestOutcome(
         observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt),
     },
     onAccepted: async attempt => {
-      if (attempt.classification === 'loaded' && format.renderProof === 'banner') {
+      if (attempt.classification !== 'loaded') {
+        return;
+      }
+      if (format.renderProof === 'banner') {
         const evidence = await assertRenderedBannerSubtree(
           AppiumTestIds.action.rendered(format.id),
         );
@@ -941,7 +983,7 @@ export async function proveRepresentativeRequestOutcome(
           })}`,
         );
       }
-      if (attempt.classification === 'loaded' && format.renderProof === 'native') {
+      if (format.renderProof === 'native') {
         const rectangle = await assertRenderedRectangle(
           AppiumTestIds.action.rendered(format.id),
         );
@@ -952,6 +994,9 @@ export async function proveRepresentativeRequestOutcome(
             rectangle,
           })}`,
         );
+      }
+      if (format.showClose) {
+        await assertShowCloseLifecycle(format.id);
       }
     },
   });

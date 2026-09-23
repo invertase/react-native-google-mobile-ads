@@ -67,13 +67,23 @@ test('every smoke case comes from the contract inventories, once', () => {
   assert.ok(SMOKE_CASES.every(smokeCase => smokeCase.testTitle.trim().length > 0));
 });
 
-test('request-outcome shard cases cover exactly the contracts.ts e2e-outcome behaviors', () => {
+test('request-outcome shard cases cover every contracts.ts e2e-outcome behavior', () => {
   const dispositioned = new Set(
     PUBLIC_API_CONTRACTS.flatMap(contract =>
       contract.disposition === 'e2e-outcome' ? [contract.contractId] : [],
     ),
   );
-  assert.deepEqual(requestOutcomeCaseIds().sort(), [...dispositioned].sort());
+  for (const contractId of dispositioned) {
+    assert.ok(
+      requestOutcomeCaseIds().includes(contractId),
+      `missing request-outcome smoke case for ${contractId}`,
+    );
+  }
+});
+
+test('request-outcome contracts are packed before navigation smoke cases', () => {
+  const firstNavigationIndex = SMOKE_CASES.findIndex(smokeCase => smokeCase.kind === 'navigation');
+  assert.equal(firstNavigationIndex, REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.length);
 });
 
 test('derived shards partition every case in order without empties', () => {
@@ -163,17 +173,18 @@ test('sharding rejects inputs that cannot fill whole waves', () => {
   );
 });
 
-test('bounded-retry request-outcome contracts stay in the first positional shard', () => {
-  const carrying = SMOKE_SHARDS.filter(shard =>
+test('bounded-retry request-outcome contracts may span positional shards when the inventory grows', () => {
+  const outcomeShards = SMOKE_SHARDS.filter(shard =>
     shard.cases.some(smokeCase => smokeCase.kind === 'request-outcome'),
   );
+  assert.ok(outcomeShards.length >= 1);
   assert.deepEqual(
-    carrying.map(shard => shard.id),
-    [SMOKE_SHARDS[0]!.id],
-  );
-  assert.equal(
-    SMOKE_SHARDS[0]!.cases.filter(smokeCase => smokeCase.kind === 'request-outcome').length,
-    requestOutcomeCaseIds().length,
+    SMOKE_SHARDS.flatMap(shard =>
+      shard.cases.flatMap(smokeCase =>
+        smokeCase.kind === 'request-outcome' ? [smokeCase.id] : [],
+      ),
+    ),
+    requestOutcomeCaseIds(),
   );
 });
 

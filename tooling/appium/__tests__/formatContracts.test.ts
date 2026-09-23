@@ -6,6 +6,7 @@ import {
   NATIVE_RNGMA_TESTING_PROBE,
   REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
   SMOKE_BANNER_VARIANT,
+  SMOKE_GAM_BANNER_VARIANT,
 } from '../src/formats.ts';
 import {
   classifyRequestOutcome,
@@ -73,33 +74,47 @@ function runtimeRecorder(
   };
 }
 
-test('locks one representative request-outcome contract per required path', () => {
-  assert.deepEqual(
-    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.map(contract => [contract.path, contract.id]),
-    [
-      ['banner', SMOKE_BANNER_VARIANT],
-      ['native', AppiumTestIds.format.native],
-      ['fullscreen', AppiumTestIds.format.interstitial],
-      ['gam', AppiumTestIds.format.gamInterstitial],
-    ],
-  );
+test('locks representative request-outcome contracts for classic ad success paths', () => {
   assert.ok(
     REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.every(
       contract => contract.contract === 'request-outcome',
     ),
   );
   assert.deepEqual(
-    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.map(contract => contract.renderProof),
-    ['banner', 'native', 'none', 'none'],
+    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.map(contract => contract.id),
+    [
+      SMOKE_BANNER_VARIANT,
+      AppiumTestIds.format.collapsibleBanner,
+      SMOKE_GAM_BANNER_VARIANT,
+      AppiumTestIds.format.native,
+      AppiumTestIds.format.appOpen,
+      AppiumTestIds.format.interstitial,
+      AppiumTestIds.format.rewarded,
+      AppiumTestIds.format.rewardedInterstitial,
+      AppiumTestIds.format.gamInterstitial,
+    ],
+  );
+  assert.deepEqual(
+    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.filter(contract => contract.showClose).map(
+      contract => contract.id,
+    ),
+    [
+      AppiumTestIds.format.appOpen,
+      AppiumTestIds.format.interstitial,
+      AppiumTestIds.format.rewarded,
+      AppiumTestIds.format.rewardedInterstitial,
+      AppiumTestIds.format.gamInterstitial,
+    ],
   );
 });
 
-test('representative request-outcome contracts never invoke Show actions', () => {
+test('representative load actions never alias Show controls', () => {
   for (const contract of REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS) {
-    assert.notEqual(contract.actionId, AppiumTestIds.action.show(contract.id));
-    if (contract.actionId) {
-      assert.equal(contract.actionId, AppiumTestIds.action.load(contract.id));
+    if (!contract.actionId) {
+      continue;
     }
+    assert.notEqual(contract.actionId, AppiumTestIds.action.show(contract.id));
+    assert.equal(contract.actionId, AppiumTestIds.action.load(contract.id));
   }
 });
 
@@ -499,7 +514,7 @@ test('Native runtime remounts, clears logs, and observes fresh request ids every
   ]);
 });
 
-test('fullscreen and GAM runtime load every attempt and never expose Show', async () => {
+test('fullscreen and GAM runtime load every attempt before observing', async () => {
   for (const path of ['fullscreen', 'gam'] satisfies RepresentativeRequestPath[]) {
     const calls: string[] = [];
     await runRepresentativeRequestOutcomeContract({
@@ -522,8 +537,34 @@ test('fullscreen and GAM runtime load every attempt and never expose Show', asyn
       'observe:2',
       'back',
     ]);
-    assert.ok(calls.every(call => call !== 'show'));
   }
+});
+
+test('remount retry revisits the format screen instead of tapping Load', async () => {
+  const calls: string[] = [];
+  await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.collapsibleBanner,
+    platform: 'android',
+    path: 'banner',
+    retry: 'remount',
+    maxAttempts: 2,
+    runtime: runtimeRecorder(calls, [
+      observedRequest(1, 'no-fill'),
+      observedRequest(2, 'loaded'),
+    ]),
+    sleep: async () => {},
+    emit: () => {},
+  });
+  assert.deepEqual(calls, [
+    'navigate',
+    'observe:1',
+    'back',
+    'navigate',
+    'observe:2',
+    'back',
+  ]);
+  assert.ok(!calls.includes('load'));
+  assert.ok(!calls.includes('reload'));
 });
 
 test('Native fingerprint requires the exact adjacent same-process GMA sequence', () => {
@@ -637,7 +678,8 @@ test('retires blanket per-attempt acceptance and locks real render probes', () =
     exampleSource,
     /<NativeAdView[\s\S]*?testID=\{AppiumTestIds\.action\.rendered\(AppiumTestIds\.format\.native\)\}/,
   );
-  assert.match(gallerySource, /attempt\.classification === 'loaded'/);
+  assert.match(gallerySource, /attempt\.classification !== 'loaded'/);
+  assert.match(gallerySource, /\[show-close-proof\]/);
   assert.match(gallerySource, /format\.renderProof === 'banner'/);
   assert.match(gallerySource, /root\.\$\$\('\.\/\/\*'\)/);
   assert.match(gallerySource, /hasNonzeroRectangle\(size\)/);

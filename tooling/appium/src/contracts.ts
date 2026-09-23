@@ -3,6 +3,7 @@ import { AppiumTestIds } from './testIds.ts';
 import {
   REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
   SMOKE_BANNER_VARIANT,
+  SMOKE_GAM_BANNER_VARIANT,
 } from './formats.ts';
 import ts from 'typescript';
 
@@ -121,11 +122,17 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'Jest locks the exact staleness guidance values and policy timers; a numeric policy constant has no honest device-level success outcome.',
   ),
   staticToken('AgeRestrictedTreatment'),
-  lower(
-    'AppOpenAd',
-    'class',
-    'The example exposes structured load outcomes and show-lifecycle markers on LoadableAdControls. Jest covers load/show lifecycle mapping; automated creative display or clicking is deliberately excluded until a later Appium contract asserts those surfaces.',
-  ),
+  outcome('AppOpenAd', 'class', {
+    contractId: AppiumTestIds.format.appOpen,
+    exampleComponent: 'LoadableAdControls',
+    screenTestId: AppiumTestIds.format.appOpen,
+    screenTestIdExpression: 'props.formatId',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.appOpen),
+    assertionTestIdExpression: 'AppiumTestIds.action.loaded(props.formatId)',
+    success: 'lifecycle-event',
+    assertion:
+      'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives.',
+  }),
   outcome('BannerAd', 'component', {
     contractId: SMOKE_BANNER_VARIANT,
     exampleComponent: 'BannerFormat',
@@ -148,11 +155,17 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'const/preset',
     'Jest covers GAM app-event payload mapping; event delivery depends on ad-server inventory and is not an independent Appium success outcome.',
   ),
-  lower(
-    'GAMBannerAd',
-    'component',
-    'The example renders GAM banner variants with request-outcome text and a measurable rendered wrapper; recordManualImpression() can prove invocation in lower-layer tests but can never prove server-side impression recording.',
-  ),
+  outcome('GAMBannerAd', 'component', {
+    contractId: SMOKE_GAM_BANNER_VARIANT,
+    exampleComponent: 'GAMBannerFormat',
+    screenTestId: SMOKE_GAM_BANNER_VARIANT,
+    screenTestIdExpression: 'AppiumTestIds.gamBannerVariant(gamSizesKey(props.sizes))',
+    assertionTestId: AppiumTestIds.action.rendered(SMOKE_GAM_BANNER_VARIANT),
+    assertionTestIdExpression: 'AppiumTestIds.action.rendered(formatId)',
+    success: 'rendered-nonzero-view',
+    assertion:
+      'After a loaded GAM banner request outcome, the rendered wrapper and a displayed native descendant both have nonzero width and height.',
+  }),
   staticToken('GAMBannerAdSize'),
   outcome('GAMInterstitialAd', 'class', {
     contractId: AppiumTestIds.format.gamInterstitial,
@@ -164,7 +177,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
       'AppiumTestIds.action.loaded(AppiumTestIds.format.gamInterstitial)',
     success: 'lifecycle-event',
     assertion:
-      'A fresh Load request reaches the structured loaded lifecycle outcome within the bounded retry contract; Show is never invoked.',
+      'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives.',
   }),
   absent('getAdCapabilities', 'function'),
   staticToken('InitializationState'),
@@ -177,7 +190,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertionTestIdExpression: 'AppiumTestIds.action.loaded(props.formatId)',
     success: 'lifecycle-event',
     assertion:
-      'A fresh Load request reaches the structured loaded lifecycle outcome within the bounded retry contract; Show is never invoked.',
+      'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives.',
   }),
   staticToken('MaxAdContentRating'),
   lower(
@@ -239,21 +252,33 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'const/preset',
     'Jest keeps paid-event precision and payload mapping; paid-event delivery is nondeterministic on Google test inventory and is not a blocking Appium contract.',
   ),
-  lower(
-    'RewardedAd',
-    'class',
-    'The example exposes structured load outcomes and show-lifecycle markers on LoadableAdControls. Jest covers lifecycle/reward mapping; Appium does not show or click ad creatives until a later contract asserts those surfaces.',
-  ),
+  outcome('RewardedAd', 'class', {
+    contractId: AppiumTestIds.format.rewarded,
+    exampleComponent: 'LoadableAdControls',
+    screenTestId: AppiumTestIds.format.rewarded,
+    screenTestIdExpression: 'props.formatId',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.rewarded),
+    assertionTestIdExpression: 'AppiumTestIds.action.loaded(props.formatId)',
+    success: 'lifecycle-event',
+    assertion:
+      'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives; paid-event delivery is not a blocking success condition.',
+  }),
   lower(
     'RewardedAdEventType',
     'const/preset',
     'Jest covers rewarded lifecycle and reward payload mapping; earning a reward requires showing a creative, which the automated Appium suite deliberately avoids.',
   ),
-  lower(
-    'RewardedInterstitialAd',
-    'class',
-    'The example exposes structured load outcomes and show-lifecycle markers on LoadableAdControls. Jest covers lifecycle/reward mapping; Appium does not show or click creatives until a later contract asserts those surfaces.',
-  ),
+  outcome('RewardedInterstitialAd', 'class', {
+    contractId: AppiumTestIds.format.rewardedInterstitial,
+    exampleComponent: 'LoadableAdControls',
+    screenTestId: AppiumTestIds.format.rewardedInterstitial,
+    screenTestIdExpression: 'props.formatId',
+    assertionTestId: AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedInterstitial),
+    assertionTestIdExpression: 'AppiumTestIds.action.loaded(props.formatId)',
+    success: 'lifecycle-event',
+    assertion:
+      'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives; paid-event delivery is not a blocking success condition.',
+  }),
   excluded(
     'SDK_VERSION',
     'const/preset',

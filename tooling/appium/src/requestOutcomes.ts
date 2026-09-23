@@ -146,6 +146,8 @@ export function nativeFingerprintFromAndroidLog(log: string): RequestFingerprint
   };
 }
 
+export type RepresentativeRequestRetry = 'default' | 'remount';
+
 export type RepresentativeRequestOperation = 'auto-load' | 'reload' | 'remount' | 'load';
 
 /**
@@ -177,9 +179,13 @@ export function evaluateRepresentativeRequestAttempt(options: {
 export function representativeRequestOperation(
   path: RepresentativeRequestPath,
   attempt: number,
+  retry: RepresentativeRequestRetry = 'default',
 ): RepresentativeRequestOperation {
   if (attempt < 1) {
     throw new Error(`Request attempt must be positive, received ${attempt}`);
+  }
+  if (retry === 'remount' && attempt > 1) {
+    return 'remount';
   }
   if (path === 'banner') {
     return attempt === 1 ? 'auto-load' : 'reload';
@@ -198,8 +204,9 @@ export async function executeRepresentativeRequestOperation(
     remount: () => Promise<void>;
     load: () => Promise<void>;
   },
+  retry: RepresentativeRequestRetry = 'default',
 ): Promise<RepresentativeRequestOperation> {
-  const operation = representativeRequestOperation(path, attempt);
+  const operation = representativeRequestOperation(path, attempt, retry);
   if (operation !== 'auto-load') {
     await operations[operation]();
   }
@@ -304,13 +311,15 @@ export async function runRepresentativeRequestOutcomeContract(options: {
   format: string;
   platform: 'android' | 'ios';
   path: RepresentativeRequestPath;
+  retry?: RepresentativeRequestRetry;
   runtime: RepresentativeRequestRuntime;
   sleep?: (delayMs: number) => Promise<void>;
   emit?: (line: string) => void;
   maxAttempts?: number;
   onAccepted?: (attempt: RequestOutcomeAttempt) => Promise<void>;
 }): Promise<readonly RequestOutcomeAttempt[]> {
-  const { format, platform, path, runtime, sleep, emit, maxAttempts, onAccepted } = options;
+  const { format, platform, path, retry = 'default', runtime, sleep, emit, maxAttempts, onAccepted } =
+    options;
   const attempts = await collectRepresentativeRequestOutcomes({
     format,
     platform,
@@ -329,16 +338,29 @@ export async function runRepresentativeRequestOutcomeContract(options: {
         return runtime.observe(1);
       }
 
+      const operation = representativeRequestOperation(path, attempt, retry);
       if (attempt === 1) {
         await runtime.navigate();
+        if (operation === 'load') {
+          await runtime.load();
+        }
+      } else if (operation === 'remount') {
+        await runtime.backToGallery();
+        await runtime.navigate();
+      } else {
+        await executeRepresentativeRequestOperation(
+          path,
+          attempt,
+          {
+            reload: runtime.reload,
+            remount: async () => {
+              throw new Error('Remounts are handled by the request runtime');
+            },
+            load: runtime.load,
+          },
+          retry,
+        );
       }
-      await executeRepresentativeRequestOperation(path, attempt, {
-        reload: runtime.reload,
-        remount: async () => {
-          throw new Error('Native remounts are handled by the request runtime');
-        },
-        load: runtime.load,
-      });
       return runtime.observe(attempt);
     },
   });
