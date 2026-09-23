@@ -84,11 +84,23 @@ No edits during `independent-review` except revert `.only`: product trees (above
 
 [Pre-flight](running-e2e.md#pre-flight) each run (prepare finished, Metro is this checkout). Canonical e2e: [local e2e commands](running-e2e.md#local-e2e-commands) only.
 
+<a id="no-edits-during-live-e2e"></a>
+
+## No source edits during live e2e
+
+Before any edit under product trees (including `tooling/appium/` and `RNGoogleMobileAdsExample/`):
+
+1. **Are e2e tests running in your slots?** Check the parallel tee / `[parallel-summary]` / live wdio+Appium for the slots this checkout owns — configured `RNGMA_E2E_PARALLEL_SLOTS` (Metro owner = first configured slot). See [running e2e § parallel Appium](running-e2e.md#parallel-appium).
+2. **If yes — wait** until the run finishes (or deliberately stop it and confirm sessions are dead). Do not edit “in parallel” with a live run.
+3. **If no — proceed** with edits, then start a **fresh** e2e run.
+
+**Why:** Metro hot refresh reloads JS mid-session and corrupts Appium state. Editing while a run is live makes the result untrustworthy even if the change is correct. Restated for harness operators in [running e2e](running-e2e.md#no-source-edits-during-a-run).
+
 <a id="implementation"></a>
 
 ## Implementation
 
-[Pre-flight](running-e2e.md#pre-flight) → edit → [platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](validation-checklist.md#lint-and-formatting) for this diff (Jest only if that table or [evidence](validation-checklist.md#validation-evidence-package) requires it).
+[No edits during live e2e](#no-edits-during-live-e2e) → [Pre-flight](running-e2e.md#pre-flight) → edit → [platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](validation-checklist.md#lint-and-formatting) for this diff (Jest only if that table or [evidence](validation-checklist.md#validation-evidence-package) requires it).
 
 Native GMA/UMP calls: read each platform’s official API; don’t copy Android fixes to iOS without checking; record citations in ephemeral session scratch under `.agents/`.
 

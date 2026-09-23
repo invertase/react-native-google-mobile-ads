@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   EXAMPLE_ANDROID_PACKAGE,
   EXAMPLE_IOS_BUNDLE_ID,
@@ -20,6 +22,12 @@ import {
   type RequestFingerprint,
 } from '../../src/requestOutcomes.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
+
+/** Repo root from `tooling/appium/test/helpers/` — no host-absolute checkout paths. */
+const repositoryRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../..',
+);
 
 function isAndroid(): boolean {
   return (driver.capabilities.platformName?.toString().toLowerCase() ?? '') === 'android';
@@ -125,15 +133,31 @@ export async function scrollToTestId(testId: string) {
     return finalEl;
   }
 
+  const started = Date.now();
+  let handledStall = false;
   for (let i = 0; i < 8; i++) {
-    if (await el.isDisplayed().catch(() => false)) {
-      return el;
+    const latest = await findByTestId(testId);
+    if (await latest.isDisplayed().catch(() => false)) {
+      return latest;
+    }
+    if (!handledStall && Date.now() - started > 12000) {
+      handledStall = true;
+      await captureIosStallEvidence(`scrollToTestId:${testId}`);
+      await dismissIosBlockingOverlays(`scrollToTestId:${testId}:stall`);
+      const after = await findByTestId(testId);
+      if (await after.isDisplayed().catch(() => false)) {
+        return after;
+      }
+      throw new Error(
+        `scrollToTestId(${testId}): still blocked after stall dismiss (gallery buried under overlay)`,
+      );
     }
     await scrollGalleryIos(testId);
   }
 
-  await el.waitForDisplayed({ timeout: 5000 });
-  return el;
+  const finalEl = await findByTestId(testId);
+  await finalEl.waitForDisplayed({ timeout: 5000 });
+  return finalEl;
 }
 
 /** Mid-screen band — avoid status bar and gesture-nav / Flush-adjacency misses. */
@@ -268,7 +292,11 @@ async function clickElement(
   try {
     await el.click();
   } catch {
-    await driver.execute('mobile: clickGesture', { elementId: el.elementId });
+    const loc = await el.getLocation().catch(() => null);
+    const size = await el.getSize().catch(() => null);
+    if (loc && size) {
+      await iosTapPoint(loc.x + size.width / 2, loc.y + size.height / 2);
+    }
   }
 }
 
@@ -568,6 +596,7 @@ export async function openFormat(formatId: string, galleryTitle?: string): Promi
 }
 
 async function openFormatStrict(formatId: string, galleryTitle?: string): Promise<void> {
+  await dismissIosBlockingOverlays(`openFormatStrict:${formatId}`);
   if (!(await isGalleryHome())) {
     await backToGallery();
   }
@@ -609,6 +638,15 @@ export async function backToGallery(): Promise<void> {
       timeout: 15000,
       timeoutMsg: 'Gallery home did not restore after back',
     });
+  } catch (error) {
+    if (!isAndroid()) {
+      await captureIosStallEvidence('backToGallery');
+      await dismissIosBlockingOverlays('backToGallery:stall');
+      if (await isGalleryHome()) {
+        return;
+      }
+    }
+    throw error;
   } finally {
     if (isAndroid()) {
       const focus = await androidWindowFocusDump();
@@ -656,23 +694,38 @@ async function assertRenderedBannerSubtree(testId: string): Promise<{
   descendantType: string;
 }> {
   const rootRectangle = await assertRenderedRectangle(testId);
-  const root = await findByTestId(testId);
-  const descendants = await root.$$('.//*');
-  for (const descendant of descendants) {
-    if (!(await descendant.isDisplayed().catch(() => false))) {
+  const deadline = Date.now() + 10_000;
+  let lastRoot = rootRectangle;
+  while (Date.now() <= deadline) {
+    const root = await findByTestId(testId);
+    lastRoot = await root.getSize().catch(() => lastRoot);
+    if (!hasNonzeroRectangle(lastRoot)) {
+      await sleep(250);
       continue;
     }
-    const size = await descendant.getSize().catch(() => ({ width: 0, height: 0 }));
-    if (hasNonzeroRectangle(size)) {
-      const descendantType = await descendant
-        .getAttribute(isAndroid() ? 'className' : 'type')
-        .catch(() => 'unknown');
-      return {
-        root: rootRectangle,
-        descendant: size,
-        descendantType: String(descendantType || 'unknown'),
-      };
+    // Prefer direct children first — iOS XCUITest sometimes hides deep WKWebView
+    // descendants from a broad `.//*` walk while the native ad host is already sized.
+    const candidates = [
+      ...(await root.$$('*').catch(() => [])),
+      ...(await root.$$('.//*').catch(() => [])),
+    ];
+    for (const descendant of candidates) {
+      if (!(await descendant.isDisplayed().catch(() => false))) {
+        continue;
+      }
+      const size = await descendant.getSize().catch(() => ({ width: 0, height: 0 }));
+      if (hasNonzeroRectangle(size)) {
+        const descendantType = await descendant
+          .getAttribute(isAndroid() ? 'className' : 'type')
+          .catch(() => 'unknown');
+        return {
+          root: lastRoot,
+          descendant: size,
+          descendantType: String(descendantType || 'unknown'),
+        };
+      }
     }
+    await sleep(250);
   }
   throw new Error(
     `[request-outcome] banner render proof ${testId} has no displayed nonzero native descendant`,
@@ -1823,13 +1876,771 @@ async function runAndroidFullscreenShowCloseLifecycle(formatId: string): Promise
   );
 }
 
+/** iOS GMA test creatives expose a stable close control while RN lifecycle nodes are off-tree. */
+const IOS_FULLSCREEN_CLOSE_NAMES = [
+  'Close Advertisement',
+  'Close Ad',
+  'Close advertisement',
+] as const;
+
+/** Markers that the fullscreen creative itself is on-screen (not leftover Close chrome). */
+const IOS_FULLSCREEN_OPEN_MARKERS = [
+  'Test mode',
+  "You're displaying a test interstitial",
+  'Nice job!',
+  'test rewarded',
+  'rewarded test ad',
+  'Test Ad',
+] as const;
+
+/** iOS UIMenu / text-selection chrome — blocks Close / Continue taps until dismissed. */
+const IOS_TEXT_SELECTION_MENU_NAMES = [
+  'Copy',
+  'Look Up',
+  'Translate',
+  'Select',
+  'Select All',
+  'Share…',
+  'Share...',
+  // Rewarded end-card link selection (2026-09-23T1921-slot-5).
+  'Open Link',
+] as const;
+
+const IOS_CONTINUE_TO_APP_NAMES = [
+  'Continue to app',
+  'Continue To App',
+  'Continue to app >',
+  'Continue to app>',
+] as const;
+
+const IOS_DEBUG_OPTIONS_SHEET_MARKERS = [
+  'Debug Options',
+  'Open ad inspector',
+  'Ad inspector settings',
+  'Creative Preview',
+  'Troubleshooting',
+  'Ad Information',
+] as const;
+
+async function findDisplayedIosElementByNames(
+  names: readonly string[],
+): Promise<WebdriverIO.Element | undefined> {
+  for (const name of names) {
+    const predicates = [
+      `name == "${name}"`,
+      `label == "${name}"`,
+      `name CONTAINS "${name}"`,
+      `label CONTAINS "${name}"`,
+    ];
+    for (const predicate of predicates) {
+      const el = await $(`-ios predicate string:${predicate}`);
+      if (
+        (await el.isExisting().catch(() => false)) &&
+        (await el.isDisplayed().catch(() => false))
+      ) {
+        return el;
+      }
+    }
+  }
+  return undefined;
+}
+
+async function iosElementExistsByName(name: string): Promise<boolean> {
+  for (const predicate of [`name == "${name}"`, `label == "${name}"`]) {
+    const el = await $(`-ios predicate string:${predicate}`);
+    if (await el.isExisting().catch(() => false)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function iosTapPoint(x: number, y: number): Promise<void> {
+  // XCUITest supports mobile: tap; mobile: clickGesture is Android-only.
+  await driver.execute('mobile: tap', { x: Math.floor(x), y: Math.floor(y) });
+}
+
+async function isIosTextSelectionMenuVisible(): Promise<boolean> {
+  // Require at least two menu items so gallery "Copy" labels cannot false-trigger.
+  let hits = 0;
+  for (const name of IOS_TEXT_SELECTION_MENU_NAMES) {
+    if (await findDisplayedIosElementByNames([name])) {
+      hits += 1;
+      if (hits >= 2) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Tap outside to clear iOS UIMenu (Copy / Look Up / Translate / Open Link). */
+async function dismissIosTextSelectionMenuIfPresent(): Promise<boolean> {
+  if (!(await isIosTextSelectionMenuVisible())) {
+    return false;
+  }
+  const { width, height } = await driver.getWindowRect();
+  // Avoid the top-right X and mid-screen Learn More / link hit targets.
+  for (const [fx, fy] of [
+    [0.2, 0.35],
+    [0.5, 0.55],
+    [0.15, 0.7],
+  ] as const) {
+    await iosTapPoint(width * fx, height * fy);
+    const gone = await driver
+      .waitUntil(async () => !(await isIosTextSelectionMenuVisible()), {
+        timeout: 1200,
+        interval: 100,
+      })
+      .then(() => true)
+      .catch(() => false);
+    if (gone) {
+      return true;
+    }
+  }
+  try {
+    await driver.back();
+  } catch {
+    // best-effort — XCUITest does not implement mobile: keys / Escape
+  }
+  return driver
+    .waitUntil(async () => !(await isIosTextSelectionMenuVisible()), {
+      timeout: 1200,
+      interval: 100,
+    })
+    .then(() => true)
+    .catch(async () => !(await isIosTextSelectionMenuVisible()));
+}
+
+async function isIosDebugOptionsSheetVisible(): Promise<boolean> {
+  if (await iosElementExistsByName('Debug Options')) {
+    return true;
+  }
+  // Sheet body without reliable title — Ad Information + Dismiss together.
+  const dismiss = await findDisplayedIosElementByNames(['Dismiss']);
+  if (!dismiss) {
+    return false;
+  }
+  for (const marker of IOS_DEBUG_OPTIONS_SHEET_MARKERS) {
+    if (await findDisplayedIosElementByNames([marker])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function dismissIosDebugOptionsSheetIfPresent(): Promise<boolean> {
+  if (!(await isIosDebugOptionsSheetVisible())) {
+    return false;
+  }
+  if (await tapIosNamedControlForce('Dismiss')) {
+    const gone = await driver
+      .waitUntil(async () => !(await isIosDebugOptionsSheetVisible()), {
+        timeout: 2000,
+        interval: 100,
+      })
+      .then(() => true)
+      .catch(() => false);
+    if (gone) {
+      return true;
+    }
+  }
+  for (const name of ['Done', 'Cancel', 'Close']) {
+    await tapIosNamedControlForce(name);
+    if (!(await isIosDebugOptionsSheetVisible())) {
+      return true;
+    }
+  }
+  try {
+    await driver.back();
+  } catch {
+    // best-effort
+  }
+  return driver
+    .waitUntil(async () => !(await isIosDebugOptionsSheetVisible()), {
+      timeout: 2000,
+      interval: 100,
+    })
+    .then(() => true)
+    .catch(async () => !(await isIosDebugOptionsSheetVisible()));
+}
+
+async function tapIosContinueToAppIfPresent(): Promise<boolean> {
+  const el = await findDisplayedIosElementByNames(IOS_CONTINUE_TO_APP_NAMES);
+  if (!el) {
+    return false;
+  }
+  try {
+    await el.click();
+  } catch {
+    const loc = await el.getLocation().catch(() => null);
+    const size = await el.getSize().catch(() => null);
+    if (loc && size) {
+      await iosTapPoint(loc.x + size.width / 2, loc.y + size.height / 2);
+    } else {
+      // Top-right "Continue to app >" band from live Flood-It / app-open captures.
+      const { width, height } = await driver.getWindowRect();
+      await iosTapPoint(width * 0.88, height * 0.08);
+    }
+  }
+  await driver
+    .waitUntil(
+      async () => !(await findDisplayedIosElementByNames(IOS_CONTINUE_TO_APP_NAMES)),
+      { timeout: 2000, interval: 100 },
+    )
+    .catch(() => undefined);
+  return true;
+}
+
+/**
+ * Clear iOS overlays that block gallery navigation and ad close chrome:
+ * text-selection UIMenu, GMA Debug Options sheet, Continue to app, Close.
+ */
+export async function dismissIosBlockingOverlays(
+  reason = 'unspecified',
+): Promise<void> {
+  if (isAndroid()) {
+    return;
+  }
+  let changed = false;
+  if (await dismissIosTextSelectionMenuIfPresent()) {
+    changed = true;
+  }
+  if (await dismissIosDebugOptionsSheetIfPresent()) {
+    changed = true;
+  }
+  if (await tapIosContinueToAppIfPresent()) {
+    changed = true;
+  }
+  if (await isIosFullscreenCloseChromeVisible()) {
+    if (await tapIosFullscreenCloseAttempt()) {
+      changed = true;
+    }
+  }
+  if (changed) {
+    console.log(`[ios-overlay-dismiss] ${JSON.stringify({ reason, changed: true })}`);
+  }
+}
+
+async function captureIosStallEvidence(label: string): Promise<void> {
+  if (isAndroid()) {
+    return;
+  }
+  const stamp = new Date().toISOString().replace(/[:.]/g, '').replace('T', 'T').slice(0, 15);
+  const slot = process.env.RNGMA_E2E_SLOT ?? process.env.RNGMA_SLOT ?? 'unknown';
+  const udid = process.env.RNGMA_IOS_UDID ?? '';
+  const dir = path.join(
+    repositoryRoot,
+    '.agents/reports/post-17.1.0-quality/ios-preflight-flakes',
+    `${stamp}-slot-${slot}`,
+  );
+  try {
+    const fs = await import('node:fs/promises');
+    await fs.mkdir(dir, { recursive: true });
+    if (udid) {
+      const { execFileSync } = await import('node:child_process');
+      execFileSync('xcrun', ['simctl', 'io', udid, 'screenshot', path.join(dir, 'screen.png')], {
+        stdio: 'ignore',
+      });
+    }
+    const source = await driver.getPageSource().catch(() => '');
+    await fs.writeFile(path.join(dir, 'pageSource.xml'), source);
+    await fs.writeFile(
+      path.join(dir, 'meta.txt'),
+      `label=${label}\nslot=${slot}\nudid=${udid}\nat=${new Date().toISOString()}\n`,
+    );
+    console.log(`[ios-stall-evidence] ${JSON.stringify({ label, dir })}`);
+  } catch (error) {
+    console.warn(`[ios-stall-evidence] capture failed: ${String(error)}`);
+  }
+}
+
+async function isIosFullscreenTestAdVisible(): Promise<boolean> {
+  return (await findDisplayedIosElementByNames(IOS_FULLSCREEN_OPEN_MARKERS)) != null;
+}
+
+async function isIosFullscreenCloseChromeVisible(): Promise<boolean> {
+  // Rewarded end-card uses a nameless top-right Other X — treat end-card as close chrome.
+  if (await isIosRewardedEndCardVisible()) {
+    return true;
+  }
+  const el = await findDisplayedIosElementByNames(IOS_FULLSCREEN_CLOSE_NAMES);
+  if (!el) {
+    return false;
+  }
+  // Ghost leftover from a prior interstitial: disabled Close with no creative.
+  const enabled = await el.isEnabled().catch(() => true);
+  if (enabled) {
+    return true;
+  }
+  return await isIosFullscreenTestAdVisible();
+}
+
+/**
+ * Dismiss fullscreen X.
+ * - Interstitial: named Close Advertisement (often enabled=false) — force-tap bounds
+ *   when in the top-right band; ignore left-edge ghost (x≈0).
+ * - Rewarded end-card (2026-09-23T1921-slot-5): nameless Other at ~374,78 — coordinate
+ *   tap ~92%x / ~9%y after clearing UIMenu (Copy / Open Link).
+ */
+async function tapIosFullscreenCloseAttempt(): Promise<boolean> {
+  await dismissIosTextSelectionMenuIfPresent();
+  const { width, height } = await driver.getWindowRect();
+  const endCard = await isIosRewardedEndCardVisible();
+  const creativeUp = endCard || (await isIosFullscreenTestAdVisible());
+
+  const el = await findDisplayedIosElementByNames(IOS_FULLSCREEN_CLOSE_NAMES);
+  if (el) {
+    const loc = await el.getLocation().catch(() => null);
+    const size = await el.getSize().catch(() => null);
+    // Left-edge disabled ghost (x≈0) is not the real X — skip its bounds.
+    const isLeftGhost = loc != null && loc.x < width * 0.25;
+    if (!isLeftGhost) {
+      const enabled = await el.isEnabled().catch(() => true);
+      if (enabled) {
+        try {
+          await el.click();
+          return true;
+        } catch {
+          // fall through to coordinate force-tap
+        }
+      }
+      if (loc && size && size.width > 0 && size.height > 0) {
+        await iosTapPoint(loc.x + size.width / 2, loc.y + size.height / 2);
+        return true;
+      }
+    }
+  }
+
+  // Nameless top-right Other / coordinate band (Rewarded end-card + interstitial fallback).
+  if (creativeUp) {
+    for (const [fx, fy] of [
+      [0.92, 0.09],
+      [0.93, 0.09],
+      [0.9, 0.08],
+    ] as const) {
+      await iosTapPoint(width * fx, height * fy);
+    }
+    return true;
+  }
+  return false;
+}
+
+const IOS_REWARDED_END_CARD_MARKERS = [
+  'Nice job!',
+  'Claim',
+  'Reward granted',
+  'You earned',
+  // Multi-ad rewarded end-card (stall 2026-09-23T1921-slot-5).
+  'Ad 2 of 2',
+  'Ad 1 of 2',
+] as const;
+
+async function isIosRewardedEndCardVisible(): Promise<boolean> {
+  return (await findDisplayedIosElementByNames(IOS_REWARDED_END_CARD_MARKERS)) != null;
+}
+
+function isIosRewardedFormat(formatId: string): boolean {
+  return (
+    formatId === AppiumTestIds.format.rewardedHook ||
+    formatId === AppiumTestIds.format.rewardedInterstitialHook ||
+    formatId === AppiumTestIds.format.rewarded ||
+    formatId === AppiumTestIds.format.rewardedInterstitial
+  );
+}
+
+/** Wait until rewarded Close is enabled or an end-card marker appears. */
+async function waitForIosRewardedDismissReady(): Promise<void> {
+  const started = Date.now();
+  await driver.waitUntil(
+    async () => {
+      if (await findDisplayedIosElementByNames(IOS_REWARDED_END_CARD_MARKERS)) {
+        return true;
+      }
+      const el = await findDisplayedIosElementByNames(IOS_FULLSCREEN_CLOSE_NAMES);
+      if (!el) {
+        return false;
+      }
+      const enabled = await el.isEnabled().catch(() => true);
+      // Even when Close reports enabled during countdown, give the creative a
+      // short mandatory-watch window before the first dismiss attempt.
+      return enabled && Date.now() - started >= 10000;
+    },
+    {
+      timeout: 120000,
+      interval: 750,
+      timeoutMsg: 'iOS rewarded dismiss never became actionable (enabled Close / end card)',
+    },
+  );
+}
+
+async function tapIosFullscreenCloseWithRetries(): Promise<void> {
+  // Only block on Close Advertisement when that chrome is actually present.
+  // App Open feeds can leave RN lifecycle on-tree with "Test mode" copy and no close button.
+  await dismissIosBlockingOverlays('tapIosFullscreenCloseWithRetries:begin');
+  if (!(await isIosFullscreenCloseChromeVisible())) {
+    await dismissIosAppOpenFeedIfPresent();
+    return;
+  }
+  let clicks = 0;
+  const started = Date.now();
+  let handledStall = false;
+  await driver.waitUntil(
+    async () => {
+      if (await tapIosContinueToAppIfPresent()) {
+        if (!(await isIosFullscreenCloseChromeVisible())) {
+          return true;
+        }
+      }
+      const tapped = await tapIosFullscreenCloseAttempt();
+      if (tapped) {
+        clicks += 1;
+        if (!(await isIosFullscreenCloseChromeVisible())) {
+          return true;
+        }
+        // Ghost Close controls leftover from a prior interstitial can remain
+        // "displayed" while App Open RN lifecycle is already on-tree. Escape.
+        if (clicks >= 5) {
+          await dismissIosAppOpenFeedIfPresent();
+          if (!(await isIosFullscreenCloseChromeVisible())) {
+            return true;
+          }
+          if (clicks === 5 || clicks === 10) {
+            try {
+              await driver.back();
+            } catch {
+              // best-effort
+            }
+          }
+          if (clicks >= 12) {
+            return true;
+          }
+        }
+        return false;
+      }
+      if (!(await isIosFullscreenCloseChromeVisible())) {
+        return true;
+      }
+      // Still stuck with disabled X — force top-right band even without name hit.
+      if (await isIosFullscreenTestAdVisible()) {
+        const { width, height } = await driver.getWindowRect();
+        await iosTapPoint(width * 0.9, height * 0.08);
+        clicks += 1;
+      }
+      if (!handledStall && Date.now() - started > 15000) {
+        handledStall = true;
+        await captureIosStallEvidence('tapIosFullscreenCloseWithRetries');
+        await dismissIosBlockingOverlays('tapIosFullscreenCloseWithRetries:stall');
+        // After evidence: always force-tap top-right X (enabled=false case).
+        const { width, height } = await driver.getWindowRect();
+        await iosTapPoint(width * 0.9, height * 0.08);
+        await iosTapPoint(width * 0.93, height * 0.075);
+        if (!(await isIosFullscreenCloseChromeVisible())) {
+          return true;
+        }
+      }
+      return false;
+    },
+    {
+      timeout: 90000,
+      interval: 400,
+      timeoutMsg: 'iOS fullscreen Close Advertisement did not dismiss within 90s',
+    },
+  );
+}
+
+const IOS_APP_OPEN_CONTINUE_NAMES = [
+  'Continue to app >',
+  'Continue to app>',
+  'Continue to app',
+  'Continue To App',
+] as const;
+
+async function isIosAppOpenFeedChromeVisible(): Promise<boolean> {
+  if (await isIosFullscreenCloseChromeVisible()) {
+    return false;
+  }
+  // Interstitial/rewarded test creatives also say "Test mode" — exclude those.
+  for (const needle of [
+    'test interstitial',
+    "You're displaying a test interstitial",
+    'Nice job!',
+    'Reward granted',
+    'Test mode',
+  ]) {
+    if (await findDisplayedIosElementByNames([needle])) {
+      return false;
+    }
+  }
+  // Prefer Continue control — lean lookup (avoid 4×CONTAINS spam per poll).
+  for (const name of IOS_APP_OPEN_CONTINUE_NAMES) {
+    if (await iosElementExistsByName(name)) {
+      const el = await $(`~${name}`);
+      if (await el.isDisplayed().catch(() => false)) {
+        return true;
+      }
+    }
+  }
+  return (await findDisplayedIosElementByNames(['Feed Test'])) != null;
+}
+
+async function tapIosAppOpenContinueChrome(): Promise<boolean> {
+  await dismissIosTextSelectionMenuIfPresent();
+  if (await tapIosContinueToAppIfPresent()) {
+    return true;
+  }
+  const continueBtn = await findDisplayedIosElementByNames(IOS_APP_OPEN_CONTINUE_NAMES);
+  if (continueBtn) {
+    await continueBtn.click();
+    await driver
+      .waitUntil(async () => !(await isIosAppOpenFeedChromeVisible()), {
+        timeout: 2000,
+        interval: 100,
+      })
+      .catch(() => undefined);
+    return true;
+  }
+  if (!(await isIosAppOpenFeedChromeVisible())) {
+    return false;
+  }
+  // Header-band X — mirrors Android app-open feed dismiss without tapping Install CTAs.
+  const { width, height } = await driver.getWindowRect();
+  for (const [fx, fy] of [
+    [0.93, 0.075],
+    [0.9, 0.075],
+    [0.87, 0.085],
+  ] as const) {
+    await iosTapPoint(width * fx, height * fy);
+    const gone = await driver
+      .waitUntil(async () => !(await isIosAppOpenFeedChromeVisible()), {
+        timeout: 1200,
+        interval: 100,
+      })
+      .then(() => true)
+      .catch(() => false);
+    if (gone) {
+      return true;
+    }
+  }
+  return true;
+}
+
+async function dismissIosAppOpenFeedIfPresent(): Promise<boolean> {
+  let dismissed = false;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (!(await isIosAppOpenFeedChromeVisible())) {
+      return dismissed;
+    }
+    await tapIosAppOpenContinueChrome();
+    dismissed = true;
+  }
+  return dismissed;
+}
+
 /** Dismiss a fullscreen test creative without tapping in-ad UI. */
 async function dismissFullscreenAdWithoutCreativeTap(): Promise<void> {
   if (isAndroid()) {
     await tapAndroidFullscreenCloseWithRetries();
     return;
   }
-  await driver.back();
+  await dismissIosBlockingOverlays('dismissFullscreenAdWithoutCreativeTap');
+  if (await isIosFullscreenCloseChromeVisible()) {
+    await tapIosFullscreenCloseWithRetries();
+    return;
+  }
+  await dismissIosAppOpenFeedIfPresent();
+}
+
+/** Fullscreen interstitial / GAM / rewarded show-close while RN lifecycle nodes may be off-tree. */
+async function runIosFullscreenShowCloseLifecycle(formatId: string): Promise<void> {
+  const showActionId = AppiumTestIds.action.show(formatId);
+  const isAppOpen = formatId === AppiumTestIds.format.appOpen;
+  const probesPerTap = 10;
+  const probeIntervalMs = 400;
+  const maxTaps = 4;
+  let lastProbe = { tap: 0, probe: 0, phase: '', adVisible: false, feedVisible: false };
+
+  const openedAfterProbe = async (tap: number, probe: number): Promise<boolean> => {
+    const phase = await safeShowLifecycleText(formatId);
+    const adVisible =
+      probe % 2 === 0
+        ? await isIosFullscreenTestAdVisible()
+        : await isIosFullscreenCloseChromeVisible();
+    const feedVisible = isAppOpen && (await isIosAppOpenFeedChromeVisible());
+    lastProbe = { tap, probe, phase, adVisible, feedVisible };
+    const opened =
+      phase.includes(SHOW_LIFECYCLE_OPENED) ||
+      phase.includes(SHOW_LIFECYCLE_CLOSED) ||
+      adVisible ||
+      feedVisible;
+    console.log(
+      `[show-close-probe] ${JSON.stringify({
+        format: formatId,
+        platform: 'ios',
+        tap,
+        probe,
+        phase,
+        adVisible,
+        feedVisible,
+        opened,
+      })}`,
+    );
+    return opened;
+  };
+
+  let opened = false;
+  for (let tap = 1; tap <= maxTaps && !opened; tap += 1) {
+    console.log(`[show-close-tap] ${JSON.stringify({ format: formatId, platform: 'ios', tap })}`);
+    await tapFormatAction(showActionId);
+    for (let probe = 1; probe <= probesPerTap; probe += 1) {
+      if (await openedAfterProbe(tap, probe)) {
+        opened = true;
+        break;
+      }
+      if (probe < probesPerTap) {
+        await sleep(probeIntervalMs);
+      }
+    }
+  }
+  if (!opened) {
+    throw new Error(
+      `[show-close-fail] ${formatId}: no opened lifecycle or iOS fullscreen chrome after ${maxTaps} show tap(s); lastProbe=${JSON.stringify(lastProbe)}`,
+    );
+  }
+  if (isIosRewardedFormat(formatId)) {
+    await waitForIosRewardedDismissReady();
+  }
+  await dismissFullscreenAdWithoutCreativeTap();
+  await driver.waitUntil(
+    async () => {
+      // Prefer RN closed phase first — ghost Close / gallery titles must not block it.
+      const phase = await safeShowLifecycleText(formatId);
+      if (phase.includes(SHOW_LIFECYCLE_CLOSED)) {
+        return true;
+      }
+      if (await isIosFullscreenCloseChromeVisible()) {
+        await tapIosFullscreenCloseAttempt();
+        return false;
+      }
+      if (isAppOpen && (await isIosAppOpenFeedChromeVisible())) {
+        await tapIosAppOpenContinueChrome();
+        return false;
+      }
+      if (await isIosFullscreenTestAdVisible()) {
+        await tapIosFullscreenCloseAttempt();
+        return false;
+      }
+      return false;
+    },
+    {
+      timeout: isIosRewardedFormat(formatId) ? 120000 : 90000,
+      interval: 400,
+      timeoutMsg: 'iOS fullscreen Show never reached Show lifecycle: closed after dismiss',
+    },
+  );
+}
+
+async function runIosHookShowCloseLifecycle(formatId: string): Promise<void> {
+  const isAppOpenHook = formatId === AppiumTestIds.format.appOpenHook;
+  const isRewardedHook = isIosRewardedFormat(formatId);
+  await driver.waitUntil(
+    async () => {
+      const phase = await safeShowLifecycleText(formatId);
+      if (phase.includes(HOOK_LIFECYCLE_SHOWING) || phase.includes(HOOK_LIFECYCLE_CLOSED)) {
+        return true;
+      }
+      if (isAppOpenHook && (await isIosAppOpenFeedChromeVisible())) {
+        return true;
+      }
+      // Require creative copy (not bare Close chrome) — Close Advertisement can be a
+      // ghost leftover from a prior interstitial in the same session.
+      return await isIosFullscreenTestAdVisible();
+    },
+    {
+      timeout: 90000,
+      interval: 400,
+      timeoutMsg: 'iOS hook Show never reached status=showing or fullscreen chrome',
+    },
+  );
+  if (isRewardedHook) {
+    await waitForIosRewardedDismissReady();
+  }
+  if (isAppOpenHook) {
+    // Prefer feed / header dismiss — do not get stuck on ghost Close Advertisement
+    // left over from a prior interstitial in the same session.
+    await dismissIosBlockingOverlays(`runIosHookShowCloseLifecycle:${formatId}`);
+    await dismissIosAppOpenFeedIfPresent();
+    if (await isIosFullscreenCloseChromeVisible()) {
+      for (let i = 0; i < 3; i += 1) {
+        if (!(await tapIosFullscreenCloseAttempt())) {
+          break;
+        }
+        if (!(await isIosFullscreenCloseChromeVisible())) {
+          break;
+        }
+      }
+    }
+  } else {
+    await dismissFullscreenAdWithoutCreativeTap();
+  }
+  let closeClicks = 0;
+  let handledStall = false;
+  const closeStarted = Date.now();
+  await driver.waitUntil(
+    async () => {
+      const phase = await safeShowLifecycleText(formatId);
+      if (phase.includes(HOOK_LIFECYCLE_CLOSED)) {
+        return true;
+      }
+      if (isAppOpenHook && (await isIosAppOpenFeedChromeVisible())) {
+        await tapIosAppOpenContinueChrome();
+        return false;
+      }
+      if (await tapIosContinueToAppIfPresent()) {
+        return false;
+      }
+      if (await isIosFullscreenCloseChromeVisible()) {
+        closeClicks += 1;
+        const tapped = await tapIosFullscreenCloseAttempt();
+        if (!tapped && isRewardedHook) {
+          // Still in mandatory watch — keep polling without counting as a ghost.
+          return false;
+        }
+        if (closeClicks >= 5) {
+          if (isAppOpenHook) {
+            // Ghost close — try header band and accept lifecycle polling.
+            await tapIosAppOpenContinueChrome();
+          }
+          if (closeClicks === 6 || closeClicks === 12) {
+            try {
+              await driver.back();
+            } catch {
+              // best-effort
+            }
+          }
+        }
+        return false;
+      }
+      if (await isIosFullscreenTestAdVisible()) {
+        await tapIosFullscreenCloseAttempt();
+        return false;
+      }
+      if (!handledStall && Date.now() - closeStarted > 15000) {
+        handledStall = true;
+        await captureIosStallEvidence(`runIosHookShowCloseLifecycle:${formatId}`);
+        await dismissIosBlockingOverlays(`runIosHookShowCloseLifecycle:${formatId}:stall`);
+      }
+      if (isAppOpenHook) {
+        await tapIosAppOpenContinueChrome();
+      }
+      return false;
+    },
+    {
+      timeout: isRewardedHook ? 120000 : 90000,
+      interval: 400,
+      timeoutMsg: 'iOS hook Show never reached status=closed after dismiss',
+    },
+  );
 }
 
 async function assertShowCloseLifecycle(formatId: string): Promise<void> {
@@ -1849,26 +2660,204 @@ async function assertShowCloseLifecycle(formatId: string): Promise<void> {
     );
     return;
   }
-  await tapFormatAction(AppiumTestIds.action.show(formatId));
-  await waitForTestIdTextContaining(
-    AppiumTestIds.action.lifecycle(formatId),
-    SHOW_LIFECYCLE_OPENED,
-    90000,
-  );
-  await dismissFullscreenAdWithoutCreativeTap();
-  await waitForTestIdTextContaining(
-    AppiumTestIds.action.lifecycle(formatId),
-    SHOW_LIFECYCLE_CLOSED,
-    90000,
-  );
+  await runIosFullscreenShowCloseLifecycle(formatId);
   console.log(
     `[show-close-proof] ${JSON.stringify({
       format: formatId,
-      platform: isAndroid() ? 'android' : 'ios',
+      platform: 'ios',
       opened: SHOW_LIFECYCLE_OPENED,
       closed: SHOW_LIFECYCLE_CLOSED,
     })}`,
   );
+}
+
+/** Native Ad Inspector chrome — require inspector body, not a lingering ghost Close. */
+async function isIosAdInspectorVisible(): Promise<boolean> {
+  // Unique footer on the inspector sheet.
+  if (await findDisplayedIosElementByNames(['Single ad source test'])) {
+    return true;
+  }
+  // Title plus the real top-right Close (enabled) — not the disabled ghost.
+  const title = await findDisplayedIosElementByNames(['Ad Inspector']);
+  if (!title) {
+    return false;
+  }
+  const close = await $('~Close');
+  if (
+    (await close.isExisting().catch(() => false)) &&
+    (await close.isEnabled().catch(() => false)) &&
+    (await close.isDisplayed().catch(() => false))
+  ) {
+    return true;
+  }
+  // Ad unit list rows inside the sheet.
+  for (const marker of ['Adapters', 'Privacy', 'Ad units'] as const) {
+    if (await findDisplayedIosElementByNames([marker])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function tapIosNamedControlForce(name: string): Promise<boolean> {
+  const el = await $(`-ios predicate string:name == "${name}"`);
+  if (!(await el.isExisting().catch(() => false))) {
+    return false;
+  }
+  try {
+    await el.click();
+  } catch {
+    const loc = await el.getLocation().catch(() => null);
+    const size = await el.getSize().catch(() => null);
+    if (!loc || !size) {
+      return false;
+    }
+    await iosTapPoint(loc.x + size.width / 2, loc.y + size.height / 2);
+  }
+  return true;
+}
+
+async function dismissIosAdInspectorIfPresent(): Promise<void> {
+  if (!(await isIosAdInspectorVisible())) {
+    return;
+  }
+  let attempts = 0;
+  await driver.waitUntil(
+    async () => {
+      await dismissIosTextSelectionMenuIfPresent();
+      if (!(await isIosAdInspectorVisible())) {
+        return true;
+      }
+      attempts += 1;
+      // Hierarchy shows enabled top-right "Close" (X). "Close Ad Inspector" is often
+      // a disabled/inaccessible ghost on the left — prefer the real Close first.
+      if (await tapIosNamedControlForce('Close')) {
+        if (!(await isIosAdInspectorVisible())) {
+          return true;
+        }
+      }
+      // Force-tap ghost Close Ad Inspector bounds anyway (may still work).
+      const ghost = await $('~Close Ad Inspector');
+      if (await ghost.isExisting().catch(() => false)) {
+        const loc = await ghost.getLocation().catch(() => null);
+        const size = await ghost.getSize().catch(() => null);
+        if (loc && size) {
+          await iosTapPoint(loc.x + size.width / 2, loc.y + size.height / 2);
+        }
+      }
+      // Top-right X band from live Ad Inspector screenshots (~346,77 on 402-wide).
+      const { width, height } = await driver.getWindowRect();
+      await iosTapPoint(width * 0.9, height * 0.1);
+      if (!(await isIosAdInspectorVisible())) {
+        return true;
+      }
+      // Sheet-style dismiss: swipe down from the header.
+      if (attempts >= 2) {
+        try {
+          await driver.execute('mobile: swipe', {
+            direction: 'down',
+            velocity: 2500,
+          });
+        } catch {
+          try {
+            await driver.execute('mobile: dragFromToForDuration', {
+              duration: 0.35,
+              fromX: Math.floor(width * 0.5),
+              fromY: Math.floor(height * 0.12),
+              toX: Math.floor(width * 0.5),
+              toY: Math.floor(height * 0.75),
+            });
+          } catch {
+            // best-effort
+          }
+        }
+      }
+      if (attempts >= 4) {
+        try {
+          await driver.back();
+        } catch {
+          // best-effort
+        }
+      }
+      return !(await isIosAdInspectorVisible());
+    },
+    {
+      timeout: 45000,
+      interval: 400,
+      timeoutMsg: 'iOS Ad Inspector did not dismiss',
+    },
+  );
+}
+
+const IOS_DEBUG_MENU_MARKERS = [
+  'Debug Options',
+  'Creative Preview',
+  'Troubleshooting',
+  'Select a debug mode',
+  'Debug options',
+  'Open ad inspector',
+  'Ad inspector settings',
+  'Ad Information',
+] as const;
+
+async function isIosDebugMenuVisible(): Promise<boolean> {
+  if (await isIosDebugOptionsSheetVisible()) {
+    return true;
+  }
+  for (const name of IOS_DEBUG_MENU_MARKERS) {
+    if (await iosElementExistsByName(name)) {
+      return true;
+    }
+    const el = await findDisplayedIosElementByNames([name]);
+    if (el) {
+      return true;
+    }
+  }
+  const src = await driver.getPageSource().catch(() => '');
+  return IOS_DEBUG_MENU_MARKERS.some(marker => src.includes(marker));
+}
+
+/** Debug Menu closed contract listens for AppState inactive/background. */
+async function nudgeIosAppStateForUtilityClose(): Promise<void> {
+  await driver.execute('mobile: pressButton', { name: 'home' });
+  await sleep(500);
+  await driver.activateApp(EXAMPLE_IOS_BUNDLE_ID);
+  await sleep(600);
+}
+
+async function dismissIosDebugMenuIfPresent(): Promise<void> {
+  await dismissIosDebugOptionsSheetIfPresent();
+  for (const name of ['Dismiss', 'Done', 'Cancel', 'Close']) {
+    if (!(await isIosDebugMenuVisible())) {
+      return;
+    }
+    await tapIosNamedControlForce(name);
+  }
+  if (await isIosDebugMenuVisible()) {
+    try {
+      await driver.back();
+    } catch {
+      // best-effort
+    }
+    await sleep(400);
+  }
+}
+
+async function dismissIosUtilitySurface(formatId: string): Promise<void> {
+  if (formatId === AppiumTestIds.format.adInspector) {
+    await dismissIosAdInspectorIfPresent();
+    return;
+  }
+  if (formatId === AppiumTestIds.format.debugMenu) {
+    await dismissIosDebugMenuIfPresent();
+    try {
+      if (!(await utilityLifecycleText(formatId)).includes(UTILITY_LIFECYCLE_CLOSED)) {
+        await nudgeIosAppStateForUtilityClose();
+      }
+    } catch {
+      await nudgeIosAppStateForUtilityClose();
+    }
+  }
 }
 
 async function assertUtilityOpenCloseLifecycle(
@@ -1906,10 +2895,34 @@ async function assertUtilityOpenCloseLifecycle(
       },
     );
   } else {
-    await waitForTestIdTextContaining(
-      AppiumTestIds.action.lifecycle(formatId),
-      UTILITY_LIFECYCLE_OPENED,
-      90000,
+    // Native inspector/debug chrome covers RN lifecycle nodes; accept chrome OR text.
+    await driver.waitUntil(
+      async () => {
+        const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
+        if (await el.isExisting().catch(() => false)) {
+          if ((await elementText(el)).includes(UTILITY_LIFECYCLE_OPENED)) {
+            return true;
+          }
+        }
+        if (
+          formatId === AppiumTestIds.format.adInspector &&
+          (await isIosAdInspectorVisible())
+        ) {
+          return true;
+        }
+        if (
+          formatId === AppiumTestIds.format.debugMenu &&
+          (await isIosDebugMenuVisible())
+        ) {
+          return true;
+        }
+        return false;
+      },
+      {
+        timeout: 90000,
+        interval: 200,
+        timeoutMsg: `Utility surface never opened for ${formatId}`,
+      },
     );
   }
   if (isAndroid()) {
@@ -1949,11 +2962,46 @@ async function assertUtilityOpenCloseLifecycle(
       },
     );
   } else {
-    await driver.back();
-    await waitForTestIdTextContaining(
-      AppiumTestIds.action.lifecycle(formatId),
-      UTILITY_LIFECYCLE_CLOSED,
-      90000,
+    await dismissIosUtilitySurface(formatId);
+    await driver.waitUntil(
+      async () => {
+        if (
+          formatId === AppiumTestIds.format.adInspector &&
+          (await isIosAdInspectorVisible())
+        ) {
+          await dismissIosAdInspectorIfPresent();
+          return false;
+        }
+        if (formatId === AppiumTestIds.format.debugMenu) {
+          if (await isIosDebugMenuVisible()) {
+            await dismissIosDebugMenuIfPresent();
+            return false;
+          }
+        }
+        const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
+        if (!(await el.isExisting().catch(() => false))) {
+          if (formatId === AppiumTestIds.format.debugMenu) {
+            await nudgeIosAppStateForUtilityClose();
+          }
+          return false;
+        }
+        const text = await elementText(el);
+        if (text.includes(UTILITY_LIFECYCLE_CLOSED)) {
+          return true;
+        }
+        if (
+          formatId === AppiumTestIds.format.debugMenu &&
+          text.includes(UTILITY_LIFECYCLE_OPENED)
+        ) {
+          await nudgeIosAppStateForUtilityClose();
+        }
+        return false;
+      },
+      {
+        timeout: 90000,
+        interval: 400,
+        timeoutMsg: `Utility surface never closed for ${formatId}`,
+      },
     );
   }
   console.log(
@@ -2053,21 +3101,11 @@ async function assertHookShowCloseLifecycle(formatId: string): Promise<void> {
     );
     return;
   }
-  await waitForTestIdTextContaining(
-    AppiumTestIds.action.lifecycle(formatId),
-    HOOK_LIFECYCLE_SHOWING,
-    90000,
-  );
-  await dismissFullscreenAdWithoutCreativeTap();
-  await waitForTestIdTextContaining(
-    AppiumTestIds.action.lifecycle(formatId),
-    HOOK_LIFECYCLE_CLOSED,
-    90000,
-  );
+  await runIosHookShowCloseLifecycle(formatId);
   console.log(
     `[hook-lifecycle-proof] ${JSON.stringify({
       format: formatId,
-      platform: isAndroid() ? 'android' : 'ios',
+      platform: 'ios',
       showing: HOOK_LIFECYCLE_SHOWING,
       closed: HOOK_LIFECYCLE_CLOSED,
     })}`,

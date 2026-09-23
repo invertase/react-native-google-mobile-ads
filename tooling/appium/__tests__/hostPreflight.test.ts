@@ -273,6 +273,29 @@ describe('hostPreflight', () => {
     assert.deepEqual(calls, [['simctl', 'bootstatus', 'booted-udid', '-b']]);
   });
 
+  test('treats concurrent already-Booted simctl race as success', () => {
+    const calls: string[][] = [];
+    bootAndPersistSelectedSimulator(
+      { udid: 'race-udid', state: 'Shutdown', runtimeVersion: '26.2' },
+      ['--github-env', '/tmp/github.env'],
+      (bin, args) => {
+        calls.push([bin, ...args]);
+        if (args[1] === 'boot') {
+          const err = Object.assign(new Error('Command failed: xcrun simctl boot race-udid'), {
+            status: 149,
+            stderr: 'Unable to boot device in current state: Booted',
+          });
+          throw err;
+        }
+      },
+      () => {},
+    );
+    assert.deepEqual(calls, [
+      ['xcrun', 'simctl', 'boot', 'race-udid'],
+      ['xcrun', 'simctl', 'bootstatus', 'race-udid', '-b'],
+    ]);
+  });
+
   test('fails clearly when --github-env or its path is missing', () => {
     assert.throws(() => requireGithubEnvPath([]), {
       message: SELECT_AND_BOOT_GITHUB_ENV_ERROR,

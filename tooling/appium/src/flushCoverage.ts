@@ -1,5 +1,6 @@
 import {
   backToGallery,
+  dismissIosBlockingOverlays,
   findByTestId,
   selectGallerySection,
   tapByTestId,
@@ -18,6 +19,7 @@ import { AppiumTestIds } from './testIds.ts';
  */
 export async function flushCoverageFromApp(): Promise<void> {
   try {
+    await dismissIosBlockingOverlays('flushCoverage:begin');
     const back = await findByTestId(AppiumTestIds.galleryBack);
     if (await back.isDisplayed().catch(() => false)) {
       await backToGallery();

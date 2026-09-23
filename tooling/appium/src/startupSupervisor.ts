@@ -21,8 +21,26 @@ export function metroBundleRequestUrl(port: number, platform: MetroBundlePlatfor
 }
 export const METRO_STARTUP_TIMEOUT_MS = 120_000;
 export const WORKER_STARTUP_TIMEOUT_MS = 60_000;
+/**
+ * Concurrent XCUITest session create (even with prebuilt+preinstalled WDA) can
+ * exceed the serial 60s worker/session ceiling under three-sim contention.
+ * iOS parallel children only (single-platform iOS parallel, or `ios:` sources in
+ * combined parallel). Serial iOS and every Android child stay on
+ * WORKER_STARTUP_TIMEOUT_MS — never raise Android via this constant.
+ */
+export const IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS = 180_000;
 export const APP_STARTUP_TIMEOUT_MS = 120_000;
 export const PROCESS_DRAIN_TIMEOUT_MS = 30_000;
+
+/**
+ * Per-source worker/session ceilings. A plain number applies to every expected
+ * child. Object form keeps Android (and unmatched labels) on `defaultMs` while
+ * prefix overrides cover iOS parallel children (`ios:` → 180s).
+ */
+export type WorkerStartupTimeoutOptions = {
+  defaultMs?: number;
+  byPrefix?: Readonly<Record<string, number>>;
+};
 
 type StartupPhase = 'metro' | 'worker' | 'app' | 'complete';
 
@@ -118,7 +136,7 @@ type Waiter = {
   phase: Exclude<StartupPhase, 'complete'>;
   resolve(): void;
   reject(error: Error): void;
-  timer: unknown;
+  timers: unknown[];
 };
 
 export class StartupSupervisor {
@@ -136,17 +154,40 @@ export class StartupSupervisor {
   private aborts = 0;
   phase: StartupPhase = 'metro';
 
+  private readonly defaultWorkerTimeoutMs: number;
+  private readonly workerTimeoutByPrefix: ReadonlyArray<readonly [string, number]>;
+
   constructor(
     expectedChildren: Iterable<string>,
     private readonly clock: StartupClock = realClock,
+    workerTimeout: number | WorkerStartupTimeoutOptions = WORKER_STARTUP_TIMEOUT_MS,
   ) {
     this.expected = new Set(expectedChildren);
+    if (typeof workerTimeout === 'number') {
+      this.defaultWorkerTimeoutMs = workerTimeout;
+      this.workerTimeoutByPrefix = [];
+    } else {
+      this.defaultWorkerTimeoutMs = workerTimeout.defaultMs ?? WORKER_STARTUP_TIMEOUT_MS;
+      this.workerTimeoutByPrefix = Object.entries(workerTimeout.byPrefix ?? {}).sort(
+        (left, right) => right[0].length - left[0].length,
+      );
+    }
     this.failure = new Promise<never>((_resolve, reject) => {
       this.rejectFailure = reject;
     });
     // A caller may use only phase promises; keep the diagnostic failure promise
     // from becoming an unhandled rejection in that valid usage.
     void this.failure.catch(() => undefined);
+  }
+
+  /** Resolved ceiling for one expected child label (e.g. `android:…` / `ios:…`). */
+  workerTimeoutFor(source: string): number {
+    for (const [prefix, milliseconds] of this.workerTimeoutByPrefix) {
+      if (source.startsWith(prefix)) {
+        return milliseconds;
+      }
+    }
+    return this.defaultWorkerTimeoutMs;
   }
 
   get abortCount(): number {
@@ -228,7 +269,29 @@ export class StartupSupervisor {
     if (this.phase !== 'worker') {
       return Promise.reject(new Error(`Cannot wait for workers during ${this.phase} phase.`));
     }
-    return this.waitFor('worker', WORKER_STARTUP_TIMEOUT_MS);
+    if (this.failed) return Promise.reject(this.failed);
+    if (this.waiter) return Promise.reject(new Error(`Already waiting for ${this.waiter.phase}.`));
+    // Per-source deadlines: Android stays at 60s even when iOS peers use 180s.
+    return new Promise((resolve, reject) => {
+      const timers: unknown[] = [];
+      for (const source of this.expected) {
+        const timeout = this.workerTimeoutFor(source);
+        timers.push(
+          this.clock.setTimeout(() => {
+            if (this.workers.has(source) && this.sessions.has(source)) {
+              return;
+            }
+            this.abort(
+              new Error(
+                `Timed out after ${timeout}ms waiting for worker startup readiness (${source}; ${this.progress('worker')}).`,
+              ),
+            );
+          }, timeout),
+        );
+      }
+      this.waiter = { phase: 'worker', resolve, reject, timers };
+      this.maybeResolve();
+    });
   }
 
   waitForApps(): Promise<void> {
@@ -252,9 +315,18 @@ export class StartupSupervisor {
           ),
         );
       }, timeout);
-      this.waiter = { phase, resolve, reject, timer };
+      this.waiter = { phase, resolve, reject, timers: [timer] };
       this.maybeResolve();
     });
+  }
+
+  private clearWaiterTimers(): void {
+    if (!this.waiter) {
+      return;
+    }
+    for (const timer of this.waiter.timers) {
+      this.clock.clearTimeout(timer);
+    }
   }
 
   private progress(phase: Exclude<StartupPhase, 'complete'>): string {
@@ -278,7 +350,7 @@ export class StartupSupervisor {
             this.sessions.size === this.expected.size
           : this.apps.size === this.expected.size;
     if (!ready) return;
-    this.clock.clearTimeout(waiter.timer);
+    this.clearWaiterTimers();
     this.waiter = undefined;
     this.phase = waiter.phase === 'metro' ? 'worker' : waiter.phase === 'worker' ? 'app' : 'complete';
     waiter.resolve();
@@ -289,7 +361,7 @@ export class StartupSupervisor {
     this.failed = error;
     this.aborts += 1;
     if (this.waiter) {
-      this.clock.clearTimeout(this.waiter.timer);
+      this.clearWaiterTimers();
       this.waiter.reject(error);
       this.waiter = undefined;
     }
