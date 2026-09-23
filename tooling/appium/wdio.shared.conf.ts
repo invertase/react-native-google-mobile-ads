@@ -33,6 +33,7 @@ export const config: Options.Testrunner = {
     ui: 'bdd',
     timeout: 180000,
     bail: true,
+    ...(process.env.RNGMA_MOCHA_GREP ? { grep: process.env.RNGMA_MOCHA_GREP } : {}),
   },
   onComplete(exitCode, _config, _capabilities, result) {
     const failed = result?.failed ?? 0;
