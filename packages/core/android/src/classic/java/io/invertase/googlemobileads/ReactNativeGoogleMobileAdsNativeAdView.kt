@@ -18,6 +18,8 @@ package io.invertase.googlemobileads
  */
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.view.View
 import android.widget.FrameLayout
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.uimanager.UIManagerHelper
@@ -30,15 +32,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Collections
+import java.util.WeakHashMap
 
 @SuppressLint("ViewConstructor")
 class ReactNativeGoogleMobileAdsNativeAdView(
   private val context: ReactContext,
 ) : FrameLayout(context) {
   val viewGroup = ReactViewGroup(context)
-  private val nativeAdView = NativeAdView(context)
+  private val nativeAdView = NativeAdView(sdkViewContext(context))
   private var nativeAd: NativeAd? = null
   private var reloadJob: Job? = null
+  private val sdkOwnedAssetViews: MutableSet<View> =
+    Collections.newSetFromMap(WeakHashMap())
 
   init {
     // Exclude the ad view hierarchy from instance state saving/restoring. Mediation
@@ -50,6 +56,7 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     isSaveFromParentEnabled = false
     nativeAdView.addView(viewGroup)
     addView(nativeAdView)
+    ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(nativeAdView, viewGroup)
   }
 
   fun setResponseId(responseId: String?) {
@@ -69,6 +76,14 @@ class ReactNativeGoogleMobileAdsNativeAdView(
   ) {
     val uiManager = UIManagerHelper.getUIManagerForReactTag(context, reactTag)
     val assetView = uiManager?.resolveView(reactTag) ?: return
+    registerResolvedAsset(assetType, assetView)
+  }
+
+  /** Test / shared path after a view has been resolved from a React tag. */
+  internal fun registerResolvedAsset(
+    assetType: String,
+    assetView: View,
+  ) {
     when (assetType) {
       "advertiser" -> nativeAdView.advertiserView = assetView
       "body" -> nativeAdView.bodyView = assetView
@@ -79,9 +94,27 @@ class ReactNativeGoogleMobileAdsNativeAdView(
       "starRating" -> nativeAdView.starRatingView = assetView
       "icon" -> nativeAdView.iconView = assetView
       "image" -> nativeAdView.imageView = assetView
-      "media" -> nativeAdView.mediaView = assetView as MediaView
+      "media" -> {
+        nativeAdView.mediaView = assetView as MediaView
+        reloadAd()
+        return
+      }
+      else -> {
+        reloadAd()
+        return
+      }
     }
+    // NativeAdView asset setters can mark the view clickable; clear after assign (#893 / iOS parity).
+    sdkOwnedAssetViews.add(assetView)
+    ReactNativeGoogleMobileAdsNativeAdClickOverlay.prepareAssetViewForSdkOwnedClicks(assetView)
     reloadAd()
+  }
+
+  private fun reapplySdkOwnedClicks() {
+    for (assetView in sdkOwnedAssetViews) {
+      ReactNativeGoogleMobileAdsNativeAdClickOverlay.prepareAssetViewForSdkOwnedClicks(assetView)
+    }
+    ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(nativeAdView, viewGroup)
   }
 
   private fun reloadAd() {
@@ -90,6 +123,8 @@ class ReactNativeGoogleMobileAdsNativeAdView(
       CoroutineScope(Dispatchers.Main).launch {
         delay(100)
         nativeAd?.let { nativeAdView.setNativeAd(it) }
+        // setNativeAd may re-enable clickable on assets; restore SDK click ownership (#893).
+        reapplySdkOwnedClicks()
         nativeAdView.rootView.requestLayout()
       }
   }
@@ -99,9 +134,15 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     post(measureAndLayout)
   }
 
+  /** Visible for tests / layout: keep GMA overlay above React content. */
+  internal fun ensureClickOverlayOnTop() {
+    ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(nativeAdView, viewGroup)
+  }
+
   fun destroy() {
     reloadJob?.cancel()
     reloadJob = null
+    sdkOwnedAssetViews.clear()
     nativeAdView.removeView(viewGroup)
     nativeAdView.destroy()
   }
@@ -113,5 +154,14 @@ class ReactNativeGoogleMobileAdsNativeAdView(
         MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY),
       )
       layout(left, top, right, bottom)
+      ensureClickOverlayOnTop()
     }
+
+  companion object {
+    /**
+     * Prefer the current Activity when constructing [NativeAdView] so click intents can start
+     * (same rationale as banner AdView construction).
+     */
+    internal fun sdkViewContext(reactContext: ReactContext): Context = reactContext.currentActivity ?: reactContext
+  }
 }
