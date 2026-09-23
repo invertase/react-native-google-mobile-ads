@@ -1071,6 +1071,16 @@ const HOOK_LIFECYCLE_CLOSED = 'status=closed';
 const UTILITY_LIFECYCLE_OPENED = 'Utility lifecycle: opened';
 const UTILITY_LIFECYCLE_CLOSED = 'Utility lifecycle: closed';
 
+/** Classic GMA + Next-Gen mobile SDK fullscreen AdActivity package markers. */
+const ANDROID_AD_ACTIVITY_MARKERS = [
+  'com.google.android.gms.ads.AdActivity',
+  'com.google.android.libraries.ads.mobile.sdk.common.AdActivity',
+] as const;
+
+function focusIncludesAndroidAdActivity(focus: string): boolean {
+  return ANDROID_AD_ACTIVITY_MARKERS.some(marker => focus.includes(marker));
+}
+
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
 async function tapAndroidShellFraction(fx: number, fy: number): Promise<void> {
@@ -1130,6 +1140,66 @@ async function dismissChromeFirstRunIfPresent(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Android immersive-mode coachmark ("Viewing full screen" / "Got it") over AdActivity.
+ * System education overlay — not ad chrome. Prefer text selectors; uiautomator dump often fails.
+ * Never HOME to clear it. Must not throw when the overlay is absent (WDIO `$` can throw).
+ */
+async function dismissAndroidImmersiveModeEducationIfPresent(): Promise<boolean> {
+  if (!isAndroid()) {
+    return false;
+  }
+  let hasViewing = false;
+  try {
+    const viewingEls = await $$('android=new UiSelector().textContains("Viewing full screen")');
+    for (const el of viewingEls) {
+      if (await el.isDisplayed().catch(() => false)) {
+        hasViewing = true;
+        break;
+      }
+    }
+  } catch {
+    hasViewing = false;
+  }
+  let hasGotIt = false;
+  try {
+    for (const selector of [
+      'android=new UiSelector().text("Got it")',
+      'android=new UiSelector().textContains("Got it")',
+    ]) {
+      const els = await $$(selector);
+      for (const el of els) {
+        if (await el.isDisplayed().catch(() => false)) {
+          hasGotIt = true;
+          break;
+        }
+      }
+      if (hasGotIt) {
+        break;
+      }
+    }
+  } catch {
+    hasGotIt = false;
+  }
+  if (!hasViewing && !hasGotIt) {
+    return false;
+  }
+  for (const fragment of ['text("Got it")', 'textContains("Got it")']) {
+    if (await tapAndroidSelectorIfDisplayed(`android=new UiSelector().${fragment}`)) {
+      logAndroidHostTrace('immersiveEducation.dismissed', {
+        via: fragment,
+        viewing: hasViewing,
+      });
+      await sleep(400);
+      return true;
+    }
+  }
+  if (hasViewing) {
+    logAndroidHostTrace('immersiveEducation.visible-no-tap', { viewing: true });
+  }
+  return false;
+}
+
 async function isAndroidExampleAppForeground(): Promise<boolean> {
   const focus = await androidWindowFocusDump();
   return focus.includes(EXAMPLE_ANDROID_PACKAGE);
@@ -1157,8 +1227,9 @@ async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
   }
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await dismissChromeFirstRunIfPresent();
+    await dismissAndroidImmersiveModeEducationIfPresent();
     const focus = await androidWindowFocusDump();
-    if (focus.includes('com.google.android.gms.ads.AdActivity')) {
+    if (focusIncludesAndroidAdActivity(focus)) {
       return;
     }
     if (focus.includes(EXAMPLE_ANDROID_PACKAGE)) {
@@ -1320,6 +1391,7 @@ async function dismissAndroidAdInspectorIfPresent(): Promise<void> {
     adActivity: await isAndroidAdActivityForeground(),
     visible: await isAndroidAdInspectorVisible(),
   });
+  await dismissAndroidImmersiveModeEducationIfPresent();
   await driver.waitUntil(
     async () => {
       if (!(await isAndroidAdActivityForeground())) {
@@ -1327,6 +1399,7 @@ async function dismissAndroidAdInspectorIfPresent(): Promise<void> {
         return true;
       }
       attempts += 1;
+      await dismissAndroidImmersiveModeEducationIfPresent();
       for (const fragment of [
         'descriptionContains("Close Ad Inspector")',
         'descriptionContains("Close ad inspector")',
@@ -1359,7 +1432,7 @@ async function dismissAndroidAdInspectorIfPresent(): Promise<void> {
 
 async function isAndroidAdActivityForeground(): Promise<boolean> {
   const focus = await androidWindowFocusDump();
-  if (!focus.includes('com.google.android.gms.ads.AdActivity')) {
+  if (!focusIncludesAndroidAdActivity(focus)) {
     return false;
   }
   return (
@@ -1420,6 +1493,7 @@ async function isAndroidInterstitialCloseChromeVisible(): Promise<boolean> {
 }
 
 async function tapAndroidInterstitialCloseAttempt(): Promise<void> {
+  await dismissAndroidImmersiveModeEducationIfPresent();
   if (await isAndroidAppOpenFeedChromeVisible()) {
     await dismissAndroidAppOpenFeedIfPresent();
     return;
@@ -1548,6 +1622,7 @@ async function utilityLifecycleText(formatId: string): Promise<string> {
  * Interstitial / Ad Inspector close — retry top-right chrome only while test ad copy is visible.
  */
 async function tapAndroidFullscreenCloseWithRetries(): Promise<void> {
+  await dismissAndroidImmersiveModeEducationIfPresent();
   if (!(await isAndroidAdActivityForeground())) {
     await ensureExampleAppInForeground();
   }
@@ -1566,6 +1641,7 @@ async function tapAndroidFullscreenCloseWithRetries(): Promise<void> {
   });
   await driver.waitUntil(
     async () => {
+      await dismissAndroidImmersiveModeEducationIfPresent();
       const adActivity = await isAndroidAdActivityForeground();
       const obstructing = await isAndroidFullscreenTestAdObstructing();
       if (!adActivity && !obstructing) {
@@ -1585,6 +1661,7 @@ async function tapAndroidFullscreenCloseWithRetries(): Promise<void> {
 }
 
 async function dismissAndroidUtilitySurface(formatId: string): Promise<void> {
+  await dismissAndroidImmersiveModeEducationIfPresent();
   if (formatId === AppiumTestIds.format.adInspector) {
     await dismissAndroidAdInspectorIfPresent();
     await bringExampleAppForwardOnceIfNeeded('dismissAndroidUtilitySurface.adInspector');
@@ -1609,9 +1686,11 @@ async function dismissAndroidUtilitySurface(formatId: string): Promise<void> {
 
 /** App Open Show can reach opened and closed while the feed chrome is still visible — observe opened first. */
 async function runAndroidAppOpenShowCloseLifecycle(formatId: string): Promise<void> {
+  await dismissAndroidImmersiveModeEducationIfPresent();
   await tapFormatAction(AppiumTestIds.action.show(formatId));
   await driver.waitUntil(
     async () => {
+      await dismissAndroidImmersiveModeEducationIfPresent();
       const phase = await safeShowLifecycleText(formatId);
       if (phase.includes(SHOW_LIFECYCLE_OPENED) || phase.includes(SHOW_LIFECYCLE_CLOSED)) {
         return true;
@@ -1667,6 +1746,7 @@ async function waitForAndroidShowActionEnabled(formatId: string, timeoutMs = 150
 
 /** Fullscreen interstitial / GAM show-close while RN lifecycle nodes may be off-tree. */
 async function runAndroidFullscreenShowCloseLifecycle(formatId: string): Promise<void> {
+  await dismissAndroidImmersiveModeEducationIfPresent();
   const showActionId = AppiumTestIds.action.show(formatId);
   const probesPerTap = 10;
   const probeIntervalMs = 400;
@@ -1677,6 +1757,7 @@ async function runAndroidFullscreenShowCloseLifecycle(formatId: string): Promise
     tap: number,
     probe: number,
   ): Promise<boolean> => {
+    await dismissAndroidImmersiveModeEducationIfPresent();
     const phase = await safeShowLifecycleText(formatId);
     const adActivity = probe % 2 === 0 ? await isAndroidAdActivityForeground() : false;
     const testAd =
@@ -1721,6 +1802,7 @@ async function runAndroidFullscreenShowCloseLifecycle(formatId: string): Promise
   await dismissFullscreenAdWithoutCreativeTap();
   await driver.waitUntil(
     async () => {
+      await dismissAndroidImmersiveModeEducationIfPresent();
       if (
         (await isAndroidFullscreenAdShowing()) ||
         (await isAndroidAdActivityForeground()) ||
@@ -1886,8 +1968,10 @@ async function assertUtilityOpenCloseLifecycle(
 
 async function runAndroidHookShowCloseLifecycle(formatId: string): Promise<void> {
   const isAppOpenHook = formatId === AppiumTestIds.format.appOpenHook;
+  await dismissAndroidImmersiveModeEducationIfPresent();
   await driver.waitUntil(
     async () => {
+      await dismissAndroidImmersiveModeEducationIfPresent();
       if (await isAndroidAdActivityForeground()) {
         return true;
       }
@@ -1926,6 +2010,7 @@ async function runAndroidHookShowCloseLifecycle(formatId: string): Promise<void>
   await dismissFullscreenAdWithoutCreativeTap();
   await driver.waitUntil(
     async () => {
+      await dismissAndroidImmersiveModeEducationIfPresent();
       if (isAppOpenHook && (await isAndroidAppOpenFeedChromeVisible())) {
         await dismissAndroidAppOpenFeedIfPresent();
         return false;
