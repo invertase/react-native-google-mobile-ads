@@ -109,6 +109,29 @@ function requestOutcomeLabel(state: RequestState): string {
   return `Request id: ${state.requestId}; Request attempt: ${state.attempt}; ${state.outcome}`;
 }
 
+type ShowLifecyclePhase = 'idle' | 'opened' | 'closed';
+
+function showLifecycleLabel(phase: ShowLifecyclePhase): string {
+  return `Show lifecycle: ${phase}`;
+}
+
+function hookLifecycleLabel(fields: {
+  status: string;
+  impression: boolean;
+  clicked: boolean;
+  earnedReward?: boolean;
+}): string {
+  const parts = [
+    `status=${fields.status}`,
+    `impression=${fields.impression}`,
+    `clicked=${fields.clicked}`,
+  ];
+  if (fields.earnedReward !== undefined) {
+    parts.push(`earned=${fields.earnedReward}`);
+  }
+  return `Hook lifecycle: ${parts.join('; ')}`;
+}
+
 const GALLERY_SECTION_CHIPS: Array<{ id: GallerySection; title: string }> = [
   { id: 'all', title: 'All' },
   { id: 'formats', title: 'Formats' },
@@ -292,6 +315,7 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
     attempt: 0,
     outcome: REQUEST_OUTCOME_PENDING,
   });
+  const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
 
   useEffect(() => {
     const adListener = props.mobileAd.addAdEventsListener(({ type, payload }) => {
@@ -306,6 +330,12 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
       if (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) {
         setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
       }
+      if (type === AdEventType.OPENED) {
+        setShowPhase('opened');
+      }
+      if (type === AdEventType.CLOSED) {
+        setShowPhase('closed');
+      }
     });
     return () => adListener();
   }, [props.mobileAd, props.type]);
@@ -317,6 +347,7 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
         testID={AppiumTestIds.action.load(props.formatId)}
         onPress={() => {
           try {
+            setShowPhase('idle');
             setRequestState(current => freshRequestState(current.attempt + 1));
             props.mobileAd.load();
           } catch (e) {
@@ -327,6 +358,9 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
       />
       <Text testID={AppiumTestIds.action.loaded(props.formatId)}>
         {requestOutcomeLabel(requestState)}
+      </Text>
+      <Text testID={AppiumTestIds.action.lifecycle(props.formatId)}>
+        {showLifecycleLabel(showPhase)}
       </Text>
       <Button
         title={`Show ${props.type} Ad`}
@@ -397,17 +431,31 @@ function BannerFormat(props: {
 }
 
 function CollapsibleBannerFormat() {
+  const formatId = AppiumTestIds.format.collapsibleBanner;
+  const [requestState, setRequestState] = useState<RequestState>(() => freshRequestState(1));
+
   return (
-    <View style={styles.testSpacing} testID={AppiumTestIds.format.collapsibleBanner}>
-      <BannerAd
-        unitId={TestIds.ADAPTIVE_BANNER}
-        size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
-        requestOptions={{
-          networkExtras: {
-            collapsible: 'top',
-          },
-        }}
-      />
+    <View style={styles.testSpacing} testID={formatId}>
+      <View testID={AppiumTestIds.action.rendered(formatId)} collapsable={false}>
+        <BannerAd
+          unitId={TestIds.ADAPTIVE_BANNER}
+          size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{
+            networkExtras: {
+              collapsible: 'top',
+            },
+          }}
+          onAdLoaded={() => {
+            setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
+          }}
+          onAdFailedToLoad={error => {
+            setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
+          }}
+        />
+      </View>
+      <Text testID={AppiumTestIds.action.loaded(formatId)}>
+        {requestOutcomeLabel(requestState)}
+      </Text>
     </View>
   );
 }
@@ -592,6 +640,9 @@ function InterstitialHookFormat() {
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.interstitialHook)}>
         Status: {status}
       </Text>
+      <Text testID={AppiumTestIds.action.lifecycle(AppiumTestIds.format.interstitialHook)}>
+        {hookLifecycleLabel({ status, impression, clicked })}
+      </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Interstitial"
@@ -636,6 +687,9 @@ function RewardedHookFormat() {
       />
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedHook)}>
         Status: {status}
+      </Text>
+      <Text testID={AppiumTestIds.action.lifecycle(AppiumTestIds.format.rewardedHook)}>
+        {hookLifecycleLabel({ status, impression, clicked, earnedReward })}
       </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
@@ -683,6 +737,9 @@ function RewardedInterstitialHookFormat() {
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedInterstitialHook)}>
         Status: {status}
       </Text>
+      <Text testID={AppiumTestIds.action.lifecycle(AppiumTestIds.format.rewardedInterstitialHook)}>
+        {hookLifecycleLabel({ status, impression, clicked, earnedReward })}
+      </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show Rewarded Interstitial"
@@ -723,6 +780,9 @@ function AppOpenHookFormat() {
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.appOpenHook)}>
         Status: {status}
       </Text>
+      <Text testID={AppiumTestIds.action.lifecycle(AppiumTestIds.format.appOpenHook)}>
+        {hookLifecycleLabel({ status, impression, clicked })}
+      </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
         title="Show App Open"
@@ -756,20 +816,31 @@ function GAMBannerFormat(props: {
 }) {
   const bannerRef = useRef<GAMBannerAd>(null);
   const formatId = AppiumTestIds.gamBannerVariant(gamSizesKey(props.sizes));
+  const [requestState, setRequestState] = useState<RequestState>(() => freshRequestState(1));
+
   return (
     <View style={styles.testSpacing} testID={formatId}>
-      <GAMBannerAd
-        ref={bannerRef}
-        unitId={props.unitId}
-        sizes={props.sizes}
-        requestOptions={{
-          requestNonPersonalizedAdsOnly: true,
-        }}
-        manualImpressionsEnabled={true}
-        onAdFailedToLoad={(error: Error) => {
-          console.log(`${Platform.OS} GAM banner error: ${error.message}`);
-        }}
-      />
+      <View testID={AppiumTestIds.action.rendered(formatId)} collapsable={false}>
+        <GAMBannerAd
+          ref={bannerRef}
+          unitId={props.unitId}
+          sizes={props.sizes}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+          }}
+          manualImpressionsEnabled={true}
+          onAdLoaded={() => {
+            setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
+          }}
+          onAdFailedToLoad={(error: Error) => {
+            setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
+            console.log(`${Platform.OS} GAM banner error: ${error.message}`);
+          }}
+        />
+      </View>
+      <Text testID={AppiumTestIds.action.loaded(formatId)}>
+        {requestOutcomeLabel(requestState)}
+      </Text>
       <Button
         title="recordManualImpression"
         testID={AppiumTestIds.action.recordImpression(formatId)}
@@ -782,11 +853,13 @@ function GAMBannerFormat(props: {
 }
 
 function GAMInterstitialFormat() {
+  const formatId = AppiumTestIds.format.gamInterstitial;
   const [requestState, setRequestState] = useState<RequestState>({
     requestId: 0,
     attempt: 0,
     outcome: REQUEST_OUTCOME_PENDING,
   });
+  const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
 
   useEffect(() => {
     const adListener = gamInterstitial.addAdEventsListener(({ type, payload }) => {
@@ -797,6 +870,12 @@ function GAMInterstitialFormat() {
       }
       if (type === AdEventType.LOADED) {
         setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
+      }
+      if (type === AdEventType.OPENED) {
+        setShowPhase('opened');
+      }
+      if (type === AdEventType.CLOSED) {
+        setShowPhase('closed');
       }
       if (type === GAMAdEventType.APP_EVENT) {
         console.log(`${Platform.OS} GAM interstitial app event: ${JSON.stringify(payload)}`);
@@ -812,6 +891,7 @@ function GAMInterstitialFormat() {
         testID={AppiumTestIds.action.load(AppiumTestIds.format.gamInterstitial)}
         onPress={() => {
           try {
+            setShowPhase('idle');
             setRequestState(current => freshRequestState(current.attempt + 1));
             gamInterstitial.load();
           } catch (e) {
@@ -822,6 +902,9 @@ function GAMInterstitialFormat() {
       />
       <Text testID={AppiumTestIds.action.loaded(AppiumTestIds.format.gamInterstitial)}>
         {requestOutcomeLabel(requestState)}
+      </Text>
+      <Text testID={AppiumTestIds.action.lifecycle(AppiumTestIds.format.gamInterstitial)}>
+        {showLifecycleLabel(showPhase)}
       </Text>
       <Button
         title="Show GAM Interstitial"
