@@ -280,7 +280,7 @@ Serial ports `:8081` and `:4725`, or the selected slot's computed Metro/Appium p
 
 The long-running owners enforce startup themselves: standalone Metro; serial or manual-slot Android/iOS Appium; single-platform owner or external-consumer parallel; and combined parallel. Startup advances only through these positive barriers:
 
-1. **Metro — 120 seconds:** task-owned Metro requires both its TCP listener and `Dev server ready`. An external consumer requires the already-supervised named Metro owner to be listening and monitors that listener through startup.
+1. **Metro — 120 seconds:** task-owned Metro requires both its TCP listener and `Dev server ready`. An external consumer prefetches `index.bundle` for the platform it is about to run (`platform=android|ios`, same query as CI) on the expected port; `/status` alone and a bare TCP accept are insufficient. It monitors listener loss through startup.
 2. **Worker/session — 60 seconds:** every Appium child must emit both WDIO worker-start evidence (`Execution of … workers started`) and evidence that its WebDriver/Appium session was created.
 3. **App — 120 seconds:** every child must emit `[e2e-startup-ready]`; each smoke spec emits it only after `waitForGalleryHome()` succeeds.
 

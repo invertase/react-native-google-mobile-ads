@@ -145,6 +145,8 @@ class MockRunner implements ParallelRunner {
     this.events.push(`listening:${port}`);
   }
 
+  probeExternalMetroBundle = async () => true;
+
   start(command: ChildCommand): RunningCommand {
     this.commands.push(command);
     this.events.push(`start:${command.role}`);

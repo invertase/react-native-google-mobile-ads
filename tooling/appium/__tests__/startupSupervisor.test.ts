@@ -23,8 +23,10 @@ import {
   hardFailureForLine,
   invocationPaths,
   iosDeviceLogCommand,
+  metroBundleRequestUrl,
   type StartupClock,
   waitForMetroReadiness,
+  waitForExternalMetroReadiness,
 } from '../src/startupSupervisor.ts';
 import type { RunningCommand } from '../src/parallelOrchestrator.ts';
 
@@ -189,6 +191,48 @@ test('Metro requires both TCP and authoritative marker and times out at 120 seco
   const rejected = assert.rejects(timeout.waitForMetro(), /120000ms.*tcp=false marker=false/);
   timeoutClock.advance(METRO_STARTUP_TIMEOUT_MS);
   await rejected;
+});
+
+test('external Metro requires platform bundle prefetch, not TCP or status alone', async () => {
+  const clock = new FakeClock();
+  const supervisor = new StartupSupervisor([], clock);
+  const waiting = waitForExternalMetroReadiness(supervisor, 9999, {
+    platform: 'android',
+    listen: async () => true,
+    probe: async () => false,
+    pollMs: 10,
+  });
+  supervisor.recordMetroTcpReady();
+  clock.advance(METRO_STARTUP_TIMEOUT_MS - 1);
+  assert.equal(supervisor.phase, 'metro');
+  const rejected = assert.rejects(
+    waiting,
+    /120000ms.*waiting for metro startup readiness \(tcp=true marker=false\)/,
+  );
+  clock.advance(1);
+  await rejected;
+});
+
+test('external Metro accepts platform bundle prefetch as the ready marker', async () => {
+  const supervisor = new StartupSupervisor([], new FakeClock());
+  await waitForExternalMetroReadiness(supervisor, 9999, {
+    platform: 'ios',
+    listen: async () => true,
+    probe: async () => true,
+    pollMs: 1,
+  });
+  assert.equal(supervisor.phase, 'worker');
+});
+
+test('metro bundle URL matches CI e2e workflow probes', async () => {
+  assert.equal(
+    metroBundleRequestUrl(8081, 'android'),
+    'http://127.0.0.1:8081/index.bundle?platform=android&dev=true&minify=false&inlineSourceMap=true',
+  );
+  assert.equal(
+    metroBundleRequestUrl(13007, 'ios'),
+    'http://127.0.0.1:13007/index.bundle?platform=ios&dev=true&minify=false&inlineSourceMap=true',
+  );
 });
 
 test('Metro marker is accepted only from the Metro source', async () => {
@@ -385,6 +429,7 @@ test('serial Appium owner arms abort and drain before WDIO spawn', async () => {
     'emulator-5554',
     {
       listen: async () => true,
+      probeMetroPackager: async () => true,
       paths: invocationPaths('serial-interrupt-test'),
       signalSource: signals,
       spawn: () => {

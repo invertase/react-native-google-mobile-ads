@@ -13,7 +13,10 @@ import {
   invocationPaths,
   iosDeviceLogCommand,
   waitForMetroReadiness,
+  waitForExternalMetroReadiness,
+  probeMetroPlatformBundle,
   type InvocationPaths,
+  type MetroPackagerProbe,
 } from './startupSupervisor.ts';
 
 export type ChildCommand = {
@@ -40,6 +43,8 @@ export type ParallelRunner = {
   readEnvFile(path: string): Promise<Record<string, string>>;
   copyFile(source: string, destination: string): Promise<void>;
   monitorPort?(port: number): RunningCommand;
+  /** Test seam: skip real Metro bundle prefetch in mock orchestrator runs. */
+  probeExternalMetroBundle?: MetroPackagerProbe;
 };
 
 /** Stable summary code for signal interruption, child-signal death, and sibling cancellation. */
@@ -392,8 +397,11 @@ async function runConcurrentPhase(
       );
     } else {
       await runner.assertPortListening(metroEntry.metroPort);
-      startup.recordLine('metro', 'Dev server ready');
-      await waitForMetroReadiness(startup, async () => undefined);
+      await waitForExternalMetroReadiness(startup, metroEntry.metroPort, {
+        platform,
+        listen: async () => true,
+        probe: runner.probeExternalMetroBundle ?? probeMetroPlatformBundle,
+      });
       console.log(
         `[e2e-startup] invocation=${paths.id} phase=external-metro-ready endpoint=127.0.0.1:${metroEntry.metroPort}`,
       );
