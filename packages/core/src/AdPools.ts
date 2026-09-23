@@ -25,7 +25,7 @@ import {
   registerAdPool,
   startNativePool,
 } from './internal/adPoolRegistry';
-import { MobileAds } from './MobileAds';
+import { MobileAds, ensureMobileAdsInitialized } from './MobileAds';
 import type { AdPool, AdPoolConfig, AdPoolsApi } from './types/AdPool';
 import { createPoolAdError, validateAdPoolConfig } from './validateAdPoolConfig';
 import { AdFormat } from './types/AdFormat';
@@ -131,6 +131,8 @@ const adPools: InternalAdPoolsApi = {
         if (!isCurrentAdPoolCreation(resolved.poolId, generation)) {
           return;
         }
+
+        await ensureMobileAdsInitialized();
 
         const pool = await startNativePool(resolved, generation);
         if (!isCurrentAdPoolCreation(resolved.poolId, generation)) {

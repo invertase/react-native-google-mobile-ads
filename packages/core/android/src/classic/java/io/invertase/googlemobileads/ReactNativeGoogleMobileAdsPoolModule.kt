@@ -19,6 +19,7 @@ package io.invertase.googlemobileads
 
 import com.facebook.fbreact.specs.NativeGoogleMobileAdsPoolModuleSpec
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
@@ -146,11 +147,25 @@ class ReactNativeGoogleMobileAdsPoolModule(
   ) {
     val activity = reactApplicationContext.currentActivity
     if (activity == null) {
-      ReactNativeModule.rejectPromiseWithCodeAndMessage(
-        promise,
-        "null-activity",
-        "Pool start requires a current Activity.",
-      )
+      val listener =
+        object : LifecycleEventListener {
+          override fun onHostResume() {
+            reactApplicationContext.removeLifecycleEventListener(this)
+            poolStart(preloadId, format, generation, adUnitId, bufferSize, requestOptions, promise)
+          }
+
+          override fun onHostPause() {}
+
+          override fun onHostDestroy() {
+            reactApplicationContext.removeLifecycleEventListener(this)
+            ReactNativeModule.rejectPromiseWithCodeAndMessage(
+              promise,
+              "null-activity",
+              "Pool start requires a current Activity.",
+            )
+          }
+        }
+      reactApplicationContext.addLifecycleEventListener(listener)
       return
     }
     val size = bufferSize.toInt().coerceAtLeast(1)
@@ -295,11 +310,25 @@ class ReactNativeGoogleMobileAdsPoolModule(
     }
     val activity = reactApplicationContext.currentActivity
     if (activity == null) {
-      ReactNativeModule.rejectPromiseWithCodeAndMessage(
-        promise,
-        "null-activity",
-        "Pool poll requires a current Activity.",
-      )
+      val listener =
+        object : LifecycleEventListener {
+          override fun onHostResume() {
+            reactApplicationContext.removeLifecycleEventListener(this)
+            poolPoll(preloadId, format, generation, requestId, adUnitId, promise)
+          }
+
+          override fun onHostPause() {}
+
+          override fun onHostDestroy() {
+            reactApplicationContext.removeLifecycleEventListener(this)
+            ReactNativeModule.rejectPromiseWithCodeAndMessage(
+              promise,
+              "null-activity",
+              "Pool poll requires a current Activity.",
+            )
+          }
+        }
+      reactApplicationContext.addLifecycleEventListener(listener)
       return
     }
     val reqId = requestId.toInt()
@@ -316,12 +345,18 @@ class ReactNativeGoogleMobileAdsPoolModule(
               resolveEmptyPoll(promise)
               return@runOnUiThread
             }
-            val module =
-              reactApplicationContext.getNativeModule(
-                ReactNativeGoogleMobileAdsAppOpenModule::class.java,
-              )
-            module?.adoptPolledAd(reqId, adUnitId, ad)
-            resolveFilledPoll(promise, reqId, ad.responseInfo)
+            adoptPolledFullscreenAdOrReject(
+              ReactNativeGoogleMobileAdsAppOpenModule.NAME,
+              {
+                reactApplicationContext.getNativeModule(
+                  ReactNativeGoogleMobileAdsAppOpenModule::class.java,
+                )
+              },
+              reqId,
+              adUnitId,
+              ad,
+              promise,
+            ) { resolveFilledPoll(promise, reqId, ad.responseInfo) }
           }
           "interstitial" -> {
             val ad: InterstitialAd? = InterstitialAdPreloader.pollAd(preloadId)
@@ -329,12 +364,18 @@ class ReactNativeGoogleMobileAdsPoolModule(
               resolveEmptyPoll(promise)
               return@runOnUiThread
             }
-            val module =
-              reactApplicationContext.getNativeModule(
-                ReactNativeGoogleMobileAdsInterstitialModule::class.java,
-              )
-            module?.adoptPolledAd(reqId, adUnitId, ad)
-            resolveFilledPoll(promise, reqId, ad.responseInfo)
+            adoptPolledFullscreenAdOrReject(
+              ReactNativeGoogleMobileAdsInterstitialModule.NAME,
+              {
+                reactApplicationContext.getNativeModule(
+                  ReactNativeGoogleMobileAdsInterstitialModule::class.java,
+                )
+              },
+              reqId,
+              adUnitId,
+              ad,
+              promise,
+            ) { resolveFilledPoll(promise, reqId, ad.responseInfo) }
           }
           "rewarded" -> {
             val ad: RewardedAd? = RewardedAdPreloader.pollAd(preloadId)
@@ -342,12 +383,18 @@ class ReactNativeGoogleMobileAdsPoolModule(
               resolveEmptyPoll(promise)
               return@runOnUiThread
             }
-            val module =
-              reactApplicationContext.getNativeModule(
-                ReactNativeGoogleMobileAdsRewardedModule::class.java,
-              )
-            module?.adoptPolledAd(reqId, adUnitId, ad)
-            resolveFilledPoll(promise, reqId, ad.responseInfo)
+            adoptPolledFullscreenAdOrReject(
+              ReactNativeGoogleMobileAdsRewardedModule.NAME,
+              {
+                reactApplicationContext.getNativeModule(
+                  ReactNativeGoogleMobileAdsRewardedModule::class.java,
+                )
+              },
+              reqId,
+              adUnitId,
+              ad,
+              promise,
+            ) { resolveFilledPoll(promise, reqId, ad.responseInfo) }
           }
           else -> {
             ReactNativeModule.rejectPromiseWithCodeAndMessage(

@@ -112,6 +112,14 @@ class ReactNativeGoogleMobileAdsFullScreenModulesTest {
     assertTrue(module.events.isEmpty())
   }
 
+  @Test
+  fun fullscreenModuleRegistersForPoolPollLookup() {
+    val module = CapturingFullScreenModule()
+    assertEquals(module, FullscreenAdModuleRefs.resolve("test") { null })
+    module.invalidate()
+    assertEquals(null, FullscreenAdModuleRefs.get("test"))
+  }
+
   private inline fun <reified T> assertModule(name: String) {
     val info = packageUnderTest.getReactModuleInfoProvider().getReactModuleInfos()[name]
     assertNotNull(info)
