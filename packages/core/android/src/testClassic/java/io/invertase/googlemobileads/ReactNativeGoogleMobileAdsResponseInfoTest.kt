@@ -49,12 +49,14 @@ class ReactNativeGoogleMobileAdsResponseInfoTest {
     bundle.putString("creative_id", "creative-1")
     bundle.putString("line_item_id", "line-9")
     bundle.putString("secret_credential", "should-drop")
+    bundle.putInt("mediation_ab_test_variant", 7)
     bundle.putString("mediation_ab_test_name", "")
 
     val extras = ReactNativeGoogleMobileAdsResponseInfo.allowlistedExtrasMap(bundle)
     assertEquals("group-a", extras["mediationGroupName"])
     assertEquals("creative-1", extras["creativeId"])
     assertEquals("line-9", extras["lineItemId"])
+    assertEquals("7", extras["mediationAbTestVariant"])
     assertFalse(extras.containsKey("secret_credential"))
     assertFalse(extras.containsKey("mediationAbTestName"))
   }
