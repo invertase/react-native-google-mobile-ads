@@ -65,7 +65,11 @@ subprojects { subproject ->
         }
         subproject.android {
             buildTypes.debug {
-                testCoverageEnabled true
+                // AGP app-wide coverage rewrites dependency bytecode. The Next-Gen SDK's
+                // video metadata handler then fails Android 16 verification while parsing a
+                // valid ad response. The library project remains instrumented by
+                // rn-coverage.gradle, which is the production code this harness measures.
+                testCoverageEnabled project.findProperty("RNGMA_ANDROID_BACKEND") != "nextgen"
             }
         }
         subproject.apply from: new File(rnCoverageRoot, "android/rn-coverage-jacoco.gradle")

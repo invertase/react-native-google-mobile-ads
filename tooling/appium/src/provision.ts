@@ -7,7 +7,7 @@ export type ProvisionCommand = {
   input?: string;
 };
 
-const ANDROID_SYSTEM_IMAGE_PREFIX = 'system-images;android-36;google_apis';
+const ANDROID_SYSTEM_IMAGE_PREFIX = 'system-images;android-36;google_apis_playstore';
 export const IOS_DEVICE_TYPE_NAME = 'iPhone 17';
 
 export function androidSystemImage(architecture: string): string {

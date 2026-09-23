@@ -103,14 +103,14 @@ describe('create-only slot provisioning', () => {
     );
   });
 
-  test('selects deterministic API 36 google_apis images by host architecture', () => {
+  test('selects deterministic API 36 Play Store images by host architecture', () => {
     assert.equal(
       androidSystemImage('arm64'),
-      'system-images;android-36;google_apis;arm64-v8a',
+      'system-images;android-36;google_apis_playstore;arm64-v8a',
     );
     assert.equal(
       androidSystemImage('x64'),
-      'system-images;android-36;google_apis;x86_64',
+      'system-images;android-36;google_apis_playstore;x86_64',
     );
   });
 
@@ -124,7 +124,7 @@ describe('create-only slot provisioning', () => {
     assert.deepEqual(commands, [
       {
         bin: 'sdkmanager',
-        args: ['system-images;android-36;google_apis;arm64-v8a'],
+        args: ['system-images;android-36;google_apis_playstore;arm64-v8a'],
       },
       {
         bin: 'avdmanager',
@@ -134,7 +134,7 @@ describe('create-only slot provisioning', () => {
           '--name',
           'TestingAVD-1',
           '--package',
-          'system-images;android-36;google_apis;arm64-v8a',
+          'system-images;android-36;google_apis_playstore;arm64-v8a',
           '--device',
           'pixel_9',
         ],
@@ -144,7 +144,7 @@ describe('create-only slot provisioning', () => {
   });
 
   test('installs and creates with the x64 host image', () => {
-    const image = 'system-images;android-36;google_apis;x86_64';
+    const image = 'system-images;android-36;google_apis_playstore;x86_64';
     const missing = androidProvisionCommands({
       slot: 2,
       architecture: 'x64',
@@ -171,7 +171,7 @@ describe('create-only slot provisioning', () => {
         slot: 1,
         architecture: 'arm64',
         avdNames: ['TestingAVD-1', 'TestingAVD-1-Detox', 'unrelated'],
-        installedPackages: ['system-images;android-36;google_apis;x86_64'],
+        installedPackages: ['system-images;android-36;google_apis_playstore;x86_64'],
       }),
       [],
     );
@@ -251,7 +251,10 @@ describe('create-only slot provisioning', () => {
       'emulator -list-avds',
       'sdkmanager --list_installed',
     ]);
-    assert.match(calls[2] ?? '', /sdkmanager system-images;android-36;google_apis;arm64-v8a/);
+    assert.match(
+      calls[2] ?? '',
+      /sdkmanager system-images;android-36;google_apis_playstore;arm64-v8a/,
+    );
     assert.match(calls[3] ?? '', /avdmanager create avd --name TestingAVD-6/);
   });
 

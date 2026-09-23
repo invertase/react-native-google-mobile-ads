@@ -25,7 +25,7 @@ function firstCapability(config: { capabilities?: unknown }): Capability {
 // unchanged versionCode was skipped and a stale native app ran against fresh Metro JS
 // (surfacing as `getSdkVersion() is unavailable`). enforceAppInstall forces a reinstall.
 test('android capabilities force a fresh app install', async () => {
-  const { config } = await import('../wdio.android.conf.ts');
+  const { config, prepareAndroidApp } = await import('../wdio.android.conf.ts');
   const cap = firstCapability(config);
   assert.equal(cap['appium:enforceAppInstall'], true, 'expected appium:enforceAppInstall to be true');
   // noReset stays false so per-session app data is still reset.
@@ -36,10 +36,9 @@ test('android capabilities force a fresh app install', async () => {
     'expected app launch only after instrumentation startup',
   );
   assert.equal(typeof config.before, 'function', 'expected a post-session Android launch hook');
+  const adbCalls: string[][] = [];
   const startupCalls: Array<{ operation: string; value: unknown }> = [];
-  await (config.before as NonNullable<typeof config.before>)(
-    cap,
-    [],
+  await prepareAndroidApp(
     {
       execute: async (command: string, options: unknown) => {
         startupCalls.push({ operation: command, value: options });
@@ -47,8 +46,32 @@ test('android capabilities force a fresh app install', async () => {
       activateApp: async (packageName: string) => {
         startupCalls.push({ operation: 'activateApp', value: packageName });
       },
-    } as never,
+    },
+    'emulator-5554',
+    (bin, args) => {
+      adbCalls.push([bin, ...args]);
+      return args.at(-1) === '--list'
+        ? 'emulator-5554 tcp:8081 tcp:8081\n'
+        : '';
+    },
   );
+  assert.deepEqual(adbCalls, [
+    ['adb', '-s', 'emulator-5554', 'reverse', 'tcp:8081', 'tcp:8081'],
+    ['adb', '-s', 'emulator-5554', 'reverse', '--list'],
+    [
+      'adb',
+      '-s',
+      'emulator-5554',
+      'shell',
+      'toybox',
+      'nc',
+      '-w',
+      '5',
+      '-z',
+      '127.0.0.1',
+      '8081',
+    ],
+  ]);
   assert.equal(startupCalls[0]?.operation, 'mobile: shell');
   assert.deepEqual(
     (startupCalls[0]?.value as { command: string; args: string[] }).args.slice(0, 3),
@@ -68,6 +91,27 @@ test('android capabilities force a fresh app install', async () => {
     operation: 'activateApp',
     value: 'com.microsoft.reacttestapp',
   });
+});
+
+test('android startup fails before launch when the post-session reverse is absent', async () => {
+  const { prepareAndroidApp } = await import('../wdio.android.conf.ts');
+  let appTouched = false;
+  await assert.rejects(
+    prepareAndroidApp(
+      {
+        execute: async () => {
+          appTouched = true;
+        },
+        activateApp: async () => {
+          appTouched = true;
+        },
+      },
+      'emulator-5554',
+      () => '',
+    ),
+    /did not retain the required tcp:8081 reverse/,
+  );
+  assert.equal(appTouched, false, 'app launch must not proceed without the reverse');
 });
 
 test('ios capabilities force a fresh app install', async () => {

@@ -1,13 +1,71 @@
 import type { Options } from '@wdio/types';
+import { execFileSync } from 'node:child_process';
 import {
   EXAMPLE_ANDROID_ACTIVITY,
   EXAMPLE_ANDROID_PACKAGE,
   androidDebugApkPath,
 } from './src/formats.ts';
+import {
+  ensureAndroidMetroReverse,
+  type AndroidExec,
+} from './src/hostPreflight.ts';
 import { runtimeResources } from './src/slots.ts';
 import { config as shared } from './wdio.shared.conf.ts';
 
 const runtime = runtimeResources('android');
+
+type AndroidStartupBrowser = {
+  execute(command: string, options: unknown): Promise<unknown>;
+  activateApp(packageName: string): Promise<unknown>;
+};
+
+const systemAndroidExec: AndroidExec = (bin, args) =>
+  execFileSync(bin, args, {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'inherit'],
+    timeout: 10_000,
+  });
+
+export async function prepareAndroidApp(
+  browser: AndroidStartupBrowser,
+  serial = process.env.RNGMA_ANDROID_UDID,
+  execFile: AndroidExec = systemAndroidExec,
+): Promise<void> {
+  if (!serial) {
+    throw new Error('RNGMA_ANDROID_UDID is required for Android Appium startup.');
+  }
+  // UiAutomator2 session creation may restart adb transport while installing/resetting
+  // the app. Re-establish and prove the reverse after that work, immediately before
+  // launch, so a pre-session success cannot leave the app redboxed on fresh AVDs.
+  ensureAndroidMetroReverse(serial, execFile, runtime.metroPort);
+  console.log(
+    `Android device ${serial} retained this checkout's Metro reverse through session setup on tcp:${runtime.metroPort}.`,
+  );
+
+  // Appium clears app data during session creation, so establish the selected device's
+  // reversed localhost as React Native's debug host only after that reset, then launch.
+  const preferences = `<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map><string name='debug_http_host'>127.0.0.1:${runtime.metroPort}</string></map>`;
+  const encodedPreferences = Buffer.from(preferences).toString('base64');
+  await browser.execute('mobile: shell', {
+    command: 'run-as',
+    args: [
+      EXAMPLE_ANDROID_PACKAGE,
+      'mkdir',
+      '-p',
+      'shared_prefs',
+    ],
+  });
+  await browser.execute('mobile: shell', {
+    command: 'run-as',
+    args: [
+      EXAMPLE_ANDROID_PACKAGE,
+      'sh',
+      '-c',
+      `'echo ${encodedPreferences} | base64 -d > shared_prefs/${EXAMPLE_ANDROID_PACKAGE}_preferences.xml'`,
+    ],
+  });
+  await browser.activateApp(EXAMPLE_ANDROID_PACKAGE);
+}
 
 /**
  * Android Appium smoke (UiAutomator2).
@@ -17,29 +75,7 @@ const runtime = runtimeResources('android');
 export const config: Options.Testrunner = {
   ...shared,
   async before(_capabilities, _specs, browser) {
-    // Appium clears app data during session creation, so establish the selected device's
-    // reversed localhost as React Native's debug host only after that reset, then launch.
-    const preferences = `<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map><string name='debug_http_host'>127.0.0.1:${runtime.metroPort}</string></map>`;
-    const encodedPreferences = Buffer.from(preferences).toString('base64');
-    await browser.execute('mobile: shell', {
-      command: 'run-as',
-      args: [
-        EXAMPLE_ANDROID_PACKAGE,
-        'mkdir',
-        '-p',
-        'shared_prefs',
-      ],
-    });
-    await browser.execute('mobile: shell', {
-      command: 'run-as',
-      args: [
-        EXAMPLE_ANDROID_PACKAGE,
-        'sh',
-        '-c',
-        `'echo ${encodedPreferences} | base64 -d > shared_prefs/${EXAMPLE_ANDROID_PACKAGE}_preferences.xml'`,
-      ],
-    });
-    await browser.activateApp(EXAMPLE_ANDROID_PACKAGE);
+    await prepareAndroidApp(browser);
   },
   capabilities: [
     {

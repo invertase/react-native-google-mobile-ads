@@ -35,12 +35,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Single CI image: API 36 google_apis (Play services, no Play Store login).
-        # API 29 google_apis intermittently fails native loads with SDK internal-error 0
-        # ("Click actions were not properly specified") on both AdMob and GAM test units.
+        # Native fill/render validation requires a Play Store-enabled image.
+        # google_apis images return SDK internal-error 0 for Native while other formats load.
         api-level: [36]
         arch: [x86_64]
-        target: [google_apis]
+        target: [google_apis_playstore]
         first-boot-delay: [600]
         # This is useful for benchmarking, do 0, 1, 2, etc (up to 256 max job-per-matrix limit) for averages
         iteration: [0]

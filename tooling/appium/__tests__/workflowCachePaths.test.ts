@@ -33,13 +33,12 @@ test('every repo-relative workflow cache path resolves inside this checkout', ()
   }
 });
 
-test('Android e2e CI uses a single API 36 google_apis image', () => {
+test('Android e2e CI uses a single API 36 Play Store image', () => {
   const source = readFileSync(join(workflowDir, 'tests_e2e_android.yml'), 'utf8');
   const matrix = source.slice(source.indexOf('matrix:'), source.indexOf('steps:'));
   assert.match(matrix, /api-level: \[36\]/);
-  assert.match(matrix, /target: \[google_apis\]/);
+  assert.match(matrix, /target: \[google_apis_playstore\]/);
   assert.doesNotMatch(matrix, /api-level: \[29\]/);
-  assert.doesNotMatch(matrix, /playstore/);
 });
 
 test('the Pods cache stores the same ios directory its key hashes', () => {
