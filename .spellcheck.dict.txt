@@ -50,6 +50,7 @@ FCM
 firebase
 Firebase
 Firestore
+FlatList
 GDPR
 globals
 Gradle
