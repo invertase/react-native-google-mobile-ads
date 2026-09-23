@@ -84,17 +84,41 @@ function isDisplayPooledAd(ad: PooledAd): boolean {
   return ad.format === AdFormat.BANNER || ad.format === AdFormat.NATIVE;
 }
 
+type FullscreenPooledAd = Extract<
+  PooledAd,
+  {
+    format:
+      | AdFormat.INTERSTITIAL
+      | AdFormat.REWARDED
+      | AdFormat.REWARDED_INTERSTITIAL
+      | AdFormat.APP_OPEN;
+  }
+>;
+
+function isFullscreenPooledAd(ad: PooledAd): ad is FullscreenPooledAd {
+  return (
+    ad.format === AdFormat.INTERSTITIAL ||
+    ad.format === AdFormat.REWARDED ||
+    ad.format === AdFormat.REWARDED_INTERSTITIAL ||
+    ad.format === AdFormat.APP_OPEN
+  );
+}
+
 const hookWrappedShowKey = Symbol('rngmaHookWrappedShow');
 
-type HookWrappedFullscreen = PooledAd & {
+type HookWrappedFullscreen = FullscreenPooledAd & {
   [hookWrappedShowKey]?: (options?: AdShowOptions) => Promise<void>;
 };
 
 function restoreHookWrappedShow(ad: PooledAd): void {
-  const original = (ad as HookWrappedFullscreen)[hookWrappedShowKey];
+  if (!isFullscreenPooledAd(ad)) {
+    return;
+  }
+  const wrapped = ad as HookWrappedFullscreen;
+  const original = wrapped[hookWrappedShowKey];
   if (original) {
-    ad.show = original;
-    delete (ad as HookWrappedFullscreen)[hookWrappedShowKey];
+    wrapped.show = original;
+    delete wrapped[hookWrappedShowKey];
   }
 }
 
@@ -309,13 +333,8 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
           watchStale(result.ad);
 
           // Wrap show so hook-owned successful show → consumed (fullscreen only).
-          if (
-            result.ad.format === AdFormat.INTERSTITIAL ||
-            result.ad.format === AdFormat.REWARDED ||
-            result.ad.format === AdFormat.REWARDED_INTERSTITIAL ||
-            result.ad.format === AdFormat.APP_OPEN
-          ) {
-            const fullscreen = result.ad;
+          if (isFullscreenPooledAd(result.ad)) {
+            const fullscreen = result.ad as HookWrappedFullscreen;
             const originalShow = fullscreen.show.bind(fullscreen);
             (fullscreen as HookWrappedFullscreen)[hookWrappedShowKey] = originalShow;
             fullscreen.show = async (options?: AdShowOptions) => {
