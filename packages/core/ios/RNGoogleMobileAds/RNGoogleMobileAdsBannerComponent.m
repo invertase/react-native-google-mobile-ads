@@ -19,6 +19,7 @@
 
 #import "RNGoogleMobileAdsBannerComponent.h"
 #import <React/RCTLog.h>
+#import "RNGoogleMobileAdsBannerEventMapping.h"
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
 
@@ -192,15 +193,24 @@
 }
 
 - (void)bannerViewWillPresentScreen:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdOpened" payload:nil];
+  [self sendEvent:
+            [RNGoogleMobileAdsBannerEventMapping
+                nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackWillPresentScreen]
+          payload:nil];
 }
 
 - (void)bannerViewDidRecordImpression:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdImpression" payload:nil];
+  [self sendEvent:[RNGoogleMobileAdsBannerEventMapping
+                      nativeEventTypeForCallback:
+                          RNGoogleMobileAdsBannerDelegateCallbackDidRecordImpression]
+          payload:nil];
 }
 
 - (void)bannerViewDidRecordClick:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdClicked" payload:nil];
+  [self sendEvent:
+            [RNGoogleMobileAdsBannerEventMapping
+                nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackDidRecordClick]
+          payload:nil];
 }
 
 - (void)bannerViewWillDismissScreen:(GADBannerView *)bannerView {
@@ -208,7 +218,10 @@
 }
 
 - (void)bannerViewDidDismissScreen:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdClosed" payload:nil];
+  [self sendEvent:
+            [RNGoogleMobileAdsBannerEventMapping
+                nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackDidDismissScreen]
+          payload:nil];
 }
 
 - (void)adView:(nonnull GADBannerView *)banner

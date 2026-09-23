@@ -81,7 +81,10 @@ export interface BannerAdProps {
   onAdFailedToLoad?: (error: Error & Partial<AdErrorPayload>) => void;
 
   /**
-   * The ad is now visible to the user.
+   * Called when a full-screen overlay is about to be presented after a banner
+   * click (in-app browser / interstitial overlay). Not every click presents an
+   * overlay — on iOS many creatives leave the app without this callback. Use
+   * `onAdClicked` to observe every recorded click.
    */
   onAdOpened?: () => void;
 
@@ -91,12 +94,14 @@ export interface BannerAdProps {
   onAdImpression?: () => void;
 
   /**
-   * Called when a click is recorded for an ad
+   * Called when a click is recorded for an ad. Prefer this over `onAdOpened`
+   * when counting taps or hiding the banner after N clicks.
    */
   onAdClicked?: () => void;
 
   /**
-   * Called when the user is about to return to the app after tapping on an ad.
+   * Called when a full-screen overlay presented after a banner click has been
+   * dismissed and the user returns to the app.
    */
   onAdClosed?: () => void;
 
