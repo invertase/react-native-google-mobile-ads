@@ -124,7 +124,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
   lower(
     'AppOpenAd',
     'class',
-    'The example and Appium suite only navigate to App Open controls. Jest covers load/show lifecycle mapping; automated creative display or clicking is deliberately excluded.',
+    'The example exposes structured load outcomes and show-lifecycle markers on LoadableAdControls. Jest covers load/show lifecycle mapping; automated creative display or clicking is deliberately excluded until a later Appium contract asserts those surfaces.',
   ),
   outcome('BannerAd', 'component', {
     contractId: SMOKE_BANNER_VARIANT,
@@ -151,7 +151,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
   lower(
     'GAMBannerAd',
     'component',
-    'The example only opens GAM banner containers. recordManualImpression() can prove invocation in lower-layer tests but can never prove server-side impression recording.',
+    'The example renders GAM banner variants with request-outcome text and a measurable rendered wrapper; recordManualImpression() can prove invocation in lower-layer tests but can never prove server-side impression recording.',
   ),
   staticToken('GAMBannerAdSize'),
   outcome('GAMInterstitialAd', 'class', {
@@ -242,7 +242,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
   lower(
     'RewardedAd',
     'class',
-    'The example and Appium suite only navigate to Rewarded controls. Jest covers lifecycle/reward mapping; Appium does not show or click ad creatives.',
+    'The example exposes structured load outcomes and show-lifecycle markers on LoadableAdControls. Jest covers lifecycle/reward mapping; Appium does not show or click ad creatives until a later contract asserts those surfaces.',
   ),
   lower(
     'RewardedAdEventType',
@@ -252,7 +252,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
   lower(
     'RewardedInterstitialAd',
     'class',
-    'The example and Appium suite only navigate to Rewarded Interstitial controls. Jest covers lifecycle/reward mapping; Appium does not show or click creatives.',
+    'The example exposes structured load outcomes and show-lifecycle markers on LoadableAdControls. Jest covers lifecycle/reward mapping; Appium does not show or click creatives until a later contract asserts those surfaces.',
   ),
   excluded(
     'SDK_VERSION',
@@ -268,7 +268,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
   lower(
     'useAppOpenAd',
     'hook',
-    'The hook screen is navigation-only today. Jest covers state transitions and listener cleanup; Appium does not show an App Open creative.',
+    'The App Open hook screen exposes hook status and lifecycle markers via stable testIDs. Jest covers state transitions and listener cleanup; Appium does not show an App Open creative or assert hook state transitions yet.',
   ),
   lower(
     'useForeground',
@@ -278,19 +278,19 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
   lower(
     'useInterstitialAd',
     'hook',
-    'The hook screen is navigation-only today. Jest covers load/status/listener transitions; no hook state transition is currently asserted by Appium.',
+    'The interstitial hook screen exposes hook status and lifecycle markers via stable testIDs. Jest covers load/status/listener transitions; no hook state transition is currently asserted by Appium.',
   ),
   absent('useMultiFormatAd', 'hook'),
   absent('usePooledAd', 'hook'),
   lower(
     'useRewardedAd',
     'hook',
-    'The hook screen is navigation-only today. Jest covers load/reward/status transitions; Appium does not show a creative to earn a reward.',
+    'The rewarded hook screen exposes hook status, earned flags, and lifecycle markers via stable testIDs. Jest covers load/reward/status transitions; Appium does not show a creative to earn a reward or assert hook transitions yet.',
   ),
   lower(
     'useRewardedInterstitialAd',
     'hook',
-    'The hook screen is navigation-only today. Jest covers load/reward/status transitions; Appium does not show a creative to earn a reward.',
+    'The rewarded interstitial hook screen exposes hook status, earned flags, and lifecycle markers via stable testIDs. Jest covers load/reward/status transitions; Appium does not show a creative to earn a reward or assert hook transitions yet.',
   ),
 ] as const;
 

@@ -46,6 +46,8 @@ export const AppiumTestIds = {
     reload: (formatId: string) => `${formatId}.reload`,
     loaded: (formatId: string) => `${formatId}.loaded`,
     rendered: (formatId: string) => `${formatId}.rendered`,
+    /** Fullscreen show / dismiss phases and hook-side impression markers (manual QA + future Appium). */
+    lifecycle: (formatId: string) => `${formatId}.lifecycle`,
     recordImpression: (formatId: string) => `${formatId}.record-impression`,
   },
   /** Open a format from the gallery home list. */
