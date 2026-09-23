@@ -1,3 +1,31 @@
+## [17.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v17.0.0...v17.1.0) (2026-09-23)
+
+### Features
+
+* **android, plugin:** add build-time GMA Next-Gen SDK selection ([ea64ecc](https://github.com/invertase/react-native-google-mobile-ads/commit/ea64ecce96815cb08efbff302c93f26d769101aa))
+* **android:** implement GMA Next-Gen native backend ([be2b79b](https://github.com/invertase/react-native-google-mobile-ads/commit/be2b79b8b79a8c52d5c7e1775cef4b72c1b5183c))
+* **appium:** add scoped resource check and release ([37902c4](https://github.com/invertase/react-native-google-mobile-ads/commit/37902c40ab91470a99f8ef644f50b99dbde917ca))
+* **appium:** add shared e2e slots ([5341473](https://github.com/invertase/react-native-google-mobile-ads/commit/534147320f44f2a491547e439145558a8071c23e))
+* **appium:** run smoke tests in parallel ([fb494e1](https://github.com/invertase/react-native-google-mobile-ads/commit/fb494e16e7a9da89b841ae2aab7751bacabcd8f1))
+* **appium:** share Metro across parallel platforms ([cc9c585](https://github.com/invertase/react-native-google-mobile-ads/commit/cc9c585b8d216f5a59b404fa2b8f70bef72ed5b6))
+* **codegen:** commit generated artifacts from pinned toolchain ([0952166](https://github.com/invertase/react-native-google-mobile-ads/commit/0952166bf18c55e6751c4684c08bf4df9f016833))
+
+### Bug Fixes
+
+* **appium:** auto-load GAM banner remount retries ([808579d](https://github.com/invertase/react-native-google-mobile-ads/commit/808579d4069bdd0d7219418267a8ce26b67cde8f))
+* **appium:** build Android once for parallel runs ([884e446](https://github.com/invertase/react-native-google-mobile-ads/commit/884e446a4ced10921a2b004c7284fc10784df3e8))
+* **appium:** fail fast on e2e startup errors ([f6edbb5](https://github.com/invertase/react-native-google-mobile-ads/commit/f6edbb511076de37e603c0386544e2c78b2b5070))
+* **appium:** point Jacoco checkpoints at classic Android sources ([7254d89](https://github.com/invertase/react-native-google-mobile-ads/commit/7254d894ca65529f5e55d0b246694676ef85c18a))
+* **appium:** prefetch Metro bundle before external consumers ([1392b94](https://github.com/invertase/react-native-google-mobile-ads/commit/1392b94bd0ed45a4a5f925a09988ca3296726f08))
+* **core:** narrow fullscreen pooled ad before restoring show ([067764f](https://github.com/invertase/react-native-google-mobile-ads/commit/067764f665c805b7b256687da0edf98cf0fdec6c))
+* **core:** restore released pooled show and align pool Jest timing ([0e96bb3](https://github.com/invertase/react-native-google-mobile-ads/commit/0e96bb3a7fd1cd2105d00584e120382b554fad83))
+* **core:** stabilize pooled fullscreen poll and show lifecycle ([25ee9ba](https://github.com/invertase/react-native-google-mobile-ads/commit/25ee9ba3c5a19066e4c7f925b7e46a821148aabe))
+* **example:** wire pool provider and gate probe polling ([2a08fff](https://github.com/invertase/react-native-google-mobile-ads/commit/2a08fff47831c4ab9e681af604941e0fd1922f6f))
+
+### Performance Improvements
+
+* **appium:** speed up local e2e runs ([1475c2a](https://github.com/invertase/react-native-google-mobile-ads/commit/1475c2a4d83c2fd6f31029083d511419496aad54))
+
 ## [17.0.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v16.5.0...v17.0.0) (2026-09-18)
 
 ### ⚠ BREAKING CHANGES

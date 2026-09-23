@@ -1,6 +1,6 @@
 {
   "name": "@react-native-google-mobile-ads/pangle",
-  "version": "17.0.0",
+  "version": "17.1.0",
   "description": "Pangle (ByteDance) Google Mobile Ads (GAM) mediation adapter for react-native-google-mobile-ads. Links the official Google mediation adapter on Android and iOS; does not add JS ad APIs.",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "license": "Apache-2.0",

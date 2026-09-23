@@ -1967,7 +1967,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - RNGoogleMobileAds (17.0.0):
+  - RNGoogleMobileAds (17.1.0):
     - Google-Mobile-Ads-SDK (= 13.6.0)
     - GoogleUserMessagingPlatform (= 3.1.0)
     - hermes-engine
@@ -2255,7 +2255,7 @@ SPEC CHECKSUMS:
   FBLazyVector: b3e7ad108f0d882e30445c5527d774e3fd432f3d
   Google-Mobile-Ads-SDK: 6e501ace4af8d63e967bd45497c8b2b05821163d
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
-  hermes-engine: 9e7870821b0919410ec70d024a3d151753b69712
+  hermes-engine: 078ab4357ee4b75ecdf2e35618b66d298b2bc72d
   RCTDeprecation: 2a74a2c57675e64419bd89078efde81f7c1de90b
   RCTRequired: 30451112e6fef4e6f31b4e7eee0845156e35e4b0
   RCTSwiftUI: 5aaf0b07e747ba749dc6acc94d8bd41eea4b570f
@@ -2333,7 +2333,7 @@ SPEC CHECKSUMS:
   ReactTestApp-DevSupport: 407a6f0915350eeaabb7e9d51fbe17873d836f36
   ReactTestApp-Resources: 1bd9ff10e4c24f2ad87101a32023721ae923bccf
   RNGMATesting: 28354db6165b9a432abd9f0284f21a446ef93e11
-  RNGoogleMobileAds: 2fe4e788be62a3c3f07076ae3226e1caf6fedcbd
+  RNGoogleMobileAds: 3639312037914801e329b270feabeafcbbdc913d
   Yoga: fe50ab299e578f397fef753cf309c6703a4db29b
 
 PODFILE CHECKSUM: 3f74a53ed7040f8be2bc71c72a44a17e52428ed8
