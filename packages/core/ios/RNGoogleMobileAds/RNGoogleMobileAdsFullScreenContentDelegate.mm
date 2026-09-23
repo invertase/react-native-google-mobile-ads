@@ -19,6 +19,7 @@
 
 #import "RNGoogleMobileAdsFullScreenContentDelegate.h"
 #import "RNGoogleMobileAdsCommon.h"
+#import "RNGoogleMobileAdsFullScreenEventDelivery.h"
 
 @implementation RNGoogleMobileAdsFullScreenContentDelegate
 
@@ -39,18 +40,40 @@
 
 - (void)ad:(id<GADFullScreenPresentingAd>)ad
     didFailToPresentFullScreenContentWithError:(NSError *)error {
-  if (self.onTerminal) {
-    self.onTerminal();
-  }
   NSDictionary *errorInfo = [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"show"];
-  [self sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_ERROR error:errorInfo data:nil];
+  __weak __typeof(self) weakSelf = self;
+  [RNGoogleMobileAdsFullScreenEventDelivery
+      deliverTerminalEventWithEmit:^{
+        __strong __typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+          return;
+        }
+        [strongSelf sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_ERROR error:errorInfo data:nil];
+      }
+      evict:^{
+        __strong __typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf.onTerminal) {
+          strongSelf.onTerminal();
+        }
+      }];
 }
 
 - (void)adDidDismissFullScreenContent:(id<GADFullScreenPresentingAd>)ad {
-  if (self.onTerminal) {
-    self.onTerminal();
-  }
-  [self sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_CLOSED error:nil data:nil];
+  __weak __typeof(self) weakSelf = self;
+  [RNGoogleMobileAdsFullScreenEventDelivery
+      deliverTerminalEventWithEmit:^{
+        __strong __typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+          return;
+        }
+        [strongSelf sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_CLOSED error:nil data:nil];
+      }
+      evict:^{
+        __strong __typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf.onTerminal) {
+          strongSelf.onTerminal();
+        }
+      }];
 }
 
 - (void)adDidRecordClick:(id<GADFullScreenPresentingAd>)ad {

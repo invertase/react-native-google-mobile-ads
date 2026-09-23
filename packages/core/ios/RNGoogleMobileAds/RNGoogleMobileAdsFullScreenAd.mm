@@ -19,7 +19,21 @@
 
 #import "RNGoogleMobileAdsFullScreenAd.h"
 #import "RNGoogleMobileAdsCommon.h"
+#import "RNGoogleMobileAdsFullScreenEventDelivery.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
+
+#import <objc/runtime.h>
+
+static const void *kRNGoogleMobileAdsFullScreenDelegateKey =
+    &kRNGoogleMobileAdsFullScreenDelegateKey;
+
+static void RNGoogleMobileAdsRetainFullScreenDelegate(id ad, id delegate) {
+  // GADFullScreenPresentingAd.fullScreenContentDelegate is weak; pin the
+  // delegate to the ad for the presentation lifetime so map eviction / races
+  // cannot nil it before GMA finishes calling through (#880).
+  objc_setAssociatedObject(ad, kRNGoogleMobileAdsFullScreenDelegateKey, delegate,
+                           OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
 @implementation RNGoogleMobileAdsFullScreenAd
 
@@ -47,6 +61,11 @@
   NSInteger next = [self.generationMap[key] integerValue] + 1;
   NSNumber *generation = @(next);
   self.generationMap[key] = generation;
+  id ad = self.adMap[key];
+  if (ad != nil) {
+    objc_setAssociatedObject(ad, kRNGoogleMobileAdsFullScreenDelegateKey, nil,
+                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  }
   [self.adMap removeObjectForKey:key];
   [self.delegateMap removeObjectForKey:key];
   return generation;
@@ -58,6 +77,11 @@
 
 - (void)evictRequestId:(int)requestId {
   NSNumber *key = @(requestId);
+  id ad = self.adMap[key];
+  if (ad != nil) {
+    objc_setAssociatedObject(ad, kRNGoogleMobileAdsFullScreenDelegateKey, nil,
+                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  }
   [self.adMap removeObjectForKey:key];
   [self.delegateMap removeObjectForKey:key];
 }
@@ -66,6 +90,11 @@
   NSNumber *key = @(requestId);
   NSInteger next = [self.generationMap[key] integerValue] + 1;
   self.generationMap[key] = @(next);
+  id ad = self.adMap[key];
+  if (ad != nil) {
+    objc_setAssociatedObject(ad, kRNGoogleMobileAdsFullScreenDelegateKey, nil,
+                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  }
   [self.adMap removeObjectForKey:key];
   [self.delegateMap removeObjectForKey:key];
 }
@@ -128,6 +157,7 @@
   }
 
   ad.fullScreenContentDelegate = delegate;
+  RNGoogleMobileAdsRetainFullScreenDelegate(ad, delegate);
   self.adMap[key] = ad;
   self.delegateMap[key] = delegate;
 }
@@ -267,8 +297,10 @@
           eventType = GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED;
           GADAdReward *adReward =
               [(GADRewardedAd *)ad adReward] ?: [(GADRewardedInterstitialAd *)ad adReward];
-          data[@"type"] = adReward.type;
-          data[@"amount"] = adReward.amount;
+          NSDictionary *rewardPayload =
+              [RNGoogleMobileAdsFullScreenEventDelivery rewardEventDataWithType:adReward.type
+                                                                         amount:adReward.amount];
+          [data addEntriesFromDictionary:rewardPayload];
         }
 
         NSDictionary *responseInfo =
@@ -282,6 +314,7 @@
         }
 
         ad.fullScreenContentDelegate = delegate;
+        RNGoogleMobileAdsRetainFullScreenDelegate(ad, delegate);
         strongSelf.adMap[@(requestId)] = ad;
         strongSelf.delegateMap[@(requestId)] = delegate;
 
@@ -325,31 +358,47 @@
   } else if ([ad isKindOfClass:[GADInterstitialAd class]]) {
     [(GADInterstitialAd *)ad presentFromRootViewController:viewController];
   } else if ([ad isKindOfClass:[GADRewardedAd class]]) {
-    [(GADRewardedAd *)ad presentFromRootViewController:viewController
-                              userDidEarnRewardHandler:^{
-                                NSDictionary *rewardData = @{
-                                  @"type" : [(GADRewardedAd *)ad adReward].type,
-                                  @"amount" : [(GADRewardedAd *)ad adReward].amount
-                                };
-                                [self sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD
-                                        requestId:requestId
-                                         adUnitId:adUnitId
-                                            error:nil
-                                             data:rewardData];
-                              }];
+    GADRewardedAd *rewardedAd = (GADRewardedAd *)ad;
+    // Snapshot at present — adReward is fixed at load; avoids retaining `ad` in
+    // the earn handler and survives post-dismiss eviction (#880).
+    NSDictionary *rewardData = [RNGoogleMobileAdsFullScreenEventDelivery
+        rewardEventDataWithType:rewardedAd.adReward.type
+                         amount:rewardedAd.adReward.amount];
+    __weak __typeof(self) weakSelf = self;
+    [rewardedAd presentFromRootViewController:viewController
+                     userDidEarnRewardHandler:^{
+                       [RNGoogleMobileAdsFullScreenEventDelivery dispatchAsyncOnMainQueue:^{
+                         __strong __typeof(weakSelf) strongSelf = weakSelf;
+                         if (!strongSelf) {
+                           return;
+                         }
+                         [strongSelf sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD
+                                       requestId:requestId
+                                        adUnitId:adUnitId
+                                           error:nil
+                                            data:rewardData];
+                       }];
+                     }];
   } else if ([ad isKindOfClass:[GADRewardedInterstitialAd class]]) {
-    [(GADRewardedInterstitialAd *)ad
+    GADRewardedInterstitialAd *rewardedInterstitialAd = (GADRewardedInterstitialAd *)ad;
+    NSDictionary *rewardData = [RNGoogleMobileAdsFullScreenEventDelivery
+        rewardEventDataWithType:rewardedInterstitialAd.adReward.type
+                         amount:rewardedInterstitialAd.adReward.amount];
+    __weak __typeof(self) weakSelf = self;
+    [rewardedInterstitialAd
         presentFromRootViewController:viewController
              userDidEarnRewardHandler:^{
-               NSDictionary *rewardData = @{
-                 @"type" : [(GADRewardedInterstitialAd *)ad adReward].type,
-                 @"amount" : [(GADRewardedInterstitialAd *)ad adReward].amount
-               };
-               [self sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD
-                       requestId:requestId
-                        adUnitId:adUnitId
-                           error:nil
-                            data:rewardData];
+               [RNGoogleMobileAdsFullScreenEventDelivery dispatchAsyncOnMainQueue:^{
+                 __strong __typeof(weakSelf) strongSelf = weakSelf;
+                 if (!strongSelf) {
+                   return;
+                 }
+                 [strongSelf sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD
+                               requestId:requestId
+                                adUnitId:adUnitId
+                                   error:nil
+                                    data:rewardData];
+               }];
              }];
   }
 

@@ -15,6 +15,8 @@
 		A1000000000000000000000D /* RNGoogleMobileAdsPoolGeneration.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000E /* RNGoogleMobileAdsPoolGeneration.m */; };
 		A10000000000000000000014 /* RNGoogleMobileAdsNativeAssetInteractionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* RNGoogleMobileAdsNativeAssetInteractionTests.m */; };
 		A10000000000000000000016 /* RNGoogleMobileAdsNativeAssetInteraction.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* RNGoogleMobileAdsNativeAssetInteraction.m */; };
+		A10000000000000000000019 /* RNGoogleMobileAdsFullScreenEventDeliveryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* RNGoogleMobileAdsFullScreenEventDeliveryTests.m */; };
+		A1000000000000000000001B /* RNGoogleMobileAdsFullScreenEventDelivery.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* RNGoogleMobileAdsFullScreenEventDelivery.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +32,9 @@
 		A10000000000000000000015 /* RNGoogleMobileAdsNativeAssetInteractionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsNativeAssetInteractionTests.m; sourceTree = "<group>"; };
 		A10000000000000000000017 /* RNGoogleMobileAdsNativeAssetInteraction.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsNativeAssetInteraction.m; sourceTree = "<group>"; };
 		A10000000000000000000018 /* RNGoogleMobileAdsNativeAssetInteraction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNGoogleMobileAdsNativeAssetInteraction.h; sourceTree = "<group>"; };
+		A1000000000000000000001A /* RNGoogleMobileAdsFullScreenEventDeliveryTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsFullScreenEventDeliveryTests.m; sourceTree = "<group>"; };
+		A1000000000000000000001C /* RNGoogleMobileAdsFullScreenEventDelivery.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsFullScreenEventDelivery.m; sourceTree = "<group>"; };
+		A1000000000000000000001D /* RNGoogleMobileAdsFullScreenEventDelivery.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNGoogleMobileAdsFullScreenEventDelivery.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +65,7 @@
 				A10000000000000000000007 /* RNGoogleMobileAdsOwnedMappersTests.m */,
 				A1000000000000000000000C /* RNGoogleMobileAdsPoolGenerationTests.m */,
 				A10000000000000000000015 /* RNGoogleMobileAdsNativeAssetInteractionTests.m */,
+				A1000000000000000000001A /* RNGoogleMobileAdsFullScreenEventDeliveryTests.m */,
 			);
 			name = Tests;
 			path = Tests;
@@ -82,6 +88,8 @@
 				A1000000000000000000000E /* RNGoogleMobileAdsPoolGeneration.m */,
 				A10000000000000000000018 /* RNGoogleMobileAdsNativeAssetInteraction.h */,
 				A10000000000000000000017 /* RNGoogleMobileAdsNativeAssetInteraction.m */,
+				A1000000000000000000001D /* RNGoogleMobileAdsFullScreenEventDelivery.h */,
+				A1000000000000000000001C /* RNGoogleMobileAdsFullScreenEventDelivery.m */,
 			);
 			name = RNGoogleMobileAds;
 			path = RNGoogleMobileAds;
@@ -150,6 +158,8 @@
 				A1000000000000000000000D /* RNGoogleMobileAdsPoolGeneration.m in Sources */,
 				A10000000000000000000014 /* RNGoogleMobileAdsNativeAssetInteractionTests.m in Sources */,
 				A10000000000000000000016 /* RNGoogleMobileAdsNativeAssetInteraction.m in Sources */,
+				A10000000000000000000019 /* RNGoogleMobileAdsFullScreenEventDeliveryTests.m in Sources */,
+				A1000000000000000000001B /* RNGoogleMobileAdsFullScreenEventDelivery.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
