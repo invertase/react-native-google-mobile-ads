@@ -1,0 +1,184 @@
+# GMA Next-Gen SDK (Android)
+
+Google publishes a rewritten Google Mobile Ads SDK for Android,
+[GMA Next-Gen SDK](https://developers.google.com/admob/android/next-gen/quick-start),
+as a replacement for the classic `com.google.android.gms:play-services-ads` artifact
+("Google Mobile Ads SDK (Legacy)"). `react-native-google-mobile-ads` can build against
+either Android SDK at **native build time**. The public JavaScript API stays the same;
+capability differences are reported through `getAdCapabilities()`.
+
+<Warning>
+  In **v17**, classic Android is the default and Next-Gen is **opt-in**. The selection is
+  Android-only — there is no GMA Next-Gen SDK for iOS. In **v18**, the default flips to Next-Gen;
+  classic remains available through the same toggle as an escape hatch.
+</Warning>
+
+## Version defaults
+
+| Library major | Android default | Other backend               |
+| ------------- | --------------- | --------------------------- |
+| v17           | classic         | Next-Gen via opt-in         |
+| v18           | Next-Gen        | classic via the same toggle |
+
+The flag spellings and Gradle property name do not change between majors — only the
+default when the flag is omitted.
+
+## Why you might switch
+
+GMA Next-Gen is Google's rewritten Android Mobile Ads SDK and the intended long-term
+successor to classic `play-services-ads`. Most apps see no functional change today.
+Under Next-Gen, this library reports fuller fullscreen preload support and SDK-managed
+pool peek on Android (see [Detecting the linked backend](#detecting-the-linked-backend)).
+
+## Mediation and Google Ad Manager
+
+### AdMob-hosted mediation
+
+Next-Gen works with **no mediation** or with **AdMob as the mediation host**. The
+scoped adapter packages (`@react-native-google-mobile-ads/<network>`) read the same
+backend selection as core. When Next-Gen is selected, each adapter excludes transitive
+`play-services-ads` / `play-services-ads-lite` so classic and Next-Gen artifacts do not
+coexist on the classpath. Adapter Maven coordinates stay the Google-published
+`com.google.ads.mediation:*` artifacts.
+
+### Non-AdMob mediation hosts
+
+Mediation hosts that are **not** AdMob (for example AppLovin MAX) **cannot** select
+Next-Gen. Stay on classic Android for those apps.
+
+### Google Ad Manager
+
+Google Ad Manager is supported under Next-Gen. Ad Manager unit IDs (paths starting with
+`/`, for example `/6499/example/native-advanced`) load through the same request builders
+as AdMob unit IDs, including custom targeting, publisher-provided ID, and app events.
+There is no separate GAM code path and no GAM rejection.
+
+See also [Mediation](/mediation).
+
+## Enabling Next-Gen (v17) or selecting a backend
+
+Accepted flag values: `classic`, `legacy`, and `nextgen`.
+
+- `classic` and `legacy` are synonyms; both select classic Android.
+- `nextgen` selects GMA Next-Gen.
+- Internal source sets and the JS `backend` value use `classic` /
+  `android-classic` (never `legacy`).
+
+Precedence for bare React Native: Gradle project property
+`-PRNGMA_ANDROID_BACKEND=…`, then the `RNGMA_ANDROID_BACKEND` entry in
+`android/gradle.properties`, then `android_sdk` in the
+`react-native-google-mobile-ads` block of `app.json`. When nothing is set, v17
+defaults to classic.
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+```json
+// <project-root>/app.json
+{
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "android_sdk": "nextgen"
+  }
+}
+```
+
+You can also set the Gradle property without editing `app.json` (useful for one-off
+local builds):
+
+```bash
+cd android && ./gradlew assembleDebug -PRNGMA_ANDROID_BACKEND=nextgen
+```
+
+Or permanently in `android/gradle.properties`:
+
+```properties
+RNGMA_ANDROID_BACKEND=nextgen
+```
+
+</TabItem>
+<TabItem value="expo">
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "androidSdk": "nextgen"
+        }
+      ]
+    ]
+  }
+}
+```
+
+The Expo config plugin writes `RNGMA_ANDROID_BACKEND` into `gradle.properties`.
+
+</TabItem>
+</Tabs>
+
+Rebuild native Android after changing the setting (`npx expo prebuild --clean` for Expo,
+or a clean Gradle rebuild for bare React Native).
+
+In v18, omit the flag to get Next-Gen by default, or set `classic` / `legacy` to keep
+the classic backend.
+
+## What does not change
+
+Your JavaScript / TypeScript call sites stay the same: create / load / show, banners,
+native ads, pools, multi-format, consent, and Ad Inspector share one API regardless of
+which Android SDK was linked. Branch on `getAdCapabilities()` only when you need
+capability-aware UI or diagnostics — do not fork app code per backend for ordinary load
+and show.
+
+## Detecting the linked backend
+
+```ts
+import { getAdCapabilities } from 'react-native-google-mobile-ads';
+
+const { backend, sdkVersion } = getAdCapabilities();
+// backend: 'ios' | 'android-classic' | 'android-next-gen'
+```
+
+`backend` is a native build-time constant exposed through TurboModule constants. It
+cannot change while the app is running. On iOS it is always `'ios'`.
+
+Notable Android Next-Gen capability differences versus classic (same JS API):
+
+| Capability                                              | `android-classic` | `android-next-gen` |
+| ------------------------------------------------------- | ----------------- | ------------------ |
+| Fullscreen preload (App Open / Interstitial / Rewarded) | `experimental`    | `supported`        |
+| Rewarded interstitial preload                           | `unavailable`     | `unavailable`      |
+| Display (banner / native) preload                       | `emulated`        | `emulated`         |
+| SDK-managed pool `peekResponseInfo`                     | `unavailable`     | `supported`        |
+
+Prefer presets over hand-rolled capability matrices. See the
+[v17 API reference](/rngma-v17-api-reference#capability-discovery-new) and
+[Preload pools diagnostics](/preload-pools-and-multiformat-recipes#diagnostics-dump).
+
+## Native SDK version overrides
+
+Classic and Next-Gen pins are separate entries in the React Native Gradle version map:
+
+| Map key                      | Package default field                        | Artifact                      |
+| ---------------------------- | -------------------------------------------- | ----------------------------- |
+| `googleMobileAds.sdk`        | `sdkVersions.android.googleMobileAds`        | `play-services-ads` (classic) |
+| `googleMobileAds.nextGenSdk` | `sdkVersions.android.googleMobileAdsNextGen` | `ads-mobile-sdk` (Next-Gen)   |
+| `ads.consent`                | `sdkVersions.android.googleUmp`              | User Messaging Platform       |
+
+Overrides select a version of the **already chosen** backend; they do not flip classic ↔
+Next-Gen. Backend selection is the flag above. Details:
+[Native SDK version overrides](/migrating-to-v17#native-sdk-version-overrides).
+
+## Requirements
+
+Next-Gen requires `minSdkVersion` 24+ and a modern `compileSdkVersion`, matching this
+library's Android baseline (min API 24; supported host compile / target API 36). Kotlin
+1.9+ is already required by the library. No extra host action is needed beyond selecting
+the backend and rebuilding.

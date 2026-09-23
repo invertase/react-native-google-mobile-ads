@@ -30,6 +30,14 @@ packages do not change that SDK pin. If you must override the package's supporte
 follow [Native SDK version overrides](/migrating-to-v17#native-sdk-version-overrides)
 and test the app-owned combination.
 
+### Android Next-Gen and mediation hosts
+
+When the Android build selects [GMA Next-Gen](/next-gen-sdk), the scoped adapter
+packages exclude transitive classic `play-services-ads` / `play-services-ads-lite`
+so only Next-Gen is on the classpath. AdMob-hosted mediation is supported; **non-AdMob
+mediation hosts** (for example AppLovin MAX) cannot select Next-Gen — stay on classic
+Android for those apps. Google Ad Manager unit IDs remain supported under Next-Gen.
+
 <Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
 <TabItem value="bare">
 
