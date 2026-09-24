@@ -52,12 +52,15 @@ const NativeFacebookAdapter: NativeFacebookAdapterModule =
 /**
  * Set Meta Audience Network advertiser tracking (iOS ATT flag) before GMA initialize.
  *
- * On iOS this calls `FBAdSettings.setAdvertiserTrackingEnabled`. On Android this is a
- * documented no-op — Meta's Android `AdSettings` has no advertiser-tracking setter
+ * On iOS this calls `FBAdSettings.setAdvertiserTrackingEnabled`. On **iOS 17+** with
+ * Audience Network **6.15.0+**, Meta’s `FBAdSettings.h` marks that setter deprecated and
+ * unused — the SDK reads `ATTrackingManager.trackingAuthorizationStatus` instead. On Android
+ * this is a documented no-op — Meta's Android `AdSettings` has no advertiser-tracking setter
  * (audience-network-sdk 6.22.0).
  *
- * Call after resolving App Tracking Transparency (when applicable) and **before**
- * `mobileAds().initialize()`.
+ * Call after resolving App Tracking Transparency (when applicable on older iOS) and **before**
+ * `mobileAds().initialize()`. This JS hook cannot prevent Meta `FBAudienceNetwork` process-start
+ * aborts that run before the bridge is up.
  */
 export function setAdvertiserTrackingEnabled(enabled: boolean): void {
   if (typeof enabled !== 'boolean') {
