@@ -413,6 +413,15 @@ Don't:
 
 You can preload several `NativeAd` instances and render them from a `FlatList` (or similar recycled list). When a cell reuses the same `NativeAdView` tree for a different ad, `NativeAsset` re-registers its views whenever `nativeAd.responseId` changes so SDK click handling stays attached. Prefer a stable `key` per ad (for example `nativeAd.responseId`) when the row should remount instead of rebind.
 
+### Registered assets only
+
+<Warning>
+  Only views wrapped in `NativeAsset` (or `NativeMediaView`) are registered as GMA clickable assets.
+  Do not wrap the entire `NativeAdView` layout in a single `NativeAsset`, and do not stretch one
+  asset view across empty padding — that invents clickable white space and can conflict with AdMob
+  policy. Decorative spacers and non-asset chrome should stay outside `NativeAsset`.
+</Warning>
+
 ### Not implemented features
 
 These features are not implemented in the current version:
