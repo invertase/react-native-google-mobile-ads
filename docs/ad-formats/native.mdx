@@ -422,6 +422,19 @@ You can preload several `NativeAd` instances and render them from a `FlatList` (
   policy. Decorative spacers and non-asset chrome should stay outside `NativeAsset`.
 </Warning>
 
+### Fullscreen pagers and native video
+
+On Android, `NativeMediaView` needs a non-zero laid-out size while the page is visible before GMA can paint video. Prefer showing media from `nativeAd.mediaContent` (and give the view width + `aspectRatio` or an explicit height) rather than gating only on `nativeAd.images`:
+
+{/* prettier-ignore */}
+```tsx
+{(nativeAd.mediaContent?.hasVideoContent || (nativeAd.images?.length ?? 0) > 0) && (
+  <NativeMediaView style={{ width: '100%' }} />
+)}
+```
+
+If a pager cell still briefly stays black, ensure the media view is mounted inside `NativeAdView` for that page (not swapped in only after images load) and that the cell is not `display: 'none'` / zero-height when it becomes the active page.
+
 ### Not implemented features
 
 These features are not implemented in the current version:

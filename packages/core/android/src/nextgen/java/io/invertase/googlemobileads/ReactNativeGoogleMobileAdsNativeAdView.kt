@@ -142,6 +142,8 @@ class ReactNativeGoogleMobileAdsNativeAdView(
         delay(100)
         nativeAd?.let { sdkNativeAdView.registerNativeAd(it, mediaView) }
         reapplySdkOwnedClicks(sdkNativeAdView)
+        // registerNativeAd can land after the MediaView's first 0×0 layout; refresh so video paints (#775).
+        (mediaView?.parent as? ReactNativeGoogleMobileAdsMediaView)?.refreshPresentation()
         sdkNativeAdView.rootView.requestLayout()
       }
   }

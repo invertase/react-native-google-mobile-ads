@@ -22,10 +22,11 @@ import android.os.Looper
 import android.widget.FrameLayout
 import android.widget.ImageView
 import com.facebook.react.bridge.ReactContext
+import com.google.android.libraries.ads.mobile.sdk.nativead.MediaContent
 import com.google.android.libraries.ads.mobile.sdk.nativead.MediaView
 
 @SuppressLint("ViewConstructor")
-class ReactNativeGoogleMobileAdsMediaView(
+open class ReactNativeGoogleMobileAdsMediaView(
   private val context: ReactContext,
 ) : FrameLayout(context) {
   private var sdkView: MediaView? = null
@@ -41,11 +42,7 @@ class ReactNativeGoogleMobileAdsMediaView(
     check(Looper.myLooper() == Looper.getMainLooper()) { "Media views must mutate on the main thread" }
     this.responseId = responseId
     runAfterInitialization {
-      val nativeModule = context.getNativeModule(ReactNativeGoogleMobileAdsNativeModule::class.java)
-      nativeModule?.getNativeAd(this.responseId ?: "")?.let {
-        sdkView?.mediaContent = it.mediaContent
-        requestLayout()
-      }
+      bindMediaContentFromResponse()
     }
   }
 
@@ -60,6 +57,35 @@ class ReactNativeGoogleMobileAdsMediaView(
   fun whenSdkViewReady(action: (MediaView) -> Unit) {
     runAfterInitialization {
       sdkView?.let(action)
+    }
+  }
+
+  /**
+   * Re-bind media after a late non-zero layout / attach / window-visible cycle so pager and
+   * list cells do not stay black until leave+return (#775).
+   */
+  internal open fun refreshPresentation() {
+    if (!ReactNativeGoogleMobileAdsMediaViewPresentation.canPresent(width, height, visibility)) {
+      return
+    }
+    runAfterInitialization {
+      val initializedView = sdkView ?: return@runAfterInitialization
+      val existing: MediaContent? = initializedView.mediaContent
+      if (existing != null) {
+        initializedView.mediaContent = null
+        initializedView.mediaContent = existing
+        requestLayout()
+        return@runAfterInitialization
+      }
+      bindMediaContentFromResponse()
+    }
+  }
+
+  private fun bindMediaContentFromResponse() {
+    val nativeModule = context.getNativeModule(ReactNativeGoogleMobileAdsNativeModule::class.java)
+    nativeModule?.getNativeAd(this.responseId ?: "")?.let {
+      sdkView?.mediaContent = it.mediaContent
+      requestLayout()
     }
   }
 
@@ -101,6 +127,35 @@ class ReactNativeGoogleMobileAdsMediaView(
     destroyed = true
     removeAllViews()
     sdkView = null
+  }
+
+  override fun onSizeChanged(
+    w: Int,
+    h: Int,
+    oldw: Int,
+    oldh: Int,
+  ) {
+    super.onSizeChanged(w, h, oldw, oldh)
+    if (ReactNativeGoogleMobileAdsMediaViewPresentation.shouldRefreshAfterSizeChange(oldw, oldh, w, h)) {
+      refreshPresentation()
+    }
+  }
+
+  override fun onAttachedToWindow() {
+    super.onAttachedToWindow()
+    refreshPresentation()
+  }
+
+  override fun onWindowVisibilityChanged(visibility: Int) {
+    super.onWindowVisibilityChanged(visibility)
+    if (ReactNativeGoogleMobileAdsMediaViewPresentation.shouldRefreshAfterWindowVisibility(
+        visibility,
+        width,
+        height,
+      )
+    ) {
+      refreshPresentation()
+    }
   }
 
   override fun requestLayout() {
