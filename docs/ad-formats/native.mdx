@@ -466,6 +466,12 @@ stack:
    full tombstone and your exact `react-native` version — do not expect a library-only
    workaround that disables the native-ad EventEmitter.
 
+implementation. Reports that describe the same frames as Android ≤10-only (or as a
+missing Android EventEmitter stub) are the same host bug — older OS versions correlate
+with 32-bit devices, not an API-level or library stub gap
+([#757](https://github.com/invertase/react-native-google-mobile-ads/issues/757)).
+
+
 ### FlatList, FlashList, and recycled list cells
 `FlatList`, [FlashList](https://shopify.github.io/flash-list/), and similar lists **reuse cell component instances**. React state inside a recycled cell survives the row change. A card that loads once in `useEffect([])` and deliberately avoids remount `key`s will keep showing the previous row's `NativeAd` after scroll — that looks like "the same ad repeating," even when each mount once called `NativeAd.createForAdRequest`.
 
