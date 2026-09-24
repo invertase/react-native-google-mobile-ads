@@ -1,21 +1,33 @@
 ---
 title: Installation - React Native CLI
-description: Install and configure React Native Google Mobile Ads in a bare React Native project.
+description: Install and configure React Native Google Mobile Ads in a bare React Native project via autolinking and app.json.
 ---
 
 # Installation — React Native CLI
 
-Install the module:
+This page is for **bare** React Native CLI projects (no Expo managed workflow).
+
+**Prefer Expo?** Start with [Installation — Expo](/installation/expo) (Expo + a development build) —
+that is the recommended default path.
+
+On bare React Native, the library **autolinks**. You configure AdMob App IDs in `app.json`; you do
+**not** manually paste IDs into `Info.plist` / `AndroidManifest.xml` or insert other native glue
+code for a standard install.
+
+## Install the package
 
 ```bash
 npm install react-native-google-mobile-ads
 ```
 
-## Configure your App IDs
+## Configure your App IDs (`app.json`)
 
-Before you can display ads you must have a [Google AdMob account](https://apps.admob.com) and an App ID for each platform —
-see [Configuration](/configuration) for where to find the App ID. For bare React Native projects, add the app IDs to the
-`app.json` file at the root of your project:
+Before you can display ads you must have a [Google AdMob account](https://apps.admob.com) and an
+App ID for each platform — see [Configuration](/configuration) for where to find the App ID.
+
+Add the app IDs under the `react-native-google-mobile-ads` key in the `app.json` file at the root of
+your project (snake_case keys). Autolinking and the library's config scripts apply these during the
+native build:
 
 ```json
 // <project-root>/app.json
@@ -38,19 +50,28 @@ npx react-native run-ios
 npx react-native run-android
 ```
 
+Full key reference (including Expo camelCase parity): [Config plugin reference](/config-plugin).
+
 ## Optionally configure iOS static frameworks
 
-Follow these steps on iOS if you need to use static frameworks (that is, `use_frameworks! :linkage => :static` in your `Podfile`).
-You may need this if you use this module in combination with `react-native-firebase` (see
-[Using with React Native Firebase](/firebase)).
+Follow these steps on iOS if you need to use static frameworks (that is,
+`use_frameworks! :linkage => :static` in your `Podfile`). You may need this when pairing this module
+with other native libraries that require static frameworks.
 
-To enable static frameworks, you must add the variable `$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`.
+Coexistence with React Native Firebase is covered on
+[Using with React Native Firebase](/firebase).
+
+To enable static frameworks for this module, add
+`$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`.
 
 ## Enable SKAdNetwork to track conversions (iOS)
 
-The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google and participating third-party buyers attribute an app install even when the IDFA is not available.
-Add the advised [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks) to your project as described below.
-Note that these identifiers are subject to change and should be updated regularly.
+The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google
+and participating third-party buyers attribute an app install even when the IDFA is not available.
+Add the advised
+[SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks)
+to your project as described below. Note that these identifiers are subject to change and should be
+updated regularly.
 
 ```json
 // <project-root>/app.json
@@ -116,8 +137,9 @@ Note that these identifiers are subject to change and should be updated regularl
 
 ## App Tracking Transparency (iOS)
 
-Apple requires apps to display the App Tracking Transparency authorization request for accessing the IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads).
-Within your project's configuration file, you have to provide a user tracking usage description:
+Apple requires apps to display the App Tracking Transparency authorization request for accessing the
+IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads). Within
+your project's configuration file, you have to provide a user tracking usage description:
 
 ```json
 // <project-root>/app.json
@@ -130,4 +152,5 @@ Within your project's configuration file, you have to provide a user tracking us
 }
 ```
 
-See [Consent & privacy basics](/consent-basics) for how to request App Tracking Transparency authorization at runtime.
+See [Consent & privacy basics](/consent-basics) for how to request App Tracking Transparency
+authorization at runtime.
