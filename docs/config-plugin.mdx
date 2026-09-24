@@ -9,23 +9,23 @@ This page is the reference for every option supported by the Expo config plugin,
 `app.json` keys under the `react-native-google-mobile-ads` block.
 
 <Info>
-  Setup context lives in the installation guides: [Installation — Expo](/installation/expo) and
-  [Installation — React Native CLI](/installation/react-native). This page documents every key the
+  Setup context lives in the installation guides: [Install with Expo](/installation/expo) and
+  [Install with React Native CLI](/installation/react-native). This page documents every key the
   plugin and bare `app.json` path accept, including options not covered there.
 </Info>
 
 ## Options (Expo plugin ↔ bare `app.json`)
 
-| Expo plugin (camelCase)        | Bare `app.json` (snake_case)      | Default      | Platforms    | Purpose                                                   |
-| ------------------------------ | --------------------------------- | ------------ | ------------ | --------------------------------------------------------- |
-| `androidAppId`                 | `android_app_id`                  | — (required) | Android      | AdMob Android App ID.                                     |
-| `iosAppId`                     | `ios_app_id`                      | — (required) | iOS          | AdMob iOS App ID.                                         |
-| `androidSdk`                   | `android_sdk`                     | `classic`    | Android      | Android ads backend (`classic` \| `legacy` \| `nextgen`). |
-| `delayAppMeasurementInit`      | `delay_app_measurement_init`      | `false`      | Android, iOS | Delay app measurement until an ad is requested.           |
-| `optimizeInitialization`       | `optimize_initialization`         | `true`       | Android      | Optimize SDK initialization.                              |
-| `optimizeAdLoading`            | `optimize_ad_loading`             | `true`       | Android      | Optimize ad loading.                                      |
-| `skAdNetworkItems`             | `sk_ad_network_items`             | —            | iOS          | SKAdNetwork identifiers.                                  |
-| `userTrackingUsageDescription` | `user_tracking_usage_description` | —            | iOS          | App Tracking Transparency usage description string.       |
+| Expo plugin (camelCase)        | Bare `app.json` (snake_case)      | Default      | Platforms    | Purpose                                                         |
+| ------------------------------ | --------------------------------- | ------------ | ------------ | --------------------------------------------------------------- |
+| `androidAppId`                 | `android_app_id`                  | — (required) | Android      | AdMob Android App ID.                                           |
+| `iosAppId`                     | `ios_app_id`                      | — (required) | iOS          | AdMob iOS App ID.                                               |
+| `androidSdk`                   | `android_sdk`                     | `classic`    | Android      | Android ads backend (`classic` \| `legacy` \| `nextgen`).       |
+| `delayAppMeasurementInit`      | `delay_app_measurement_init`      | `false`      | Android, iOS | Delay app measurement until the SDK initializes or loads an ad. |
+| `optimizeInitialization`       | `optimize_initialization`         | `true`       | Android      | Optimize SDK initialization.                                    |
+| `optimizeAdLoading`            | `optimize_ad_loading`             | `true`       | Android      | Optimize ad loading.                                            |
+| `skAdNetworkItems`             | `sk_ad_network_items`             | —            | iOS          | SKAdNetwork identifiers.                                        |
+| `userTrackingUsageDescription` | `user_tracking_usage_description` | —            | iOS          | App Tracking Transparency usage description string.             |
 
 There are no other plugin keys. Rebuild native code after changing any of these values.
 
@@ -125,7 +125,8 @@ bare examples: [GMA Next-Gen SDK (Android)](/next-gen-sdk).
 
 ### `delayAppMeasurementInit` / `delay_app_measurement_init`
 
-When `true`, delays Google Mobile Ads app measurement until an ad is requested. Default: `false`.
+When `true`, delays Google Mobile Ads app measurement until the Mobile Ads SDK is initialized or an ad is
+loaded. Default: `false`.
 
 - **Android:** writes `com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT` in the manifest.
 - **iOS:** writes `GADDelayAppMeasurementInit` in `Info.plist`.
@@ -153,7 +154,7 @@ via Android manifest placeholders when the keys are omitted from `app.json`.
 
 ### `skAdNetworkItems` / `sk_ad_network_items`
 
-An array of [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks)
+An array of [SKAdNetwork identifiers](https://developers.google.com/admob/ios/3p-skadnetworks)
 merged into `SKAdNetworkItems` in `Info.plist`. Identifiers already present are left unchanged;
 missing ones are appended. Keep this list up to date — Google's published list changes over time.
 

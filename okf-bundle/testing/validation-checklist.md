@@ -49,8 +49,10 @@ checks. CI runs spellcheck and the link check; markdown check is local. Link-che
 `@docs.page/cli` version. Exit 0 is blocking when `docs/**` changes. Fix internal failures and
 external 404, 5xx, DNS, abort, and timeout errors; retry transient external failures before
 classifying them. External 401, 403, 405, and 429 bot-gate responses are warnings and do not
-justify rewriting a valid link or weakening checker severity. Do not exclude the generated
-reference host; its links must become green when the Pages deployment is available.
+justify rewriting a valid link or weakening checker severity. Do not exclude or special-case the
+generated reference host, locally or in CI. A 404 there for a symbol the deployed reference does
+not have yet (before the first deployment, or a new symbol before the next Publish run) is resolved
+by deploying the reference ([CI workflows](../ci-workflows/index.md#workflows)), not by exclusion.
 
 <a id="api-reference"></a>
 
@@ -106,7 +108,7 @@ Goal: each iteration improves OKF and removes conflicting guidance. The contract
 | whitespace | [§ lint](#lint-and-formatting) scoped `git diff --check` | 0 | all handwritten files; generated trees excluded |
 | docs | `yarn lint:markdown:check` and `yarn lint:spellcheck` | 0 | if `docs/**` — [§ lint](#lint-and-formatting) |
 | docs links | `yarn lint:docs-links` | 0 | if `docs/**` — [§ docs.page link check](#docs-page-link-check); record error and warning counts |
-| API reference | `yarn reference:api`; additionally `yarn reference:api:gh-pages` when hosted output may change | 0, warning-clean | if TypeDoc config, source TSDoc, reference assets/landing content, or Pages workflow changed — [§ API reference](#api-reference) |
+| API reference | `yarn reference:api`, `yarn reference:api:gh-pages` | 0, warning-clean | when [§ API reference](#api-reference) applies |
 | plugin | `yarn tests:jest packages/core/plugin/__tests__/` | 0 | if `packages/core/plugin/` or `packages/core/app.plugin.js` — [§ Expo plugin](#expo-plugin) |
 | coverage | [evidence package](coverage-design.md#coverage-evidence-package) | — | required when `packages/core/src/` **or** `packages/core/android/` **or** `packages/core/ios/` **or** `packages/core/plugin/` TS; `packages/core/app.plugin.js`-only is `n/a` unless plugin TS changed |
 | OKF scan | [§ OKF bundle review](#okf-bundle-review) | pass | if frozen tree includes `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` — not during `documentation`; gate close is not a skip |

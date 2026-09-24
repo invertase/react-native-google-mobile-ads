@@ -43,9 +43,10 @@ Two additional guides cover cross-cutting integration patterns:
   configured for its ad unit. Do not add a second JavaScript refresh timer. Reload manually only
   for a lifecycle reason, such as the documented iOS foreground case.
 - Do not retain loaded inventory indefinitely. Google documents a four-hour window for app open ads
-  and a [60-minute expiry for Android
-  interstitials](https://developers.google.com/admob/android/interstitial). Other formats and
-  platforms do not share one universal SDK expiry. For held pooled inventory, this library applies
+  and a one-hour expiry on Android for
+  [interstitial](https://developers.google.com/admob/android/interstitial) and
+  [rewarded interstitial](https://developers.google.com/admob/android/rewarded-interstitial) ads.
+  Other formats and platforms do not share one universal SDK expiry. For held pooled inventory, this library applies
   a conservative one-hour **publisher reload-policy default** to non-app-open formats; it is not a
   claim about every native SDK cache. Reload stale inventory before showing it. Pool handles
   expose `isStaleByPolicy()` when you use pools.

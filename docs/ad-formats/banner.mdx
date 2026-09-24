@@ -37,7 +37,9 @@ function App() {
   // (iOS) WKWebView can terminate if app is in a "suspended state", resulting in an empty banner when app returns to foreground.
   // Therefore it's advised to "manually" request a new ad when the app is foregrounded (https://groups.google.com/g/google-admob-ads-sdk/c/rwBpqOUr8m8).
   useForeground(() => {
-    Platform.OS === 'ios' && bannerRef.current?.load();
+    if (Platform.OS === 'ios') {
+      bannerRef.current?.load();
+    }
   });
 
   return (
@@ -137,7 +139,7 @@ requested size.
 
 Collapsible banner ads are banner ads that are initially presented as a larger overlay, with a button to collapse them to the originally requested banner size.
 Collapsible banner ads are intended to improve performance of anchored ads that are otherwise a smaller size.
-This guide shows how to turn on collapsible banner ads for existing banner placements.
+To turn one on, set the `collapsible` network extra on an existing banner placement, as in the sample below.
 
 <img
   width="400"

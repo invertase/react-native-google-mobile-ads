@@ -50,8 +50,8 @@ ad can preload. Resolve consent first as described in [Consent & privacy basics]
 
 <Info>
   Expo apps require a development build or production build. Native Google Mobile Ads code is not
-  available in Expo Go. Start with the [Expo installation guide](/installation/expo), rebuild after
-  native configuration changes, and then return here.
+  available in Expo Go. Start with [Install with Expo](/installation/expo), rebuild after native
+  configuration changes, and then return here.
 </Info>
 
 ## Official test units
@@ -192,6 +192,7 @@ Do not branch only on legacy native integer error codes:
   Google Ad Manager metadata. It can also be attached to `error`.
 
 ```tsx
+import { useEffect } from 'react';
 import { Text } from 'react-native';
 import { TestIds, useInterstitialAd } from 'react-native-google-mobile-ads';
 
@@ -200,11 +201,13 @@ export function InterstitialDiagnostics() {
     adUnitId: TestIds.INTERSTITIAL,
   });
 
-  if (status === 'no-fill') {
-    console.log('No inventory', error.reason, responseInfo?.responseId);
-  } else if (status === 'error') {
-    console.error('Ad failure', error.phase, error.reason, error.responseInfo);
-  }
+  useEffect(() => {
+    if (status === 'no-fill') {
+      console.log('No inventory', error?.reason, responseInfo?.responseId);
+    } else if (status === 'error') {
+      console.error('Ad failure', error?.phase, error?.reason, error?.responseInfo);
+    }
+  }, [status, error, responseInfo]);
 
   return <Text>Ad status: {status}</Text>;
 }
@@ -225,7 +228,7 @@ See [React hooks](/ad-formats/hooks) for a complete component and
 | A test unit works but your unit does not | Confirm test mode, verify app/ad-unit status and format, then inspect the request.             |
 | Nothing reaches the network              | Disable Private DNS/VPN filtering temporarily and verify device connectivity.                  |
 
-Continue with [Common reasons for ads not showing](/common-reasons-for-ads-not-showing), then open
+Continue with [Common reasons ads do not show](/common-reasons-for-ads-not-showing), then open
 [Ad Inspector and the debug menu](/ad-inspector) for request-level diagnosis.
 
 ## Testing with Jest

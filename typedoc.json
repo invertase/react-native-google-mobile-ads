@@ -20,7 +20,6 @@
   "highlightLanguages": ["bash", "javascript", "json", "jsx", "tsx", "typescript"],
   "hideGenerator": true,
   "cleanOutputDir": true,
-  "titleLink": "/",
   "favicon": "./docs/img/logo_admob_192px.svg",
   "navigationLinks": {
     "Documentation": "https://docs.page/invertase/react-native-google-mobile-ads",

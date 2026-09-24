@@ -12,7 +12,7 @@ the RNFB suite) in one React Native app.
 
 This page is the coexistence guide for **Expo** and **bare React Native**. Follow
 [React Native Firebase](https://rnfirebase.io) for Firebase install details, and this library's
-[Installation — Expo](/installation/expo) or [Installation — React Native CLI](/installation/react-native)
+[Install with Expo](/installation/expo) or [Install with React Native CLI](/installation/react-native)
 for Ads. The sections below cover the native build choices that matter when both are present.
 
 <Info>
@@ -41,8 +41,9 @@ other. See [App IDs vs Firebase configuration](#app-ids-vs-firebase-configuratio
 - Meet this library's [platform baseline](/prerequisites) (React Native 0.86+, New Architecture,
   iOS 15.1+, Android `minSdk` 24).
 - **New Architecture is required.** Explicit Legacy Architecture opt-out fails CocoaPods install
-  for this module on iOS. On React Native 0.82+, some Android hosts ignore `newArchEnabled=false`;
-  treat New Architecture as mandatory on both platforms.
+  for this module on iOS, and this module's Android Gradle build fails whenever `newArchEnabled`
+  is present and not `true`, even though React Native 0.82+ may ignore that flag. See
+  [New Architecture (required)](/prerequisites#new-architecture-required).
 - Install and configure each library normally — there is no special combined npm package.
 
 ## Recommended path: dynamic frameworks + SPM (Expo and bare)
@@ -55,7 +56,7 @@ default and documents **dynamic** frameworks. That path works with this module.
 1. Install and configure React Native Firebase per
    [rnfirebase.io](https://rnfirebase.io) (plugins, `googleServicesFile`, rebuild).
 2. Install this module and set AdMob App IDs on the config plugin — see
-   [Installation — Expo](/installation/expo).
+   [Install with Expo](/installation/expo).
 3. Set `expo-build-properties` to **dynamic** frameworks (RNFB's documented default):
 
 ```json
@@ -104,7 +105,7 @@ That combination is unsupported. Use dynamic + SPM (this section) or the
 1. Install React Native Firebase and follow its iOS SPM / dynamic frameworks guidance
    ([iOS SPM Support](https://rnfirebase.io/ios-spm)).
 2. Install this module and set App IDs in `app.json` — see
-   [Installation — React Native CLI](/installation/react-native).
+   [Install with React Native CLI](/installation/react-native).
 3. Keep RNFB on SPM + dynamic frameworks. You do **not** need
    `$RNGoogleMobileAdsAsStaticFramework` on this path.
 4. Run `npx pod-install` and rebuild. Autolinking is sufficient for basic coexistence.
@@ -118,8 +119,11 @@ SPM** first.
 ### Expo
 
 Pass `disableSPM` on `@react-native-firebase/app`, set `useFrameworks: "static"`, and list every
-RNFB native module you use in `forceStaticLinking` (required on current Expo / React Native
-prebuilt core — see [RNFB iOS SPM Support](https://rnfirebase.io/ios-spm)):
+RNFB native module you use in `forceStaticLinking`. Expo documents `forceStaticLinking` as the list of
+pods to link statically when `use_frameworks!` is on, because some pods (especially alongside React
+Native prebuilt binaries) fail as dynamic frameworks; see
+[`expo-build-properties`](https://docs.expo.dev/versions/latest/sdk/build-properties/). In this
+project's Expo verification, the static path needed the RNFB pods listed there:
 
 ```json
 // <project-root>/app.json
@@ -170,7 +174,7 @@ $RNGoogleMobileAdsAsStaticFramework = true
 
 2. Configure `use_frameworks! :linkage => :static` as required by your Firebase / other native
    setup (see [RNFB](https://rnfirebase.io/ios-spm) and
-   [Installation — React Native CLI](/installation/react-native#optionally-configure-ios-static-frameworks)).
+   [Install with React Native CLI](/installation/react-native#optionally-configure-ios-static-frameworks)).
 3. Run `npx pod-install` and rebuild.
 
 The install pages' “optionally configure iOS static frameworks” snippets are for apps that
@@ -244,8 +248,8 @@ Prefer config plugins (Expo) and documented Podfile / `app.json` knobs (bare). A
   (or bare `app.json` App ID keys) already sets them — edit the source of truth, then rebuild.
 - Mixing RNFB **SPM** with **static** `use_frameworks!` / `useFrameworks: "static"`.
 - Treating the install-page static-frameworks snippet as the React Native Firebase default (see
-  [Installation — Expo](/installation/expo#optionally-configure-ios-static-frameworks) and
-  [Installation — React Native CLI](/installation/react-native#optionally-configure-ios-static-frameworks);
+  [Install with Expo](/installation/expo#optionally-configure-ios-static-frameworks) and
+  [Install with React Native CLI](/installation/react-native#optionally-configure-ios-static-frameworks);
   those sections defer here for RNFB).
 - Manually patching `AppDelegate` / `MainApplication` solely to “enable” Ads or Firebase linking
   when autolinking and the config plugins already apply.

@@ -1,14 +1,10 @@
 :root {
-  --color-accent: #a86525;
-  --color-link: #a86525;
-  --color-focus-outline: #c17c56;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-accent: #fcc171;
-    --color-link: #fcc171;
-  }
+  --light-color-accent: #a86525;
+  --light-color-link: #a86525;
+  --light-color-focus-outline: #c17c56;
+  --dark-color-accent: #fcc171;
+  --dark-color-link: #fcc171;
+  --dark-color-focus-outline: #c17c56;
 }
 
 .site-menu,

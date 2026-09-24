@@ -71,7 +71,7 @@ export function resolveStalenessWindow(options: {
  * Publisher-owned staleness policy timer for held inventory.
  *
  * Used by pooled / multi-format handles (and tests). Edge semantics match
- * `AdExpiry` in the approved API reference.
+ * the public `AdExpiry` type.
  */
 export function createAdExpiry(options: CreateAdExpiryOptions): AdExpiryHandle {
   const now = options.now ?? (() => Date.now());

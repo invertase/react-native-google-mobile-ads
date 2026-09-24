@@ -68,7 +68,7 @@ You'll need to generate a new development build before using it.
 ### Delaying app measurement
 
 By default, the Google Mobile Ads SDK initializes app measurement and begins sending user-level event data to Google immediately when the app starts.
-If your app will be used by users within the EEA, it is important you prevent app measurement until your first ad has been requested (after consent).
+If your app will be used by users within the EEA, it is important you delay app measurement until you initialize the Google Mobile Ads SDK or load an ad (after consent).
 
 <Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
 <TabItem value="bare">
@@ -117,7 +117,7 @@ Once set, rebuild your application.
 ### App Tracking Transparency
 
 If you configure an [ATT message](https://support.google.com/admob/answer/10115331) in your Google AdMob account, the UMP SDK will automatically handle the ATT alert.
-This will also show an IDFA explainer message. If you don't want to show an explainer message you can show the ATT alert [manually](https://docs.page/invertase/react-native-google-mobile-ads#app-tracking-transparency-ios).
+This will also show an IDFA explainer message. If you don't want to show an explainer message you can show the ATT alert [manually](/consent-basics#requesting-app-tracking-transparency-authorization-ios).
 Also, within your projects configuration file, you have to provide a user tracking usage description (once set, rebuild your application):
 
 <Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>

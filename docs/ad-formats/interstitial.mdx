@@ -104,6 +104,8 @@ function App() {
       if (Platform.OS === 'ios') {
         StatusBar.setHidden(false);
       }
+      // Preload the next ad on the same instance.
+      interstitial.load();
     });
     const unsubscribePaid = interstitial.addAdEventListener(AdEventType.PAID, event => {
       console.log('Interstitial revenue', event.value, event.currency);
@@ -147,6 +149,7 @@ You can subscribe to other various events with `addAdEventListener` listener suc
 or closes the advert and returns back to your app.
 To see the full list of available events, view the [`AdEventType`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/AdEventType.ts) source code.
 
-If needed, you can reuse the existing instance of the `InterstitialAd` class to load more adverts and show them when required.
+The sample reuses the same `InterstitialAd` instance: after `CLOSED`, it calls `load()` again so the next
+advert is ready for the next transition.
 Forward `AdEventType.PAID` payloads to your
 [revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.

@@ -19,6 +19,12 @@ with something (e.g. in-game currency). Unlike rewarded ads, users aren't requir
 />
 
 <Warning>
+  Before showing a rewarded interstitial ad, you must present an intro screen that provides clear
+  reward messaging and an option to skip the ad before it starts. See Google's [rewarded
+  interstitial guide](https://developers.google.com/admob/android/rewarded-interstitial).
+</Warning>
+
+<Warning>
   Complete consent and SDK initialization before calling `load()`. See [Consent & privacy
   basics](/consent-basics) and the shared [load best
   practices](/ad-formats#load-and-refresh-best-practices).
@@ -51,8 +57,8 @@ To listen to events, such as when the advert from the network has loaded or when
 `addAdEventListener` method:
 
 ```js
-import React, { useEffect, useState } from 'react';
-import { Button } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Button, Text, View } from 'react-native';
 import {
   AdEventType,
   RewardedInterstitialAd,
@@ -68,8 +74,12 @@ const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(adUnitId,
   keywords: ['fashion', 'clothing'],
 });
 
-function App() {
+// onContinue moves the app on to its next step.
+function LevelTransition({ onContinue }) {
   const [loaded, setLoaded] = useState(false);
+  const [introVisible, setIntroVisible] = useState(false);
+  const onContinueRef = useRef(onContinue);
+  onContinueRef.current = onContinue;
 
   useEffect(() => {
     const unsubscribeLoaded = rewardedInterstitial.addAdEventListener(
@@ -89,6 +99,9 @@ function App() {
     });
     const unsubscribeClosed = rewardedInterstitial.addAdEventListener(AdEventType.CLOSED, () => {
       setLoaded(false);
+      // Preload the next ad on the same instance, then move on.
+      rewardedInterstitial.load();
+      onContinueRef.current();
     });
 
     // Start loading the rewarded interstitial ad straight away
@@ -103,27 +116,45 @@ function App() {
     };
   }, []);
 
-  // No advert ready to show yet
-  if (!loaded) {
-    return null;
+  if (introVisible) {
+    return (
+      <View>
+        <Text>Watch a short ad to earn 50 coins?</Text>
+        <Button
+          title="Watch ad"
+          onPress={() => {
+            setIntroVisible(false);
+            // Not loaded, already showing, or a platform decline reject; a destroyed ad throws.
+            rewardedInterstitial.show().catch(error => {
+              console.warn(error);
+              onContinue();
+            });
+          }}
+        />
+        <Button
+          title="Skip"
+          onPress={() => {
+            setIntroVisible(false);
+            onContinue();
+          }}
+        />
+      </View>
+    );
   }
 
+  // Without a loaded advert, the transition goes straight to the next step.
   return (
-    <Button
-      title="Show Rewarded Interstitial Ad"
-      onPress={() => {
-        // Not loaded, already showing, or a platform decline reject; a destroyed ad throws.
-        rewardedInterstitial.show().catch(console.warn);
-      }}
-    />
+    <Button title="Continue" onPress={() => (loaded ? setIntroVisible(true) : onContinue())} />
   );
 }
 ```
 
 The code above subscribes to the rewarded interstitial ad events (via `addAdEventListener()`) and immediately starts to load a new advert from
-the network (via `load()`). Once an advert is available, local state is set, re-rendering the component showing a `Button`.
-When pressed, the `show` method on the rewarded interstitial ad instance is called and the advert is shown over-the-top of your
-application.
+the network (via `load()`). At the natural transition, pressing "Continue" shows an intro screen that states the reward and
+offers to skip, but only once an advert has loaded; otherwise the app moves straight on. Only when the user chooses to watch
+is the `show` method on the rewarded interstitial ad instance called, showing the advert over-the-top of your application.
+"Skip", a failed show, and the `CLOSED` event all call `onContinue`, and the `CLOSED` listener also loads the next advert on
+the same instance.
 
 Like Interstitial Ads, you can listen to the events with the `addAdEventListener` such as when the user clicks the advert or closes
 the advert and returns back to your app. However, you can listen to an extra `EARNED_REWARD` event which is triggered when user completes the
@@ -131,7 +162,6 @@ advert action. An additional `reward` payload is sent with the event, containing
 
 To learn more, view the [`RewardedAdEventType`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/RewardedAdEventType.ts) source code.
 
-If needed, you can reuse the existing instance of the `RewardedInterstitialAd` class to load more adverts and show them when required.
 Forward `AdEventType.PAID` payloads to your
 [revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.
 
