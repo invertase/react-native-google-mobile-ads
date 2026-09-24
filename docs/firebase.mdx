@@ -1,0 +1,28 @@
+---
+title: Using with React Native Firebase
+description: Install React Native Google Mobile Ads alongside React Native Firebase, including iOS static frameworks.
+---
+
+# Using with React Native Firebase
+
+Many apps use this module together with [`react-native-firebase`](https://rnfirebase.io). The two libraries coexist,
+but there are a few native build considerations — most importantly iOS static frameworks.
+
+<Info>
+  This page is being expanded with verified, end-to-end coexistence guidance for both Expo and bare
+  React Native (static frameworks, `GoogleUtilities` alignment, pod ordering, Android Firebase BOM +
+  Google Mobile Ads, and what not to hand-edit). The notes below are the current baseline.
+</Info>
+
+## iOS static frameworks
+
+`react-native-firebase` may require `use_frameworks!` on iOS. When that is the case, this module must also be built as a
+static framework:
+
+- **Expo:** enable `expo-build-properties` with `ios.useFrameworks: "static"` — see [Installation — Expo](/installation/expo#optionally-configure-ios-static-frameworks).
+- **Bare React Native:** set `$RNGoogleMobileAdsAsStaticFramework = true` in your `Podfile` — see [Installation — React Native CLI](/installation/react-native#optionally-configure-ios-static-frameworks).
+
+## App IDs vs Firebase configuration
+
+Google Mobile Ads uses your AdMob **App ID** (see [Configuration](/configuration)). This is separate from Firebase's
+`GoogleService-Info.plist` / `google-services.json`. When using both libraries you need both configured.

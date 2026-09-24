@@ -1,0 +1,57 @@
+---
+title: Show your first ad
+description: Use test ads to verify your integration works before shipping production ad units.
+---
+
+# Show your first ad
+
+Once you've installed, configured your App IDs, and initialized the SDK, you're ready to display your first ad. Always
+start with **test ads** and verify your integration before switching to production ad units.
+
+## Test ads
+
+Whilst developing your app with AdMob, you'll want to make sure you use test ads rather than production ads from your
+Google AdMob account - otherwise your account may be disabled!
+
+Although usage of different advert types is explained later, when creating your adverts the "Ad Unit ID" being used whilst
+testing can be set to a testing ID. The code snippet below shows how to initialize each advert type with a test ID:
+
+```jsx
+import {
+  AppOpenAd,
+  InterstitialAd,
+  RewardedAd,
+  BannerAd,
+  TestIds,
+} from 'react-native-google-mobile-ads';
+
+// App Open
+AppOpenAd.createForAdRequest(TestIds.APP_OPEN);
+
+// Interstitial
+InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
+
+// Rewarded
+RewardedAd.createForAdRequest(TestIds.REWARDED);
+
+// Banner
+<BannerAd unitId={TestIds.BANNER} />;
+```
+
+## Verify your integration
+
+- You should see a **Test Ad** label on rendered ads when using test IDs or a registered test device.
+- If ads do not appear, work through [Common reasons for ads not showing](/common-reasons-for-ads-not-showing).
+- For deeper diagnostics, use the [Ad Inspector](/ad-inspector).
+
+## Next steps
+
+Now the basics of setting up and configuring AdMob have been explained, you can go ahead and start to display different
+adverts to your users. The AdMob module provides integration with six different types:
+
+- [App Open Ads](/ad-formats/app-open)
+- [Banner Ads](/ad-formats/banner)
+- [Interstitial Ads](/ad-formats/interstitial)
+- [Rewarded Ads](/ad-formats/rewarded)
+- [Rewarded Interstitial Ads](/ad-formats/rewarded-interstitial)
+- [Native Ads](/ad-formats/native)

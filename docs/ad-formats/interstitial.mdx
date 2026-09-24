@@ -1,0 +1,132 @@
+---
+title: Interstitial ads
+description: Display full-screen interstitial ads at natural transition points in your app.
+---
+
+# Interstitial Ads
+
+Interstitials are full-screen ads that cover the interface of an app until closed by the user. These types of ads are
+programmatically loaded and then shown at a suitable point during your application flow (e.g. after a level on a gaming
+app has been completed, or game over). The ads can be preloaded in the background to ensure they're ready to go when needed.
+
+To keep a **buffer** of ready interstitials and poll at show time, see
+[Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes).
+For `destroy()`, structured errors, and other v17 deltas, see
+[Migrating to v17](/migrating-to-v17).
+
+To create a new interstitial, call the `createForAdRequest` method from the `InterstitialAd` class. The first argument
+of the method is the "Ad Unit ID". For testing, we can use a Test ID, however for production the ID from the
+Google AdMob dashboard under "Ad units" should be used:
+
+```js
+import { InterstitialAd, TestIds, AdEventType } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+
+const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
+  keywords: ['fashion', 'clothing'],
+});
+```
+
+The second argument is additional optional request options object to be sent whilst loading an advert, such as keywords, location, and content URLs.
+Setting additional request options helps AdMob choose better tailored ads from the network.
+View the [`RequestOptions`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestOptions.ts) source code to see the full range of options available.
+
+### Content URL targeting (brand safety)
+
+When an ad sits next to web-like content (for example an article in a feed), you can pass the page URL and nearby URLs so Google can apply a more appropriate content rating.
+
+- `contentUrl`: the URL of the content currently being displayed (max 512 characters, HTTP or HTTPS).
+- `neighboringContentUrls`: up to 4 nearby content URLs (each max 512 characters, HTTP or HTTPS).
+
+These options apply to any ad loaded with `RequestOptions` (`createForAdRequest`, banner `requestOptions`, [hooks](/ad-formats/hooks), [native ads](/ad-formats/native)).
+
+```js
+import { InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+
+const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
+  contentUrl: 'https://www.example.com/article-a',
+  neighboringContentUrls: [
+    'https://www.example.com/article-b',
+    'https://www.example.com/article-c',
+  ],
+});
+```
+
+See Google's [brand safety targeting](https://developers.google.com/ad-manager/mobile-ads-sdk/android/targeting#content_url) docs for platform details.
+
+The call to `createForAdRequest` returns an instance of the [`InterstitialAd`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/ads/InterstitialAd.ts) class,
+which provides a number of utilities for loading and displaying interstitials.
+
+To listen to events, such as when the advert from the network has loaded or when an error occurs, we can subscribe via the
+`addAdEventListener` method:
+
+```jsx
+import React, { useEffect, useState } from 'react';
+import { Button, Platform, StatusBar } from 'react-native';
+import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+
+const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
+  keywords: ['fashion', 'clothing'],
+});
+
+function App() {
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
+      setLoaded(true);
+    });
+
+    const unsubscribeOpened = interstitial.addAdEventListener(AdEventType.OPENED, () => {
+      if (Platform.OS === 'ios') {
+        // Prevent the close button from being unreachable by hiding the status bar on iOS
+        StatusBar.setHidden(true);
+      }
+    });
+
+    const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+      if (Platform.OS === 'ios') {
+        StatusBar.setHidden(false);
+      }
+    });
+
+    // Start loading the interstitial straight away
+    interstitial.load();
+
+    // Unsubscribe from events on unmount
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeOpened();
+      unsubscribeClosed();
+    };
+  }, []);
+
+  // No advert ready to show yet
+  if (!loaded) {
+    return null;
+  }
+
+  return (
+    <Button
+      title="Show Interstitial"
+      onPress={() => {
+        interstitial.show();
+      }}
+    />
+  );
+}
+```
+
+The code above subscribes to the interstitial events (via `addAdEventListener()`) and immediately starts to load a new advert from
+the network (via `load()`). Once an advert is available, local state is set, re-rendering the component showing a `Button`.
+When pressed, the `show` method on the interstitial instance is called and the advert is shown over-the-top of your
+application.
+
+You can subscribe to other various events with `addAdEventListener` listener such as if the user clicks the advert,
+or closes the advert and returns back to your app.
+To see the full list of available events, view the [`AdEventType`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/AdEventType.ts) source code.
+
+If needed, you can reuse the existing instance of the `InterstitialAd` class to load more adverts and show them when required.

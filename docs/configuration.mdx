@@ -1,0 +1,60 @@
+---
+title: Configuration
+description: Set up your Google AdMob account, find your App ID, and configure outbound ad request settings.
+---
+
+# Configuration
+
+## Setting up Google AdMob
+
+Before you are able to display ads to your users, you must have a [Google AdMob account](https://apps.admob.com). Under the
+"Apps" menu item, create or choose an existing Android/iOS app. Each app platform exposes a unique account ID which needs to
+be added to the project.
+
+<Warning>
+  Attempting to build your app without configuring a valid App ID for this package will cause the
+  app to crash on start or fail to build.
+</Warning>
+
+Under the "App settings" menu item, you can find the "App ID":
+
+![Google AdMob App ID](https://prismic-io.s3.amazonaws.com/invertase%2F52dd6900-108c-47a6-accb-699fde963b99_new+project+%2813%29.jpg)
+
+The app IDs for Android and iOS need to be added to your project configuration. Where you put them depends on your setup:
+
+- **Expo:** add them via the config plugin — see [Installation — Expo](/installation/expo).
+- **Bare React Native:** add them to `app.json` — see [Installation — React Native CLI](/installation/react-native).
+
+## Configure outbound requests
+
+If the default ad settings are not correct for your app, you can provide settings that will apply to all ad requests.
+
+For example, if the application targets children then you must configure the outbound requests to only
+receive content suitable for children before loading any adverts.
+
+If you need to set a custom request configuration, you must call the `setRequestConfiguration` method before initializing the Google Mobile Ads SDK:
+
+```js
+import mobileAds, { MaxAdContentRating } from 'react-native-google-mobile-ads';
+
+mobileAds()
+  .setRequestConfiguration({
+    // Update all future requests suitable for parental guidance
+    maxAdContentRating: MaxAdContentRating.PG,
+
+    // Indicates that you want your content treated as child-directed for purposes of COPPA.
+    tagForChildDirectedTreatment: true,
+
+    // Indicates that you want the ad request to be handled in a
+    // manner suitable for users under the age of consent.
+    tagForUnderAgeOfConsent: true,
+
+    // An array of test device IDs to allow.
+    testDeviceIdentifiers: ['EMULATOR'],
+  })
+  .then(() => {
+    // Request config successfully set!
+  });
+```
+
+To learn more about the request configuration settings, view the [`RequestConfiguration`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestConfiguration.ts) source code.

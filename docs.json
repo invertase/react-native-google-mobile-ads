@@ -1,41 +1,104 @@
 {
+  "$schema": "https://docs.page/schema.json",
   "name": "React Native Google Mobile Ads",
-  "logo": "https://raw.githubusercontent.com/invertase/react-native-google-mobile-ads/main/docs/img/logo_admob_192px.svg",
-  "twitter": "invertaseio",
+  "description": "A React Native library for the Google Mobile Ads (AdMob & Ad Manager) SDKs, with full Expo support.",
+  "favicon": "/img/logo_admob_192px.svg",
+  "logo": {
+    "light": "/img/logo_admob_192px.svg",
+    "dark": "/img/logo_admob_192px.svg"
+  },
+  "theme": {
+    "primary": "#2D303A"
+  },
+  "social": {
+    "x": "invertaseio",
+    "github": "invertase/react-native-google-mobile-ads"
+  },
+  "content": {
+    "automaticallyInferNextPrevious": true
+  },
+  "redirects": {
+    "/displaying-ads": "/ad-formats",
+    "/displaying-ads-hook": "/ad-formats/hooks",
+    "/native-ads": "/ad-formats/native"
+  },
   "sidebar": [
-    [
-      "Getting Started",
-      [
-        ["Getting Started", "/"],
-        ["Displaying Ads", "/displaying-ads"],
-        ["Native Ads", "/native-ads"],
-        ["Common Reasons For Ads Not Showing", "/common-reasons-for-ads-not-showing"],
-        ["GMA Next-Gen SDK (Android)", "/next-gen-sdk"]
+    {
+      "group": "Getting Started",
+      "icon": "rocket",
+      "pages": [
+        { "title": "Getting Started", "href": "/" },
+        { "title": "Prerequisites", "href": "/prerequisites" },
+        { "title": "Installation — Expo", "href": "/installation/expo" },
+        { "title": "Installation — React Native CLI", "href": "/installation/react-native" },
+        { "title": "Configuration", "href": "/configuration" },
+        { "title": "Using with React Native Firebase", "href": "/firebase" },
+        { "title": "Initializing the SDK", "href": "/initialization" },
+        { "title": "Consent & privacy basics", "href": "/consent-basics" },
+        { "title": "Show your first ad", "href": "/first-ad" }
       ]
-    ],
-    [
-      "Advanced Usage",
-      [
-        ["Displaying Ads via Hook", "/displaying-ads-hook"],
-        ["Mediation", "/mediation"],
-        ["European User Consent", "/european-user-consent"],
-        ["Ad Inspector", "/ad-inspector"],
-        ["Impression-level ad revenue", "/impression-level-ad-revenue"],
-        ["Revenue telemetry and auction diagnostics", "/revenue-telemetry-and-auction-diagnostics"],
-        ["Preload pools and multi-format recipes", "/preload-pools-and-multiformat-recipes"],
-        ["v17 API reference", "/rngma-v17-api-reference"],
-        ["Video ad volume control", "/video-ad_volume-control"],
-        ["Testing", "/testing"]
+    },
+    {
+      "group": "Ad formats",
+      "icon": "rectangle-ad",
+      "pages": [
+        { "title": "Overview", "href": "/ad-formats" },
+        { "title": "App open", "href": "/ad-formats/app-open" },
+        { "title": "Banner", "href": "/ad-formats/banner" },
+        { "title": "Interstitial", "href": "/ad-formats/interstitial" },
+        { "title": "Rewarded", "href": "/ad-formats/rewarded" },
+        { "title": "Rewarded interstitial", "href": "/ad-formats/rewarded-interstitial" },
+        { "title": "Native", "href": "/ad-formats/native" },
+        { "title": "Fullscreen ads with hooks", "href": "/ad-formats/hooks" },
+        { "title": "Google Ad Manager", "href": "/ad-formats/ad-manager" }
       ]
-    ],
-    [
-      "Migration Guides",
-      [
-        ["Migrating to v5", "/migrating-to-v5"],
-        ["Migrating to v6", "/migrating-to-v6"],
-        ["Migrating to v15", "/migrating-to-v15"],
-        ["Migrating to v17", "/migrating-to-v17"]
+    },
+    {
+      "group": "Advanced",
+      "icon": "sliders",
+      "pages": [
+        {
+          "title": "Preload pools & multi-format recipes",
+          "href": "/preload-pools-and-multiformat-recipes"
+        },
+        { "title": "GMA Next-Gen SDK (Android)", "href": "/next-gen-sdk" },
+        { "title": "Mediation", "href": "/mediation" },
+        { "title": "European user consent", "href": "/european-user-consent" },
+        { "title": "Impression-level ad revenue", "href": "/impression-level-ad-revenue" },
+        {
+          "title": "Revenue telemetry & auction diagnostics",
+          "href": "/revenue-telemetry-and-auction-diagnostics"
+        },
+        { "title": "Video ad volume control", "href": "/video-ad_volume-control" }
       ]
-    ]
+    },
+    {
+      "group": "Testing & debugging",
+      "icon": "bug",
+      "pages": [
+        { "title": "Testing", "href": "/testing" },
+        { "title": "Ads not showing", "href": "/common-reasons-for-ads-not-showing" },
+        { "title": "Ad Inspector", "href": "/ad-inspector" }
+      ]
+    },
+    {
+      "group": "Reference",
+      "icon": "book",
+      "pages": [
+        { "title": "v17 API reference", "href": "/rngma-v17-api-reference" },
+        { "title": "Config plugin reference", "href": "/config-plugin" },
+        { "title": "For AI agents", "href": "/ai-agents" }
+      ]
+    },
+    {
+      "group": "Migration guides",
+      "icon": "code-branch",
+      "pages": [
+        { "title": "Migrating to v17", "href": "/migrating-to-v17" },
+        { "title": "Migrating to v15", "href": "/migrating-to-v15" },
+        { "title": "Migrating to v6", "href": "/migrating-to-v6" },
+        { "title": "Migrating to v5", "href": "/migrating-to-v5" }
+      ]
+    }
   ]
 }

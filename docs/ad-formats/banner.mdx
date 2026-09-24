@@ -1,0 +1,97 @@
+---
+title: Banner ads
+description: Integrate component-based banner ads, including anchored adaptive and collapsible banners.
+---
+
+# Banner Ads (component)
+
+Banner ads are partial adverts which can be integrated within your existing application. Unlike Interstitial and Rewarded Ads,
+a Banner only takes up a limited area of the application and displays an advert within the area. This allows you to integrate
+adverts without a disruptive action.
+
+The module exposes a [`BannerAd`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/ads/BannerAd.tsx) component. The `unitId` and `size` props are required to display
+a banner:
+
+```js
+import React, { useState, useRef } from 'react';
+import { Platform } from 'react-native';
+import { BannerAd, BannerAdSize, TestIds, useForeground } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+
+function App() {
+  const bannerRef = useRef < BannerAd > null;
+
+  // (iOS) WKWebView can terminate if app is in a "suspended state", resulting in an empty banner when app returns to foreground.
+  // Therefore it's advised to "manually" request a new ad when the app is foregrounded (https://groups.google.com/g/google-admob-ads-sdk/c/rwBpqOUr8m8).
+  useForeground(() => {
+    Platform.OS === 'ios' && bannerRef.current?.load();
+  });
+
+  return (
+    <BannerAd
+      ref={bannerRef}
+      unitId={adUnitId}
+      size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
+    />
+  );
+}
+```
+
+The `size` prop takes a [`BannerAdSize`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/BannerAdSize.ts) type, and once the advert is available, will
+fill the space for the chosen size.
+
+<Info>
+  If no inventory for the size specified is available, an error will be thrown via
+  `onAdFailedToLoad`!
+</Info>
+
+The `requestOptions` prop is additional optional request options object to be sent whilst loading an advert, such as keywords & location.
+Setting additional request options helps AdMob choose better tailored ads from the network.
+View the [`RequestOptions`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestOptions.ts) documentation to view the full range of options available.
+
+The component also exposes props for listening to events, which you can use to handle the state of your app is the user
+or network triggers an event:
+
+- `onAdClosed`
+- `onAdFailedToLoad`
+- `onAdLeftApplication`
+- `onAdOpened`
+- `onAdImpression`
+- `onAdClicked`
+- `onPaid` &mdash; On [impression-level ad revenue](https://support.google.com/admob/answer/11322405?hl=en) events.
+
+Each render of the component loads a single advert, allowing you to display multiple adverts at once. If you need to reload/change
+an advert for a currently mounted component, you'll need to force a re-render inside of your own code.
+
+### Collapsible banner ads
+
+Collapsible banner ads are banner ads that are initially presented as a larger overlay, with a button to collapse them to the originally requested banner size.
+Collapsible banner ads are intended to improve performance of anchored ads that are otherwise a smaller size.
+This guide shows how to turn on collapsible banner ads for existing banner placements.
+
+```js
+import React from 'react';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+
+function App() {
+  return (
+    <BannerAd
+      unitId={adUnitId}
+      size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
+      requestOptions={{
+        networkExtras: {
+          collapsible: 'bottom',
+        },
+      }}
+    />
+  );
+}
+```
+
+<Info>
+  Looking for a Google Ad Manager banner (`GAMBannerAd` with multiple `sizes`)? See the [Google Ad
+  Manager](/ad-formats/ad-manager) guide.
+</Info>
