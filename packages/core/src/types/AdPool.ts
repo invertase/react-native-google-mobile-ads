@@ -377,6 +377,12 @@ export type AdPoolsApi = {
    * platform preloader rejects that format with no usable signal, so the pool
    * can never fill. Check `fullscreenPreloadFormats` before creating, or catch
    * reason `'pool/format-preload-unsupported'`.
+   *
+   * @remarks
+   * **WARNING:** Triggers Android native `initialize()` via
+   * `ensureMobileAdsInitialized()`. Do **not** call before consent is
+   * resolved. Prefer `AdPoolProvider` `enabled` (mirrors hook `autoLoad`), or
+   * only call after UMP / consent has finished.
    */
   create(config: AdPoolConfig): Promise<AdPool>;
   get(poolId: string): AdPool | null;

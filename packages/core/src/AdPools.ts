@@ -82,6 +82,16 @@ type InternalAdPoolsApi = Omit<AdPoolsApi, 'create'> & {
 const adPools: InternalAdPoolsApi = {
   getCapabilities: getAdCapabilities,
 
+  /**
+   * Create (or replace) a managed ad pool.
+   *
+   * @remarks
+   * **WARNING:** Calling this triggers Android native `initialize()` via
+   * `ensureMobileAdsInitialized()`. Do **not** call before consent is
+   * resolved. Prefer gating declarative ownership with `AdPoolProvider`'s
+   * `enabled` prop (mirrors hook `autoLoad`), or only invoke this after
+   * UMP / consent has finished.
+   */
   async create(config: AdPoolConfig, owner = null): Promise<AdPool> {
     // Ensure native event bridge subscriptions (including pool events) are live.
     MobileAds();

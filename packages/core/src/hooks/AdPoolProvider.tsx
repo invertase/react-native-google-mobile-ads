@@ -38,6 +38,13 @@ export type AdPoolProviderProps = {
    * id is the identity.
    */
   pools: AdPoolConfig[];
+  /**
+   * When `false`, stops *future* pool creates; never destroys, cancels, or
+   * unregisters already-created pools. Mirrors hook `autoLoad`: set it
+   * `false` while something create depends on is still resolving (typically
+   * consent), then flip `true` to resume creates. Default `true`.
+   */
+  enabled?: boolean;
   children: React.ReactNode;
 };
 
@@ -74,7 +81,7 @@ function configSignature(config: AdPoolConfig): string {
  * pool registered or was destroyed.
  */
 export function AdPoolProvider(props: AdPoolProviderProps): React.ReactElement {
-  const { pools, children } = props;
+  const { pools, children, enabled = true } = props;
   const ownedRef = React.useRef<Map<string, OwnedEntry>>(new Map());
   const pendingCreatesRef = React.useRef(new Set<string>());
   const createAttemptsRef = React.useRef(new Map<string, number>());
@@ -82,11 +89,14 @@ export function AdPoolProvider(props: AdPoolProviderProps): React.ReactElement {
   const mountedRef = React.useRef(true);
   const poolsRef = React.useRef(pools);
   poolsRef.current = pools;
+  const enabledRef = React.useRef(enabled);
+  enabledRef.current = enabled;
   const poolsSignature = pools.map(config => configSignature(config)).join('\0');
 
   const kickCreate = React.useCallback((config: AdPoolConfig, signature: string) => {
     const poolId = config.poolId;
     if (
+      !enabledRef.current ||
       !mountedRef.current ||
       getRegisteredAdPool(poolId) ||
       pendingCreatesRef.current.has(poolId)
@@ -161,21 +171,24 @@ export function AdPoolProvider(props: AdPoolProviderProps): React.ReactElement {
       }
     }
 
-    // Create or replace by signature.
-    for (const config of pools) {
-      const signature = configSignature(config);
-      const previous = owned.get(config.poolId);
-      if (previous && previous.signature === signature) {
-        if (getRegisteredAdPool(config.poolId) || pendingCreatesRef.current.has(config.poolId)) {
-          continue;
+    // Create or replace by signature. Skipped when enabled=false so existing
+    // pools survive a consent/gate flip; destroy-removed-ids above still runs.
+    if (enabled) {
+      for (const config of pools) {
+        const signature = configSignature(config);
+        const previous = owned.get(config.poolId);
+        if (previous && previous.signature === signature) {
+          if (getRegisteredAdPool(config.poolId) || pendingCreatesRef.current.has(config.poolId)) {
+            continue;
+          }
+        } else {
+          createAttemptsRef.current.delete(config.poolId);
         }
-      } else {
-        createAttemptsRef.current.delete(config.poolId);
+        owned.set(config.poolId, { config, signature });
+        kickCreate(config, signature);
       }
-      owned.set(config.poolId, { config, signature });
-      kickCreate(config, signature);
     }
-  }, [kickCreate, poolsSignature]);
+  }, [kickCreate, poolsSignature, enabled]);
 
   React.useEffect(() => {
     const onAppState = (state: AppStateStatus) => {
