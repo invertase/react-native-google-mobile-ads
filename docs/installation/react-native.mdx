@@ -57,6 +57,20 @@ npx react-native run-android
 
 Full key reference (including Expo camelCase parity): [Config plugin reference](/config-plugin).
 
+### iOS packaging and frameworks (CocoaPods)
+
+This module ships as a **CocoaPods** pod only. There is no Swift Package Manager (`Package.swift`) distribution yet.
+Until SPM packaging lands, integrate it through CocoaPods (including Expo prebuild / Continuous Native Generation, which still resolve native modules via CocoaPods).
+
+By default the podspec sets `static_framework` to `false`, so under CocoaPods `use_frameworks!` the module follows **dynamic** linkage unless you opt into static frameworks below.
+That default is the CocoaPods path that aligns with dynamic `use_frameworks! :linkage => :dynamic`.
+It does **not** replace a future SPM package for apps that consume React Native Firebase (or other dependencies) via SPM only.
+
+#### Optionally configure iOS static frameworks
+You may need this if you use this module in combination with `react-native-firebase` v15 and higher on the **CocoaPods** path, since that setup commonly requires `use_frameworks!` with static linkage.
+To enable static frameworks for this pod, add `$RNGoogleMobileAdsAsStaticFramework = true` near the top of your `Podfile` (before `use_native_modules!` / `use_react_native!`), then run `pod install` again.
+If the pod still needs the library-specific static opt-in, also set `$RNGoogleMobileAdsAsStaticFramework = true` in the generated `ios/Podfile` (or via a small config plugin / `expo-build-properties` Podfile property hook) before `pod install`.
+
 ## Optionally configure iOS static frameworks
 
 This module does **not** require static frameworks for a normal bare install. Use them only when

@@ -15,6 +15,7 @@ Built and maintained by [Invertase](https://invertase.io/?utm_source=docs&utm_me
   library.
 </Info>
 
+<<<<<<< HEAD
 The module supports six ad formats:
 
 1. Full screen [App open ads](/ad-formats/app-open).
@@ -36,3 +37,496 @@ The module supports six ad formats:
 7. [Show your first ad](/first-ad)
 
 Then explore the [ad formats](/ad-formats) in depth.
+=======
+### iOS packaging and frameworks (CocoaPods)
+
+This module ships as a **CocoaPods** pod only. There is no Swift Package Manager (`Package.swift`) distribution yet.
+Until SPM packaging lands, integrate it through CocoaPods (including Expo prebuild / Continuous Native Generation, which still resolve native modules via CocoaPods).
+
+By default the podspec sets `static_framework` to `false`, so under CocoaPods `use_frameworks!` the module follows **dynamic** linkage unless you opt into static frameworks below.
+That default is the CocoaPods path that aligns with dynamic `use_frameworks! :linkage => :dynamic`.
+It does **not** replace a future SPM package for apps that consume React Native Firebase (or other dependencies) via SPM only.
+
+#### Optionally configure iOS static frameworks
+
+Follow these steps on iOS if you need to use static frameworks (that is, `use_frameworks! :linkage => :static` in your `Podfile`).
+You may need this if you use this module in combination with `react-native-firebase` v15 and higher on the **CocoaPods** path, since that setup commonly requires `use_frameworks!` with static linkage.
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+To enable static frameworks for this pod, add `$RNGoogleMobileAdsAsStaticFramework = true` near the top of your `Podfile` (before `use_native_modules!` / `use_react_native!`), then run `pod install` again.
+
+</TabItem>
+<TabItem value="expo">
+
+Expo users may enable static frameworks by using the `expo-build-properties` plugin.
+To do so [follow the official `expo-build-properties` installation instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following code into your `app.json`, `app.config.js`, or `app.config.ts` file:
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ]
+  }
+}
+```
+
+If the pod still needs the library-specific static opt-in, also set `$RNGoogleMobileAdsAsStaticFramework = true` in the generated `ios/Podfile` (or via a small config plugin / `expo-build-properties` Podfile property hook) before `pod install`.
+
+</TabItem>
+</Tabs>
+
+### Android Kotlin compatibility
+
+Google Mobile Ads Android SDK 25.4 ships Kotlin 2.3 metadata. This library supports
+Kotlin 1.9.25 and newer:
+
+- With Kotlin 1.9.25 through versions earlier than 2.3, the library adds
+  `-Xskip-metadata-version-check` only to its own Kotlin compile tasks.
+- With Kotlin 2.3 or newer, no metadata skip is added.
+
+The scoped compiler flag is safe here because this module consumes the Google Mobile
+Ads public Java API. It is a compiler compatibility setting, not a dependency exclusion.
+If Kotlin code in your app or another module directly consumes an affected dependency,
+upgrade that module to Kotlin 2.3+ or configure its compile tasks separately.
+
+### Setting up Google AdMob
+
+Before you are able to display ads to your users, you must have a [Google AdMob account](https://apps.admob.com). Under the
+"Apps" menu item, create or choose an existing Android/iOS app. Each app platform exposes a unique account ID which needs to
+be added to the project.
+
+<Warning>
+  Attempting to build your app without configuring a valid App ID for this package will cause the
+  app to crash on start or fail to build.
+</Warning>
+
+Under the "App settings" menu item, you can find the "App ID":
+
+![Google AdMob App ID](https://prismic-io.s3.amazonaws.com/invertase%2F52dd6900-108c-47a6-accb-699fde963b99_new+project+%2813%29.jpg)
+
+The app IDs for Android and iOS need to be inserted into your app's native code.
+For bare React Native projects, you can add the app IDs to the `app.json` file.
+For Expo projects, we provide an [Expo config plugin](https://docs.expo.dev/config-plugins/introduction/).
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+```json
+// <project-root>/app.json
+{
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+  }
+}
+```
+
+For the changes to take effect, rebuild your project:
+
+```bash
+# For iOS
+npx pod-install
+npx react-native run-ios
+
+# For Android
+npx react-native run-android
+```
+
+</TabItem>
+<TabItem value="expo">
+
+This library contains an Expo config plugin which you must add to your `app.json`, `app.config.js`, or `app.config.ts` file.
+For these changes to take effect, you must rebuild your project's native code and install the new build on your device.
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+        }
+      ]
+    ]
+  }
+}
+```
+
+<Warning>️ This module contains custom native code which is NOT supported by Expo Go</Warning>
+
+If you're using Expo without EAS, run the following commands:
+
+```bash
+# For iOS
+npx expo prebuild
+npx expo run:ios
+
+# For Android
+npx expo prebuild
+npx expo run:android
+```
+
+If you're using Expo with EAS, create a new build:
+
+```bash
+# For online builds
+npx eas build --profile development
+
+# For local builds
+npx eas build --profile development --local
+```
+
+</TabItem>
+</Tabs>
+
+### Configure outbound requests
+
+If the default ad settings are not correct for your app, you can provide settings that will apply to all ad requests.
+
+For example, if the application targets children then you must configure the outbound requests to only
+receive content suitable for children before loading any adverts.
+
+If you need to set a custom request configuration, you must call the `setRequestConfiguration` method before initializing the Google Mobile Ads SDK:
+
+```js
+import mobileAds, { MaxAdContentRating } from 'react-native-google-mobile-ads';
+
+mobileAds()
+  .setRequestConfiguration({
+    // Update all future requests suitable for parental guidance
+    maxAdContentRating: MaxAdContentRating.PG,
+
+    // Indicates that you want your content treated as child-directed for purposes of COPPA.
+    tagForChildDirectedTreatment: true,
+
+    // Indicates that you want the ad request to be handled in a
+    // manner suitable for users under the age of consent.
+    tagForUnderAgeOfConsent: true,
+
+    // An array of test device IDs to allow.
+    testDeviceIdentifiers: ['EMULATOR'],
+  })
+  .then(() => {
+    // Request config successfully set!
+  });
+```
+
+To learn more about the request configuration settings, view the [`RequestConfiguration`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestConfiguration.ts) source code.
+
+### Initialize the Google Mobile Ads SDK
+
+Before loading ads, have your app initialize the Google Mobile Ads SDK by calling `initialize` which initializes the SDK and returns a promise once initialization is complete (or after a 30-second timeout).
+This needs to be done only once, ideally at app launch.
+
+<Warning>
+  Ads may be preloaded by the Mobile Ads SDK or mediation partner SDKs upon calling `initialize`. If
+  you need to obtain consent from users in the European Economic Area (EEA), set any
+  request-specific flags (such as tagForChildDirectedTreatment), or otherwise take action before
+  loading ads, ensure you do so before initializing the Mobile Ads SDK.
+</Warning>
+
+```js
+import mobileAds from 'react-native-google-mobile-ads';
+
+mobileAds()
+  .initialize()
+  .then(adapterStatuses => {
+    // Initialization complete!
+  });
+```
+
+If you are using mediation, you may wish to wait until the promise is settled before loading ads, as this will ensure that all mediation adapters are initialized.
+
+### Enable SKAdNetwork to track conversions (iOS)
+
+The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google and participating third-party buyers attribute an app install even when the IDFA is not available.
+Add the advised [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks) to your project as described below.
+Note that these identifiers are subject to change and should be updated regularly.
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+```json
+// <project-root>/app.json
+{
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "sk_ad_network_items": [
+      "cstr6suwn9.skadnetwork",
+      "4fzdc2evr5.skadnetwork",
+      "2fnua5tdw4.skadnetwork",
+      "ydx93a7ass.skadnetwork",
+      "p78axxw29g.skadnetwork",
+      "v72qych5uu.skadnetwork",
+      "ludvb6z3bs.skadnetwork",
+      "cp8zw746q7.skadnetwork",
+      "3sh42y64q3.skadnetwork",
+      "c6k4g5qg8m.skadnetwork",
+      "s39g8k73mm.skadnetwork",
+      "wg4vff78zm.skadnetwork",
+      "3qy4746246.skadnetwork",
+      "f38h382jlk.skadnetwork",
+      "hs6bdukanm.skadnetwork",
+      "mlmmfzh3r3.skadnetwork",
+      "v4nxqhlyqp.skadnetwork",
+      "wzmmz9fp6w.skadnetwork",
+      "su67r6k2v3.skadnetwork",
+      "yclnxrl5pm.skadnetwork",
+      "t38b2kh725.skadnetwork",
+      "7ug5zh24hu.skadnetwork",
+      "gta9lk7p23.skadnetwork",
+      "vutu7akeur.skadnetwork",
+      "y5ghdn5j9k.skadnetwork",
+      "v9wttpbfk9.skadnetwork",
+      "n38lu8286q.skadnetwork",
+      "47vhws6wlr.skadnetwork",
+      "kbd757ywx3.skadnetwork",
+      "9t245vhmpl.skadnetwork",
+      "a2p9lx4jpn.skadnetwork",
+      "22mmun2rn5.skadnetwork",
+      "44jx6755aq.skadnetwork",
+      "k674qkevps.skadnetwork",
+      "4468km3ulz.skadnetwork",
+      "2u9pt9hc89.skadnetwork",
+      "8s468mfl3y.skadnetwork",
+      "klf5c3l5u5.skadnetwork",
+      "ppxm28t8ap.skadnetwork",
+      "kbmxgpxpgc.skadnetwork",
+      "uw77j35x4d.skadnetwork",
+      "578prtvx9j.skadnetwork",
+      "4dzt52r2t5.skadnetwork",
+      "tl55sbb4fm.skadnetwork",
+      "c3frkrj4fj.skadnetwork",
+      "e5fvkxwrpn.skadnetwork",
+      "8c4e2ghe7u.skadnetwork",
+      "3rd42ekr43.skadnetwork",
+      "97r2b46745.skadnetwork",
+      "3qcr597p9d.skadnetwork"
+    ]
+  }
+}
+```
+
+</TabItem>
+<TabItem value="expo">
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "skAdNetworkItems": [
+            "cstr6suwn9.skadnetwork",
+            "4fzdc2evr5.skadnetwork",
+            "2fnua5tdw4.skadnetwork",
+            "ydx93a7ass.skadnetwork",
+            "p78axxw29g.skadnetwork",
+            "v72qych5uu.skadnetwork",
+            "ludvb6z3bs.skadnetwork",
+            "cp8zw746q7.skadnetwork",
+            "3sh42y64q3.skadnetwork",
+            "c6k4g5qg8m.skadnetwork",
+            "s39g8k73mm.skadnetwork",
+            "wg4vff78zm.skadnetwork",
+            "3qy4746246.skadnetwork",
+            "f38h382jlk.skadnetwork",
+            "hs6bdukanm.skadnetwork",
+            "mlmmfzh3r3.skadnetwork",
+            "v4nxqhlyqp.skadnetwork",
+            "wzmmz9fp6w.skadnetwork",
+            "su67r6k2v3.skadnetwork",
+            "yclnxrl5pm.skadnetwork",
+            "t38b2kh725.skadnetwork",
+            "7ug5zh24hu.skadnetwork",
+            "gta9lk7p23.skadnetwork",
+            "vutu7akeur.skadnetwork",
+            "y5ghdn5j9k.skadnetwork",
+            "v9wttpbfk9.skadnetwork",
+            "n38lu8286q.skadnetwork",
+            "47vhws6wlr.skadnetwork",
+            "kbd757ywx3.skadnetwork",
+            "9t245vhmpl.skadnetwork",
+            "a2p9lx4jpn.skadnetwork",
+            "22mmun2rn5.skadnetwork",
+            "44jx6755aq.skadnetwork",
+            "k674qkevps.skadnetwork",
+            "4468km3ulz.skadnetwork",
+            "2u9pt9hc89.skadnetwork",
+            "8s468mfl3y.skadnetwork",
+            "klf5c3l5u5.skadnetwork",
+            "ppxm28t8ap.skadnetwork",
+            "kbmxgpxpgc.skadnetwork",
+            "uw77j35x4d.skadnetwork",
+            "578prtvx9j.skadnetwork",
+            "4dzt52r2t5.skadnetwork",
+            "tl55sbb4fm.skadnetwork",
+            "c3frkrj4fj.skadnetwork",
+            "e5fvkxwrpn.skadnetwork",
+            "8c4e2ghe7u.skadnetwork",
+            "3rd42ekr43.skadnetwork",
+            "97r2b46745.skadnetwork",
+            "3qcr597p9d.skadnetwork"
+          ]
+        }
+      ]
+    ]
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### App Tracking Transparency (iOS)
+
+Apple requires apps to display the App Tracking Transparency authorization request for accessing the IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads).
+Within your projects configuration file, you have to provide a user tracking usage description:
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+```json
+// <project-root>/app.json
+{
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "user_tracking_usage_description": "This identifier will be used to deliver personalized ads to you."
+  }
+}
+```
+
+</TabItem>
+<TabItem value="expo">
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+        }
+      ]
+    ]
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### Requesting App Tracking Transparency authorization
+
+To request the App Tracking Transparency authorization we recommend using a library or making it part of the UMP consent flow [European User Consent page](/european-user-consent).
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+```js
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+
+const result = await check(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
+if (result === RESULTS.DENIED) {
+  // The permission has not been requested, so request it.
+  await request(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
+}
+
+const adapterStatuses = await mobileAds().initialize();
+
+// Now ads can be loaded.
+```
+
+</TabItem>
+<TabItem value="expo">
+
+```js
+import {
+  getTrackingPermissionsAsync,
+  PermissionStatus,
+  requestTrackingPermissionsAsync,
+} from 'expo-tracking-transparency';
+
+const { status } = await getTrackingPermissionsAsync();
+if (status === PermissionStatus.UNDETERMINED) {
+  await requestTrackingPermissionsAsync();
+}
+
+const adapterStatuses = await mobileAds().initialize();
+
+// Now ads can be loaded.
+```
+
+</TabItem>
+</Tabs>
+
+### European User Consent
+
+Out of the box, AdMob does not handle any related regulations which you may need to enforce on your application.
+It is up to the developer to implement and handle this on a user-by-user basis. You must consent to EEA users
+being served both personalized and non-personalized adverts before showing them. For more information, see
+[Obtaining Consent with the User Messaging Platform](https://developers.google.com/admob/ump/android/quick-start).
+
+The AdMob module provides a `AdsConsent` helper to help developers quickly implement consent flows within their application.
+See the [European User Consent page](/european-user-consent) for full examples of how to integrate the helper into your application.
+
+### Test ads
+
+Whilst developing your app with AdMob, you'll want to make sure you use test ads rather than production ads from your
+Google AdMob account - otherwise your account may be disabled!
+
+Although usage of different advert types is explained later, when creating your adverts the "Ad Unit ID" being used whilst
+testing can be set to a testing ID. The code snippet below shows how to initialize each advert type with a test ID:
+
+```jsx
+import { AppOpenAd, InterstitialAd, RewardedAd, BannerAd, TestIds } from 'react-native-google-mobile-ads';
+
+# App Open
+AppOpenAd.createForAdRequest(TestIds.APP_OPEN);
+
+# Interstitial
+InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
+
+# Rewarded
+RewardedAd.createForAdRequest(TestIds.REWARDED);
+
+# Banners
+<BannerAd unitId={TestIds.BANNER} />
+```
+
+## Next Steps
+
+Now the basics of setting up and configuring AdMob have been explained, we can go ahead and start to display different
+adverts to our users. The AdMob module provides integration with six different types:
+
+- [App Open Ads](/displaying-ads#app-open-ads)
+- [Interstitial Ads](/displaying-ads#interstitial-ads)
+- [Rewarded Ads](/displaying-ads#rewarded-ads)
+- [Banner Ads](/displaying-ads#banner-ads-component)
+- [Rewarded Interstitial Ads](/displaying-ads#rewarded-interstitial-ads)
+- [Native Ads](/native-ads)
+>>>>>>> 3ca9216 (docs(ios): clarify CocoaPods dynamic default and that SPM is unavailable)
