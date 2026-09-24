@@ -13,6 +13,7 @@
 
 ## [Unreleased]
 
+* **displaying-ads:** document Android host UI flicker after fullscreen dismiss as AdActivity resume / insets (not package window flags) ([#732](https://github.com/invertase/react-native-google-mobile-ads/issues/732))
 * **displaying-ads:** document Android rewarded close / progress chrome under high-engagement as upstream AdActivity / creative UI ([#743](https://github.com/invertase/react-native-google-mobile-ads/issues/743))
 * **mediation:** document Pangle dual-host / iOS creative Auto Layout conflicts; core `destroy()` already covers lifecycle ([#738](https://github.com/invertase/react-native-google-mobile-ads/issues/738))
 * **mediation:** document Meta Audience Network iOS process-start abort as upstream FAN / adapter ([#783](https://github.com/invertase/react-native-google-mobile-ads/issues/783))

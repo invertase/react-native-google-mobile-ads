@@ -5,6 +5,9 @@ ABI
 Ad
 AdActivity
 adapterResponses
+adjustNothing
+adjustPan
+adjustResize
 AdChoices
 AdError
 AdLoader-style
@@ -130,6 +133,7 @@ iabtcf
 IDFA
 ILRD
 immersive
+immersiveModeEnabled
 installable
 Intellisense
 interstitials
@@ -327,6 +331,7 @@ PubSub
 qa
 react-native-firebase
 react-native-mlkit
+react-native-screens
 realtime
 Realtime
 reCAPTCHA
@@ -390,3 +395,4 @@ VPN
 VSCode
 waterfall
 waterfalls
+windowSoftInputMode
