@@ -333,11 +333,22 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
           watchStale(result.ad);
 
           // Wrap show so hook-owned successful show → consumed (fullscreen only).
+          //
+          // SH-2: this wrapper must preserve `PooledAd.show()`'s two-channel
+          // contract (see the long note in MobileAd.show()): a destroyed
+          // instance / invalid options THROW synchronously, and the returned
+          // promise REJECTS for not-loaded / already-requested / platform
+          // decline. It must therefore NOT be `async` — an async function would
+          // flatten the synchronous throw into a rejection and collapse both
+          // channels into one. Pooled `show()` is the imperative surface (there
+          // is no separate press-safe hook `show` callback for pools), so it is
+          // intentionally not press-safe: callers `.catch()` the promise, and a
+          // destroyed/misused ad throws synchronously like `MobileAd.show()`.
           if (isFullscreenPooledAd(result.ad)) {
             const fullscreen = result.ad as HookWrappedFullscreen;
             const originalShow = fullscreen.show.bind(fullscreen);
             fullscreen[hookWrappedShowKey] = originalShow;
-            fullscreen.show = async (options?: AdShowOptions) => {
+            fullscreen.show = (options?: AdShowOptions): Promise<void> => {
               const consumeIfOwned = () => {
                 if (adRef.current !== fullscreen || !ownedByHookRef.current) {
                   return;
@@ -357,16 +368,21 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
                 }));
                 void refreshAvailability(poolIdRef.current);
               };
+              // Sync channel: originalShow throws synchronously for destroyed /
+              // invalid-options. Call it before wiring the close listener so
+              // the throw propagates out of `show()` synchronously and no
+              // listener is leaked.
+              const showPromise = originalShow(options);
               const offClosed = fullscreen.addAdEventListener(AdEventType.CLOSED, () => {
                 offClosed();
                 consumeIfOwned();
               });
-              try {
-                await originalShow(options);
-              } catch (error) {
+              // Promise channel: a rejection (decline / not-loaded / already
+              // requested) removes the listener and propagates unchanged.
+              return showPromise.catch((error: unknown) => {
                 offClosed();
                 throw error;
-              }
+              });
             };
           }
 
