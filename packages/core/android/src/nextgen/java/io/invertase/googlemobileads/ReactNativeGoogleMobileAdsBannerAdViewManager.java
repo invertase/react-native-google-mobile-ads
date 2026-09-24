@@ -221,6 +221,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     AdView adView = new AdView(activity);
     adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
     view.setIsFluid(view.getSizes().contains(AdSize.FLUID));
+    view.setIsCollapsible(false);
     view.addView(adView);
     loadAd(view, adView);
   }
@@ -242,11 +243,23 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
                 () -> {
                   ad.setAdEventCallback(buildEventCallback(view, ad));
                   AdSize size = ad.getAdSize();
+                  boolean collapsible = ad.isCollapsible();
+                  view.setIsCollapsible(collapsible);
                   int width;
                   int height;
+                  boolean trackLayoutChanges =
+                      ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(
+                          view.getIsFluid(), collapsible);
                   if (view.getIsFluid()) {
                     width = view.getWidth();
                     height = view.getHeight();
+                  } else {
+                    width = size.getWidthInPixels(view.getContext());
+                    height = size.getHeightInPixels(view.getContext());
+                    adView.measure(width, height);
+                    adView.layout(0, 0, width, height);
+                  }
+                  if (trackLayoutChanges) {
                     adView.addOnLayoutChangeListener(
                         (v, l, t, r, b, oldL, oldT, oldR, oldB) -> {
                           if (!ReactNativeGoogleMobileAdsBannerAdLayout.shouldEmitSizeChange(
@@ -258,11 +271,6 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
                           changed.putDouble("height", PixelUtil.toDIPFromPixel(b - t));
                           sendEvent(view, EVENT_SIZE_CHANGE, changed);
                         });
-                  } else {
-                    width = size.getWidthInPixels(view.getContext());
-                    height = size.getHeightInPixels(view.getContext());
-                    adView.measure(width, height);
-                    adView.layout(0, 0, width, height);
                   }
                   WritableMap payload = Arguments.createMap();
                   payload.putDouble("width", PixelUtil.toDIPFromPixel(width));

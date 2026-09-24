@@ -23,9 +23,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Regression helpers for [#801](https://github.com/invertase/react-native-google-mobile-ads/issues/801):
+ * Regression helpers for [#801](https://github.com/invertase/react-native-google-mobile-ads/issues/801)
+ * and [#594](https://github.com/invertase/react-native-google-mobile-ads/issues/594):
  * Android FLUID banners must not treat every sizeConfig re-delivery or layout ping as a full
- * ad reload, and fluid measure/layout must adopt [android.view.View.getMeasuredHeight].
+ * ad reload, fluid/collapsible measure/layout must adopt [android.view.View.getMeasuredHeight],
+ * and collapsible ads must use the dynamic-height path.
  */
 class ReactNativeGoogleMobileAdsBannerAdLayoutTest {
   @Test
@@ -78,6 +80,14 @@ class ReactNativeGoogleMobileAdsBannerAdLayoutTest {
     assertTrue(
       ReactNativeGoogleMobileAdsBannerAdLayout.shouldEmitSizeChange(100, 200, 100, 250),
     )
+  }
+
+  @Test
+  fun usesDynamicHeight_forFluidOrCollapsible() {
+    assertFalse(ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(false, false))
+    assertTrue(ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(true, false))
+    assertTrue(ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(false, true))
+    assertTrue(ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(true, true))
   }
 
   @Test

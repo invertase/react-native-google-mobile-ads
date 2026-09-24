@@ -18,12 +18,17 @@ package io.invertase.googlemobileads
  */
 
 /**
- * Banner layout / reload gates for Android FLUID ads ([#801](https://github.com/invertase/react-native-google-mobile-ads/issues/801)).
+ * Banner layout / reload gates for Android FLUID ads ([#801](https://github.com/invertase/react-native-google-mobile-ads/issues/801))
+ * and collapsible expand ([#594](https://github.com/invertase/react-native-google-mobile-ads/issues/594)).
  *
  * Re-delivering an identical sizeConfig previously always set `propsChanged`, which destroyed
  * and reloaded the AdView on every JS dimension update. Fluid measure/layout must also adopt
  * [android.view.View.getMeasuredHeight] after an UNSPECIFIED measure — using stale
  * [android.view.View.getHeight] leaves the view at Yoga's prior height and fights onSizeChange.
+ *
+ * Collapsible banners are not FLUID, but their AdView height still changes after load (collapse /
+ * expand). They need the same UNSPECIFIED measure path and onSizeChange layout tracking;
+ * otherwise Yoga stays at the initial AdSize height until a React refocus re-lays out.
  */
 object ReactNativeGoogleMobileAdsBannerAdLayout {
   /**
@@ -52,6 +57,16 @@ object ReactNativeGoogleMobileAdsBannerAdLayout {
     return previousWidth != nextWidth
   }
 
+  /**
+   * FLUID and collapsible ads must measure with UNSPECIFIED height and forward AdView layout
+   * changes as onSizeChange. Fixed-size banners stay on the AdSize / Yoga EXACTLY path.
+   */
+  @JvmStatic
+  fun usesDynamicHeight(
+    isFluid: Boolean,
+    isCollapsible: Boolean,
+  ): Boolean = isFluid || isCollapsible
+
   /** Forward onSizeChange only when the ad view's pixel size actually changed. */
   @JvmStatic
   fun shouldEmitSizeChange(
@@ -61,7 +76,7 @@ object ReactNativeGoogleMobileAdsBannerAdLayout {
     newHeightPx: Int,
   ): Boolean = oldWidthPx != newWidthPx || oldHeightPx != newHeightPx
 
-  /** Bottom edge after a fluid UNSPECIFIED measure — always use measured height, not Yoga height. */
+  /** Bottom edge after a dynamic UNSPECIFIED measure — always use measured height, not Yoga height. */
   @JvmStatic
   fun fluidLayoutBottom(
     top: Int,
