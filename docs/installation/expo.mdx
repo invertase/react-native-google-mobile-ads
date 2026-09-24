@@ -1,28 +1,33 @@
 ---
 title: Installation - Expo
-description: Install and configure React Native Google Mobile Ads in an Expo project using the config plugin.
+description: Install and configure React Native Google Mobile Ads in an Expo project using the config plugin and a development build.
 ---
 
 # Installation — Expo
 
-Install the module and its config plugin:
+**Start here: Expo + a development build.** This is the recommended install path for most apps.
+
+This module contains custom native code and is **not** supported by Expo Go. You must use a
+[development build](https://docs.expo.dev/develop/development-builds/introduction/) — typically with
+[`expo-dev-client`](https://docs.expo.dev/develop/development-builds/introduction/) and/or
+[EAS Build](https://docs.expo.dev/build/introduction/).
+
+Bare React Native CLI projects: see [Installation — React Native CLI](/installation/react-native).
+
+## 1. Install the package
 
 ```bash
 npx expo install react-native-google-mobile-ads
 ```
 
-<Warning>
-  ️ This module contains custom native code which is NOT supported by Expo Go. You must use a
-  development build.
-</Warning>
+## 2. Configure your App IDs (config plugin)
 
-## Configure your App IDs (config plugin)
+Add the Expo config plugin to your `app.json`, `app.config.js`, or `app.config.ts`. For these
+changes to take effect, rebuild native code and install the new build on your device (see
+[Generate native projects](#4-generate-native-projects-prebuild-once) below).
 
-This library contains an Expo config plugin which you must add to your `app.json`, `app.config.js`, or `app.config.ts` file.
-For these changes to take effect, you must rebuild your project's native code and install the new build on your device.
-
-Before you can display ads you must have a [Google AdMob account](https://apps.admob.com) and an App ID for each platform —
-see [Configuration](/configuration) for where to find the App ID.
+Before you can display ads you must have a [Google AdMob account](https://apps.admob.com) and an
+App ID for each platform — see [Configuration](/configuration) for where to find the App ID.
 
 ```json
 // <project-root>/app.json
@@ -41,36 +46,55 @@ see [Configuration](/configuration) for where to find the App ID.
 }
 ```
 
-## Optionally configure iOS static frameworks
+Full plugin option reference: [Config plugin reference](/config-plugin).
 
-You may need static frameworks on iOS if you use this module in combination with `react-native-firebase`
-(see [Using with React Native Firebase](/firebase)). Expo users may enable static frameworks by using the
-`expo-build-properties` plugin.
-To do so [follow the official `expo-build-properties` installation instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following code into your `app.json`, `app.config.js`, or `app.config.ts` file:
+## 3. Add a development client (`expo-dev-client` / EAS)
 
-```json
-// <project-root>/app.json
-{
-  "expo": {
-    "plugins": [
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useFrameworks": "static"
-          }
-        }
-      ]
-    ]
-  }
-}
+If you do not already have a development build workflow, install the Expo development client:
+
+```bash
+npx expo install expo-dev-client
 ```
+
+Then create a development build — via EAS or a local prebuild + `run:*` — as described in the next
+section.
+
+## 4. Generate native projects (prebuild once)
+
+After installing the module or changing plugin config, generate native projects **once**, then build
+each platform:
+
+```bash
+npx expo prebuild
+
+# iOS
+npx expo run:ios
+
+# Android
+npx expo run:android
+```
+
+If you use EAS instead of local `run:*`, create a new development build (EAS runs prebuild as part of
+the build):
+
+```bash
+# Online
+npx eas build --profile development
+
+# Local
+npx eas build --profile development --local
+```
+
+Re-run prebuild (or create a new EAS build) whenever you change App IDs or other plugin options.
 
 ## Enable SKAdNetwork to track conversions (iOS)
 
-The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google and participating third-party buyers attribute an app install even when the IDFA is not available.
-Add the advised [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks) to your project as described below.
-Note that these identifiers are subject to change and should be updated regularly.
+The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google
+and participating third-party buyers attribute an app install even when the IDFA is not available.
+Add the advised
+[SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks)
+to your project as described below. Note that these identifiers are subject to change and should be
+updated regularly.
 
 ```json
 // <project-root>/app.json
@@ -143,8 +167,9 @@ Note that these identifiers are subject to change and should be updated regularl
 
 ## App Tracking Transparency (iOS)
 
-Apple requires apps to display the App Tracking Transparency authorization request for accessing the IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads).
-Within your project's configuration file, you have to provide a user tracking usage description:
+Apple requires apps to display the App Tracking Transparency authorization request for accessing the
+IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads). Within
+your project's configuration file, you have to provide a user tracking usage description:
 
 ```json
 // <project-root>/app.json
@@ -164,28 +189,39 @@ Within your project's configuration file, you have to provide a user tracking us
 }
 ```
 
-See [Consent & privacy basics](/consent-basics) for how to request App Tracking Transparency authorization at runtime.
+See [Consent & privacy basics](/consent-basics) for how to request App Tracking Transparency
+authorization at runtime.
 
-## Rebuild your app
+## Optionally configure iOS static frameworks
 
-If you're using Expo without EAS, run the following commands:
+You may need static frameworks on iOS when pairing this module with other native libraries that
+require `use_frameworks!`. Expo users can enable static frameworks with the `expo-build-properties`
+plugin.
 
-```bash
-# For iOS
-npx expo prebuild
-npx expo run:ios
+<Warning>
+  Coexistence with React Native Firebase is covered on
+  [Using with React Native Firebase](/firebase). Do not treat the snippet below as the RNFB path.
+</Warning>
 
-# For Android
-npx expo prebuild
-npx expo run:android
-```
+To enable static frameworks when you intentionally need them, [follow the official
+`expo-build-properties` installation
+instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following
+into your `app.json`, `app.config.js`, or `app.config.ts`:
 
-If you're using Expo with EAS, create a new build:
-
-```bash
-# For online builds
-npx eas build --profile development
-
-# For local builds
-npx eas build --profile development --local
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ]
+  }
+}
 ```

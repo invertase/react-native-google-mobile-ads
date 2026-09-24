@@ -140,7 +140,7 @@ The current migration status of individual native surfaces is:
 
 ## Documentation
 
-- [Installation](https://docs.page/invertase/react-native-google-mobile-ads)
+- [Installation (Expo — recommended)](https://docs.page/invertase/react-native-google-mobile-ads/installation/expo)
 - [Displaying Ads](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads)
 
 ## Contributing
