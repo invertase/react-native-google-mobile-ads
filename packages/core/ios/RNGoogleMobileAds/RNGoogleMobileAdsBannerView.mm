@@ -7,6 +7,7 @@
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
 
+#import <GoogleMobileAds/GAMBannerView.h>
 #import <RNGoogleMobileAdsSpec/ComponentDescriptors.h>
 #import <RNGoogleMobileAdsSpec/EventEmitters.h>
 #import <RNGoogleMobileAdsSpec/Props.h>
@@ -40,10 +41,7 @@ using namespace facebook::react;
   static const auto defaultProps = std::make_shared<const RNGoogleMobileAdsBannerViewProps>();
   _props = defaultProps;
 
-  if (_banner) {
-    [_banner removeFromSuperview];
-    _banner = nil;
-  }
+  [self destroyBanner];
 }
 
 - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps {
@@ -117,17 +115,29 @@ using namespace facebook::react;
 }
 
 - (void)dealloc {
-  if (_banner) {
-    [_banner removeFromSuperview];
-    _banner = nil;
-  }
+  [self destroyBanner];
 }
 
 #pragma mark - Methods
 
+- (void)destroyBanner {
+  if (_banner == nil) {
+    return;
+  }
+  // #540: clear copy-retained paidEventHandler before releasing the banner so
+  // a strong capture cannot keep the Fabric view + WKWebView creative alive.
+  _banner.paidEventHandler = nil;
+  _banner.delegate = nil;
+  if ([_banner isKindOfClass:[GAMBannerView class]]) {
+    ((GAMBannerView *)_banner).appEventDelegate = nil;
+  }
+  [_banner removeFromSuperview];
+  _banner = nil;
+}
+
 - (void)initBanner:(GADAdSize)adSize {
   if (_requested) {
-    [_banner removeFromSuperview];
+    [self destroyBanner];
   }
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
@@ -138,10 +148,18 @@ using namespace facebook::react;
   } else {
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
   }
+  // #540: GADBannerView.paidEventHandler is `copy`. Strongly capturing self
+  // (via _banner / _eventEmitter ivars) retains owner → banner → block → owner
+  // and leaks list banners on real devices. Match paper BannerComponent.
+  __weak __typeof(self) weakSelf = self;
   _banner.paidEventHandler = ^(GADAdValue *_Nonnull value) {
-    NSDictionary *paid =
-        [RNGoogleMobileAdsResponseInfo paidEventPayloadFromAdValue:value
-                                                      responseInfo:_banner.responseInfo];
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf == nil || strongSelf->_eventEmitter == nullptr || strongSelf->_banner == nil) {
+      return;
+    }
+    NSDictionary *paid = [RNGoogleMobileAdsResponseInfo
+        paidEventPayloadFromAdValue:value
+                       responseInfo:strongSelf->_banner.responseInfo];
     NSString *responseInfoJson = nil;
     id compact = paid[@"responseInfo"];
     if ([compact isKindOfClass:[NSDictionary class]]) {
@@ -155,7 +173,7 @@ using namespace facebook::react;
     // iOS has no exact micros (see paidEventPayloadFromAdValue → NSNull). Fabric event
     // strings default to ""; bannerEventPayload maps empty/absent → null for PaidEvent.
     std::dynamic_pointer_cast<const facebook::react::RNGoogleMobileAdsBannerViewEventEmitter>(
-        _eventEmitter)
+        strongSelf->_eventEmitter)
         ->onNativeEvent(facebook::react::RNGoogleMobileAdsBannerViewEventEmitter::OnNativeEvent {
           .type = "onPaid", .value = value.value.doubleValue,
           .precision = @(value.precision).doubleValue, .currency = value.currencyCode.UTF8String,
