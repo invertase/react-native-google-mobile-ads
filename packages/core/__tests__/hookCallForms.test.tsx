@@ -159,7 +159,7 @@ function SuspendRender({
 /**
  * Drives real `InterstitialAd` instances, with only the native module mocked,
  * so the show-path guards under test come from `MobileAd.show()` itself rather
- * than from a stub that decides when to throw.
+ * than from a stub that decides when to reject.
  */
 function trackRealInterstitials() {
   const createForAdRequest = InterstitialAd.createForAdRequest.bind(InterstitialAd);
@@ -1373,8 +1373,8 @@ describe('fullscreen hook call forms', () => {
     }
     render(<Probe />);
 
-    // `MobileAd.show()` throws "has not loaded" here. `show` is written at
-    // `onPress`, so the press has to survive it, and nothing native runs.
+    // `MobileAd.show()` rejects with "has not loaded" here. `show` is written
+    // at `onPress`, so the press has to survive it, and nothing native runs.
     expect(() => act(() => loadedNothing!.show())).not.toThrow();
     expect(interstitials.show).not.toHaveBeenCalled();
     expect(loadedNothing!).toMatchObject({ status: 'idle', error: null });
@@ -1404,7 +1404,7 @@ describe('fullscreen hook call forms', () => {
     // `'showing'` stays event-driven: the call itself moves no status.
     expect(result!.status).toBe('loaded');
 
-    // A second press before OPENED throws "Show has already been requested".
+    // A second press before OPENED rejects with "Show has already been requested".
     expect(() => act(() => result!.show())).not.toThrow();
     expect(interstitials.show).toHaveBeenCalledTimes(1);
     expect(result!).toMatchObject({ status: 'loaded', error: null });

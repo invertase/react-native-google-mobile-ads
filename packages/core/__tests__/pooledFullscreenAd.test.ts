@@ -141,7 +141,9 @@ describe('FEAT-05 pooledFullscreenAd + registry events', () => {
     await ad.show();
     await expect(ad.show()).rejects.toThrow(/already been requested/);
     ad.destroy();
-    await expect(ad.show()).rejects.toThrow(/destroyed/);
+    // Destroyed is use-after-free: show() throws synchronously, like the
+    // listener methods below. "Already requested" above stays a rejection.
+    expect(() => ad.show()).toThrow(/destroyed/);
     expect(() => ad.addAdEventListener(AdEventType.OPENED, () => undefined)).toThrow(
       /destroyed/,
     );

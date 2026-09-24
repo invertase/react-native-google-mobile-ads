@@ -151,9 +151,13 @@ type UseFullScreenAdResultBase = {
    */
   load: () => void;
   /**
-   * Shows a loaded ad. Unsafe presses no-op. Sync throws and promise rejections
-   * do not escape. This path synthesizes no hook state; an `AdError` appears
-   * only if an ad event arrives. Imperative `MobileAd.show()` remains a Promise.
+   * Shows a loaded ad. Press-safe: unsafe presses are a no-op. Absorbs BOTH
+   * failure channels of `MobileAd.show()` — the synchronous throw (destroyed /
+   * invalid options) and the promise rejection (not loaded / already requested
+   * / platform decline) — so neither escapes an `onPress`. This path
+   * synthesizes no hook state; an `AdError` appears only if an ad event
+   * arrives. The imperative `MobileAd.show()` keeps that two-channel contract
+   * for direct callers (see its source).
    */
   show: (showOptions?: AdShowOptions) => void;
   /**
@@ -324,16 +328,18 @@ function useFullScreenAdCore(
     if (!currentAd) {
       return;
     }
+    // `MobileAd.show()` uses two failure channels (see its source): it THROWS
+    // synchronously for destroyed / invalid-options, and its promise REJECTS
+    // for not-loaded / already-requested / platform-decline. This callback is
+    // written at `onPress`, so it must absorb BOTH — the try/catch swallows
+    // the synchronous throw, the `.catch()` swallows the rejection — leaving
+    // an unsafe press a no-op with no unhandled rejection. Ad events stay the
+    // failure channel, so nothing here writes hook state.
     try {
-      // `MobileAd.show()` throws synchronously when the ad is not showable —
-      // idle, already requested, or destroyed — and its promise can reject
-      // once the platform declines. This callback is written at `onPress`, so
-      // both are absorbed: an unsafe press is a no-op, and `void show()` never
-      // leaves an unhandled rejection. Ad events stay the failure channel, so
-      // nothing here writes hook state.
       void Promise.resolve(currentAd.show(showOptions)).catch(() => undefined);
     } catch {
-      // Not showable yet; the state that says so already rendered.
+      // Not showable / misused; the state that says so already rendered, and
+      // the imperative `MobileAd.show()` is where that throw surfaces loudly.
     }
   }, []);
 
