@@ -60,6 +60,9 @@ repositories {
 }
 
 dependencies {
+  // React Native bridge for Meta privacy hooks (AdSettings / advertiser-tracking JS API).
+  api("com.facebook.react:react-android")
+
   // Google-published Meta Audience Network GAM mediation adapter.
   // Pin: package.json sdkVersions.android.googleMobileAdsMediation (docs: 6.22.0.0 as of package publish; verify against current docs/Maven).
   // Core GMA is provided by react-native-google-mobile-ads; do not re-pin it here.

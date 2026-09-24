@@ -75,4 +75,20 @@ describe('Android SDK selection', () => {
     );
     expect(result.mods?.android?.gradleProperties).toBeDefined();
   });
+
+  it('warns on missing app IDs when called without plugin props', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      withReactNativeGoogleMobileAds({
+        ...config,
+        _internal: { projectRoot: process.cwd() },
+      } as ExpoConfig);
+      expect(warnSpy.mock.calls.some(call => String(call[0]).includes('androidAppId'))).toBe(
+        true,
+      );
+      expect(warnSpy.mock.calls.some(call => String(call[0]).includes('iosAppId'))).toBe(true);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
 });

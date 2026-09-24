@@ -9,6 +9,55 @@ type PluginParameters = {
   skAdNetworkItems?: string[];
 };
 
+/** Keys accepted by the facebook adapter Expo config plugin. */
+export const KNOWN_PLUGIN_PARAMETER_KEYS = ['skAdNetworkItems'] as const;
+
+const RUNTIME_META_KEYS_HINT =
+  'Advertiser tracking and data-processing options are runtime JS APIs on ' +
+  '@react-native-google-mobile-ads/facebook (setAdvertiserTrackingEnabled / setDataProcessingOptions), ' +
+  'not Expo plugin config. Call them before mobileAds().initialize().';
+
+/**
+ * Warn when Expo plugin options include keys this adapter plugin does not apply.
+ * Exported for unit tests.
+ */
+export function warnUnknownPluginParameters(
+  params: Record<string, unknown> | undefined,
+): void {
+  if (params == null || typeof params !== 'object' || Array.isArray(params)) {
+    return;
+  }
+
+  const known = new Set<string>(KNOWN_PLUGIN_PARAMETER_KEYS);
+  const unknownKeys = Object.keys(params).filter(key => !known.has(key));
+  if (unknownKeys.length === 0) {
+    return;
+  }
+
+  const runtimeKeys = unknownKeys.filter(key =>
+    /^(meta)?(AdvertiserTrackingEnabled|DataProcessingOptions|AudienceNetworkEnabled)$/i.test(
+      key,
+    ),
+  );
+  const otherKeys = unknownKeys.filter(key => !runtimeKeys.includes(key));
+
+  if (runtimeKeys.length > 0) {
+    console.warn(
+      `[@react-native-google-mobile-ads/facebook] Ignoring Expo plugin option(s): ${runtimeKeys.join(
+        ', ',
+      )}. ${RUNTIME_META_KEYS_HINT}`,
+    );
+  }
+
+  if (otherKeys.length > 0) {
+    console.warn(
+      `[@react-native-google-mobile-ads/facebook] Ignoring unknown Expo plugin option(s): ${otherKeys.join(
+        ', ',
+      )}. Known keys: ${KNOWN_PLUGIN_PARAMETER_KEYS.join(', ')}.`,
+    );
+  }
+}
+
 const withAdapterSkAdNetworkItems: ConfigPlugin<PluginParameters['skAdNetworkItems']> = (
   config,
   skAdNetworkItems,
@@ -40,12 +89,16 @@ const withAdapterSkAdNetworkItems: ConfigPlugin<PluginParameters['skAdNetworkIte
 
 /**
  * Optional Expo config plugin for `@react-native-google-mobile-ads/facebook`.
- * Does not set GMA app IDs (core plugin).
+ * Does not set GMA app IDs (core plugin). Does not set advertiser tracking
+ * (runtime JS — ATT status is not knowable at prebuild time).
  */
 const withRNGoogleMobileAdsAdapterFacebook: ConfigPlugin<PluginParameters> = (
   config,
-  { skAdNetworkItems } = {},
+  props = {},
 ) => {
+  warnUnknownPluginParameters(props as Record<string, unknown>);
+
+  const { skAdNetworkItems } = props;
   return withPlugins(config, [[withAdapterSkAdNetworkItems, skAdNetworkItems]]);
 };
 
