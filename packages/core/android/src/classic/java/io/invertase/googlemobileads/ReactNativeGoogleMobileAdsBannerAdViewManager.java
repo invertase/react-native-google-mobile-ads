@@ -276,7 +276,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
             ? new AdManagerAdView(currentActivity)
             : new AdView(currentActivity);
 
-    adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+    // FOCUS_BLOCK_DESCENDANTS alone is insufficient after creative load (#813).
+    ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
+    ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(reactViewGroup);
     adView.setOnPaidEventListener(
         new OnPaidEventListener() {
           @Override
@@ -291,6 +293,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
         new AdListener() {
           @Override
           public void onAdLoaded() {
+            // Creatives / mediation can re-enable focus on the AdView after load (#813).
+            ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
+            ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(reactViewGroup);
             AdSize adSize = adView.getAdSize();
             boolean collapsible = adView.isCollapsible();
             reactViewGroup.setIsCollapsible(collapsible);
