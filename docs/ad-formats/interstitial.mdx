@@ -154,6 +154,61 @@ Forward `AdEventType.PAID` payloads to your
 
 ## Caveats / limitations
 
+On Android 15+ (`targetSdk` 35+), if interstitial content draws under the system navigation bar, see
+[Android: interstitial content under the system navigation bar (API 35+)](#android-interstitial-content-under-the-system-navigation-bar-api-35).
+
+### Android: interstitial content under the system navigation bar (API 35+)
+
+On Android 15+ (`targetSdk` 35+), the platform can enforce edge-to-edge drawing on activities. Google Mobile Ads presents
+fullscreen creatives (interstitial, rewarded, rewarded interstitial, app open) in Google's own `AdActivity`, not in a
+view owned by this package:
+
+- Classic SDK: `com.google.android.gms.ads.AdActivity` with `@android:style/Theme.Translucent`
+- Next-Gen SDK: `com.google.android.libraries.ads.mobile.sdk.common.AdActivity` with `@style/Theme.GoogleMobileAds`
+  (transparent status and navigation bar colors)
+
+This package calls `show()` and forwards Google's fullscreen callbacks. It does **not** apply `WindowInsets`, host the
+creative layout, or replace Google's activity theme. If interstitial (or other fullscreen) content draws under the
+system navigation bar on API 35+, that layout is controlled by the Google Mobile Ads SDK / GMS module for `AdActivity`.
+
+Ways to mitigate this in **your** app (not in this library):
+
+- Prefer a current Google Mobile Ads SDK build and re-test after SDK / Google Play services updates. This package's tip
+  pins live in `packages/core/package.json` `sdkVersions`; they do **not** freeze classic fullscreen creative layout —
+  classic UI is delivered by the remote GMS ads module, not a fixed in-app layout in the client AAR.
+- Temporary app-side opt-out: define a custom theme that **parents** the SDK theme your backend already uses
+  (`@android:style/Theme.Translucent` for classic, `@style/Theme.GoogleMobileAds` for Next-Gen) and **only adds**
+  `android:windowOptOutEdgeToEdgeEnforcement=true` (API 35+ only; typically under `res/values-v35/`). Do **not** replace
+  those parents with an opt-out-only theme — that can break translucent / transparent-bar behavior on `AdActivity`.
+  Then merge-override Google's `AdActivity` in **your** `AndroidManifest.xml` with the matching `android:name`,
+  `tools:replace="android:theme"`, and `xmlns:tools` on the manifest root. Opt-out is a platform migration escape
+  hatch — validate immersive / video creatives and plan to remove it when the SDK no longer needs it.
+- Do **not** expect this React Native package to pad Google's `AdActivity` content; there is no public bridge API for
+  that window.
+
+Minimal classic example (Next-Gen: parent `@style/Theme.GoogleMobileAds` and
+`com.google.android.libraries.ads.mobile.sdk.common.AdActivity`):
+
+```xml
+<!-- res/values-v35/styles.xml -->
+<style name="Theme.AdActivity.OptOutEdgeToEdge" parent="@android:style/Theme.Translucent">
+  <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+</style>
+```
+
+```xml
+<!-- AndroidManifest.xml -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
+  <application>
+    <activity
+      android:name="com.google.android.gms.ads.AdActivity"
+      android:theme="@style/Theme.AdActivity.OptOutEdgeToEdge"
+      tools:replace="android:theme" />
+  </application>
+</manifest>
+```
+
 - On Android, if an app open ad closes when returning from the background via the launcher icon, see
   [Android: fullscreen ads closing after Home → resume](#android-fullscreen-ads-closing-after-home--resume).
 ### Android: fullscreen ads closing after Home → resume

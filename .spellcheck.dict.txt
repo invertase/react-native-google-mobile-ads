@@ -1,5 +1,6 @@
 100k
 64k
+AAR
 Ad
 AdActivity
 adapterResponses
@@ -103,7 +104,9 @@ getAdCapabilities
 getNumAdsAvailable
 globals
 GMA
+GMS
 Google-Mobile-Ads-SDK
+GoogleMobileAds
 gradle
 Gradle
 groupId
@@ -114,6 +117,7 @@ HTTPS
 IAB
 IDFA
 ILRD
+immersive
 installable
 Intellisense
 interstitials
@@ -323,6 +327,11 @@ SDK-managed
 SDK.
 SDKs
 SDKs.
+sdkVersions
+targetSdk
+Translucent
+WindowInsets
+windowOptOutEdgeToEdgeEnforcement
 SHA-256
 SHA1
 showable
