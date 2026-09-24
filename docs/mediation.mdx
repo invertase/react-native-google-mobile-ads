@@ -112,7 +112,11 @@ To open the ad inspector from your React Native application, see [Ad inspector](
 
 ## Meta Audience Network (Facebook)
 
-Install the scoped adapter package and call Meta’s privacy hooks **before** `mobileAds().initialize()`:
+Install the scoped adapter package (`@react-native-google-mobile-ads/facebook`) rather than pinning
+`GoogleMobileAdsMediationFacebook` alone via `expo-build-properties`. The package pins the Google
+mediation adapter (and thus `FBAudienceNetwork`) and exposes Meta privacy hooks.
+
+Call those hooks **before** `mobileAds().initialize()` when they apply:
 
 ```ts
 import mobileAds from 'react-native-google-mobile-ads';
@@ -121,7 +125,7 @@ import {
   setDataProcessingOptions,
 } from '@react-native-google-mobile-ads/facebook';
 
-// After App Tracking Transparency resolves (when you use ATT):
+// After App Tracking Transparency resolves (when you use ATT on iOS versions that still need it):
 setAdvertiserTrackingEnabled(trackingGranted);
 // Optional Limited Data Use:
 // setDataProcessingOptions(['LDU']);
@@ -129,9 +133,34 @@ setAdvertiserTrackingEnabled(trackingGranted);
 await mobileAds().initialize();
 ```
 
-On iOS this sets `FBAdSettings.setAdvertiserTrackingEnabled`. On Android, advertiser tracking is a no-op (Meta’s Android SDK has no equivalent setter); use `setDataProcessingOptions` when you need Limited Data Use.
+| Platform | Advertiser tracking                                                                                                                                                                                                                                                                                                                           | Data-processing options                 |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| iOS      | Calls `FBAdSettings.setAdvertiserTrackingEnabled`. On **iOS 17+** with Audience Network **6.15.0+**, Meta’s own header marks that setter deprecated and unused — the SDK reads `ATTrackingManager.trackingAuthorizationStatus` instead. Still call it on older iOS, or keep it for a single code path; it does not fix a process-start crash. | `FBAdSettings.setDataProcessingOptions` |
+| Android  | No-op — Meta’s Android `AdSettings` has no advertiser-tracking setter                                                                                                                                                                                                                                                                         | `AdSettings.setDataProcessingOptions`   |
 
 Do **not** put `metaAdvertiserTrackingEnabled` / `metaDataProcessingOptions` / `metaAudienceNetworkEnabled` on the core Expo plugin — those keys are not recognized. The core and `@react-native-google-mobile-ads/facebook` Expo plugins warn on unknown options. The facebook adapter plugin only merges `skAdNetworkItems`; advertiser tracking remains a runtime JS call because ATT status is not knowable at prebuild time.
+
+### iOS process-start crash when the Meta adapter is linked
+
+Linking `GoogleMobileAdsMediationFacebook` pulls in Meta’s `FBAudienceNetwork` framework. That SDK can
+abort during its own early `dispatch_once` work on the main queue — **before any ad request and before
+JavaScript runs**. A reported signature is `SIGABRT` with an unrecognized selector involving a format
+string `%s` on `NSString`. That path is inside Meta’s binary, not in `react-native-google-mobile-ads`
+native modules (the JS `setAdvertiserTrackingEnabled` bridge cannot run early enough to prevent it).
+
+If AppLovin / Unity mediation start fine and only Meta fails at launch:
+
+1. Confirm the **AdMob / GAM** iOS App ID is in Info.plist (`GADApplicationIdentifier` via the core Expo
+   plugin). A missing AdMob App ID also crashes at start; that is unrelated to Meta and is already
+   covered in [Getting Started](/index#getting-started).
+2. Set `NSUserTrackingUsageDescription` (core plugin `userTrackingUsageDescription`) when you use ATT.
+3. Prefer the scoped package pin (`GoogleMobileAdsMediationFacebook` **6.22.0.0** / `FBAudienceNetwork`
+   **6.22.0** with current core) over an older Expo `expo-build-properties` pod pin.
+4. Retest on a **non-beta** iOS release. Beta OS builds have shown the same Meta launch abort with older
+   adapter pins (for example mediation **6.17.1.0** on iOS 26 beta).
+
+This library cannot patch Meta’s closed-source `dispatch_once` path. Escalate persistent launch aborts
+to Meta Audience Network / Google’s Meta mediation adapter with a full crash report.
 
 See the [facebook adapter package documentation](https://github.com/invertase/react-native-google-mobile-ads/tree/main/packages/facebook) for class names and pins.
 

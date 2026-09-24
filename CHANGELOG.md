@@ -9,6 +9,8 @@
 * **android:** keep hardware BACK for React Navigation when `<BannerAd>` is mounted ([#813](https://github.com/invertase/react-native-google-mobile-ads/issues/813))
 * **plugin:** warn on unknown Expo config plugin keys (including ignored Meta `meta*` options) ([#828](https://github.com/invertase/react-native-google-mobile-ads/issues/828))
 
+## [Unreleased]
+
 ## [17.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v17.1.0...v17.2.0) (2026-09-25)
 
 ### Features
@@ -40,7 +42,6 @@
 * **hooks:** preserve PooledAd.show() two-channel contract in usePooledAd ([b2630e4](https://github.com/invertase/react-native-google-mobile-ads/commit/b2630e42ee4f26871c00df8c2c1f5d7da564cd55))
 * **hooks:** suppress app-open auto-show after another fullscreen ad (AO-2) ([7402f9f](https://github.com/invertase/react-native-google-mobile-ads/commit/7402f9f0640a26e9077b16084126087994456494))
 * **js:** name GAM unit remedy in AdMob banner pool/multi-format errors ([f463de9](https://github.com/invertase/react-native-google-mobile-ads/commit/f463de9ffd280a6aa5797f47f5fbe4253ea0b197))
-
 ## [17.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v17.0.0...v17.1.0) (2026-09-23)
 
 ### Features
