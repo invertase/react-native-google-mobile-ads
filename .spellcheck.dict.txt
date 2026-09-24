@@ -141,6 +141,7 @@ SIGABRT
 singleTask
 singleTop
 SMS
+SPM
 src
 staleness
 SVG
