@@ -175,6 +175,20 @@ function App() {
 }
 ```
 
+## Caveats / limitations
+
+### Banners inside scrolling content (iOS momentum)
+
+Banner creatives are rendered by the Google Mobile Ads SDK (typically a nested `WKWebView`). This package does **not** expose nested web-view scroll settings such as `decelerationRate` — the public `GADBannerView` / `GAMBannerView` APIs have no such knobs, so React Native `WebView` `decelerationRate` workarounds do not apply here.
+
+On iOS, finger-tracking scroll can feel fine while momentum after lift feels choppy when live banners sit inside a `ScrollView`. That mismatch is an upstream SDK embedding limitation, not a missing prop on `<BannerAd>`. To reduce it on the app side:
+
+- Prefer fewer concurrent live banners (for example one anchored banner outside the scrollable content).
+- Prefer `FlatList` / `SectionList` (or similar) recycling so off-screen rows unmount and tear down their banner views.
+- Avoid mounting many banners at once in a long non-recycling `ScrollView`.
+
+A separate Fabric retain-cycle bug that could keep banners alive after unmount (device heat / scroll death under dense lists) was fixed independently; that is not the same as momentum choppiness when banners are destroyed correctly on unmount.
+
 <Info>
   Looking for a Google Ad Manager banner (`GAMBannerAd` with multiple `sizes`)? See the [Google Ad
   Manager](/ad-formats/ad-manager) guide.
