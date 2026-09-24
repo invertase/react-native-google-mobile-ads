@@ -2,10 +2,12 @@ package io.invertase.googlemobileads.common;
 
 import android.content.Context;
 import android.widget.FrameLayout;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdLayout;
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * Using FrameLayout instead of ReactViewGroup
@@ -27,6 +29,8 @@ public class ReactNativeAdView extends FrameLayout {
   private boolean propsChanged;
   private boolean isFluid;
   private boolean isCollapsible;
+  private boolean adTornDown;
+  @Nullable private LifecycleEventListener hostDestroyListener;
 
   @Override
   public void requestLayout() {
@@ -156,5 +160,30 @@ public class ReactNativeAdView extends FrameLayout {
 
   public boolean getIsCollapsible() {
     return this.isCollapsible;
+  }
+
+  /**
+   * Marks this banner wrapper as torn down. Returns true only on the first call so destroy is
+   * idempotent across onDropViewInstance and host Activity destroy (#892).
+   */
+  public boolean beginAdTeardown() {
+    if (adTornDown) {
+      return false;
+    }
+    adTornDown = true;
+    return true;
+  }
+
+  public boolean isAdTornDown() {
+    return adTornDown;
+  }
+
+  public void setHostDestroyListener(@Nullable LifecycleEventListener hostDestroyListener) {
+    this.hostDestroyListener = hostDestroyListener;
+  }
+
+  @Nullable
+  public LifecycleEventListener getHostDestroyListener() {
+    return hostDestroyListener;
   }
 }

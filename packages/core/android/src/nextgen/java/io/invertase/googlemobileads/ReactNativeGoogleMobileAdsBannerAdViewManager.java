@@ -1,9 +1,11 @@
 package io.invertase.googlemobileads;
 
 import android.app.Activity;
+import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
@@ -58,7 +60,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @Nonnull
   @Override
   public ReactNativeAdView createViewInstance(@Nonnull ThemedReactContext context) {
-    return new ReactNativeAdView(context);
+    ReactNativeAdView view = new ReactNativeAdView(context);
+    LifecycleEventListener listener =
+        ReactNativeGoogleMobileAdsBannerAdHostDestroy.attach(context, () -> destroyAdView(view));
+    view.setHostDestroyListener(listener);
+    return view;
   }
 
   @Override
@@ -166,12 +172,30 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @Override
   public void onDropViewInstance(@NonNull ReactNativeAdView view) {
-    AdView adView = getAdView(view);
-    if (adView != null) {
-      adView.destroy();
-      view.removeView(adView);
-    }
+    destroyAdView(view);
     super.onDropViewInstance(view);
+  }
+
+  /**
+   * Idempotent AdView teardown for JS unmount ([onDropViewInstance]) and host Activity destroy
+   * (#892 configuration-change leak when AppState stays active).
+   */
+  private void destroyAdView(@NonNull ReactNativeAdView view) {
+    if (!view.beginAdTeardown()) {
+      return;
+    }
+    ReactContext reactContext = (ReactContext) view.getContext();
+    ReactNativeGoogleMobileAdsBannerAdHostDestroy.detach(
+        reactContext, view.getHostDestroyListener());
+    view.setHostDestroyListener(null);
+
+    View child = view.getChildCount() == 0 ? null : view.getChildAt(0);
+    if (child instanceof AdView) {
+      ((AdView) child).destroy();
+    }
+    if (child != null) {
+      view.removeView(child);
+    }
   }
 
   private void requestAd(ReactNativeAdView view) {
@@ -205,6 +229,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   }
 
   private void requestAdInitialized(ReactNativeAdView view) {
+    if (view.isAdTornDown()) {
+      return;
+    }
     if (view.getSizes() == null
         || view.getSizes().isEmpty()
         || view.getUnitId() == null
@@ -341,7 +368,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @Nullable
   private AdView getAdView(ViewGroup parent) {
-    return parent.getChildCount() == 0 ? null : (AdView) parent.getChildAt(0);
+    if (parent.getChildCount() == 0) {
+      return null;
+    }
+    View child = parent.getChildAt(0);
+    return child instanceof AdView ? (AdView) child : null;
   }
 
   private void sendEvent(ReactNativeAdView view, String type, @Nullable WritableMap payload) {
