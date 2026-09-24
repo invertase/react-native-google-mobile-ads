@@ -82,6 +82,15 @@ class MobileAdsModule implements MobileAdsModuleInterface {
     RNGoogleMobileAdsModule.setAppMuted(muted);
   }
 
+  registerWebView(viewTag: number) {
+    if (typeof viewTag !== 'number' || !Number.isFinite(viewTag)) {
+      throw new Error(
+        "googleMobileAds.registerWebView(*) 'viewTag' expected a finite number (React Native view tag)",
+      );
+    }
+    return RNGoogleMobileAdsModule.registerWebView(viewTag);
+  }
+
   disableMediationAdapterInitialization() {
     // Stub no-op until native wiring: then queued until initialize / reject after.
   }

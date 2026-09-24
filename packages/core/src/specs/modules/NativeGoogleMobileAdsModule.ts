@@ -17,7 +17,7 @@
 
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
-import type { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
+import type { Double, UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
 import { AdapterStatus } from '../../types';
 
@@ -34,6 +34,7 @@ export interface Spec extends TurboModule {
   openDebugMenu(adUnit: string): void;
   setAppVolume(volume: number): void;
   setAppMuted(muted: boolean): void;
+  registerWebView(viewTag: Double): Promise<void>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNGoogleMobileAdsModule');

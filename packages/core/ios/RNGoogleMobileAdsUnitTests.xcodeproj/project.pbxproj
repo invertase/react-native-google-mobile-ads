@@ -23,6 +23,8 @@
 		A1000000000000000000002A /* RNGoogleMobileAdsFullScreenDismissRecovery.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002B /* RNGoogleMobileAdsFullScreenDismissRecovery.m */; };
 		A1000000000000000000002D /* RNGoogleMobileAdsBannerPaidHandlerLifetimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002E /* RNGoogleMobileAdsBannerPaidHandlerLifetimeTests.m */; };
 		A1000000000000000000002F /* RNGoogleMobileAdsBannerPaidHandlerLifetime.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000031 /* RNGoogleMobileAdsBannerPaidHandlerLifetime.m */; };
+		A10000000000000000000033 /* RNGoogleMobileAdsWebViewRegistrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000034 /* RNGoogleMobileAdsWebViewRegistrationTests.m */; };
+		A10000000000000000000035 /* RNGoogleMobileAdsWebViewRegistration.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000036 /* RNGoogleMobileAdsWebViewRegistration.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +52,9 @@
 		A1000000000000000000002E /* RNGoogleMobileAdsBannerPaidHandlerLifecycleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsBannerPaidHandlerLifecycleTests.m; sourceTree = "<group>"; };
 		A10000000000000000000031 /* RNGoogleMobileAdsBannerPaidHandlerLifecycle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsBannerPaidHandlerLifecycle.m; sourceTree = "<group>"; };
 		A10000000000000000000032 /* RNGoogleMobileAdsBannerPaidHandlerLifecycle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNGoogleMobileAdsBannerPaidHandlerLifecycle.h; sourceTree = "<group>"; };
+		A10000000000000000000034 /* RNGoogleMobileAdsWebViewRegistrationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsWebViewRegistrationTests.m; sourceTree = "<group>"; };
+		A10000000000000000000036 /* RNGoogleMobileAdsWebViewRegistration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsWebViewRegistration.m; sourceTree = "<group>"; };
+		A10000000000000000000037 /* RNGoogleMobileAdsWebViewRegistration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNGoogleMobileAdsWebViewRegistration.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +89,7 @@
 				A10000000000000000000029 /* RNGoogleMobileAdsFullScreenDismissRecoveryTests.m */,
 				A1000000000000000000001F /* RNGoogleMobileAdsBannerEventMappingTests.m */,
 				A1000000000000000000002E /* RNGoogleMobileAdsBannerPaidHandlerLifecycleTests.m */,
+				A10000000000000000000034 /* RNGoogleMobileAdsWebViewRegistrationTests.m */,
 			);
 			name = Tests;
 			path = Tests;
@@ -114,6 +120,8 @@
 				A10000000000000000000025 /* RNGoogleMobileAdsBannerEventMapping.m */,
 				A10000000000000000000032 /* RNGoogleMobileAdsBannerPaidHandlerLifecycle.h */,
 				A10000000000000000000031 /* RNGoogleMobileAdsBannerPaidHandlerLifecycle.m */,
+				A10000000000000000000037 /* RNGoogleMobileAdsWebViewRegistration.h */,
+				A10000000000000000000036 /* RNGoogleMobileAdsWebViewRegistration.m */,
 			);
 			name = RNGoogleMobileAds;
 			path = RNGoogleMobileAds;
@@ -190,6 +198,8 @@
 				A10000000000000000000024 /* RNGoogleMobileAdsBannerEventMapping.m in Sources */,
 				A1000000000000000000002D /* RNGoogleMobileAdsBannerPaidHandlerLifecycleTests.m in Sources */,
 				A1000000000000000000002F /* RNGoogleMobileAdsBannerPaidHandlerLifecycle.m in Sources */,
+				A10000000000000000000033 /* RNGoogleMobileAdsWebViewRegistrationTests.m in Sources */,
+				A10000000000000000000035 /* RNGoogleMobileAdsWebViewRegistration.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
