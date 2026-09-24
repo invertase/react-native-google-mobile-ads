@@ -18,6 +18,7 @@
 #import "RNGoogleMobileAdsNativeView.h"
 #import "RNGoogleMobileAdsMediaView.h"
 #import "RNGoogleMobileAdsNativeAdRegistry.h"
+#import "RNGoogleMobileAdsNativeAdViewLayout.h"
 #import "RNGoogleMobileAdsNativeAssetInteraction.h"
 
 #ifdef RCT_NEW_ARCH_ENABLED
@@ -137,6 +138,25 @@ using namespace facebook::react;
 #endif  // RCT_NEW_ARCH_ENABLED
 
 #pragma mark - Common logics
+
+/**
+ * #700: GMA's native-ad validator rejects asset views that sit on a fractional
+ * outer edge (e.g. height 637.333). Expand width/height to the next whole point
+ * so assets remain inside the GADNativeAdView Google checks. Fabric hosts the
+ * SDK view as contentView; Paper is the GADNativeAdView itself.
+ */
+- (void)layoutSubviews {
+  [super layoutSubviews];
+#ifdef RCT_NEW_ARCH_ENABLED
+  _nativeAdView.frame = RNGoogleMobileAdsCeilNativeAdViewFrame(self.bounds);
+#endif
+}
+
+#ifndef RCT_NEW_ARCH_ENABLED
+- (void)setFrame:(CGRect)frame {
+  [super setFrame:RNGoogleMobileAdsCeilNativeAdViewFrame(frame)];
+}
+#endif
 
 - (void)setResponseId:(NSString *)responseId {
   _responseId = [responseId copy];
