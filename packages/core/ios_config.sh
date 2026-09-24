@@ -158,8 +158,27 @@ for i in "${!_PLIST_ENTRY_KEYS[@]}"; do
   echo "    ->  $i) ${_PLIST_ENTRY_KEYS[$i]}" "${_PLIST_ENTRY_TYPES[$i]}" "${_PLIST_ENTRY_VALUES[$i]}"
 done
 
+# Xcode may start this Build Phase before Process Info.plist has finished writing
+# $(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH) (GitHub #568). Autolinking already sets
+# after_compile + input_files + always_out_of_date; still poll briefly for the race.
+# RNGMA_INFOPLIST_WAIT_MAX = poll count (default 150 × 0.2s ≈ 30s). Use 0 in tests.
+_PLIST_WAIT_MAX="${RNGMA_INFOPLIST_WAIT_MAX:-150}"
+_PLIST_WAIT_I=0
+while ! [[ -f "${_TARGET_PLIST}" ]]; do
+  if [[ ${_PLIST_WAIT_I} -ge ${_PLIST_WAIT_MAX} ]]; then
+    break
+  fi
+  if [[ $((_PLIST_WAIT_I % 25)) -eq 0 ]]; then
+    echo "note:   waiting for Info.plist at ${_TARGET_PLIST} (${_PLIST_WAIT_I}/${_PLIST_WAIT_MAX})"
+  fi
+  sleep 0.2
+  _PLIST_WAIT_I=$((_PLIST_WAIT_I + 1))
+done
+
 if ! [[ -f "${_TARGET_PLIST}" ]]; then
   echo "error: unable to locate Info.plist to set properties. App will crash without GADApplicationIdentifier set."
+  echo "error: expected path: ${_TARGET_PLIST}"
+  echo "error: if this persists, confirm the [RNGoogleMobileAds] Configuration Build Phase is after Process Info.plist, has Input Files \$(BUILT_PRODUCTS_DIR)/\$(INFOPLIST_PATH), and run pod install after upgrading this package."
   exit 1
 fi
 
