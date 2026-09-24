@@ -102,6 +102,8 @@ GAM
 GDPR
 getAdCapabilities
 getNumAdsAvailable
+getTCModel
+getUserChoices
 globals
 GMA
 GMS
@@ -110,11 +112,13 @@ GoogleMobileAds
 gradle
 Gradle
 groupId
+gvl
 Hesp
 Homebrew
 HTTP
 HTTPS
 IAB
+iabtcf
 IDFA
 ILRD
 immersive
@@ -146,6 +150,8 @@ logcat
 MainActivity
 maxManagedPoolAds
 MDX
+Metro
+mjs
 mlkit
 MLKit
 mono-repo
@@ -164,6 +170,7 @@ natively
 NativeMediaView
 NDK
 Node.js
+node_modules
 NoSQL
 Notifee
 NPE
@@ -346,6 +353,7 @@ SSV
 staleness
 StrictMode
 SVG
+TCF
 TestLab
 TFUA
 thenable
@@ -353,6 +361,7 @@ timezones
 triaging
 TypeDoc
 UI
+UnableToResolveError
 uncomment
 unhandled
 unrendered
