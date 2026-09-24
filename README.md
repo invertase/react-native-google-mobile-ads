@@ -147,7 +147,7 @@ for the full list.
 On Android you can choose the classic Google Mobile Ads SDK (default) or the
 [GMA Next-Gen SDK](https://developers.google.com/admob/android/next-gen/quick-start) at build
 time; the JavaScript API is the same either way. See
-[Android SDK backend](https://docs.page/invertase/react-native-google-mobile-ads/config-plugin#android-sdk-backend).
+[GMA Next-Gen SDK (Android)](https://docs.page/invertase/react-native-google-mobile-ads/next-gen-sdk).
 
 ### Native implementation status
 

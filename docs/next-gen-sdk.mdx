@@ -34,6 +34,7 @@ pool peek on Android (see [Detecting the linked backend](#detecting-the-linked-b
 
 ### AdMob-hosted mediation
 
+Per [Google's Next-Gen migration guide](https://developers.google.com/admob/android/next-gen/migration),
 Next-Gen works with **no mediation** or with **AdMob as the mediation host**. The
 scoped adapter packages (`@react-native-google-mobile-ads/<network>`) read the same
 backend selection as core. When Next-Gen is selected, each adapter excludes transitive
@@ -158,8 +159,10 @@ Notable Android Next-Gen capability differences versus classic (same JS API):
 | Display (banner / native) preload                       | `emulated`        | `emulated`         |
 | SDK-managed pool `peekResponseInfo`                     | `unavailable`     | `supported`        |
 
-Prefer presets over hand-rolled capability matrices. See the
-[v17 API reference](/rngma-v17-api-reference#capability-discovery-new) and
+Prefer presets over hand-rolled capability matrices. See
+[`AdCapabilities`](https://invertase.github.io/react-native-google-mobile-ads/AdCapabilities.html)
+and [`getAdCapabilities`](https://invertase.github.io/react-native-google-mobile-ads/getAdCapabilities.html)
+in the [API reference](https://invertase.github.io/react-native-google-mobile-ads/), and
 [Preload pools diagnostics](/preload-pools-and-multiformat-recipes#diagnostics-dump).
 
 ## Native SDK version overrides
@@ -182,3 +185,7 @@ Next-Gen requires `minSdkVersion` 24+ and a modern `compileSdkVersion`, matching
 library's Android baseline (min API 24; supported host compile / target API 36). Kotlin
 1.9+ is already required by the library. No extra host action is needed beyond selecting
 the backend and rebuilding.
+
+Unlike classic Android, Next-Gen does not initialize itself. This library holds ad
+requests made before [`initialize()`](/initialization) completes and replays them once
+initialization finishes, so ads do not load under Next-Gen until you call `initialize()`.

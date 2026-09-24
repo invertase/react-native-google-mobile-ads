@@ -52,8 +52,9 @@ mobileAds()
     // manner suitable for users under the age of consent.
     tagForUnderAgeOfConsent: true,
 
-    // An array of test device IDs to allow.
-    testDeviceIdentifiers: ['EMULATOR'],
+    // Hashed ids of physical test devices; emulators and simulators are automatic.
+    // See /testing#register-a-test-device.
+    testDeviceIdentifiers: ['YOUR-HASHED-TEST-DEVICE-ID'],
   })
   .then(() => {
     // Request config successfully set!

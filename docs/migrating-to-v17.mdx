@@ -45,6 +45,53 @@ You can upgrade, ship, and adopt new APIs later.
 4. Prefer branching on structured `reason` / `phase` (and hook `status`) over legacy `code` strings.
 5. Call `destroy()` (or let hooks / `release()` ownership rules do it) when you finish with an ad.
 6. Optionally adopt telemetry, pools, multi-format, or scoped adapter packages — see below.
+7. On v17.2 or newer, handle not-loaded and already-showing `show()` outcomes with `.catch()` —
+   see
+   [v17.2: `show()` reports not-loaded and already-showing on the promise](#v172-show-reports-not-loaded-and-already-showing-on-the-promise).
+
+## v17.2: `show()` reports not-loaded and already-showing on the promise
+
+We recognize v17 is very new and expect essentially no one has adopted the new v17 APIs yet. This
+smooths a real rough edge: the two most common "not right now" conditions on `show()` — not loaded,
+and already showing — now come back on the returned promise, like a platform decline, so a single
+`.catch()` (or `try { await } catch`) covers them. A destroyed or misused ad still throws
+synchronously, on purpose, as a loud programmer-error signal. If you drive fullscreen ads through
+the hooks, nothing changes — the hook `show` was always press-safe.
+
+What changed for `MobileAd.show()` (`InterstitialAd`, `RewardedAd`, `RewardedInterstitialAd`,
+`AppOpenAd`, `GAMInterstitialAd`):
+
+| Condition                          | v17.1 and earlier    | v17.2 and newer                  |
+| ---------------------------------- | -------------------- | -------------------------------- |
+| Not loaded yet                     | Throws synchronously | Rejects the returned promise     |
+| Show already requested (in flight) | Throws synchronously | Rejects the returned promise     |
+| Platform declines to present       | Rejects              | Rejects (unchanged)              |
+| Ad has been destroyed              | Throws synchronously | Throws synchronously (unchanged) |
+| Structurally invalid `showOptions` | Throws synchronously | Throws synchronously (unchanged) |
+
+The error messages are the same as before. If you wrapped `show()` in a synchronous `try` /
+`catch` to handle not-loaded or already-showing, move that handling to the promise:
+
+```ts
+// v17.1 and earlier: not-loaded and already-requested were thrown synchronously.
+try {
+  interstitial.show();
+} catch (error) {
+  console.warn(error);
+}
+
+// v17.2 and newer: not-loaded, already-showing, and platform declines come back on the promise.
+interstitial.show().catch(error => {
+  console.warn(error);
+});
+// A destroyed instance or invalid options still throw synchronously (programmer error) — fix the
+// call site.
+```
+
+The existing fullscreen hooks (`useInterstitialAd`, `useRewardedAd`, `useRewardedInterstitialAd`,
+`useAppOpenAd`) are unchanged: their `show` absorbs both channels, so an `onPress={() => show()}`
+is a no-op on failure and hook call sites need no change. The new `useGAMInterstitialAd` shares
+the same press-safe `show`.
 
 ## Additive: `ResponseInfo` and paid telemetry
 
@@ -175,7 +222,7 @@ the current instance.
 
 `autoLoad` is a load **policy**, not a second placement identity. Setting it `false`
 stops future automatic loads; it does not cancel an in-flight request (platforms do not
-expose load cancellation). See [Fullscreen ads with hooks](/ad-formats/hooks).
+expose load cancellation). See [React hooks](/ad-formats/hooks).
 
 Automatic loading does **not** re-fire after `'closed'`. Call `load()` / `retry()` (or
 flip `autoLoad` with a new consent-ready value) when you want the next ad.
@@ -320,7 +367,7 @@ Account approval, new units, test devices, and `applicationId` issues still domi
 - [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics)
 - [Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes)
 - [Ad formats](/ad-formats)
-- [Fullscreen ads with hooks](/ad-formats/hooks)
+- [React hooks](/ad-formats/hooks)
 - [Mediation](/mediation)
 - [Common reasons for ads not showing](/common-reasons-for-ads-not-showing)
 - [Migrating to v15](/migrating-to-v15) — prior Android Kotlin floor note

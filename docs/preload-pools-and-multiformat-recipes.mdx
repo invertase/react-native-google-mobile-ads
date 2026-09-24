@@ -22,9 +22,21 @@ multi-format APIs are **opt-in**. Full TypeScript shapes live in the
 | Warm display (native + banner) inventory                   | `AdPoolPresets.display` + provider / `usePooledAd` (depth **1**, emulated) |
 | Ask what this binary can do (diagnostics only)             | `getAdCapabilities()`                                                      |
 
+## Consent before pools
+
+`AdPools.create` initializes the Google Mobile Ads SDK on Android and starts preloading
+immediately. Create pools only after consent is resolved:
+
+- **Declarative:** pass `enabled={consentReady}` to `AdPoolProvider`. `enabled` defaults to
+  `true`. `false` stops **future** creates only; it does not destroy, cancel, or tear down
+  pools that already exist.
+- **Imperative:** call `AdPools.create` only after your consent flow has finished.
+
+See [European User Consent](/european-user-consent).
+
 ## Recipe: fullscreen interstitial pool
 
-Canonical path for warming a classic fullscreen format. Same pattern applies to
+Canonical path for warming a single fullscreen format. Same pattern applies to
 rewarded and app open; use `AdFormat.REWARDED` or `AdFormat.APP_OPEN` in the
 preset.
 
@@ -64,16 +76,19 @@ function LevelEndButton() {
       unsub();
       next.destroy();
     });
-    await next.show();
+    await next.show().catch(() => {
+      unsub();
+      next.destroy();
+    });
   }, [poll, release]);
 
   return <Button title="Continue (ad)" onPress={onPress} />;
 }
 
-export function AppWithFullscreenPool() {
+export function AppWithFullscreenPool({ consentReady }: { consentReady: boolean }) {
   const pools = useMemo(() => [fullscreenPool], []);
   return (
-    <AdPoolProvider pools={pools}>
+    <AdPoolProvider pools={pools} enabled={consentReady}>
       <LevelEndButton />
     </AdPoolProvider>
   );
@@ -90,21 +105,38 @@ export function AppWithFullscreenPool() {
 - There is no separate “pooled interstitial hook”: a polled fullscreen `PooledAd`
   already exposes `show()` and the same event listeners.
 
-Imperative equivalent (no React provider):
+Imperative equivalent (no React provider; run after consent is resolved):
 
 ```ts
-import { AdFormat, AdPools, AdPoolPresets, TestIds } from 'react-native-google-mobile-ads';
+import {
+  AdEventType,
+  AdFormat,
+  AdPools,
+  AdPoolPresets,
+  TestIds,
+} from 'react-native-google-mobile-ads';
 
 const pool = await AdPools.create(
   AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL),
 );
 const result = await pool.poll();
 if (result.status === 'filled' && result.ad.format === AdFormat.INTERSTITIAL) {
-  if (result.ad.isStaleByPolicy()) {
-    result.ad.destroy();
+  const ad = result.ad;
+  if (ad.isStaleByPolicy()) {
+    ad.destroy();
   } else {
-    await result.ad.show();
-    result.ad.destroy();
+    // show() resolves once presentation starts, not when the ad closes.
+    const offClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
+      offClosed();
+      ad.destroy();
+    });
+    try {
+      await ad.show();
+    } catch (error) {
+      offClosed();
+      ad.destroy();
+      console.warn(error);
+    }
   }
 }
 ```
@@ -272,7 +304,7 @@ opt-in in v17 — see [GMA Next-Gen SDK (Android)](/next-gen-sdk).
 | Rewarded interstitial pools | **iOS only.** Both Android backends create hard-error (`pool/format-preload-unsupported`)                                                                                                            |
 | Display pools               | Library-emulated depth 1 on every backend; `displayPreload: 'emulated'`                                                                                                                              |
 | Multi-format                | GAM native ± banner, count 1                                                                                                                                                                         |
-| `maxManagedPoolAds`         | Always `null` (server-delivered). Documented classic default app-wide cap is **6**                                                                                                                   |
+| `maxManagedPoolAds`         | Always `null` (server-delivered). Google's documented default app-wide cap is **6**                                                                                                                  |
 | `poolResponseInfoPeek`      | SDK-managed peek: iOS and Android Next-Gen `supported`; Android classic **unavailable** (`pool/peek-unsupported`). Emulated display pools peek the library buffer without that gate on every backend |
 
 Pooling improves readiness and may let the SDK optimize cache order among already-won
@@ -351,13 +383,17 @@ Useful fields: `backend`, `sdkVersion`, `fullscreenPreloadFormats`, `displayPrel
 
 Google’s managed preload cache is **app-wide** across formats and preload IDs. The SDK
 resolves the limit from server-delivered settings, so `maxManagedPoolAds` reports
-`null`. The classic documented default is **6**. Shallow pools coexist comfortably;
+`null`. Google documents a default limit of **6** preloaded ads, shared across all formats and
+preload IDs, for [iOS](https://developers.google.com/admob/ios/ad-preloading#preload-cache-limits),
+[Android](https://developers.google.com/admob/android/ad-preloading#preload-cache-limits), and
+[Android Next-Gen](https://developers.google.com/admob/android/next-gen/ad-preloading#preload-cache-limits).
+Shallow pools coexist comfortably;
 many deep pools will clamp. Read `pool.resolved.effectiveBufferSize` after create.
 
 ## Related guides
 
 - [Ad formats](/ad-formats) — classic create/load/show
-- [Fullscreen ads with hooks](/ad-formats/hooks) — fullscreen hooks without pools
+- [React hooks](/ad-formats/hooks) — fullscreen, native, and pool hooks
 - [Native ads](/ad-formats/native) — standalone native layouts
 - [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics) —
   `responseInfo` / paid events on load and poll

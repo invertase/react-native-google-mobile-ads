@@ -24,8 +24,8 @@ export enum AdEventType {
    * ```js
    * import { AdEventType } from 'react-native-google-mobile-ads';
    *
-   * advert.addEventListener(AdEventType.LOADED, () => {
-   *   advert.show();
+   * advert.addAdEventListener(AdEventType.LOADED, () => {
+   *   advert.show().catch(console.warn);
    * });
    * ```
    */
@@ -39,7 +39,7 @@ export enum AdEventType {
    * ```js
    * import { AdEventType } from 'react-native-google-mobile-ads';
    *
-   * advert.addEventListener(AdEventType.ERROR, (error) => {
+   * advert.addAdEventListener(AdEventType.ERROR, (error) => {
    *   console.log('Ad error:', error);
    * });
    * ```

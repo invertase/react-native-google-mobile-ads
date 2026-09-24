@@ -29,25 +29,31 @@ export type AdCapabilities = {
   multiFormatNativeBanner: CapabilitySupport;
   /**
    * Coarse rollup of fullscreen preload. Prefer `fullscreenPreloadFormats` for
-   * gating: one value cannot express that Android classic rejects rewarded
-   * interstitial while accepting the other three fullscreen formats.
+   * gating: one value cannot express that both Android backends (classic and
+   * Next-Gen) reject rewarded interstitial while accepting the other three
+   * fullscreen formats.
    */
   fullscreenPreload: CapabilitySupport;
   /**
    * Per-format SDK-managed fullscreen preloader support. Gate rewarded
-   * interstitial pooling here before `AdPools.create`: on Android classic that
-   * format is `unavailable` and create hard-errors with
-   * `'pool/format-preload-unsupported'`.
+   * interstitial pooling here before `AdPools.create`: on both Android
+   * backends (classic and Next-Gen) that format is `unavailable` and create
+   * hard-errors with `'pool/format-preload-unsupported'`.
    */
   fullscreenPreloadFormats: Record<FullscreenAdFormat, CapabilitySupport>;
-  /** Banner/native preloader. Unsupported on both classic backends. */
+  /**
+   * Banner/native preloader. No backend (iOS, Android classic, Android
+   * Next-Gen) ships one, so this is `emulated` everywhere: display pools are
+   * library-managed depth-1.
+   */
   displayPreload: CapabilitySupport;
   /** numberOfAds > 1. Unsupported on mediated units. */
   multiCountNative: CapabilitySupport;
   /**
    * Non-consuming head-of-queue `ResponseInfo` peek for **SDK-managed** pools.
-   * Classic Android has no SDK peek API (`unavailable`); classic iOS exposes
-   * `adResponseInfoWithPreloadID:` (`supported`). When `unavailable`,
+   * iOS (`adResponseInfoWithPreloadID:`) and Android Next-Gen
+   * (`peekAdResponseInfo`) expose one (`supported`); classic Android has no
+   * SDK peek API (`unavailable`). When `unavailable`,
    * SDK-managed `AdPool.peekResponseInfo()` hard-errors with
    * `'pool/peek-unsupported'` rather than resolving `null` (empty head).
    * Library-managed (emulated) pools peek their own buffer without this gate.

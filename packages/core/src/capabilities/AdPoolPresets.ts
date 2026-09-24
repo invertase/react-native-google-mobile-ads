@@ -62,7 +62,8 @@ type FullscreenPresetConfigCustomId<
  * Fullscreen buffer sized for this backend.
  *
  * Rewarded interstitial is accepted in the type for cross-platform presets,
- * but `AdPools.create` hard-errors on Android classic when
+ * but `AdPools.create` hard-errors on both Android backends (classic and
+ * Next-Gen) when
  * `fullscreenPreloadFormats[REWARDED_INTERSTITIAL]` is `unavailable` (reason
  * `'pool/format-preload-unsupported'`). Check that capability before create,
  * or catch the error.
@@ -70,8 +71,9 @@ type FullscreenPresetConfigCustomId<
  * Default `bufferSize: 1`. Google recommends 2 per preload ID; pass
  * `{ bufferSize: 2 }` to ask for that depth. The app-wide cap that depth
  * competes for is server-delivered (`maxManagedPoolAds` reports `null`).
- * The classic documented default for that app-wide cap is **6**
- * (P-poolcap-ios); do not invent a number on the capability field.
+ * Google's documented default for that app-wide cap is **6** on iOS, Android
+ * classic, and Android Next-Gen; do not invent a number on the capability
+ * field.
  * Depth 1 stays the default so create succeeds under a tight app-wide cap;
  * publishers that want Google's recommended depth opt in explicitly.
  *

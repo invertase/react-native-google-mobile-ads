@@ -105,7 +105,8 @@ function App() {
     <Button
       title="Show Rewarded Ad"
       onPress={() => {
-        rewarded.show();
+        // Not loaded, already showing, or a platform decline reject; a destroyed ad throws.
+        rewarded.show().catch(console.warn);
       }}
     />
   );

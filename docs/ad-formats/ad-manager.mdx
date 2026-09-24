@@ -55,56 +55,62 @@ through `GAMBannerAdSize` and expands or contracts its height to fit the returne
 
 ## GAM interstitial
 
-`GAMInterstitialAd` uses the same load/show lifecycle as `InterstitialAd` and adds support for GAM
-app events.
+`useGAMInterstitialAd` owns one Ad Manager interstitial with the same `status` lifecycle as the
+other [options-form hooks](/ad-formats/hooks), and adds GAM app events through `onAppEvent`.
 
 ```tsx
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import { Button } from 'react-native';
-import { AdEventType, GAMInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+import { TestIds, useGAMInterstitialAd } from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.GAM_INTERSTITIAL : '/xxx/interstitial';
 
-export default function GAMInterstitialButton() {
-  const [loaded, setLoaded] = useState(false);
-  const interstitial = useMemo(
-    () =>
-      GAMInterstitialAd.createForAdRequest(adUnitId, {
-        customTargeting: {
-          section: 'sports',
-          interests: ['football', 'running'],
-        },
-        categoryExclusions: ['airline'],
-      }),
-    [],
-  );
+const requestOptions = {
+  customTargeting: {
+    section: 'sports',
+    interests: ['football', 'running'],
+  },
+  categoryExclusions: ['airline'],
+};
+
+export default function GAMInterstitialButton({ consentReady }: { consentReady: boolean }) {
+  const { status, show, revenue } = useGAMInterstitialAd({
+    adUnitId,
+    autoLoad: consentReady,
+    requestOptions,
+    onAppEvent: ({ name, data }) => {
+      console.log('GAM app event', name, data);
+    },
+  });
 
   useEffect(() => {
-    const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
-      setLoaded(true);
-    });
-    const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
-      setLoaded(false);
-    });
-    const unsubscribePaid = interstitial.addAdEventListener(AdEventType.PAID, event => {
-      console.log('GAM interstitial revenue', event.value, event.currency);
-    });
-
-    interstitial.load();
-
-    return () => {
-      unsubscribeLoaded();
-      unsubscribeClosed();
-      unsubscribePaid();
-      interstitial.destroy();
-    };
-  }, [interstitial]);
+    if (revenue) {
+      console.log('GAM interstitial revenue', revenue.value, revenue.currency);
+    }
+  }, [revenue]);
 
   return (
-    <Button title="Show GAM interstitial" disabled={!loaded} onPress={() => interstitial.show()} />
+    <Button title="Show GAM interstitial" disabled={status !== 'loaded'} onPress={() => show()} />
   );
 }
 ```
+
+- `onAppEvent` receives `{ name, data }` for each Ad Manager app event the creative sends. It is
+  not mirrored into hook state, and changing the callback does not recreate the ad. Set up the
+  creative side as described in Google's
+  [Ad Manager app events guide](https://developers.google.com/ad-manager/mobile-ads-sdk/android/banner#app_events).
+- The hook's `show()` is press-safe: it absorbs both the synchronous throw and the rejection, so
+  `onPress={() => show()}` needs no `.catch`. A press while the ad isn't showable is a silent
+  no-op; a platform show failure reported by the ad's `ERROR` event surfaces as `status: 'error'`
+  with `error` set.
+- The hook does not preload the next ad after `closed`; call `load()` when another impression is
+  plausible.
+
+For imperative create / load / show outside React, `GAMInterstitialAd.createForAdRequest` is still
+available. Listen for `GAMAdEventType.APP_EVENT`, and handle `show()` with
+`interstitial.show().catch(...)`: not loaded, already showing, and platform declines reject the
+returned promise, while a destroyed ad or invalid `showOptions` throw synchronously (a programmer
+error to fix at the call site).
 
 ## Target line items
 

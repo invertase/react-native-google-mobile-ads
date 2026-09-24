@@ -40,7 +40,7 @@ export interface RequestOptions {
    * Attaches `?campaign=abc&user=123` to the ad request:
    *
    * ```js
-   * await Interstitial.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
+   * InterstitialAd.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
    *   networkExtras: {
    *     campaign: 'abc',
    *     user: '123',
@@ -57,7 +57,7 @@ export interface RequestOptions {
    * #### Example
    *
    * ```js
-   * await Interstitial.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
+   * InterstitialAd.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
    *   keywords: ['fashion', 'clothing'],
    * });
    * ```
@@ -76,7 +76,7 @@ export interface RequestOptions {
    * #### Example
    *
    * ```js
-   * await Interstitial.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
+   * InterstitialAd.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
    *   contentUrl: 'https://www.example.com/article-a',
    * });
    * ```
@@ -97,7 +97,7 @@ export interface RequestOptions {
    * #### Example
    *
    * ```js
-   * await Interstitial.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
+   * InterstitialAd.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
    *   contentUrl: 'https://www.example.com/article-a',
    *   neighboringContentUrls: [
    *     'https://www.example.com/article-b',
@@ -133,7 +133,7 @@ export interface RequestOptions {
    * #### Example
    *
    * ```js
-   * await Interstitial.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
+   * InterstitialAd.createForAdRequest('ca-app-pub-3940256099942544/1033173712', {
    *   requestAgent: 'CoolAds',
    * });
    * ```
@@ -171,7 +171,7 @@ export interface RequestOptions {
    * #### Example
    *
    * ```js
-   * await Interstitial.createForAdRequest('/12345/ad-unit', {
+   * InterstitialAd.createForAdRequest('/12345/ad-unit', {
    *   publisherProvidedSignals: {
    *     IAB_CONTENT_2_2: [533, 483],    // Soccer, Sports
    *     IAB_AUDIENCE_1_1: [6, 284],     // Sports & Fitness, Soccer

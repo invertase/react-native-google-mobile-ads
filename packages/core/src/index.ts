@@ -23,10 +23,14 @@
  * | Need | API and ownership |
  * | --- | --- |
  * | Keep direct create/load/show, `BannerAd`, or `NativeAd` | Classic classes/components; your code owns the instance |
- * | Let React own one fullscreen ad lifecycle | Options-form fullscreen hooks |
+ * | Show a fullscreen ad imperatively | `ad.show()` rejects when not loaded, already showing, or declined, so `.catch` it; a destroyed ad or invalid `showOptions` throw synchronously (programmer error) |
+ * | Let React own one fullscreen ad lifecycle | Options-form fullscreen hooks; `useGAMInterstitialAd` for Ad Manager app events |
+ * | Show app open ads from a cold-start loading screen and on warm foreground | `useAppOpenAdManager`; gate consent with `adUnitId: null`, not `autoLoad` |
+ * | Let React own one native ad | `useNativeAd` with `NativeAdView` |
  * | Warm inventory, then poll at show time | `AdPoolProvider` + `usePooledAd`, or imperative `AdPools` outside React |
  * | Let native and GAM banner formats compete for one placement | `useMultiFormatAd`, or imperative `MultiFormatAdRequest` |
  * | Diagnose what this binary supports | `getAdCapabilities`; prefer presets over reproducing its matrix |
+ * | Register test devices | Emulators/simulators are automatic; `TestDeviceIds.EMULATOR` is a classic-Android-only alias |
  *
  * Pools and multi-format requests are additive. Existing direct APIs remain supported.
  *

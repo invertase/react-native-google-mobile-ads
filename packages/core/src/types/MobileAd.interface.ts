@@ -49,6 +49,16 @@ export interface MobileAdInterface {
   /**
    * Show the loaded advert to the user.
    *
+   * Uses two error channels:
+   *
+   * - **Rejects** the returned promise when the show did not happen: the ad
+   *   has not loaded, a show is already in flight, or the platform declines.
+   *   Handle these with `.catch()` (or `try { await } catch`).
+   * - **Throws synchronously** for programmer errors: the ad has been
+   *   destroyed, or `showOptions` are structurally invalid. Fix the call site.
+   *
+   * The fullscreen hooks' `show` absorbs both channels.
+   *
    * #### Example
    *
    * ```js
@@ -56,9 +66,11 @@ export interface MobileAdInterface {
    * const advert = InterstitialAd.createForAdRequest('...');
    *
    * advert.addAdEventListener(AdEventType.LOADED, () => {
-   *   advert.show({
-   *     immersiveModeEnabled: true,
-   *   });
+   *   advert
+   *     .show({
+   *       immersiveModeEnabled: true,
+   *     })
+   *     .catch(console.warn);
    * });
    * ```
    *
@@ -99,7 +111,7 @@ export interface MobileAdInterface {
    * // Create InterstitialAd/RewardedAd
    * const advert = InterstitialAd.createForAdRequest('...');
    *
-   * const unsubscribe = advert.addAdEventListener(AdEventType.Loaded, () => {
+   * const unsubscribe = advert.addAdEventListener(AdEventType.LOADED, () => {
    *
    * });
    *

@@ -26,15 +26,15 @@ diagnosing request outcomes. It intentionally does not repeat the installation f
 
 ## Quick path
 
-Use the package's platform-aware `TestIds` for the first request. Android emulators are
-automatically configured as test devices by Google. For a physical device, or when you want an
-explicit identifier in diagnostics, optionally register the device before calling `initialize()`.
+Use the package's platform-aware `TestIds` for the first request. Emulators and simulators are
+automatically test devices. For a physical device, register its hashed id (see
+[Register a test device](#register-a-test-device)) before calling `initialize()`.
 
 ```ts
 import mobileAds, { TestIds } from 'react-native-google-mobile-ads';
 
 await mobileAds().setRequestConfiguration({
-  // Optional explicit registration; Android emulators are already test devices.
+  // Physical devices only; emulators and simulators are already test devices.
   testDeviceIdentifiers: ['YOUR-HASHED-TEST-DEVICE-ID'],
 });
 
@@ -88,19 +88,36 @@ configured unit plus test mode for every mediated network.
 
 ## Register a test device
 
-Choose either method:
+Emulators and simulators are automatically test devices on every backend: classic Android,
+Android [Next-Gen](/next-gen-sdk), and iOS. You do not need to register them.
+
+For a **physical device**, choose either method:
 
 1. Add the device in the AdMob UI using Google's
    [test-device instructions](https://support.google.com/admob/answer/9691433).
-2. Make one request, copy the hashed identifier printed by the native SDK, and pass it through
+2. Run a development build on the device and make one ad request. The Google Mobile Ads SDK logs
+   the device's hashed test-device id with a ready-to-paste configuration snippet: Android logcat
+   shows a `RequestConfiguration.Builder.setTestDeviceIds(...)` call, and the Xcode console prints
+   a line setting `testDeviceIdentifiers` that contains your device id. Copy that id into
    `testDeviceIdentifiers` as shown above.
-3. Restart the app and confirm that Google-served ads carry a **Test Ad** or **Test mode** label
-   before interacting with them.
 
-Google states that Android emulators are automatically configured as test devices. Explicitly
-registering one with this package's `EMULATOR` constant or the identifier printed by the SDK is
-optional, but can make diagnostics and configuration intent clearer. A Google test label does not
-prove that a mediated network is in test mode; follow each network's test instructions too.
+Then restart the app and confirm that Google-served ads carry a **Test Ad** or **Test mode** label
+before interacting with them.
+
+`TestDeviceIds.EMULATOR` is a classic-Android-only convenience that maps to the SDK's emulator
+alias. You never need it, because emulators are already test devices, and it has no effect on
+Android Next-Gen or iOS:
+
+```ts
+import mobileAds, { TestDeviceIds } from 'react-native-google-mobile-ads';
+
+await mobileAds().setRequestConfiguration({
+  testDeviceIdentifiers: [TestDeviceIds.EMULATOR, 'YOUR-HASHED-TEST-DEVICE-ID'],
+});
+```
+
+A Google test label does not prove that a mediated network is in test mode; follow each network's
+test instructions too.
 
 ## Android emulator checklist
 
@@ -193,7 +210,7 @@ export function InterstitialDiagnostics() {
 }
 ```
 
-See [Fullscreen ads with hooks](/ad-formats/hooks) for a complete component and
+See [React hooks](/ad-formats/hooks) for a complete component and
 [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics) for
 `ResponseInfo`.
 

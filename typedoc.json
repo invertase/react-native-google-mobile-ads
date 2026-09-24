@@ -66,6 +66,8 @@
       "UseFullScreenAdResultBase",
       "UseFullScreenAdResultWithoutReward",
       "UseMultiFormatAdResultBase",
+      "UseNativeAdOutcome",
+      "UseNativeAdResultBase",
       "UsePooledAdResultBase"
     ]
   },

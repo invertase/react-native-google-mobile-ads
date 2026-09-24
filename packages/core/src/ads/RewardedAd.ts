@@ -58,10 +58,10 @@ import NativeRewardedModule from '../specs/modules/NativeRewardedModule';
  * ```js
  * import { RewardedAdEventType } from 'react-native-google-mobile-ads';
  *
- * rewarded.addAdEventListener(RewardedAdEventType.LOADED. () => {
- *   rewarded.show();
+ * rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+ *   rewarded.show().catch(console.warn);
  * });
- * rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD. (reward) => {
+ * rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
  *   console.log('User earned reward of ', reward);
  * });
  *
@@ -80,14 +80,14 @@ export class RewardedAd extends MobileAd {
    * ```js
    * import { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
    *
-   * const rewardedAd = await RewardedAd.createForAdRequest(TestIds.REWARDED, {
+   * const rewardedAd = RewardedAd.createForAdRequest(TestIds.REWARDED, {
    *   requestAgent: 'CoolAds',
    * });
    *
-   * rewarded.addAdEventListener(RewardedAdEventType.LOADED. () => {
-   *   rewarded.show();
+   * rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
+   *   rewardedAd.show().catch(console.warn);
    * });
-   * rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD. (reward) => {
+   * rewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
    *   console.log('User earned reward of ', reward);
    * });
    *

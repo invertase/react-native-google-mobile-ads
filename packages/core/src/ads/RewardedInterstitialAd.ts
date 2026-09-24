@@ -58,10 +58,10 @@ import NativeRewardedInterstitialModule from '../specs/modules/NativeRewardedInt
  * ```js
  * import { RewardedAdEventType } from 'react-native-google-mobile-ads';
  *
- * rewardedInterstitial.addAdEventListener(RewardedAdEventType.LOADED. () => {
- *   rewarded.show();
+ * rewardedInterstitial.addAdEventListener(RewardedAdEventType.LOADED, () => {
+ *   rewardedInterstitial.show().catch(console.warn);
  * });
- * rewardedInterstitial.addAdEventListener(RewardedAdEventType.EARNED_REWARD. (reward) => {
+ * rewardedInterstitial.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
  *   console.log('User earned reward of ', reward);
  * });
  *
@@ -80,14 +80,14 @@ export class RewardedInterstitialAd extends MobileAd {
    * ```js
    * import { RewardedInterstitialAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
    *
-   * const rewardedInterstitialAd = await RewardedInterstitialAd.createForAdRequest(TestIds.REWARDED_INTERSTITIAL, {
+   * const rewardedInterstitialAd = RewardedInterstitialAd.createForAdRequest(TestIds.REWARDED_INTERSTITIAL, {
    *   requestAgent: 'CoolAds',
    * });
    *
-   * rewardedInterstitialAd.addAdEventListener(RewardedAdEventType.LOADED. () => {
-   *   rewardedInterstitialAd.show();
+   * rewardedInterstitialAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
+   *   rewardedInterstitialAd.show().catch(console.warn);
    * });
-   * rewardedInterstitialAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD. (reward) => {
+   * rewardedInterstitialAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
    *   console.log('User earned reward of ', reward);
    * });
    *

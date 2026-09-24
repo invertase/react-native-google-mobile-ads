@@ -19,10 +19,14 @@ Use `mobileAds()` (not a capital-`MobileAds()` constructor). Prefer the v17 **op
 | Need | Use |
 | ---- | --- |
 | Simple create → load → show, or `<BannerAd>` / `NativeAd` | Classic APIs (no pool, no provider) |
-| Fullscreen ads in a React component with lifecycle state | Options-form hooks: `useAppOpenAd` / `useInterstitialAd` / `useRewardedAd` / `useRewardedInterstitialAd` |
+| Imperative fullscreen `ad.show()` | Not loaded, already showing, or a platform decline reject the promise — `.catch(...)` it; a destroyed ad or invalid `showOptions` throw synchronously (programmer error — fix the call site) |
+| Fullscreen ads in a React component with lifecycle state | Options-form hooks: `useAppOpenAd` / `useInterstitialAd` / `useRewardedAd` / `useRewardedInterstitialAd`; Ad Manager interstitial with app events: `useGAMInterstitialAd` (`onAppEvent`) |
+| App open ads on cold-start loading screen + warm foreground | `useAppOpenAdManager` (`showAdIfAvailable()`; 4-hour freshness). Consent gate is `adUnitId: consentReady ? unitId : null` (or not mounting), **not** `autoLoad`: `showAdIfAvailable()` and warm foreground load even with `autoLoad: false`. Warm-foreground auto-show fires on any RN `background` → `active` (on Android this can include returning from another fullscreen ad), so also pass `null` while other fullscreen ads may show |
+| One native ad owned by a component | `useNativeAd` + `<NativeAdView>` |
 | Keep fullscreen inventory warm; poll at show time | Preload pools: `AdPoolPresets.fullscreen` + `AdPoolProvider` / `usePooledAd`, or `AdPools.create` |
-| Keep display (banner/native) inventory warm | `AdPoolPresets.display` + provider / `usePooledAd` (depth 1 / emulated preload today) |
-| One request, native **or** banner winner | `useMultiFormatAd` or `MultiFormatAdRequest` (+ `MultiFormatAdPresets.nativeOrBanner`) |
+| Keep display (banner/native) inventory warm | `AdPoolPresets.display` + provider / `usePooledAd` (depth 1 / emulated preload today). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob `ca-app-pub-…` units hard-error |
+| One request, native **or** banner winner | `useMultiFormatAd` or `MultiFormatAdRequest` (+ `MultiFormatAdPresets.nativeOrBanner`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob units hard-error |
+| Register test devices | Emulators / simulators are automatic on every backend. Physical devices: copy the hashed id the SDK logs (logcat / Xcode console) into `testDeviceIdentifiers`. `TestDeviceIds.EMULATOR` is a classic-Android-only alias |
 | Ask what this binary supports | `getAdCapabilities()` (prefer presets over hand-rolled matrices) |
 
 Classic, hooks, and pools are **additive** — existing create/load/show keeps working. Details: [generated API reference](https://invertase.github.io/react-native-google-mobile-ads/), [Migrating to v17](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17), [Preload pools](https://docs.page/invertase/react-native-google-mobile-ads/preload-pools-and-multiformat-recipes).
@@ -33,7 +37,9 @@ Classic, hooks, and pools are **additive** — existing create/load/show keeps w
 
 Gather UMP/ATT consent and set request configuration **before** `mobileAds().initialize()`. Ads may preload on init. Check `AdsConsent` / `canRequestAds` when using European consent flows. See [Consent basics](https://docs.page/invertase/react-native-google-mobile-ads/consent-basics) and [European user consent](https://docs.page/invertase/react-native-google-mobile-ads/european-user-consent).
 
-For options-form hooks: keep a real `adUnitId` once the placement exists; gate loading with `autoLoad: consentReady` (or call `load()` / `retry()` after consent). Putting consent only in `adUnitId` retires the placement when consent is false — that is a different policy.
+For options-form hooks (except `useAppOpenAdManager`): keep a real `adUnitId` once the placement exists; gate loading with `autoLoad: consentReady` (or call `load()` / `retry()` after consent). Putting consent only in `adUnitId` retires the placement when consent is false — that is a different policy. `useAppOpenAdManager` is the exception: gate it with `adUnitId: null` (or do not mount it), because `showAdIfAvailable()` and warm foreground start loads regardless of `autoLoad`.
+
+For pools: `AdPools.create` initializes the SDK on Android and starts preloading, so create pools only after consent. Gate `AdPoolProvider` with `enabled={consentReady}` (default `true`); `false` stops future creates only and does not tear down existing pools.
 
 ---
 

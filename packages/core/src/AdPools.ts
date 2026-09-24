@@ -72,8 +72,9 @@ function isSdkManagedFormat(format: AdFormat): format is FullscreenAdFormat {
 /**
  * Factory for managed ad pools.
  *
- * Classic fullscreen pools wire to the platform SDK preloader.
- * Display (banner/native) pools are library-emulated depth-1.
+ * Fullscreen pools wire to the platform SDK preloader on iOS and both Android
+ * backends. Display (banner/native) pools are library-emulated depth-1 on
+ * every backend.
  */
 type InternalAdPoolsApi = Omit<AdPoolsApi, 'create'> & {
   create(config: AdPoolConfig, owner?: object | null): Promise<AdPool>;
