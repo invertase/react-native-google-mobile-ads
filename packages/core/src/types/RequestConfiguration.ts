@@ -47,7 +47,17 @@ export interface RequestConfiguration {
   /**
    * An array of test device IDs to add to the allowlist.
    *
-   * If using an emulator, set the device ID to `EMULATOR`.
+   * Emulators and simulators are automatically treated as test devices on iOS
+   * and Android (classic and Next-Gen). You usually do not need to list them.
+   *
+   * The string `EMULATOR` (or `TestDeviceIds.EMULATOR`) is a classic-Android-only
+   * convenience that maps to `AdRequest.DEVICE_ID_EMULATOR`. On Android Next-Gen
+   * it is stripped before reaching the SDK; on iOS it has no special meaning.
+   *
+   * Physical devices must use the hashed id the Google Mobile Ads SDK logs when
+   * an ad is requested — look for a logcat / Xcode line like
+   * `Use RequestConfiguration.Builder.setTestDeviceIds(Arrays.asList("<hash>"))`
+   * and pass that hash here.
    */
   testDeviceIdentifiers?: string[];
 
