@@ -180,6 +180,16 @@ class ReactNativeGoogleMobileAdsModule(
     MobileAds.setAppMuted(muted)
   }
 
+  /**
+   * iOS-only GMA API (`audioSessionIsApplicationManaged`). No equivalent on
+   * play-services-ads 25.4.0 — TurboModule Spec requires a matching method.
+   */
+  @ReactMethod
+  @Suppress("UNUSED_PARAMETER")
+  fun setAudioSessionIsApplicationManaged(managed: Boolean) {
+    // no-op
+  }
+
   @ReactMethod
   fun registerWebView(
     viewTag: Double,

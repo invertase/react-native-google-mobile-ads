@@ -40,6 +40,8 @@ class ReactNativeGoogleMobileAdsPreInitializationTest {
     module.setAppVolume(0.4f)
     module.setAppMuted(true)
     module.setRequestConfiguration(JavaOnlyMap(), noOpPromise())
+    // iOS-only no-op — must not enqueue on the Next-Gen gate.
+    module.setAudioSessionIsApplicationManaged(true)
 
     assertEquals(3, NextGenMobileAdsGate.pendingActionCount())
   }

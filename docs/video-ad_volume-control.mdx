@@ -54,3 +54,22 @@ By default, `appVolume` is set to 1 (the current device volume) and `appMuted` i
   only utilize this API if your app provides a custom mute control to the user, and the user's mute
   decision is properly reflected in the API.
 </Error>
+
+## Application-managed audio session (iOS only)
+
+On iOS, video ads can change the shared `AVAudioSession` while they play — even when muted —
+which may interrupt or pause in-page video. If your app owns the audio session, tell the SDK
+before loading video ads:
+
+```js
+import MobileAds from 'react-native-google-mobile-ads';
+
+MobileAds().setAudioSessionIsApplicationManaged(true);
+```
+
+This sets `GADMobileAds.sharedInstance.audioVideoManager.audioSessionIsApplicationManaged`
+(Google-Mobile-Ads-SDK 13.6.0). When `true`, the SDK does not manage `AVAudioSession` during
+ad video playback. Default is `false`.
+
+This API is **iOS only**. Classic Android (`play-services-ads` 25.4.0) and Next-Gen
+(`ads-mobile-sdk` 1.4.0) have no equivalent; calls are a no-op on Android.

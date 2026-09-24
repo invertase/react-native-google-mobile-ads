@@ -82,6 +82,10 @@ class MobileAdsModule implements MobileAdsModuleInterface {
     RNGoogleMobileAdsModule.setAppMuted(muted);
   }
 
+  setAudioSessionIsApplicationManaged(managed: boolean) {
+    RNGoogleMobileAdsModule.setAudioSessionIsApplicationManaged(managed);
+  }
+
   registerWebView(viewTag: number) {
     if (typeof viewTag !== 'number' || !Number.isFinite(viewTag)) {
       throw new Error(

@@ -34,6 +34,7 @@ export interface Spec extends TurboModule {
   openDebugMenu(adUnit: string): void;
   setAppVolume(volume: number): void;
   setAppMuted(muted: boolean): void;
+  setAudioSessionIsApplicationManaged(managed: boolean): void;
   registerWebView(viewTag: Double): Promise<void>;
 }
 
