@@ -12,6 +12,18 @@ The purpose of a rewarded ad is to reward users with _something_ after completin
 as watching a video or submitting an option via an interactive form. If the user completes the action, you can reward them
 with something (e.g. in-game currency).
 
+<img
+  width="300"
+  src="https://developers.google.com/static/admob/images/format-rewarded.svg"
+  alt="Rewarded ad offering an in-app reward"
+/>
+
+<Warning>
+  Complete consent and SDK initialization before calling `load()`. See [Consent & privacy
+  basics](/consent-basics) and the shared [load best
+  practices](/ad-formats#load-and-refresh-best-practices).
+</Warning>
+
 To create a new rewarded ad, call the `createForAdRequest` method from the `RewardedAd` class. The first argument
 of the method is the "Ad Unit ID". For testing, we can use a Test ID, however for production the ID from the
 Google AdMob dashboard under "Ad units" should be used:
@@ -39,7 +51,12 @@ To listen to events, such as when the advert from the network has loaded or when
 ```js
 import React, { useEffect, useState } from 'react';
 import { Button } from 'react-native';
-import { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
+import {
+  AdEventType,
+  RewardedAd,
+  RewardedAdEventType,
+  TestIds,
+} from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
@@ -60,6 +77,12 @@ function App() {
         console.log('User earned reward of ', reward);
       },
     );
+    const unsubscribePaid = rewarded.addAdEventListener(AdEventType.PAID, event => {
+      console.log('Rewarded revenue', event.value, event.currency);
+    });
+    const unsubscribeClosed = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
+      setLoaded(false);
+    });
 
     // Start loading the rewarded ad straight away
     rewarded.load();
@@ -68,6 +91,8 @@ function App() {
     return () => {
       unsubscribeLoaded();
       unsubscribeEarned();
+      unsubscribePaid();
+      unsubscribeClosed();
     };
   }, []);
 
@@ -99,6 +124,8 @@ advert action. An additional `reward` payload is sent with the event, containing
 To learn more, view the [`RewardedAdEventType`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/RewardedAdEventType.ts) source code.
 
 If needed, you can reuse the existing instance of the `RewardedAd` class to load more adverts and show them when required.
+Forward `AdEventType.PAID` payloads to your
+[revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.
 
 ## Server-side verification (SSV)
 

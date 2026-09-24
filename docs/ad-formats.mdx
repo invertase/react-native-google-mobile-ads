@@ -19,10 +19,39 @@ Two additional guides cover cross-cutting integration patterns:
 - [Fullscreen ads with hooks](/ad-formats/hooks) — the React hook API for the fullscreen formats.
 - [Google Ad Manager](/ad-formats/ad-manager) — Ad Manager (GAM) specific components and options.
 
+## Before loading any format
+
+<Warning>
+  Complete your consent flow before calling `mobileAds().initialize()` or loading an ad. Keep this
+  page focused on format behavior; follow [Consent & privacy basics](/consent-basics) for the
+  integration sequence and regional requirements.
+</Warning>
+
 <Info>
   Always use [test ads](/first-ad#test-ads) while developing. Using production ad units on a device
   that is not registered as a test device can get your AdMob account suspended.
 </Info>
+
+## Load and refresh best practices
+
+- Load fullscreen ads before the natural transition where you plan to show them, then show only
+  after the loaded event or `status === 'loaded'`.
+- Keep one load in flight per ad instance. The v17 hook API coalesces concurrent `load()` calls;
+  with class APIs, guard your own loading state.
+- Let the Google Mobile Ads SDK refresh a mounted banner according to the refresh interval
+  configured for its ad unit. Do not add a second JavaScript refresh timer. Reload manually only
+  for a lifecycle reason, such as the documented iOS foreground case.
+- Do not retain loaded inventory indefinitely. Google documents a four-hour window for app open ads
+  and a [60-minute expiry for Android
+  interstitials](https://developers.google.com/admob/android/interstitial). Other formats and
+  platforms do not share one universal SDK expiry. For held pooled inventory, this library applies
+  a conservative one-hour **publisher reload-policy default** to non-app-open formats; it is not a
+  claim about every native SDK cache. Reload stale inventory before showing it. Pool handles
+  expose `isStaleByPolicy()` when you use pools.
+- Capture impression revenue through `onPaid`, `AdEventType.PAID`,
+  `NativeAdEventType.PAID`, or a hook's `revenue`, depending on the API. See
+  [Impression-level ad revenue](/impression-level-ad-revenue) and
+  [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics).
 
 To keep a **buffer** of ready-to-show ads and poll at show time, see
 [Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes).

@@ -318,3 +318,5 @@ prebuilt
 CocoaPods-only
 config-script
 RNFB's
+GAM-only
+preload-pool

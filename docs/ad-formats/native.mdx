@@ -12,6 +12,18 @@ When a native ad loads, your app receives an ad object that contains its assets,
 
 Broadly speaking, there are two parts to successfully implementing native ads: Loading an ad using the SDK and then displaying the ad content in your app.
 
+<img
+  width="300"
+  src="https://developers.google.com/static/admob/images/format-native.svg"
+  alt="Native ad assets arranged in a custom app layout"
+/>
+
+<Warning>
+  Complete consent and SDK initialization before calling `NativeAd.createForAdRequest()`. See
+  [Consent & privacy basics](/consent-basics) and the shared [load best
+  practices](/ad-formats#load-and-refresh-best-practices).
+</Warning>
+
 For a **one-request native-or-banner** competitive load (GAM, count 1), or an emulated
 display pool that keeps one ready fill, see
 [Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes).
@@ -96,7 +108,8 @@ NativeAd.createForAdRequest(TestIds.NATIVE, {
 
 #### Other Ad Request Options
 
-You can specify other request options to be sent while loading an advert, such as keywords, location, and [content URLs](/displaying-ads#content-url-targeting-brand-safety).
+You can specify other request options to be sent while loading an advert, such as keywords and
+[content URLs](/ad-formats/interstitial#content-url-targeting-brand-safety).
 Setting additional request options helps AdMob choose better tailored ads from the network.
 View the [RequestOptions](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestOptions.ts) source code to see the full range of options available.
 
@@ -114,6 +127,9 @@ Each view used to display that ads assets should be placed within the view hiera
 Pass the `NativeAd` object to the `nativeAd` prop of the `NativeAdView` component to register the ad view:
 
 ```tsx
+import { useEffect, useState } from 'react';
+import { NativeAd, NativeAdView, TestIds } from 'react-native-google-mobile-ads';
+
 const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
@@ -127,7 +143,7 @@ const NativeComponent = () => {
 
   return (
     <NativeAdView nativeAd={nativeAd}>
-      // Components to display assets must be placed here
+      {/* Components to display assets must be placed here */}
     </NativeAdView>
   );
 };
@@ -169,8 +185,7 @@ const NativeComponent = () => {
 
 <Warning>
   Place the asset view(such as `Text`, `Image` component) as a direct child of the `NativeAsset`
-  component. See more in [Caveats: `NativeAsset` placement](/native-ads#nativeasset-placement)
-  section.
+  component. See more in [Caveats: `NativeAsset` placement](#nativeasset-placement) section.
 </Warning>
 
 ### NativeMediaView component
@@ -184,7 +199,7 @@ const NativeComponent = () => {
   return (
     <NativeAdView nativeAd={nativeAd}>
       <NativeMediaView />
-      // Other assets..
+      {/* Other assets */}
     </NativeAdView>
   );
 };
@@ -212,7 +227,7 @@ const NativeComponent = () => {
   return (
     <NativeAdView nativeAd={nativeAd}>
       <NativeMediaView resizeMode={'contain'} style={{ aspectRatio: 1 }} />
-      // Other assets..
+      {/* Other assets */}
     </NativeAdView>
   );
 };
@@ -221,7 +236,9 @@ const NativeComponent = () => {
 ### AdChoices overlay
 
 An AdChoices overlay is added as an ad view by the SDK when a backfill ad is returned.
-If your app uses native ads backfill, leave space in your [preferred corner](/native-ads#adchoices-placements) of your native ad view for the automatically inserted AdChoices logo.
+If your app uses native ads backfill, leave space in your
+[preferred corner](#adchoices-placements) of your native ad view for the automatically inserted
+AdChoices logo.
 Also, it's important that the AdChoices overlay is seen, so choose background colors and images appropriately.
 For more information on the overlay's appearance and function, refer to the [programmatic native ads implementation guidelines](https://support.google.com/admob/answer/6329638#adchoices).
 
@@ -253,23 +270,20 @@ const NativeComponent = () => {
   }
 
   return (
-    // Wrap all the ad assets in the NativeAdView component, and register the view with the nativeAd prop
     <NativeAdView nativeAd={nativeAd}>
-      // Display the icon asset with Image component, and use NativeAsset to register the view
+      {/* Register every displayed asset inside NativeAdView. */}
       {nativeAd.icon && (
         <NativeAsset assetType={NativeAssetType.ICON}>
           <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} />
         </NativeAsset>
       )}
-      // Display the headline asset with Text component, and use NativeAsset to register the view
       <NativeAsset assetType={NativeAssetType.HEADLINE}>
         <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{nativeAd.headline}</Text>
       </NativeAsset>
-      // Always display an ad attribution to denote that the view is an advertisement
+      {/* Always display an ad attribution. */}
       <Text>Sponsored</Text>
-      // Display the media asset
       <NativeMediaView />
-      // Repeat the process for the other assets in the NativeAd.
+      {/* Repeat the registration pattern for the other assets. */}
     </NativeAdView>
   );
 };
@@ -282,8 +296,13 @@ The `NativeAd` object emits events that you can listen to.
 Use the `addAdEventListener` method to listen to ad events emitted by the `NativeAd`. Pass one of the `NativeAdEventType` enum values to specify the event type.
 
 Check the [NativeAdEventType](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/NativeAdEventType.ts) source code to see the full range of events available.
+Forward `NativeAdEventType.PAID` payloads to your
+[revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.
 
 ```tsx
+import { useEffect, useState } from 'react';
+import { NativeAd, NativeAdEventType, NativeAdView, TestIds } from 'react-native-google-mobile-ads';
+
 const NativeComponent = () => {
   const [nativeAd, setNativeAd] = useState<NativeAd>();
 
@@ -293,12 +312,15 @@ const NativeComponent = () => {
 
   useEffect(() => {
     if (!nativeAd) return;
-    const listener = nativeAd.addAdEventListener(NativeAdEventType.CLICKED, () => {
+    const clickedListener = nativeAd.addAdEventListener(NativeAdEventType.CLICKED, () => {
       console.log('Native ad clicked');
     });
+    const paidListener = nativeAd.addAdEventListener(NativeAdEventType.PAID, event => {
+      console.log('Native ad revenue', event.value, event.currency);
+    });
     return () => {
-      listener.remove();
-      // or
+      clickedListener.remove();
+      paidListener.remove();
       nativeAd.destroy();
     };
   }, [nativeAd]);
@@ -309,7 +331,7 @@ const NativeComponent = () => {
 
   return (
     <NativeAdView nativeAd={nativeAd}>
-      // Components to display assets must be placed here
+      {/* Components to display assets must be placed here */}
     </NativeAdView>
   );
 };
@@ -342,7 +364,7 @@ const NativeComponent = () => {
 
   return (
     <NativeAdView nativeAd={nativeAd}>
-      // Components to display assets must be placed here
+      {/* Components to display assets must be placed here */}
     </NativeAdView>
   );
 };
@@ -364,7 +386,7 @@ Do:
   <Text style={{ padding: 8 }}>{nativeAd.cta}</Text>
 </NativeAsset>
 <NativeAsset assetType={NativeAssetType.ICON}>
-  <Image source={{uri: nativeAd.icon.url}} width={24} height={24} style={{ borderRadius: 8 }} />
+  <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} style={{ borderRadius: 8 }} />
 </NativeAsset>
 ```
 
@@ -378,7 +400,7 @@ Don't:
 </NativeAsset>
 <NativeAsset assetType={NativeAssetType.ICON}>
   <View style={{ borderRadius: 8, overflow: 'hidden' }}>
-    <Image source={{uri: nativeAd.icon.url}} width={24} height={24} />
+    <Image source={{ uri: nativeAd.icon.url }} width={24} height={24} />
   </View>
 </NativeAsset>
 ```

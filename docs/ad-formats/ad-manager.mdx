@@ -6,27 +6,120 @@ description: Use Google Ad Manager (GAM) components and options, including GAM b
 # Google Ad Manager
 
 Google Ad Manager (GAM) publishers can use the Ad Manager specific components and request options exposed by this
-library. This page currently covers the GAM banner; it is the home for expanded Ad Manager coverage
-(`GAMInterstitialAd`, `categoryExclusions`, line items, and multi-format native-or-banner requests).
+library. Use your Ad Manager ad unit paths (for example `/network-code/ad-unit`) rather than AdMob
+`ca-app-pub-…` unit IDs.
+
+<Warning>
+  Complete consent and SDK initialization before requesting GAM inventory. See [Consent & privacy
+  basics](/consent-basics).
+</Warning>
 
 <Info>
   For multi-format Ad Manager requests (one request, native **or** banner winner), see [Preload
   pools and multi-format recipes](/preload-pools-and-multiformat-recipes).
 </Info>
 
-## Displaying a Google Ad Manager banner
+## GAM banner
 
 You can display a Google Ad Manager banner ad unit. In this case, you have to import the `GAMBannerAd` component and use the `sizes` prop instead of the `size` prop:
 
-```js
+```tsx
 import React from 'react';
-import { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import { GAMBannerAd, GAMBannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.GAM_BANNER : '/xxx/yyyy';
 
 function App() {
-  return <GAMBannerAd unitId={adUnitId} sizes={[BannerAdSize.FULL_BANNER]} />;
+  return (
+    <GAMBannerAd
+      unitId={adUnitId}
+      sizes={[GAMBannerAdSize.FULL_BANNER, GAMBannerAdSize.FLUID]}
+      requestOptions={{
+        customTargeting: {
+          section: 'sports',
+          subscriber: 1,
+        },
+        categoryExclusions: ['airline'],
+      }}
+      onPaid={event => {
+        console.log('GAM banner revenue', event.value, event.currency);
+      }}
+    />
+  );
 }
 ```
 
-The `sizes` prop takes an array of [`BannerAdSize`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/BannerAdSize.ts) types.
+The `sizes` prop accepts several eligible sizes for the same request. `FLUID` is available only
+through `GAMBannerAdSize` and expands or contracts its height to fit the returned creative. See the
+[banner size catalog](/ad-formats/banner#banner-size-catalog).
+
+## GAM interstitial
+
+`GAMInterstitialAd` uses the same load/show lifecycle as `InterstitialAd` and adds support for GAM
+app events.
+
+```tsx
+import { useEffect, useMemo, useState } from 'react';
+import { Button } from 'react-native';
+import { AdEventType, GAMInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.GAM_INTERSTITIAL : '/xxx/interstitial';
+
+export default function GAMInterstitialButton() {
+  const [loaded, setLoaded] = useState(false);
+  const interstitial = useMemo(
+    () =>
+      GAMInterstitialAd.createForAdRequest(adUnitId, {
+        customTargeting: {
+          section: 'sports',
+          interests: ['football', 'running'],
+        },
+        categoryExclusions: ['airline'],
+      }),
+    [],
+  );
+
+  useEffect(() => {
+    const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
+      setLoaded(true);
+    });
+    const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+      setLoaded(false);
+    });
+    const unsubscribePaid = interstitial.addAdEventListener(AdEventType.PAID, event => {
+      console.log('GAM interstitial revenue', event.value, event.currency);
+    });
+
+    interstitial.load();
+
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeClosed();
+      unsubscribePaid();
+      interstitial.destroy();
+    };
+  }, [interstitial]);
+
+  return (
+    <Button title="Show GAM interstitial" disabled={!loaded} onPress={() => interstitial.show()} />
+  );
+}
+```
+
+## Target line items
+
+Both examples pass the shared `RequestOptions` supported by the GAM request:
+
+- `customTargeting` sends key/value pairs that Ad Manager can use in line-item targeting.
+- `categoryExclusions` blocks the GAM content categories you name for that request.
+- `publisherProvidedId` and `publisherProvidedSignals` are available for publishers whose Ad
+  Manager setup uses those features.
+- `networkExtras` sends adapter-specific values; it is not a replacement for GAM custom targeting.
+
+Define the matching keys, values, exclusions, and line-item rules in Ad Manager. The client API
+supplies request signals; it does not create or select line items by ID. See Google's
+[Ad Manager targeting guide](https://developers.google.com/ad-manager/mobile-ads-sdk/android/targeting)
+for the upstream concepts.
+
+For paid-event payloads and load-time auction metadata, see
+[Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics).

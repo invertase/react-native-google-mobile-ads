@@ -1,29 +1,113 @@
 ---
 title: Fullscreen ads with hooks
-description: Use the React hook API (useInterstitialAd and related hooks) to display fullscreen ads with minimal code.
+description: Use React hooks to load and show app open, interstitial, rewarded, and rewarded interstitial ads.
 ---
 
 # Fullscreen ads with hooks
 
-The AdMob package provides hooks to help you to display ads in a functional component with tiny code. The supported ad formats are full-screen ads: App open, Interstitial, Rewarded, and Rewarded Interstitial.
+The package provides hooks for all four fullscreen formats: app open, interstitial, rewarded,
+and rewarded interstitial. The v17 options form loads automatically by default and exposes one
+shared lifecycle model.
 
-## Load an ad
+<Warning>
+  Resolve consent before initialization and loading. Keep `autoLoad` false until your consent flow
+  says ads may be requested; see [Consent & privacy basics](/consent-basics).
+</Warning>
 
-You can create a new ad by adding the corresponding ad type's hook to your component.
-Pass an options object containing the Ad Unit ID. For testing, use a Test ID; for
-production, use the ID from the Google AdMob dashboard under "Ad units":
+## Choose the hook
 
-```tsx {4-8}
-import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+Each hook takes the same options shape. Use `TestIds` during development and your own ad unit ID
+in production.
 
-export default function App() {
-  const interstitialAd = useInterstitialAd({
+### App open
+
+```tsx
+import { Button } from 'react-native';
+import { TestIds, useAppOpenAd } from 'react-native-google-mobile-ads';
+
+export default function AppOpenButton() {
+  const { status, show } = useAppOpenAd({
+    adUnitId: TestIds.APP_OPEN,
+  });
+
+  return <Button title="Show app open ad" disabled={status !== 'loaded'} onPress={() => show()} />;
+}
+```
+
+Use app open ads only while a launch or foreground loading screen is visible. For complete cold-
+and warm-start handling, see [App open ads](/ad-formats/app-open).
+
+### Interstitial
+
+```tsx
+import { Button } from 'react-native';
+import { TestIds, useInterstitialAd } from 'react-native-google-mobile-ads';
+
+export default function InterstitialButton() {
+  const { status, show } = useInterstitialAd({
     adUnitId: TestIds.INTERSTITIAL,
   });
 
-  return <View>{/* ... */}</View>;
+  return <Button title="Show interstitial" disabled={status !== 'loaded'} onPress={() => show()} />;
 }
 ```
+
+### Rewarded
+
+```tsx
+import { useEffect } from 'react';
+import { Button } from 'react-native';
+import { TestIds, useRewardedAd } from 'react-native-google-mobile-ads';
+
+export default function RewardedButton() {
+  const { status, show, reward, earnedReward } = useRewardedAd({
+    adUnitId: TestIds.REWARDED,
+    requestOptions: {
+      serverSideVerificationOptions: {
+        userId: 'current-user-id',
+        customData: 'reward-source=store',
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (earnedReward && reward) {
+      console.log(`Grant ${reward.amount} ${reward.type}`);
+    }
+  }, [earnedReward, reward]);
+
+  return <Button title="Show rewarded ad" disabled={status !== 'loaded'} onPress={() => show()} />;
+}
+```
+
+In a real app, react to `earnedReward` in an effect or state transition after the SDK reports it;
+do not grant a reward merely because the ad opened. Configure and verify
+[server-side verification](/ad-formats/rewarded#server-side-verification-ssv) for valuable rewards.
+
+### Rewarded interstitial
+
+```tsx
+import { Button } from 'react-native';
+import { TestIds, useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
+
+export default function RewardedInterstitialButton() {
+  const { status, show, earnedReward } = useRewardedInterstitialAd({
+    adUnitId: TestIds.REWARDED_INTERSTITIAL,
+  });
+
+  return (
+    <Button
+      title={earnedReward ? 'Reward earned' : 'Continue'}
+      disabled={status !== 'loaded'}
+      onPress={() => show()}
+    />
+  );
+}
+```
+
+The rewarded interstitial hook works on Android and iOS. Pool-based warming for this format is
+unavailable on the Android classic backend; that pool limitation does not apply to this
+load-on-demand hook.
 
 <Info>
   `adUnitId` identifies the placement and manages the ad instance. Changing it creates a new
@@ -32,15 +116,69 @@ export default function App() {
   but automatic loading should wait; explicit `load()` and `retry()` still work.
 </Info>
 
-The optional `requestOptions` field is sent while loading an advert and supports values such as keywords, location, and [content URLs](/displaying-ads#content-url-targeting-brand-safety).
+The optional `requestOptions` field is sent while loading an advert and supports values such as
+keywords, content URLs, and `serverSideVerificationOptions` for rewarded formats. See
+[content URL targeting](/ad-formats/interstitial#content-url-targeting-brand-safety) and the
+[`RequestOptions`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestOptions.ts)
+source for the full set.
 Setting additional request options helps AdMob choose better tailored ads from the network.
-View the [`RequestOptions`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestOptions.ts) source code to see the full range of options available.
+
+## Wait for consent with `autoLoad`
+
+```tsx
+import { useEffect, useState } from 'react';
+import { Button } from 'react-native';
+import mobileAds, { TestIds, useInterstitialAd } from 'react-native-google-mobile-ads';
+
+export default function ConsentAwareInterstitial({ canRequestAds }: { canRequestAds: boolean }) {
+  const [adsReady, setAdsReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!canRequestAds) {
+      setAdsReady(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const initializeAds = async () => {
+      await mobileAds().initialize();
+      if (!cancelled) {
+        setAdsReady(true);
+      }
+    };
+
+    initializeAds().catch(error => {
+      console.error('Google Mobile Ads initialization failed', error);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canRequestAds]);
+
+  const { status, show } = useInterstitialAd({
+    adUnitId: TestIds.INTERSTITIAL,
+    autoLoad: adsReady,
+  });
+
+  return <Button title="Continue" disabled={status !== 'loaded'} onPress={() => show()} />;
+}
+```
+
+Here `canRequestAds` must come from the completed consent flow. `adsReady` becomes true only after
+consent permits requests **and** `mobileAds().initialize()` resolves, so the hook cannot load
+earlier. Changing `autoLoad` to `false` does not cancel a request already in flight.
 
 ## Show the ad
 
 The hook returns several states and functions to control ad.
 
-```tsx
+```jsx
+import { useEffect } from 'react';
+import { Button, View } from 'react-native';
 import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 
 export default function App({ navigation }) {
@@ -78,6 +216,22 @@ Otherwise, if the ad is not loaded, the `navigation.navigate` method is called t
 After the ad is closed, `status` becomes `'closed'` and the app navigates to the next screen.
 
 Call `retry()` after an error or no-fill, or call `load()` explicitly when `autoLoad` is false.
+
+All four hooks use the same `status` values:
+
+| Status    | Meaning                                                                 |
+| :-------- | :---------------------------------------------------------------------- |
+| `idle`    | No load has started, or the options-form ad was destroyed.              |
+| `loading` | A load is in flight.                                                    |
+| `loaded`  | The ad is ready to show.                                                |
+| `showing` | The fullscreen ad is visible.                                           |
+| `closed`  | The user dismissed a shown ad.                                          |
+| `no-fill` | Loading completed without inventory; retry later, without a tight loop. |
+| `error`   | Loading or showing failed; inspect the structured error fields below.   |
+
+`error.phase` identifies the `load` or `show` stage. `error.reason` is the machine-readable
+classification to use for branching. `error.message` is human-readable diagnostic text and is not
+stable for branching.
 
 Return values of the hook are:
 

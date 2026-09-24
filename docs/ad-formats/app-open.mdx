@@ -13,46 +13,176 @@ To make sure you have an ad ready to display when a user opens your app, you'll 
 
 That means you must preload an app open ad before you need to show the ad. That way, your app open ad is ready to show the next time the app is opened.
 
-To create a new app open ad, call the `createForAdRequest` method from the `AppOpenAd` class. The first argument
-of the method is the "Ad Unit ID". For testing, we can use a Test ID, however for production the ID from the
-Google AdMob dashboard under "Ad units" should be used:
+<img
+  width="200"
+  src="https://developers.google.com/static/admob/images/app-open-ad.png"
+  alt="App open ad displayed over an app loading screen"
+/>
 
-```js
-import { AppOpenAd, TestIds, AdEventType } from 'react-native-google-mobile-ads';
+<Warning>
+  Complete consent and SDK initialization before calling `load()`. See [Consent & privacy
+  basics](/consent-basics).
+</Warning>
 
+## Cold and warm foreground lifecycle
+
+The controller below covers both entry paths:
+
+- On a **cold start**, load while your launch/loading screen is visible and show only if that
+  screen is still the active context when loading finishes.
+- On a **warm start**, listen for `AppState` returning to `active`, then show a fresh loaded ad.
+- Pass `canShow={false}` while another fullscreen ad, modal, onboarding screen, or sensitive flow
+  is visible. Do not surprise the user by showing an app open ad over unrelated content.
+
+```tsx
+import { useEffect, useRef } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
+import { AdEventType, AppOpenAd, TestIds } from 'react-native-google-mobile-ads';
+
+const FOUR_HOURS = 4 * 60 * 60 * 1000;
 const adUnitId = __DEV__ ? TestIds.APP_OPEN : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
-const appOpenAd = AppOpenAd.createForAdRequest(adUnitId, {
-  keywords: ['fashion', 'clothing'],
-});
+export default function AppOpenAdController({ canShow }: { canShow: boolean }) {
+  const appState = useRef<AppStateStatus | null>(AppState.currentState);
+  const canShowRef = useRef(canShow);
 
-// Preload an app open ad
-appOpenAd.load();
+  canShowRef.current = canShow;
 
-// Show the app open ad when user brings the app to the foreground.
-appOpenAd.show();
+  useEffect(() => {
+    let appOpenAd: AppOpenAd | null = null;
+    let loadedAt: number | null = null;
+    let loading = false;
+    let showing = false;
+    let pendingForegroundShow = false;
+    let adUnsubscribers: Array<() => void> = [];
+
+    const retireAd = () => {
+      adUnsubscribers.forEach(unsubscribe => unsubscribe());
+      adUnsubscribers = [];
+      appOpenAd?.destroy();
+      appOpenAd = null;
+      loadedAt = null;
+      loading = false;
+    };
+
+    const isFresh = () => loadedAt !== null && Date.now() - loadedAt < FOUR_HOURS;
+
+    const showPendingAd = () => {
+      if (!pendingForegroundShow) {
+        return;
+      }
+      if (!canShowRef.current || AppState.currentState !== 'active' || showing) {
+        pendingForegroundShow = false;
+        return;
+      }
+      if (!appOpenAd || !isFresh()) {
+        replaceAndLoad(true);
+        return;
+      }
+
+      pendingForegroundShow = false;
+      showing = true;
+      appOpenAd.show().catch(() => {
+        showing = false;
+        retireAd();
+      });
+    };
+
+    const replaceAndLoad = (showForThisForeground: boolean) => {
+      if (loading) {
+        return;
+      }
+      retireAd();
+      pendingForegroundShow = showForThisForeground;
+      loading = true;
+
+      const nextAd = AppOpenAd.createForAdRequest(adUnitId);
+      appOpenAd = nextAd;
+      adUnsubscribers = [
+        nextAd.addAdEventListener(AdEventType.LOADED, () => {
+          loading = false;
+          loadedAt = Date.now();
+          showPendingAd();
+        }),
+        nextAd.addAdEventListener(AdEventType.CLOSED, () => {
+          showing = false;
+          // The shown instance is spent. Wait for a later foreground opportunity
+          // before creating another one, so closing cannot trigger a show loop.
+          retireAd();
+        }),
+        nextAd.addAdEventListener(AdEventType.ERROR, () => {
+          showing = false;
+          pendingForegroundShow = false;
+          retireAd();
+        }),
+        nextAd.addAdEventListener(AdEventType.PAID, event => {
+          console.log('App open revenue', event.value, event.currency);
+        }),
+      ];
+      nextAd.load();
+    };
+
+    const requestForegroundShow = () => {
+      if (!canShowRef.current || showing) {
+        pendingForegroundShow = false;
+        return;
+      }
+      pendingForegroundShow = true;
+      if (appOpenAd && isFresh()) {
+        showPendingAd();
+      } else {
+        // Expired inventory is destroyed and replaced; never call load() on it again.
+        replaceAndLoad(true);
+      }
+    };
+
+    const appStateSubscription = AppState.addEventListener('change', nextState => {
+      const returnedToForeground = appState.current !== 'active' && nextState === 'active';
+      appState.current = nextState;
+      if (returnedToForeground) {
+        requestForegroundShow();
+      }
+    });
+
+    // Cold start: preload, and show on load only while the app-provided loading
+    // context says a fullscreen presentation is appropriate.
+    replaceAndLoad(canShowRef.current && AppState.currentState === 'active');
+
+    return () => {
+      appStateSubscription.remove();
+      pendingForegroundShow = false;
+      showing = false;
+      retireAd();
+    };
+  }, []);
+
+  return null;
+}
 ```
 
-### Consider ad expiration
+`pendingForegroundShow` ties presentation to one cold- or warm-foreground opportunity. Closing an
+ad retires that instance without loading or showing another one. If a loaded instance reaches the
+four-hour policy window, the controller destroys it and creates a replacement instead of trying to
+reload the stale object.
 
-Key Point: Ad references in the app open beta will time out after four hours.
-Ads rendered more than four hours after request time will no longer be valid and may not earn revenue.
-This time limit is being carefully considered and may change in future beta versions of the app open format.
+The example intentionally does not retry immediately after an error or no-fill. Retry at a later
+lifecycle opportunity to avoid a request loop. Send `AdEventType.PAID` payloads to your
+[revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.
 
-### Cold starts and loading screens
+## Consider ad expiration
 
-The above documentation assumes that you only show app open ads when users foreground your app when it is suspended in memory.
-"Cold starts" occur when your app is launched but was not previously suspended in memory.
+Google's published app open guidance uses a four-hour freshness window. Record when loading
+completes and request a replacement instead of showing older inventory. If you use preload pools,
+the handed-out object applies the same default through `isStaleByPolicy()`.
 
-An example of a cold start is when a user opens your app for the first time.
-With cold starts, you won't have a previously loaded app open ad that's ready to be shown right away.
-The delay between when you request an ad and receive an ad back can create a situation where users are able to briefly use your app before being surprised by an out of context ad.
-This should be avoided because it is a bad user experience.
+## Cold starts and loading screens
 
-The preferred way to use app open ads on cold starts is to use a loading screen to load your game or app assets, and to only show the ad from the loading screen.
+On a cold start, you will not already have an ad in memory. Loading can finish after the user reaches
+the main UI, creating an out-of-context interruption.
+Use a loading screen while app assets and the ad load, and show the ad only from that screen.
 If your app has completed loading and has sent the user to the main content of your app, do not show the ad.
 
-### Best practices
+## Best practices
 
 Google built app open ads to help you monetize your app's loading screen, but it's important to keep best practices in mind so that your users enjoy using your app. Make sure to:
 
@@ -62,5 +192,6 @@ Google built app open ads to help you monetize your app's loading screen, but it
 
 <Info>
   Prefer the hook API? See [`useAppOpenAd`](/ad-formats/hooks). To keep a warm app open ad ready at
-  all times, see [preload pools](/preload-pools-and-multiformat-recipes).
+  all times, create a pool config with `AdPoolPresets.fullscreen(AdFormat.APP_OPEN, adUnitId)`; see
+  [preload pools](/preload-pools-and-multiformat-recipes).
 </Info>
