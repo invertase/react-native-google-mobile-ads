@@ -154,6 +154,50 @@ Forward `AdEventType.PAID` payloads to your
 
 ## Caveats / limitations
 
+### Android: host UI flicker after fullscreen dismiss
+
+After a normal close of an interstitial, app open, rewarded, or rewarded interstitial ad on Android, some apps see the
+host screen briefly **push and return** (a one-frame layout jump / flicker). iOS is often unaffected because fullscreen
+ads present from a view controller, not a separate activity with its own window and system UI policy.
+
+On Android, Google Mobile Ads shows those creatives in Google's own `AdActivity` (classic:
+`com.google.android.gms.ads.AdActivity` with `@android:style/Theme.Translucent`; Next-Gen:
+`com.google.android.libraries.ads.mobile.sdk.common.AdActivity` with `@style/Theme.GoogleMobileAds`). When that activity
+finishes, your `MainActivity` resumes. System bars, immersive mode, window insets, soft-input mode, and activity
+transitions can all change in that resume transition. React Native layout (Safe Area, `react-native-screens`, keyboard
+controllers, navigation stacks) then recalculates — which can look like a push/back flicker even though no navigation
+`push` / `pop` ran.
+
+This package's Android show path only:
+
+- calls the SDK `show(activity, …)` APIs,
+- optionally forwards `show({ immersiveModeEnabled })` to `setImmersiveMode(boolean)` (Android system UI immersive
+  mode on the ad window — **not** a host-window or React Navigation API),
+
+then emits `AdEventType.CLOSED` from `onAdDismissedFullScreenContent`. It does **not** set `MainActivity` window
+flags, `windowSoftInputMode`, override activity transitions, or drive React Navigation / `react-native-screens`.
+
+This is a **different** class from [fullscreen ads closing after Home → resume](#android-fullscreen-ads-closing-after-home--resume)
+(`singleTask` clearing `AdActivity`). Here the ad closed intentionally; the host UI is what jumps.
+
+Ways to investigate or mitigate in **your** app (not in this library):
+
+1. Re-test with `immersiveModeEnabled` omitted or `false`. Leaving immersive mode when `AdActivity` finishes is a
+   common source of system bar / inset restore animation on the resumed activity.
+2. Check `MainActivity` `android:windowSoftInputMode` (templates often use `adjustResize`). A focus or inset change on
+   resume can resize the React root once; try `adjustPan` or `adjustNothing` if that matches your keyboard behavior.
+3. Prefer current Google Mobile Ads / Play services builds and compare against a minimal native AdMob sample (no React
+   Navigation). Tip pins: `packages/core/package.json` `sdkVersions`. Classic creative chrome still ships via the
+   remote GMS ads module.
+4. If the jump tracks Safe Area or navigation chrome, audit app-side listeners on `AdEventType.CLOSED` /
+   `AppState` that remount screens, toggle status-bar style, or call navigation `reset` / `navigate` — those are app
+   code, not this package.
+5. Activity enter/exit animations and translucent `AdActivity` themes are owned by the SDK / your app theme. Do **not**
+   expect this React Native package to zero Google's transitions or pad host insets after dismiss.
+
+If a pure Google Mobile Ads sample still flickers on the same device / OS, escalate to Google with Mobile Ads SDK logs.
+This package cannot keep host layout stable across Google's `AdActivity` finish.
+
 On Android 15+ (`targetSdk` 35+), if interstitial content draws under the system navigation bar, see
 [Android: interstitial content under the system navigation bar (API 35+)](#android-interstitial-content-under-the-system-navigation-bar-api-35).
 
