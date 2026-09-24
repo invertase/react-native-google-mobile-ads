@@ -1,112 +1,94 @@
-# Common reasons for ads not showing
+---
+title: Common reasons ads do not show
+description: Diagnose no-fill, consent, configuration, device, and network problems using v17 outcomes.
+---
 
-Use the following guide to understand common reasons why apps show few or no ads.
+# Common reasons ads do not show
 
-## Did you recently create your AdMob account?
+Start with an official `TestIds.*` unit on a development build. If that works, register the device
+before trying your own unit. Record the v17 `status`, `error.reason`, `error.phase`, and
+`responseInfo` before changing configuration.
 
-Your account must be approved before ad requests will succeed.
-When you first sign up for AdMob, your account is reviewed before it’s approved.
-This typically takes less than 24 hours, but in rare cases can take up to 2 weeks.
-You'll be notified of approval or rejection via email after review.
+<Warning>
+  Do not repeatedly request or click production ads while diagnosing. Use official test units or a
+  registered test device as described in [Testing ads](/testing).
+</Warning>
 
-## Is your app or ad unit new?
+## Symptom → likely cause → fix
 
-New apps and ad units take some time to activate.
-Here are common reasons you may not see live impressions immediately:
+| Symptom                                                                     | Likely cause                                                                                             | Fix                                                                                                                                                                                                                                                            |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| An official test unit works, but your production unit does not              | The device is not in test mode, the unit is new or inactive, or live inventory is unavailable            | Register the device before using your unit, verify the unit's format and status in AdMob, and inspect `reason` plus `responseInfo`. Never click an unlabeled live ad.                                                                                          |
+| A Google demo unit does not load and app-ads.txt looks suspicious           | The test request has a device, network, App ID, format, or SDK problem—not a missing demo publisher line | Do **not** add Google's demo publisher to your app-ads.txt. Demo units are not associated with your account and Google describes them as configured to return test ads. Verify the App ID, ad format, network, and device image.                               |
+| `canRequestAds === false`                                                   | UMP has not established request eligibility for the current session                                      | Call `AdsConsent.requestInfoUpdate()`, present a required form, and initialize/load only after `canRequestAds` is true. Test debug paths both inside and outside the EEA.                                                                                      |
+| Consent UI appears after ads already request                                | The SDK or a hook initialized/preloaded before consent was resolved                                      | Gather consent and set request configuration before `mobileAds().initialize()`. Keep hook `autoLoad` false until eligible.                                                                                                                                     |
+| A new app or ad unit shows no live impressions                              | Account/app readiness review or unit propagation is incomplete                                           | Google says new units typically take up to an hour and, uncommonly, a few days. Check account, app, and Policy Center status rather than issuing rapid retries.                                                                                                |
+| An unpublished iOS app does not serve live ads                              | The app is not listed and linked for AdMob readiness review                                              | Use test ads during development. List the app in the Apple App Store, link the listing in AdMob, and wait for readiness approval before expecting full live serving.                                                                                           |
+| The app crashes or every request fails immediately after startup            | The AdMob **App ID** is missing, malformed, or configured for the wrong platform                         | Verify Expo plugin or bare configuration. An App ID contains `~`; an ad unit ID contains `/`. Neither is the Android `applicationId` package name. Rebuild after changing native configuration.                                                                |
+| Fullscreen hook reports `status === 'no-fill'` and `error.phase === 'load'` | The request completed but no matching inventory or mediation source filled                               | Treat `reason: 'no-fill'` or `'mediation-no-fill'` as an inventory outcome. Use backoff, inspect waterfall rows, and do not convert it into an immediate retry loop.                                                                                           |
+| Hook reports `status === 'error'` with `error.phase === 'show'`             | A loaded ad could not be presented, was reused, or lost a valid presentation context                     | Fix the lifecycle/presentation problem. Do not classify a show-phase failure as routine no-fill, even if a native message mentions inventory.                                                                                                                  |
+| Native fails on Android while banner or interstitial test ads load          | The AVD uses a Google APIs image without the Play Store or has stale Play services                       | Recreate it with a Google Play (`google_apis_playstore`) image, preferably API 26+, and update Play services. This Native-specific signature is observed in this repository's integration environment, not promised by Google for every image/SDK combination. |
+| Test ads work but live requests vary by location or time                    | Demand, targeting, frequency caps, floors, or regional inventory differ                                  | Inspect Ad Inspector and `ResponseInfo`, test on a real device/network, and treat isolated no-fill as expected inventory behavior.                                                                                                                             |
+| A GAM sample unit occasionally returns no fill                              | The request did not receive a matching test creative, or the device/network path is unhealthy            | Confirm the matching `TestIds.GAM_*` format, retry later with backoff, and use Ad Inspector. A no-fill result alone does not prove the React Native integration is broken.                                                                                     |
+| Requests fail only on one wireless network                                  | Private DNS, VPN, firewall, or content filtering blocks ad hosts                                         | Temporarily switch Private DNS to Automatic and disable filtering/VPN for a controlled test. Restore security settings afterward and permit required hosts instead of shipping a bypass.                                                                       |
 
-- It usually takes at least an hour after you create an app or ad unit
-- Sometimes it can take a few days for ads to appear in new apps or ad units
-- New iOS apps will not show Google ads until they’re listed in the Apple App Store
+Google's [ads-not-showing guide](https://support.google.com/admob/answer/9469204) documents
+account approval, new-unit activation, and iOS listing constraints. Its
+[onboarding troubleshooting](https://support.google.com/admob/answer/9905175) also covers format
+mismatches, floors, and missing publisher data.
 
-## Test ads not showing up
+## Read v17 diagnostics first
 
-If you set up an app-ads.txt file for your app, you need to also include this line in your app-ads.txt file in order to load ads using the demo ad units:
-`google.com, pub-3940256099942544, DIRECT, f08c47fec0942fa0`
+For fullscreen hooks:
 
-- Set up app-ads.txt [iOS](https://developers.google.com/admob/ios/app-ads), [Android](https://developers.google.com/admob/android/app-ads)
-- Enabling test ads [iOS](https://developers.google.com/admob/ios/test-ads), [Android](https://developers.google.com/admob/android/test-ads)
+```ts
+import { TestIds, useInterstitialAd } from 'react-native-google-mobile-ads';
 
-Alternatively, you can enable test devices and use your own ad unit IDs instead.
+export function useDiagnosedInterstitial() {
+  const ad = useInterstitialAd({
+    adUnitId: TestIds.INTERSTITIAL,
+  });
 
-### Check Your ApplicationId
+  if (ad.status === 'no-fill') {
+    console.info('No fill', ad.error.reason, ad.responseInfo?.responseId);
+  } else if (ad.status === 'error') {
+    console.error('Ad failed', ad.error.phase, ad.error.reason, ad.error.responseInfo);
+  }
 
-If you initiated your project with `react-native init`, the auto-generated `applicationId` might not fulfill the required structure or uniqueness needed for AdMob integration. This can lead to issues where the request was successful but no ads are shown. Here are common reasons and fixes related to `applicationId` issues:
+  return ad;
+}
+```
 
-- **Non-unique ApplicationId**: The default `applicationId` may clash with existing apps, especially if you haven't customized it. AdMob requires a unique identifier for each app to correctly manage ad requests and revenue.
+`responseInfo.adapterResponses` shows waterfall latency and per-adapter outcomes. A response ID can
+help support teams find a request. See
+[Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics).
 
-- **Improperly Structured ApplicationId**: The `applicationId` should generally follow Java package name conventions, such as `com.companyname.appname`. It must start with a letter, and can only include letters (a-z, A-Z), numbers (0-9), and underscores (\_).
+<Info>
+  Legacy integer codes can help when comparing a native Google SDK log, but application logic should
+  branch on v17 `status`, `reason`, and `phase`. Those fields distinguish normal load-time no-fill
+  from configuration, transport, mediation, and show failures.
+</Info>
 
-Google documentation: [Configure the app module](https://developer.android.com/build/configure-app-module?hl=de)
+## Verify identifiers without conflating them
 
-**Important**: If you change the application ID of an already published app, Google Play Store treats the upload as a completely different app!
+- **Android application ID / iOS bundle ID:** your store package identity.
+- **AdMob App ID:** app-level native configuration, in the form `ca-app-pub-…~…`.
+- **Ad unit ID:** one placement and format, in the form `ca-app-pub-…/…` or a GAM path.
+- **Hashed test device ID:** a device identifier emitted by the SDK for test registration.
 
-### Enable test devices
+Changing an Android application ID or iOS bundle ID changes the store identity; it is not a fix for
+an invalid AdMob App ID. Follow [Configuration](/configuration) and rebuild when App ID
+configuration changes.
 
-If you want to do more rigorous testing with production-looking ads, configure your device as a test device and use your own ad unit IDs that you've created in the AdMob UI.
-Test devices can either be added in the AdMob UI or programmatically using the Google Mobile Ads SDK.
+## Device and consent checks
 
-Follow the steps below to add your device as a test device.
+- Use a Google Play system image for Android Native testing and a real device for final UMP/ATT
+  smoke testing.
+- Keep Google Play services current. The SDK can access Advertising ID when available, but that ID
+  is not interchangeable with the hashed test-device identifier generated by the SDK.
+- Reset UMP only in test builds, then request fresh consent information. ATT reset requires
+  reinstalling the iOS app.
+- Confirm the app is allowed to request ads before initialization and loading.
 
-#### Add your test device in the AdMob UI
-
-For a simple, non-programmatic way to add a test device and test new or existing app builds, use the AdMob UI.
-[Learn how](https://support.google.com/admob/answer/9691433).
-
-#### Add your test device programmatically
-
-If you want to test ads in your app as you're developing, follow the steps below to programmatically register your test device.
-
-1. Load your ads-integrated app and make an ad request.
-
-2. For **iOS** follow step 3, for **Android** skip to step 4.
-
-3. Check the console for a message that looks like this:
-
-   ```
-   GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers =
-     @[ @"2077ef9a63d2b398840261c8221a0c9b"  ]; // Sample device ID
-   ```
-
-   Copy your test device ID to your clipboard.
-
-4. Check the logcat output for a message that looks like the one below, which shows you your device ID and how to add it as a test device:
-
-   ```
-   I/Ads: Use RequestConfiguration.Builder.setTestDeviceIds(Arrays.asList("33BE2250B43518CCDA7DE426D04EE231"))
-   to get test ads on this device."
-   ```
-
-   Copy your test device ID to your clipboard.
-
-5. Modify your code to set the test device ID through testDeviceIdentifiers
-
-   ```js
-   import mobileAds from 'react-native-google-mobile-ads';
-
-   mobileAds()
-     .setRequestConfiguration({
-       // An array of test device IDs to add to the allow list.
-       testDeviceIdentifiers: ['2077ef9a63d2b398840261c8221a0c9b', 'EMULATOR'],
-     })
-     .then(() => {
-       // Request config successfully set!
-     });
-   ```
-
-6. Re-run your app. If the ad is a Google ad, you'll see a Test Ad label centered at the top of the ad.
-   Ads with this Test Ad label are safe to click. Requests, impressions, and clicks on test ads will not show up in your account's reports.
-
-## Emulator vs real device
-
-In some cases ads won't show up on an emulator but will show up while testing on a real device.
-
-## Are you using a private DNS provider?
-
-Some private DNS providers can block ads from displaying. If your device or emulator is using a private DNS, switch it to Automatic in the settings to ensure it is not blocking ads.
-
-## Extra links
-
-- Mobile Ads SDK [iOS](https://developers.google.com/admob/ios/quick-start), [Android](https://developers.google.com/admob/android/quick-start)
-- [Common reasons for ads not showing](https://support.google.com/admob/answer/9469204)
-- [Migrating to v17](/migrating-to-v17) — structured errors, no-fill vs failure, diagnostics
-- [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics) — `ResponseInfo` after load
+See [Testing ads](/testing) for the complete checklist and
+[Ad Inspector and the debug menu](/ad-inspector) for request-level inspection.

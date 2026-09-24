@@ -1,51 +1,135 @@
-# Debug-menu
+---
+title: Ad Inspector and debug menu
+description: Inspect requests and mediation or open Google Ad Manager creative debugging tools.
+---
 
-The debug menu is a tool that allows you to test and debug your app's ad experience. It can be used to:
+# Ad Inspector and debug menu
 
-```js
-await mobileAds().openDebugMenu(AD_UNIT_ID);
+Ad Inspector is Google's in-app overlay for examining test requests, SDK and adapter
+initialization, waterfall results, privacy signals, and ad units. The Google Ad Manager debug menu
+is a separate tool for creative preview and delivery inspection.
+
+## Prerequisites
+
+Before opening either tool:
+
+1. Use a native development build. Expo Go cannot load the Google Mobile Ads native SDK.
+2. For Ad Inspector, register each physical device. Android emulators are automatically configured
+   as test devices, so explicit registration is optional.
+3. Initialize the SDK after consent and request eligibility are resolved.
+4. On Android, use a suitable Google Play system image for Native and inspector testing and keep
+   Play services current. Prefer API 26 or newer for reliable tooling.
+5. Make at least one test request so the inspector has a request to display.
+
+<Warning>
+  Ad Inspector launches only on devices registered as test devices. Use a real device for final UMP,
+  ATT, mediation, and gesture-launch smoke testing.
+</Warning>
+
+## Register the test device
+
+Use the AdMob interface's
+[test-device setup](https://support.google.com/admob/answer/9691433), or make one ad request and copy
+the hashed identifier from Xcode or logcat:
+
+```ts
+import mobileAds from 'react-native-google-mobile-ads';
+
+await mobileAds().setRequestConfiguration({
+  testDeviceIdentifiers: ['YOUR-HASHED-TEST-DEVICE-ID'],
+});
+
+// Gather consent and confirm request eligibility before initialization.
+await mobileAds().initialize();
 ```
 
-# Ad Inspector
+Set request configuration before initialization or any ad preload. Restart the app and confirm a
+Google-served ad shows the **Test Ad** or **Test mode** label before interacting with it. See
+[Testing ads](/testing#register-a-test-device) for emulator and mediation caveats.
 
-Ad inspector is an in-app overlay that enables authorized devices to perform real-time analysis of test ad requests directly within a mobile app.
+## Use Ad Inspector
 
-Using ad inspector, you can:
+Use Ad Inspector when you need to:
 
-- Inspect your ad units
-- Check whether your ads are filling as expected
-- Identify errors and view details about how to resolve them
-- View the details for each Open Bidding ad network per request
-- View the mediation details for each ad network per request
-- Test individual third-party Open Bidding or waterfall mediation ad sources
-- Verify that you've correctly configured each ad unit for Open Bidding and waterfall mediation
+- inspect recent requests, errors, and ad-unit results;
+- verify SDK and mediation adapter initialization;
+- examine waterfall or bidding sources and latency;
+- test a single ad source or an ad unit outside its normal screen;
+- inspect privacy signals and troubleshoot consent-related serving.
 
-To see more information about ad inspector, see the [official documentation](https://developers.google.com/admob/android/ad-inspector).
-
-For programmatic `ResponseInfo` / paid telemetry from the React Native API (waterfall
-rows, compact paid snapshots, distinct no-fill), see
-[Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics).
-
-## Launch ad inspector
-
-Ad inspector can be launched from anywhere in your app. There are three different ways to launch ad inspector.
-
-1. Use the launch button from the debug menu.
-2. Use the gesture that you selected in the ad inspector settings.
-3. Programmatically using the provided API.
-
-More information about launching ad inspector is available in [official documentation](https://developers.google.com/admob/android/ad-inspector#launch_ad_inspector).
+Google maintains separate feature references for
+[Android](https://developers.google.com/admob/android/ad-inspector) and
+[iOS](https://developers.google.com/admob/ios/ad-inspector).
 
 ### Launch programmatically
 
-Ad inspector can be launched programmatically with the `openAdInspector` method in the `MobileAds` instance.
+`mobileAds().openAdInspector()` takes no arguments and returns a promise. The promise resolves when
+the overlay closes and rejects if it closes because of an inspector error.
 
-```js
-try {
-  await mobileAds().openAdInspector();
-  // The promise will resolve when the inspector is closed.
-} catch (error) {
-  // The promise will reject if ad inspector is closed due to an error.
-  console.log(error);
+```ts
+import mobileAds from 'react-native-google-mobile-ads';
+
+export async function inspectAds(): Promise<void> {
+  try {
+    await mobileAds().openAdInspector();
+    console.log('Ad Inspector closed');
+  } catch (error) {
+    console.error('Ad Inspector failed', error);
+  }
 }
 ```
+
+You can also configure a shake or double-flick gesture in the AdMob UI. Google notes that gesture
+settings can take time to propagate; make a request and restart the app if the gesture does not
+open the inspector.
+
+<Info>
+  Ad Inspector explains an individual device and request. Preserve v17 `status`, `error.reason`,
+  `error.phase`, and `responseInfo` in application diagnostics too, so a problem can be understood
+  without reproducing it in the overlay.
+</Info>
+
+## Use the Google Ad Manager debug menu
+
+Use the debug menu for Google Ad Manager creative preview and delivery inspection. It is not a
+replacement for Ad Inspector's AdMob request, privacy, and mediation diagnostics.
+
+`mobileAds().openDebugMenu(adUnitId)` takes one valid ad unit from your Google Ad Manager account
+and returns `void`. On Android, `initialize()` must be called first. Since this API does not return
+a promise, completion event, or native error result, do not `await` it. The JavaScript wrapper
+synchronously throws only when the ad unit ID is empty; after a non-empty string is passed to
+native code, the call provides no success or failure result.
+
+```ts
+import mobileAds from 'react-native-google-mobile-ads';
+
+const GAM_AD_UNIT_ID = '/your-network-code/your-ad-unit';
+
+export async function openGamDebugMenu(): Promise<void> {
+  await mobileAds().initialize();
+  mobileAds().openDebugMenu(GAM_AD_UNIT_ID);
+}
+```
+
+The example's promise covers initialization only; it does not track the menu opening or closing.
+
+In production code, consent and request eligibility must be resolved before the initialization
+shown in this focused example. Google's debug-menu guides cover creative linking and delivery
+inspection for
+[Android](https://developers.google.com/ad-manager/mobile-ads-sdk/android/debug) and
+[iOS](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/debug).
+
+## If the tool does not open
+
+| Symptom                             | Check                                                                                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Ad Inspector immediately rejects    | Log the rejection, confirm test-device registration, initialize first, and update the native SDK through the current package version. |
+| Gesture does nothing                | Make a test request, restart the app, and allow the AdMob UI setting to propagate.                                                    |
+| Inspector opens but has no requests | Load the affected unit in context, then reopen the inspector and select its SDK request log.                                          |
+| Native request is absent on Android | Confirm a Google Play system image, current Play services, API 26+ tooling, and unrestricted network access.                          |
+| GAM debug menu does nothing         | Use a valid ad unit from your GAM account and initialize first on Android.                                                            |
+| Consent/privacy blocks requests     | Refresh UMP state and verify `canRequestAds` before loading.                                                                          |
+
+Continue with [Common reasons ads do not show](/common-reasons-for-ads-not-showing). For
+programmatic waterfall rows and paid telemetry, see
+[Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics).

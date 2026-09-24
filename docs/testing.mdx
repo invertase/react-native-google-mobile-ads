@@ -1,15 +1,248 @@
-# Testing
+---
+title: Testing ads
+description: Test ad loading, consent, devices, and v17 outcomes without risking invalid traffic.
+---
 
-The React Native Google Mobile Ads library depends on a lot of platform-specific native code which you likely want to mock in your tests.
+# Testing ads
+
+Use this page after the integration checks in [Show your first ad](/first-ad). It is a
+long-lived reference for choosing safe test inventory, preparing devices, testing consent, and
+diagnosing request outcomes. It intentionally does not repeat the installation flow.
+
+## What to test
+
+- **Unit tests:** mock the native boundary and verify your UI, lifecycle, retry, and reward logic.
+- **Integration tests:** use Google's demo units or a registered test device to verify real SDK
+  loading and rendering without generating invalid traffic.
+- **Consent tests:** force supported debug geographies, reset UMP state, and verify both eligible
+  and ineligible request paths.
+
+<Warning>
+  Never click live ads during development. Google recommends demo ad units or a registered test
+  device because interacting with production ads can be treated as invalid traffic. See Google's
+  [Android](https://developers.google.com/admob/android/test-ads) and
+  [iOS](https://developers.google.com/admob/ios/test-ads) test-ad guides.
+</Warning>
+
+## Quick path
+
+Use the package's platform-aware `TestIds` for the first request. Android emulators are
+automatically configured as test devices by Google. For a physical device, or when you want an
+explicit identifier in diagnostics, optionally register the device before calling `initialize()`.
+
+```ts
+import mobileAds, { TestIds } from 'react-native-google-mobile-ads';
+
+await mobileAds().setRequestConfiguration({
+  // Optional explicit registration; Android emulators are already test devices.
+  testDeviceIdentifiers: ['YOUR-HASHED-TEST-DEVICE-ID'],
+});
+
+// Gather consent and confirm AdsConsent.canRequestAds before this point.
+await mobileAds().initialize();
+
+// Use the matching ID when creating the ad:
+const bannerUnitId = TestIds.BANNER;
+```
+
+Request configuration applies to future requests, so set it before initialization and before any
+ad can preload. Resolve consent first as described in [Consent & privacy basics](/consent-basics).
+
+<Info>
+  Expo apps require a development build or production build. Native Google Mobile Ads code is not
+  available in Expo Go. Start with the [Expo installation guide](/installation/expo), rebuild after
+  native configuration changes, and then return here.
+</Info>
+
+## Official test units
+
+`TestIds` selects the official Android or iOS demo unit where the platforms use different IDs.
+These exports match the package source and include:
+
+| Format                                  | Export                              |
+| --------------------------------------- | ----------------------------------- |
+| App open                                | `TestIds.APP_OPEN`                  |
+| Adaptive banner                         | `TestIds.ADAPTIVE_BANNER`           |
+| Banner                                  | `TestIds.BANNER`                    |
+| Interstitial                            | `TestIds.INTERSTITIAL`              |
+| Interstitial video                      | `TestIds.INTERSTITIAL_VIDEO`        |
+| Rewarded                                | `TestIds.REWARDED`                  |
+| Rewarded interstitial                   | `TestIds.REWARDED_INTERSTITIAL`     |
+| Native                                  | `TestIds.NATIVE`                    |
+| Native video                            | `TestIds.NATIVE_VIDEO`              |
+| Google Ad Manager app open              | `TestIds.GAM_APP_OPEN`              |
+| Google Ad Manager banner                | `TestIds.GAM_BANNER`                |
+| Google Ad Manager interstitial          | `TestIds.GAM_INTERSTITIAL`          |
+| Google Ad Manager rewarded              | `TestIds.GAM_REWARDED`              |
+| Google Ad Manager rewarded interstitial | `TestIds.GAM_REWARDED_INTERSTITIAL` |
+| Google Ad Manager native                | `TestIds.GAM_NATIVE`                |
+| Google Ad Manager native video          | `TestIds.GAM_NATIVE_VIDEO`          |
+
+Google documents dedicated units for formats including
+[Native](https://developers.google.com/admob/android/native),
+[Rewarded Interstitial](https://developers.google.com/admob/android/rewarded-interstitial), and
+[Google Ad Manager test ads](https://developers.google.com/ad-manager/mobile-ads-sdk/android/test-ads).
+Prefer demo units during development. When using your own unit, confirm the request is in test mode
+before interacting with the ad. Demo units test Google demand; testing mediation requires your own
+configured unit plus test mode for every mediated network.
+
+## Register a test device
+
+Choose either method:
+
+1. Add the device in the AdMob UI using Google's
+   [test-device instructions](https://support.google.com/admob/answer/9691433).
+2. Make one request, copy the hashed identifier printed by the native SDK, and pass it through
+   `testDeviceIdentifiers` as shown above.
+3. Restart the app and confirm that Google-served ads carry a **Test Ad** or **Test mode** label
+   before interacting with them.
+
+Google states that Android emulators are automatically configured as test devices. Explicitly
+registering one with this package's `EMULATOR` constant or the identifier printed by the SDK is
+optional, but can make diagnostics and configuration intent clearer. A Google test label does not
+prove that a mediated network is in test mode; follow each network's test instructions too.
+
+## Android emulator checklist
+
+<Warning>
+  For Native ads, use an AVD whose image target is **Google Play** (`google_apis_playstore`), not a
+  Google APIs-only (`google_apis`) image. In this repository's integration testing, Google APIs-only
+  images can return code 0 or an incorrect-native-response signature even when banner or
+  interstitial demo units load. Google documents that Google Play images include the Play Store and
+  access to Play services, while Google APIs images provide Play services without the store in
+  [Create and manage virtual devices](https://developer.android.com/studio/run/managing-avds). The
+  Native-specific failure signature is a repository-observed compatibility warning, not an upstream
+  guarantee for every SDK version.
+</Warning>
+
+- Prefer API 26 or newer for reliable modern AVD, logcat, and inspector tooling. This is a testing
+  recommendation; the package's supported Android floor is defined in [Prerequisites](/prerequisites).
+- Update the AVD Google Play services. Google's tooling guidance recommends an emulator image
+  with Google Play when Play services need to be updated.
+- Ensure network access is unrestricted and Private DNS, VPN, or content filtering is not blocking
+  ad hosts.
+- The current Google Mobile Ads SDK declares the Android `AD_ID` permission and uses the
+  Advertising ID when available. Advertising ID availability is separate from the hashed test
+  device identifier; do not paste one in place of the other.
+- Continue using an official `TestIds.*` unit during development. If you use your own unit, confirm
+  the response is marked as test mode before interacting with it. Any request not confirmed as test
+  mode can return live inventory, so clicks or impressions can create invalid-traffic policy risk.
+
+## iOS simulator or real device
+
+The iOS simulator is useful for basic loading and layout checks and does not need to be registered
+for UMP debug mode. Use a registered **real device** for the final smoke test, App Tracking
+Transparency, real UMP presentation and persistence, gesture launching, and device-specific
+network behavior. ATT state requires deleting and reinstalling the app to test the first prompt
+again.
+
+## Test consent
+
+Debug geography works only for UMP test devices; iOS simulators are treated as test devices.
+Register a real device with the UMP identifier printed after `requestInfoUpdate`.
+
+```ts
+import { AdsConsent, AdsConsentDebugGeography } from 'react-native-google-mobile-ads';
+
+AdsConsent.reset();
+
+const consentInfo = await AdsConsent.requestInfoUpdate({
+  debugGeography: AdsConsentDebugGeography.EEA,
+  testDeviceIdentifiers: ['YOUR-UMP-HASHED-TEST-DEVICE-ID'],
+});
+
+if (consentInfo.isConsentFormAvailable) {
+  await AdsConsent.loadAndShowConsentFormIfRequired();
+}
+```
+
+Call `AdsConsent.reset()` only in test tooling; then request fresh information. Remove debug
+identifiers and forced geography before release. Google's UMP guides describe the same test-device,
+forced-geography, and reset flow for
+[Android](https://developers.google.com/admob/android/privacy#testing) and
+[iOS](https://developers.google.com/admob/ios/privacy#testing).
+
+## Understand v17 outcomes
+
+Do not branch only on legacy native integer error codes:
+
+- Fullscreen hooks expose lifecycle `status`, including `loaded`, `no-fill`, and `error`.
+- A load-time `error.reason === 'no-fill'` or `'mediation-no-fill'` is an inventory outcome, not an
+  integration exception. Retry later with backoff; do not create a request loop.
+- `error.phase` distinguishes a request failure (`load`) from a presentation failure (`show`).
+  Show failures are errors even if their native message mentions inventory.
+- `responseInfo` records the response ID, winning adapter, waterfall rows, latency, and selected
+  Google Ad Manager metadata. It can also be attached to `error`.
+
+```tsx
+import { Text } from 'react-native';
+import { TestIds, useInterstitialAd } from 'react-native-google-mobile-ads';
+
+export function InterstitialDiagnostics() {
+  const { status, error, responseInfo } = useInterstitialAd({
+    adUnitId: TestIds.INTERSTITIAL,
+  });
+
+  if (status === 'no-fill') {
+    console.log('No inventory', error.reason, responseInfo?.responseId);
+  } else if (status === 'error') {
+    console.error('Ad failure', error.phase, error.reason, error.responseInfo);
+  }
+
+  return <Text>Ad status: {status}</Text>;
+}
+```
+
+See [Fullscreen ads with hooks](/ad-formats/hooks) for a complete component and
+[Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics) for
+`ResponseInfo`.
+
+## When ads still do not show
+
+| Observation                              | Next step                                                                                      |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `status === 'no-fill'`                   | Treat it as inventory; inspect `responseInfo`, wait, and retry with backoff.                   |
+| `status === 'error'`                     | Branch on `error.phase` and `error.reason`; fix configuration or presentation before retrying. |
+| Native fails only on an Android emulator | Confirm a Google Play system image and current Play services.                                  |
+| Consent says `canRequestAds === false`   | Complete or refresh the UMP flow before initialization or loading.                             |
+| A test unit works but your unit does not | Confirm test mode, verify app/ad-unit status and format, then inspect the request.             |
+| Nothing reaches the network              | Disable Private DNS/VPN filtering temporarily and verify device connectivity.                  |
+
+Continue with [Common reasons for ads not showing](/common-reasons-for-ads-not-showing), then open
+[Ad Inspector and the debug menu](/ad-inspector) for request-level diagnosis.
 
 ## Testing with Jest
 
-This library ships with a Jest setup file that mocks the native code for you.
-To use it, add the following to your Jest configuration:
+The package currently does not export a consumer Jest setup file. Mock the surface your component
+uses in your own setup file, and keep integration tests on a development build:
 
-```json
-// jest.config.js|ts|mjs|cjs|json
-{
-  "setupFiles": ["./node_modules/react-native-google-mobile-ads/jest.setup.ts"]
-}
+```ts
+// jest.setup.ts
+jest.mock('react-native-google-mobile-ads', () => ({
+  __esModule: true,
+  default: () => ({
+    initialize: jest.fn().mockResolvedValue([]),
+    setRequestConfiguration: jest.fn().mockResolvedValue(undefined),
+  }),
+  TestIds: {
+    BANNER: 'test-banner',
+    INTERSTITIAL: 'test-interstitial',
+  },
+  useInterstitialAd: jest.fn(() => ({
+    status: 'loaded',
+    error: null,
+    responseInfo: null,
+    show: jest.fn(),
+    load: jest.fn(),
+    retry: jest.fn(),
+    destroy: jest.fn(),
+  })),
+}));
+```
+
+```js
+// jest.config.js
+module.exports = {
+  setupFiles: ['./jest.setup.ts'],
+};
 ```
