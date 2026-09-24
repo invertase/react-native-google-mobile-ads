@@ -192,6 +192,9 @@ If hybrid video still fails to paint after upgrading:
 2. Confirm the banner has a real laid-out width and height before or when the creative loads (avoid mounting a 0×0 placeholder that never grows).
 3. Distinguish this from [native video in pagers](/native-ads#fullscreen-pagers-and-native-video) — that path uses `NativeMediaView` / `mediaContent`, not `<BannerAd>`.
 
+Some banner inventory is a **hybrid** creative (static image beside or above an in-banner video). Google's banner `AdView` renders that inside an embedded WebView. On Android, video halves historically could stay frozen after `onAdLoaded` until the user scrolled or otherwise interacted, or left the app and returned — the Activity leave+return cycle recreates the WebView surface / resume path ([#655](https://github.com/invertase/react-native-google-mobile-ads/issues/655), [#711](https://github.com/invertase/react-native-google-mobile-ads/issues/711)).
+
+
 ### Banners inside scrolling content (iOS momentum)
 
 Banner creatives are rendered by the Google Mobile Ads SDK (typically a nested `WKWebView`). This package does **not** expose nested web-view scroll settings such as `decelerationRate` — the public `GADBannerView` / `GAMBannerView` APIs have no such knobs, so React Native `WebView` `decelerationRate` workarounds do not apply here.
