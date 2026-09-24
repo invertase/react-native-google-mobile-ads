@@ -101,6 +101,7 @@ Firebase
 firebase-admin
 Firestore
 FlatList
+FlashList
 Flutter
 fullscreen
 Fullscreen
