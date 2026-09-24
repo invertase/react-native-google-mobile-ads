@@ -564,6 +564,7 @@ spelling.json
 # Gatsby / Website
 website/.cache
 website/public
+apidocs-out/
 
 # generated files by bob
 lib/

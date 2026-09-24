@@ -124,6 +124,47 @@ function restoreHookWrappedShow(ad: PooledAd): void {
 
 /**
  * Poll-on-demand against a pool. Never polls during render.
+ *
+ * This hook is state-first: `poll()` updates `status`, `ad`, and `error`; do
+ * not stash the returned ad in parallel state. It owns a filled ad until
+ * `release()`:
+ *
+ * - a later poll supersedes and destroys the previous owned ad,
+ * - unmount destroys owned inventory,
+ * - concurrent polls coalesce per hook instance,
+ * - calling `destroy()` while the hook owns the ad leaves dead inventory in
+ *   hook state, so release first when ownership must move.
+ *
+ * `poolStatus` answers lookup/creation (`absent`, `creating`, `ready`,
+ * `ready-degraded`, `error`); `status` answers polling (`polling`, `filled`,
+ * `empty`, `timeout`, `no-fill`, `error`, `stale-by-policy`, `consumed`).
+ * These vocabularies are intentionally separate. `consumed` is a pooled
+ * fullscreen show-promise milestone, not the classic hook's `closed` event.
+ *
+ * `poll` and `release` keep stable callback identities while sampling the
+ * latest `poolId`. Coalescing is per hook instance, not per pool: two
+ * placements polling the same depth-1 pool can starve each other.
+ *
+ * @example Release when post-show events must outlive the hook
+ * ```tsx
+ * const { poll, release } = usePooledAd(poolConfig.poolId);
+ *
+ * const showNext = useCallback(async () => {
+ *   const result = await poll();
+ *   if (result.status !== 'filled' || result.ad.format !== AdFormat.INTERSTITIAL) return;
+ *
+ *   const ad = release();
+ *   if (!ad || ad.isStaleByPolicy()) {
+ *     ad?.destroy();
+ *     return;
+ *   }
+ *   const off = ad.addAdEventListener(AdEventType.CLOSED, () => {
+ *     off();
+ *     ad.destroy();
+ *   });
+ *   await ad.show();
+ * }, [poll, release]);
+ * ```
  */
 export function usePooledAd(poolId: string): UsePooledAdResult {
   const poolLookup = useAdPool(poolId);

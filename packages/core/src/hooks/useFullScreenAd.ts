@@ -42,6 +42,24 @@ export type FullScreenAd = AppOpenAd | InterstitialAd | RewardedAd | RewardedInt
  * Passing this instead of a positional ad unit id opts into the v17 shape:
  * the hook loads on its own, `status` reports where the ad is, and separate
  * fields report what has happened to it.
+ *
+ * The positional form remains a manual-load compatibility shim in v17. Move
+ * consent gating into `autoLoad` when adopting this form:
+ *
+ * @example Positional to options form
+ * ```tsx
+ * // Before: useInterstitialAd(unit), then call load() from an effect.
+ * const { status, show, load } = useInterstitialAd({
+ *   adUnitId: unit,
+ *   autoLoad: consentReady,
+ * });
+ *
+ * // Automatic loading is once per identity. Warm another ad only when another
+ * // impression is plausible; `load` has stable identity.
+ * useEffect(() => {
+ *   if (status === 'closed') load();
+ * }, [status, load]);
+ * ```
  */
 export type FullScreenAdHookOptions = {
   /**
@@ -145,6 +163,10 @@ type UseFullScreenAdResultBase = {
    * Concurrent calls coalesce, so an automatic load and a manual one in the
    * same tick issue a single request. That is what keeps React StrictMode's
    * double-invoked effects from burning two ads in development.
+   *
+   * Stable callback identity does not freeze arguments: the callback samples
+   * the latest ad instance. It is safe in dependency arrays, and handlers do
+   * not retain a retired instance after `adUnitId` or request options change.
    *
    * Returns `void` deliberately: this hook never transfers ownership, so a
    * promise could only hand back what the next render already carries.

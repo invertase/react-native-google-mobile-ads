@@ -79,6 +79,22 @@ function isCleanNoFill(error: AdError | null | undefined): boolean {
  *
  * Multi-format means several formats compete for one ad. It is not multi-count:
  * `requestCount` stays 1 in v1.
+ *
+ * @example
+ * ```ts
+ * const request = MultiFormatAdRequest.create({
+ *   adUnitId: gamUnitId,
+ *   requestOptions: MultiFormatAdPresets.nativeOrBanner([
+ *     BannerAdSize.MEDIUM_RECTANGLE,
+ *   ]),
+ * });
+ * const { ads, errors, responseInfo } = await request.load();
+ * const handle = ads[0];
+ * if (handle && !handle.isStaleByPolicy()) {
+ *   renderWinner(handle);
+ * }
+ * console.log(errors.map(error => error.reason), responseInfo?.responseId);
+ * ```
  */
 export class MultiFormatAdRequest {
   readonly adUnitId: string;

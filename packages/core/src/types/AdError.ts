@@ -56,6 +56,23 @@ export type AdErrorPayload = {
  * This mirrors the classic event path, where the payload of an `AdEventType`
  * `ERROR` event is `Error & AdErrorPayload`. One shape, both delivery styles.
  *
+ * Branch on `phase` before `reason`: a show-phase `no-fill` is still a
+ * presentation failure, while a load-phase `no-fill` is routine inventory
+ * emptiness.
+ *
+ * @example
+ * ```ts
+ * ad.addAdEventListener(AdEventType.ERROR, error => {
+ *   if (error.phase === 'show') {
+ *     reportPresentationFailure(error);
+ *   } else if (error.reason === 'no-fill' || error.reason === 'mediation-no-fill') {
+ *     scheduleRetry();
+ *   } else {
+ *     reportLoadFailure(error);
+ *   }
+ * });
+ * ```
+ *
  * `NativeError` itself is deliberately not widened: it is shared with legacy
  * code paths that have no structured payload to supply.
  */

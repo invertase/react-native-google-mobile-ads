@@ -70,3 +70,12 @@ jobs:
       - name: Publish Missing Packages
         if: success()
         run: yarn lerna publish from-package --yes --loglevel trace
+
+  deploy-api-reference:
+    name: Deploy API Reference
+    needs: publish_npm
+    uses: ./.github/workflows/deploy-api-reference.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

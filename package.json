@@ -17,6 +17,8 @@
     "postinstallDev": "yarn prepare",
     "prepare": "yarn lerna:prepare",
     "lerna:prepare": "cross-env NX_NO_CLOUD=true NX_CACHE_DIRECTORY=.nx/cache NX_WORKSPACE_DATA_DIRECTORY=.nx/workspace-data lerna run prepare",
+    "reference:api": "typedoc",
+    "reference:api:gh-pages": "typedoc --hostedBaseUrl https://invertase.github.io/react-native-google-mobile-ads/",
     "build:all:clean": "lerna run build:clean",
     "build:all:build": "lerna run build",
     "lint:code": "yarn lint:js && yarn lint:android && yarn lint:ios:check",
@@ -119,6 +121,7 @@
     "rimraf": "^6.0.1",
     "semantic-release": "^25.0.1",
     "spellchecker-cli": "^7.0.0",
+    "typedoc": "^0.28.13",
     "typescript": "^5.9.3"
   },
   "packageManager": "yarn@4.10.3",

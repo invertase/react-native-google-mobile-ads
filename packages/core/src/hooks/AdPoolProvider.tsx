@@ -79,6 +79,36 @@ function configSignature(config: AdPoolConfig): string {
  * state through `useAdPool` / `usePooledAd`, which subscribe individually; a
  * registry subscription here would re-render the whole subtree every time any
  * pool registered or was destroyed.
+ *
+ * The provider owns pools, not ads already handed to consumers:
+ *
+ * 1. Pass configs with stable `poolId` values.
+ * 2. Descendants use that same id with `useAdPool` or `usePooledAd`.
+ * 3. Consumers still poll on demand, then render or show the returned ad.
+ *
+ * A new `pools` array with unchanged ids/configs does not recreate native
+ * pools; `useMemo` is an optimization, not a correctness requirement.
+ *
+ * @example
+ * ```tsx
+ * const pool = AdPoolPresets.display(gamUnitId, {
+ *   bannerSizes: [BannerAdSize.MEDIUM_RECTANGLE],
+ * });
+ *
+ * function Placement() {
+ *   const { status, ad, poll } = usePooledAd(pool.poolId);
+ *   return (
+ *     <>
+ *       <Button title="Load placement" disabled={status === 'polling'} onPress={() => void poll()} />
+ *       {ad?.format === AdFormat.BANNER ? <MultiFormatBannerAdView handle={ad} /> : null}
+ *     </>
+ *   );
+ * }
+ *
+ * <AdPoolProvider pools={[pool]}>
+ *   <Placement />
+ * </AdPoolProvider>;
+ * ```
  */
 export function AdPoolProvider(props: AdPoolProviderProps): React.ReactElement {
   const { pools, children, enabled = true } = props;

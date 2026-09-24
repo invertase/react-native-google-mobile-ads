@@ -17,10 +17,23 @@
   "content": {
     "automaticallyInferNextPrevious": true
   },
+  "tabs": [
+    {
+      "id": "root",
+      "title": "Documentation",
+      "href": "/"
+    },
+    {
+      "id": "reference",
+      "title": "Reference API",
+      "href": "https://invertase.github.io/react-native-google-mobile-ads/"
+    }
+  ],
   "redirects": {
     "/displaying-ads": "/ad-formats",
     "/displaying-ads-hook": "/ad-formats/hooks",
-    "/native-ads": "/ad-formats/native"
+    "/native-ads": "/ad-formats/native",
+    "/rngma-v17-api-reference": "https://invertase.github.io/react-native-google-mobile-ads/"
   },
   "sidebar": [
     {
@@ -85,7 +98,6 @@
       "group": "Reference",
       "icon": "book",
       "pages": [
-        { "title": "v17 API reference", "href": "/rngma-v17-api-reference" },
         { "title": "Config plugin reference", "href": "/config-plugin" },
         { "title": "For AI agents", "href": "/ai-agents" }
       ]
