@@ -143,6 +143,14 @@ npx react-native run-ios
 npx react-native run-android
 ```
 
+CocoaPods installs an Xcode Build Phase (`[RNGoogleMobileAds] Configuration`) that
+writes `GADApplicationIdentifier` into the built app `Info.plist` from `app.json`.
+If a release build fails with `unable to locate Info.plist`, re-run `pod install` after
+upgrading this package so the phase keeps `after_compile` timing, an Input File of
+`$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)`, and "Based on dependency analysis" disabled.
+Do not move that script earlier in Build Phases. Expo apps that use the config plugin
+below set the App ID at prebuild time and do not rely on this Build Phase.
+
 </TabItem>
 <TabItem value="expo">
 
