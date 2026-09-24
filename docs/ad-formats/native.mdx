@@ -435,6 +435,37 @@ On Android, `NativeMediaView` needs a non-zero laid-out size while the page is v
 
 If a pager cell still briefly stays black, ensure the media view is mounted inside `NativeAdView` for that page (not swapped in only after images load) and that the cell is not `display: 'none'` / zero-height when it becomes the active page.
 
+### Android 32-bit (`armeabi-v7a`) TurboModule EventEmitter crash
+
+Play Console stacks that show
+`JavaTurboModule::setEventEmitterCallback` →
+`NativeGoogleMobileAdsNativeModuleSpecJSI` →
+`RNGoogleMobileAdsSpec_ModuleProvider` on **`armeabi-v7a`** (often signed release / Play
+splits) are a **React Native host bug**, not a defect in this library’s native module
+implementation.
+
+Native ads declare a Codegen `EventEmitter` (`onAdEvent`). During TurboModule
+construction, React Native’s C++ layer calls Java `setEventEmitterCallback`. On 32-bit
+ARM, the pre-fix path used variadic JNI `CallVoidMethod`, which is unsafe for that ABI
+and can SIGSEGV in `art::ArgArray::BuildArgArrayFromVarArgs` — matching
+[facebook/react-native#51628](https://github.com/facebook/react-native/issues/51628).
+The fix replaces that call with `CallVoidMethodA`
+([PR #51695](https://github.com/facebook/react-native/pull/51695), backported to the
+**0.79.6** line and present in later releases including this package’s peer baseline
+**React Native ≥ 0.86.0**).
+
+This package cannot patch `libreactnative.so` inside the app. If you still see the
+stack:
+
+1. Confirm the crash ABI is `armeabi-v7a` (or another 32-bit split) and the frames above.
+2. Upgrade the **host** React Native to **≥ 0.79.6** (Expo: a SDK build whose RN patch
+   includes that backport), or to this package’s peer **≥ 0.86.0**.
+3. Rebuild and ship a new binary; Play Console stacks from older RN builds will keep
+   appearing until those installs update.
+4. If the same stack persists on a patched RN version, escalate to React Native with the
+   full tombstone and your exact `react-native` version — do not expect a library-only
+   workaround that disables the native-ad EventEmitter.
+
 ### Not implemented features
 
 These features are not implemented in the current version:
