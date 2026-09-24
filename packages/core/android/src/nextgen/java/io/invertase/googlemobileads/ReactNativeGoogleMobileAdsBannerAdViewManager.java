@@ -89,6 +89,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @ReactProp(name = "unitId")
   public void setUnitId(ReactNativeAdView view, String value) {
+    if (value != null && value.equals(view.getUnitId())) {
+      return;
+    }
     view.setUnitId(value);
     view.setPropsChanged(true);
   }
@@ -107,15 +110,15 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @ReactProp(name = "sizeConfig")
   public void setSizeConfig(ReactNativeAdView view, ReadableMap config) {
     if (config == null) return;
-    view.setMaxAdHeight(
+    float maxHeight =
         config.hasKey("maxHeight") && !config.isNull("maxHeight")
             ? (float) config.getDouble("maxHeight")
-            : 0);
-    view.setAdWidth(
-        config.hasKey("width") && !config.isNull("width") ? (float) config.getDouble("width") : 0);
+            : 0;
+    float width =
+        config.hasKey("width") && !config.isNull("width") ? (float) config.getDouble("width") : 0;
+    List<String> sizeNames = new ArrayList<>();
     if (config.hasKey("sizes") && !config.isNull("sizes")) {
       ReadableArray values = config.getArray("sizes");
-      List<String> sizeNames = new ArrayList<>();
       if (values != null) {
         for (int index = 0; index < values.size(); index++) {
           if (values.getType(index) == ReadableType.String) {
@@ -123,14 +126,33 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           }
         }
       }
-      view.setSizeNames(sizeNames);
+    }
+
+    boolean requiresReload =
+        ReactNativeGoogleMobileAdsBannerAdLayout.sizeConfigRequiresReload(
+            view.getSizeNames(),
+            view.getMaxAdHeight(),
+            view.getAdWidth(),
+            sizeNames,
+            maxHeight,
+            width);
+
+    view.setMaxAdHeight(maxHeight);
+    view.setAdWidth(width);
+    view.setSizeNames(sizeNames);
+    if (!sizeNames.isEmpty()) {
       NextGenMobileAdsGate.run(() -> view.post(() -> resolveSizes(view)));
     }
-    view.setPropsChanged(true);
+    if (requiresReload) {
+      view.setPropsChanged(true);
+    }
   }
 
   @ReactProp(name = "manualImpressionsEnabled")
   public void setManualImpressionsEnabled(ReactNativeAdView view, boolean value) {
+    if (view.getManualImpressionsEnabled() == value && view.getSizeNames() != null) {
+      return;
+    }
     view.setManualImpressionsEnabled(value);
     view.setPropsChanged(true);
   }
@@ -227,6 +249,10 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
                     height = view.getHeight();
                     adView.addOnLayoutChangeListener(
                         (v, l, t, r, b, oldL, oldT, oldR, oldB) -> {
+                          if (!ReactNativeGoogleMobileAdsBannerAdLayout.shouldEmitSizeChange(
+                              oldR - oldL, oldB - oldT, r - l, b - t)) {
+                            return;
+                          }
                           WritableMap changed = Arguments.createMap();
                           changed.putDouble("width", PixelUtil.toDIPFromPixel(r - l));
                           changed.putDouble("height", PixelUtil.toDIPFromPixel(b - t));

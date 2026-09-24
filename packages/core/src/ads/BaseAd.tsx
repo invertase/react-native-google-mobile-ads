@@ -15,7 +15,7 @@
  *
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DimensionValue, NativeSyntheticEvent, Platform } from 'react-native';
 import { bannerEventPayload } from '../internal/bannerEventPayload';
 import GoogleMobileAdsBannerView from '../specs/components/GoogleMobileAdsBannerViewNativeComponent';
@@ -37,7 +37,9 @@ export const BaseAd = React.forwardRef<
   ) => {
     const [dimensions, setDimensions] = useState<(number | DimensionValue)[]>([0, 0]);
 
-    const debouncedSetDimensions = debounce(setDimensions, 100);
+    // Stable debounce across re-renders — a new debounce each render would not coalesce
+    // FLUID onSizeChange bursts on Android (#801).
+    const debouncedSetDimensions = useRef(debounce(setDimensions, 100)).current;
 
     useEffect(() => {
       if (!unitId) {
@@ -68,6 +70,13 @@ export const BaseAd = React.forwardRef<
       }
       return {};
     }, [requestOptions]);
+
+    const request = useMemo(
+      () => JSON.stringify(validatedRequestOptions),
+      [validatedRequestOptions],
+    );
+
+    const sizeConfig = useMemo(() => ({ sizes, maxHeight, width }), [sizes, maxHeight, width]);
 
     function onNativeEvent(event: NativeSyntheticEvent<NativeEvent>) {
       const nativeEvent =
@@ -118,10 +127,14 @@ export const BaseAd = React.forwardRef<
       }
 
       if (type === 'onAdLoaded' || type === 'onSizeChange') {
-        const width = Math.ceil(nativeEvent.width);
-        const height = Math.ceil(nativeEvent.height);
+        const nextWidth = Math.round(nativeEvent.width);
+        const nextHeight = Math.round(nativeEvent.height);
 
-        if (width && height && JSON.stringify([width, height]) !== JSON.stringify(dimensions)) {
+        if (
+          nextWidth &&
+          nextHeight &&
+          JSON.stringify([nextWidth, nextHeight]) !== JSON.stringify(dimensions)
+        ) {
           /**
            * On Android, it seems the ad size is not always the definitive on the first onAdLoaded event.
            * So if we change the size here with an incorrect value, then we relayout the ad on native side
@@ -134,9 +147,9 @@ export const BaseAd = React.forwardRef<
            * hence the 100ms debounce
            */
           if (sizes.includes(GAMBannerAdSize.FLUID) && Platform.OS === 'android') {
-            debouncedSetDimensions([width, height]);
+            debouncedSetDimensions([nextWidth, nextHeight]);
           } else {
-            setDimensions([width, height]);
+            setDimensions([nextWidth, nextHeight]);
           }
         }
       }
@@ -155,10 +168,10 @@ export const BaseAd = React.forwardRef<
     return (
       <GoogleMobileAdsBannerView
         ref={ref}
-        sizeConfig={{ sizes, maxHeight, width }}
+        sizeConfig={sizeConfig}
         style={style}
         unitId={unitId}
-        request={JSON.stringify(validatedRequestOptions)}
+        request={request}
         manualImpressionsEnabled={!!manualImpressionsEnabled}
         onNativeEvent={onNativeEvent}
       />

@@ -133,17 +133,35 @@ describe('BaseAd ResponseInfo native event wiring', () => {
     jest.useFakeTimers();
     try {
       render(<BannerAd unitId={MOCK_ID} size={GAMBannerAdSize.FLUID} />);
+      const sizeConfigBefore = (lastNativeProps as { sizeConfig?: unknown }).sizeConfig;
       act(() => {
         lastNativeProps.onNativeEvent!({
-          nativeEvent: { type: 'onAdLoaded', width: 360, height: 100 },
+          nativeEvent: { type: 'onAdLoaded', width: 360.4, height: 100.6 },
         });
         jest.advanceTimersByTime(150);
       });
+      const sizeConfigAfter = (lastNativeProps as { sizeConfig?: unknown }).sizeConfig;
+      expect(sizeConfigAfter).toBe(sizeConfigBefore);
+      expect((lastNativeProps as { style?: { height?: number } }).style?.height).toBe(101);
     } finally {
       jest.useRealTimers();
       if (osDescriptor) {
         Object.defineProperty(Platform, 'OS', osDescriptor);
       }
     }
+  });
+
+  it('keeps a stable sizes array across BannerAd re-renders until size changes', () => {
+    const { rerender } = render(<BannerAd unitId={MOCK_ID} size={BannerAdSize.BANNER} />);
+    const sizesBefore = (lastNativeProps as { sizeConfig?: { sizes?: string[] } }).sizeConfig
+      ?.sizes;
+    rerender(<BannerAd unitId={MOCK_ID} size={BannerAdSize.BANNER} />);
+    expect((lastNativeProps as { sizeConfig?: { sizes?: string[] } }).sizeConfig?.sizes).toBe(
+      sizesBefore,
+    );
+    rerender(<BannerAd unitId={MOCK_ID} size={BannerAdSize.LARGE_BANNER} />);
+    expect((lastNativeProps as { sizeConfig?: { sizes?: string[] } }).sizeConfig?.sizes).toEqual([
+      BannerAdSize.LARGE_BANNER,
+    ]);
   });
 });
