@@ -33,7 +33,24 @@ This heading owns lint-by-tree, check vs `:fix`/`--replace` by work type, and wh
 
 **Whitespace.** Run `git diff --check HEAD -- . ':(exclude,glob)packages/core/android/generated/**' ':(exclude,glob)packages/core/ios/generated/**'` against every change. This check remains blocking for all handwritten files, including handwritten native files. It excludes only the two [GMA-AD-3](../architecture-decisions.md#gma-ad-3) upstream-generated trees; do not format or patch those bytes to satisfy a generic whitespace check. `yarn codegen:verify` owns their integrity.
 
-**Docs.** `yarn lint:markdown:check` and `yarn lint:spellcheck` **only** when the diff includes `docs/**`. Independent-review of `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` with **no** `docs/**` does **not** run markdown check or `lint:markdown:fix`. CI docs job is spellcheck only; markdown check is local. Allowlist: [agent command policy](agent-command-policy.md). User-docs sidebar: [documentation site maintenance](../documentation-site-maintenance.md).
+**Docs.** `yarn lint:markdown:check`, `yarn lint:spellcheck`, and
+`yarn lint:docs-links` **only** when the diff includes `docs/**`. Independent-review of
+`okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` with **no** `docs/**` does **not** run docs
+checks. CI runs spellcheck and the link check; markdown check is local. Link-check behavior:
+[§ docs.page link check](#docs-page-link-check). Allowlist:
+[agent command policy](agent-command-policy.md). User-docs sidebar:
+[documentation site maintenance](../documentation-site-maintenance.md).
+
+<a id="docs-page-link-check"></a>
+
+### Docs.page link check
+
+`yarn lint:docs-links` runs `docs check .` with the exact root-pinned
+`@docs.page/cli` version. Exit 0 is blocking when `docs/**` changes. Fix internal failures and
+external 404, 5xx, DNS, abort, and timeout errors; retry transient external failures before
+classifying them. External 401, 403, 405, and 429 bot-gate responses are warnings and do not
+justify rewriting a valid link or weakening checker severity. Do not exclude the generated
+reference host; its links must become green when the Pages deployment is available.
 
 <a id="api-reference"></a>
 
@@ -88,6 +105,7 @@ Goal: each iteration improves OKF and removes conflicting guidance. The contract
 | lint | [§ lint](#lint-and-formatting) for this diff (`lint:js` only if `packages/core/src/`; not plugin; not `packages/core/__tests__/`). `yarn lint:code` / `yarn lint` only when this diff includes `packages/core/src/` **and** `packages/core/android/` **and** `packages/core/ios/` and the work type may `--replace` | 0 | matching linters |
 | whitespace | [§ lint](#lint-and-formatting) scoped `git diff --check` | 0 | all handwritten files; generated trees excluded |
 | docs | `yarn lint:markdown:check` and `yarn lint:spellcheck` | 0 | if `docs/**` — [§ lint](#lint-and-formatting) |
+| docs links | `yarn lint:docs-links` | 0 | if `docs/**` — [§ docs.page link check](#docs-page-link-check); record error and warning counts |
 | API reference | `yarn reference:api`; additionally `yarn reference:api:gh-pages` when hosted output may change | 0, warning-clean | if TypeDoc config, source TSDoc, reference assets/landing content, or Pages workflow changed — [§ API reference](#api-reference) |
 | plugin | `yarn tests:jest packages/core/plugin/__tests__/` | 0 | if `packages/core/plugin/` or `packages/core/app.plugin.js` — [§ Expo plugin](#expo-plugin) |
 | coverage | [evidence package](coverage-design.md#coverage-evidence-package) | — | required when `packages/core/src/` **or** `packages/core/android/` **or** `packages/core/ios/` **or** `packages/core/plugin/` TS; `packages/core/app.plugin.js`-only is `n/a` unless plugin TS changed |

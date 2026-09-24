@@ -38,7 +38,7 @@ App open ads are a special ad format intended for publishers wishing to monetize
 
 <img width="200" src="https://developers.google.com/static/admob/images/app-open-ad.png" alt="App open ad">
 
-[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#app-open-ads)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/app-open)
 
 ### Banner
 
@@ -52,7 +52,7 @@ A dynamically sized banner that is full-width and auto-height. Anchored adaptive
 
 <img width="200" src="https://developers.google.com/static/admob/images/Android_adaptive.png" alt="Anchored adaptive">
 
-[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#banner-ads-component)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/banner#anchored-and-inline-adaptive-banners)
 
 #### Inline adaptive
 
@@ -62,7 +62,7 @@ They are intended to be placed in scrolling content.
 
 <img width="600" src="https://developers.google.com/static/admob/images/inline-adaptive.png" alt="Inline adaptive">
 
-[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#banner-ads-component)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/banner#anchored-and-inline-adaptive-banners)
 
 #### Collapsible
 
@@ -70,14 +70,14 @@ Collapsible banner ads are intended to improve performance of anchored ads that 
 
 <img width="400" src="https://developers.google.com/static/admob/images/collapsible-banner.png" alt="Collapsible banner">
 
-[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#collapsible-banner-ads)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/banner#collapsible-banner-ads)
 
 #### Fixed size (legacy)
 
 The Google Mobile Ads SDK supports fixed ad sizes for situations where adaptive banners ads don't meet your needs.
 Banner (320x50), Large banner (320x100), Medium rectangle (300x250), full banner (468x60) and leaderboard (728x90).
 
-[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#banner-ads-component)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/banner#banner-size-catalog)
 
 ### Native
 
@@ -86,7 +86,7 @@ You decide how and where they're placed, so the layout is more consistent your a
 
 <img width="300" src="https://developers.google.com/static/admob/images/format-native.svg" alt="Native">
 
-[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/native-ads)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/native)
 
 ### Interstitial
 
@@ -94,7 +94,7 @@ Interstitial ad units show full-page ads in your app. Place them at natural brea
 
 <img width="300" src="https://developers.google.com/static/admob/images/format-interstitial.svg" alt="Interstitial">
 
-[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#interstitial-ads)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/interstitial)
 
 ### Rewarded
 
@@ -102,7 +102,7 @@ AdMob rewarded ad units allow you to reward users with in-app items for interact
 
 <img width="300" src="https://developers.google.com/static/admob/images/format-rewarded.svg" alt="Rewarded">
 
-[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#rewarded-ads)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/rewarded)
 
 ### Rewarded Interstitial
 
@@ -111,7 +111,7 @@ Unlike rewarded ads, users aren't required to opt-in to view a rewarded intersti
 
 <img width="300" src="https://developers.google.com/static/admob/images/format-rewarded-interstitial.svg" alt="Rewarded interstitial">
 
-[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads#rewarded-interstitial-ads)
+[Learn More](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/rewarded-interstitial)
 
 ## Platform requirements
 
@@ -141,7 +141,7 @@ The current migration status of individual native surfaces is:
 ## Documentation
 
 - [Installation (Expo — recommended)](https://docs.page/invertase/react-native-google-mobile-ads/installation/expo)
-- [Displaying Ads](https://docs.page/invertase/react-native-google-mobile-ads/displaying-ads)
+- [Ad formats](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats)
 
 ## Contributing
 
