@@ -26,10 +26,7 @@
 @implementation RNGoogleMobileAdsBannerComponent
 
 - (void)dealloc {
-  if (_banner) {
-    [_banner removeFromSuperview];
-    _banner = nil;
-  }
+  [self destroyBanner];
 }
 
 - (void)didSetProps:(NSArray<NSString *> *)changedProps {
@@ -39,9 +36,22 @@
   _propsChanged = false;
 }
 
+- (void)destroyBanner {
+  if (_banner == nil) {
+    return;
+  }
+  _banner.paidEventHandler = nil;
+  _banner.delegate = nil;
+  if ([_banner isKindOfClass:[GAMBannerView class]]) {
+    ((GAMBannerView *)_banner).appEventDelegate = nil;
+  }
+  [_banner removeFromSuperview];
+  _banner = nil;
+}
+
 - (void)initBanner:(GADAdSize)adSize {
   if (_requested) {
-    [_banner removeFromSuperview];
+    [self destroyBanner];
   }
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
