@@ -2,12 +2,15 @@ package io.invertase.googlemobileads.common;
 
 import android.content.Context;
 import android.view.KeyEvent;
+import android.view.View;
 import android.widget.FrameLayout;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.BaseAdView;
 import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdFocus;
 import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdLayout;
+import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdPresentation;
 import java.util.List;
 import javax.annotation.Nullable;
 
@@ -104,6 +107,53 @@ public class ReactNativeAdView extends FrameLayout {
       return false;
     }
     return super.onKeyPreIme(keyCode, event);
+  }
+
+  /**
+   * Kick the child AdView when this wrapper first becomes a non-zero, window-visible box so hybrid
+   * image+video creatives are not stuck until leave+return (#711). Classic GMA exposes
+   * [BaseAdView.resume].
+   */
+  public void refreshBannerPresentation() {
+    ReactNativeGoogleMobileAdsBannerAdPresentation.refreshIfPresentable(
+        getWidth(),
+        getHeight(),
+        getVisibility(),
+        () -> {
+          if (getChildCount() == 0) {
+            return;
+          }
+          View child = getChildAt(0);
+          if (child instanceof BaseAdView) {
+            // resume() forwards to the embedded WebView — the same path leave+return uses (#711).
+            ((BaseAdView) child).resume();
+            child.requestLayout();
+          }
+        });
+  }
+
+  @Override
+  protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+    super.onSizeChanged(w, h, oldw, oldh);
+    if (ReactNativeGoogleMobileAdsBannerAdPresentation.shouldRefreshAfterSizeChange(
+        oldw, oldh, w, h)) {
+      refreshBannerPresentation();
+    }
+  }
+
+  @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    refreshBannerPresentation();
+  }
+
+  @Override
+  protected void onWindowVisibilityChanged(int visibility) {
+    super.onWindowVisibilityChanged(visibility);
+    if (ReactNativeGoogleMobileAdsBannerAdPresentation.shouldRefreshAfterWindowVisibility(
+        visibility, getWidth(), getHeight())) {
+      refreshBannerPresentation();
+    }
   }
 
   public void setRequest(AdRequest request) {

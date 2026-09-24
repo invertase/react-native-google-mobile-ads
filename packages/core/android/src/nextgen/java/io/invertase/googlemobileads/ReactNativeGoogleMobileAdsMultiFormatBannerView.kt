@@ -83,6 +83,7 @@ class ReactNativeGoogleMobileAdsMultiFormatBannerView(
       LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT),
     )
     requestLayout()
+    refreshBannerPresentation()
   }
 
   /** Detach the ad view from this container without destroying inventory. */
@@ -122,6 +123,52 @@ class ReactNativeGoogleMobileAdsMultiFormatBannerView(
   override fun requestLayout() {
     super.requestLayout()
     post(measureAndLayout)
+  }
+
+  /**
+   * Best-effort surface kick when this host becomes presentable (#711). Next-Gen AdView has no
+   * pause/resume — layout/invalidate only; not equivalent to classic leave+return / resume.
+   */
+  internal fun refreshBannerPresentation() {
+    ReactNativeGoogleMobileAdsBannerAdPresentation.refreshIfPresentable(
+      width,
+      height,
+      visibility,
+    ) {
+      attachedAdView?.let { adView ->
+        adView.requestLayout()
+        adView.invalidate()
+      }
+    }
+  }
+
+  override fun onSizeChanged(
+    w: Int,
+    h: Int,
+    oldw: Int,
+    oldh: Int,
+  ) {
+    super.onSizeChanged(w, h, oldw, oldh)
+    if (ReactNativeGoogleMobileAdsBannerAdPresentation.shouldRefreshAfterSizeChange(oldw, oldh, w, h)) {
+      refreshBannerPresentation()
+    }
+  }
+
+  override fun onAttachedToWindow() {
+    super.onAttachedToWindow()
+    refreshBannerPresentation()
+  }
+
+  override fun onWindowVisibilityChanged(visibility: Int) {
+    super.onWindowVisibilityChanged(visibility)
+    if (ReactNativeGoogleMobileAdsBannerAdPresentation.shouldRefreshAfterWindowVisibility(
+        visibility,
+        width,
+        height,
+      )
+    ) {
+      refreshBannerPresentation()
+    }
   }
 
   private val measureAndLayout =

@@ -340,6 +340,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
             }
 
             sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
+            // Hybrid image+video creatives need a resume kick once presentable (#711).
+            reactViewGroup.refreshBannerPresentation();
           }
 
           @Override
