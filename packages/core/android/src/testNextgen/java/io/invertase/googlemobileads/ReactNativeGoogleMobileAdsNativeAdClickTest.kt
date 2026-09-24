@@ -19,15 +19,19 @@ package io.invertase.googlemobileads
 
 import android.app.Activity
 import com.facebook.react.bridge.BridgeReactContext
+import com.facebook.react.uimanager.ThemedReactContext
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
- * Next-Gen slice of [#893](https://github.com/invertase/react-native-google-mobile-ads/issues/893).
+ * Next-Gen slice of [#893](https://github.com/invertase/react-native-google-mobile-ads/issues/893)
+ * / [#726](https://github.com/invertase/react-native-google-mobile-ads/issues/726).
  *
  * Full overlay/asset click ownership is covered by classic
  * [ReactNativeGoogleMobileAdsNativeAdClickTest] and neutral
@@ -47,6 +51,31 @@ class ReactNativeGoogleMobileAdsNativeAdClickTest {
     assertSame(
       activity,
       ReactNativeGoogleMobileAdsNativeAdView.sdkViewContext(context),
+    )
+  }
+
+  @Test
+  fun sdkViewContext_withoutActivity_returnsNull() {
+    val context = BridgeReactContext(RuntimeEnvironment.getApplication())
+
+    assertNull(
+      "Non-Activity ReactContext must not back NativeAdView (#726 NEW_TASK blank task)",
+      ReactNativeGoogleMobileAdsNativeAdView.sdkViewContext(context),
+    )
+  }
+
+  @Test
+  fun sdkViewContext_walksThemedReactContextBaseToActivity() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val reactContext = BridgeReactContext(RuntimeEnvironment.getApplication())
+    assertNull(reactContext.currentActivity)
+
+    val themed = ThemedReactContext(reactContext, activity)
+
+    assertSame(
+      "ThemedReactContext base is often Activity even when currentActivity is null (#726)",
+      activity,
+      ReactNativeGoogleMobileAdsNativeAdView.sdkViewContext(themed),
     )
   }
 }

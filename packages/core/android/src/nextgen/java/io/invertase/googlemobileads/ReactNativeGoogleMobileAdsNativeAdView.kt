@@ -18,10 +18,14 @@ package io.invertase.googlemobileads
  */
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.os.Looper
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
+import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.views.view.ReactViewGroup
@@ -39,7 +43,8 @@ import java.util.WeakHashMap
 @SuppressLint("ViewConstructor")
 class ReactNativeGoogleMobileAdsNativeAdView(
   private val context: ReactContext,
-) : FrameLayout(context) {
+) : FrameLayout(context),
+  LifecycleEventListener {
   val viewGroup = ReactViewGroup(context)
   private var nativeAdView: NativeAdView? = null
   private var nativeAd: NativeAd? = null
@@ -49,6 +54,7 @@ class ReactNativeGoogleMobileAdsNativeAdView(
   private var destroyed = false
   private val sdkOwnedAssetViews: MutableSet<View> =
     Collections.newSetFromMap(WeakHashMap())
+  private val pendingAssets = ArrayList<Pair<String, View>>()
 
   init {
     // Exclude the ad view hierarchy from instance state saving/restoring. Mediation
@@ -59,6 +65,7 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     // (e.g. react-native-screens) restores its view hierarchy state.
     isSaveFromParentEnabled = false
     addView(viewGroup)
+    context.addLifecycleEventListener(this)
     runAfterInitialization {}
   }
 
@@ -83,15 +90,28 @@ class ReactNativeGoogleMobileAdsNativeAdView(
   ) {
     check(Looper.myLooper() == Looper.getMainLooper()) { "Native views must mutate on the main thread" }
     runAfterInitialization {
-      val sdkNativeAdView = nativeAdView ?: return@runAfterInitialization
       val uiManager = UIManagerHelper.getUIManagerForReactTag(context, reactTag)
       val assetView = uiManager?.resolveView(reactTag) ?: return@runAfterInitialization
-      registerResolvedAsset(sdkNativeAdView, assetType, assetView)
+      registerResolvedAsset(assetType, assetView)
     }
   }
 
   /** Test / shared path after a view has been resolved from a React tag. */
   internal fun registerResolvedAsset(
+    assetType: String,
+    assetView: View,
+  ) {
+    val sdkNativeAdView = nativeAdView
+    if (sdkNativeAdView == null) {
+      // NativeAsset registers once; buffer until Activity-backed NativeAdView exists (#726).
+      pendingAssets.add(assetType to assetView)
+      ensureSdkView()
+      return
+    }
+    applyResolvedAsset(sdkNativeAdView, assetType, assetView)
+  }
+
+  private fun applyResolvedAsset(
     sdkNativeAdView: NativeAdView,
     assetType: String,
     assetView: View,
@@ -127,6 +147,17 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     reloadAd()
   }
 
+  private fun flushPendingAssets(sdkNativeAdView: NativeAdView) {
+    if (pendingAssets.isEmpty()) {
+      return
+    }
+    val pending = ArrayList(pendingAssets)
+    pendingAssets.clear()
+    for ((assetType, assetView) in pending) {
+      applyResolvedAsset(sdkNativeAdView, assetType, assetView)
+    }
+  }
+
   private fun reapplySdkOwnedClicks(sdkNativeAdView: NativeAdView) {
     for (assetView in sdkOwnedAssetViews) {
       ReactNativeGoogleMobileAdsNativeAdClickOverlay.prepareAssetViewForSdkOwnedClicks(assetView)
@@ -160,17 +191,25 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     }
   }
 
+  /**
+   * Builds Next-Gen [NativeAdView] only with an [Activity] context (banner parity).
+   * Non-Activity contexts force click launches with
+   * [android.content.Intent.FLAG_ACTIVITY_NEW_TASK] and can leave a blank Recents
+   * task (#726).
+   */
   private fun ensureSdkView() {
-    if (nativeAdView != null) {
+    if (destroyed || nativeAdView != null) {
       return
     }
-    val sdkView = NativeAdView(sdkViewContext(context))
-    (viewGroup.parent as? android.view.ViewGroup)?.removeView(viewGroup)
+    val activity = sdkViewContext(context) ?: return
+    val sdkView = NativeAdView(activity)
+    (viewGroup.parent as? ViewGroup)?.removeView(viewGroup)
     sdkView.addView(viewGroup)
     removeAllViews()
     addView(sdkView)
     nativeAdView = sdkView
     ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(sdkView, viewGroup)
+    flushPendingAssets(sdkView)
   }
 
   override fun requestLayout() {
@@ -184,15 +223,36 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     }
   }
 
+  override fun onHostResume() {
+    if (nativeAdView == null) {
+      runAfterInitialization {
+        // ensureSdkView (via runAfterInitialization) flushes pending assets (#726).
+        if (nativeAd != null) {
+          reloadAd()
+        }
+      }
+    }
+  }
+
+  override fun onHostPause() = Unit
+
+  override fun onHostDestroy() = Unit
+
   fun destroy() {
+    if (destroyed) {
+      return
+    }
     destroyed = true
+    context.removeLifecycleEventListener(this)
     reloadJob?.cancel()
     reloadJob = null
+    pendingAssets.clear()
     sdkOwnedAssetViews.clear()
     nativeAdView?.let {
       it.removeView(viewGroup)
       it.destroy()
     }
+    nativeAdView = null
     removeAllViews()
   }
 
@@ -207,6 +267,24 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     }
 
   companion object {
-    internal fun sdkViewContext(reactContext: ReactContext): Context = reactContext.currentActivity ?: reactContext
+    /**
+     * Activity-only context for NativeAdView construction (#726). Prefers
+     * [ReactContext.getCurrentActivity], then walks [ContextWrapper.getBaseContext]
+     * (ThemedReactContext often wraps Activity). Null when neither yields an Activity —
+     * [ensureSdkView] defers until [onHostResume].
+     */
+    internal fun sdkViewContext(reactContext: ReactContext): Activity? {
+      reactContext.currentActivity?.let {
+        return it
+      }
+      var current: Context? = reactContext
+      while (current != null) {
+        if (current is Activity) {
+          return current
+        }
+        current = (current as? ContextWrapper)?.baseContext
+      }
+      return null
+    }
   }
 }

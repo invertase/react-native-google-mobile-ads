@@ -396,3 +396,7 @@ VSCode
 waterfall
 waterfalls
 windowSoftInputMode
+Recents
+FLAG_ACTIVITY_NEW_TASK
+NEW_TASK
+CustomTabs

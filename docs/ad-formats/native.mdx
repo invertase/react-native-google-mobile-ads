@@ -525,6 +525,40 @@ When a cell **does** reuse the same `NativeAdView` tree while you swap a differe
 
 **No uniqueness guarantee.** Each successful `createForAdRequest` is a separate load request. The ad server may still return the same creative for adjacent slots. This package cannot force distinct creatives; treat back-to-back duplicates after correct per-item load/`destroy` as fill inventory, not a view-recycling bug.
 
+### Android: blank app task / flaky redirects after native ad click
+
+On Android, this package does **not** build click `Intent`s or set `FLAG_ACTIVITY_NEW_TASK`.
+Google Mobile Ads owns click handling once assets are registered on `NativeAdView`. The tip
+constructs that SDK view with the current `Activity` (same mediation guidance as banner
+`AdView`) and defers construction until an Activity is attached — a non-Activity
+`ReactContext` / Application context forces the SDK to add `FLAG_ACTIVITY_NEW_TASK`, which
+can leave a **blank app card in Recents** while the destination URL still opens, and make
+later taps need multiple tries until that blank task is closed. Assets registered before
+Activity attach are queued and flushed once the SDK `NativeAdView` is created.
+
+Related hit-testing / registration work (AdChoices overlay elevation, clearing asset
+`clickable`, FlatList rebind) is separate: see click-ownership notes in this page and
+[displaying ads](/displaying-ads) where those flows are documented.
+
+If you still see a blank Recents instance with a current tip build:
+
+1. Confirm `MainActivity` is resumed when the native ad mounts (cold-start trees
+   defer SDK `NativeAdView` until an Activity is attached).
+2. Check host `AndroidManifest.xml` `MainActivity` `android:launchMode`. React Native /
+   Expo templates often use `singleTask` for deep links; that mode interacts with how
+   Google's `AdActivity` / Custom Tabs and any `https` intent-filters on `MainActivity`
+   share tasks. Prefer `singleTop` when compatible — see
+   [Android: fullscreen ads closing after Home → resume](/displaying-ads#android-fullscreen-ads-closing-after-home--resume).
+3. If an ad destination matches your app's App Links / intent-filters, the system may
+   route the click into your activity instead of the browser; that is host deep-link
+   configuration, not tip intent flags.
+4. Re-test with Google test units on tip-pinned GMA (`packages/core/package.json`
+   `sdkVersions.android`). If a minimal native AdMob sample still duplicates a blank task
+   on the same device / OS / `launchMode`, escalate to Google with Mobile Ads SDK logs.
+
+This package cannot override Google's click Intent flags or keep a host `singleTask`
+manifest from clearing / stacking activities around SDK chrome.
+
 ### Not implemented features
 
 These features are not implemented in the current version:

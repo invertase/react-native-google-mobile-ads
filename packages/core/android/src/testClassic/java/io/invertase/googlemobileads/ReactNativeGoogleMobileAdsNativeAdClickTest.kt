@@ -23,9 +23,11 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
 import com.facebook.react.bridge.BridgeReactContext
+import com.facebook.react.uimanager.ThemedReactContext
 import com.google.android.gms.ads.nativead.NativeAdView
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -36,18 +38,18 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
- * Regression for [#893](https://github.com/invertase/react-native-google-mobile-ads/issues/893):
- * Android native-ad clicks (including the SDK AdChoices overlay) must remain hittable under
- * Fabric/RN view nesting. GMA's [NativeAdView] keeps a MATCH_PARENT overlay FrameLayout that
- * must stay the topmost child; React content must not cover it, and registered asset views must
- * not consume clicks away from the SDK (iOS already clears `userInteractionEnabled`).
+ * Regression for [#893](https://github.com/invertase/react-native-google-mobile-ads/issues/893)
+ * (overlay / asset click ownership) and [#726](https://github.com/invertase/react-native-google-mobile-ads/issues/726)
+ * (Activity-backed NativeAdView so click intents do not need FLAG_ACTIVITY_NEW_TASK).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ReactNativeGoogleMobileAdsNativeAdClickTest {
   @Test
   fun sdkClickOverlay_staysAboveReactContent_afterLayoutAndElevation() {
-    val context = BridgeReactContext(RuntimeEnvironment.getApplication())
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val context = BridgeReactContext(activity)
+    context.onHostResume(activity)
     val host = ReactNativeGoogleMobileAdsNativeAdView(context)
     val nativeAdView = findNativeAdView(host)
     assertNotNull(nativeAdView)
@@ -81,6 +83,7 @@ class ReactNativeGoogleMobileAdsNativeAdClickTest {
   fun registerAsset_disablesAssetClickConsumption_soSdkOwnsClicks() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val context = BridgeReactContext(activity)
+    context.onHostResume(activity)
     val host = ReactNativeGoogleMobileAdsNativeAdView(context)
     val asset =
       TextView(context).also {
@@ -108,6 +111,87 @@ class ReactNativeGoogleMobileAdsNativeAdClickTest {
 
     // GMA click intents need an Activity-backed context (same rationale as banner AdView).
     assertSame(activity, unwrapActivity(nativeAdView.context))
+  }
+
+  @Test
+  fun sdkViewContext_withoutActivity_returnsNull() {
+    val context = BridgeReactContext(RuntimeEnvironment.getApplication())
+
+    assertNull(
+      "Non-Activity ReactContext must not back NativeAdView (#726 NEW_TASK blank task)",
+      ReactNativeGoogleMobileAdsNativeAdView.sdkViewContext(context),
+    )
+  }
+
+  @Test
+  fun nativeAdView_notConstructedWithApplicationContext() {
+    val context = BridgeReactContext(RuntimeEnvironment.getApplication())
+    val host = ReactNativeGoogleMobileAdsNativeAdView(context)
+
+    assertNull(
+      "Without an Activity, tip must defer NativeAdView (banner parity) instead of " +
+        "Application/ReactContext that forces FLAG_ACTIVITY_NEW_TASK on clicks (#726)",
+      findNativeAdView(host),
+    )
+  }
+
+  @Test
+  fun nativeAdView_createdWhenActivityArrivesOnResume() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val context = BridgeReactContext(RuntimeEnvironment.getApplication())
+    val host = ReactNativeGoogleMobileAdsNativeAdView(context)
+    assertNull(findNativeAdView(host))
+
+    context.onHostResume(activity)
+
+    val nativeAdView = findNativeAdView(host)
+    assertNotNull(nativeAdView)
+    assertSame(activity, unwrapActivity(nativeAdView!!.context))
+  }
+
+  @Test
+  fun registerAsset_beforeActivity_flushedOnHostResume() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val context = BridgeReactContext(RuntimeEnvironment.getApplication())
+    val host = ReactNativeGoogleMobileAdsNativeAdView(context)
+    assertNull(findNativeAdView(host))
+
+    val cta =
+      TextView(context).also {
+        it.text = "CTA"
+        it.isClickable = true
+      }
+    val headline = TextView(context).also { it.text = "headline" }
+    host.viewGroup.addView(cta)
+    host.viewGroup.addView(headline)
+
+    // NativeAsset one-shot registration can land before Activity is attached (#726).
+    host.registerResolvedAsset("callToAction", cta)
+    host.registerResolvedAsset("headline", headline)
+    assertNull(findNativeAdView(host))
+
+    context.onHostResume(activity)
+
+    val nativeAdView = findNativeAdView(host)
+    assertNotNull(nativeAdView)
+    assertSame(cta, nativeAdView!!.callToActionView)
+    assertSame(headline, nativeAdView.headlineView)
+    assertFalse(cta.isClickable)
+  }
+
+  @Test
+  fun sdkViewContext_walksThemedReactContextBaseToActivity() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val reactContext = BridgeReactContext(RuntimeEnvironment.getApplication())
+    assertNull(reactContext.currentActivity)
+
+    val themed = ThemedReactContext(reactContext, activity)
+
+    assertSame(
+      "ThemedReactContext base is often Activity even when currentActivity is null (#726)",
+      activity,
+      ReactNativeGoogleMobileAdsNativeAdView.sdkViewContext(themed),
+    )
   }
 
   private fun findNativeAdView(host: ViewGroup): NativeAdView? {
