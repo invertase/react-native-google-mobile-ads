@@ -13,6 +13,7 @@
 
 ## [Unreleased]
 
+* **displaying-ads:** document Android rewarded close / progress chrome under high-engagement as upstream AdActivity / creative UI ([#743](https://github.com/invertase/react-native-google-mobile-ads/issues/743))
 * **mediation:** document Meta Audience Network iOS process-start abort as upstream FAN / adapter ([#783](https://github.com/invertase/react-native-google-mobile-ads/issues/783))
 * **native-ads:** document Android `armeabi-v7a` TurboModule EventEmitter crash as upstream React Native ([#771](https://github.com/invertase/react-native-google-mobile-ads/issues/771), [#757](https://github.com/invertase/react-native-google-mobile-ads/issues/757), [#754](https://github.com/invertase/react-native-google-mobile-ads/issues/754))
 
