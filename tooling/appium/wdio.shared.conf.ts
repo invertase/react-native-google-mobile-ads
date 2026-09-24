@@ -31,7 +31,9 @@ export const config: Options.Testrunner = {
   reporters: ['spec'],
   mochaOpts: {
     ui: 'bdd',
-    timeout: 180000,
+    // Rewarded show-close can spend ≤120s waiting for dismiss chrome alone; leave
+    // headroom above that so mocha does not mask waitUntil timeoutMsg (run-04).
+    timeout: 300000,
     bail: true,
     ...(process.env.RNGMA_MOCHA_GREP ? { grep: process.env.RNGMA_MOCHA_GREP } : {}),
   },

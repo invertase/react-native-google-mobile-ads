@@ -15,7 +15,7 @@ import {
   ANDROID_DEVICE_HARD_FAILURES,
   APP_STARTUP_TIMEOUT_MS,
   HARD_FAILURE_MARKERS,
-  IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS,
+  IOS_WORKER_STARTUP_TIMEOUT_MS,
   METRO_STARTUP_TIMEOUT_MS,
   STARTUP_READY_MARKER,
   StartupSupervisor,
@@ -327,13 +327,13 @@ test('combined parallel keeps Android at 60s while iOS may use 180s', async () =
     androidMiss,
     {
       defaultMs: WORKER_STARTUP_TIMEOUT_MS,
-      byPrefix: { 'ios:': IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS },
+      byPrefix: { 'ios:': IOS_WORKER_STARTUP_TIMEOUT_MS },
     },
   );
   assert.equal(androidMissSupervisor.workerTimeoutFor('android:a-primary'), WORKER_STARTUP_TIMEOUT_MS);
   assert.equal(
     androidMissSupervisor.workerTimeoutFor('ios:a-primary'),
-    IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS,
+    IOS_WORKER_STARTUP_TIMEOUT_MS,
   );
   await metroReady(androidMissSupervisor);
   const androidMissed = assert.rejects(
@@ -353,7 +353,7 @@ test('combined parallel keeps Android at 60s while iOS may use 180s', async () =
     iosLate,
     {
       defaultMs: WORKER_STARTUP_TIMEOUT_MS,
-      byPrefix: { 'ios:': IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS },
+      byPrefix: { 'ios:': IOS_WORKER_STARTUP_TIMEOUT_MS },
     },
   );
   await metroReady(iosLateSupervisor);
@@ -364,11 +364,29 @@ test('combined parallel keeps Android at 60s while iOS may use 180s', async () =
   iosLate.advance(WORKER_STARTUP_TIMEOUT_MS);
   assert.equal(iosLateSupervisor.abortCount, 0);
   assert.equal(iosLateSupervisor.phase, 'worker');
-  iosLate.advance(IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS - WORKER_STARTUP_TIMEOUT_MS - 1);
+  iosLate.advance(IOS_WORKER_STARTUP_TIMEOUT_MS - WORKER_STARTUP_TIMEOUT_MS - 1);
   iosLateSupervisor.recordLine('ios:a-primary', 'Execution of 1 workers started');
   iosLateSupervisor.recordLine('ios:a-primary', 'Appium session created successfully');
   await workers;
   assert.equal(iosLateSupervisor.phase, 'app');
+});
+
+test('serial-ios uses the 180s iOS worker ceiling (CI cold WDA session create)', async () => {
+  const clock = new FakeClock();
+  const supervisor = new StartupSupervisor(
+    ['serial-ios'],
+    clock,
+    IOS_WORKER_STARTUP_TIMEOUT_MS,
+  );
+  assert.equal(supervisor.workerTimeoutFor('serial-ios'), IOS_WORKER_STARTUP_TIMEOUT_MS);
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  // Past the old 60s serial ceiling — session still pending should not abort yet.
+  clock.advance(WORKER_STARTUP_TIMEOUT_MS);
+  assert.equal(supervisor.abortCount, 0);
+  supervisor.recordLine('serial-ios', 'Appium session created successfully');
+  await workers;
 });
 
 test('real WDIO session URL is positive only after a session id exists', async () => {
