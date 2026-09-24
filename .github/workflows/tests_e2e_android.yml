@@ -112,18 +112,14 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Warm Gradle Cache
-        # This makes sure we fetch gradle network resources with a retry
+        # This makes sure we fetch gradle network resources with a retry.
+        # RNGMA_ANDROID_BACKEND from the job env selects classic vs nextgen in Gradle.
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 15
           retry_wait_seconds: 60
           max_attempts: 3
-          command: |
-            if [ "${{ matrix.android-backend }}" = "nextgen" ]; then
-              yarn tests:android:build:nextgen
-            else
-              yarn tests:android:build
-            fi
+          command: yarn tests:android:build
 
         # This appears to be 'Cache Size: ~1230 MB (1290026823 B)' based on watching action logs
         # Repo limit is 10GB; branch caches are independent; branches may read default branch cache.
@@ -215,11 +211,7 @@ jobs:
             $ANDROID_HOME/platform-tools/adb logcat '*:D' > adb-log.txt &
             yarn tests:appium:drivers:install
             yarn tests:appium:drivers:verify
-            if [ "${{ matrix.android-backend }}" = "nextgen" ]; then
-              yarn tests:appium:android:nextgen
-            else
-              yarn tests:appium:android
-            fi
+            yarn tests:appium:android
 
       - uses: codecov/codecov-action@v5
         with:
