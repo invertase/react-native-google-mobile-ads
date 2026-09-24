@@ -1,0 +1,32 @@
+---
+title: Google Ad Manager
+description: Use Google Ad Manager (GAM) components and options, including GAM banners and interstitials.
+---
+
+# Google Ad Manager
+
+Google Ad Manager (GAM) publishers can use the Ad Manager specific components and request options exposed by this
+library. This page currently covers the GAM banner; it is the home for expanded Ad Manager coverage
+(`GAMInterstitialAd`, `categoryExclusions`, line items, and multi-format native-or-banner requests).
+
+<Info>
+  For multi-format Ad Manager requests (one request, native **or** banner winner), see [Preload
+  pools and multi-format recipes](/preload-pools-and-multiformat-recipes).
+</Info>
+
+## Displaying a Google Ad Manager banner
+
+You can display a Google Ad Manager banner ad unit. In this case, you have to import the `GAMBannerAd` component and use the `sizes` prop instead of the `size` prop:
+
+```js
+import React from 'react';
+import { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.GAM_BANNER : '/xxx/yyyy';
+
+function App() {
+  return <GAMBannerAd unitId={adUnitId} sizes={[BannerAdSize.FULL_BANNER]} />;
+}
+```
+
+The `sizes` prop takes an array of [`BannerAdSize`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/BannerAdSize.ts) types.

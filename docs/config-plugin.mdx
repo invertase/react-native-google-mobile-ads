@@ -1,0 +1,29 @@
+---
+title: Config plugin reference
+description: Reference for the Expo config plugin options and the bare app.json equivalents.
+---
+
+# Config plugin reference
+
+This page is the reference for every option supported by the Expo config plugin, alongside the equivalent bare
+`app.json` keys.
+
+<Info>
+  This reference is being completed. It will document each Expo plugin key (camelCase) next to its
+  bare `app.json` equivalent (snake_case), including options not yet covered in the installation
+  guides. See [Installation — Expo](/installation/expo) and [Installation — React Native
+  CLI](/installation/react-native) for setup context.
+</Info>
+
+## Options (Expo plugin ↔ bare `app.json`)
+
+| Expo plugin (camelCase)        | Bare `app.json` (snake_case)      | Purpose                                                             |
+| ------------------------------ | --------------------------------- | ------------------------------------------------------------------- |
+| `androidAppId`                 | `android_app_id`                  | AdMob Android App ID.                                               |
+| `iosAppId`                     | `ios_app_id`                      | AdMob iOS App ID.                                                   |
+| `userTrackingUsageDescription` | `user_tracking_usage_description` | iOS ATT usage description string.                                   |
+| `skAdNetworkItems`             | `sk_ad_network_items`             | SKAdNetwork identifiers (iOS).                                      |
+| `delayAppMeasurementInit`      | `delay_app_measurement_init`      | Delay app measurement until an ad is shown.                         |
+| `androidSdk`                   | `android_sdk`                     | Android ads backend selection (`classic` \| `legacy` \| `nextgen`). |
+| `optimizeInitialization`       | —                                 | Optimize SDK initialization.                                        |
+| `optimizeAdLoading`            | —                                 | Optimize ad loading.                                                |

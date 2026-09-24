@@ -1,0 +1,63 @@
+---
+title: Consent & privacy basics
+description: Understand European user consent (UMP) and App Tracking Transparency before requesting ads.
+---
+
+# Consent & privacy basics
+
+Out of the box, AdMob does not handle any related regulations which you may need to enforce on your application.
+It is up to the developer to implement and handle this on a user-by-user basis. You must consent to EEA users
+being served both personalized and non-personalized adverts before showing them. For more information, see
+[Obtaining Consent with the User Messaging Platform](https://developers.google.com/admob/ump/android/quick-start).
+
+The AdMob module provides a `AdsConsent` helper to help developers quickly implement consent flows within their application.
+See the [European User Consent page](/european-user-consent) for full examples of how to integrate the helper into your application.
+
+<Warning>
+  Gather consent and set any request-specific flags **before** calling
+  [`initialize`](/initialization) — ads may be preloaded on init.
+</Warning>
+
+## Requesting App Tracking Transparency authorization (iOS)
+
+To request the App Tracking Transparency authorization we recommend using a library or making it part of the UMP consent flow (see the [European User Consent page](/european-user-consent)). App Tracking Transparency also requires a usage description string — see the installation guides for [Expo](/installation/expo#app-tracking-transparency-ios) or [bare React Native](/installation/react-native#app-tracking-transparency-ios).
+
+<Tabs groupId="framework" values={[{label: 'React Native', value: 'bare'}, {label: 'Expo', value: 'expo'}]}>
+<TabItem value="bare">
+
+```js
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+
+const result = await check(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
+if (result === RESULTS.DENIED) {
+  // The permission has not been requested, so request it.
+  await request(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
+}
+
+const adapterStatuses = await mobileAds().initialize();
+
+// Now ads can be loaded.
+```
+
+</TabItem>
+<TabItem value="expo">
+
+```js
+import {
+  getTrackingPermissionsAsync,
+  PermissionStatus,
+  requestTrackingPermissionsAsync,
+} from 'expo-tracking-transparency';
+
+const { status } = await getTrackingPermissionsAsync();
+if (status === PermissionStatus.UNDETERMINED) {
+  await requestTrackingPermissionsAsync();
+}
+
+const adapterStatuses = await mobileAds().initialize();
+
+// Now ads can be loaded.
+```
+
+</TabItem>
+</Tabs>

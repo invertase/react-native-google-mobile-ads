@@ -1,0 +1,29 @@
+---
+title: Ad formats
+description: Overview of the ad formats supported by React Native Google Mobile Ads and how to choose between them.
+---
+
+# Ad formats
+
+The Google Mobile Ads package supports the following ad formats. Pick the format that best fits the placement in your app:
+
+- [App open](/ad-formats/app-open) — full screen, shown as your app is brought to the foreground.
+- [Banner](/ad-formats/banner) — component based, occupies a fixed area of your UI (anchored, adaptive, collapsible).
+- [Interstitial](/ad-formats/interstitial) — full screen, shown at natural transition points.
+- [Rewarded](/ad-formats/rewarded) — full screen, rewards the user for completing an action.
+- [Rewarded interstitial](/ad-formats/rewarded-interstitial) — full screen reward format that does not require opt-in.
+- [Native](/ad-formats/native) — component based, rendered with your own layout.
+
+Two additional guides cover cross-cutting integration patterns:
+
+- [Fullscreen ads with hooks](/ad-formats/hooks) — the React hook API for the fullscreen formats.
+- [Google Ad Manager](/ad-formats/ad-manager) — Ad Manager (GAM) specific components and options.
+
+<Info>
+  Always use [test ads](/first-ad#test-ads) while developing. Using production ad units on a device
+  that is not registered as a test device can get your AdMob account suspended.
+</Info>
+
+To keep a **buffer** of ready-to-show ads and poll at show time, see
+[Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes).
+For `destroy()`, structured errors, and other v17 deltas, see [Migrating to v17](/migrating-to-v17).
