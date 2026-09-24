@@ -466,6 +466,53 @@ stack:
    full tombstone and your exact `react-native` version — do not expect a library-only
    workaround that disables the native-ad EventEmitter.
 
+### FlatList, FlashList, and recycled list cells
+`FlatList`, [FlashList](https://shopify.github.io/flash-list/), and similar lists **reuse cell component instances**. React state inside a recycled cell survives the row change. A card that loads once in `useEffect([])` and deliberately avoids remount `key`s will keep showing the previous row's `NativeAd` after scroll — that looks like "the same ad repeating," even when each mount once called `NativeAd.createForAdRequest`.
+
+**Load against list-item identity** (or remount the card):
+
+```tsx
+function NativeAdCard({ itemId, adUnitId }: { itemId: string; adUnitId: string }) {
+  const [nativeAd, setNativeAd] = useState<NativeAd>();
+
+  useEffect(() => {
+    let cancelled = false;
+    let loaded: NativeAd | undefined;
+    NativeAd.createForAdRequest(adUnitId)
+      .then(ad => {
+        if (cancelled) {
+          ad.destroy();
+          return;
+        }
+        loaded = ad;
+        setNativeAd(ad);
+      })
+      .catch(console.error);
+    return () => {
+      cancelled = true;
+      loaded?.destroy();
+      setNativeAd(undefined);
+    };
+  }, [itemId, adUnitId]);
+
+  if (!nativeAd) {
+    return null;
+  }
+
+  return <NativeAdView nativeAd={nativeAd}>{/* assets */}</NativeAdView>;
+}
+
+// Remount path: key the card so FlashList cannot keep stale JS state for a new row.
+// <NativeAdCard key={item.id} itemId={item.id} adUnitId={unitId} />
+```
+
+**Prefer a preload pool** when many feed slots need warm inventory: poll/bind a ready `NativeAd` per visible slot and `destroy()` (or return to pool policy) when the slot leaves. See
+[Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes) (`AdPoolPresets.display`).
+
+When a cell **does** reuse the same `NativeAdView` tree while you swap a different preloaded `NativeAd`, the library rebinds: `NativeAdView` passes the new `responseId`, and `NativeAsset` re-registers whenever `nativeAd.responseId` changes so SDK click handling stays attached. Prefer a stable React `key` per ad (for example `nativeAd.responseId`) when the row should remount instead of rebind.
+
+**No uniqueness guarantee.** Each successful `createForAdRequest` is a separate load request. The ad server may still return the same creative for adjacent slots. This package cannot force distinct creatives; treat back-to-back duplicates after correct per-item load/`destroy` as fill inventory, not a view-recycling bug.
+
 ### Not implemented features
 
 These features are not implemented in the current version:
