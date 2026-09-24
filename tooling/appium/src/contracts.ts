@@ -406,6 +406,11 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'SDK_VERSION is build metadata with no device behavior; its string value is verified by package build/version tooling rather than an Appium outcome.',
   ),
   excluded(
+    'TestDeviceIds',
+    'const/preset',
+    'TestDeviceIds is a static typed alias bag (EMULATOR); successful request-configuration outcomes are dispositioned on MobileAds / RequestConfiguration surfaces rather than an Appium outcome for the constant itself.',
+  ),
+  excluded(
     'TestIds',
     'const/preset',
     'TestIds is a static inventory of Google test-unit strings; successful requests using selected IDs are dispositioned on the corresponding ad APIs.',
@@ -435,6 +440,11 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
       'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives.',
   }),
   lower(
+    'useAppOpenAdManager',
+    'hook',
+    'Jest owns AppOpenAdManager lifecycle (4h freshness, warm-foreground show via useForeground, isShowing guard, reload after close/show-error, no cold-start auto-show). Dedicated manager e2e / example screen is deferred; useAppOpenAd already has an app-open e2e-outcome. Full-tier platform coverage may still require an app-open manager e2e later.',
+  ),
+  lower(
     'useForeground',
     'hook',
     'Jest drives deterministic AppState transitions and listener cleanup; device foreground timing is not asserted as an ad-success outcome.',
@@ -443,6 +453,11 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'useGAMInterstitialAd',
     'hook',
     'Jest owns options-form lifecycle parity with useInterstitialAd plus onAppEvent delivery; GAMInterstitialAd already has an e2e-outcome for the imperative Ad Manager interstitial path, and the example has no dedicated hook screen yet.',
+  ),
+  lower(
+    'useNativeAd',
+    'hook',
+    'Jest owns NativeAd create/unmount/identity lifecycle; NativeAd / NativeAdView already have e2e-outcomes for the imperative render path, and the example has no dedicated useNativeAd screen yet.',
   ),
   outcome('useInterstitialAd', 'hook', {
     contractId: AppiumTestIds.format.interstitialHook,
