@@ -60,13 +60,16 @@ RCT_EXPORT_METHOD(initialize : (RCTPromiseResolveBlock)resolve : (RCTPromiseReje
   [self initialize:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(setRequestConfiguration : (NSDictionary *)requestConfiguration : (
-    RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(setRequestConfiguration
+                  : (NSDictionary *)requestConfiguration
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   [self setRequestConfiguration:requestConfiguration resolve:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(openAdInspector : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)
-                      reject) {
+RCT_EXPORT_METHOD(openAdInspector
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   [self openAdInspector:resolve reject:reject];
 }
 
