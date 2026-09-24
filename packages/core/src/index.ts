@@ -35,6 +35,7 @@ export type {
 export { AdsConsentPurposes } from './AdsConsentPurposes';
 export { AdsConsentSpecialFeatures } from './AdsConsentSpecialFeatures';
 export { MaxAdContentRating } from './MaxAdContentRating';
+export { TestDeviceIds } from './TestDeviceIds';
 export { TestIds } from './TestIds';
 export { AdEventType } from './AdEventType';
 export { BannerAdSize, GAMBannerAdSize } from './BannerAdSize';

@@ -58,6 +58,8 @@ class ReactNativeGoogleMobileAdsModule(
 
     if (requestConfiguration.hasKey("testDeviceIdentifiers")) {
       val devices = checkNotNull(requestConfiguration.getArray("testDeviceIdentifiers")).toArrayList()
+      // Dropping "EMULATOR" is harmless: emulators are auto-detected as test
+      // devices, and EMULATOR is a classic-Android-only AdRequest.DEVICE_ID_EMULATOR alias.
       builder.setTestDeviceIds(
         devices.mapNotNull { id ->
           (id as String).takeUnless { it == "EMULATOR" }
