@@ -49,9 +49,13 @@ export type UseAppOpenAdManagerOptions = {
   /**
    * Controls **automatic** preloading. Defaults to `true`.
    *
-   * Set it to `false` until consent / SDK init is ready. Warm-foreground and
-   * explicit {@link UseAppOpenAdManagerResult.showAdIfAvailable} still attempt
-   * to show only when a fresh ad is already held; otherwise they kick a load.
+   * This is the master "may I issue an ad request" switch. While `false` — set
+   * it so until consent / SDK init is ready — **no** path issues a load: not
+   * the automatic preload, not a warm foreground, not
+   * {@link UseAppOpenAdManagerResult.showAdIfAvailable}, and not a post-close
+   * reload. Warm foreground and `showAdIfAvailable` still *show* an ad that is
+   * already held and fresh, but they never *start* a request while it is
+   * `false`. Flip it to `true` once consent is resolved to begin preloading.
    */
   autoLoad?: boolean;
 };
@@ -201,6 +205,16 @@ export function useAppOpenAdManager(
   const attachAndLoad = useCallback(() => {
     const unitId = optionsRef.current.adUnitId;
     if (unitId === null) {
+      return;
+    }
+    // AO-1: `autoLoad` is the master "may I issue an ad request" switch. While
+    // it is false — e.g. before consent / SDK init — NO path may start a load:
+    // not the automatic preload, not a warm foreground, not showAdIfAvailable,
+    // and not a post-close reload. showAdIfAvailable and warm-foreground then
+    // only *show* an ad that is already held and fresh; otherwise they no-op.
+    // This is what stops an ad request from firing before consent is resolved,
+    // rather than relying on the caller to also gate on `adUnitId`.
+    if (!(optionsRef.current.autoLoad ?? true)) {
       return;
     }
     // Do not load when a fresh ad is already held or a load is in flight.

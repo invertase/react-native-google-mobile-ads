@@ -592,4 +592,70 @@ describe('useAppOpenAdManager', () => {
     expect(create.mock.calls.length).toBe(createsBeforeClose);
     expect(result!.status).toBe('idle');
   });
+
+  // AO-1: autoLoad is the master request gate. While false, no path loads.
+  it('does not load on warm foreground while autoLoad is false', () => {
+    const create = jest.spyOn(AppOpenAd, 'createForAdRequest');
+    let result: UseAppOpenAdManagerResult | undefined;
+
+    function Probe() {
+      result = useAppOpenAdManager({ adUnitId: TestIds.APP_OPEN, autoLoad: false });
+      return null;
+    }
+
+    render(<Probe />);
+    expect(create).not.toHaveBeenCalled();
+
+    enterForeground();
+
+    expect(create).not.toHaveBeenCalled();
+    expect(result!.status).toBe('idle');
+    expect(result!.isShowing).toBe(false);
+  });
+
+  it('showAdIfAvailable does not load while autoLoad is false and no ad is held', () => {
+    const create = jest.spyOn(AppOpenAd, 'createForAdRequest');
+    let result: UseAppOpenAdManagerResult | undefined;
+
+    function Probe() {
+      result = useAppOpenAdManager({ adUnitId: TestIds.APP_OPEN, autoLoad: false });
+      return null;
+    }
+
+    render(<Probe />);
+    act(() => {
+      result!.showAdIfAvailable();
+    });
+
+    expect(create).not.toHaveBeenCalled();
+    expect(result!.isShowing).toBe(false);
+    expect(result!.status).toBe('idle');
+  });
+
+  it('still shows an already-held fresh ad via showAdIfAvailable after autoLoad flips false', () => {
+    const fake = createTestAppOpenAd();
+    const create = jest.spyOn(AppOpenAd, 'createForAdRequest').mockReturnValue(fake.ad);
+    let result: UseAppOpenAdManagerResult | undefined;
+
+    function Probe({ autoLoad }: { autoLoad: boolean }) {
+      result = useAppOpenAdManager({ adUnitId: TestIds.APP_OPEN, autoLoad });
+      return null;
+    }
+
+    const view = render(<Probe autoLoad />);
+    act(() => {
+      fake.emit(AdEventType.LOADED);
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+
+    // Consent withdrawn / not ready: no new request, but a held fresh ad shows.
+    view.rerender(<Probe autoLoad={false} />);
+    act(() => {
+      result!.showAdIfAvailable();
+    });
+
+    expect(fake.show).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(result!.isShowing).toBe(true);
+  });
 });
