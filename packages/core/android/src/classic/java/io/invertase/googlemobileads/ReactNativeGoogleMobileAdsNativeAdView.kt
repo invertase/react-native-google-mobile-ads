@@ -125,6 +125,8 @@ class ReactNativeGoogleMobileAdsNativeAdView(
         nativeAd?.let { nativeAdView.setNativeAd(it) }
         // setNativeAd may re-enable clickable on assets; restore SDK click ownership (#893).
         reapplySdkOwnedClicks()
+        // setNativeAd can land after the MediaView's first 0×0 layout; refresh so video paints (#775).
+        (nativeAdView.mediaView as? ReactNativeGoogleMobileAdsMediaView)?.refreshPresentation()
         nativeAdView.rootView.requestLayout()
       }
   }

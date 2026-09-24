@@ -20,18 +20,18 @@ package io.invertase.googlemobileads
 import android.annotation.SuppressLint
 import android.widget.ImageView
 import com.facebook.react.bridge.ReactContext
+import com.google.android.gms.ads.MediaContent
 import com.google.android.gms.ads.nativead.MediaView
 
 @SuppressLint("ViewConstructor")
-class ReactNativeGoogleMobileAdsMediaView(
+open class ReactNativeGoogleMobileAdsMediaView(
   private val context: ReactContext,
 ) : MediaView(context) {
+  private var responseId: String? = null
+
   fun setResponseId(responseId: String?) {
-    val nativeModule = context.getNativeModule(ReactNativeGoogleMobileAdsNativeModule::class.java)
-    nativeModule?.getNativeAd(responseId ?: "")?.let {
-      this.mediaContent = it.mediaContent
-      requestLayout()
-    }
+    this.responseId = responseId
+    bindMediaContentFromResponse()
   }
 
   fun setResizeMode(resizeMode: String?) {
@@ -39,6 +39,62 @@ class ReactNativeGoogleMobileAdsMediaView(
       "cover" -> setImageScaleType(ImageView.ScaleType.CENTER_CROP)
       "contain" -> setImageScaleType(ImageView.ScaleType.CENTER_INSIDE)
       "stretch" -> setImageScaleType(ImageView.ScaleType.FIT_XY)
+    }
+  }
+
+  /**
+   * Re-bind media after a late non-zero layout / attach / window-visible cycle so pager and
+   * list cells do not stay black until leave+return (#775).
+   */
+  internal open fun refreshPresentation() {
+    if (!ReactNativeGoogleMobileAdsMediaViewPresentation.canPresent(width, height, visibility)) {
+      return
+    }
+    val existing: MediaContent? = mediaContent
+    if (existing != null) {
+      // Identical re-assign can be a no-op inside MediaView; clear first so the surface rebuilds.
+      mediaContent = null
+      mediaContent = existing
+      requestLayout()
+      return
+    }
+    bindMediaContentFromResponse()
+  }
+
+  private fun bindMediaContentFromResponse() {
+    val nativeModule = context.getNativeModule(ReactNativeGoogleMobileAdsNativeModule::class.java)
+    nativeModule?.getNativeAd(responseId ?: "")?.let {
+      this.mediaContent = it.mediaContent
+      requestLayout()
+    }
+  }
+
+  override fun onSizeChanged(
+    w: Int,
+    h: Int,
+    oldw: Int,
+    oldh: Int,
+  ) {
+    super.onSizeChanged(w, h, oldw, oldh)
+    if (ReactNativeGoogleMobileAdsMediaViewPresentation.shouldRefreshAfterSizeChange(oldw, oldh, w, h)) {
+      refreshPresentation()
+    }
+  }
+
+  override fun onAttachedToWindow() {
+    super.onAttachedToWindow()
+    refreshPresentation()
+  }
+
+  override fun onWindowVisibilityChanged(visibility: Int) {
+    super.onWindowVisibilityChanged(visibility)
+    if (ReactNativeGoogleMobileAdsMediaViewPresentation.shouldRefreshAfterWindowVisibility(
+        visibility,
+        width,
+        height,
+      )
+    ) {
+      refreshPresentation()
     }
   }
 
