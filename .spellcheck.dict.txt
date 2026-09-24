@@ -1,6 +1,7 @@
 100k
 64k
 Ad
+AdActivity
 AdMob
 Analytics
 analytics
@@ -51,6 +52,7 @@ firebase
 Firebase
 Firestore
 FlatList
+Flutter
 GDPR
 globals
 Gradle
@@ -69,9 +71,11 @@ iOS13
 IPs
 JS
 JSON
+launchMode
 launchProperties
 learnt
 Lerna
+MainActivity
 MDX
 MLKit
 mlkit
@@ -99,6 +103,7 @@ podspec
 plist
 pre-fetched
 pre-rendered
+prebuild
 preflight
 preloaded
 preloader
@@ -133,6 +138,8 @@ SDKs.
 SHA1
 SHA-256
 SIGABRT
+singleTask
+singleTop
 SMS
 src
 staleness

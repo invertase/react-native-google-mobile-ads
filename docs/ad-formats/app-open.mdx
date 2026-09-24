@@ -159,3 +159,32 @@ Google built app open ads to help you monetize your app's loading screen, but it
   `AdPoolPresets.fullscreen(AdFormat.APP_OPEN, adUnitId)`; see [preload
   pools](/preload-pools-and-multiformat-recipes).
 </Info>
+
+## Caveats / limitations
+
+- On Android, if an app open ad closes when returning from the background via the launcher icon, see
+  [Android: fullscreen ads closing after Home → resume](#android-fullscreen-ads-closing-after-home--resume).
+### Android: fullscreen ads closing after Home → resume
+
+On Android, Google Mobile Ads presents interstitial, app open, rewarded, and rewarded interstitial creatives in a separate
+`AdActivity`. This package only emits `AdEventType.CLOSED` when that activity reports dismissal
+(`onAdDismissedFullScreenContent`). Other helpers may listen to React Native `AppState` (for example `useForeground` /
+`AdPoolProvider`), but they do **not** destroy a showing fullscreen ad or emit `CLOSED` from `AppState` alone.
+
+If a fullscreen ad disappears when the user presses Home and then returns via the **launcher icon**, check your app
+`AndroidManifest.xml` `MainActivity` `android:launchMode`. React Native and Expo templates commonly set
+`android:launchMode="singleTask"`. With that mode, bringing `MainActivity` to the front can clear activities above it in
+the same task — including Google's `AdActivity` — which dismisses the creative and fires `CLOSED` (including before any
+delayed close button appears).
+
+Ways to mitigate this in **your** app (not in this library):
+
+- Prefer `android:launchMode="singleTop"` on `MainActivity` when it is compatible with your deep-link and cold-start
+  behavior (Flutter AdMob samples commonly use `singleTop`).
+- After Expo prebuild, edit the generated `android/app/src/main/AndroidManifest.xml`, or apply the same change with a
+  small config plugin, then re-verify launcher resume and any auth / deep-link flows that originally needed `singleTask`.
+- Confirm the dismiss is not your own JS calling `destroy()` / reloading on `AppState` `'active'`.
+
+This package cannot keep Google's `AdActivity` alive across an app-manifest task clear. Changing `launchMode` has
+side effects beyond ads — validate carefully before shipping.
+
