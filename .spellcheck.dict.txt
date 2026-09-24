@@ -94,6 +94,7 @@ perf
 performant
 personalization
 Podfile
+podspec
 plist
 pre-fetched
 pre-rendered
