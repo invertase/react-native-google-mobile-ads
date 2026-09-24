@@ -308,3 +308,12 @@ OKF
 prebuild
 autolinks
 camelCase
+SPM
+GoogleUtilities
+BOM
+disableSPM
+forceStaticLinking
+prebuilt
+CocoaPods-only
+config-script
+RNFB's
