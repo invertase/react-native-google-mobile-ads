@@ -105,7 +105,6 @@ preloader's
 preloader.
 Preload
 pre-flight
-preflight
 programmatically
 provenance
 PRs
@@ -220,12 +219,6 @@ Programmatically
 RequestOptions
 RewardedAd
 RewardedAdReward
-AdError
-autoLoad
-earnedReward
-responseInfo
-ResponseInfo
-UseFullScreenAdStatus
 SKAdNetwork
 testDeviceIdentifiers
 unmuted

@@ -13,29 +13,46 @@ start with **test ads** and verify your integration before switching to producti
 Whilst developing your app with AdMob, you'll want to make sure you use test ads rather than production ads from your
 Google AdMob account - otherwise your account may be disabled!
 
-Although usage of different advert types is explained later, when creating your adverts the "Ad Unit ID" being used whilst
-testing can be set to a testing ID. The code snippet below shows how to initialize each advert type with a test ID:
+Although usage of different advert types is explained later, set the "Ad Unit ID" to a test ID
+during development. These intentionally small creation fragments show the matching test ID for all
+six ad formats; the format guides cover lifecycle and cleanup:
 
 ```jsx
+import React from 'react';
 import {
   AppOpenAd,
-  InterstitialAd,
-  RewardedAd,
   BannerAd,
+  BannerAdSize,
+  InterstitialAd,
+  NativeAd,
+  RewardedAd,
+  RewardedInterstitialAd,
   TestIds,
 } from 'react-native-google-mobile-ads';
 
-// App Open
-AppOpenAd.createForAdRequest(TestIds.APP_OPEN);
-
-// Interstitial
-InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
-
-// Rewarded
-RewardedAd.createForAdRequest(TestIds.REWARDED);
+// App open
+const appOpenAd = AppOpenAd.createForAdRequest(TestIds.APP_OPEN);
 
 // Banner
-<BannerAd unitId={TestIds.BANNER} />;
+function TestBanner() {
+  return <BannerAd unitId={TestIds.BANNER} size={BannerAdSize.BANNER} />;
+}
+
+// Interstitial
+const interstitialAd = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
+
+// Rewarded
+const rewardedAd = RewardedAd.createForAdRequest(TestIds.REWARDED);
+
+// Rewarded interstitial
+const rewardedInterstitialAd = RewardedInterstitialAd.createForAdRequest(
+  TestIds.REWARDED_INTERSTITIAL,
+);
+
+// Native creation is asynchronous.
+async function loadNativeTestAd() {
+  return NativeAd.createForAdRequest(TestIds.NATIVE);
+}
 ```
 
 ## Verify your integration
@@ -46,8 +63,8 @@ RewardedAd.createForAdRequest(TestIds.REWARDED);
 
 ## Next steps
 
-Now the basics of setting up and configuring AdMob have been explained, you can go ahead and start to display different
-adverts to your users. The AdMob module provides integration with six different types:
+Now the basics of setting up and configuring AdMob have been explained, you can start displaying
+adverts to your users. The module supports six ad formats:
 
 - [App Open Ads](/ad-formats/app-open)
 - [Banner Ads](/ad-formats/banner)

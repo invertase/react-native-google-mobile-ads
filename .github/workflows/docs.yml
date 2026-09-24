@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   spelling:
-    name: 'Spelling & Grammar & Markdown'
+    name: 'Spelling & Docs links'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -38,3 +38,5 @@ jobs:
       - name: Spell check
         run: |
           yarn lint:spellcheck
+      - name: Docs.page links
+        run: yarn lint:docs-links

@@ -26,6 +26,7 @@
     "lint:android": "(find packages/core/android/src -name '*.java' -not -path '*/generated/*' -print0 | xargs -0 google-java-format --set-exit-if-changed --replace || (echo \"\n\nandroid formatting error - please re-run\n\n\" && exit 1)) && (git diff --exit-code packages/core/android/src || (echo \"\n\nandroid files changed from linting, please examine and commit result\n\n\" && exit 1))",
     "lint:ios:check": "find packages/core/ios -type f \\( -name '*.h' -o -name '*.cpp' -o -name '*.m' -o -name '*.mm' \\) -not -path '*/generated/*' -print0 | xargs -0 clang-format --style=Google -n -Werror",
     "lint:ios:fix": "find packages/core/ios -type f \\( -name '*.h' -o -name '*.cpp' -o -name '*.m' -o -name '*.mm' \\) -not -path '*/generated/*' -print0 | xargs -0 clang-format -i --style=Google",
+    "lint:docs-links": "docs check .",
     "lint:markdown:check": "prettier --check \"docs/**/*.md[x]\"",
     "lint:markdown:fix": "prettier --write \"docs/**/*.md[x]\"",
     "lint:report": "eslint --output-file=eslint-report.json --format=json packages/core/src/ --ext .js,.jsx,.ts,.tsx",
@@ -77,6 +78,7 @@
   "devDependencies": {
     "@babel/core": "^7.28.4",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@docs.page/cli": "2.1.0",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.38.0",
     "@react-native/babel-preset": "0.86.0",

@@ -17,12 +17,12 @@ For App Open, Banner, Interstitial, Rewarded, and Rewarded Interstitial ad forma
 
 ```js
 import React from 'react';
-import MobileAds, { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import mobileAds, { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.GAM_BANNER : '/xxx/yyyy';
 
 function App() {
-  MobileAds().setAppVolume(0.5);
+  mobileAds().setAppVolume(0.5);
 
   return <GAMBannerAd unitId={adUnitId} sizes={[BannerAdSize.FULL_BANNER]} />;
 }
@@ -38,12 +38,12 @@ For App Open, Banner, Interstitial, Rewarded, and Rewarded Interstitial ad forma
 
 ```js
 import React from 'react';
-import MobileAds, { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import mobileAds, { GAMBannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.GAM_BANNER : '/xxx/yyyy';
 
 function App() {
-  MobileAds().setAppMuted(true);
+  mobileAds().setAppMuted(true);
 
   return <GAMBannerAd unitId={adUnitId} sizes={[BannerAdSize.FULL_BANNER]} />;
 }
