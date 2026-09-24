@@ -25,26 +25,23 @@ maven {
 
 ## Native adapter class names (GAM / AdMob UI)
 
-| Platform | Class name |
-| -------- | ---------- |
-| Android | `com.google.ads.mediation.pangle.PangleMediationAdapter` |
-| iOS | `GADMediationAdapterPangle` |
+| Platform | Class name                                               |
+| -------- | -------------------------------------------------------- |
+| Android  | `com.google.ads.mediation.pangle.PangleMediationAdapter` |
+| iOS      | `GADMediationAdapterPangle`                              |
 
 Also exported from JS:
 
 ```ts
-import {
-  nativeAdapterClassName,
-  networkSlug,
-} from '@react-native-google-mobile-ads/pangle';
+import { nativeAdapterClassName, networkSlug } from '@react-native-google-mobile-ads/pangle';
 ```
 
 ## Mediation dependencies (pinned in this package)
 
-| Platform | Coordinate | Version pin |
-| -------- | ---------- | ----------- |
-| Android | `com.google.ads.mediation:pangle` | `8.2.0.4.0` |
-| iOS | CocoaPods `GoogleMobileAdsMediationPangle` | `8.2.1.0.0` |
+| Platform | Coordinate                                 | Version pin |
+| -------- | ------------------------------------------ | ----------- |
+| Android  | `com.google.ads.mediation:pangle`          | `8.2.0.4.0` |
+| iOS      | CocoaPods `GoogleMobileAdsMediationPangle` | `8.2.1.0.0` |
 
 Citations (verify at upgrade time):
 
@@ -66,15 +63,24 @@ Platform floors align with core: iOS **15.1** and Android minSdk **24**.
   '@react-native-google-mobile-ads/pangle',
   {
     // Pass Pangle SKAdNetwork IDs from Pangle’s current docs
-    skAdNetworkItems: [/* ... */],
+    skAdNetworkItems: [
+      /* ... */
+    ],
   },
-]
+];
 ```
 
 App IDs stay in the core Expo plugin.
+
+## Lifecycle
+
+This package does **not** add JS ad APIs. Use core fullscreen / native / multi-format / pool `destroy()` (and hook ownership rules) when you finish with inventory — see the core [Migrating to v17](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17) lifecycle section and [Mediation — Pangle](https://docs.page/invertase/react-native-google-mobile-ads/mediation#pangle-bytedance).
+
+Do **not** dual-host Pangle by linking `Ads-Global` (or another direct Pangle React Native module) **and** this mediation adapter / Google Mobile Ads in the same app unless you intentionally own that stack. iOS Auto Layout conflicts inside video creatives (`UIButton` trailing vs `UIImageView`) are upstream creative / SDK layout, not a missing destroy method on this adapter.
 
 ## Out of scope
 
 - AppLovin MAX host SDK
 - CloudX / other non-GAM hosts
 - Fyber/DT Exchange (no Google GAM adapter — do not invent)
+- Direct Pangle (ByteDance) SDK hosting or a second JS destroy API beyond core

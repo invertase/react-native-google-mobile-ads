@@ -52,6 +52,7 @@ barcode
 Barcode
 barcodes
 booleans
+breakpoint
 Bridgeless
 bufferSize
 BUGFIX
@@ -196,6 +197,8 @@ OpenID
 P0
 PaidEvent
 PaidResponseInfo
+pangle
+Pangle
 perf
 performant
 personalization
@@ -370,6 +373,7 @@ triaging
 variadic
 TypeDoc
 UI
+UIKit
 UnableToResolveError
 uncomment
 unhandled

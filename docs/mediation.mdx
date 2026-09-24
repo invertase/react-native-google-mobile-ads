@@ -164,6 +164,24 @@ to Meta Audience Network / Google’s Meta mediation adapter with a full crash r
 
 See the [facebook adapter package documentation](https://github.com/invertase/react-native-google-mobile-ads/tree/main/packages/facebook) for class names and pins.
 
+## Pangle (ByteDance)
+
+Prefer the scoped mediation package (`@react-native-google-mobile-ads/pangle`) so Pangle participates in AdMob / GAM mediation through Google’s adapter. That package links `GoogleMobileAdsMediationPangle` / `com.google.ads.mediation:pangle` and does **not** add JS load/show APIs — use core `initialize()`, fullscreen / native / banner surfaces, and adapter status as usual.
+
+### Lifecycle: `destroy()` already exists
+
+Fullscreen (`InterstitialAd`, `RewardedAd`, `RewardedInterstitialAd`, `AppOpenAd`), native ads, multi-format handles, and preload pools expose idempotent `destroy()` (and hooks that own inventory call it for you). See [Migrating to v17 — lifecycle](/migrating-to-v17#additive-lifecycle--destroy-ownership-impression). Call `destroy()` when you finish with an ad (or let hook / pool ownership rules do it). There is no separate destroy API for Pangle in this library: mediation adapters are not owned as separate JS ad objects.
+
+### iOS Auto Layout conflicts when hosting Google and Pangle video together
+
+Reports of iOS `Unable to simultaneously satisfy constraints` on a `UIButton` with two different trailing constants against a `UIImageView` (for example `-(5)-|` and `-(36)-|`), often while loading Google and Pangle video creatives in the same process, originate inside **third-party creative / SDK view hierarchies** — not in this package’s React Native banner or fullscreen bridges (those do not build that `UIButton`/`UIImageView` constraint pair).
+
+UIKit typically recovers by breaking one constraint; treat a symbolic `UIViewAlertForUnsatisfiableConstraints` breakpoint or console noise as an upstream layout warning unless you have a native crash stack that points at `RNGoogleMobileAds*` code.
+
+If you also link the Pangle host SDK **directly** (for example CocoaPods `Ads-Global` plus a custom Pangle TurboModule) **alongside** `react-native-google-mobile-ads`, you are dual-hosting two video ad stacks. Prefer mediation via `@react-native-google-mobile-ads/pangle` instead of a second direct Pangle integration, keep core `destroy()` hygiene, and escalate persistent creative Auto Layout failures to Pangle / Google’s Pangle mediation adapter with a full Instruments / constraint dump.
+
+See the [pangle adapter package documentation](https://github.com/invertase/react-native-google-mobile-ads/tree/main/packages/pangle) for class names and pins.
+
 ## Call Android / iOS code from React Native
 
 A third-party mediation adapter might have specific Android or iOS APIs that aren't exposed to your React Native code. In these cases, you can create a custom "bridge" to expose that native functionality.
