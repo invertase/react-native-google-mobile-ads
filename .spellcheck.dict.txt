@@ -1,6 +1,7 @@
 100k
 64k
 AAR
+ABI
 Ad
 AdActivity
 adapterResponses
@@ -45,6 +46,8 @@ backends
 backfill
 backgrounded
 backoff
+backport
+backported
 barcode
 Barcode
 barcodes
@@ -56,6 +59,7 @@ Changelog
 CLI
 CocoaPods
 codebase
+Codegen
 config
 Config
 configs
@@ -83,6 +87,8 @@ emulated
 enablement
 enum
 ESLint
+EventEmitter
+EventEmitter.
 explainer
 facebook
 Facebook
@@ -137,6 +143,7 @@ isEarnedReward
 isLoaded
 isOpened
 isShowing
+JNI
 JS
 JSON
 latencyMillis
@@ -199,6 +206,7 @@ PooledAd
 poolId
 poolStatus
 pre-fetched
+pre-fix
 pre-flight
 pre-flight-branch
 pre-rendered
@@ -277,9 +285,7 @@ SDK's
 unmounts
 unmounting
 Appium
-Codegen
 e2e
-EventEmitter
 IMA
 incentivized
 init
@@ -343,6 +349,7 @@ SHA-256
 SHA1
 showable
 SIGABRT
+SIGSEGV
 singleTask
 singleTop
 SMS
@@ -359,6 +366,7 @@ TFUA
 thenable
 timezones
 triaging
+variadic
 TypeDoc
 UI
 UnableToResolveError
