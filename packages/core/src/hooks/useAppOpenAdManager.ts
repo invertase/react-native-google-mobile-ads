@@ -80,7 +80,9 @@ export type UseAppOpenAdManagerStatus =
  * - `status` — current lifecycle position.
  * - `showAdIfAvailable` — Google's show-if-ready entry point (call from a cold
  *   start loading screen; warm foreground is handled by the hook).
- * - `isShowing` — mirrors the sample `isShowingAd` guard.
+ * - `isShowing` — mirrors the sample `isShowingAd` guard: true from the show
+ *   request until the ad closes or fails to show. Warm-foreground ads overlay
+ *   the running app, so do not swap the app tree out because of it.
  */
 export type UseAppOpenAdManagerResult = {
   status: UseAppOpenAdManagerStatus;
@@ -121,20 +123,25 @@ function requestSignatureOf(adUnitId: string | null, requestOptions: RequestOpti
  * - Auto-shows on **warm** foreground only, via {@link useForeground}
  *   (background → active). Does **not** auto-show on the very first cold start
  *   — call `showAdIfAvailable()` from your loading screen for that path.
- * - **AO-2**: on Android a foreground return caused by another library
+ * - On Android a foreground return caused by another library
  *   fullscreen ad Activity (interstitial / rewarded / app-open) dismissing does
  *   **not** trigger the warm-foreground auto-show, so two fullscreen ads never
  *   stack back-to-back. A real home / app-switcher return still shows. See
  *   `internal/fullscreenAdPresence.ts`.
  * - Guards with `isShowing`; reloads after `CLOSED` and show-phase errors.
  *
+ * #### Consent
+ *
+ * While `autoLoad` is `false`, no path starts an ad request, so keep it
+ * `false` until consent is resolved. Passing `adUnitId: null` (or not mounting
+ * the hook) also prevents every load.
+ *
  * #### Inventory source
  *
- * Ships the correct cross-backend manager first: every backend uses
- * `AppOpenAd.createForAdRequest`. Android Next-Gen also exposes SDK-managed
- * app-open preload (`AppOpenAdPreloader` / `AdPools` fullscreen app-open);
- * composing this manager onto that preloader is a follow-up
- * (`TODO(next-gen-app-open-preloader)`), not required for a correct manager.
+ * Every backend uses `AppOpenAd.createForAdRequest`. Android Next-Gen also
+ * exposes SDK-managed app-open preload (`AppOpenAdPreloader` / `AdPools`
+ * fullscreen app-open); composing this manager with that preloader is not yet
+ * supported and is not required for a correct manager.
  *
  * #### Example
  *
@@ -147,10 +154,13 @@ function requestSignatureOf(adUnitId: string | null, requestOptions: RequestOpti
  * // Cold start loading screen (after the first launch, if you follow Google's
  * // "don't show on the very first app start" guidance yourself):
  * useEffect(() => {
- *   if (assetsReady) {
+ *   if (assetsReady && consentReady) {
  *     showAdIfAvailable();
  *   }
- * }, [assetsReady, showAdIfAvailable]);
+ * }, [assetsReady, consentReady, showAdIfAvailable]);
+ * // Hold a loading screen only for this cold-start pass, and never make it
+ * // wait on consent: if consent is unresolved, skip the offer and continue.
+ * // Keep the app tree mounted while a warm-foreground ad shows.
  * ```
  */
 export function useAppOpenAdManager(

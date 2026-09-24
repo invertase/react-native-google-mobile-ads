@@ -115,76 +115,11 @@ For bare React Native, precedence is:
 2. `RNGMA_ANDROID_BACKEND` in `android/gradle.properties`
 3. `android_sdk` in the `react-native-google-mobile-ads` block of `app.json`
 
-When nothing is set, the library defaults to `classic`.
+When nothing is set, the library defaults to `classic`. Rebuild native Android after changing the
+backend.
 
-<Info>
-  `nextgen` is generally available in this library and ready to use, but it is still relatively new
-  upstream. Feedback from production apps is welcome. There is no GMA Next-Gen SDK for iOS — this
-  key is Android-only. The public JavaScript API stays the same either way.
-</Info>
-
-<Warning>
-  Per [Google's Next-Gen migration
-  guide](https://developers.google.com/admob/android/next-gen/migration), you must either integrate
-  **without mediation** or use **AdMob as the mediation host**. Other mediation platforms (for
-  example AppLovin MAX) are not compatible with GMA Next-Gen — stay on `classic` / `legacy` for
-  those apps. Google Ad Manager unit IDs are supported under Next-Gen. Next-Gen also requires
-  initialization before loading ads (this library already does that when you call
-  [`initialize`](/initialization)).
-</Warning>
-
-<Tabs groupId="framework" values={[{label: 'Expo', value: 'expo'}, {label: 'React Native', value: 'bare'}]}>
-<TabItem value="expo">
-
-```json
-// <project-root>/app.json
-{
-  "expo": {
-    "plugins": [
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-          "androidSdk": "nextgen"
-        }
-      ]
-    ]
-  }
-}
-```
-
-</TabItem>
-<TabItem value="bare">
-
-```json
-// <project-root>/app.json
-{
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "android_sdk": "nextgen"
-  }
-}
-```
-
-One-off Gradle override without editing `app.json`:
-
-```bash
-cd android && ./gradlew assembleDebug -PRNGMA_ANDROID_BACKEND=nextgen
-```
-
-Or permanently in `android/gradle.properties`:
-
-```properties
-RNGMA_ANDROID_BACKEND=nextgen
-```
-
-</TabItem>
-</Tabs>
-
-Rebuild native Android after changing the backend (`npx expo prebuild --clean` for Expo, or a clean
-Gradle rebuild for bare React Native).
+Why and when to switch, mediation and Google Ad Manager compatibility, requirements, and full Expo /
+bare examples: [GMA Next-Gen SDK (Android)](/next-gen-sdk).
 
 ## App measurement delay
 

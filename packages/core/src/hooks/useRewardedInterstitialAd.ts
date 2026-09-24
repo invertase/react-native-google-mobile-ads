@@ -56,9 +56,9 @@ export function useRewardedInterstitialAd(
  * as `useRewardedAd`: `reward` describes the offer at load and the grant once
  * `earnedReward` is true.
  *
- * Android classic has no preload slot for this format, so pool-based warming is
- * unavailable there. This hook is the load-on-demand path and works on both
- * platforms.
+ * Neither Android backend (classic or Next-Gen) has a preload slot for this
+ * format, so pool-based warming is unavailable on Android. This hook is the
+ * load-on-demand path and works on both platforms.
  */
 export function useRewardedInterstitialAd(
   options: UseRewardedInterstitialAdOptions,

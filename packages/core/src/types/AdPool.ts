@@ -192,13 +192,13 @@ export type PooledAd =
        * never destroy it directly.
        */
       ad: NativeAd;
-      /** Display pools are always library-emulated on classic backends. */
+      /** Display pools are always library-emulated on every backend. */
       provenance: 'pool/emulated-no-sdk-preloader';
     })
   | (Omit<PooledAdBase, 'provenance'> & {
       format: AdFormat.BANNER;
       size: { width: number; height: number };
-      /** Display pools are always library-emulated on classic backends. */
+      /** Display pools are always library-emulated on every backend. */
       provenance: 'pool/emulated-no-sdk-preloader';
     })
   | (PooledAdBase & {
@@ -312,9 +312,9 @@ export type AdPoolEvent =
 /**
  * Snapshot of pool buffer readiness from `AdPool.getAvailability()`.
  *
- * Both classic platforms expose a count for SDK-managed preloaders
- * (`getNumAdsAvailable` on Android, `numberOfAdsAvailableWithPreloadID:` on
- * iOS). Library-managed (emulated) pools report the library's own buffer
+ * iOS and both Android backends expose a count for SDK-managed preloaders
+ * (`getNumAdsAvailable` on Android classic and Next-Gen,
+ * `numberOfAdsAvailableWithPreloadID:` on iOS). Library-managed (emulated) pools report the library's own buffer
  * depth. `observedCount` is therefore always present — not optional.
  *
  * Caveat: on the Android V2 path neither the boolean nor the count sweeps for
@@ -349,10 +349,10 @@ export interface AdPool {
    * information, so it is not a freshness / age check. Racy: do not treat it
    * as a poll.
    *
-   * **SDK-managed** (classic fullscreen) pools are capability-gated by
-   * `AdCapabilities.poolResponseInfoPeek` (classic Android has no SDK peek API;
-   * classic iOS does). When that capability is `unavailable`, this call
-   * hard-errors with reason `'pool/peek-unsupported'`.
+   * **SDK-managed** (fullscreen) pools are capability-gated by
+   * `AdCapabilities.poolResponseInfoPeek`: iOS and Android Next-Gen expose an
+   * SDK peek API; classic Android does not. When that capability is
+   * `unavailable`, this call hard-errors with reason `'pool/peek-unsupported'`.
    *
    * **Library-managed (emulated) display pools** peek the library's own buffer
    * head and do **not** consult `poolResponseInfoPeek` — they resolve on both
@@ -403,9 +403,9 @@ export type AdPoolsApi = {
    * backend capabilities. Hard-errors on an impossible config; loud-degrades
    * when a milder adjustment is safe.
    *
-   * Hard-errors include rewarded interstitial pooling on Android classic: the
-   * platform preloader rejects that format with no usable signal, so the pool
-   * can never fill. Check `fullscreenPreloadFormats` before creating, or catch
+   * Hard-errors include rewarded interstitial pooling on both Android backends
+   * (classic and Next-Gen): neither Android SDK has a usable rewarded
+   * interstitial preloader, so the pool could never fill. Check `fullscreenPreloadFormats` before creating, or catch
    * reason `'pool/format-preload-unsupported'`.
    *
    * @remarks
@@ -421,12 +421,23 @@ export type AdPoolsApi = {
    * );
    * const result = await pool.poll();
    * if (result.status === 'filled') {
-   *   if (!result.ad.isStaleByPolicy() && result.ad.format === AdFormat.INTERSTITIAL) {
-   *     await result.ad.show();
+   *   const ad = result.ad;
+   *   if (!ad.isStaleByPolicy() && ad.format === AdFormat.INTERSTITIAL) {
+   *     // show() resolves once presentation starts; destroy on CLOSED.
+   *     const offClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
+   *       offClosed();
+   *       ad.destroy();
+   *     });
+   *     await ad.show().catch(error => {
+   *       offClosed();
+   *       ad.destroy();
+   *       console.warn(error);
+   *     });
+   *   } else {
+   *     ad.destroy();
    *   }
-   *   result.ad.destroy();
    * }
-   * pool.destroy();
+   * // Destroy the pool when the placement is gone, not while its ad is on screen.
    * ```
    */
   create(config: AdPoolConfig): Promise<AdPool>;

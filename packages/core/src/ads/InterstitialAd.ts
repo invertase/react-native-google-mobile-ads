@@ -54,8 +54,8 @@ import NativeInterstitialModule from '../specs/modules/NativeInterstitialModule'
  * ```js
  * import { AdEventType } from 'react-native-google-mobile-ads';
  *
- * interstitialAd.addAdEventListener(AdEventType.Loaded, () => {
- *   interstitialAd.show();
+ * interstitial.addAdEventListener(AdEventType.LOADED, () => {
+ *   interstitial.show().catch(console.warn);
  * });
  *
  * interstitial.load();
@@ -73,12 +73,12 @@ export class InterstitialAd extends MobileAd {
    * ```js
    * import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
    *
-   * const interstitialAd = await InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
+   * const interstitialAd = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL, {
    *   requestAgent: 'CoolAds',
    * });
    *
-   * interstitialAd.addAdEventListener(AdEventType.Loaded, () => {
-   *   interstitialAd.show();
+   * interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
+   *   interstitialAd.show().catch(console.warn);
    * });
    *
    * interstitialAd.load();

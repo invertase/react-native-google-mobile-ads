@@ -19,9 +19,9 @@ Broadly speaking, there are two parts to successfully implementing native ads: L
 />
 
 <Warning>
-  Complete consent and SDK initialization before calling `NativeAd.createForAdRequest()`. See
-  [Consent & privacy basics](/consent-basics) and the shared [load best
-  practices](/ad-formats#load-and-refresh-best-practices).
+  Complete consent and SDK initialization before calling `NativeAd.createForAdRequest()` or letting
+  `useNativeAd` load (`autoLoad: consentReady`). See [Consent & privacy basics](/consent-basics) and
+  the shared [load best practices](/ad-formats#load-and-refresh-best-practices).
 </Warning>
 
 For a **one-request native-or-banner** competitive load (GAM, count 1), or an emulated
@@ -30,19 +30,42 @@ display pool that keeps one ready fill, see
 
 ## Load ads
 
-Native ads are loaded with `NativeAd.createForAdRequest` static method, which returns a promise that resolves with a `NativeAd` object.
-The first argument of the method is the "Ad Unit ID".
-For testing, we can use a Test ID, however for production the ID from the Google AdMob dashboard under "Ad units" should be used:
+In a React component, load with the `useNativeAd` hook. It owns the `NativeAd`: it destroys the ad
+when the component unmounts or when `adUnitId` / `requestOptions` change, including a load that
+resolves after unmount. For testing, use a Test ID; in production, use the ID from the Google AdMob
+dashboard under "Ad units":
 
 ```tsx
-NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
+import { TestIds, useNativeAd } from 'react-native-google-mobile-ads';
+
+const { status, nativeAd, error, retry, destroy } = useNativeAd({
+  adUnitId: TestIds.NATIVE,
+  autoLoad: consentReady,
+});
+```
+
+- `status` is `'idle'`, `'loading'`, `'loaded'`, `'no-fill'`, or `'error'`. `nativeAd` is non-null
+  only when `status` is `'loaded'`; `error` is set for `'no-fill'` and `'error'`.
+- `autoLoad` defaults to `true`. Set it to `false` until consent is resolved. Turning it back off
+  stops future automatic loads only; it does not destroy a loaded ad.
+- `retry()` loads again (after `'no-fill'` / `'error'`, or the first load when `autoLoad` is
+  false). Automatic loading never retries on its own.
+- `destroy()` destroys the owned ad and returns to `'idle'` without loading again. Do not call
+  `nativeAd.destroy()` yourself on an ad the hook owns.
+
+Outside React, call the `NativeAd.createForAdRequest` static method directly. It returns a promise
+that resolves with a `NativeAd` object, and you own `destroy()`:
+
+```tsx
+const nativeAd = await NativeAd.createForAdRequest(TestIds.NATIVE);
 ```
 
 ### Native ad Options
 
 Native ads have many advanced features that allow you to make additional customizations to create the best possible ad experience.
 
-You can pass an optional `NativeAdRequestOptions` object as the second argument to `NativeAd.createForAdRequest` to customize the ad request:
+Pass an optional `NativeAdRequestOptions` object as `requestOptions` to `useNativeAd`, or as the
+second argument to `NativeAd.createForAdRequest`, to customize the ad request:
 
 ```tsx
 NativeAd.createForAdRequest(TestIds.NATIVE, {
@@ -127,15 +150,10 @@ Each view used to display that ads assets should be placed within the view hiera
 Pass the `NativeAd` object to the `nativeAd` prop of the `NativeAdView` component to register the ad view:
 
 ```tsx
-import { useEffect, useState } from 'react';
-import { NativeAd, NativeAdView, TestIds } from 'react-native-google-mobile-ads';
+import { NativeAdView, TestIds, useNativeAd } from 'react-native-google-mobile-ads';
 
-const NativeComponent = () => {
-  const [nativeAd, setNativeAd] = useState<NativeAd>();
-
-  useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
-  }, []);
+const NativeComponent = ({ consentReady }: { consentReady: boolean }) => {
+  const { nativeAd } = useNativeAd({ adUnitId: TestIds.NATIVE, autoLoad: consentReady });
 
   if (!nativeAd) {
     return null;
@@ -162,12 +180,8 @@ Registering the views in this way allows the SDK to automatically handle tasks s
 Customize your UI components as needed and place them inside the `NativeAsset` component, setting the `assetType` prop to the asset type you are displaying:
 
 ```tsx
-const NativeComponent = () => {
-  const [nativeAd, setNativeAd] = useState<NativeAd>();
-
-  useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
-  }, []);
+const NativeComponent = ({ consentReady }: { consentReady: boolean }) => {
+  const { nativeAd } = useNativeAd({ adUnitId: TestIds.NATIVE, autoLoad: consentReady });
 
   if (!nativeAd) {
     return null;
@@ -258,13 +272,15 @@ These are the steps for displaying a native ad:
 3. Place the `NativeMediaView` inside your native ad layout to display media asset.
 
 ```tsx
-const NativeComponent = () => {
-  const [nativeAd, setNativeAd] = useState<NativeAd>();
+const NativeComponent = ({ consentReady }: { consentReady: boolean }) => {
+  const { status, nativeAd, retry } = useNativeAd({
+    adUnitId: TestIds.NATIVE,
+    autoLoad: consentReady,
+  });
 
-  useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
-  }, []);
-
+  if (status === 'no-fill' || status === 'error') {
+    return <Button title="Retry" onPress={retry} />;
+  }
   if (!nativeAd) {
     return null;
   }
@@ -300,15 +316,16 @@ Forward `NativeAdEventType.PAID` payloads to your
 [revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.
 
 ```tsx
-import { useEffect, useState } from 'react';
-import { NativeAd, NativeAdEventType, NativeAdView, TestIds } from 'react-native-google-mobile-ads';
+import { useEffect } from 'react';
+import {
+  NativeAdEventType,
+  NativeAdView,
+  TestIds,
+  useNativeAd,
+} from 'react-native-google-mobile-ads';
 
-const NativeComponent = () => {
-  const [nativeAd, setNativeAd] = useState<NativeAd>();
-
-  useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
-  }, []);
+const NativeComponent = ({ consentReady }: { consentReady: boolean }) => {
+  const { nativeAd } = useNativeAd({ adUnitId: TestIds.NATIVE, autoLoad: consentReady });
 
   useEffect(() => {
     if (!nativeAd) return;
@@ -321,7 +338,6 @@ const NativeComponent = () => {
     return () => {
       clickedListener.remove();
       paidListener.remove();
-      nativeAd.destroy();
     };
   }, [nativeAd]);
 
@@ -340,34 +356,15 @@ const NativeComponent = () => {
 ## Destroying ads
 
 Always destroy the `NativeAd` object when it is no longer needed to free up resources.
+Calling `destroy` also removes all event listeners registered on the `NativeAd` object.
 
-Calling the `destroy` method also removes all event listeners registered on the `NativeAd` object.
+`useNativeAd` does this for you on unmount and when the request changes; call its `destroy()` to
+drop the ad early. If you created the ad yourself with `NativeAd.createForAdRequest`, you own it:
 
 ```tsx
-const NativeComponent = () => {
-  const [nativeAd, setNativeAd] = useState<NativeAd>();
-
-  useEffect(() => {
-    NativeAd.createForAdRequest(TestIds.NATIVE).then(setNativeAd).catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    if (!nativeAd) return;
-    return () => {
-      nativeAd.destroy();
-    };
-  }, [nativeAd]);
-
-  if (!nativeAd) {
-    return null;
-  }
-
-  return (
-    <NativeAdView nativeAd={nativeAd}>
-      {/* Components to display assets must be placed here */}
-    </NativeAdView>
-  );
-};
+const nativeAd = await NativeAd.createForAdRequest(TestIds.NATIVE);
+// ...render it in <NativeAdView nativeAd={nativeAd}>...
+nativeAd.destroy();
 ```
 
 ## Caveats / Limitations

@@ -29,7 +29,8 @@ import { validateAdRequestOptions } from './validateAdRequestOptions';
 export const GOOGLE_DEFAULT_POOL_BUFFER_SIZE = 2;
 
 /**
- * Documented classic app-wide managed-pool default (P-poolcap-ios = 6).
+ * Google's documented default app-wide preload cache limit (6), the same on
+ * iOS, Android classic, and Android Next-Gen.
  * Not reported on `maxManagedPoolAds` (always null: server-delivered).
  */
 export const DOCUMENTED_APP_WIDE_POOL_CAP = 6;
@@ -126,7 +127,7 @@ function validateSharedFields(config: AdPoolConfig): void {
 }
 
 /**
- * Validates an AdPoolConfig for classic fullscreen SDK pools and emulated
+ * Validates an AdPoolConfig for single-format fullscreen SDK pools and emulated
  * display (banner/native) depth-1 pools.
  *
  * Hard-errors on impossible configs (format drop, illegal mix). Loud-degrades

@@ -1,13 +1,30 @@
 ---
-title: Fullscreen ads with hooks
-description: Use React hooks to load and show app open, interstitial, rewarded, and rewarded interstitial ads.
+title: React hooks
+description: Every React hook in the library, plus the shared lifecycle for app open, interstitial, rewarded, and rewarded interstitial hooks.
 ---
 
-# Fullscreen ads with hooks
+# React hooks
 
-The package provides hooks for all four fullscreen formats: app open, interstitial, rewarded,
-and rewarded interstitial. The v17 options form loads automatically by default and exposes one
-shared lifecycle model.
+## All hooks
+
+| Hook                        | Purpose                                                                                  | Guide                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `useAppOpenAd`              | Load and show one app open ad.                                                           | [Below](#app-open)                                                                                         |
+| `useAppOpenAdManager`       | Google's app open manager: preload, four-hour freshness, cold-start and warm foreground. | [App open ads](/ad-formats/app-open#cold-and-warm-foreground-lifecycle)                                    |
+| `useInterstitialAd`         | Load and show one interstitial.                                                          | [Below](#interstitial)                                                                                     |
+| `useRewardedAd`             | Load and show one rewarded ad and read its reward.                                       | [Below](#rewarded)                                                                                         |
+| `useRewardedInterstitialAd` | Load and show one rewarded interstitial and read its reward.                             | [Below](#rewarded-interstitial)                                                                            |
+| `useGAMInterstitialAd`      | Load and show one Google Ad Manager interstitial, with app events.                       | [Google Ad Manager](/ad-formats/ad-manager#gam-interstitial)                                               |
+| `useNativeAd`               | Load and own one native ad for `NativeAdView`.                                           | [Native ads](/ad-formats/native#load-ads)                                                                  |
+| `useMultiFormatAd`          | One request that returns a native or Google Ad Manager banner winner.                    | [Multi-format recipe](/preload-pools-and-multiformat-recipes#recipe-multi-format-native-or-banner-count-1) |
+| `AdPoolProvider`            | Component that creates and destroys preload pools; gate with `enabled`.                  | [Preload pools](/preload-pools-and-multiformat-recipes#consent-before-pools)                               |
+| `useAdPool`                 | Read one pool's creation status and availability.                                        | [Display pool recipe](/preload-pools-and-multiformat-recipes#recipe-display-pool-native-banner-depth-1)    |
+| `usePooledAd`               | Poll a pool at show time and own the returned ad.                                        | [Fullscreen pool recipe](/preload-pools-and-multiformat-recipes#recipe-fullscreen-interstitial-pool)       |
+| `useForeground`             | Run a callback when the app returns from the background (not on cold start).             | [API reference](https://invertase.github.io/react-native-google-mobile-ads/useForeground.html)             |
+
+The rest of this page covers the four fullscreen hooks for app open, interstitial, rewarded, and
+rewarded interstitial ads. Their v17 options form loads automatically by default and exposes one
+shared lifecycle model. `useGAMInterstitialAd` uses the same model.
 
 <Warning>
   Resolve consent before initialization and loading. Keep `autoLoad` false until your consent flow
@@ -106,7 +123,7 @@ export default function RewardedInterstitialButton() {
 ```
 
 The rewarded interstitial hook works on Android and iOS. Pool-based warming for this format is
-unavailable on the Android classic backend; that pool limitation does not apply to this
+unavailable on both Android backends (classic and Next-Gen); that pool limitation does not apply to this
 load-on-demand hook.
 
 <Info>
@@ -175,6 +192,12 @@ earlier. Changing `autoLoad` to `false` does not cancel a request already in fli
 ## Show the ad
 
 The hook returns several states and functions to control ad.
+
+The fullscreen hooks' `show` is press-safe: it absorbs both the synchronous throw (destroyed ad,
+invalid options) and the promise rejection (not loaded, already showing, platform decline), so
+`onPress={() => show()}` needs no `.catch` or `try`. A press while the ad isn't showable is a
+silent no-op and changes no hook state; a platform show failure reported by the ad's `ERROR` event
+surfaces as `status: 'error'` with `error` set. This does not apply to the ad returned by `usePooledAd`, which has its own `show()`.
 
 ```jsx
 import { useEffect } from 'react';

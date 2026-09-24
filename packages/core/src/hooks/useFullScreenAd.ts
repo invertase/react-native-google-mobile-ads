@@ -98,7 +98,7 @@ export type FullScreenAdHookOptions = {
  * `UseMultiFormatAdStatus` mirrors `MultiFormatLoadResult`. They are not
  * synonyms across hooks: `'closed'` here is the dismissal of a shown ad and
  * does **not** destroy anything, whereas `usePooledAd`'s `'consumed'` fires
- * when the show promise fulfills and the hook destroys the spent ad.
+ * when the shown ad closes and the hook destroys the spent ad.
  *
  * `'no-fill'` is not a failure. Load-phase `no-fill` and `mediation-no-fill`
  * both land here, matching `MultiFormatAdRequest`. Show-phase failures stay

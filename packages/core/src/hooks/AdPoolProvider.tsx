@@ -89,6 +89,10 @@ function configSignature(config: AdPoolConfig): string {
  * A new `pools` array with unchanged ids/configs does not recreate native
  * pools; `useMemo` is an optimization, not a correctness requirement.
  *
+ * Creating a pool initializes the SDK on Android and starts preloading, so
+ * pass `enabled={consentReady}` until consent is resolved. `enabled={false}`
+ * stops future creates only; it never tears down existing pools.
+ *
  * @example
  * ```tsx
  * const pool = AdPoolPresets.display(gamUnitId, {
@@ -105,7 +109,7 @@ function configSignature(config: AdPoolConfig): string {
  *   );
  * }
  *
- * <AdPoolProvider pools={[pool]}>
+ * <AdPoolProvider pools={[pool]} enabled={consentReady}>
  *   <Placement />
  * </AdPoolProvider>;
  * ```

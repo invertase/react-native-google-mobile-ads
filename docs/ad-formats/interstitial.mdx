@@ -130,7 +130,8 @@ function App() {
     <Button
       title="Show Interstitial"
       onPress={() => {
-        interstitial.show();
+        // Not loaded, already showing, or a platform decline reject; a destroyed ad throws.
+        interstitial.show().catch(console.warn);
       }}
     />
   );

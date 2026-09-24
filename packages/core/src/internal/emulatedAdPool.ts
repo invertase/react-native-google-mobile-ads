@@ -38,8 +38,8 @@ type BufferedSlot = {
 /**
  * Library-managed depth-1 display pool (banner / native).
  *
- * Fills via multi-format `MultiFormatAdRequest` (count 1). Classic backends have no
- * SDK display preloader, so create always reports
+ * Fills via multi-format `MultiFormatAdRequest` (count 1). No backend (iOS,
+ * Android classic, Android Next-Gen) has an SDK display preloader, so create always reports
  * `'pool/emulated-no-sdk-preloader'` and clamps buffer depth to 1.
  *
  * Expiry of pool-owned inventory is library-owned (Option 1): policy eviction

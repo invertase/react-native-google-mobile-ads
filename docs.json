@@ -62,7 +62,7 @@
         { "title": "Rewarded", "href": "/ad-formats/rewarded" },
         { "title": "Rewarded interstitial", "href": "/ad-formats/rewarded-interstitial" },
         { "title": "Native", "href": "/ad-formats/native" },
-        { "title": "Fullscreen ads with hooks", "href": "/ad-formats/hooks" },
+        { "title": "React hooks", "href": "/ad-formats/hooks" },
         { "title": "Google Ad Manager", "href": "/ad-formats/ad-manager" }
       ]
     },

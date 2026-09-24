@@ -138,8 +138,10 @@ function restoreHookWrappedShow(ad: PooledAd): void {
  * `poolStatus` answers lookup/creation (`absent`, `creating`, `ready`,
  * `ready-degraded`, `error`); `status` answers polling (`polling`, `filled`,
  * `empty`, `timeout`, `no-fill`, `error`, `stale-by-policy`, `consumed`).
- * These vocabularies are intentionally separate. `consumed` is a pooled
- * fullscreen show-promise milestone, not the classic hook's `closed` event.
+ * These vocabularies are intentionally separate. `consumed` fires when a
+ * hook-owned pooled fullscreen ad that was shown emits `AdEventType.CLOSED`;
+ * the hook then destroys it. That differs from the classic hook's `closed`,
+ * which destroys nothing.
  *
  * `poll` and `release` keep stable callback identities while sampling the
  * latest `poolId`. Coalescing is per hook instance, not per pool: two
@@ -162,7 +164,10 @@ function restoreHookWrappedShow(ad: PooledAd): void {
  *     off();
  *     ad.destroy();
  *   });
- *   await ad.show();
+ *   await ad.show().catch(() => {
+ *     off();
+ *     ad.destroy();
+ *   });
  * }, [poll, release]);
  * ```
  */
