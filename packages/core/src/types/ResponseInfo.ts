@@ -38,6 +38,26 @@ export type ResponseInfoExtras = {
   lineItemId?: string;
 };
 
+/**
+ * Ad-server and mediation-waterfall metadata for one request.
+ *
+ * Keep the channels separate: a status says what happened, an error says what
+ * failed, and `ResponseInfo` records what the ad server returned. A clean
+ * no-fill can therefore have useful response metadata without being a failure.
+ *
+ * @example
+ * ```ts
+ * const info = ad.responseInfo;
+ * console.log(info?.responseId);
+ * console.log(
+ *   info?.adapterResponses.map(row => ({
+ *     source: row.adSourceName,
+ *     latencyMillis: row.latencyMillis,
+ *     error: row.outcome === 'error' ? row.adError.message : null,
+ *   })),
+ * );
+ * ```
+ */
 export type ResponseInfo = {
   responseId: string | null;
   adapterClassName: string | null;

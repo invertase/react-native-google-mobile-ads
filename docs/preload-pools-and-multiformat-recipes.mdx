@@ -1,3 +1,8 @@
+---
+title: Preload pools and multi-format recipes
+description: Warm ad inventory and request native or banner winners with v17 pools and multi-format APIs.
+---
+
 # Preload pools and multi-format recipes
 
 Use this guide when you want **warm inventory** (poll when you need an ad) or a
@@ -6,7 +11,7 @@ do not invent capability matrices in app code.
 
 Classic create/load/show and `<BannerAd>` / `NativeAd` keep working. Pools and
 multi-format APIs are **opt-in**. Full TypeScript shapes live in the
-[v17 API reference](./rngma-v17-api-reference.md#which-api-to-reach-for).
+[generated API reference](https://invertase.github.io/react-native-google-mobile-ads/modules.html#choose-the-smallest-api-that-fits).
 
 ## Pick a recipe
 
@@ -357,5 +362,5 @@ many deep pools will clamp. Read `pool.resolved.effectiveBufferSize` after creat
 - [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics) —
   `responseInfo` / paid events on load and poll
 - [Migrating to v17](/migrating-to-v17) — upgrade checklist, ownership, troubleshooting
-- [v17 API reference](./rngma-v17-api-reference.md#ad-pools-new) — pool / multi-format types,
+- [Generated pool reference](https://invertase.github.io/react-native-google-mobile-ads/AdPool.html) — pool / multi-format types,
   expiry, and ownership rules

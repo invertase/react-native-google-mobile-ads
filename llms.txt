@@ -1,0 +1,10 @@
+# React Native Google Mobile Ads
+
+> React Native bindings for Google Mobile Ads (AdMob and Google Ad Manager), including Expo support.
+
+## Primary guidance
+
+- [Integrator instructions](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/AGENTS.md)
+- [Documentation](https://docs.page/invertase/react-native-google-mobile-ads)
+- [Generated API reference](https://invertase.github.io/react-native-google-mobile-ads/)
+- [Source repository](https://github.com/invertase/react-native-google-mobile-ads)

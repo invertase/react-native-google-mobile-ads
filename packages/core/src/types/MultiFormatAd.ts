@@ -25,6 +25,19 @@ import type { ResponseInfo } from './ResponseInfo';
 
 export type MultiFormatAdFormat = AdFormat.NATIVE | AdFormat.BANNER;
 
+/**
+ * One AdLoader-style request where native and/or GAM banner formats compete
+ * for a single winner.
+ *
+ * This is multi-format, not multi-count: `requestCount` is fixed at 1. Banner
+ * requires `bannerSizes`; adaptive and `FLUID` sizes are excluded because no
+ * view width exists at request time. The banner arm is Google Ad Manager only,
+ * so `adServer` accepts only `'ad-manager'`.
+ *
+ * TypeScript excludes known-illegal size/count values. Runtime creation still
+ * validates facts types cannot express, including an empty format list,
+ * banner without sizes, and an AdMob unit used with banner.
+ */
 export type MultiFormatAdRequestOptions = RequestOptions & {
   formats: MultiFormatAdFormat[];
   bannerSizes?: MultiFormatBannerSize[];

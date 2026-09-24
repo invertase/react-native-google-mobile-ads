@@ -34,6 +34,25 @@ const emulated: CapabilitySupport = 'emulated';
  * Android next-gen wires AppOpen/Interstitial/Rewarded preloaders + peek; RWI and
  * display preload remain unavailable / library-emulated.
  * `maxManagedPoolAds` stays null (server-delivered; documented default is 6).
+ *
+ * Prefer presets and create-time validation for normal control flow. Read this
+ * snapshot for diagnostics or to hide an unavailable UI path; do not branch on
+ * the entire matrix before every request. `experimental` describes upstream
+ * maturity, not a veto. `emulated` means the library supplies an honest
+ * fallback and reports degradation on the resolved pool.
+ *
+ * @example Gate the one classic format-specific hard failure
+ * ```ts
+ * const capabilities = getAdCapabilities();
+ * if (
+ *   capabilities.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL] !==
+ *   'unavailable'
+ * ) {
+ *   await AdPools.create(
+ *     AdPoolPresets.fullscreen(AdFormat.REWARDED_INTERSTITIAL, adUnitId),
+ *   );
+ * }
+ * ```
  */
 export function getAdCapabilities(): AdCapabilities {
   const { sdkVersion, backend: backendRaw } = NativeGoogleMobileAdsModule.getConstants();

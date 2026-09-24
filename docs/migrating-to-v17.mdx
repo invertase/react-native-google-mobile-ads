@@ -1,3 +1,8 @@
+---
+title: Migrating to v17
+description: Adopt the v17 platform baseline, structured outcomes, pools, and multi-format APIs.
+---
+
 # Migrating to v17
 
 v17 keeps classic create / load / show and `<BannerAd>` / `NativeAd` **source-compatible**.
@@ -18,7 +23,7 @@ do not. See [Android Kotlin compatibility](/prerequisites#android-kotlin-compati
 
 Use this guide for the deltas publishers hit on upgrade, plus honest troubleshooting.
 Canonical TypeScript shapes live in the
-[v17 API reference](./rngma-v17-api-reference.md).
+[generated API reference](https://invertase.github.io/react-native-google-mobile-ads/).
 
 ## What stays the same
 
@@ -170,7 +175,7 @@ the current instance.
 
 `autoLoad` is a load **policy**, not a second placement identity. Setting it `false`
 stops future automatic loads; it does not cancel an in-flight request (platforms do not
-expose load cancellation). See [Displaying Ads via Hook](/displaying-ads-hook).
+expose load cancellation). See [Fullscreen ads with hooks](/ad-formats/hooks).
 
 Automatic loading does **not** re-fire after `'closed'`. Call `load()` / `retry()` (or
 flip `autoLoad` with a new consent-ready value) when you want the next ad.
@@ -180,11 +185,11 @@ flip `autoLoad` with a new consent-ready value) when you want the next ad.
 Warm inventory and native-or-banner competitive requests are opt-in. Prefer presets —
 do not hand-roll capability matrices.
 
-| Need                                | Guide                                                                            |
-| ----------------------------------- | -------------------------------------------------------------------------------- |
-| Fullscreen pool + poll at show time | [Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes) |
-| Count-1 native **or** GAM banner    | Same guide · `MultiFormatAdPresets.nativeOrBanner`                               |
-| Types, expiry, ownership            | [v17 API reference](./rngma-v17-api-reference.md#ad-pools-new)                   |
+| Need                                | Guide                                                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Fullscreen pool + poll at show time | [Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes)                       |
+| Count-1 native **or** GAM banner    | Same guide · `MultiFormatAdPresets.nativeOrBanner`                                                     |
+| Types, expiry, ownership            | [Generated `AdPool` reference](https://invertase.github.io/react-native-google-mobile-ads/AdPool.html) |
 
 ## Optional: scoped mediation adapter packages
 
@@ -314,9 +319,9 @@ Account approval, new units, test devices, and `applicationId` issues still domi
 - [GMA Next-Gen SDK (Android)](/next-gen-sdk) — Android classic / Next-Gen build-time selection
 - [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics)
 - [Preload pools and multi-format recipes](/preload-pools-and-multiformat-recipes)
-- [Displaying Ads](/displaying-ads)
-- [Displaying Ads via Hook](/displaying-ads-hook)
+- [Ad formats](/ad-formats)
+- [Fullscreen ads with hooks](/ad-formats/hooks)
 - [Mediation](/mediation)
 - [Common reasons for ads not showing](/common-reasons-for-ads-not-showing)
 - [Migrating to v15](/migrating-to-v15) — prior Android Kotlin floor note
-- [v17 API reference](./rngma-v17-api-reference.md) — types, migration sketches, first failure modes
+- [Generated API reference](https://invertase.github.io/react-native-google-mobile-ads/) — public types and symbol-level guidance

@@ -25,7 +25,7 @@ Use `mobileAds()` (not a capital-`MobileAds()` constructor). Prefer the v17 **op
 | One request, native **or** banner winner | `useMultiFormatAd` or `MultiFormatAdRequest` (+ `MultiFormatAdPresets.nativeOrBanner`) |
 | Ask what this binary supports | `getAdCapabilities()` (prefer presets over hand-rolled matrices) |
 
-Classic, hooks, and pools are **additive** — existing create/load/show keeps working. Details: [v17 API reference](https://docs.page/invertase/react-native-google-mobile-ads/rngma-v17-api-reference), [Migrating to v17](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17), [Preload pools](https://docs.page/invertase/react-native-google-mobile-ads/preload-pools-and-multiformat-recipes).
+Classic, hooks, and pools are **additive** — existing create/load/show keeps working. Details: [generated API reference](https://invertase.github.io/react-native-google-mobile-ads/), [Migrating to v17](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17), [Preload pools](https://docs.page/invertase/react-native-google-mobile-ads/preload-pools-and-multiformat-recipes).
 
 ---
 
@@ -66,7 +66,7 @@ Base: `https://docs.page/invertase/react-native-google-mobile-ads`
 | Ad formats | `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,hooks,ad-manager}` |
 | Advanced | `/preload-pools-and-multiformat-recipes`, `/mediation`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control` |
 | Testing | `/testing`, `/common-reasons-for-ads-not-showing`, `/ad-inspector` |
-| Reference | `/rngma-v17-api-reference`, `/config-plugin`, `/ai-agents` |
+| Reference | External [Reference API](https://invertase.github.io/react-native-google-mobile-ads/), `/config-plugin`, `/ai-agents` |
 | Migration | `/migrating-to-v17` (and older `/migrating-to-v{15,6,5}`) |
 
 Old paths `/displaying-ads`, `/displaying-ads-hook`, `/native-ads` redirect; prefer the `/ad-formats/*` URLs above.

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "React Native Google Mobile Ads",
+  "customCss": "./docs/reference.css",
+  "entryPointStrategy": "packages",
+  "entryPoints": ["packages/core"],
+  "out": "apidocs-out",
+  "githubPages": true,
+  "router": "structure",
+  "navigation": {
+    "includeFolders": true,
+    "includeCategories": true,
+    "includeGroups": true,
+    "excludeReferences": false
+  },
+  "categorizeByGroup": false,
+  "excludeExternals": true,
+  "useFirstParagraphOfCommentAsSummary": true,
+  "searchInComments": true,
+  "highlightLanguages": ["bash", "javascript", "json", "jsx", "tsx", "typescript"],
+  "hideGenerator": true,
+  "cleanOutputDir": true,
+  "titleLink": "/",
+  "favicon": "./docs/img/logo_admob_192px.svg",
+  "navigationLinks": {
+    "Documentation": "https://docs.page/invertase/react-native-google-mobile-ads",
+    "GitHub": "https://github.com/invertase/react-native-google-mobile-ads",
+    "npm": "https://www.npmjs.com/package/react-native-google-mobile-ads"
+  },
+  "sidebarLinks": {
+    "Documentation": "https://docs.page/invertase/react-native-google-mobile-ads"
+  },
+  "readme": "./reference-api-readme.md",
+  "packageOptions": {
+    "entryPoints": ["src/index.ts"],
+    "excludeExternals": true,
+    "excludePrivate": true,
+    "readme": "none",
+    "skipErrorChecking": true,
+    "gitRevision": "main",
+    "groupOrder": ["Functions", "Classes", "Interfaces", "Type Aliases", "Variables", "*"],
+    "intentionallyNotExported": [
+      "AdDestroyFunction",
+      "AdLoadFunction",
+      "AdShowFunction",
+      "AdType",
+      "DisplayPresetConfig",
+      "DisplayPresetConfigCustomId",
+      "EventType",
+      "FullscreenPresetConfig",
+      "FullscreenPresetConfigCustomId",
+      "MobileAdInterface",
+      "MobileAdsModule",
+      "MultiFormatAdHandleBase",
+      "MultiFormatLoadResultBase",
+      "NativeAdImage",
+      "NativeAdListenerPayload",
+      "NativeAdProps",
+      "NativeAdViewProps",
+      "NativeAssetProps",
+      "NativeMediaContent",
+      "NativeMediaViewProps",
+      "PooledAdBase",
+      "UseAdPoolResultBase",
+      "UseFullScreenAdOutcome",
+      "UseFullScreenAdResultBase",
+      "UseFullScreenAdResultWithoutReward",
+      "UseMultiFormatAdResultBase",
+      "UsePooledAdResultBase"
+    ]
+  },
+  "treatWarningsAsErrors": true,
+  "treatValidationWarningsAsErrors": true,
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "invalidPath": true,
+    "rewrittenLink": true,
+    "notDocumented": false
+  }
+}

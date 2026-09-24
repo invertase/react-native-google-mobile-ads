@@ -234,6 +234,34 @@ function configError(message: string): AdError {
  * Ownership, release ordering, never-reject load, load coalescing, and
  * `stale-by-policy` semantics match `usePooledAd`. Automatic loading, including
  * when a changed request reloads, is `UseMultiFormatAdOptions.autoLoad`.
+ *
+ * This hook does not require `AdPoolProvider`: one request produces one native
+ * or GAM banner winner. `loaded-partial` carries both a usable handle and
+ * load-scoped errors; `no-fill` carries neither handles nor errors. Narrow on
+ * `status` before rendering.
+ *
+ * Returned callbacks have stable identity but use current arguments. With
+ * automatic loading enabled, content changes to the request trigger one new
+ * load; a freshly allocated content-equal options object does not. Property
+ * order is ignored, array order remains significant.
+ *
+ * @example
+ * ```tsx
+ * const result = useMultiFormatAd({
+ *   adUnitId: gamUnitId,
+ *   requestOptions: MultiFormatAdPresets.nativeOrBanner([
+ *     BannerAdSize.MEDIUM_RECTANGLE,
+ *   ]),
+ *   autoLoad: consentReady,
+ * });
+ *
+ * if (result.status === 'no-fill') return <Text onPress={result.retry}>Try again</Text>;
+ * if (result.status === 'error') return <Text>{result.errors[0]?.reason}</Text>;
+ * const winner = result.ads[0];
+ * return winner?.format === AdFormat.BANNER
+ *   ? <MultiFormatBannerAdView handle={winner} />
+ *   : winner ? <NativeAdView nativeAd={winner.ad} /> : null;
+ * ```
  */
 export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiFormatAdResult {
   const autoLoad = options.autoLoad ?? true;

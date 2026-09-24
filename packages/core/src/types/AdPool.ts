@@ -91,6 +91,36 @@ export type AdPoolDegradeReason =
   | 'pool/degraded-request-count'
   | 'pool/emulated-no-sdk-preloader';
 
+/**
+ * Effective pool configuration after capability and app-wide accounting.
+ *
+ * Impossible requests hard-error at `AdPools.create`; safe fallback is loud:
+ * `degraded` is true, reasons are listed here, and development builds warn.
+ * For example, a display pool requesting depth 3 resolves at depth 1 with
+ * `'pool/degraded-buffer-size'` and `'pool/emulated-no-sdk-preloader'`.
+ *
+ * Presets default `bufferSize` to 1. A hand-written fullscreen config with no
+ * size uses the platform preload default; display pools are depth 1.
+ * `pollTimeoutMillis` has no implicit timeout, so the `timeout` result is only
+ * reachable when a positive timeout is configured.
+ *
+ * `AdPoolConfig.adServer` accepts AdMob or Ad Manager. Multi-format banner
+ * requests intentionally accept only Ad Manager because that is the
+ * AdLoader-style banner path.
+ *
+ * @example Inspect a loud degradation
+ * ```ts
+ * const pool = await AdPools.create(
+ *   AdPoolPresets.display(gamUnitId, {
+ *     bannerSizes: [BannerAdSize.MEDIUM_RECTANGLE],
+ *     bufferSize: 3,
+ *   }),
+ * );
+ * console.log(pool.resolved.requestedBufferSize); // 3
+ * console.log(pool.resolved.effectiveBufferSize); // 1
+ * console.log(pool.resolved.degraded, pool.resolved.degradeReasons);
+ * ```
+ */
 export type AdPoolResolvedConfig = AdPoolConfig & {
   requestedBufferSize?: number;
   effectiveBufferSize: number;
@@ -383,6 +413,21 @@ export type AdPoolsApi = {
    * `ensureMobileAdsInitialized()`. Do **not** call before consent is
    * resolved. Prefer `AdPoolProvider` `enabled` (mirrors hook `autoLoad`), or
    * only call after UMP / consent has finished.
+   *
+   * @example Imperative fullscreen pool
+   * ```ts
+   * const pool = await AdPools.create(
+   *   AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL),
+   * );
+   * const result = await pool.poll();
+   * if (result.status === 'filled') {
+   *   if (!result.ad.isStaleByPolicy() && result.ad.format === AdFormat.INTERSTITIAL) {
+   *     await result.ad.show();
+   *   }
+   *   result.ad.destroy();
+   * }
+   * pool.destroy();
+   * ```
    */
   create(config: AdPoolConfig): Promise<AdPool>;
   get(poolId: string): AdPool | null;
