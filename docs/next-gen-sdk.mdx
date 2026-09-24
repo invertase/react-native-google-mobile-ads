@@ -34,7 +34,6 @@ pool peek on Android (see [Detecting the linked backend](#detecting-the-linked-b
 
 ### AdMob-hosted mediation
 
-Per [Google's Next-Gen migration guide](https://developers.google.com/admob/android/next-gen/migration),
 Next-Gen works with **no mediation** or with **AdMob as the mediation host**. The
 scoped adapter packages (`@react-native-google-mobile-ads/<network>`) read the same
 backend selection as core. When Next-Gen is selected, each adapter excludes transitive
@@ -42,15 +41,19 @@ backend selection as core. When Next-Gen is selected, each adapter excludes tran
 coexist on the classpath. Adapter Maven coordinates stay the Google-published
 `com.google.ads.mediation:*` artifacts.
 
-### Non-AdMob mediation hosts
+### Third-party mediation platforms
 
-Mediation hosts that are **not** AdMob (for example AppLovin MAX) **cannot** select
-Next-Gen. Stay on classic Android for those apps.
+If you connect to AdMob through a third-party mediation platform, check the
+compatibility table in
+[Google's Next-Gen migration guide](https://developers.google.com/admob/android/next-gen/migration)
+for that platform before selecting Next-Gen. If your platform is not compatible, stay on
+classic Android.
 
 ### Google Ad Manager
 
-Google Ad Manager is supported under Next-Gen. Ad Manager unit IDs (paths starting with
-`/`, for example `/6499/example/native-advanced`) load through the same request builders
+Google publishes a [Next-Gen guide for Ad Manager](https://developers.google.com/ad-manager/mobile-ads-sdk/android/next-gen/quick-start),
+and this library's Next-Gen backend accepts Ad Manager unit IDs (paths starting with
+`/`, for example `/6499/example/native-advanced`). They load through the same request builders
 as AdMob unit IDs, including custom targeting, publisher-provided ID, and app events.
 There is no separate GAM code path and no GAM rejection.
 

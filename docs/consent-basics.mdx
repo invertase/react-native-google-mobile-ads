@@ -6,9 +6,11 @@ description: Understand European user consent (UMP) and App Tracking Transparenc
 # Consent & privacy basics
 
 Out of the box, AdMob does not handle any related regulations which you may need to enforce on your application.
-It is up to the developer to implement and handle this on a user-by-user basis. You must consent to EEA users
-being served both personalized and non-personalized adverts before showing them. For more information, see
-[Obtaining Consent with the User Messaging Platform](https://developers.google.com/admob/ump/android/quick-start).
+It is up to the developer to implement and handle this on a user-by-user basis. Under Google's EU User Consent
+Policy, you must obtain consent from users in the European Economic Area (EEA), the UK, and Switzerland to use
+cookies or other local storage where legally required, and to use personal data to serve ads. For more information,
+see Google's User Messaging Platform guides for [Android](https://developers.google.com/admob/android/privacy) and
+[iOS](https://developers.google.com/admob/ios/privacy).
 
 The AdMob module provides a `AdsConsent` helper to help developers quickly implement consent flows within their application.
 See the [European User Consent page](/european-user-consent) for full examples of how to integrate the helper into your application.
@@ -26,7 +28,11 @@ To request the App Tracking Transparency authorization we recommend using a libr
 <TabItem value="bare">
 
 ```js
+import mobileAds, { AdsConsent } from 'react-native-google-mobile-ads';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+
+// Gather UMP consent first; see the European User Consent page.
+const { canRequestAds } = await AdsConsent.gatherConsent();
 
 const result = await check(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
 if (result === RESULTS.DENIED) {
@@ -34,9 +40,10 @@ if (result === RESULTS.DENIED) {
   await request(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
 }
 
-const adapterStatuses = await mobileAds().initialize();
-
-// Now ads can be loaded.
+if (canRequestAds) {
+  const adapterStatuses = await mobileAds().initialize();
+  // Now ads can be loaded.
+}
 ```
 
 </TabItem>
@@ -48,15 +55,20 @@ import {
   PermissionStatus,
   requestTrackingPermissionsAsync,
 } from 'expo-tracking-transparency';
+import mobileAds, { AdsConsent } from 'react-native-google-mobile-ads';
+
+// Gather UMP consent first; see the European User Consent page.
+const { canRequestAds } = await AdsConsent.gatherConsent();
 
 const { status } = await getTrackingPermissionsAsync();
 if (status === PermissionStatus.UNDETERMINED) {
   await requestTrackingPermissionsAsync();
 }
 
-const adapterStatuses = await mobileAds().initialize();
-
-// Now ads can be loaded.
+if (canRequestAds) {
+  const adapterStatuses = await mobileAds().initialize();
+  // Now ads can be loaded.
+}
 ```
 
 </TabItem>

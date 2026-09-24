@@ -82,6 +82,8 @@ function App() {
     });
     const unsubscribeClosed = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
       setLoaded(false);
+      // Preload the next ad on the same instance.
+      rewarded.load();
     });
 
     // Start loading the rewarded ad straight away
@@ -124,7 +126,8 @@ advert action. An additional `reward` payload is sent with the event, containing
 
 To learn more, view the [`RewardedAdEventType`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/RewardedAdEventType.ts) source code.
 
-If needed, you can reuse the existing instance of the `RewardedAd` class to load more adverts and show them when required.
+The sample reuses the same `RewardedAd` instance: after `CLOSED`, it calls `load()` again so the next
+advert is ready when the user next opts in.
 Forward `AdEventType.PAID` payloads to your
 [revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.
 

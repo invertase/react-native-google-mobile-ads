@@ -42,12 +42,12 @@
       "pages": [
         { "title": "Getting Started", "href": "/" },
         { "title": "Prerequisites", "href": "/prerequisites" },
-        { "title": "Installation — Expo", "href": "/installation/expo" },
-        { "title": "Installation — React Native CLI", "href": "/installation/react-native" },
+        { "title": "Install with Expo", "href": "/installation/expo" },
+        { "title": "Install with React Native CLI", "href": "/installation/react-native" },
         { "title": "Configuration", "href": "/configuration" },
         { "title": "Using with React Native Firebase", "href": "/firebase" },
-        { "title": "Initializing the SDK", "href": "/initialization" },
         { "title": "Consent & privacy basics", "href": "/consent-basics" },
+        { "title": "Initializing the SDK", "href": "/initialization" },
         { "title": "Show your first ad", "href": "/first-ad" }
       ]
     },
@@ -90,7 +90,10 @@
       "icon": "bug",
       "pages": [
         { "title": "Testing", "href": "/testing" },
-        { "title": "Ads not showing", "href": "/common-reasons-for-ads-not-showing" },
+        {
+          "title": "Common reasons ads do not show",
+          "href": "/common-reasons-for-ads-not-showing"
+        },
         { "title": "Ad Inspector", "href": "/ad-inspector" }
       ]
     },

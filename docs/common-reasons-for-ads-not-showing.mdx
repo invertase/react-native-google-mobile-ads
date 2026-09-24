@@ -42,6 +42,7 @@ mismatches, floors, and missing publisher data.
 For fullscreen hooks:
 
 ```ts
+import { useEffect } from 'react';
 import { TestIds, useInterstitialAd } from 'react-native-google-mobile-ads';
 
 export function useDiagnosedInterstitial() {
@@ -49,11 +50,13 @@ export function useDiagnosedInterstitial() {
     adUnitId: TestIds.INTERSTITIAL,
   });
 
-  if (ad.status === 'no-fill') {
-    console.info('No fill', ad.error.reason, ad.responseInfo?.responseId);
-  } else if (ad.status === 'error') {
-    console.error('Ad failed', ad.error.phase, ad.error.reason, ad.error.responseInfo);
-  }
+  useEffect(() => {
+    if (ad.status === 'no-fill') {
+      console.info('No fill', ad.error?.reason, ad.responseInfo?.responseId);
+    } else if (ad.status === 'error') {
+      console.error('Ad failed', ad.error?.phase, ad.error?.reason, ad.error?.responseInfo);
+    }
+  }, [ad.status, ad.error, ad.responseInfo]);
 
   return ad;
 }

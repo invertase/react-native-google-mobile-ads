@@ -59,7 +59,9 @@
  *   a slow create.
  * - Two `usePooledAd` instances sharing a depth-1 display pool can starve each other. Give each
  *   placement an id or centralize polling.
- * - Never destroy hook-owned inventory. Call `release()` first when ownership must leave a hook.
+ * - Never destroy hook-owned inventory. With `usePooledAd` or `useMultiFormatAd`, call `release()`
+ *   first when ownership must leave the hook; other hooks keep ownership, so use the hook's own
+ *   `destroy()`.
  * - Options-form fullscreen hooks intentionally remain `idle` when `autoLoad` is false or
  *   `adUnitId` is null.
  * - Automatic fullscreen loading does not warm the next ad after `closed`; call `load()` when

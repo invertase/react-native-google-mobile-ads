@@ -4,7 +4,8 @@
 
 ## Primary guidance
 
-- [Integrator instructions](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/AGENTS.md)
+- [Integrator instructions](https://raw.githubusercontent.com/invertase/react-native-google-mobile-ads/main/packages/core/AGENTS.md)
 - [Documentation](https://docs.page/invertase/react-native-google-mobile-ads)
+- [Documentation llms.txt](https://docs.page/invertase/react-native-google-mobile-ads/llms.txt)
 - [Generated API reference](https://invertase.github.io/react-native-google-mobile-ads/)
 - [Source repository](https://github.com/invertase/react-native-google-mobile-ads)

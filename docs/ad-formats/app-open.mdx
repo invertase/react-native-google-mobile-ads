@@ -130,8 +130,8 @@ Android Next-Gen SDK-managed app open preloader is not yet supported.
 ### Without hooks
 
 Outside React, create the ad with `AppOpenAd.createForAdRequest(adUnitId)`, listen for
-`AdEventType.LOADED`, `AdEventType.CLOSED`, and `AdEventType.ERROR`, record when loading finished,
-and call `appOpenAd.show().catch(...)` only while the ad is less than four hours old. Not
+`AdEventType.LOADED`, `AdEventType.CLOSED`, and `AdEventType.ERROR`, record when the ad was requested
+or loaded, and call `appOpenAd.show().catch(...)` only while the ad is less than four hours old. Not
 loaded, already showing, and platform declines reject the returned promise; a destroyed ad or
 invalid `showOptions` throw synchronously (a programmer error to fix at the call site). Create a new instance for each
 impression, and send `AdEventType.PAID` payloads to your
@@ -139,9 +139,10 @@ impression, and send `AdEventType.PAID` payloads to your
 
 ## Consider ad expiration
 
-Google's published app open guidance uses a four-hour freshness window. `useAppOpenAdManager`
-enforces it for you. If you manage `AppOpenAd` yourself, record when loading completes and request a
-replacement instead of showing older inventory. If you use preload pools, the handed-out object
+Google's app open guidance says an ad rendered more than four hours after its request is no longer
+valid. `useAppOpenAdManager` enforces that window for you. If you manage `AppOpenAd` yourself, record
+when the ad was requested or loaded (Google's sample records load time) and request a replacement
+instead of showing older inventory. If you use preload pools, the handed-out object
 applies the same default through `isStaleByPolicy()`.
 
 ## Cold starts and loading screens

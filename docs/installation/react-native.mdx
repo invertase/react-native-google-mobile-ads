@@ -1,13 +1,13 @@
 ---
-title: Installation - React Native CLI
+title: Install with React Native CLI
 description: Install and configure React Native Google Mobile Ads in a bare React Native project via autolinking and app.json.
 ---
 
-# Installation — React Native CLI
+# Install with React Native CLI
 
 This page is for **bare** React Native CLI projects (no Expo managed workflow).
 
-**Prefer Expo?** Start with [Installation — Expo](/installation/expo) (Expo + a development build) —
+**Prefer Expo?** Start with [Install with Expo](/installation/expo) (Expo + a development build) —
 that is the recommended default path.
 
 On bare React Native, the library **autolinks**. You configure AdMob App IDs in root `app.json`
@@ -43,7 +43,7 @@ second copy in native project files.
 <Warning>
   If `android_app_id` / `ios_app_id` are missing from that block, native build scripts warn and the
   Google Mobile Ads SDK can crash on startup. (Expo apps that set IDs only on the config plugin can
-  ignore the same warning — see [Installation — Expo](/installation/expo).)
+  ignore the same warning — see [Install with Expo](/installation/expo).)
 </Warning>
 
 For the changes to take effect, rebuild your project:
@@ -73,7 +73,7 @@ another dependency intentionally needs `use_frameworks! :linkage => :static` in 
 The podspec defaults to `static_framework = false`. On **bare**, when you do enable static
 frameworks, set `$RNGoogleMobileAdsAsStaticFramework = true` in the `Podfile` **before** any target
 block (Expo uses `expo-build-properties` instead — see
-[Installation — Expo](/installation/expo#optionally-configure-ios-static-frameworks)):
+[Install with Expo](/installation/expo#optionally-configure-ios-static-frameworks)):
 
 ```ruby
 $RNGoogleMobileAdsAsStaticFramework = true
@@ -84,7 +84,7 @@ $RNGoogleMobileAdsAsStaticFramework = true
 The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google
 and participating third-party buyers attribute an app install even when the IDFA is not available.
 Add the advised
-[SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks)
+[SKAdNetwork identifiers](https://developers.google.com/admob/ios/3p-skadnetworks)
 to your project as described below. Note that these identifiers are subject to change and should be
 updated regularly.
 

@@ -65,8 +65,7 @@ export type UseMultiFormatAdOptions = MultiFormatAdConfig & {
  * sampled when `load` runs (a ref updated each render), so a fresh inline
  * object each render — including `MultiFormatAdPresets.*(...)` called in the
  * render body — does not change `load`'s identity or re-fire an effect that
- * depends only on `[load]`. See the v17 reference "Callback identity and
- * argument freshness".
+ * depends only on `[load]`.
  */
 type UseMultiFormatAdResultBase = {
   /**
@@ -257,6 +256,7 @@ function configError(message: string): AdError {
  *
  * if (result.status === 'no-fill') return <Text onPress={result.retry}>Try again</Text>;
  * if (result.status === 'error') return <Text>{result.errors[0]?.reason}</Text>;
+ * if (result.status === 'stale-by-policy') return <Text onPress={result.retry}>Refresh</Text>;
  * const winner = result.ads[0];
  * return winner?.format === AdFormat.BANNER
  *   ? <MultiFormatBannerAdView handle={winner} />

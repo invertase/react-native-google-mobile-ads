@@ -31,9 +31,9 @@ Enable New Architecture in your app (or remove an explicit old-architecture opt-
 installing pods / building Android.
 
 <Info>
-  On React Native 0.82 and newer, some Android host setups may ignore `newArchEnabled=false` while
-  iOS still hard-fails an explicit Legacy Architecture opt-out. Treat New Architecture as mandatory
-  on both platforms — do not rely on the Legacy Architecture path.
+  React Native 0.82 and newer may ignore `newArchEnabled=false` for its own build, but this module's
+  Gradle build still fails whenever `newArchEnabled` is present and not `true`. Treat New
+  Architecture as mandatory on both platforms — do not rely on the Legacy Architecture path.
 </Info>
 
 ### Android host notes

@@ -50,7 +50,7 @@ Add your AdMob App IDs to the config plugin in `app.json`, then create a [develo
 }
 ```
 
-Next: gather consent, initialize the SDK and show your first ad by following [Getting Started](https://docs.page/invertase/react-native-google-mobile-ads). Bare React Native CLI projects start at [Installation — React Native CLI](https://docs.page/invertase/react-native-google-mobile-ads/installation/react-native).
+Next: gather consent, initialize the SDK and show your first ad by following [Getting Started](https://docs.page/invertase/react-native-google-mobile-ads). Bare React Native CLI projects start at [Install with React Native CLI](https://docs.page/invertase/react-native-google-mobile-ads/installation/react-native).
 
 ## Ad formats
 
@@ -173,7 +173,7 @@ Fabric component; the port does not change the JavaScript API.
 ## Documentation
 
 - [Getting Started](https://docs.page/invertase/react-native-google-mobile-ads): the integration path from install to first ad
-- Installation: [Expo (recommended)](https://docs.page/invertase/react-native-google-mobile-ads/installation/expo) or [React Native CLI](https://docs.page/invertase/react-native-google-mobile-ads/installation/react-native)
+- [Install with Expo](https://docs.page/invertase/react-native-google-mobile-ads/installation/expo) (recommended) or [Install with React Native CLI](https://docs.page/invertase/react-native-google-mobile-ads/installation/react-native)
 - [Ad formats](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats), including [React hooks](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/hooks) and [Google Ad Manager](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/ad-manager)
 - [Consent & privacy](https://docs.page/invertase/react-native-google-mobile-ads/consent-basics)
 - [Testing](https://docs.page/invertase/react-native-google-mobile-ads/testing) and [Common reasons ads do not show](https://docs.page/invertase/react-native-google-mobile-ads/common-reasons-for-ads-not-showing)

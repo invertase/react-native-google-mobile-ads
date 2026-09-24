@@ -1,9 +1,9 @@
 ---
-title: Installation - Expo
+title: Install with Expo
 description: Install and configure React Native Google Mobile Ads in an Expo project using the config plugin and a development build.
 ---
 
-# Installation — Expo
+# Install with Expo
 
 **Start here: Expo + a development build.** This is the recommended install path for most apps.
 
@@ -12,7 +12,7 @@ This module contains custom native code and is **not** supported by Expo Go. You
 [`expo-dev-client`](https://docs.expo.dev/develop/development-builds/introduction/) and/or
 [EAS Build](https://docs.expo.dev/build/introduction/).
 
-Bare React Native CLI projects: see [Installation — React Native CLI](/installation/react-native).
+Bare React Native CLI projects: see [Install with React Native CLI](/installation/react-native).
 
 ## 1. Install the package
 
@@ -86,11 +86,13 @@ If you use EAS instead of local `run:*`, create a new development build (EAS run
 the build):
 
 ```bash
+npm install --global eas-cli
+
 # Online
-npx eas build --profile development
+eas build --profile development
 
 # Local
-npx eas build --profile development --local
+eas build --profile development --local
 ```
 
 Re-run prebuild (or create a new EAS build) whenever you change App IDs or other plugin options.
@@ -100,7 +102,7 @@ Re-run prebuild (or create a new EAS build) whenever you change App IDs or other
 The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google
 and participating third-party buyers attribute an app install even when the IDFA is not available.
 Add the advised
-[SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks)
+[SKAdNetwork identifiers](https://developers.google.com/admob/ios/3p-skadnetworks)
 to your project as described below. Note that these identifiers are subject to change and should be
 updated regularly.
 

@@ -104,23 +104,63 @@ do not grant a reward merely because the ad opened. Configure and verify
 ### Rewarded interstitial
 
 ```tsx
-import { Button } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Button, Text, View } from 'react-native';
 import { TestIds, useRewardedInterstitialAd } from 'react-native-google-mobile-ads';
 
-export default function RewardedInterstitialButton() {
+export default function RewardedInterstitialIntro({
+  onContinue,
+}: {
+  onContinue: (earnedReward: boolean) => void;
+}) {
+  const [introVisible, setIntroVisible] = useState(false);
   const { status, show, earnedReward } = useRewardedInterstitialAd({
     adUnitId: TestIds.REWARDED_INTERSTITIAL,
   });
 
+  // Move on once when the ad is dismissed, passing whether the reward was earned.
+  const latest = useRef({ onContinue, earnedReward });
+  latest.current = { onContinue, earnedReward };
+  useEffect(() => {
+    if (status === 'closed') {
+      latest.current.onContinue(latest.current.earnedReward);
+    }
+  }, [status]);
+
+  if (introVisible) {
+    return (
+      <View>
+        <Text>Watch a short ad to earn 50 coins?</Text>
+        <Button
+          title="Watch ad"
+          onPress={() => {
+            setIntroVisible(false);
+            show();
+          }}
+        />
+        <Button
+          title="Skip"
+          onPress={() => {
+            setIntroVisible(false);
+            onContinue(false);
+          }}
+        />
+      </View>
+    );
+  }
+
   return (
     <Button
-      title={earnedReward ? 'Reward earned' : 'Continue'}
-      disabled={status !== 'loaded'}
-      onPress={() => show()}
+      title="Continue"
+      onPress={() => (status === 'loaded' ? setIntroVisible(true) : onContinue(false))}
     />
   );
 }
 ```
+
+Google requires an intro screen with clear reward messaging and an option to skip before a
+rewarded interstitial starts; see
+[Rewarded interstitial ads](/ad-formats/rewarded-interstitial).
 
 The rewarded interstitial hook works on Android and iOS. Pool-based warming for this format is
 unavailable on both Android backends (classic and Next-Gen); that pool limitation does not apply to this

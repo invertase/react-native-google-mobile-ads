@@ -24,7 +24,7 @@ Use `mobileAds()` (not a capital-`MobileAds()` constructor). Prefer the v17 **op
 | App open ads on cold-start loading screen + warm foreground | `useAppOpenAdManager` (`showAdIfAvailable()`; 4-hour freshness). Consent gate is `adUnitId: consentReady ? unitId : null` (or not mounting), **not** `autoLoad`: `showAdIfAvailable()` and warm foreground load even with `autoLoad: false`. Warm-foreground auto-show fires on any RN `background` → `active` (on Android this can include returning from another fullscreen ad), so also pass `null` while other fullscreen ads may show |
 | One native ad owned by a component | `useNativeAd` + `<NativeAdView>` |
 | Keep fullscreen inventory warm; poll at show time | Preload pools: `AdPoolPresets.fullscreen` + `AdPoolProvider` / `usePooledAd`, or `AdPools.create` |
-| Keep display (banner/native) inventory warm | `AdPoolPresets.display` + provider / `usePooledAd` (depth 1 / emulated preload today). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob `ca-app-pub-…` units hard-error |
+| Keep display (banner/native) inventory warm | `AdPoolPresets.display` + provider / `usePooledAd` (emulated, depth 1; see `resolved.degradeReasons`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob `ca-app-pub-…` units hard-error |
 | One request, native **or** banner winner | `useMultiFormatAd` or `MultiFormatAdRequest` (+ `MultiFormatAdPresets.nativeOrBanner`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob units hard-error |
 | Register test devices | Emulators / simulators are automatic on every backend. Physical devices: copy the hashed id the SDK logs (logcat / Xcode console) into `testDeviceIdentifiers`. `TestDeviceIds.EMULATOR` is a classic-Android-only alias |
 | Ask what this binary supports | `getAdCapabilities()` (prefer presets over hand-rolled matrices) |
@@ -56,7 +56,7 @@ For pools: `AdPools.create` initializes the SDK on Android and starts preloading
 
 **`destroy()` / pool `release()` ownership**
 
-- Options-form fullscreen hooks **own** the ad. Do not `destroy()` inventory the hook still owns if you need a consistent `status`. Call `destroy()` to reset to a fresh idle instance (does not auto-load), or leave cleanup to unmount.
+- Options-form fullscreen hooks **own** the ad and never hand it out. Use the hook's own `destroy()` to reset to a fresh idle instance (does not auto-load), or leave cleanup to unmount. These hooks have no `release()`.
 - Pool / multi-format hooks (`usePooledAd`, `useMultiFormatAd`): call **`release()`** before you `destroy()` yourself or if the ad must outlive the hook. After `release()`, **you** own `destroy()` and staleness. Pool `destroy()` does not tear down ads already polled out.
 - Imperative `AdPools.create` / `MultiFormatAdRequest.load` callers own `destroy()` themselves.
 
@@ -68,14 +68,14 @@ Base: `https://docs.page/invertase/react-native-google-mobile-ads`
 
 | Area | Paths |
 | ---- | ----- |
-| Getting Started | `/`, `/prerequisites`, `/installation/expo`, `/installation/react-native`, `/configuration`, `/firebase`, `/initialization`, `/consent-basics`, `/first-ad` |
+| Getting Started | `/`, `/prerequisites`, `/installation/expo`, `/installation/react-native`, `/configuration`, `/firebase`, `/consent-basics`, `/initialization`, `/first-ad` |
 | Ad formats | `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,hooks,ad-manager}` |
-| Advanced | `/preload-pools-and-multiformat-recipes`, `/mediation`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control` |
+| Advanced | `/preload-pools-and-multiformat-recipes`, `/next-gen-sdk`, `/mediation`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control` |
 | Testing | `/testing`, `/common-reasons-for-ads-not-showing`, `/ad-inspector` |
 | Reference | External [Reference API](https://invertase.github.io/react-native-google-mobile-ads/), `/config-plugin`, `/ai-agents` |
 | Migration | `/migrating-to-v17` (and older `/migrating-to-v{15,6,5}`) |
 
-Old paths `/displaying-ads`, `/displaying-ads-hook`, `/native-ads` redirect; prefer the `/ad-formats/*` URLs above.
+Use the paths above. `/displaying-ads`, `/displaying-ads-hook`, and `/native-ads` are retired routes; their content lives under `/ad-formats/*`.
 
 ---
 
@@ -85,16 +85,9 @@ File on [GitHub Issues](https://github.com/invertase/react-native-google-mobile-
 
 **Always attach:** RN / Expo SDK versions, `react-native-google-mobile-ads` version, iOS/Android, New Architecture on (required), ad unit type, whether test IDs / test devices were used, and a **minimal reproduction** (smallest app or Snack/repo that shows the bug).
 
-**Diagnostics dump** (from [Migrating to v17](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17)):
+**Diagnostics dump:** attach the per-bug-kind details (Ad Inspector outcome, summarized `ResponseInfo`, `getAdCapabilities()` output, structured error fields) listed in [Migrating to v17 § Diagnostics dump for issue reports](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17#diagnostics-dump-for-issue-reports).
 
-| Kind of bug | Include |
-| ----------- | ------- |
-| Classic load / show / fill | [Ad Inspector](https://docs.page/invertase/react-native-google-mobile-ads/ad-inspector) outcome, ad unit, test device, platform SDK version |
-| Auction / mediation mix | Summarized load-time `ResponseInfo` |
-| Pools / multi-format / preload | `JSON.stringify(getAdCapabilities(), null, 2)` |
-| Structured error handling | `reason`, `phase`, `code`, `message`, and whether `responseInfo` was present |
-
-Rule out config first: [Ads not showing](https://docs.page/invertase/react-native-google-mobile-ads/common-reasons-for-ads-not-showing), [Testing](https://docs.page/invertase/react-native-google-mobile-ads/testing).
+Rule out config first: [Common reasons ads do not show](https://docs.page/invertase/react-native-google-mobile-ads/common-reasons-for-ads-not-showing), [Testing](https://docs.page/invertase/react-native-google-mobile-ads/testing).
 
 ---
 
@@ -106,4 +99,8 @@ Google publishes **native** Google Mobile Ads agent skills (not React Native):
 - Install: `npx skills add google/skills/skills/ads`
 - Docs: [iOS agent skills](https://developers.google.com/admob/ios/agent-skills), [Android / Next-Gen agent skills](https://developers.google.com/admob/android/next-gen/agent-skills)
 
-**Caveat:** those skills target the **native** Android/iOS (and Next-Gen) SDKs. This package is a **React Native layer** over those SDKs. Verify every upstream tip against this library’s public JS API and these docs before applying it. When unsure, prefer this file and [docs.page](https://docs.page/invertase/react-native-google-mobile-ads). Official product docs: [developers.google.com/admob](https://developers.google.com/admob).
+**Caveats:**
+
+- Those skills target the **native** Android/iOS (and Next-Gen) SDKs. This package is a **React Native layer** over those SDKs. Verify every upstream tip against this library’s public JS API and these docs before applying it. When unsure, prefer this file and [docs.page](https://docs.page/invertase/react-native-google-mobile-ads). Official product docs: [developers.google.com/admob](https://developers.google.com/admob).
+- Do not apply native SDK migration skills (for example `google-mobile-ads-android-migrate-to-next-gen`) to a React Native app. This library selects classic or Next-Gen Android at build time; switching is a config option, not a native code rewrite. See [GMA Next-Gen SDK (Android)](https://docs.page/invertase/react-native-google-mobile-ads/next-gen-sdk). This package ships no migrate-to-Next-Gen skill of its own.
+- The install command also adds skills unrelated to Google Mobile Ads (Google Ads API, Data Manager API, IMA SDK). Ignore them for ad integration.

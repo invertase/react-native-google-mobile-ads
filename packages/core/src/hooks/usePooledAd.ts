@@ -32,7 +32,7 @@ import { useAdPool, type UseAdPoolStatus } from './useAdPool';
  * instance, so listing them in a dependency array does not re-run the effect
  * or callback that depends on them. `poolId` is sampled when `poll` runs (ref
  * updated each render): a new string on a later render does not change `poll`'s
- * identity. See the v17 reference "Callback identity and argument freshness".
+ * identity.
  */
 type UsePooledAdResultBase = {
   poolStatus: UseAdPoolStatus;
