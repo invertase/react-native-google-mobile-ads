@@ -5,14 +5,42 @@ description: Platform requirements and compatibility notes before installing Rea
 
 # Prerequisites & platform requirements
 
-Before installing, make sure your project meets the platform requirements. See [Migrating to v17](/migrating-to-v17) for
-the full v17 baseline.
+Before installing, confirm your project meets the platform baseline. The New Architecture is
+**required** — native installation fails when it is explicitly disabled. See
+[Migrating to v17](/migrating-to-v17) for the full v17 upgrade checklist.
+
+## Supported baseline
+
+| Requirement             | Floor                                                             |
+| ----------------------- | ----------------------------------------------------------------- |
+| React Native            | **0.86.0** or newer (`peerDependencies`: `react-native >=0.86.0`) |
+| New Architecture        | **Required** — Legacy Architecture is not supported               |
+| iOS deployment target   | **15.1** (`RNGoogleMobileAds.podspec`)                            |
+| Android `minSdkVersion` | **24** (`sdkVersions.android.minSdk` in package metadata)         |
+
+### New Architecture (required)
+
+v17 ships Turbo Modules and Fabric components only. If New Architecture is turned off,
+native install fails:
+
+- **iOS:** CocoaPods raises when `RCT_NEW_ARCH_ENABLED=0`.
+- **Android:** Gradle throws when `newArchEnabled` is set and is not `true` in
+  `android/gradle.properties`.
+
+Enable New Architecture in your app (or remove an explicit old-architecture opt-out) before
+installing pods / building Android.
 
 <Info>
-  This page will be expanded with the exact supported React Native version, New Architecture
-  requirement, and minimum iOS / Android versions. Until then, the authoritative baseline lives in
-  the project README and the [v17 migration guide](/migrating-to-v17).
+  On React Native 0.82 and newer, some Android host setups may ignore `newArchEnabled=false` while
+  iOS still hard-fails an explicit Legacy Architecture opt-out. Treat New Architecture as mandatory
+  on both platforms — do not rely on the Legacy Architecture path.
 </Info>
+
+### Android host notes
+
+The supported and tested Android host baseline uses compile / target API level **36** and Build
+Tools **36.0.0**. Standalone package builds use Android Gradle Plugin 8.6.0; the library does
+not enforce the host application's Android Gradle Plugin version.
 
 <Info>
   On Android, before releasing your app, you must select "Yes, my app contains ads" in the Google
