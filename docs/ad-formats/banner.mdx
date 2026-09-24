@@ -177,6 +177,21 @@ function App() {
 
 ## Caveats / limitations
 
+### Android: hybrid image+video banner creatives
+
+Some banner inventory is a **hybrid** creative (static image beside or above an in-banner video). Google's banner `AdView` renders that inside an embedded WebView. On Android, video halves historically could stay frozen after `onAdLoaded` until the user left the app and returned — the Activity leave+return cycle recreates the WebView surface / resume path.
+
+When the banner wrapper first has a non-zero size and is window-visible (including after load and on window-VISIBLE), this package:
+
+- **Classic GMA:** calls `BaseAdView.resume()`, which forwards into the embedded WebView — the same recovery path leave+return uses, without requiring a manual background/refocus workaround.
+- **Next-Gen GMA:** has no banner `AdView` pause/resume API. The package best-effort `requestLayout` / `invalidate`s the child view. That is **not** equivalent to leave+return and may not recover every hybrid video creative.
+
+If hybrid video still fails to paint after upgrading:
+
+1. Confirm the host `Activity` has **hardware acceleration** enabled. Google requires it for video in banner ad views ([Set up banner ads](https://developers.google.com/admob/android/banner#hardware_acceleration_for_video_ads)). Expo / React Native templates usually enable it globally; do not set `android:hardwareAccelerated="false"` on `MainActivity`.
+2. Confirm the banner has a real laid-out width and height before or when the creative loads (avoid mounting a 0×0 placeholder that never grows).
+3. Distinguish this from [native video in pagers](/native-ads#fullscreen-pagers-and-native-video) — that path uses `NativeMediaView` / `mediaContent`, not `<BannerAd>`.
+
 ### Banners inside scrolling content (iOS momentum)
 
 Banner creatives are rendered by the Google Mobile Ads SDK (typically a nested `WKWebView`). This package does **not** expose nested web-view scroll settings such as `decelerationRate` — the public `GADBannerView` / `GAMBannerView` APIs have no such knobs, so React Native `WebView` `decelerationRate` workarounds do not apply here.

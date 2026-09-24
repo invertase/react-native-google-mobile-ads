@@ -311,6 +311,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
                       ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(ad.getResponseInfo());
                   if (response != null) payload.putMap("responseInfo", response);
                   sendEvent(view, EVENT_AD_LOADED, payload);
+                  // Best-effort Next-Gen surface kick once presentable (#711; no pause/resume API).
+                  view.refreshBannerPresentation();
                 });
           }
 
