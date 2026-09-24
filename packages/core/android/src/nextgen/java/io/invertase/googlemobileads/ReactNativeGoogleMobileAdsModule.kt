@@ -274,6 +274,17 @@ class ReactNativeGoogleMobileAdsModule(
     }
   }
 
+  /**
+   * iOS-only GMA API (`audioSessionIsApplicationManaged`). No equivalent on
+   * ads-mobile-sdk 1.4.0 — TurboModule Spec requires a matching method.
+   * Intentionally does not queue on [NextGenMobileAdsGate]; there is nothing to apply.
+   */
+  @ReactMethod
+  @Suppress("UNUSED_PARAMETER")
+  fun setAudioSessionIsApplicationManaged(managed: Boolean) {
+    // no-op
+  }
+
   @ReactMethod
   fun registerWebView(
     viewTag: Double,

@@ -349,6 +349,11 @@ viewTag
 WebView
 WKWebView
 webview
+audioSessionIsApplicationManaged
+setAudioSessionIsApplicationManaged
+AVAudioSession
+AudioVideoManager
+Google-Mobile-Ads-SDK
 CPM
 subtree
 Bridgeless

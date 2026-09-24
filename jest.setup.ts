@@ -42,6 +42,7 @@ jest.doMock('react-native', () => {
             openDebugMenu: jest.fn(),
             setAppVolume: jest.fn(),
             setAppMuted: jest.fn(),
+            setAudioSessionIsApplicationManaged: jest.fn(),
             registerWebView: jest.fn(() => Promise.resolve()),
           };
         },

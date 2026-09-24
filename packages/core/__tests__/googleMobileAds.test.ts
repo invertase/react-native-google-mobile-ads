@@ -159,6 +159,14 @@ describe('Admob', function () {
         expect(RNGoogleMobileAdsModule.setAppMuted).toHaveBeenCalledTimes(1);
       });
 
+      it('does call native setAudioSessionIsApplicationManaged method', () => {
+        jest.clearAllMocks();
+        admob().setAudioSessionIsApplicationManaged(true);
+        expect(RNGoogleMobileAdsModule.setAudioSessionIsApplicationManaged).toHaveBeenCalledWith(
+          true,
+        );
+      });
+
       it('does call native registerWebView method', () => {
         jest.clearAllMocks();
         admob().registerWebView(42);
