@@ -186,20 +186,20 @@ describe('Google Mobile Ads Interstitial', function () {
     });
 
     describe('show', function () {
-      it('throws if showing before loaded', function () {
+      it('rejects if showing before loaded', async function () {
         const i = InterstitialAd.createForAdRequest('abc');
 
-        expect(() => i.show()).toThrow(
+        await expect(i.show()).rejects.toThrow(
           'The requested InterstitialAd has not loaded and could not be shown',
         );
       });
 
-      it('throws if show is requested twice before close/error', function () {
+      it('rejects if show is requested twice before close/error', async function () {
         const ad = InterstitialAd.createForAdRequest('abc');
         // @ts-ignore
         ad._handleAdEvent({ body: { type: AdEventType.LOADED } });
-        ad.show();
-        expect(() => ad.show()).toThrow('Show has already been requested');
+        void ad.show();
+        await expect(ad.show()).rejects.toThrow('Show has already been requested');
       });
 
       it('rethrows non-Error validation failures from show', function () {
@@ -251,11 +251,13 @@ describe('Google Mobile Ads Interstitial', function () {
         expect(ad.loaded).toBe(false);
       });
 
-      it('blocks load and show after destroy', function () {
+      it('blocks load and throws show after destroy', function () {
         const ad = InterstitialAd.createForAdRequest('abc');
         ad.destroy();
         ad.load();
         expect(NativeInterstitialModule.interstitialLoad).not.toHaveBeenCalled();
+        // Destroyed is use-after-free: show() throws synchronously (matching
+        // addAdEventListener), not a promise rejection. See MobileAd.show().
         expect(() => ad.show()).toThrow('has been destroyed');
       });
 
