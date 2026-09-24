@@ -25,13 +25,15 @@ concurrency:
 
 jobs:
   android:
-    name: Android
+    name: Android (${{ matrix.android-backend }})
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       EMULATOR_COMMAND: "-avd TestingAVD -noaudio -gpu swiftshader_indirect -camera-back none -no-snapshot -no-window -no-boot-anim -nojni -memory 2048 -timezone 'Europe/London' -cores 2"
       EMULATOR_EXECUTABLE: qemu-system-x86_64-headless
+      # classic | nextgen — drives example Gradle + Appium scripts (Q13.A / NG-5).
+      RNGMA_ANDROID_BACKEND: ${{ matrix.android-backend }}
     strategy:
       fail-fast: false
       matrix:
@@ -43,6 +45,8 @@ jobs:
         first-boot-delay: [600]
         # This is useful for benchmarking, do 0, 1, 2, etc (up to 256 max job-per-matrix limit) for averages
         iteration: [0]
+        # Dual Android SDK backends — classic default + Next-Gen opt-in (ads-mobile-sdk).
+        android-backend: [classic, nextgen]
     steps:
       - name: Liberate disk space
         uses: jlumbroso/free-disk-space@main
@@ -114,7 +118,12 @@ jobs:
           timeout_minutes: 15
           retry_wait_seconds: 60
           max_attempts: 3
-          command: yarn tests:android:build
+          command: |
+            if [ "${{ matrix.android-backend }}" = "nextgen" ]; then
+              yarn tests:android:build:nextgen
+            else
+              yarn tests:android:build
+            fi
 
         # This appears to be 'Cache Size: ~1230 MB (1290026823 B)' based on watching action logs
         # Repo limit is 10GB; branch caches are independent; branches may read default branch cache.
@@ -206,7 +215,11 @@ jobs:
             $ANDROID_HOME/platform-tools/adb logcat '*:D' > adb-log.txt &
             yarn tests:appium:drivers:install
             yarn tests:appium:drivers:verify
-            yarn tests:appium:android
+            if [ "${{ matrix.android-backend }}" = "nextgen" ]; then
+              yarn tests:appium:android:nextgen
+            else
+              yarn tests:appium:android
+            fi
 
       - uses: codecov/codecov-action@v5
         with:
@@ -216,5 +229,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: adb_logs
+          name: adb_logs-${{ matrix.android-backend }}-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.iteration }}
           path: adb-log.txt
