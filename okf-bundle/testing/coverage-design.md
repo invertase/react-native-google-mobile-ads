@@ -15,7 +15,7 @@ timestamp: 2026-09-04T00:00:00Z
 | Android JVM unit | The [canonical registry](agent-command-policy.md#canonical-registry) owns the neutral + backend-specific Robolectric layouts and the classic/Next-Gen commands. Run each command matching the touched backend; no Google auction/fill asserts. |
 | iOS XCTest unit | `yarn tests:ios:unit` — XCTest under `packages/core/ios/Tests/` (+ `RNGoogleMobileAdsUnitTests.xcodeproj`, which also compiles `RNGoogleMobileAdsOwnedMappers` for the lightweight harness) when that tree changed. Podspec `UnitTests` test_spec mirrors `ios/Tests/**`; owned mappers ship in the main pod `source_files`. A production extract into `RNGoogleMobileAds/*` (or `Common.mm` delegate) is **not** harness-only — [platform coverage](running-e2e.md#platform-coverage-gate-blocking) plugin/native still requires iOS Appium for that Diff. |
 | E2e | [local e2e](running-e2e.md#local-e2e-commands) when [platform coverage](running-e2e.md#platform-coverage-gate-blocking) requires it |
-| Native e2e (Jacoco / LLVM) | Published [`react-native-coverage@0.2.0`](https://www.npmjs.com/package/react-native-coverage) in the **example harness only** (Pattern C). See [§ native agent collection](#native-agent-collection). |
+| Native e2e (Jacoco / LLVM) | Published [`react-native-coverage@0.2.2`](https://www.npmjs.com/package/react-native-coverage) in the **example harness only** (Pattern C). See [§ native agent collection](#native-agent-collection). |
 
 CI Codecov: Jest + e2e jobs. Review signal = **touched files**.
 
@@ -27,7 +27,7 @@ Consume the **published** package — do **not** copy RNFB coverage scripts into
 
 | Piece | Location / role |
 |-------|-----------------|
-| Dep | `RNGoogleMobileAdsExample` → `react-native-coverage@0.2.0` (TurboModule autolinks; New Arch only) |
+| Dep | `RNGoogleMobileAdsExample` → `react-native-coverage@0.2.2` (TurboModule autolinks; New Arch only) |
 | Probe TurboModule | Example-only `@invertase/rngma-testing` (`portal:./modules/rngma-testing`) → `NativeRNGMATesting` (Pattern C; not product). See [running-e2e § Appium](running-e2e.md#appium-scaffold). |
 | Config | `RNGoogleMobileAdsExample/react-native-coverage.config.js` (app ids, `RNGoogleMobileAds` / `react-native-google-mobile-ads` matchers; excludes Google GMA SDK) |
 | Android | Example `android/build.gradle` applies package `rn-coverage.gradle` + Jacoco report helper on RNTA `:app` |
