@@ -1,7 +1,7 @@
 {
   "name": "@react-native-google-mobile-ads/facebook",
   "version": "17.2.0",
-  "description": "Meta Audience Network (Facebook) Google Mobile Ads (GAM) mediation adapter for react-native-google-mobile-ads. Links the official Google mediation adapter on Android and iOS; does not add JS ad APIs.",
+  "description": "Meta Audience Network (Facebook) Google Mobile Ads (GAM) mediation adapter for react-native-google-mobile-ads. Links the official Google mediation adapter on Android and iOS, and exposes Meta privacy hooks (advertiser tracking / data-processing options) for use before GMA initialize.",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "license": "Apache-2.0",
   "repository": {
