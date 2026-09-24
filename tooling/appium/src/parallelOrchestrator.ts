@@ -8,7 +8,7 @@ import { IOS_WDA_RUNNER_APP_PATH } from './hostPreflight.ts';
 import { serialAndroidApkPath } from './slots.ts';
 import {
   ANDROID_DEVICE_HARD_FAILURES,
-  IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS,
+  IOS_WORKER_STARTUP_TIMEOUT_MS,
   PROCESS_DRAIN_TIMEOUT_MS,
   StartupSupervisor,
   WORKER_STARTUP_TIMEOUT_MS,
@@ -357,7 +357,7 @@ async function runConcurrentPhase(
   const startup = new StartupSupervisor(
     plan.map(entry => entry.label),
     undefined,
-    platform === 'ios' ? IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS : undefined,
+    platform === 'ios' ? IOS_WORKER_STARTUP_TIMEOUT_MS : undefined,
   );
   startup.onFailure(() => void context.stopActive());
 
@@ -969,7 +969,7 @@ export async function runCombinedParallelE2e(
         // Combined parallel: Android remains on the serial 60s ceiling; only
         // iOS children receive the longer XCUITest contention allowance.
         defaultMs: WORKER_STARTUP_TIMEOUT_MS,
-        byPrefix: { 'ios:': IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS },
+        byPrefix: { 'ios:': IOS_WORKER_STARTUP_TIMEOUT_MS },
       },
     );
     startup.onFailure(() => void context.stopActive());
