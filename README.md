@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://docs.page/invertase/react-native-google-mobile-ads">
-    <img width="160px" src="./docs/img/logo_admob_192px.svg"><br/>
+    <img width="160px" src="https://raw.githubusercontent.com/invertase/react-native-google-mobile-ads/main/docs/img/logo_admob_192px.svg"><br/>
   </a>
   <h2 align="center">React Native Google Mobile Ads</h2>
 </p>
@@ -8,7 +8,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/react-native-google-mobile-ads"><img src="https://img.shields.io/npm/dm/react-native-google-mobile-ads.svg?style=flat-square" alt="NPM downloads"></a>
   <a href="https://www.npmjs.com/package/react-native-google-mobile-ads"><img src="https://img.shields.io/npm/v/react-native-google-mobile-ads.svg?style=flat-square" alt="NPM version"></a>
-  <a href="/LICENSE"><img src="https://img.shields.io/npm/l/react-native-google-mobile-ads.svg?style=flat-square" alt="License"></a>
+  <a href="https://github.com/invertase/react-native-google-mobile-ads/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/react-native-google-mobile-ads.svg?style=flat-square" alt="License"></a>
 </p>
 
 <p align="center">
@@ -19,16 +19,38 @@
 
 ---
 
-**React Native Google Mobile Ads** allows you to monetize your app with AdMob; a React Native wrapper around the native Google-Mobile-Ads SDKs for both iOS and Android.
+**React Native Google Mobile Ads** lets you monetize your app with Google AdMob or Google Ad Manager. It wraps the native Google Mobile Ads SDKs for iOS and Android.
 
-React Native Google Mobile Ads is built with three key principals in mind;
+- **Expo first**: install with `npx expo install` and configure through the bundled config plugin. Bare React Native CLI apps are fully supported.
+- **Every format**: app open, banner, native, interstitial, rewarded and rewarded interstitial, plus Ad Manager, consent (UMP) and mediation.
+- **React-friendly**: imperative ad classes, React hooks, and preload pools for apps that show many ads.
+- **Typed and tested**: written in TypeScript with a generated [API reference](https://invertase.github.io/react-native-google-mobile-ads/), and unit and end-to-end tested on both platforms.
 
-- 🧪 **Well tested**
-  - the module is extensively tested to >95% coverage (getting there after moving from react-native-firebase!)
-- 👁 **Well typed**
-  - first class support for Typescript included
-- 📄 **Well documented**
-  - full reference & installation documentation alongside detailed guides and FAQs
+## Quick start (Expo)
+
+```bash
+npx expo install react-native-google-mobile-ads expo-dev-client
+```
+
+Add your AdMob App IDs to the config plugin in `app.json`, then create a [development build](https://docs.expo.dev/develop/development-builds/introduction/) (the module does not run in Expo Go):
+
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+        }
+      ]
+    ]
+  }
+}
+```
+
+Next: gather consent, initialize the SDK and show your first ad by following [Getting Started](https://docs.page/invertase/react-native-google-mobile-ads). Bare React Native CLI projects start at [Installation — React Native CLI](https://docs.page/invertase/react-native-google-mobile-ads/installation/react-native).
 
 ## Ad formats
 
@@ -82,7 +104,7 @@ Banner (320x50), Large banner (320x100), Medium rectangle (300x250), full banner
 ### Native
 
 Native ads allow you to customize the look and feel of the ads that appear in your app.
-You decide how and where they're placed, so the layout is more consistent your app's design.
+You decide how and where they're placed, so the layout is more consistent with your app's design.
 
 <img width="300" src="https://developers.google.com/static/admob/images/format-native.svg" alt="Native">
 
@@ -106,8 +128,8 @@ AdMob rewarded ad units allow you to reward users with in-app items for interact
 
 ### Rewarded Interstitial
 
-Rewarded interstitial is a type of incentivized ad format that allows you offer rewards for ads that appear automatically during natural app transitions.
-Unlike rewarded ads, users aren't required to opt-in to view a rewarded interstitial.
+Rewarded interstitial is a type of incentivized ad format that allows you to offer rewards for ads that appear automatically during natural app transitions.
+Unlike rewarded ads, users don't opt in to view a rewarded interstitial, but Google requires an intro screen with clear reward messaging and an option to skip before the ad shows.
 
 <img width="300" src="https://developers.google.com/static/admob/images/format-rewarded-interstitial.svg" alt="Rewarded interstitial">
 
@@ -117,31 +139,54 @@ Unlike rewarded ads, users aren't required to opt-in to view a rewarded intersti
 
 Version 17 requires React Native 0.86.0 or newer with
 [the New Architecture](https://reactnative.dev/docs/the-new-architecture/landing-page)
-enabled. The Legacy Architecture is no longer supported. The minimum operating system
-versions remain **iOS 15.1** and **Android API level 24**.
-The current migration status of individual native surfaces is:
+enabled. The Legacy Architecture is no longer supported. Expo projects need a development
+build (Expo Go is not supported). The minimum operating system versions are **iOS 15.1** and
+**Android API level 24**. See [Prerequisites](https://docs.page/invertase/react-native-google-mobile-ads/prerequisites)
+for the full list.
 
-| Platform | Feature                                                                                                                                                        | Status      |
-| -------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------| ----------- |
-| iOS      | Mobile Ads SDK Methods (Turbo Native Module)                                                                                                                   | ✅ Complete |
-| iOS      | Banners (Fabric Native Component)                                                                                                                              | ✅ Complete |
-| iOS      | Full Screen Ads (Turbo Native Module)                                                                                                                          | ✅ Complete |
-| iOS      | Native Ads (Turbo Native Module, Fabric Native Component)                                                                                                      | ✅ Complete |
-| iOS      | User Messaging Platform (Turbo Native Module)                                                                                                                  | ✅ Complete |
-| iOS      | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do    |
-| iOS      | Revenue Precision Constants (Turbo Native Module)                                                                                                              | ✅ Complete |
-| Android  | Mobile Ads SDK Methods (Turbo Native Module)                                                                                                                   | ⏳ To-Do    |
-| Android  | Banners (Fabric Native Component)                                                                                                                              | ⏳ To-Do    |
-| Android  | Full Screen Ads (Turbo Native Module)                                                                                                                          | ⏳ To-Do    |
-| Android  | Native Ads (Turbo Native Module, Fabric Native Component)                                                                                                      | ✅ Complete |
-| Android  | User Messaging Platform (Turbo Native Module)                                                                                                                  | ⏳ To-Do    |
-| Android  | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do    |
-| Android  | Revenue Precision Constants (Turbo Native Module)                                                                                                              | ⏳ To-Do    |
+On Android you can choose the classic Google Mobile Ads SDK (default) or the
+[GMA Next-Gen SDK](https://developers.google.com/admob/android/next-gen/quick-start) at build
+time; the JavaScript API is the same either way. See
+[Android SDK backend](https://docs.page/invertase/react-native-google-mobile-ads/config-plugin#android-sdk-backend).
+
+### Native implementation status
+
+Every surface below works on the New Architecture. Surfaces marked To-Do still run through
+React Native's interoperability layer and have not yet been ported to a native Turbo Module or
+Fabric component; the port does not change the JavaScript API.
+
+| Platform | Feature                                                                                                                                                        | Status                                                        |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| iOS      | Mobile Ads SDK Methods (Turbo Native Module)                                                                                                                   | ✅ Complete                                                   |
+| iOS      | Banners (Fabric Native Component)                                                                                                                              | ✅ Complete                                                   |
+| iOS      | Full Screen Ads (Turbo Native Module)                                                                                                                          | ✅ Complete                                                   |
+| iOS      | Native Ads (Turbo Native Module, Fabric Native Component)                                                                                                      | ✅ Complete                                                   |
+| iOS      | User Messaging Platform (Turbo Native Module)                                                                                                                  | ✅ Complete                                                   |
+| iOS      | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do                                                      |
+| Android  | Mobile Ads SDK Methods (Turbo Native Module)                                                                                                                   | ⏳ To-Do                                                      |
+| Android  | Banners (Fabric Native Component)                                                                                                                              | 🟡 Partial: multi-format banner ported, standard banner To-Do |
+| Android  | Full Screen Ads (Turbo Native Module)                                                                                                                          | ⏳ To-Do                                                      |
+| Android  | Native Ads (Turbo Native Module, Fabric Native Component)                                                                                                      | ✅ Complete                                                   |
+| Android  | User Messaging Platform (Turbo Native Module)                                                                                                                  | ⏳ To-Do                                                      |
+| Android  | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do                                                      |
 
 ## Documentation
 
-- [Installation (Expo — recommended)](https://docs.page/invertase/react-native-google-mobile-ads/installation/expo)
-- [Ad formats](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats)
+- [Getting Started](https://docs.page/invertase/react-native-google-mobile-ads): the integration path from install to first ad
+- Installation: [Expo (recommended)](https://docs.page/invertase/react-native-google-mobile-ads/installation/expo) or [React Native CLI](https://docs.page/invertase/react-native-google-mobile-ads/installation/react-native)
+- [Ad formats](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats), including [React hooks](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/hooks) and [Google Ad Manager](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats/ad-manager)
+- [Consent & privacy](https://docs.page/invertase/react-native-google-mobile-ads/consent-basics)
+- [Testing](https://docs.page/invertase/react-native-google-mobile-ads/testing) and [Common reasons ads do not show](https://docs.page/invertase/react-native-google-mobile-ads/common-reasons-for-ads-not-showing)
+- [Using with React Native Firebase](https://docs.page/invertase/react-native-google-mobile-ads/firebase)
+- [Migrating to v17](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17)
+- [API reference](https://invertase.github.io/react-native-google-mobile-ads/)
+
+### For AI coding agents
+
+This package ships an integrator guide for coding agents at
+[`AGENTS.md`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/AGENTS.md)
+(also installed at `node_modules/react-native-google-mobile-ads/AGENTS.md`). Point your agent at it
+before it writes ad code. See [For AI agents](https://docs.page/invertase/react-native-google-mobile-ads/ai-agents).
 
 ## Contributing
 
@@ -152,7 +197,7 @@ The current migration status of individual native surfaces is:
 
 ## License
 
-- See [LICENSE](/LICENSE)
+- See [LICENSE](https://github.com/invertase/react-native-google-mobile-ads/blob/main/LICENSE)
 
 ---
 
