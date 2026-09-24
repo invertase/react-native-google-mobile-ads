@@ -99,6 +99,11 @@ export {
   type UseRewardedInterstitialAdResult,
 } from './hooks/useRewardedInterstitialAd';
 /* eslint-enable @typescript-eslint/no-deprecated */
+export {
+  useGAMInterstitialAd,
+  type UseGAMInterstitialAdOptions,
+  type UseGAMInterstitialAdResult,
+} from './hooks/useGAMInterstitialAd';
 export { useForeground } from './hooks/useForeground';
 export { AdPoolProvider, type AdPoolProviderProps } from './hooks/AdPoolProvider';
 export { useAdPool, type UseAdPoolResult, type UseAdPoolStatus } from './hooks/useAdPool';

@@ -439,6 +439,11 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'hook',
     'Jest drives deterministic AppState transitions and listener cleanup; device foreground timing is not asserted as an ad-success outcome.',
   ),
+  lower(
+    'useGAMInterstitialAd',
+    'hook',
+    'Jest owns options-form lifecycle parity with useInterstitialAd plus onAppEvent delivery; GAMInterstitialAd already has an e2e-outcome for the imperative Ad Manager interstitial path, and the example has no dedicated hook screen yet.',
+  ),
   outcome('useInterstitialAd', 'hook', {
     contractId: AppiumTestIds.format.interstitialHook,
     exampleComponent: 'InterstitialHookFormat',
