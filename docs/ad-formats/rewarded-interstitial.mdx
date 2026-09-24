@@ -12,6 +12,18 @@ The purpose of a rewarded interstitial ad is to reward users with _something_ af
 as watching a video or submitting an option via an interactive form. If the user completes the action, you can reward them
 with something (e.g. in-game currency). Unlike rewarded ads, users aren't required to opt-in to view a rewarded interstitial.
 
+<img
+  width="300"
+  src="https://developers.google.com/static/admob/images/format-rewarded-interstitial.svg"
+  alt="Rewarded interstitial ad shown at a natural transition"
+/>
+
+<Warning>
+  Complete consent and SDK initialization before calling `load()`. See [Consent & privacy
+  basics](/consent-basics) and the shared [load best
+  practices](/ad-formats#load-and-refresh-best-practices).
+</Warning>
+
 To create a new rewarded interstitial ad, call the `createForAdRequest` method from the `RewardedInterstitialAd` class. The first argument
 of the method is the "Ad Unit ID". For testing, we can use a Test ID, however for production the ID from the
 Google AdMob dashboard under "Ad units" should be used:
@@ -42,6 +54,7 @@ To listen to events, such as when the advert from the network has loaded or when
 import React, { useEffect, useState } from 'react';
 import { Button } from 'react-native';
 import {
+  AdEventType,
   RewardedInterstitialAd,
   RewardedAdEventType,
   TestIds,
@@ -71,6 +84,12 @@ function App() {
         console.log('User earned reward of ', reward);
       },
     );
+    const unsubscribePaid = rewardedInterstitial.addAdEventListener(AdEventType.PAID, event => {
+      console.log('Rewarded interstitial revenue', event.value, event.currency);
+    });
+    const unsubscribeClosed = rewardedInterstitial.addAdEventListener(AdEventType.CLOSED, () => {
+      setLoaded(false);
+    });
 
     // Start loading the rewarded interstitial ad straight away
     rewardedInterstitial.load();
@@ -79,6 +98,8 @@ function App() {
     return () => {
       unsubscribeLoaded();
       unsubscribeEarned();
+      unsubscribePaid();
+      unsubscribeClosed();
     };
   }, []);
 
@@ -110,6 +131,8 @@ advert action. An additional `reward` payload is sent with the event, containing
 To learn more, view the [`RewardedAdEventType`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/RewardedAdEventType.ts) source code.
 
 If needed, you can reuse the existing instance of the `RewardedInterstitialAd` class to load more adverts and show them when required.
+Forward `AdEventType.PAID` payloads to your
+[revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.
 
 ## Server-side verification (SSV)
 

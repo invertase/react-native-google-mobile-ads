@@ -1,6 +1,6 @@
 ---
 title: Banner ads
-description: Integrate component-based banner ads, including anchored adaptive and collapsible banners.
+description: Integrate fixed, anchored adaptive, inline adaptive, collapsible, and GAM banner ads.
 ---
 
 # Banner Ads (component)
@@ -9,18 +9,30 @@ Banner ads are partial adverts which can be integrated within your existing appl
 a Banner only takes up a limited area of the application and displays an advert within the area. This allows you to integrate
 adverts without a disruptive action.
 
+<img
+  width="200"
+  src="https://developers.google.com/static/admob/images/Android_adaptive.png"
+  alt="Anchored adaptive banner at the bottom of a mobile screen"
+/>
+
+<Warning>
+  Complete consent and SDK initialization before mounting a banner that can request an ad. See
+  [Consent & privacy basics](/consent-basics) and the shared [load best
+  practices](/ad-formats#load-and-refresh-best-practices).
+</Warning>
+
 The module exposes a [`BannerAd`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/ads/BannerAd.tsx) component. The `unitId` and `size` props are required to display
 a banner:
 
-```js
-import React, { useState, useRef } from 'react';
+```tsx
+import React, { useRef } from 'react';
 import { Platform } from 'react-native';
 import { BannerAd, BannerAdSize, TestIds, useForeground } from 'react-native-google-mobile-ads';
 
 const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 function App() {
-  const bannerRef = useRef < BannerAd > null;
+  const bannerRef = useRef<BannerAd>(null);
 
   // (iOS) WKWebView can terminate if app is in a "suspended state", resulting in an empty banner when app returns to foreground.
   // Therefore it's advised to "manually" request a new ad when the app is foregrounded (https://groups.google.com/g/google-admob-ads-sdk/c/rwBpqOUr8m8).
@@ -33,6 +45,9 @@ function App() {
       ref={bannerRef}
       unitId={adUnitId}
       size={BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER}
+      onPaid={event => {
+        console.log('Banner revenue', event.value, event.currency);
+      }}
     />
   );
 }
@@ -42,33 +57,93 @@ The `size` prop takes a [`BannerAdSize`](https://github.com/invertase/react-nati
 fill the space for the chosen size.
 
 <Info>
-  If no inventory for the size specified is available, an error will be thrown via
-  `onAdFailedToLoad`!
+  If no inventory for the requested size is available, `onAdFailedToLoad` receives the load error.
 </Info>
 
 The `requestOptions` prop is additional optional request options object to be sent whilst loading an advert, such as keywords & location.
 Setting additional request options helps AdMob choose better tailored ads from the network.
 View the [`RequestOptions`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestOptions.ts) documentation to view the full range of options available.
 
-The component also exposes props for listening to events, which you can use to handle the state of your app is the user
-or network triggers an event:
+The component also exposes props for listening to user, lifecycle, and revenue events:
 
 - `onAdClosed`
 - `onAdFailedToLoad`
-- `onAdLeftApplication`
 - `onAdOpened`
 - `onAdImpression`
 - `onAdClicked`
 - `onPaid` &mdash; On [impression-level ad revenue](https://support.google.com/admob/answer/11322405?hl=en) events.
 
-Each render of the component loads a single advert, allowing you to display multiple adverts at once. If you need to reload/change
-an advert for a currently mounted component, you'll need to force a re-render inside of your own code.
+Use `onPaid` to forward impression-level revenue to your telemetry pipeline. See
+[Impression-level ad revenue](/impression-level-ad-revenue) for the event shape.
 
-### Collapsible banner ads
+## Anchored and inline adaptive banners
+
+**Anchored adaptive** banners stay attached to the top or bottom of the screen. Use
+`LARGE_ANCHORED_ADAPTIVE_BANNER` for a persistent placement outside scrolling content.
+
+**Inline adaptive** banners belong inside a scroll view or feed. Their height varies with the
+creative and can be as tall as the device screen by default, so constrain the slot with
+`maxHeight` when your layout cannot accept that much vertical space:
+
+<img
+  width="600"
+  src="https://developers.google.com/static/admob/images/inline-adaptive.png"
+  alt="Inline adaptive banner examples at different widths and heights"
+/>
+
+```tsx
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+export default function FeedAd() {
+  return (
+    <BannerAd
+      unitId={TestIds.ADAPTIVE_BANNER}
+      size={BannerAdSize.INLINE_ADAPTIVE_BANNER}
+      maxHeight={250}
+      onPaid={event => {
+        console.log('Inline banner revenue', event.value, event.currency);
+      }}
+    />
+  );
+}
+```
+
+For the upstream layout guidance, see Google's
+[anchored adaptive](https://developers.google.com/admob/android/banner/anchored-adaptive) and
+[inline adaptive](https://developers.google.com/admob/android/banner/inline-adaptive) concepts.
+
+## Banner size catalog
+
+The public exports distinguish regular `BannerAdSize` values from the GAM-only
+`GAMBannerAdSize.FLUID` value.
+
+| Export                                        | Size or behavior                    | Use                                                                               |
+| :-------------------------------------------- | :---------------------------------- | :-------------------------------------------------------------------------------- |
+| `BannerAdSize.BANNER`                         | 320 × 50                            | Standard phone banner.                                                            |
+| `BannerAdSize.FULL_BANNER`                    | 468 × 60                            | Fixed full banner.                                                                |
+| `BannerAdSize.LARGE_BANNER`                   | 320 × 100                           | Fixed large phone banner.                                                         |
+| `BannerAdSize.LEADERBOARD`                    | 728 × 90                            | Fixed tablet banner.                                                              |
+| `BannerAdSize.MEDIUM_RECTANGLE`               | 300 × 250                           | Rectangle placement, often embedded in content.                                   |
+| `BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER` | Full width, adaptive height         | Preferred anchored adaptive placement.                                            |
+| `BannerAdSize.INLINE_ADAPTIVE_BANNER`         | Adaptive width and variable height  | Scrolling content; optionally constrain with `maxHeight`.                         |
+| `BannerAdSize.WIDE_SKYSCRAPER`                | 160 × 600                           | Mediation networks only; Google Mobile Ads network inventory does not support it. |
+| `BannerAdSize.ANCHORED_ADAPTIVE_BANNER`       | Full width, adaptive height         | Deprecated by this library; use `LARGE_ANCHORED_ADAPTIVE_BANNER`.                 |
+| `GAMBannerAdSize.FLUID`                       | Parent width, content-driven height | Google Ad Manager banners only; use `GAMBannerAd`, not the regular `BannerAd`.    |
+
+Custom dimensions such as `"300x200"` are also accepted, but inventory must exist for the
+requested size.
+
+## Collapsible banner ads
 
 Collapsible banner ads are banner ads that are initially presented as a larger overlay, with a button to collapse them to the originally requested banner size.
 Collapsible banner ads are intended to improve performance of anchored ads that are otherwise a smaller size.
 This guide shows how to turn on collapsible banner ads for existing banner placements.
+
+<img
+  width="400"
+  src="https://developers.google.com/static/admob/images/collapsible-banner.png"
+  alt="Expanded and collapsed states of a collapsible banner"
+/>
 
 ```js
 import React from 'react';
@@ -85,6 +160,9 @@ function App() {
         networkExtras: {
           collapsible: 'bottom',
         },
+      }}
+      onPaid={event => {
+        console.log('Collapsible banner revenue', event.value, event.currency);
       }}
     />
   );
