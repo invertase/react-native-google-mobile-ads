@@ -154,6 +154,40 @@ Forward `AdEventType.PAID` payloads to your
 
 ## Caveats / limitations
 
+On iOS, if the interstitial close control is hard to tap (especially on notched devices), see
+[iOS: interstitial close control unreachable (status bar / notch / creatives)](#ios-interstitial-close-control-unreachable-status-bar--notch--creatives).
+
+        // See "iOS: interstitial close control unreachable" below
+### iOS: interstitial close control unreachable (status bar / notch / creatives)
+
+On iOS, this package resolves a presenting `UIViewController` and calls Google's
+`GADInterstitialAd` / `GADRewardedAd` / `GADRewardedInterstitialAd` / `GADAppOpenAd`
+`presentFromRootViewController:`. It does **not** host the fullscreen creative, draw a close
+button, insert a touch overlay, or restyle AdMob chrome. Close controls, countdown / exit steps,
+and any stacked creative UI belong to the Google Mobile Ads SDK and the serving creative (including
+mediation partners).
+
+If taps on the close (X) control do nothing — especially on notched phones (for example iPhone 11 /
+12 / 13) where the control sits near the status bar — or you see **two** close icons stacked:
+
+1. Hide the React Native status bar while the ad is open (the example above uses
+   `StatusBar.setHidden(true)` on `OPENED` and restores it on `CLOSED`). A visible status bar can
+   sit over the creative's hit target even though the icon still draws.
+2. Confirm you are not keeping a React Native `Modal`, absolute-positioned view, toast, coachmark,
+   or Expo / system UI layer above the ad while it is presented. The SDK presents its own view
+   controller; package JS does not insert chrome on top of it.
+3. Distinguish this from unrelated tip fixes: NativeAsset Fabric recycle leaving
+   `userInteractionEnabled = NO` on **host** views after native ads (not interstitial close during
+   presentation), and fullscreen dismiss-recovery when `CLOSED` is skipped after a non-interactive
+   dismiss (touches dead **after** the ad is gone).
+4. Re-test on a current Google Mobile Ads iOS SDK (tip pin: `packages/core/package.json`
+   `sdkVersions.ios.googleMobileAds`) and with Google test units. Dual close chrome or a close
+   control that does not receive taps and only appears on some creatives is usually upstream
+   creative / mediation UI — capture SDK logs, device / OS, GMA SDK version, mediation adapters,
+   and whether [High-engagement ads](https://support.google.com/admob/answer/15525707) is enabled
+   under AdMob **App settings**, then escalate to Google. This React Native package cannot relocate
+   or force hit-testing on Google's close control.
+
 ### Android: host UI flicker after fullscreen dismiss
 
 After a normal close of an interstitial, app open, rewarded, or rewarded interstitial ad on Android, some apps see the
