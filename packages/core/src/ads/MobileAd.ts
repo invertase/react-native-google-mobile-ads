@@ -256,19 +256,52 @@ export abstract class MobileAd implements MobileAdInterface {
   }
 
   public show(showOptions?: AdShowOptions) {
+    // show() has a DELIBERATE two-channel error contract. This corner has been
+    // revisited several times and keeps tempting a "simplify everything to one
+    // channel" change — do NOT make that change again without first reading
+    // 8476fab (2026-09-18, which ratified the two channels and made the
+    // fullscreen hook press-safe, with dedicated tests) and recording a
+    // decision on Linear CPRN-347 (the v17 JS API freeze). It is a considered
+    // contract, not an oversight.
+    //
+    // The line is programmer error vs. attempt outcome:
+    //
+    //   THROW synchronously — a bug the caller must fix in code, surfaced loud
+    //   at the call site (dev redbox), NOT a runtime condition to handle:
+    //     • operating on a destroyed instance (use-after-free). This matches
+    //       the codebase-wide "destroyed throws" convention already shared by
+    //       addAdEventListener / addAdEventsListener here, on NativeAd, and on
+    //       PooledAd (see internal/pooledFullscreenAd.ts).
+    //     • structurally invalid show options (argument validation, below).
+    //
+    //   REJECT the returned promise — "the show did not happen" for reasons
+    //   that arise from ordinary UI timing (early tap, double tap) and share
+    //   ONE channel with a genuine platform decline, so a single .catch() (or
+    //   the AdEventType.ERROR event) covers all of them:
+    //     • not loaded yet, and
+    //     • a show already in flight.
+    //
+    // The fullscreen hooks' `show` is press-safe: it absorbs BOTH channels so
+    // an onPress={() => show()} is always a no-op on failure. The loud signal
+    // for a destroyed/misused ad is therefore preserved for direct imperative
+    // callers, which is exactly the audience it helps. See useFullScreenAd.ts.
     if (this._destroyed) {
       throw new Error(
         `${this._className}.show() The requested ${this._className} has been destroyed.`,
       );
     }
     if (!this._loaded) {
-      throw new Error(
-        `${this._className}.show() The requested ${this._className} has not loaded and could not be shown.`,
+      return Promise.reject(
+        new Error(
+          `${this._className}.show() The requested ${this._className} has not loaded and could not be shown.`,
+        ),
       );
     }
     if (this._showRequested) {
-      throw new Error(
-        `${this._className}.show() Show has already been requested for this ${this._className}.`,
+      return Promise.reject(
+        new Error(
+          `${this._className}.show() Show has already been requested for this ${this._className}.`,
+        ),
       );
     }
 

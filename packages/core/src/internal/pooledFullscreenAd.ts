@@ -209,8 +209,13 @@ export function createPooledFullscreenAd(
       return responseInfo;
     },
     show(showOptions?: AdShowOptions): Promise<void> {
+      // Same two-channel model as MobileAd.show() (read the long note there,
+      // and CPRN-347, before changing): a destroyed instance is use-after-free
+      // and THROWS synchronously — matching addAdEventListener /
+      // addAdEventsListener below — while "show already requested" is a
+      // transient outcome that REJECTS.
       if (destroyed) {
-        return Promise.reject(new Error('PooledAd.show() ad has been destroyed.'));
+        throw new Error('PooledAd.show() ad has been destroyed.');
       }
       if (showRequested) {
         return Promise.reject(new Error('PooledAd.show() Show has already been requested.'));

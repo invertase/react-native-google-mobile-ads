@@ -26,10 +26,10 @@ describe('Google Mobile Ads Rewarded', () => {
   });
 
   describe('show', () => {
-    it('throws if showing before loaded', () => {
+    it('rejects if showing before loaded', async () => {
       const ad = RewardedAd.createForAdRequest('abc');
 
-      expect(() => ad.show()).toThrow(
+      await expect(ad.show()).rejects.toThrow(
         'The requested RewardedAd has not loaded and could not be shown',
       );
     });
