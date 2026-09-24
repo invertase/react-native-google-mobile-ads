@@ -48,6 +48,14 @@ App ID for each platform — see [Configuration](/configuration) for where to fi
 
 Full plugin option reference: [Config plugin reference](/config-plugin).
 
+<Info>
+  **Single source for Expo App IDs:** put them on the config plugin only. You do **not** also need a
+  root-level `react-native-google-mobile-ads` JSON block with `ios_app_id` / `android_app_id`. The
+  plugin writes `GADApplicationIdentifier` / Android `APPLICATION_ID` during prebuild. A legacy
+  build-script warning about a missing root `ios_app_id` or `android_app_id` can still appear; it is
+  safe to ignore when the plugin already injected the IDs.
+</Info>
+
 ## 3. Add a development client (`expo-dev-client` / EAS)
 
 If you do not already have a development build workflow, install the Expo development client:
@@ -194,19 +202,21 @@ authorization at runtime.
 
 ## Optionally configure iOS static frameworks
 
-You may need static frameworks on iOS when pairing this module with other native libraries that
-require `use_frameworks!`. Expo users can enable static frameworks with the `expo-build-properties`
-plugin.
+This module does **not** require static frameworks for a normal Expo install. Use them only when
+another dependency intentionally needs `use_frameworks! :linkage => :static`.
 
 <Warning>
   Coexistence with React Native Firebase is covered on [Using with React Native
-  Firebase](/firebase). Do not treat the snippet below as the RNFB path.
+  Firebase](/firebase). Prefer RNFB's modern **dynamic + SPM** path there. Do **not** treat the
+  snippet below as the React Native Firebase recipe (static alone with RNFB's default SPM mode fails
+  at `pod install`).
 </Warning>
 
-To enable static frameworks when you intentionally need them, [follow the official
-`expo-build-properties` installation
-instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge the following
-into your `app.json`, `app.config.js`, or `app.config.ts`:
+On Expo, enable static frameworks with `expo-build-properties` only — you do **not** set the bare
+Podfile global `$RNGoogleMobileAdsAsStaticFramework` (that flag is for [React Native
+CLI](/installation/react-native#optionally-configure-ios-static-frameworks); the podspec defaults
+to non-static unless overridden). [Follow the official `expo-build-properties`
+instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge:
 
 ```json
 // <project-root>/app.json

@@ -10,9 +10,9 @@ This page is for **bare** React Native CLI projects (no Expo managed workflow).
 **Prefer Expo?** Start with [Installation — Expo](/installation/expo) (Expo + a development build) —
 that is the recommended default path.
 
-On bare React Native, the library **autolinks**. You configure AdMob App IDs in `app.json`; you do
-**not** manually paste IDs into `Info.plist` / `AndroidManifest.xml` or insert other native glue
-code for a standard install.
+On bare React Native, the library **autolinks**. You configure AdMob App IDs in root `app.json`
+(snake_case). You do **not** manually paste IDs into `Info.plist` / `AndroidManifest.xml`, edit
+`AppDelegate` / `MainApplication`, or insert other native glue for a standard install.
 
 ## Install the package
 
@@ -25,9 +25,10 @@ npm install react-native-google-mobile-ads
 Before you can display ads you must have a [Google AdMob account](https://apps.admob.com) and an
 App ID for each platform — see [Configuration](/configuration) for where to find the App ID.
 
-Add the app IDs under the `react-native-google-mobile-ads` key in the `app.json` file at the root of
-your project (snake_case keys). Autolinking and the library's config scripts apply these during the
-native build:
+**Single source for bare App IDs:** add them under the top-level `react-native-google-mobile-ads`
+key in the project-root `app.json` (snake_case). Autolinking plus the Android Gradle / iOS config
+scripts apply these during the native build — edit this JSON, then rebuild; do not hand-maintain a
+second copy in native project files.
 
 ```json
 // <project-root>/app.json
@@ -38,6 +39,12 @@ native build:
   }
 }
 ```
+
+<Warning>
+  If `android_app_id` / `ios_app_id` are missing from that block, native build scripts warn and the
+  Google Mobile Ads SDK can crash on startup. (Expo apps that set IDs only on the config plugin can
+  ignore the same warning — see [Installation — Expo](/installation/expo).)
+</Warning>
 
 For the changes to take effect, rebuild your project:
 
@@ -54,15 +61,23 @@ Full key reference (including Expo camelCase parity): [Config plugin reference](
 
 ## Optionally configure iOS static frameworks
 
-Follow these steps on iOS if you need to use static frameworks (that is,
-`use_frameworks! :linkage => :static` in your `Podfile`). You may need this when pairing this module
-with other native libraries that require static frameworks.
+This module does **not** require static frameworks for a normal bare install. Use them only when
+another dependency intentionally needs `use_frameworks! :linkage => :static` in your `Podfile`.
 
-Coexistence with React Native Firebase is covered on
-[Using with React Native Firebase](/firebase).
+<Warning>
+  Coexistence with React Native Firebase is covered on [Using with React Native
+  Firebase](/firebase). Prefer RNFB's modern **dynamic + SPM** path there — not static frameworks
+  alone.
+</Warning>
 
-To enable static frameworks for this module, add
-`$RNGoogleMobileAdsAsStaticFramework = true` to the targets in your `Podfile`.
+The podspec defaults to `static_framework = false`. On **bare**, when you do enable static
+frameworks, set `$RNGoogleMobileAdsAsStaticFramework = true` in the `Podfile` **before** any target
+block (Expo uses `expo-build-properties` instead — see
+[Installation — Expo](/installation/expo#optionally-configure-ios-static-frameworks)):
+
+```ruby
+$RNGoogleMobileAdsAsStaticFramework = true
+```
 
 ## Enable SKAdNetwork to track conversions (iOS)
 

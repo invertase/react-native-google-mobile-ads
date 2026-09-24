@@ -20,10 +20,13 @@ Under the "App settings" menu item, you can find the "App ID":
 
 ![Google AdMob App ID](https://prismic-io.s3.amazonaws.com/invertase%2F52dd6900-108c-47a6-accb-699fde963b99_new+project+%2813%29.jpg)
 
-The app IDs for Android and iOS need to be added to your project configuration. Where you put them depends on your setup:
+The app IDs for Android and iOS need to be added to your project configuration. Use **one** source of
+truth for your setup — do not also hand-edit `Info.plist` / `AndroidManifest.xml` for App IDs:
 
-- **Expo:** add them via the config plugin — see [Installation — Expo](/installation/expo).
-- **Bare React Native:** add them to `app.json` — see [Installation — React Native CLI](/installation/react-native).
+- **Expo:** config plugin (`androidAppId` / `iosAppId`) — see [Installation — Expo](/installation/expo).
+- **Bare React Native:** root `app.json` snake_case (`android_app_id` / `ios_app_id`) — see
+  [Installation — React Native CLI](/installation/react-native). Missing bare keys produce native
+  build warnings and can crash the ads SDK on startup.
 
 ## Configure outbound requests
 
