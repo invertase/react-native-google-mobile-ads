@@ -151,3 +151,45 @@ If you request an Advert as in the example above, AdMob will call your server wi
 ```
 
 You still need to verify these incoming requests yourself to ensure they are genuine. To learn more about callback parameters and verifying, see the [AdMob SDK Server Side Verification(SSV) documentation](https://developers.google.com/admob/android/rewarded-video-ssv).
+
+## Caveats / limitations
+
+### Android: rewarded close / progress chrome (high-engagement creatives)
+
+Rewarded (and rewarded interstitial) creatives — including close controls, countdown / progress chrome, and any second
+creative that plays inside a **single** `show()` presentation — are rendered by Google's `AdActivity` and the Google
+Mobile Ads creative UI (classic: remote GMS ads module). This package's Android show path only:
+
+- calls `RewardedAd.show(activity, …)` / `RewardedInterstitialAd.show(activity, …)` (and the same for interstitial /
+  app open),
+- optionally forwards `show({ immersiveModeEnabled })` to the SDK `setImmersiveMode(boolean)` API (Android system UI
+  immersive mode — **not** AdMob
+  [High-engagement ads](https://support.google.com/admob/answer/15525707) under App settings),
+
+then forwards Google's fullscreen and reward callbacks. Separately, `serverSideVerificationOptions` from
+[`RequestOptions`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestOptions.ts)
+are applied when the rewarded ad is loaded / wired — that is SSV setup, not chrome ownership. Tip's `AndroidManifest`
+meta-data and Expo config plugin do **not** host an overlay, draw a close button, or restyle that chrome. Local classic
+`play-services-ads-api` public `RewardedAd` surfaces expose no close-button, progress-bar, or “high-engagement” knobs —
+only load / show / immersive / SSV / callbacks / placement / metadata.
+
+If the close control is **invisible but still receives taps**, or a progress bar vanishes when a second creative starts
+within one `rewarded.show()`, and the issue is intermittent across creatives (especially with
+[High-engagement ads](https://support.google.com/admob/answer/15525707) enabled under AdMob **App settings** — app-level
+fill / exit-step policy, not a per-unit creative toggle):
+
+1. Confirm you are not drawing a React Native `Modal`, absolute-positioned view, or Expo status-bar / system UI layer
+   above the ad — Google's `AdActivity` is a separate activity; package JS does not insert chrome on top of it.
+2. Distinguish `immersiveModeEnabled` (this package's only Android show option) from AdMob **App settings →
+   High-engagement ads** (app-level fill / exit-step policy). Toggling the show option does not enable or disable
+   high-engagement creatives.
+3. Re-test on a current Google Mobile Ads SDK / Play services build (tip pins: `packages/core/package.json`
+   `sdkVersions`). Classic fullscreen layout is still delivered by the remote GMS module, so Play services updates can
+   change chrome without a package bump.
+4. If edge-to-edge drawing on API 35+ puts chrome under the system bars and makes it hard to see, see
+   [Android: interstitial content under the system navigation bar (API 35+)](#android-interstitial-content-under-the-system-navigation-bar-api-35)
+   — that is a different, layout-inset class of issue.
+5. Capture Mobile Ads SDK logs, device / OS, GMA SDK version, whether High-engagement ads is enabled under App
+   settings, and whether the tap still dismisses the ad, then escalate to Google. This React Native package cannot pad,
+   recolor, or force-show Google's rewarded chrome.
+
