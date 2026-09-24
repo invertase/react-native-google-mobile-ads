@@ -114,5 +114,11 @@ export {
   type UseMultiFormatAdResult,
   type UseMultiFormatAdStatus,
 } from './hooks/useMultiFormatAd';
+export {
+  useNativeAd,
+  type UseNativeAdOptions,
+  type UseNativeAdResult,
+  type UseNativeAdStatus,
+} from './hooks/useNativeAd';
 export { RevenuePrecisions } from './common/constants';
 export * from './types';
