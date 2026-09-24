@@ -22,20 +22,21 @@ export function metroBundleRequestUrl(port: number, platform: MetroBundlePlatfor
 export const METRO_STARTUP_TIMEOUT_MS = 120_000;
 export const WORKER_STARTUP_TIMEOUT_MS = 60_000;
 /**
- * Concurrent XCUITest session create (even with prebuilt+preinstalled WDA) can
- * exceed the serial 60s worker/session ceiling under three-sim contention.
- * iOS parallel children only (single-platform iOS parallel, or `ios:` sources in
- * combined parallel). Serial iOS and every Android child stay on
- * WORKER_STARTUP_TIMEOUT_MS — never raise Android via this constant.
+ * iOS XCUITest session create (even with prebuilt+preinstalled WDA) regularly
+ * exceeds the Android 60s worker/session ceiling — cold CI serial runners and
+ * parallel three-sim contention both need headroom. All iOS sources
+ * (`serial-ios` and `ios:*`) use this; Android stays on WORKER_STARTUP_TIMEOUT_MS.
  */
-export const IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS = 180_000;
+export const IOS_WORKER_STARTUP_TIMEOUT_MS = 180_000;
+/** @deprecated Prefer {@link IOS_WORKER_STARTUP_TIMEOUT_MS}. */
+export const IOS_PARALLEL_WORKER_STARTUP_TIMEOUT_MS = IOS_WORKER_STARTUP_TIMEOUT_MS;
 export const APP_STARTUP_TIMEOUT_MS = 120_000;
 export const PROCESS_DRAIN_TIMEOUT_MS = 30_000;
 
 /**
  * Per-source worker/session ceilings. A plain number applies to every expected
  * child. Object form keeps Android (and unmatched labels) on `defaultMs` while
- * prefix overrides cover iOS parallel children (`ios:` → 180s).
+ * prefix overrides cover iOS children (`ios:` → 180s).
  */
 export type WorkerStartupTimeoutOptions = {
   defaultMs?: number;

@@ -2056,6 +2056,7 @@ const IOS_FULLSCREEN_CLOSE_NAMES = [
   'Close Advertisement',
   'Close Ad',
   'Close advertisement',
+  // Bare "Close" is rewarded end-card only — handled in tapIosFullscreenCloseAttempt end-card path.
 ] as const;
 
 /** Markers that the fullscreen creative itself is on-screen (not leftover Close chrome). */
@@ -2137,6 +2138,7 @@ async function iosTapPoint(x: number, y: number): Promise<void> {
 
 async function isIosTextSelectionMenuVisible(): Promise<boolean> {
   // Require at least two menu items so gallery "Copy" labels cannot false-trigger.
+  // Also accept Copy+Open Link (run-08 rewarded end-card link selection bar).
   let hits = 0;
   for (const name of IOS_TEXT_SELECTION_MENU_NAMES) {
     if (await findDisplayedIosElementByNames([name])) {
@@ -2155,11 +2157,13 @@ async function dismissIosTextSelectionMenuIfPresent(): Promise<boolean> {
     return false;
   }
   const { width, height } = await driver.getWindowRect();
-  // Avoid the top-right X and mid-screen Learn More / link hit targets.
+  // Prefer chrome that is not selectable ad body text — mid-card taps re-open the menu
+  // (run-04: Bolt description / rating selection under Copy|Look Up|Translate).
   for (const [fx, fy] of [
-    [0.2, 0.35],
-    [0.5, 0.55],
-    [0.15, 0.7],
+    [0.5, 0.055],
+    [0.72, 0.055],
+    [0.5, 0.93],
+    [0.12, 0.055],
   ] as const) {
     await iosTapPoint(width * fx, height * fy);
     const gone = await driver
@@ -2171,6 +2175,25 @@ async function dismissIosTextSelectionMenuIfPresent(): Promise<boolean> {
       .catch(() => false);
     if (gone) {
       return true;
+    }
+  }
+  // Last resort: force the named Close control even under a sticky UIMenu.
+  const close = await findDisplayedIosElementByNames(IOS_FULLSCREEN_CLOSE_NAMES);
+  if (close) {
+    const loc = await close.getLocation().catch(() => null);
+    const size = await close.getSize().catch(() => null);
+    if (loc && size && size.width > 0 && size.height > 0) {
+      await iosTapPoint(loc.x + size.width / 2, loc.y + size.height / 2);
+      const gone = await driver
+        .waitUntil(async () => !(await isIosTextSelectionMenuVisible()), {
+          timeout: 1500,
+          interval: 100,
+        })
+        .then(() => true)
+        .catch(() => false);
+      if (gone) {
+        return true;
+      }
     }
   }
   try {
@@ -2354,9 +2377,10 @@ async function isIosFullscreenCloseChromeVisible(): Promise<boolean> {
 /**
  * Dismiss fullscreen X.
  * - Interstitial: named Close Advertisement (often enabled=false) — force-tap bounds
- *   when in the top-right band; ignore left-edge ghost (x≈0).
- * - Rewarded end-card (2026-09-23T1921-slot-5): nameless Other at ~374,78 — coordinate
- *   tap ~92%x / ~9%y after clearing UIMenu (Copy / Open Link).
+ *   when in the top-right band; ignore left-edge ghost (x≈0) unless rewarded end-card.
+ * - Rewarded end-card (run-05 2026-09-24T1341): real X is bare enabled `Close` at ~12,74
+ *   (top-LEFT). Disabled `Close Advertisement` at top-RIGHT is a ghost — do not prefer it.
+ *   Clear UIMenu (Copy / Look Up / Translate) before tapping.
  */
 async function tapIosFullscreenCloseAttempt(): Promise<boolean> {
   await dismissIosTextSelectionMenuIfPresent();
@@ -2364,14 +2388,53 @@ async function tapIosFullscreenCloseAttempt(): Promise<boolean> {
   const endCard = await isIosRewardedEndCardVisible();
   const creativeUp = endCard || (await isIosFullscreenTestAdVisible());
 
+  // Rewarded end-card: X may be top-LEFT bare `Close` (run-05) OR top-RIGHT
+  // (run-08 multi-ad "Ad 2 of 2" with left disabled Close Advertisement ghost at x=0).
+  if (endCard) {
+    for (const predicate of [
+      'name == "Close" AND enabled == 1',
+      'name == "Close Advertisement" AND enabled == 1',
+    ]) {
+      const rewardedClose = await $(`-ios predicate string:${predicate}`);
+      if (
+        (await rewardedClose.isExisting().catch(() => false)) &&
+        (await rewardedClose.isDisplayed().catch(() => false))
+      ) {
+        const loc = await rewardedClose.getLocation().catch(() => null);
+        const size = await rewardedClose.getSize().catch(() => null);
+        try {
+          await rewardedClose.click();
+          return true;
+        } catch {
+          if (loc && size && size.width > 0 && size.height > 0) {
+            await iosTapPoint(loc.x + size.width / 2, loc.y + size.height / 2);
+            return true;
+          }
+        }
+      }
+    }
+    // Prefer top-right band first (multi-ad end-card); then left X fallback.
+    for (const [fx, fy] of [
+      [0.92, 0.09],
+      [0.93, 0.09],
+      [0.06, 0.09],
+      [0.08, 0.1],
+    ] as const) {
+      await iosTapPoint(width * fx, height * fy);
+    }
+    return true;
+  }
+
   const el = await findDisplayedIosElementByNames(IOS_FULLSCREEN_CLOSE_NAMES);
   if (el) {
     const loc = await el.getLocation().catch(() => null);
     const size = await el.getSize().catch(() => null);
-    // Left-edge disabled ghost (x≈0) is not the real X — skip its bounds.
-    const isLeftGhost = loc != null && loc.x < width * 0.25;
+    const name = await el.getAttribute('name').catch(() => '');
+    const enabled = await el.isEnabled().catch(() => true);
+    // Left-edge disabled Close Advertisement ghost (interstitial leftover) — skip.
+    const isLeftGhost =
+      loc != null && loc.x < width * 0.25 && !enabled && /advertisement/i.test(String(name));
     if (!isLeftGhost) {
-      const enabled = await el.isEnabled().catch(() => true);
       if (enabled) {
         try {
           await el.click();
@@ -2380,14 +2443,17 @@ async function tapIosFullscreenCloseAttempt(): Promise<boolean> {
           // fall through to coordinate force-tap
         }
       }
-      if (loc && size && size.width > 0 && size.height > 0) {
+      // Rewarded only: never force-tap a disabled top-right Close Advertisement ghost.
+      if (!enabled && endCard && loc != null && loc.x > width * 0.5) {
+        // fall through to coordinate band / other names
+      } else if (loc && size && size.width > 0 && size.height > 0) {
         await iosTapPoint(loc.x + size.width / 2, loc.y + size.height / 2);
         return true;
       }
     }
   }
 
-  // Nameless top-right Other / coordinate band (Rewarded end-card + interstitial fallback).
+  // Nameless top-right Other / coordinate band (interstitial fallback).
   if (creativeUp) {
     for (const [fx, fy] of [
       [0.92, 0.09],
@@ -2402,7 +2468,8 @@ async function tapIosFullscreenCloseAttempt(): Promise<boolean> {
 }
 
 const IOS_REWARDED_END_CARD_MARKERS = [
-  'Nice job!',
+  // Do NOT include "Nice job!" — GAM/interstitial test creatives use the same copy
+  // (run-06: misclassified as rewarded end-card → tapped top-left instead of top-right X).
   'Claim',
   'Reward granted',
   'You earned',
@@ -2727,12 +2794,26 @@ async function runIosHookShowCloseLifecycle(formatId: string): Promise<void> {
       if (isAppOpenHook && (await isIosAppOpenFeedChromeVisible())) {
         return true;
       }
+      // Rewarded creatives often omit Test mode / open markers until end-card
+      // (run-12: timed out on showing, teardown saw Reward granted + enabled Close).
+      if (isRewardedHook) {
+        if (await isIosRewardedEndCardVisible()) {
+          return true;
+        }
+        const close = await $(`-ios predicate string:name == "Close" AND enabled == 1`);
+        if (
+          (await close.isExisting().catch(() => false)) &&
+          (await close.isDisplayed().catch(() => false))
+        ) {
+          return true;
+        }
+      }
       // Require creative copy (not bare Close chrome) — Close Advertisement can be a
       // ghost leftover from a prior interstitial in the same session.
       return await isIosFullscreenTestAdVisible();
     },
     {
-      timeout: 90000,
+      timeout: isRewardedHook ? 120000 : 90000,
       interval: 400,
       timeoutMsg: 'iOS hook Show never reached status=showing or fullscreen chrome',
     },
@@ -2763,6 +2844,7 @@ async function runIosHookShowCloseLifecycle(formatId: string): Promise<void> {
   const closeStarted = Date.now();
   await driver.waitUntil(
     async () => {
+      await dismissIosTextSelectionMenuIfPresent();
       const phase = await safeShowLifecycleText(formatId);
       if (phase.includes(HOOK_LIFECYCLE_CLOSED)) {
         return true;
@@ -2774,7 +2856,7 @@ async function runIosHookShowCloseLifecycle(formatId: string): Promise<void> {
       if (await tapIosContinueToAppIfPresent()) {
         return false;
       }
-      if (await isIosFullscreenCloseChromeVisible()) {
+      if (await isIosFullscreenCloseChromeVisible() || (await isIosRewardedEndCardVisible())) {
         closeClicks += 1;
         const tapped = await tapIosFullscreenCloseAttempt();
         if (!tapped && isRewardedHook) {

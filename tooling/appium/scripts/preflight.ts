@@ -35,7 +35,9 @@ import {
   androidDeviceLogCommand,
   invocationPaths,
   iosDeviceLogCommand,
+  IOS_WORKER_STARTUP_TIMEOUT_MS,
   StartupSupervisor,
+  WORKER_STARTUP_TIMEOUT_MS,
   waitForMetroReadiness,
   waitForExternalMetroReadiness,
   type InvocationPaths,
@@ -124,7 +126,13 @@ export async function runWdioOwned(
 ): Promise<number> {
   const paths = options.paths ?? invocationPaths();
   const source = `serial-${target}`;
-  const startup = new StartupSupervisor([source]);
+  // Serial iOS needs the same WDA session-create headroom as parallel iOS (CI
+  // failed twice at the default 60s with sessions=0/1 after prebuilt WDA).
+  const startup = new StartupSupervisor(
+    [source],
+    undefined,
+    target === 'ios' ? IOS_WORKER_STARTUP_TIMEOUT_MS : WORKER_STARTUP_TIMEOUT_MS,
+  );
   const drain = options.drain ?? stopAndDrain;
   const owned: RunningCommand[] = [];
   let draining: Promise<void> | undefined;
