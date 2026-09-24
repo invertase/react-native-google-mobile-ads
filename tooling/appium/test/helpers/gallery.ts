@@ -1130,8 +1130,23 @@ const ANDROID_AD_ACTIVITY_MARKERS = [
   'com.google.android.libraries.ads.mobile.sdk.common.AdActivity',
 ] as const;
 
+/** Off-app surfaces that looking like "AdActivity gone" must not count as dismiss. */
+const ANDROID_FOREIGN_FOCUS_MARKERS = [
+  'com.android.chrome',
+  'com.android.vending',
+  'com.google.android.finsky',
+] as const;
+
 function focusIncludesAndroidAdActivity(focus: string): boolean {
   return ANDROID_AD_ACTIVITY_MARKERS.some(marker => focus.includes(marker));
+}
+
+function focusIncludesAndroidForeignApp(focus: string): boolean {
+  return ANDROID_FOREIGN_FOCUS_MARKERS.some(marker => focus.includes(marker));
+}
+
+function invalidateAndroidWindowFocusDump(): void {
+  cachedAndroidWindowFocusDump = { at: 0, value: '' };
 }
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -1152,6 +1167,8 @@ async function tapAndroidShellPoint(x: number, y: number): Promise<void> {
 }
 
 let cachedAndroidWindowFocusDump = { at: 0, value: '' };
+/** When true, skip top-right blind taps unless Close/end-card is visible (Rewarded). */
+let androidSkipBlindCloseFallback = false;
 
 async function androidWindowFocusDump(): Promise<string> {
   const now = Date.now();
@@ -1274,6 +1291,40 @@ async function bringExampleAppForwardOnceIfNeeded(reason: string): Promise<void>
   await sleep(600);
 }
 
+/** Force-stop Chrome / Play Store diversion, then bring the example app forward. */
+async function recoverAndroidForeignAppIfPresent(reason: string): Promise<boolean> {
+  if (!isAndroid()) {
+    return false;
+  }
+  invalidateAndroidWindowFocusDump();
+  const focus = await androidWindowFocusDump();
+  if (!focusIncludesAndroidForeignApp(focus)) {
+    return false;
+  }
+  logAndroidHostTrace('recover.foreign', {
+    reason,
+    focus: androidFocusSnippet(focus),
+  });
+  if (focus.includes('com.android.chrome')) {
+    await driver.execute('mobile: shell', {
+      command: 'am',
+      args: ['force-stop', 'com.android.chrome'],
+    });
+  }
+  if (focus.includes('com.android.vending') || focus.includes('com.google.android.finsky')) {
+    await driver.execute('mobile: shell', {
+      command: 'am',
+      args: ['force-stop', 'com.android.vending'],
+    });
+  }
+  await sleep(400);
+  invalidateAndroidWindowFocusDump();
+  await driver.activateApp(EXAMPLE_ANDROID_PACKAGE);
+  await sleep(600);
+  invalidateAndroidWindowFocusDump();
+  return true;
+}
+
 async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
   if (!isAndroid()) {
     return;
@@ -1281,6 +1332,9 @@ async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await dismissChromeFirstRunIfPresent();
     await dismissAndroidImmersiveModeEducationIfPresent();
+    if (await recoverAndroidForeignAppIfPresent(`${reason}.foreign`)) {
+      continue;
+    }
     const focus = await androidWindowFocusDump();
     if (focusIncludesAndroidAdActivity(focus)) {
       return;
@@ -1293,15 +1347,9 @@ async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
       attempt,
       focus: androidFocusSnippet(focus),
     });
-    if (focus.includes('com.android.chrome')) {
-      await driver.execute('mobile: shell', {
-        command: 'am',
-        args: ['force-stop', 'com.android.chrome'],
-      });
-      await sleep(400);
-    }
     await driver.activateApp(EXAMPLE_ANDROID_PACKAGE);
     await sleep(600);
+    invalidateAndroidWindowFocusDump();
   }
 }
 
@@ -1536,6 +1584,10 @@ async function isAndroidInterstitialCloseChromeVisible(): Promise<boolean> {
     'descriptionContains("Interstitial close button")',
     'descriptionContains("Close ad")',
     'descriptionContains("Interstitial close")',
+    'descriptionContains("Close Advertisement")',
+    'descriptionContains("Close")',
+    'text("Close")',
+    'textContains("Close ad")',
   ]) {
     const el = await $(`android=new UiSelector().${fragment}`);
     if (await el.isDisplayed().catch(() => false)) {
@@ -1545,8 +1597,94 @@ async function isAndroidInterstitialCloseChromeVisible(): Promise<boolean> {
   return false;
 }
 
+/** Rewarded end-card / grant copy — safe signal that Close chrome may be actionable. */
+async function isAndroidRewardedEndCardVisible(): Promise<boolean> {
+  for (const needle of [
+    'Reward granted',
+    'test rewarded',
+    'rewarded test ad',
+    'Nice job',
+    'You earned',
+    'Video has finished',
+    'Advertisement',
+  ]) {
+    const el = await $(`android=new UiSelector().textContains("${needle}")`);
+    if (await el.isDisplayed().catch(() => false)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isAndroidRewardedFormat(formatId: string): boolean {
+  return (
+    formatId === AppiumTestIds.format.rewardedHook ||
+    formatId === AppiumTestIds.format.rewardedInterstitialHook ||
+    formatId === AppiumTestIds.format.rewarded ||
+    formatId === AppiumTestIds.format.rewardedInterstitial
+  );
+}
+
+/**
+ * Wait until rewarded Close is present or an end-card marker appears.
+ * Blind top-right taps during the creative open Play Store on nextgen Play AVDs.
+ * After the mandatory watch (reward / long AdActivity), allow guarded dismiss even when
+ * WebView creatives hide Close from UiAutomator (run-06: AdActivity stuck, no chrome).
+ */
+async function waitForAndroidRewardedDismissReady(formatId: string): Promise<void> {
+  const started = Date.now();
+  await driver.waitUntil(
+    async () => {
+      await dismissAndroidImmersiveModeEducationIfPresent();
+      await recoverAndroidForeignAppIfPresent('rewardedDismissReady');
+      if (await isAndroidRewardedEndCardVisible()) {
+        return true;
+      }
+      if (await isAndroidInterstitialCloseChromeVisible()) {
+        // Even when Close exists early, give a short mandatory-watch window.
+        return Date.now() - started >= 8000;
+      }
+      const phase = await safeShowLifecycleText(formatId);
+      // Reward earned / lifecycle reward text ⇒ Close is usually actionable.
+      if (/reward/i.test(phase) && Date.now() - started >= 10000) {
+        logAndroidHostTrace('rewardedDismissReady.lifecycle', { phase });
+        return true;
+      }
+      // Long AdActivity with no discoverable chrome — still better than Play Store taps mid-roll.
+      if (Date.now() - started >= 25000 && (await isAndroidAdActivityForeground())) {
+        logAndroidHostTrace('rewardedDismissReady.adActivityElapsed', {
+          ms: Date.now() - started,
+        });
+        return true;
+      }
+      return false;
+    },
+    {
+      timeout: 120000,
+      interval: 750,
+      timeoutMsg: 'Android rewarded dismiss never became actionable (Close / end card)',
+    },
+  );
+}
+
+async function withAndroidRewardedDismissGuard<T>(
+  formatId: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  androidSkipBlindCloseFallback = true;
+  try {
+    await waitForAndroidRewardedDismissReady(formatId);
+    return await fn();
+  } finally {
+    androidSkipBlindCloseFallback = false;
+  }
+}
+
 async function tapAndroidInterstitialCloseAttempt(): Promise<void> {
   await dismissAndroidImmersiveModeEducationIfPresent();
+  if (await recoverAndroidForeignAppIfPresent('closeAttempt')) {
+    return;
+  }
   if (await isAndroidAppOpenFeedChromeVisible()) {
     await dismissAndroidAppOpenFeedIfPresent();
     return;
@@ -1576,6 +1714,17 @@ async function tapAndroidInterstitialCloseAttempt(): Promise<void> {
       });
     }
     await sleep(300);
+    invalidateAndroidWindowFocusDump();
+    return;
+  }
+  // Blind top-right fallback — required for interstitial / app-open when Close
+  // chrome is late. Rewarded sets androidSkipBlindCloseFallback until Close /
+  // end-card is visible so we do not open Play Store mid-creative.
+  if (
+    androidSkipBlindCloseFallback &&
+    !(await isAndroidInterstitialCloseChromeVisible()) &&
+    !(await isAndroidRewardedEndCardVisible())
+  ) {
     return;
   }
   const { width, height } = await driver.getWindowRect();
@@ -1602,6 +1751,7 @@ async function tapAndroidInterstitialCloseAttempt(): Promise<void> {
         await driver.execute('mobile: clickGesture', { x: centerX, y: centerY });
       }
       await sleep(300);
+      invalidateAndroidWindowFocusDump();
       return;
     }
   }
@@ -1616,6 +1766,7 @@ async function tapAndroidInterstitialCloseAttempt(): Promise<void> {
     });
     await sleep(300);
   }
+  invalidateAndroidWindowFocusDump();
 }
 
 async function isAndroidDebugModePickerVisible(): Promise<boolean> {
@@ -1676,6 +1827,7 @@ async function utilityLifecycleText(formatId: string): Promise<string> {
  */
 async function tapAndroidFullscreenCloseWithRetries(): Promise<void> {
   await dismissAndroidImmersiveModeEducationIfPresent();
+  await recoverAndroidForeignAppIfPresent('dismiss.begin');
   if (!(await isAndroidAdActivityForeground())) {
     await ensureExampleAppInForeground();
   }
@@ -1695,9 +1847,19 @@ async function tapAndroidFullscreenCloseWithRetries(): Promise<void> {
   await driver.waitUntil(
     async () => {
       await dismissAndroidImmersiveModeEducationIfPresent();
+      if (await recoverAndroidForeignAppIfPresent('dismiss.loop')) {
+        // Play Store / Chrome diversion is not a successful dismiss.
+        return false;
+      }
       const adActivity = await isAndroidAdActivityForeground();
       const obstructing = await isAndroidFullscreenTestAdObstructing();
       if (!adActivity && !obstructing) {
+        invalidateAndroidWindowFocusDump();
+        const focus = await androidWindowFocusDump();
+        if (focusIncludesAndroidForeignApp(focus)) {
+          await recoverAndroidForeignAppIfPresent('dismiss.falseSuccess');
+          return false;
+        }
         logAndroidHostTrace('interstitial.dismiss.success', { attempts });
         return true;
       }
@@ -1852,28 +2014,41 @@ async function runAndroidFullscreenShowCloseLifecycle(formatId: string): Promise
       `[show-close-fail] ${formatId}: no opened lifecycle or fullscreen chrome after ${maxTaps} show tap(s); lastProbe=${JSON.stringify(lastProbe)}`,
     );
   }
-  await dismissFullscreenAdWithoutCreativeTap();
-  await driver.waitUntil(
-    async () => {
-      await dismissAndroidImmersiveModeEducationIfPresent();
-      if (
-        (await isAndroidFullscreenAdShowing()) ||
-        (await isAndroidAdActivityForeground()) ||
-        (await isAndroidFullscreenTestAdObstructing()) ||
-        (await isAndroidInterstitialCloseChromeVisible())
-      ) {
-        await tapAndroidInterstitialCloseAttempt();
-        return false;
-      }
-      const phase = await safeShowLifecycleText(formatId);
-      return phase.includes(SHOW_LIFECYCLE_CLOSED);
-    },
-    {
-      timeout: 90000,
-      interval: 400,
-      timeoutMsg: 'Fullscreen Show never reached Show lifecycle: closed after dismiss',
-    },
-  );
+  const finishClosedWait = async (): Promise<void> => {
+    await driver.waitUntil(
+      async () => {
+        await dismissAndroidImmersiveModeEducationIfPresent();
+        if (await recoverAndroidForeignAppIfPresent('showClose.waitClosed')) {
+          return false;
+        }
+        if (
+          (await isAndroidFullscreenAdShowing()) ||
+          (await isAndroidAdActivityForeground()) ||
+          (await isAndroidFullscreenTestAdObstructing()) ||
+          (await isAndroidInterstitialCloseChromeVisible())
+        ) {
+          await tapAndroidInterstitialCloseAttempt();
+          return false;
+        }
+        const phase = await safeShowLifecycleText(formatId);
+        return phase.includes(SHOW_LIFECYCLE_CLOSED);
+      },
+      {
+        timeout: isAndroidRewardedFormat(formatId) ? 120000 : 90000,
+        interval: 400,
+        timeoutMsg: 'Fullscreen Show never reached Show lifecycle: closed after dismiss',
+      },
+    );
+  };
+  if (isAndroidRewardedFormat(formatId)) {
+    await withAndroidRewardedDismissGuard(formatId, async () => {
+      await dismissFullscreenAdWithoutCreativeTap();
+      await finishClosedWait();
+    });
+  } else {
+    await dismissFullscreenAdWithoutCreativeTap();
+    await finishClosedWait();
+  }
 }
 
 /** iOS GMA test creatives expose a stable close control while RN lifecycle nodes are off-tree. */
@@ -3055,35 +3230,48 @@ async function runAndroidHookShowCloseLifecycle(formatId: string): Promise<void>
   if (isAppOpenHook) {
     await dismissAndroidAppOpenFeedIfPresent();
   }
-  await dismissFullscreenAdWithoutCreativeTap();
-  await driver.waitUntil(
-    async () => {
-      await dismissAndroidImmersiveModeEducationIfPresent();
-      if (isAppOpenHook && (await isAndroidAppOpenFeedChromeVisible())) {
-        await dismissAndroidAppOpenFeedIfPresent();
-        return false;
-      }
-      if (
-        (await isAndroidFullscreenAdShowing()) ||
-        (await isAndroidAdActivityForeground()) ||
-        (await isAndroidFullscreenTestAdObstructing()) ||
-        (await isAndroidInterstitialCloseChromeVisible())
-      ) {
-        await tapAndroidInterstitialCloseAttempt();
-        return false;
-      }
-      const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
-      if (!(await el.isExisting().catch(() => false))) {
-        return false;
-      }
-      return (await elementText(el)).includes(HOOK_LIFECYCLE_CLOSED);
-    },
-    {
-      timeout: 90000,
-      interval: 400,
-      timeoutMsg: 'Hook Show never reached status=closed',
-    },
-  );
+  const finishHookClosedWait = async (): Promise<void> => {
+    await driver.waitUntil(
+      async () => {
+        await dismissAndroidImmersiveModeEducationIfPresent();
+        if (await recoverAndroidForeignAppIfPresent('hookClose.waitClosed')) {
+          return false;
+        }
+        if (isAppOpenHook && (await isAndroidAppOpenFeedChromeVisible())) {
+          await dismissAndroidAppOpenFeedIfPresent();
+          return false;
+        }
+        if (
+          (await isAndroidFullscreenAdShowing()) ||
+          (await isAndroidAdActivityForeground()) ||
+          (await isAndroidFullscreenTestAdObstructing()) ||
+          (await isAndroidInterstitialCloseChromeVisible())
+        ) {
+          await tapAndroidInterstitialCloseAttempt();
+          return false;
+        }
+        const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
+        if (!(await el.isExisting().catch(() => false))) {
+          return false;
+        }
+        return (await elementText(el)).includes(HOOK_LIFECYCLE_CLOSED);
+      },
+      {
+        timeout: isAndroidRewardedFormat(formatId) ? 120000 : 90000,
+        interval: 400,
+        timeoutMsg: 'Hook Show never reached status=closed',
+      },
+    );
+  };
+  if (isAndroidRewardedFormat(formatId)) {
+    await withAndroidRewardedDismissGuard(formatId, async () => {
+      await dismissFullscreenAdWithoutCreativeTap();
+      await finishHookClosedWait();
+    });
+  } else {
+    await dismissFullscreenAdWithoutCreativeTap();
+    await finishHookClosedWait();
+  }
 }
 
 /** Hook screens publish `Hook lifecycle:` markers; reward/paid delivery stays non-blocking. */
