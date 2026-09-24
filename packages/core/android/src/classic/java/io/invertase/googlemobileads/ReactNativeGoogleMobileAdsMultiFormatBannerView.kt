@@ -18,6 +18,7 @@ package io.invertase.googlemobileads
  */
 
 import android.annotation.SuppressLint
+import android.view.KeyEvent
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.facebook.react.bridge.ReactContext
@@ -38,6 +39,8 @@ class ReactNativeGoogleMobileAdsMultiFormatBannerView(
   init {
     // Mediation adapters can collide with RN view tags when saving instance state.
     isSaveFromParentEnabled = false
+    // Keep hardware BACK for React Navigation / OnBackPressedDispatcher (#813).
+    ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(this)
   }
 
   fun setHandleId(nextHandleId: String?) {
@@ -55,6 +58,8 @@ class ReactNativeGoogleMobileAdsMultiFormatBannerView(
     if (parent is ViewGroup) {
       parent.removeView(adView)
     }
+    ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView)
+    ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(this)
     attachedAdView = adView
     addView(
       adView,
@@ -68,6 +73,27 @@ class ReactNativeGoogleMobileAdsMultiFormatBannerView(
     val adView = attachedAdView ?: return
     removeView(adView)
     attachedAdView = null
+  }
+
+  /**
+   * Never consume hardware BACK. Banner WebViews historically stole focus and finished the Activity
+   * instead of letting nested navigators pop (#813). Parity with [common.ReactNativeAdView].
+   */
+  override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+    if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+      return false
+    }
+    return super.dispatchKeyEvent(event)
+  }
+
+  override fun onKeyPreIme(
+    keyCode: Int,
+    event: KeyEvent,
+  ): Boolean {
+    if (keyCode == KeyEvent.KEYCODE_BACK) {
+      return false
+    }
+    return super.onKeyPreIme(keyCode, event)
   }
 
   override fun requestLayout() {

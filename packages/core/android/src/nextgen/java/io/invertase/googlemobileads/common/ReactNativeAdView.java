@@ -1,10 +1,12 @@
 package io.invertase.googlemobileads.common;
 
 import android.content.Context;
+import android.view.KeyEvent;
 import android.widget.FrameLayout;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReadableMap;
 import com.google.android.libraries.ads.mobile.sdk.banner.AdSize;
+import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdFocus;
 import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdLayout;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -80,6 +82,28 @@ public class ReactNativeAdView extends FrameLayout {
     // com.facebook.ads.internal.util.parcelable.WrappedParcelable") when a fragment
     // (e.g. react-native-screens) restores its view hierarchy state.
     setSaveFromParentEnabled(false);
+    // Keep hardware BACK for React Navigation / OnBackPressedDispatcher (#813).
+    ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(this);
+  }
+
+  /**
+   * Never consume hardware BACK. Banner WebViews historically stole focus and finished the Activity
+   * instead of letting nested navigators pop (#813).
+   */
+  @Override
+  public boolean dispatchKeyEvent(KeyEvent event) {
+    if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+      return false;
+    }
+    return super.dispatchKeyEvent(event);
+  }
+
+  @Override
+  public boolean onKeyPreIme(int keyCode, KeyEvent event) {
+    if (keyCode == KeyEvent.KEYCODE_BACK) {
+      return false;
+    }
+    return super.onKeyPreIme(keyCode, event);
   }
 
   public void setRequestOptions(ReadableMap requestOptions) {
