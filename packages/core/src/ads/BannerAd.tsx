@@ -24,6 +24,7 @@ import GoogleMobileAdsBannerView, {
 
 export class BannerAd extends React.Component<BannerAdProps> {
   private ref = createRef<React.ComponentRef<typeof GoogleMobileAdsBannerView>>();
+  private sizes: [BannerAdProps['size']] = [this.props.size];
 
   load() {
     if (this.ref.current) {
@@ -32,6 +33,10 @@ export class BannerAd extends React.Component<BannerAdProps> {
   }
 
   render() {
-    return <BaseAd ref={this.ref} sizes={[this.props.size]} {...this.props} />;
+    const { size, ...rest } = this.props;
+    if (this.sizes[0] !== size) {
+      this.sizes = [size];
+    }
+    return <BaseAd ref={this.ref} sizes={this.sizes} {...rest} />;
   }
 }

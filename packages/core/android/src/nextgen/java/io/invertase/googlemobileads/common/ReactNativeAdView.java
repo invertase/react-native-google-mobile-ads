@@ -4,6 +4,7 @@ import android.content.Context;
 import android.widget.FrameLayout;
 import com.facebook.react.bridge.ReadableMap;
 import com.google.android.libraries.ads.mobile.sdk.banner.AdSize;
+import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdLayout;
 import java.util.List;
 
 /**
@@ -47,6 +48,10 @@ public class ReactNativeAdView extends FrameLayout {
          *
          * <p>See
          * https://developers.google.com/ad-manager/mobile-ads-sdk/android/native/styles#fluid_size
+         *
+         * <p>After UNSPECIFIED measure, layout to {@link #getMeasuredHeight()} — not stale Yoga
+         * {@link #getHeight()} — otherwise FLUID ads fight onSizeChange and appear to reload
+         * (#801).
          */
         int heightMeasureSpec =
             isFluid
@@ -54,7 +59,12 @@ public class ReactNativeAdView extends FrameLayout {
                 : MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.EXACTLY);
 
         measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY), heightMeasureSpec);
-        layout(getLeft(), getTop(), getRight(), getTop() + getHeight());
+        int bottom =
+            isFluid
+                ? ReactNativeGoogleMobileAdsBannerAdLayout.fluidLayoutBottom(
+                    getTop(), getMeasuredHeight())
+                : getTop() + getHeight();
+        layout(getLeft(), getTop(), getRight(), bottom);
       };
 
   public ReactNativeAdView(final Context context) {
