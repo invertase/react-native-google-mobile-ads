@@ -154,7 +154,7 @@ export function validateMultiFormatAdConfig(config: MultiFormatAdConfig): {
     }
     if (config.adUnitId.startsWith('ca-app-pub-')) {
       throw new Error(
-        "'adUnitId' AdMob units cannot request banner in a multi-format AdLoader request",
+        "'adUnitId' AdMob units cannot request banner in a multi-format AdLoader request — use a Google Ad Manager unit (for example TestIds.GAM_NATIVE).",
       );
     }
     if (!isArray(options.bannerSizes) || options.bannerSizes.length === 0) {

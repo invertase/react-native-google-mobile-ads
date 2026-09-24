@@ -55,7 +55,9 @@ describe('MultiFormatAdRequest (FEAT-04)', () => {
           adServer: 'ad-manager',
         },
       }),
-    ).toThrow(/AdMob/);
+    ).toThrow(
+      /AdMob units cannot request banner in a multi-format AdLoader request — use a Google Ad Manager unit \(for example TestIds\.GAM_NATIVE\)/,
+    );
   });
 
   it('hard-errors on adaptive banner sizes', () => {
