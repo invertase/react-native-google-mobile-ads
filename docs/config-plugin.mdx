@@ -6,24 +6,240 @@ description: Reference for the Expo config plugin options and the bare app.json 
 # Config plugin reference
 
 This page is the reference for every option supported by the Expo config plugin, alongside the equivalent bare
-`app.json` keys.
+`app.json` keys under the `react-native-google-mobile-ads` block.
 
 <Info>
-  This reference is being completed. It will document each Expo plugin key (camelCase) next to its
-  bare `app.json` equivalent (snake_case), including options not yet covered in the installation
-  guides. See [Installation — Expo](/installation/expo) and [Installation — React Native
-  CLI](/installation/react-native) for setup context.
+  Setup context lives in the installation guides: [Installation — Expo](/installation/expo) and
+  [Installation — React Native CLI](/installation/react-native). This page documents every key the
+  plugin and bare `app.json` path accept, including options not covered there.
 </Info>
 
 ## Options (Expo plugin ↔ bare `app.json`)
 
-| Expo plugin (camelCase)        | Bare `app.json` (snake_case)      | Purpose                                                             |
-| ------------------------------ | --------------------------------- | ------------------------------------------------------------------- |
-| `androidAppId`                 | `android_app_id`                  | AdMob Android App ID.                                               |
-| `iosAppId`                     | `ios_app_id`                      | AdMob iOS App ID.                                                   |
-| `userTrackingUsageDescription` | `user_tracking_usage_description` | iOS ATT usage description string.                                   |
-| `skAdNetworkItems`             | `sk_ad_network_items`             | SKAdNetwork identifiers (iOS).                                      |
-| `delayAppMeasurementInit`      | `delay_app_measurement_init`      | Delay app measurement until an ad is shown.                         |
-| `androidSdk`                   | `android_sdk`                     | Android ads backend selection (`classic` \| `legacy` \| `nextgen`). |
-| `optimizeInitialization`       | —                                 | Optimize SDK initialization.                                        |
-| `optimizeAdLoading`            | —                                 | Optimize ad loading.                                                |
+| Expo plugin (camelCase)        | Bare `app.json` (snake_case)      | Default      | Platforms    | Purpose                                                   |
+| ------------------------------ | --------------------------------- | ------------ | ------------ | --------------------------------------------------------- |
+| `androidAppId`                 | `android_app_id`                  | — (required) | Android      | AdMob Android App ID.                                     |
+| `iosAppId`                     | `ios_app_id`                      | — (required) | iOS          | AdMob iOS App ID.                                         |
+| `androidSdk`                   | `android_sdk`                     | `classic`    | Android      | Android ads backend (`classic` \| `legacy` \| `nextgen`). |
+| `delayAppMeasurementInit`      | `delay_app_measurement_init`      | `false`      | Android, iOS | Delay app measurement until an ad is requested.           |
+| `optimizeInitialization`       | `optimize_initialization`         | `true`       | Android      | Optimize SDK initialization.                              |
+| `optimizeAdLoading`            | `optimize_ad_loading`             | `true`       | Android      | Optimize ad loading.                                      |
+| `skAdNetworkItems`             | `sk_ad_network_items`             | —            | iOS          | SKAdNetwork identifiers.                                  |
+| `userTrackingUsageDescription` | `user_tracking_usage_description` | —            | iOS          | App Tracking Transparency usage description string.       |
+
+There are no other plugin keys. Rebuild native code after changing any of these values.
+
+## Where configuration lives
+
+<Tabs groupId="framework" values={[{label: 'Expo', value: 'expo'}, {label: 'React Native', value: 'bare'}]}>
+<TabItem value="expo">
+
+Pass options as the second element of the plugin tuple in `app.json`, `app.config.js`, or `app.config.ts`:
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+        }
+      ]
+    ]
+  }
+}
+```
+
+</TabItem>
+<TabItem value="bare">
+
+Put snake_case keys under the top-level `react-native-google-mobile-ads` object in the project-root
+`app.json` (read at native build time by Android Gradle and the iOS config script):
+
+```json
+// <project-root>/app.json
+{
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## App IDs
+
+### `androidAppId` / `android_app_id`
+
+Sets the AdMob Android App ID on
+`com.google.android.gms.ads.APPLICATION_ID` in the Android manifest.
+
+<Warning>
+  Omitting this value causes a console warning from the Expo plugin (or a Gradle warning for bare
+  apps). The native Google Mobile Ads SDK will crash on Android startup without a valid App ID.
+</Warning>
+
+See [Configuration](/configuration) for where to find the App ID in the AdMob console.
+
+### `iosAppId` / `ios_app_id`
+
+Sets `GADApplicationIdentifier` in the iOS `Info.plist`.
+
+<Warning>
+  Omitting this value causes a console warning from the Expo plugin (or an iOS config-script warning
+  for bare apps). The native Google Mobile Ads SDK will crash on iOS without a valid App ID.
+</Warning>
+
+## Android SDK backend
+
+### `androidSdk` / `android_sdk`
+
+Selects which Google Mobile Ads Android SDK this library links at **native build time**. Accepted
+values: `classic`, `legacy`, and `nextgen`.
+
+| Value     | Effect                                                                                                   |
+| --------- | -------------------------------------------------------------------------------------------------------- |
+| `classic` | Classic `play-services-ads` backend (default when the key / Gradle property is omitted).                 |
+| `legacy`  | Synonym for `classic`.                                                                                   |
+| `nextgen` | [GMA Next-Gen SDK](https://developers.google.com/admob/android/next-gen/quick-start) (`ads-mobile-sdk`). |
+
+The Expo config plugin writes the Gradle property `RNGMA_ANDROID_BACKEND` when `androidSdk` is set.
+For bare React Native, precedence is:
+
+1. Gradle project property `-PRNGMA_ANDROID_BACKEND=…`
+2. `RNGMA_ANDROID_BACKEND` in `android/gradle.properties`
+3. `android_sdk` in the `react-native-google-mobile-ads` block of `app.json`
+
+When nothing is set, the library defaults to `classic`.
+
+<Info>
+  `nextgen` is generally available in this library and ready to use, but it is still relatively new
+  upstream. Feedback from production apps is welcome. There is no GMA Next-Gen SDK for iOS — this
+  key is Android-only. The public JavaScript API stays the same either way.
+</Info>
+
+<Warning>
+  Per [Google's Next-Gen migration
+  guide](https://developers.google.com/admob/android/next-gen/migration), you must either integrate
+  **without mediation** or use **AdMob as the mediation host**. Other mediation platforms (for
+  example AppLovin MAX) are not compatible with GMA Next-Gen — stay on `classic` / `legacy` for
+  those apps. Google Ad Manager unit IDs are supported under Next-Gen. Next-Gen also requires
+  initialization before loading ads (this library already does that when you call
+  [`initialize`](/initialization)).
+</Warning>
+
+<Tabs groupId="framework" values={[{label: 'Expo', value: 'expo'}, {label: 'React Native', value: 'bare'}]}>
+<TabItem value="expo">
+
+```json
+// <project-root>/app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+          "androidSdk": "nextgen"
+        }
+      ]
+    ]
+  }
+}
+```
+
+</TabItem>
+<TabItem value="bare">
+
+```json
+// <project-root>/app.json
+{
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+    "android_sdk": "nextgen"
+  }
+}
+```
+
+One-off Gradle override without editing `app.json`:
+
+```bash
+cd android && ./gradlew assembleDebug -PRNGMA_ANDROID_BACKEND=nextgen
+```
+
+Or permanently in `android/gradle.properties`:
+
+```properties
+RNGMA_ANDROID_BACKEND=nextgen
+```
+
+</TabItem>
+</Tabs>
+
+Rebuild native Android after changing the backend (`npx expo prebuild --clean` for Expo, or a clean
+Gradle rebuild for bare React Native).
+
+## App measurement delay
+
+### `delayAppMeasurementInit` / `delay_app_measurement_init`
+
+When `true`, delays Google Mobile Ads app measurement until an ad is requested. Default: `false`.
+
+- **Android:** writes `com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT` in the manifest.
+- **iOS:** writes `GADDelayAppMeasurementInit` in `Info.plist`.
+
+Use this when you gather consent before ads — see
+[Delaying app measurement](/european-user-consent#delaying-app-measurement).
+
+## Android optimization flags
+
+### `optimizeInitialization` / `optimize_initialization`
+
+### `optimizeAdLoading` / `optimize_ad_loading`
+
+Android-only flags that set Google's
+[`OPTIMIZE_INITIALIZATION`](https://developers.google.com/admob/android/optimize-initialization)
+and
+[`OPTIMIZE_AD_LOADING`](https://developers.google.com/admob/android/optimize-initialization)
+manifest meta-data. Both default to `true` (matching Google Mobile Ads SDK 24+ defaults).
+
+These keys have no iOS equivalent. On Expo, the config plugin always writes both meta-data entries
+(using the defaults when the keys are omitted). On bare React Native, the same defaults are applied
+via Android manifest placeholders when the keys are omitted from `app.json`.
+
+## SKAdNetwork (iOS)
+
+### `skAdNetworkItems` / `sk_ad_network_items`
+
+An array of [SKAdNetwork identifiers](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/3p-skadnetworks)
+merged into `SKAdNetworkItems` in `Info.plist`. Identifiers already present are left unchanged;
+missing ones are appended. Keep this list up to date — Google's published list changes over time.
+
+See the installation guides for a full example list:
+[Expo](/installation/expo#enable-skadnetwork-to-track-conversions-ios) ·
+[React Native CLI](/installation/react-native#enable-skadnetwork-to-track-conversions-ios).
+
+## App Tracking Transparency (iOS)
+
+### `userTrackingUsageDescription` / `user_tracking_usage_description`
+
+Sets `NSUserTrackingUsageDescription` in `Info.plist` — the string shown in Apple's App Tracking
+Transparency prompt. Request authorization at runtime as described in
+[Consent & privacy basics](/consent-basics#requesting-app-tracking-transparency-authorization-ios).
+
+```json
+"userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+```
+
+Bare equivalent:
+
+```json
+"user_tracking_usage_description": "This identifier will be used to deliver personalized ads to you."
+```
