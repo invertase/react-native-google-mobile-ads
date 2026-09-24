@@ -84,6 +84,12 @@ export {
   type UseAppOpenAdResult,
 } from './hooks/useAppOpenAd';
 export {
+  useAppOpenAdManager,
+  type UseAppOpenAdManagerOptions,
+  type UseAppOpenAdManagerResult,
+  type UseAppOpenAdManagerStatus,
+} from './hooks/useAppOpenAdManager';
+export {
   useInterstitialAd,
   type UseInterstitialAdOptions,
   type UseInterstitialAdResult,
