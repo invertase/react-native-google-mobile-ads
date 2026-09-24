@@ -51,30 +51,84 @@
       "group": "Getting Started",
       "icon": "rocket",
       "pages": [
-        { "title": "Getting Started", "href": "/" },
-        { "title": "Prerequisites", "href": "/prerequisites" },
-        { "title": "Install with Expo", "href": "/installation/expo" },
-        { "title": "Install with React Native CLI", "href": "/installation/react-native" },
-        { "title": "Configuration", "href": "/configuration" },
-        { "title": "Using with React Native Firebase", "href": "/firebase" },
-        { "title": "Consent & privacy basics", "href": "/consent-basics" },
-        { "title": "Initializing the SDK", "href": "/initialization" },
-        { "title": "Show your first ad", "href": "/first-ad" }
+        {
+          "title": "Getting Started",
+          "href": "/"
+        },
+        {
+          "title": "Prerequisites",
+          "href": "/prerequisites"
+        },
+        {
+          "title": "Install with Expo",
+          "href": "/installation/expo"
+        },
+        {
+          "title": "Install with React Native CLI",
+          "href": "/installation/react-native"
+        },
+        {
+          "title": "Configuration",
+          "href": "/configuration"
+        },
+        {
+          "title": "Using with React Native Firebase",
+          "href": "/firebase"
+        },
+        {
+          "title": "Consent & privacy basics",
+          "href": "/consent-basics"
+        },
+        {
+          "title": "Initializing the SDK",
+          "href": "/initialization"
+        },
+        {
+          "title": "Show your first ad",
+          "href": "/first-ad"
+        }
       ]
     },
     {
       "group": "Ad formats",
       "icon": "rectangle-ad",
       "pages": [
-        { "title": "Overview", "href": "/ad-formats" },
-        { "title": "App open", "href": "/ad-formats/app-open" },
-        { "title": "Banner", "href": "/ad-formats/banner" },
-        { "title": "Interstitial", "href": "/ad-formats/interstitial" },
-        { "title": "Rewarded", "href": "/ad-formats/rewarded" },
-        { "title": "Rewarded interstitial", "href": "/ad-formats/rewarded-interstitial" },
-        { "title": "Native", "href": "/ad-formats/native" },
-        { "title": "React hooks", "href": "/ad-formats/hooks" },
-        { "title": "Google Ad Manager", "href": "/ad-formats/ad-manager" }
+        {
+          "title": "Overview",
+          "href": "/ad-formats"
+        },
+        {
+          "title": "App open",
+          "href": "/ad-formats/app-open"
+        },
+        {
+          "title": "Banner",
+          "href": "/ad-formats/banner"
+        },
+        {
+          "title": "Interstitial",
+          "href": "/ad-formats/interstitial"
+        },
+        {
+          "title": "Rewarded",
+          "href": "/ad-formats/rewarded"
+        },
+        {
+          "title": "Rewarded interstitial",
+          "href": "/ad-formats/rewarded-interstitial"
+        },
+        {
+          "title": "Native",
+          "href": "/ad-formats/native"
+        },
+        {
+          "title": "React hooks",
+          "href": "/ad-formats/hooks"
+        },
+        {
+          "title": "Google Ad Manager",
+          "href": "/ad-formats/ad-manager"
+        }
       ]
     },
     {
@@ -85,45 +139,88 @@
           "title": "Preload pools & multi-format recipes",
           "href": "/preload-pools-and-multiformat-recipes"
         },
-        { "title": "GMA Next-Gen SDK (Android)", "href": "/next-gen-sdk" },
-        { "title": "Mediation", "href": "/mediation" },
-        { "title": "European user consent", "href": "/european-user-consent" },
-        { "title": "Impression-level ad revenue", "href": "/impression-level-ad-revenue" },
+        {
+          "title": "GMA Next-Gen SDK (Android)",
+          "href": "/next-gen-sdk"
+        },
+        {
+          "title": "Mediation",
+          "href": "/mediation"
+        },
+        {
+          "title": "WebView API for Ads",
+          "href": "/webview-api-for-ads"
+        },
+        {
+          "title": "European user consent",
+          "href": "/european-user-consent"
+        },
+        {
+          "title": "Impression-level ad revenue",
+          "href": "/impression-level-ad-revenue"
+        },
         {
           "title": "Revenue telemetry & auction diagnostics",
           "href": "/revenue-telemetry-and-auction-diagnostics"
         },
-        { "title": "Video ad volume control", "href": "/video-ad_volume-control" }
+        {
+          "title": "Video ad volume control",
+          "href": "/video-ad_volume-control"
+        }
       ]
     },
     {
       "group": "Testing & debugging",
       "icon": "bug",
       "pages": [
-        { "title": "Testing", "href": "/testing" },
+        {
+          "title": "Testing",
+          "href": "/testing"
+        },
         {
           "title": "Common reasons ads do not show",
           "href": "/common-reasons-for-ads-not-showing"
         },
-        { "title": "Ad Inspector", "href": "/ad-inspector" }
+        {
+          "title": "Ad Inspector",
+          "href": "/ad-inspector"
+        }
       ]
     },
     {
       "group": "Reference",
       "icon": "book",
       "pages": [
-        { "title": "Config plugin reference", "href": "/config-plugin" },
-        { "title": "For AI agents", "href": "/ai-agents" }
+        {
+          "title": "Config plugin reference",
+          "href": "/config-plugin"
+        },
+        {
+          "title": "For AI agents",
+          "href": "/ai-agents"
+        }
       ]
     },
     {
       "group": "Migration guides",
       "icon": "code-branch",
       "pages": [
-        { "title": "Migrating to v17", "href": "/migrating-to-v17" },
-        { "title": "Migrating to v15", "href": "/migrating-to-v15" },
-        { "title": "Migrating to v6", "href": "/migrating-to-v6" },
-        { "title": "Migrating to v5", "href": "/migrating-to-v5" }
+        {
+          "title": "Migrating to v17",
+          "href": "/migrating-to-v17"
+        },
+        {
+          "title": "Migrating to v15",
+          "href": "/migrating-to-v15"
+        },
+        {
+          "title": "Migrating to v6",
+          "href": "/migrating-to-v6"
+        },
+        {
+          "title": "Migrating to v5",
+          "href": "/migrating-to-v5"
+        }
       ]
     }
   ]

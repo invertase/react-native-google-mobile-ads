@@ -1,0 +1,62 @@
+---
+title: WebView API for Ads
+description: Register an app WebView with the Google Mobile Ads SDK for WebView API for Ads.
+---
+
+When your app shows ads inside an in-app `WebView`, Google requires you to register that WebView with the Mobile Ads SDK so traffic is classified as **in-app** rather than mobile web. Correct classification affects CPM, targeting, and policy compliance for WebView monetization.
+
+This module exposes `mobileAds().registerWebView(viewTag)` on both Android and iOS (classic GMA and Android Next-Gen). It does **not** depend on `react-native-webview` — pass a React Native view tag from any host that owns an `android.webkit.WebView` / `WKWebView`.
+
+## Prerequisites
+
+1. Call `await mobileAds().initialize()` before registering.
+2. Obtain a numeric view tag after the WebView has mounted (for example from `findNodeHandle` on a ref, typically in `onLoadEnd`).
+
+## Usage
+
+```jsx
+import React, { useRef } from 'react';
+import { findNodeHandle } from 'react-native';
+import { WebView } from 'react-native-webview';
+import mobileAds from 'react-native-google-mobile-ads';
+
+export function InAppBrowser({ uri }) {
+  const webRef = useRef(null);
+
+  return (
+    <WebView
+      ref={webRef}
+      source={{ uri }}
+      onLoadEnd={() => {
+        const viewTag = findNodeHandle(webRef.current);
+        if (viewTag == null) {
+          return;
+        }
+        mobileAds()
+          .registerWebView(viewTag)
+          .catch(error => {
+            console.warn('registerWebView failed', error);
+          });
+      }}
+    />
+  );
+}
+```
+
+Register each WebView instance you use for in-app ad traffic. If the tagged view is a host wrapper (common with `react-native-webview`), the native bridge walks the subtree for the platform WebView.
+
+## Errors
+
+The promise rejects when:
+
+- the view tag cannot be resolved (New Architecture / Bridgeless uses `UIManagerHelper` on Android and `RCTViewRegistry` on iOS — do not call the legacy `UIManagerModule` yourself), or
+- no `WebView` / `WKWebView` is found under that tag.
+
+## Platform notes
+
+| Platform                              | SDK API                                          |
+| ------------------------------------- | ------------------------------------------------ |
+| Android classic (`play-services-ads`) | `MobileAds.registerWebView(WebView)`             |
+| Android Next-Gen (`ads-mobile-sdk`)   | `MobileAds.registerWebView(WebView)`             |
+| iOS (`Google-Mobile-Ads-SDK`)         | `[GADMobileAds.sharedInstance registerWebView:]` |
+

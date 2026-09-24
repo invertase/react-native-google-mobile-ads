@@ -309,6 +309,10 @@ namespace facebook::react {
       return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "setAppMuted", @selector(setAppMuted:), args, count);
     }
 
+    static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_registerWebView(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "registerWebView", @selector(registerWebView:resolve:reject:), args, count);
+    }
+
     static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_getConstants(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
       return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, ObjectKind, "getConstants", @selector(getConstants), args, count);
     }
@@ -332,6 +336,9 @@ namespace facebook::react {
         
         
         methodMap_["setAppMuted"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_setAppMuted};
+        
+        
+        methodMap_["registerWebView"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_registerWebView};
         
         
         methodMap_["getConstants"] = MethodMetadata {0, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_getConstants};

@@ -34,6 +34,7 @@
 
 ### Features
 
+* **core:** add `mobileAds().registerWebView(viewTag)` for WebView API for Ads ([#855](https://github.com/invertase/react-native-google-mobile-ads/issues/855))
 * **android, plugin:** add build-time GMA Next-Gen SDK selection ([ea64ecc](https://github.com/invertase/react-native-google-mobile-ads/commit/ea64ecce96815cb08efbff302c93f26d769101aa))
 * **android:** implement GMA Next-Gen native backend ([be2b79b](https://github.com/invertase/react-native-google-mobile-ads/commit/be2b79b8b79a8c52d5c7e1775cef4b72c1b5183c))
 * **appium:** add scoped resource check and release ([37902c4](https://github.com/invertase/react-native-google-mobile-ads/commit/37902c40ab91470a99f8ef644f50b99dbde917ca))

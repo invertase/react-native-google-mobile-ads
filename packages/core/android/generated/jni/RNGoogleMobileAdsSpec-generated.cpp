@@ -230,6 +230,11 @@ static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_se
   return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "setAppMuted", "(Z)V", args, count, cachedMethodId);
 }
 
+static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_registerWebView(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, PromiseKind, "registerWebView", "(DLcom/facebook/react/bridge/Promise;)V", args, count, cachedMethodId);
+}
+
 NativeGoogleMobileAdsModuleSpecJSI::NativeGoogleMobileAdsModuleSpecJSI(const JavaTurboModule::InitParams &params)
   : JavaTurboModule(params) {
   methodMap_["getConstants"] = MethodMetadata {0, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_getConstants};
@@ -239,6 +244,7 @@ NativeGoogleMobileAdsModuleSpecJSI::NativeGoogleMobileAdsModuleSpecJSI(const Jav
   methodMap_["openDebugMenu"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_openDebugMenu};
   methodMap_["setAppVolume"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_setAppVolume};
   methodMap_["setAppMuted"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_setAppMuted};
+  methodMap_["registerWebView"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_registerWebView};
 }
 static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_load(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
   static jmethodID cachedMethodId = nullptr;

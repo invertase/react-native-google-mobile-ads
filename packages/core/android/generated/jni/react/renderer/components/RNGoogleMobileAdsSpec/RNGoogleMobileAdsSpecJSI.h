@@ -592,6 +592,7 @@ protected:
     methodMap_["openDebugMenu"] = MethodMetadata {.argCount = 1, .invoker = __openDebugMenu};
     methodMap_["setAppVolume"] = MethodMetadata {.argCount = 1, .invoker = __setAppVolume};
     methodMap_["setAppMuted"] = MethodMetadata {.argCount = 1, .invoker = __setAppMuted};
+    methodMap_["registerWebView"] = MethodMetadata {.argCount = 1, .invoker = __registerWebView};
   }
   
 private:
@@ -646,6 +647,14 @@ private:
       "Expected setAppMuted(...) to have 2 parameters");
     bridging::callFromJs<void>(rt, &T::setAppMuted,  static_cast<NativeGoogleMobileAdsModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
       count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asBool());return jsi::Value::undefined();
+  }
+
+  static jsi::Value __registerWebView(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::registerWebView) == 2,
+      "Expected registerWebView(...) to have 2 parameters");
+    return bridging::callFromJs<jsi::Value>(rt, &T::registerWebView,  static_cast<NativeGoogleMobileAdsModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber());
   }
 };
 

@@ -180,6 +180,35 @@ class ReactNativeGoogleMobileAdsModule(
     MobileAds.setAppMuted(muted)
   }
 
+  @ReactMethod
+  fun registerWebView(
+    viewTag: Double,
+    promise: Promise,
+  ) {
+    val tag = viewTag.toInt()
+    reactApplicationContext.runOnUiQueueThread {
+      try {
+        val webView =
+          ReactNativeGoogleMobileAdsWebViewRegistration.resolveWebView(reactApplicationContext, tag)
+        if (webView == null) {
+          promise.reject(
+            "webview-not-found",
+            "No android.webkit.WebView found for view tag $tag.",
+          )
+          return@runOnUiQueueThread
+        }
+        MobileAds.registerWebView(webView)
+        promise.resolve(null)
+      } catch (exception: Exception) {
+        promise.reject(
+          "webview-register-failed",
+          exception.message ?: exception.toString(),
+          exception,
+        )
+      }
+    }
+  }
+
   companion object {
     const val NAME = "RNGoogleMobileAdsModule"
   }

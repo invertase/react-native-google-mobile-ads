@@ -101,6 +101,7 @@ mobileAds().openAdInspector().then();
 mobileAds().openDebugMenu('foo');
 mobileAds().setAppMuted(false);
 mobileAds().setAppVolume(0.5);
+mobileAds().registerWebView(1).then();
 mobileAds().setRequestConfiguration({ maxAdContentRating: MaxAdContentRating.G }).then();
 mobileAds().subscribeToNativeModuleEvent('foo');
 
@@ -112,6 +113,7 @@ MobileAds().openAdInspector().then();
 MobileAds().openDebugMenu('foo');
 MobileAds().setAppMuted(false);
 MobileAds().setAppVolume(0.5);
+MobileAds().registerWebView(1).then();
 MobileAds().setRequestConfiguration({ maxAdContentRating: MaxAdContentRating.G }).then();
 MobileAds().subscribeToNativeModuleEvent('foo');
 
