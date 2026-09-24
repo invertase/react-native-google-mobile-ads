@@ -264,22 +264,15 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           @Override
           public void onAdLoaded() {
             AdSize adSize = adView.getAdSize();
+            boolean collapsible = adView.isCollapsible();
+            reactViewGroup.setIsCollapsible(collapsible);
             int width, height;
+            boolean trackLayoutChanges =
+                ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(
+                    reactViewGroup.getIsFluid(), collapsible);
             if (reactViewGroup.getIsFluid()) {
               width = reactViewGroup.getWidth();
               height = reactViewGroup.getHeight();
-
-              adView.addOnLayoutChangeListener(
-                  (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-                    if (!ReactNativeGoogleMobileAdsBannerAdLayout.shouldEmitSizeChange(
-                        oldRight - oldLeft, oldBottom - oldTop, right - left, bottom - top)) {
-                      return;
-                    }
-                    WritableMap payload = Arguments.createMap();
-                    payload.putDouble("width", PixelUtil.toDIPFromPixel(right - left));
-                    payload.putDouble("height", PixelUtil.toDIPFromPixel(bottom - top));
-                    sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, payload);
-                  });
             } else {
               int left = adView.getLeft();
               int top = adView.getTop();
@@ -288,6 +281,20 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
               adView.measure(width, height);
               adView.layout(left, top, left + width, top + height);
+            }
+
+            if (trackLayoutChanges) {
+              adView.addOnLayoutChangeListener(
+                  (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    if (!ReactNativeGoogleMobileAdsBannerAdLayout.shouldEmitSizeChange(
+                        oldRight - oldLeft, oldBottom - oldTop, right - left, bottom - top)) {
+                      return;
+                    }
+                    WritableMap sizePayload = Arguments.createMap();
+                    sizePayload.putDouble("width", PixelUtil.toDIPFromPixel(right - left));
+                    sizePayload.putDouble("height", PixelUtil.toDIPFromPixel(bottom - top));
+                    sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, sizePayload);
+                  });
             }
 
             WritableMap payload = Arguments.createMap();
@@ -370,6 +377,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     if (adView != null) {
       adView.setAdUnitId(unitId);
       reactViewGroup.setIsFluid(false);
+      reactViewGroup.setIsCollapsible(false);
       if (adView instanceof AdManagerAdView) {
         if (sizes.contains(AdSize.FLUID)) {
           reactViewGroup.setIsFluid(true);

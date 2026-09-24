@@ -26,6 +26,7 @@ public class ReactNativeAdView extends FrameLayout {
   private boolean manualImpressionsEnabled;
   private boolean propsChanged;
   private boolean isFluid;
+  private boolean isCollapsible;
 
   @Override
   public void requestLayout() {
@@ -35,32 +36,31 @@ public class ReactNativeAdView extends FrameLayout {
 
   /**
    * This ensures the adview is properly measured and laid out if its layout changed after being
-   * loaded This happens everytime for fluid ads, but cannot happen for fixed size ads loading
-   * additional content
+   * loaded. Required for FLUID ads and for collapsible banners whose height changes after load
+   * (#594). Fixed-size ads stay on the Yoga EXACTLY path.
    *
    * <p>See https://github.com/facebook/react-native/issues/17968 for more details
    */
   private final Runnable measureAndLayout =
       () -> {
         /**
-         * For fluid ads, we usually don't specify the ad height from JS side, so mark it as
-         * unspecified and let it dynamically determine its size
+         * For fluid / collapsible ads, mark height as unspecified and let the AdView determine its
+         * size, then layout to {@link #getMeasuredHeight()} — not stale Yoga {@link #getHeight()} —
+         * otherwise dynamic ads fight onSizeChange (#801 / #594).
          *
          * <p>See
          * https://developers.google.com/ad-manager/mobile-ads-sdk/android/native/styles#fluid_size
-         *
-         * <p>After UNSPECIFIED measure, layout to {@link #getMeasuredHeight()} — not stale Yoga
-         * {@link #getHeight()} — otherwise FLUID ads fight onSizeChange and appear to reload
-         * (#801).
          */
+        boolean dynamicHeight =
+            ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(isFluid, isCollapsible);
         int heightMeasureSpec =
-            isFluid
+            dynamicHeight
                 ? MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
                 : MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.EXACTLY);
 
         measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY), heightMeasureSpec);
         int bottom =
-            isFluid
+            dynamicHeight
                 ? ReactNativeGoogleMobileAdsBannerAdLayout.fluidLayoutBottom(
                     getTop(), getMeasuredHeight())
                 : getTop() + getHeight();
@@ -148,5 +148,13 @@ public class ReactNativeAdView extends FrameLayout {
 
   public boolean getIsFluid() {
     return this.isFluid;
+  }
+
+  public void setIsCollapsible(boolean isCollapsible) {
+    this.isCollapsible = isCollapsible;
+  }
+
+  public boolean getIsCollapsible() {
+    return this.isCollapsible;
   }
 }
