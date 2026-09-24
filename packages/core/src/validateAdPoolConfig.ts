@@ -240,7 +240,7 @@ function validateDisplayPoolConfig(config: AdPoolConfig, formats: string[]): AdP
     if (config.adUnitId.startsWith('ca-app-pub-')) {
       throw createPoolAdError(
         'invalid-request',
-        "'adUnitId' AdMob units cannot request banner in a display pool (would drop a format)",
+        "'adUnitId' AdMob units cannot request banner in a display pool (would drop a format) — use a Google Ad Manager unit (for example TestIds.GAM_NATIVE).",
       );
     }
     if (!isArray(config.bannerSizes) || config.bannerSizes.length === 0) {

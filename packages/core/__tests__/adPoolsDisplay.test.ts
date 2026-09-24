@@ -106,7 +106,9 @@ describe('FEAT-06 emulated display AdPools', () => {
           bannerSizes: [BannerAdSize.BANNER],
         }),
       ),
-    ).toThrow(/AdMob|would drop/);
+    ).toThrow(
+      /AdMob units cannot request banner in a display pool \(would drop a format\) — use a Google Ad Manager unit \(for example TestIds\.GAM_NATIVE\)/,
+    );
 
     expect(() =>
       validateAdPoolConfig({
