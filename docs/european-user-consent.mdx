@@ -276,6 +276,8 @@ this will likely result in failed app review upon submission to Apple Store, bas
 
 > ...Apps should not require users to rate the app, review the app, watch videos, download other apps, tap on advertisements, enable tracking...
 
+`getUserChoices` / `getTCModel` decode the IAB TCF string with a transitive `@iabtcf/core` dependency. Apps that only use this module do **not** need to add `@iabtcf/core` themselves. If Metro reports `UnableToResolveError` for `./gvl/index.js` under `@iabtcf/core`, confirm `node_modules/@iabtcf/core/lib/mjs/model/gvl/index.js` exists on disk, reinstall dependencies, and restart Metro with a reset cache — a missing file is an incomplete install, not a missing export from this package.
+
 ### Testing
 
 When developing the consent flow, the behavior of the `AdsConsent` responses may not be reliable due to the environment
