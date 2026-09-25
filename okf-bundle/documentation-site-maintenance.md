@@ -50,12 +50,12 @@ This section is the single owner of retired-route handling.
 This section owns the public surfaces that steer **integrator** agents. Root `AGENTS.md` is the
 maintainer path and is not one of them.
 
-| Surface | Owns |
-| --- | --- |
-| `packages/core/AGENTS.md` (ships in npm) | The full v17 "which API to use" decision list, consent gates, hook `status` / ownership rules, docs routes list, and issue-reporting checklist |
-| `packages/core/src/index.ts` module TSDoc (API reference front page) | A short intro that links to `AGENTS.md` and the docs site; it does not repeat the decision list |
-| `llms.txt` and the README "For AI coding agents" section | Links only (to `packages/core/AGENTS.md`, the docs site, `/ai-agents`, and the generated API reference); no API facts |
-| `docs/ai-agents.mdx` | Public entry page; points to the npm `AGENTS.md` and links only the `okf-bundle/` root |
+| Surface                                                              | Owns                                                                                                                                           |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/core/AGENTS.md` (ships in npm)                             | The full v17 "which API to use" decision list, consent gates, hook `status` / ownership rules, docs routes list, and issue-reporting checklist |
+| `packages/core/src/index.ts` module TSDoc (API reference front page) | A short intro that links to `AGENTS.md` and the docs site; it does not repeat the decision list                                                |
+| `llms.txt` and the README "For AI coding agents" section             | Links only (to `packages/core/AGENTS.md`, the docs site, `/ai-agents`, and the generated API reference); no API facts                          |
+| `docs/ai-agents.mdx`                                                 | Public entry page; points to the npm `AGENTS.md` and links only the `okf-bundle/` root                                                         |
 
 - A public API, `show()` contract, consent-gate, or docs-route change updates `packages/core/AGENTS.md`
   in the same change. Retired routes follow [retired routes](#retired-routes).
