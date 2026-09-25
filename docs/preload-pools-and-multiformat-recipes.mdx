@@ -11,7 +11,7 @@ do not invent capability matrices in app code.
 
 Classic create/load/show and `<BannerAd>` / `NativeAd` keep working. Pools and
 multi-format APIs are **opt-in**. Full TypeScript shapes live in the
-[generated API reference](https://invertase.github.io/react-native-google-mobile-ads/modules.html#choose-the-smallest-api-that-fits).
+[generated API reference](https://invertase.github.io/react-native-google-mobile-ads/modules.html).
 
 ## Pick a recipe
 
@@ -66,7 +66,10 @@ function LevelEndButton() {
     }
 
     const next = release();
-    if (!next) return;
+    if (!next || next.format !== AdFormat.INTERSTITIAL) {
+      next?.destroy();
+      return;
+    }
     if (next.isStaleByPolicy()) {
       next.destroy();
       return;

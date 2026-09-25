@@ -20,7 +20,7 @@ How to author a product change. Gate state is maintained outside this repo per [
 
 `gap-analysis?` → `baseline-capture?` → `implementation` (`unit-focused`) → `documentation?` → `independent-review` (`area-focused`, frozen) → `commit` → `pre-merge-validation` (`full`) if merging.
 
-OKF, `AGENTS.md`, and `CONTRIBUTING.md` edits belong in `documentation?` **on the same change set** as the product work they describe. `independent-review` of that frozen tree **is** the [OKF bundle scan](validation-checklist.md#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` (including a `CONTRIBUTING.md`-only tree). Do not add OKF after a frozen review without another `independent-review`. Close `commit` only after that scan (when OKF/`AGENTS.md`/`CONTRIBUTING.md` changed).
+OKF, `AGENTS.md`, and `CONTRIBUTING.md` edits belong in `documentation?` **on the same change set** as the product work they describe. `independent-review` of that frozen tree **is** the [OKF bundle scan](validation-checklist.md#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md` (including a `CONTRIBUTING.md`-only tree). Do not add OKF after a frozen review without another `independent-review`. Close `commit` only after that scan (when OKF/`AGENTS.md`/`CONTRIBUTING.md` changed).
 
 | Work type | Tier | Edits | Commit |
 |-----------|------|-------|--------|
@@ -41,7 +41,7 @@ Tiers: `unit-focused` = Jest + optional `.only`/narrow e2e for **diagnosis only*
 | Gate | Closes when |
 |------|-------------|
 | `implementation` (`implementation_gate`) | Unit-focused green; [platform coverage](running-e2e.md#platform-coverage-gate-blocking); [lint](validation-checklist.md#lint-and-formatting) |
-| `independent-review` (`review_gate`) | `documentation?` already done when OKF/`AGENTS.md`/`CONTRIBUTING.md`/user docs changed; area-focused green on frozen tree; **all** findings fixed ([§ quality](#quality-standards)); apply per [§ frozen tree](#frozen-tree) (not every finding → `documentation?`); OKF scan when `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` is in the frozen tree |
+| `independent-review` (`review_gate`) | `documentation?` already done when OKF/`AGENTS.md`/`CONTRIBUTING.md`/user docs changed; area-focused green on frozen tree; **all** findings fixed ([§ quality](#quality-standards)); apply per [§ frozen tree](#frozen-tree) (not every finding → `documentation?`); OKF scan when `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md` is in the frozen tree |
 | `coverage_evidence_gate` | Closes per [coverage evidence](coverage-design.md#coverage-evidence-package) (`n/a` unless the diff includes `packages/core/src/` **or** `packages/core/android/` **or** `packages/core/ios/` **or** `packages/core/plugin/` TS; `packages/core/app.plugin.js`-only is `n/a` unless plugin TS changed — plugin Jest still follows [§ Expo plugin](validation-checklist.md#expo-plugin)) |
 | `commit` (`commit_gate`) | Prior gates closed with [evidence package](validation-checklist.md#validation-evidence-package) |
 | `pre-merge-validation` | [Validation-checklist work types](validation-checklist.md#work-types) pre-merge row recorded (platform coverage + lint/evidence in addition to [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error)) |

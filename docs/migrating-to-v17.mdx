@@ -54,8 +54,8 @@ You can upgrade, ship, and adopt new APIs later.
 We recognize v17 is very new and expect essentially no one has adopted the new v17 APIs yet. This
 smooths a real rough edge: the two most common "not right now" conditions on `show()` — not loaded,
 and already showing — now come back on the returned promise, like a platform decline, so a single
-`.catch()` (or `try { await } catch`) covers them. A destroyed or misused ad still throws
-synchronously, on purpose, as a loud programmer-error signal. If you drive fullscreen ads through
+`.catch()` (or `try { await } catch`) covers them. A destroyed ad, or invalid show options on a
+loaded ad, still throw synchronously, on purpose, as a loud programmer-error signal. If you drive fullscreen ads through
 the hooks, nothing changes — the hook `show` was always press-safe.
 
 What changed for `MobileAd.show()` (`InterstitialAd`, `RewardedAd`, `RewardedInterstitialAd`,
@@ -69,7 +69,9 @@ What changed for `MobileAd.show()` (`InterstitialAd`, `RewardedAd`, `RewardedInt
 | Ad has been destroyed              | Throws synchronously | Throws synchronously (unchanged) |
 | Structurally invalid `showOptions` | Throws synchronously | Throws synchronously (unchanged) |
 
-The error messages are the same as before. If you wrapped `show()` in a synchronous `try` /
+A destroyed ad always throws. Otherwise, the not-loaded and in-flight checks reject first, so
+invalid `showOptions` throw only on a loaded ad with no show in flight. The error messages are the
+same as before. If you wrapped `show()` in a synchronous `try` /
 `catch` to handle not-loaded or already-showing, move that handling to the promise:
 
 ```ts
@@ -84,8 +86,8 @@ try {
 interstitial.show().catch(error => {
   console.warn(error);
 });
-// A destroyed instance or invalid options still throw synchronously (programmer error) — fix the
-// call site.
+// A destroyed instance, or invalid options on a loaded ad, still throw synchronously (programmer
+// error) — fix the call site.
 ```
 
 The existing fullscreen hooks (`useInterstitialAd`, `useRewardedAd`, `useRewardedInterstitialAd`,
@@ -161,8 +163,8 @@ tell routine `'no-fill'` from `'error'`. Details:
 ## Additive: lifecycle — `destroy()`, ownership, impression
 
 Fullscreen and native ads expose idempotent `destroy()`: it releases JS listeners and
-asks native to drop the holder. Destroyed instances ignore late events and further show
-attempts.
+asks native to drop the holder. Destroyed instances ignore late events and `load()`; `show()` on a
+destroyed instance throws synchronously.
 
 ```ts
 const unsub = ad.addAdEventListener(AdEventType.CLOSED, () => {

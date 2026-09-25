@@ -20,19 +20,17 @@
  *
  * ## Choose the smallest API that fits
  *
- * | Need | API and ownership |
- * | --- | --- |
- * | Keep direct create/load/show, `BannerAd`, or `NativeAd` | Classic classes/components; your code owns the instance |
- * | Show a fullscreen ad imperatively | `ad.show()` rejects when not loaded, already showing, or declined, so `.catch` it; a destroyed ad or invalid `showOptions` throw synchronously (programmer error) |
- * | Let React own one fullscreen ad lifecycle | Options-form fullscreen hooks; `useGAMInterstitialAd` for Ad Manager app events |
- * | Show app open ads from a cold-start loading screen and on warm foreground | `useAppOpenAdManager`; gate consent with `adUnitId: null`, not `autoLoad` |
- * | Let React own one native ad | `useNativeAd` with `NativeAdView` |
- * | Warm inventory, then poll at show time | `AdPoolProvider` + `usePooledAd`, or imperative `AdPools` outside React |
- * | Let native and GAM banner formats compete for one placement | `useMultiFormatAd`, or imperative `MultiFormatAdRequest` |
- * | Diagnose what this binary supports | `getAdCapabilities`; prefer presets over reproducing its matrix |
- * | Register test devices | Emulators/simulators are automatic; `TestDeviceIds.EMULATOR` is a classic-Android-only alias |
+ * Start with the classic classes and components (`BannerAd`, `NativeAd`, direct
+ * create/load/show), move to the options-form hooks when React should own one ad's
+ * lifecycle, and reach for preload pools or multi-format requests only when you need
+ * warmed inventory or one flexible slot. Pools and multi-format requests are additive.
+ * Existing direct APIs remain supported.
  *
- * Pools and multi-format requests are additive. Existing direct APIs remain supported.
+ * The full decision list, including the `show()` error channels and consent gates,
+ * lives in the `AGENTS.md` shipped with the npm package. See also
+ * [Ad formats](https://docs.page/invertase/react-native-google-mobile-ads/ad-formats),
+ * [Preload pools and multi-format recipes](https://docs.page/invertase/react-native-google-mobile-ads/preload-pools-and-multiformat-recipes),
+ * and [For AI agents](https://docs.page/invertase/react-native-google-mobile-ads/ai-agents).
  *
  * ## Deliberate v17 boundaries
  *

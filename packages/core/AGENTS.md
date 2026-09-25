@@ -8,7 +8,7 @@ This file ships inside the npm package (`node_modules/react-native-google-mobile
 · [For AI agents](https://docs.page/invertase/react-native-google-mobile-ads/ai-agents)
 (append `.md` to any docs.page URL for plain Markdown).
 
-**Not for you:** the GitHub repo-root `AGENTS.md` is maintainer/contributor steering for this library’s development. Do not follow it when integrating into an app.
+**Not for you:** the `AGENTS.md` at the GitHub repository root is maintainer/contributor steering for this library’s development. Do not follow it when integrating into an app.
 
 Use `mobileAds()` (not a capital-`MobileAds()` constructor). Prefer the v17 **options-form** fullscreen hooks over deprecated positional hooks.
 
@@ -16,18 +16,16 @@ Use `mobileAds()` (not a capital-`MobileAds()` constructor). Prefer the v17 **op
 
 ## v17: which API to use
 
-| Need | Use |
-| ---- | --- |
-| Simple create → load → show, or `<BannerAd>` / `NativeAd` | Classic APIs (no pool, no provider) |
-| Imperative fullscreen `ad.show()` | Not loaded, already showing, or a platform decline reject the promise — `.catch(...)` it; a destroyed ad or invalid `showOptions` throw synchronously (programmer error — fix the call site) |
-| Fullscreen ads in a React component with lifecycle state | Options-form hooks: `useAppOpenAd` / `useInterstitialAd` / `useRewardedAd` / `useRewardedInterstitialAd`; Ad Manager interstitial with app events: `useGAMInterstitialAd` (`onAppEvent`) |
-| App open ads on cold-start loading screen + warm foreground | `useAppOpenAdManager` (`showAdIfAvailable()`; 4-hour freshness). Consent gate is `adUnitId: consentReady ? unitId : null` (or not mounting), **not** `autoLoad`: `showAdIfAvailable()` and warm foreground load even with `autoLoad: false`. Warm-foreground auto-show fires on any RN `background` → `active` (on Android this can include returning from another fullscreen ad), so also pass `null` while other fullscreen ads may show |
-| One native ad owned by a component | `useNativeAd` + `<NativeAdView>` |
-| Keep fullscreen inventory warm; poll at show time | Preload pools: `AdPoolPresets.fullscreen` + `AdPoolProvider` / `usePooledAd`, or `AdPools.create` |
-| Keep display (banner/native) inventory warm | `AdPoolPresets.display` + provider / `usePooledAd` (emulated, depth 1; see `resolved.degradeReasons`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob `ca-app-pub-…` units hard-error |
-| One request, native **or** banner winner | `useMultiFormatAd` or `MultiFormatAdRequest` (+ `MultiFormatAdPresets.nativeOrBanner`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob units hard-error |
-| Register test devices | Emulators / simulators are automatic on every backend. Physical devices: copy the hashed id the SDK logs (logcat / Xcode console) into `testDeviceIdentifiers`. `TestDeviceIds.EMULATOR` is a classic-Android-only alias |
-| Ask what this binary supports | `getAdCapabilities()` (prefer presets over hand-rolled matrices) |
+- **Simple create → load → show, or `<BannerAd>` / `NativeAd`:** Classic APIs (no pool, no provider)
+- **Imperative fullscreen `ad.show()`:** Not loaded, already showing, or a platform decline reject the promise — `.catch(...)` it; a destroyed ad, or invalid `showOptions` on a loaded ad, throw synchronously (programmer error — fix the call site)
+- **Fullscreen ads in a React component with lifecycle state:** Options-form hooks: `useAppOpenAd` / `useInterstitialAd` / `useRewardedAd` / `useRewardedInterstitialAd`; Ad Manager interstitial with app events: `useGAMInterstitialAd` (`onAppEvent`)
+- **App open ads on cold-start loading screen + warm foreground:** `useAppOpenAdManager` (`showAdIfAvailable()`; 4-hour freshness). Consent gate is `adUnitId: consentReady ? unitId : null` (or not mounting), **not** `autoLoad`: `showAdIfAvailable()` and warm foreground load even with `autoLoad: false`. Warm-foreground auto-show fires on any RN `background` → `active` (on Android this can include returning from another fullscreen ad), so also pass `null` while other fullscreen ads may show
+- **One native ad owned by a component:** `useNativeAd` + `<NativeAdView>`
+- **Keep fullscreen inventory warm; poll at show time:** Preload pools: `AdPoolPresets.fullscreen` + `AdPoolProvider` / `usePooledAd`, or `AdPools.create`
+- **Keep display (banner/native) inventory warm:** `AdPoolPresets.display` + provider / `usePooledAd` (emulated, depth 1; see `resolved.degradeReasons`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob `ca-app-pub-…` units hard-error
+- **One request, native _or_ banner winner:** `useMultiFormatAd` or `MultiFormatAdRequest` (+ `MultiFormatAdPresets.nativeOrBanner`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob units hard-error
+- **Register test devices:** Emulators / simulators are automatic on every backend. Physical devices: copy the hashed id the SDK logs (logcat / Xcode console) into `testDeviceIdentifiers`. `TestDeviceIds.EMULATOR` is a classic-Android-only alias
+- **Ask what this binary supports:** `getAdCapabilities()` (prefer presets over hand-rolled matrices)
 
 Classic, hooks, and pools are **additive** — existing create/load/show keeps working. Details: [generated API reference](https://invertase.github.io/react-native-google-mobile-ads/), [Migrating to v17](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17), [Preload pools](https://docs.page/invertase/react-native-google-mobile-ads/preload-pools-and-multiformat-recipes).
 
@@ -47,12 +45,10 @@ For pools: `AdPools.create` initializes the SDK on Android and starts preloading
 
 **Branch on `status`, not `error !== null`.** Options-form hooks populate `error` on both `'no-fill'` and `'error'`.
 
-| Signal | Rule |
-| ------ | ---- |
-| `status: 'no-fill'` | Load-phase inventory emptiness (`no-fill` / `mediation-no-fill`) — routine, not a hard failure |
-| `status: 'error'` | Real failure; show-phase failures stay here even if the reason looks like inventory |
-| `error.phase` | `'load'` vs `'show'` (there is no `SHOW_FAILED` event — use `ERROR` with `phase: 'show'`) |
-| `error.reason` / `code` / `message` | Structured payload; include in bug reports when relevant |
+- **`status: 'no-fill'`:** Load-phase inventory emptiness (`no-fill` / `mediation-no-fill`) — routine, not a hard failure
+- **`status: 'error'`:** Real failure; show-phase failures stay here even if the reason looks like inventory
+- **`error.phase`:** `'load'` vs `'show'` (there is no `SHOW_FAILED` event — use `ERROR` with `phase: 'show'`)
+- **`error.reason` / `code` / `message`:** Structured payload; include in bug reports when relevant
 
 **`destroy()` / pool `release()` ownership**
 
@@ -66,16 +62,14 @@ For pools: `AdPools.create` initializes the SDK on Android and starts preloading
 
 Base: `https://docs.page/invertase/react-native-google-mobile-ads`
 
-| Area | Paths |
-| ---- | ----- |
-| Getting Started | `/`, `/prerequisites`, `/installation/expo`, `/installation/react-native`, `/configuration`, `/firebase`, `/consent-basics`, `/initialization`, `/first-ad` |
-| Ad formats | `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,hooks,ad-manager}` |
-| Advanced | `/preload-pools-and-multiformat-recipes`, `/next-gen-sdk`, `/mediation`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control` |
-| Testing | `/testing`, `/common-reasons-for-ads-not-showing`, `/ad-inspector` |
-| Reference | External [Reference API](https://invertase.github.io/react-native-google-mobile-ads/), `/config-plugin`, `/ai-agents` |
-| Migration | `/migrating-to-v17` (and older `/migrating-to-v{15,6,5}`) |
+- **Getting Started:** `/`, `/prerequisites`, `/installation/expo`, `/installation/react-native`, `/configuration`, `/firebase`, `/consent-basics`, `/initialization`, `/first-ad`
+- **Ad formats:** `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,hooks,ad-manager}`
+- **Advanced:** `/preload-pools-and-multiformat-recipes`, `/next-gen-sdk`, `/mediation`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control`
+- **Testing:** `/testing`, `/common-reasons-for-ads-not-showing`, `/ad-inspector`
+- **Reference:** External [Reference API](https://invertase.github.io/react-native-google-mobile-ads/), `/config-plugin`, `/ai-agents`
+- **Migration:** `/migrating-to-v17` (and older `/migrating-to-v{15,6,5}`)
 
-Use the paths above. `/displaying-ads`, `/displaying-ads-hook`, and `/native-ads` are retired routes; their content lives under `/ad-formats/*`.
+Use the paths above. `/displaying-ads`, `/displaying-ads-hook`, `/native-ads`, and `/rngma-v17-api-reference` are retired routes; their content lives under `/ad-formats/*` and the external Reference API.
 
 ---
 

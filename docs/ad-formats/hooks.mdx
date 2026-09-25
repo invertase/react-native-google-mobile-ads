@@ -18,7 +18,7 @@ description: Every React hook in the library, plus the shared lifecycle for app 
 | `useNativeAd`               | Load and own one native ad for `NativeAdView`.                                           | [Native ads](/ad-formats/native#load-ads)                                                                  |
 | `useMultiFormatAd`          | One request that returns a native or Google Ad Manager banner winner.                    | [Multi-format recipe](/preload-pools-and-multiformat-recipes#recipe-multi-format-native-or-banner-count-1) |
 | `AdPoolProvider`            | Component that creates and destroys preload pools; gate with `enabled`.                  | [Preload pools](/preload-pools-and-multiformat-recipes#consent-before-pools)                               |
-| `useAdPool`                 | Read one pool's creation status and availability.                                        | [Display pool recipe](/preload-pools-and-multiformat-recipes#recipe-display-pool-native-banner-depth-1)    |
+| `useAdPool`                 | Read one pool's creation status and availability.                                        | [Display pool recipe](/preload-pools-and-multiformat-recipes#recipe-display-pool-native--banner-depth-1)   |
 | `usePooledAd`               | Poll a pool at show time and own the returned ad.                                        | [Fullscreen pool recipe](/preload-pools-and-multiformat-recipes#recipe-fullscreen-interstitial-pool)       |
 | `useForeground`             | Run a callback when the app returns from the background (not on cold start).             | [API reference](https://invertase.github.io/react-native-google-mobile-ads/useForeground.html)             |
 
@@ -162,6 +162,12 @@ Google requires an intro screen with clear reward messaging and an option to ski
 rewarded interstitial starts; see
 [Rewarded interstitial ads](/ad-formats/rewarded-interstitial).
 
+The hook's `show` swallows a rejected show, so `status` stays `'loaded'` and the next Continue press
+returns to the intro; Skip is the way on in that case. The sample also assumes the reward event
+arrives before the ad closes. For valuable rewards, rely on
+[server-side verification](/ad-formats/rewarded#server-side-verification-ssv) rather than the
+client-side order.
+
 The rewarded interstitial hook works on Android and iOS. Pool-based warming for this format is
 unavailable on both Android backends (classic and Next-Gen); that pool limitation does not apply to this
 load-on-demand hook.
@@ -233,9 +239,9 @@ earlier. Changing `autoLoad` to `false` does not cancel a request already in fli
 
 The hook returns several states and functions to control ad.
 
-The fullscreen hooks' `show` is press-safe: it absorbs both the synchronous throw (destroyed ad,
-invalid options) and the promise rejection (not loaded, already showing, platform decline), so
-`onPress={() => show()}` needs no `.catch` or `try`. A press while the ad isn't showable is a
+The fullscreen hooks' `show` is press-safe: it absorbs both the synchronous throw (destroyed ad, or
+invalid options on a loaded ad) and the promise rejection (not loaded, already showing, platform
+decline), so `onPress={() => show()}` needs no `.catch` or `try`. A press while the ad isn't showable is a
 silent no-op and changes no hook state; a platform show failure reported by the ad's `ERROR` event
 surfaces as `status: 'error'` with `error` set. This does not apply to the ad returned by `usePooledAd`, which has its own `show()`.
 

@@ -114,13 +114,15 @@ export interface RequestOptions {
   /**
    * key-value pairs used for custom targeting
    *
-   * Takes an object of keys with values of string, number, or arrays of strings/numbers.
-   * Bridge coerces values to `string | string[]`.
+   * Takes an object of keys whose values are passed to the native SDK unchanged. Pass each value
+   * as a string or an array of strings.
    */
   customTargeting?: Record<string, string | number | (string | number)[]>;
 
   /**
    * GAM-only category exclusions for the request.
+   *
+   * Not currently applied to requests: this option is not forwarded to the native SDK.
    */
   categoryExclusions?: string[];
 

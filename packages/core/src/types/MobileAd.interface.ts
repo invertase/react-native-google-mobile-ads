@@ -55,7 +55,9 @@ export interface MobileAdInterface {
    *   has not loaded, a show is already in flight, or the platform declines.
    *   Handle these with `.catch()` (or `try { await } catch`).
    * - **Throws synchronously** for programmer errors: the ad has been
-   *   destroyed, or `showOptions` are structurally invalid. Fix the call site.
+   *   destroyed, or `showOptions` are structurally invalid (checked only on a
+   *   loaded ad with no show in flight, so otherwise the rejection comes
+   *   first). Fix the call site.
    *
    * The fullscreen hooks' `show` absorbs both channels.
    *

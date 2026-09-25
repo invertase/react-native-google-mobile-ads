@@ -17,8 +17,8 @@ Coverage: [coverage design](coverage-design.md). Tiers: [change authoring](chang
 | `gap-analysis` | Read APIs/docs |
 | `baseline-capture` | Only the [platform coverage](running-e2e.md#platform-coverage-gate-blocking) rows for this diff; no `.only` |
 | `implementation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](#lint-and-formatting) for this diff; `.only` local OK |
-| `documentation` | Promote durable OKF / user docs / `AGENTS.md` / `CONTRIBUTING.md`. [Lint](#lint-and-formatting) if `docs/**`. **Do not** run the independent OKF scan here. |
-| `independent-review` | Rows that apply to **this** diff ([platform coverage](running-e2e.md#platform-coverage-gate-blocking), check-only [lint-by-tree](#lint-and-formatting)), frozen, no `.only`. [OKF scan](#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md`. |
+| `documentation` | Promote durable OKF / user docs / `AGENTS.md` / `CONTRIBUTING.md`. [Lint](#lint-and-formatting) if the [markdown lint scope](#markdown-lint-scope) is touched. **Do not** run the independent OKF scan here. |
+| `independent-review` | Rows that apply to **this** diff ([platform coverage](running-e2e.md#platform-coverage-gate-blocking), check-only [lint-by-tree](#lint-and-formatting)), frozen, no `.only`. [OKF scan](#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md`. |
 | `pre-merge-validation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) for this diff; [lint-by-tree](#lint-and-formatting) / evidence rows that already apply; [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error) |
 
 <a id="lint-and-formatting"></a>
@@ -27,16 +27,20 @@ Coverage: [coverage design](coverage-design.md). Tiers: [change authoring](chang
 
 This heading owns lint-by-tree, check vs `:fix`/`--replace` by work type, and when markdown check applies. Registry hops here: [canonical registry](agent-command-policy.md#canonical-registry), [constraints block](agent-command-policy.md#constraints-block).
 
-**Check vs format.** `implementation` and `documentation`: after a check failure, run the allowlisted `:fix` then re-check. `yarn lint:android` already `--replace` (and `--set-exit-if-changed`). `independent-review` is **check-only** on the frozen tree ([§ frozen tree](change-authoring-workflow.md#frozen-tree)): run matching **check** commands; do not run `lint:ios:fix` or `lint:markdown:fix`. Frozen `independent-review` does **not** run `yarn lint:android` because that script is `--replace` only; Android format is not a frozen-pass check — apply it in `implementation`. Do not invent `npx google-java-format` or a check-only yarn name. A check failure is a finding; apply per [§ frozen tree](change-authoring-workflow.md#frozen-tree) (product/lint including iOS `:fix` and Android format → `implementation`; markdown format when `docs/**` → `documentation`).
+**Check vs format.** `implementation` and `documentation`: after a check failure, run the allowlisted `:fix` then re-check. `yarn lint:android` already `--replace` (and `--set-exit-if-changed`). `independent-review` is **check-only** on the frozen tree ([§ frozen tree](change-authoring-workflow.md#frozen-tree)): run matching **check** commands; do not run `lint:ios:fix` or `lint:markdown:fix`. Frozen `independent-review` does **not** run `yarn lint:android` because that script is `--replace` only; Android format is not a frozen-pass check — apply it in `implementation`. Do not invent `npx google-java-format` or a check-only yarn name. A check failure is a finding; apply per [§ frozen tree](change-authoring-workflow.md#frozen-tree) (product/lint including iOS `:fix` and Android format → `implementation`; markdown format in the [markdown lint scope](#markdown-lint-scope) → `documentation`).
 
 **Which trees.** [GMA-AD-3](../architecture-decisions.md#gma-ad-3) generated trees are never formatted; the canonical Android/iOS lint scripts exclude them. `yarn lint:js` only if `packages/core/src/` (script scope is `packages/core/src/`). Plugin JS: [Expo plugin](#expo-plugin) Jest, not `lint:js`. `packages/core/__tests__/` is not in `lint:js`. `yarn lint:android` if `packages/core/android/` **and** the work type may `--replace` (`implementation` / `documentation`) — formats **Java** only. Android **Kotlin** (`.kt`): repo-root `./gradlew ktlintFormat` when `packages/core/android/` has `.kt` changes and the work type may format (`implementation` / `documentation`; optional `-PinternalKtlintGitFilter`). Frozen `independent-review` runs `./gradlew ktlintCheck` only (not `ktlintFormat`, like `lint:android`). Optional local hook: `./gradlew addKtlintFormatGitPreCommitHook`; Invertase global pre-commit also invokes root `./gradlew ktlintFormat` when present — this repo does not ship an installed hook. `yarn lint:ios:check` if `packages/core/ios/`. `yarn lint:code` only when this diff includes `packages/core/src/` **and** `packages/core/android/` **and** `packages/core/ios/` **and** the work type may `--replace`; never as a stand-in for a single-tree lint; never on frozen `independent-review` (`yarn lint:code` / `yarn lint` include `lint:android`, which is `--replace`-only — see **Check vs format**). `yarn lint` is `lint:code` plus `tsc:compile` (same three-tree rule). Frozen three-tree: `lint:js`, `./gradlew ktlintCheck` (when `.kt` is in scope), and `lint:ios:check` only.
 
 **Whitespace.** Run `git diff --check HEAD -- . ':(exclude,glob)packages/core/android/generated/**' ':(exclude,glob)packages/core/ios/generated/**'` against every change. This check remains blocking for all handwritten files, including handwritten native files. It excludes only the two [GMA-AD-3](../architecture-decisions.md#gma-ad-3) upstream-generated trees; do not format or patch those bytes to satisfy a generic whitespace check. `yarn codegen:verify` owns their integrity.
 
-**Docs.** `yarn lint:markdown:check`, `yarn lint:spellcheck`, and
-`yarn lint:docs-links` **only** when the diff includes `docs/**`. Independent-review of
-`okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` with **no** `docs/**` does **not** run docs
-checks. CI runs spellcheck and the link check; markdown check is local. Link-check behavior:
+<a id="markdown-lint-scope"></a>
+
+**Docs.** The **markdown lint scope** is `docs/**`, `README.md`, root `AGENTS.md`,
+`packages/core/AGENTS.md`, and `reference-api-readme.md` (the globs in the root `package.json`
+scripts). Run `yarn lint:markdown:check` and `yarn lint:spellcheck` when the diff touches that
+scope; run `yarn lint:docs-links` **only** when the diff includes `docs/**`. A diff limited to
+`okf-bundle/` / `CONTRIBUTING.md` runs no docs checks. Which of these CI runs:
+[CI workflows](../ci-workflows/index.md#workflows). Link-check behavior:
 [§ docs.page link check](#docs-page-link-check). Allowlist:
 [agent command policy](agent-command-policy.md). User-docs sidebar:
 [documentation site maintenance](../documentation-site-maintenance.md).
@@ -60,7 +64,8 @@ by deploying the reference ([CI workflows](../ci-workflows/index.md#workflows)),
 
 Run `yarn reference:api` when the diff changes `typedoc.json`, TypeDoc presentation/assets or
 landing content, public source TSDoc under `packages/core/src/`, or reference deployment wiring.
-The strict local build must exit 0 with no warnings. Also run `yarn reference:api:gh-pages` when
+The strict local build must exit 0 with no warnings (CI coverage:
+[CI workflows](../ci-workflows/index.md#workflows)). Also run `yarn reference:api:gh-pages` when
 the change can affect hosted URLs, generated content, or the Pages artifact; verify
 `apidocs-out/` contains the expected symbol routes and ported teaching text. Run `yarn` and
 then the reference build. When source TSDoc is in scope, run `yarn prepare` before source checks
@@ -82,7 +87,7 @@ E2e vs plugin Jest: [platform coverage](running-e2e.md#platform-coverage-gate-bl
 
 ## OKF bundle review
 
-This scan **is** `independent-review` of the frozen tree when `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` is in that tree ([change authoring § loop](change-authoring-workflow.md#loop)). Do not run it during `documentation` (that work type only promotes durable text). This scan does **not** run `yarn lint:markdown:check` / `lint:markdown:fix` unless `docs/**` is also in the frozen tree ([§ lint](#lint-and-formatting)). Run the [OKF update contract](../documentation-policy.md#okf-update-contract):
+This scan **is** `independent-review` of the frozen tree when `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` is in that tree (here and below, `AGENTS.md` means root `AGENTS.md` and `packages/core/AGENTS.md`; the latter is owned by [agent steering surfaces](../documentation-site-maintenance.md#agent-steering-surfaces)) ([change authoring § loop](change-authoring-workflow.md#loop)). Do not run it during `documentation` (that work type only promotes durable text). This scan does **not** run `yarn lint:markdown:check` / `lint:markdown:fix` unless the frozen tree touches the [markdown lint scope](#markdown-lint-scope). Run the [OKF update contract](../documentation-policy.md#okf-update-contract):
 
 1. Confirm durable learnings landed in the owning `okf-bundle/` doc. If the frozen tree is `AGENTS.md`-only or `CONTRIBUTING.md`-only, still confirm those files against the [OKF update contract](../documentation-policy.md#okf-update-contract) rows that apply to them, and still complete step 3.
 2. Check `okf-bundle/testing/` for conflicts with verified behavior; report drift (do not edit on this frozen pass).
@@ -106,9 +111,9 @@ Goal: each iteration improves OKF and removes conflicting guidance. The contract
 | e2e iOS / Android | Android/iOS named-script trios on [platform coverage](running-e2e.md#platform-coverage-gate-blocking); [named-owner logs + optional tee](running-e2e.md#local-e2e-commands) | 0 | counts + printed invocation log root (or additional unique tee) — only if that table requires e2e |
 | lint | [§ lint](#lint-and-formatting) for this diff (`lint:js` only if `packages/core/src/`; not plugin; not `packages/core/__tests__/`). `yarn lint:code` / `yarn lint` only when this diff includes `packages/core/src/` **and** `packages/core/android/` **and** `packages/core/ios/` and the work type may `--replace` | 0 | matching linters |
 | whitespace | [§ lint](#lint-and-formatting) scoped `git diff --check` | 0 | all handwritten files; generated trees excluded |
-| docs | `yarn lint:markdown:check` and `yarn lint:spellcheck` | 0 | if `docs/**` — [§ lint](#lint-and-formatting) |
+| docs | `yarn lint:markdown:check` and `yarn lint:spellcheck` | 0 | if the [markdown lint scope](#markdown-lint-scope) is touched |
 | docs links | `yarn lint:docs-links` | 0 | if `docs/**` — [§ docs.page link check](#docs-page-link-check); record error and warning counts |
 | API reference | `yarn reference:api`, `yarn reference:api:gh-pages` | 0, warning-clean | when [§ API reference](#api-reference) applies |
 | plugin | `yarn tests:jest packages/core/plugin/__tests__/` | 0 | if `packages/core/plugin/` or `packages/core/app.plugin.js` — [§ Expo plugin](#expo-plugin) |
 | coverage | [evidence package](coverage-design.md#coverage-evidence-package) | — | required when `packages/core/src/` **or** `packages/core/android/` **or** `packages/core/ios/` **or** `packages/core/plugin/` TS; `packages/core/app.plugin.js`-only is `n/a` unless plugin TS changed |
-| OKF scan | [§ OKF bundle review](#okf-bundle-review) | pass | if frozen tree includes `okf-bundle/`, `AGENTS.md`, or `CONTRIBUTING.md` — not during `documentation`; gate close is not a skip |
+| OKF scan | [§ OKF bundle review](#okf-bundle-review) | pass | if frozen tree includes `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md` — not during `documentation`; gate close is not a skip |

@@ -156,7 +156,7 @@ function restoreHookWrappedShow(ad: PooledAd): void {
  *   if (result.status !== 'filled' || result.ad.format !== AdFormat.INTERSTITIAL) return;
  *
  *   const ad = release();
- *   if (!ad || ad.isStaleByPolicy()) {
+ *   if (!ad || ad.format !== AdFormat.INTERSTITIAL || ad.isStaleByPolicy()) {
  *     ad?.destroy();
  *     return;
  *   }

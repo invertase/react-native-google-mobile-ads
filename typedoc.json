@@ -36,7 +36,6 @@
     "excludePrivate": true,
     "readme": "none",
     "skipErrorChecking": true,
-    "gitRevision": "main",
     "groupOrder": ["Functions", "Classes", "Interfaces", "Type Aliases", "Variables", "*"],
     "intentionallyNotExported": [
       "AdDestroyFunction",
@@ -73,7 +72,7 @@
   "treatWarningsAsErrors": true,
   "treatValidationWarningsAsErrors": true,
   "validation": {
-    "notExported": false,
+    "notExported": true,
     "invalidLink": true,
     "invalidPath": true,
     "rewrittenLink": true,
