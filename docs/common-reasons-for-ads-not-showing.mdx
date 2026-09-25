@@ -91,68 +91,8 @@ configuration changes.
   reinstalling the iOS app.
 - Confirm the app is allowed to request ads before initialization and loading.
 
-<<<<<<< HEAD
 See [Testing ads](/testing) for the complete checklist and
 [Ad Inspector and the debug menu](/ad-inspector) for request-level inspection.
-=======
-Follow the steps below to add your device as a test device.
-
-#### Add your test device in the AdMob UI
-
-For a simple, non-programmatic way to add a test device and test new or existing app builds, use the AdMob UI.
-[Learn how](https://support.google.com/admob/answer/9691433).
-
-#### Add your test device programmatically
-
-If you want to test ads in your app as you're developing, follow the steps below to programmatically register your test device.
-
-1. Load your ads-integrated app and make an ad request.
-
-2. For **iOS** follow step 3, for **Android** skip to step 4.
-
-3. Check the console for a message that looks like this:
-
-   ```
-   GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers =
-     @[ @"2077ef9a63d2b398840261c8221a0c9b"  ]; // Sample device ID
-   ```
-
-   Copy your test device ID to your clipboard.
-
-4. Check the logcat output for a message that looks like the one below, which shows you your device ID and how to add it as a test device:
-
-   ```
-   I/Ads: Use RequestConfiguration.Builder.setTestDeviceIds(Arrays.asList("33BE2250B43518CCDA7DE426D04EE231"))
-   to get test ads on this device."
-   ```
-
-   Copy your test device ID to your clipboard.
-
-5. Modify your code to set the test device ID through testDeviceIdentifiers
-
-   ```js
-   import mobileAds from 'react-native-google-mobile-ads';
-
-   mobileAds()
-     .setRequestConfiguration({
-       // An array of test device IDs to add to the allow list.
-       testDeviceIdentifiers: ['2077ef9a63d2b398840261c8221a0c9b', 'EMULATOR'],
-     })
-     .then(() => {
-       // Request config successfully set!
-     });
-   ```
-
-6. Re-run your app. If the ad is a Google ad, you'll see a Test Ad label centered at the top of the ad.
-   Ads with this Test Ad label are safe to click. Requests, impressions, and clicks on test ads will not show up in your account's reports.
-
-## Emulator vs real device
-
-In some cases ads won't show up on an emulator but will show up while testing on a real device.
-
-## Are you using a private DNS provider?
-
-Some private DNS providers can block ads from displaying. If your device or emulator is using a private DNS, switch it to Automatic in the settings to ensure it is not blocking ads.
 
 ## `googleMobileAds/timeout` on load
 
@@ -173,4 +113,3 @@ New Architecture vs Paper does not change this mapping: both call the same nativ
 - [Common reasons for ads not showing](https://support.google.com/admob/answer/9469204)
 - [Migrating to v17](/migrating-to-v17) — structured errors, no-fill vs failure, diagnostics
 - [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics) — `ResponseInfo` after load
->>>>>>> e8d38b1 (docs: clarify googleMobileAds/timeout is iOS SDK passthrough)
