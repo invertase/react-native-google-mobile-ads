@@ -40,6 +40,31 @@ This section is the single owner of retired-route handling.
   redirect. Stubs stay out of the sidebar.
 - Before claiming any redirect works, confirm it with `curl -sI <preview-url>/<old-path>` against
   the branch preview and check for a 3xx `location` header, not only a 200.
+- In the same change, update the routes list and the retired-routes sentence in
+  `packages/core/AGENTS.md` ([agent steering surfaces](#agent-steering-surfaces)).
+
+<a id="agent-steering-surfaces"></a>
+
+## Agent steering surfaces
+
+This section owns the public surfaces that steer **integrator** agents. Root `AGENTS.md` is the
+maintainer path and is not one of them.
+
+| Surface | Owns |
+| --- | --- |
+| `packages/core/AGENTS.md` (ships in npm) | The full v17 "which API to use" decision list, consent gates, hook `status` / ownership rules, docs routes list, and issue-reporting checklist |
+| `packages/core/src/index.ts` module TSDoc (API reference front page) | A short intro that links to `AGENTS.md` and the docs site; it does not repeat the decision list |
+| `llms.txt` and the README "For AI coding agents" section | Links only (to `packages/core/AGENTS.md`, the docs site, `/ai-agents`, and the generated API reference); no API facts |
+| `docs/ai-agents.mdx` | Public entry page; points to the npm `AGENTS.md` and links only the `okf-bundle/` root |
+
+- A public API, `show()` contract, consent-gate, or docs-route change updates `packages/core/AGENTS.md`
+  in the same change. Retired routes follow [retired routes](#retired-routes).
+- Keep `/AGENTS.md` in the `files` list in `packages/core/package.json`.
+- Write its multi-column content as compact bulleted lists, not Markdown tables: prettier pads
+  wide tables, which bloats the shipped file.
+- These surfaces follow the public-docs rules in [documentation policy](documentation-policy.md):
+  no links to `.agents/`, `okf-bundle/testing`, or `okf-bundle/ci-workflows`, and no tracker ids.
+- In OKF gate text, `AGENTS.md` means both root `AGENTS.md` and `packages/core/AGENTS.md`.
 
 <a id="api-reference"></a>
 
@@ -65,8 +90,11 @@ applicability and evidence are owned by
 
 ## Related
 
-- User docs live in `docs/`. Integrator agent steering ships in `packages/core/AGENTS.md` (npm); root `AGENTS.md` is the maintainer path and redirects integrators there. Maintainer/agent knowledge lives in `okf-bundle/` — [documentation policy](documentation-policy.md).
-- CI docs job: `.github/workflows/docs.yml` — [§ lint](testing/validation-checklist.md#lint-and-formatting)
-  (spellcheck and link check in CI; markdown check is local).
+- User docs live in `docs/`. Integrator agent steering is owned by
+  [agent steering surfaces](#agent-steering-surfaces); root `AGENTS.md` is the maintainer path and
+  redirects integrators there. Maintainer/agent knowledge lives in `okf-bundle/` —
+  [documentation policy](documentation-policy.md).
+- CI docs jobs (`.github/workflows/docs.yml`): [CI workflows](ci-workflows/index.md#workflows);
+  local checks: [§ lint](testing/validation-checklist.md#lint-and-formatting).
 - TypeDoc and source-TSDoc validation follows
   [validation checklist § API reference](testing/validation-checklist.md#api-reference).

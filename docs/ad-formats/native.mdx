@@ -3,7 +3,7 @@ title: Native ads
 description: Render native ads with your own layout using NativeAd, NativeAdView, and NativeAsset.
 ---
 
-# Native Ads
+# Native ads
 
 Native ads are ad assets that are presented to users through UI components that are native to the platform.
 They're shown using the same types of views with which you're already building your layouts, and can be formatted to match your app's visual design.
@@ -60,7 +60,7 @@ that resolves with a `NativeAd` object, and you own `destroy()`:
 const nativeAd = await NativeAd.createForAdRequest(TestIds.NATIVE);
 ```
 
-### Native ad Options
+### Native ad options
 
 Native ads have many advanced features that allow you to make additional customizations to create the best possible ad experience.
 
@@ -129,7 +129,7 @@ NativeAd.createForAdRequest(TestIds.NATIVE, {
 });
 ```
 
-#### Other Ad Request Options
+#### Other ad request options
 
 You can specify other request options to be sent while loading an advert, such as keywords and
 [content URLs](/ad-formats/interstitial#content-url-targeting-brand-safety).
@@ -219,7 +219,7 @@ const NativeComponent = () => {
 };
 ```
 
-#### Resize Mode
+#### Resize mode
 
 The `NativeMediaView` component respects the `resizeMode` property when displaying images. The `resizeMode` defaults to `cover`.
 
@@ -367,7 +367,7 @@ const nativeAd = await NativeAd.createForAdRequest(TestIds.NATIVE);
 nativeAd.destroy();
 ```
 
-## Caveats / Limitations
+## Caveats / limitations
 
 ### `NativeAsset` placement
 

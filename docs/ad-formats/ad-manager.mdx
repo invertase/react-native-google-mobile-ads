@@ -37,9 +37,8 @@ function App() {
       requestOptions={{
         customTargeting: {
           section: 'sports',
-          subscriber: 1,
+          subscriber: '1',
         },
-        categoryExclusions: ['airline'],
       }}
       onPaid={event => {
         console.log('GAM banner revenue', event.value, event.currency);
@@ -70,7 +69,6 @@ const requestOptions = {
     section: 'sports',
     interests: ['football', 'running'],
   },
-  categoryExclusions: ['airline'],
 };
 
 export default function GAMInterstitialButton({ consentReady }: { consentReady: boolean }) {
@@ -109,20 +107,20 @@ export default function GAMInterstitialButton({ consentReady }: { consentReady: 
 For imperative create / load / show outside React, `GAMInterstitialAd.createForAdRequest` is still
 available. Listen for `GAMAdEventType.APP_EVENT`, and handle `show()` with
 `interstitial.show().catch(...)`: not loaded, already showing, and platform declines reject the
-returned promise, while a destroyed ad or invalid `showOptions` throw synchronously (a programmer
-error to fix at the call site).
+returned promise, while a destroyed ad, or invalid `showOptions` on a loaded ad, throw
+synchronously (a programmer error to fix at the call site).
 
 ## Target line items
 
 Both examples pass the shared `RequestOptions` supported by the GAM request:
 
-- `customTargeting` sends key/value pairs that Ad Manager can use in line-item targeting.
-- `categoryExclusions` blocks the GAM content categories you name for that request.
+- `customTargeting` sends key/value pairs that Ad Manager can use in line-item targeting. Pass
+  each value as a string or an array of strings.
 - `publisherProvidedId` and `publisherProvidedSignals` are available for publishers whose Ad
   Manager setup uses those features.
 - `networkExtras` sends adapter-specific values; it is not a replacement for GAM custom targeting.
 
-Define the matching keys, values, exclusions, and line-item rules in Ad Manager. The client API
+Define the matching keys, values, and line-item rules in Ad Manager. The client API
 supplies request signals; it does not create or select line items by ID. See Google's
 [Ad Manager targeting guide](https://developers.google.com/ad-manager/mobile-ads-sdk/android/targeting)
 for the upstream concepts.

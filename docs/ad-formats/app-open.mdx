@@ -3,7 +3,7 @@ title: App open ads
 description: Display full-screen app open ads when users bring your app to the foreground.
 ---
 
-# App Open Ads
+# App open ads
 
 App open ads are a special ad format intended for publishers wishing to monetize their app load screens.
 App open ads can be closed by your users at any time. App open ads can be shown when users bring your app to the foreground.
@@ -132,8 +132,9 @@ Android Next-Gen SDK-managed app open preloader is not yet supported.
 Outside React, create the ad with `AppOpenAd.createForAdRequest(adUnitId)`, listen for
 `AdEventType.LOADED`, `AdEventType.CLOSED`, and `AdEventType.ERROR`, record when the ad was requested
 or loaded, and call `appOpenAd.show().catch(...)` only while the ad is less than four hours old. Not
-loaded, already showing, and platform declines reject the returned promise; a destroyed ad or
-invalid `showOptions` throw synchronously (a programmer error to fix at the call site). Create a new instance for each
+loaded, already showing, and platform declines reject the returned promise; a destroyed ad, or
+invalid `showOptions` on a loaded ad, throw synchronously (a programmer error to fix at the call
+site). After `CLOSED`, call `load()` again on the same instance (or create a new one) for the next
 impression, and send `AdEventType.PAID` payloads to your
 [revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.
 

@@ -3,7 +3,7 @@ title: Rewarded interstitial ads
 description: Display full-screen rewarded interstitial ads that reward users without requiring opt-in.
 ---
 
-# Rewarded Interstitial Ads
+# Rewarded interstitial ads
 
 Rewarded Interstitial Ads are full-screen ads that cover the interface of an app until closed by the user. The content of a rewarded interstitial
 advert is controlled via the Google AdMob dashboard.
@@ -80,6 +80,7 @@ function LevelTransition({ onContinue }) {
   const [introVisible, setIntroVisible] = useState(false);
   const onContinueRef = useRef(onContinue);
   onContinueRef.current = onContinue;
+  const showPendingRef = useRef(false);
 
   useEffect(() => {
     const unsubscribeLoaded = rewardedInterstitial.addAdEventListener(
@@ -98,10 +99,20 @@ function LevelTransition({ onContinue }) {
       console.log('Rewarded interstitial revenue', event.value, event.currency);
     });
     const unsubscribeClosed = rewardedInterstitial.addAdEventListener(AdEventType.CLOSED, () => {
+      showPendingRef.current = false;
       setLoaded(false);
       // Preload the next ad on the same instance, then move on.
       rewardedInterstitial.load();
       onContinueRef.current();
+    });
+    // show() resolves once presentation is handed to the SDK; a later failure arrives here.
+    const unsubscribeError = rewardedInterstitial.addAdEventListener(AdEventType.ERROR, error => {
+      console.warn(error);
+      setLoaded(false);
+      if (showPendingRef.current) {
+        showPendingRef.current = false;
+        onContinueRef.current();
+      }
     });
 
     // Start loading the rewarded interstitial ad straight away
@@ -113,6 +124,7 @@ function LevelTransition({ onContinue }) {
       unsubscribeEarned();
       unsubscribePaid();
       unsubscribeClosed();
+      unsubscribeError();
     };
   }, []);
 
@@ -123,9 +135,12 @@ function LevelTransition({ onContinue }) {
         <Button
           title="Watch ad"
           onPress={() => {
+            if (showPendingRef.current) return;
             setIntroVisible(false);
+            showPendingRef.current = true;
             // Not loaded, already showing, or a platform decline reject; a destroyed ad throws.
             rewardedInterstitial.show().catch(error => {
+              showPendingRef.current = false;
               console.warn(error);
               onContinue();
             });
@@ -153,8 +168,9 @@ The code above subscribes to the rewarded interstitial ad events (via `addAdEven
 the network (via `load()`). At the natural transition, pressing "Continue" shows an intro screen that states the reward and
 offers to skip, but only once an advert has loaded; otherwise the app moves straight on. Only when the user chooses to watch
 is the `show` method on the rewarded interstitial ad instance called, showing the advert over-the-top of your application.
-"Skip", a failed show, and the `CLOSED` event all call `onContinue`, and the `CLOSED` listener also loads the next advert on
-the same instance.
+"Skip", a rejected show, an `ERROR` event after `show()` resolved, and the `CLOSED` event all call `onContinue`, and the
+`CLOSED` listener also loads the next advert on the same instance. The sample assumes `EARNED_REWARD` arrives before
+`CLOSED`; for valuable rewards, confirm the grant with [server-side verification](#server-side-verification-ssv).
 
 Like Interstitial Ads, you can listen to the events with the `addAdEventListener` such as when the user clicks the advert or closes
 the advert and returns back to your app. However, you can listen to an extra `EARNED_REWARD` event which is triggered when user completes the
