@@ -183,7 +183,7 @@ export function validateAdRequestOptions(options?: RequestOptions) {
         return;
       }
       if (Array.isArray(value)) {
-        customTargeting[key] = value.map(item => customTargetingValueToString(key, item));
+        customTargeting[key] = Array.from(value, item => customTargetingValueToString(key, item));
       } else {
         customTargeting[key] = customTargetingValueToString(key, value);
       }
