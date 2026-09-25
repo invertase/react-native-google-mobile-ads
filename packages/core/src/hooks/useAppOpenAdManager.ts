@@ -23,6 +23,7 @@ import { AppOpenAd } from '../ads/AppOpenAd';
 import type { AdError } from '../types/AdError';
 import { AdStalenessGuidanceMillis } from '../types/AdExpiry';
 import type { RequestOptions } from '../types/RequestOptions';
+import { isFullscreenAdPresenting } from '../internal/fullscreenAdPresence';
 
 import { useForeground } from './useForeground';
 
@@ -120,6 +121,11 @@ function requestSignatureOf(adUnitId: string | null, requestOptions: RequestOpti
  * - Auto-shows on **warm** foreground only, via {@link useForeground}
  *   (background → active). Does **not** auto-show on the very first cold start
  *   — call `showAdIfAvailable()` from your loading screen for that path.
+ * - **AO-2**: on Android a foreground return caused by another library
+ *   fullscreen ad Activity (interstitial / rewarded / app-open) dismissing does
+ *   **not** trigger the warm-foreground auto-show, so two fullscreen ads never
+ *   stack back-to-back. A real home / app-switcher return still shows. See
+ *   `internal/fullscreenAdPresence.ts`.
  * - Guards with `isShowing`; reloads after `CLOSED` and show-phase errors.
  *
  * #### Inventory source
@@ -315,9 +321,14 @@ export function useAppOpenAdManager(
     if (!fresh) {
       // Missing or stale (>4h): do not show; ensure a reload.
       if (ad !== null && loadTimeRef.current > 0) {
-        // Stale held inventory — discard before reload.
+        // Stale held inventory — discard before reload. Reset status to 'idle'
+        // so a consumer never observes 'loaded' with no ad actually held:
+        // attachAndLoad() overwrites this with 'loading' if it proceeds, but
+        // no-ops (leaving 'idle') when the AO-1 gate is closed (autoLoad false)
+        // or adUnitId is null.
         generationRef.current += 1;
         destroyHeld();
+        setStatus('idle');
       }
       attachAndLoad();
       return;
@@ -343,7 +354,28 @@ export function useAppOpenAdManager(
   // Warm foreground only — useForeground fires on background → active, never
   // on the initial cold-start `active` AppState. Cold start remains app-owned
   // via showAdIfAvailable() from a loading screen.
-  useForeground(showAdIfAvailable);
+  //
+  // AO-2: On Android, AppState background → active ALSO fires when a library
+  // fullscreen ad Activity (interstitial / rewarded / another app-open) merely
+  // dismisses — GMA renders each fullscreen ad in its own Activity, which
+  // backgrounds the host ReactActivity. Auto-showing an app-open ad in that
+  // window stacks two fullscreen ads back-to-back (a Google policy / UX
+  // problem). Suppress the warm-foreground auto-show while any library
+  // fullscreen ad is presenting (or within the brief grace window armed on the
+  // ad's CLOSED, to absorb the AppState settle around that CLOSED event). This
+  // is scoped to the automatic path only: caller-driven showAdIfAvailable()
+  // (cold start) and the generic public useForeground hook are intentionally
+  // unaffected. A genuine home / app-switcher return happens outside that
+  // window and still shows. Mirrors Google's AppOpenAdManager
+  // (ProcessLifecycleOwner) intent.
+  const showOnWarmForeground = useCallback(() => {
+    if (isFullscreenAdPresenting()) {
+      return;
+    }
+    showAdIfAvailable();
+  }, [showAdIfAvailable]);
+
+  useForeground(showOnWarmForeground);
 
   useEffect(() => {
     mountedRef.current = true;

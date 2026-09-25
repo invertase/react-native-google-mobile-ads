@@ -24,6 +24,7 @@ import { RewardedAdEventType } from '../RewardedAdEventType';
 import { isFunction, isOneOf } from '../common';
 import { adErrorFromNativeEvent, parseResponseInfoPayload } from './adErrorFromNativeEvent';
 import { createAdExpiry } from './adExpiry';
+import { markFullscreenAdClosed, markFullscreenAdOpened } from './fullscreenAdPresence';
 import { allocateFullscreenRequestId } from './fullscreenRequestIds';
 import { SharedEventEmitter } from './SharedEventEmitter';
 import NativeAppOpenModule from '../specs/modules/NativeAppOpenModule';
@@ -127,6 +128,9 @@ export function createPooledFullscreenAd(
   let destroyed = false;
   let showRequested = false;
   let responseInfo = options.responseInfo;
+  // AO-2: whether this pooled ad currently counts toward the process-wide
+  // fullscreen-ad-presence signal (see internal/fullscreenAdPresence.ts).
+  let presenceMarked = false;
 
   const adEventsListeners = new Map<number, AdEventsListener<EventType>>();
   const adEventListenersMap = new Map<EventType, Map<number, AdEventListener<EventType>>>();
@@ -167,11 +171,26 @@ export function createPooledFullscreenAd(
       }
 
       let payload: AdEventPayload<EventType>;
+      // AO-2: maintain the process-wide fullscreen-ad-presence signal so a warm
+      // foreground caused purely by this ad Activity dismissing does not make
+      // the app-open manager auto-show a second fullscreen ad.
+      if (type === AdEventType.OPENED && !presenceMarked) {
+        presenceMarked = true;
+        markFullscreenAdOpened();
+      }
       if (type === AdEventType.ERROR) {
         showRequested = false;
+        if (presenceMarked) {
+          presenceMarked = false;
+          markFullscreenAdClosed();
+        }
       }
       if (type === AdEventType.CLOSED) {
         showRequested = false;
+        if (presenceMarked) {
+          presenceMarked = false;
+          markFullscreenAdClosed();
+        }
       }
       if (error) {
         payload = adErrorFromNativeEvent(
@@ -281,6 +300,11 @@ export function createPooledFullscreenAd(
         return;
       }
       destroyed = true;
+      if (presenceMarked) {
+        // Balance the presence counter if destroyed while still presenting.
+        presenceMarked = false;
+        markFullscreenAdClosed();
+      }
       nativeListener.remove();
       adEventsListeners.clear();
       adEventListenersMap.forEach((_, type, map) => {

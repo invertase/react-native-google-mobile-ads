@@ -6,6 +6,11 @@ import { AdEventType, AppOpenAd, TestIds, useAppOpenAdManager } from '../src';
 import type { UseAppOpenAdManagerResult } from '../src';
 import { AdStalenessGuidanceMillis } from '../src/types/AdExpiry';
 import type { AdError } from '../src/types/AdError';
+import {
+  __resetFullscreenAdPresenceForTests,
+  markFullscreenAdClosed,
+  markFullscreenAdOpened,
+} from '../src/internal/fullscreenAdPresence';
 
 type TestAdEventsListener = (event: { type: AdEventType; payload: unknown }) => void;
 type ChangeHandler = (status: AppStateStatus) => void;
@@ -67,6 +72,9 @@ describe('useAppOpenAdManager', () => {
     jest.restoreAllMocks();
     jest.useRealTimers();
     addEventListener.mockClear();
+    // AO-2: reset the process-wide fullscreen-ad-presence singleton so state
+    // never leaks between tests.
+    __resetFullscreenAdPresenceForTests();
   });
 
   it('preloads on mount and does not show on first cold start', async () => {
@@ -657,5 +665,175 @@ describe('useAppOpenAdManager', () => {
     expect(fake.show).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledTimes(1);
     expect(result!.isShowing).toBe(true);
+  });
+
+  // AO-1: the post-close reload path (CLOSED → scheduleReload → attachAndLoad)
+  // must also honour the autoLoad gate. If consent is withdrawn while an ad is
+  // showing, closing it must not silently issue a fresh request.
+  it('does not reload after CLOSED while autoLoad is false', () => {
+    jest.useFakeTimers();
+    const first = createTestAppOpenAd();
+    const second = createTestAppOpenAd();
+    const create = jest
+      .spyOn(AppOpenAd, 'createForAdRequest')
+      .mockReturnValueOnce(first.ad)
+      .mockReturnValueOnce(second.ad);
+    let result: UseAppOpenAdManagerResult | undefined;
+
+    function Probe({ autoLoad }: { autoLoad: boolean }) {
+      result = useAppOpenAdManager({ adUnitId: TestIds.APP_OPEN, autoLoad });
+      return null;
+    }
+
+    const view = render(<Probe autoLoad />);
+    act(() => {
+      first.emit(AdEventType.LOADED);
+    });
+    act(() => {
+      result!.showAdIfAvailable();
+    });
+    act(() => {
+      first.emit(AdEventType.OPENED);
+    });
+
+    // Consent withdrawn before the ad closes.
+    view.rerender(<Probe autoLoad={false} />);
+
+    act(() => {
+      first.emit(AdEventType.CLOSED);
+    });
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    // Post-close reload is gated: no second ad requested or loaded.
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(second.load).not.toHaveBeenCalled();
+    expect(result!.status).toBe('closed');
+  });
+
+  // AO-2: a genuine app return (home / app-switcher) must still auto-show. No
+  // library fullscreen ad is presenting, so the presence signal is absent.
+  it('auto-shows on a genuine warm-foreground app return (no library ad presenting)', () => {
+    const fake = createTestAppOpenAd();
+    jest.spyOn(AppOpenAd, 'createForAdRequest').mockReturnValue(fake.ad);
+    let result: UseAppOpenAdManagerResult | undefined;
+
+    function Probe() {
+      result = useAppOpenAdManager({ adUnitId: TestIds.APP_OPEN });
+      return null;
+    }
+
+    render(<Probe />);
+    act(() => {
+      fake.emit(AdEventType.LOADED);
+    });
+
+    // Nothing is presenting → the foreground return is genuine → show.
+    enterForeground();
+
+    expect(fake.show).toHaveBeenCalledTimes(1);
+    expect(result!.isShowing).toBe(true);
+  });
+
+  // AO-2: a warm foreground caused purely by a *library* fullscreen ad Activity
+  // (e.g. an interstitial) dismissing must NOT auto-show an app-open ad, or two
+  // fullscreen ads would stack back-to-back. The caller-driven cold-start path
+  // (showAdIfAvailable) is intentionally still allowed.
+  it('does not auto-show on the foreground triggered by a library fullscreen ad closing', () => {
+    const fake = createTestAppOpenAd();
+    jest.spyOn(AppOpenAd, 'createForAdRequest').mockReturnValue(fake.ad);
+    let result: UseAppOpenAdManagerResult | undefined;
+
+    function Probe() {
+      result = useAppOpenAdManager({ adUnitId: TestIds.APP_OPEN });
+      return null;
+    }
+
+    render(<Probe />);
+    act(() => {
+      fake.emit(AdEventType.LOADED);
+    });
+
+    // Simulate another library fullscreen ad (interstitial) opening then closing
+    // — exactly what raises/lowers the process-wide presence signal on device.
+    // On close, a short grace window keeps "presenting" true to absorb the
+    // AppState settle, so the immediately-following background → active is
+    // recognised as ad-driven, not a real app return.
+    act(() => {
+      markFullscreenAdOpened();
+      markFullscreenAdClosed();
+    });
+
+    enterForeground();
+
+    expect(fake.show).not.toHaveBeenCalled();
+    expect(result!.isShowing).toBe(false);
+    // Cold-start / caller-driven path is unaffected by the suppression.
+    act(() => {
+      result!.showAdIfAvailable();
+    });
+    expect(fake.show).toHaveBeenCalledTimes(1);
+    expect(result!.isShowing).toBe(true);
+  });
+
+  // AO-2: while a library fullscreen ad is still OPEN (not yet closed), a warm
+  // foreground must also be suppressed — covers the on-device ordering where
+  // AppState `active` arrives *before* the interstitial's CLOSED event.
+  it('does not auto-show while a library fullscreen ad is still presenting', () => {
+    const fake = createTestAppOpenAd();
+    jest.spyOn(AppOpenAd, 'createForAdRequest').mockReturnValue(fake.ad);
+
+    function Probe() {
+      useAppOpenAdManager({ adUnitId: TestIds.APP_OPEN });
+      return null;
+    }
+
+    render(<Probe />);
+    act(() => {
+      fake.emit(AdEventType.LOADED);
+    });
+
+    act(() => {
+      markFullscreenAdOpened(); // interstitial Activity is up, no CLOSED yet
+    });
+
+    enterForeground();
+
+    expect(fake.show).not.toHaveBeenCalled();
+  });
+
+  // AO-2: once the post-close grace window elapses, a later genuine foreground
+  // return resumes auto-showing (the suppression is bounded, not permanent).
+  it('resumes auto-show on a later genuine foreground after the ad-close grace elapses', () => {
+    jest.useFakeTimers({ now: 5_000_000 });
+    const fake = createTestAppOpenAd();
+    jest.spyOn(AppOpenAd, 'createForAdRequest').mockReturnValue(fake.ad);
+
+    function Probe() {
+      useAppOpenAdManager({ adUnitId: TestIds.APP_OPEN });
+      return null;
+    }
+
+    render(<Probe />);
+    act(() => {
+      fake.emit(AdEventType.LOADED);
+    });
+
+    act(() => {
+      markFullscreenAdOpened();
+      markFullscreenAdClosed(); // arms a 1s grace window from "now"
+    });
+
+    // Foreground within the grace window: suppressed.
+    enterForeground();
+    expect(fake.show).not.toHaveBeenCalled();
+
+    // Advance well past the grace window, then a genuine return: shows.
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+    enterForeground();
+    expect(fake.show).toHaveBeenCalledTimes(1);
   });
 });
