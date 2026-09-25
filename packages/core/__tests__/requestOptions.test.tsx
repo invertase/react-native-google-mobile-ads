@@ -400,6 +400,8 @@ describe('Admob RequestOptions', () => {
       ['nested array', [['a']]],
       ['array containing a boolean', ['a', false]],
       ['array containing null', [null]],
+      // eslint-disable-next-line no-sparse-arrays
+      ['sparse array', [, 'a']],
     ])('throws if a value is a %s', (_label, value) => {
       expect(() =>
         validateAdRequestOptions({
