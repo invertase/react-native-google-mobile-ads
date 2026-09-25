@@ -21,6 +21,8 @@ When adding or renaming user docs pages:
 
 - Add or update sidebar entries in `docs.json` in the same change as `docs/**`.
 - Paths in the sidebar are docs.page routes (for example `/ad-formats`), not GitHub file paths.
+- docs.page renders frontmatter `title` as the page heading; do not repeat it as a `# ` H1 in the
+  page body. Start body sections at `##`.
 - Run the canonical prose and link checks owned by
   [validation checklist § lint](testing/validation-checklist.md#lint-and-formatting) and
   [§ docs.page link check](testing/validation-checklist.md#docs-page-link-check).
