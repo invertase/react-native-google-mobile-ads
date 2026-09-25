@@ -26,8 +26,8 @@ import { AppState } from 'react-native';
  * covered the host `ReactActivity` goes away — including the Google Mobile Ads
  * SDK's own fullscreen ad Activities (interstitial / rewarded / app-open). If
  * your callback shows a fullscreen ad, guard against stacking two ads
- * back-to-back; {@link useAppOpenAdManager} does this internally via
- * `internal/fullscreenAdPresence.ts` (AO-2).
+ * back-to-back; {@link useAppOpenAdManager} already does this for its own
+ * warm-foreground auto-show.
  *
  * @param {Function} callback - The function to be called when the app has come to the foreground.
  */

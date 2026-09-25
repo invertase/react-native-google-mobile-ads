@@ -28,36 +28,35 @@ That means you must preload an app open ad before you need to show the ad. That 
 
 `useAppOpenAdManager` follows Google's app open manager pattern:
 
-- **Preload:** it loads an ad as soon as `adUnitId` is set (and `autoLoad` is not `false`), and
-  loads the next one after an ad closes or fails to show.
-- **Freshness:** an ad more than four hours old is never shown; it is discarded and replaced.
+- **Preload:** while `adUnitId` is set and `autoLoad` is not `false`, it loads an ad right away
+  and loads the next one after an ad closes or fails to show.
+- **Freshness:** an ad more than four hours old is never shown; it is discarded and replaced
+  (while `autoLoad` is not `false`).
 - **Cold start:** the hook does **not** show an ad on the first launch of a process. Call
   `showAdIfAvailable()` from your loading screen. It shows only if a fresh ad is already loaded;
-  otherwise it starts a load and shows nothing.
+  otherwise it starts a load (while `autoLoad` is not `false`) and shows nothing.
 - **Warm foreground:** when the app returns from the background, the hook calls
   `showAdIfAvailable()` for you, so an ad appears only if a fresh one is already held.
+- **After other fullscreen ads:** on Android, closing any fullscreen ad from this library
+  (including rewarded interstitial, Ad Manager interstitial, and pooled ads) makes React Native
+  report a return to the foreground. The manager ignores returns while such an ad is showing and
+  briefly after it closes, so it doesn't show an app open ad straight after another fullscreen
+  ad. iOS doesn't background the app for these ads, so there is nothing to ignore there. On both
+  platforms, a real return, from the home screen, the app switcher, or a banner or native ad
+  click-through to the browser or store, can still show a held app open ad.
 - `isShowing` is true from the show request until the ad closes or fails to show. Warm-foreground
   ads overlay your running app; do not swap your app's tree out because of `isShowing`.
 
 <Warning>
-  **Gate consent with `adUnitId`, not `autoLoad`.** `autoLoad` controls only automatic preloading.
-  `showAdIfAvailable()` and every return to the foreground start a load whenever no fresh ad is
-  held, even with `autoLoad: false`. Pass `adUnitId: null` (or do not mount the hook) until consent
-  is resolved.
-</Warning>
-
-<Warning>
-  **Warm-foreground auto-show fires on any React Native `background` → `active` transition.** On
-  Android, React Native reports `background` whenever another Activity covers your app, including
-  the Google Mobile Ads fullscreen ad Activity and ad click-throughs. A mounted manager holding a
-  fresh ad can therefore show an app open ad right after an interstitial or rewarded ad closes, or
-  when the user returns from an ad click. While another fullscreen ad may show, pass `adUnitId:
-  null` or unmount the manager. Setting `adUnitId` to `null` destroys any held app open ad; a new
-  one loads when you restore the unit.
+  **Gate consent before any request.** While `autoLoad` is `false`, the manager issues no request at
+  all: not the preload, not `showAdIfAvailable()`, not a warm foreground, and not the reload after
+  an ad closes. It can still show an ad it already holds. Passing `adUnitId: null` (or not mounting
+  the hook) is the strongest gate, because there is no unit to request and no ad to show, so the
+  sample uses that.
 </Warning>
 
 The sample mounts the manager at the app root and switches it off with `adUnitId: null` until
-consent is resolved and whenever the app is about to show another fullscreen ad:
+consent is resolved:
 
 ```tsx
 import { useEffect, useState } from 'react';
@@ -66,21 +65,13 @@ import { TestIds, useAppOpenAdManager } from 'react-native-google-mobile-ads';
 const APP_OPEN_UNIT = __DEV__ ? TestIds.APP_OPEN : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 // loadAppAssets, LoadingScreen, and MainContent are your app's own.
-// otherFullscreenAdMayShow is true while your app may present an interstitial or rewarded ad.
-export default function AppRoot({
-  consentReady,
-  otherFullscreenAdMayShow,
-}: {
-  consentReady: boolean;
-  otherFullscreenAdMayShow: boolean;
-}) {
+export default function AppRoot({ consentReady }: { consentReady: boolean }) {
   const [assetsReady, setAssetsReady] = useState(false);
   // 'pending' → 'offered' (cold-start showAdIfAvailable() called) → 'done' (no ad, or it closed).
   const [coldStart, setColdStart] = useState<'pending' | 'offered' | 'done'>('pending');
-  const appOpenAllowed = consentReady && !otherFullscreenAdMayShow;
   const { showAdIfAvailable, isShowing } = useAppOpenAdManager({
     // null is the gate: no request is made and warm foreground cannot show or load.
-    adUnitId: appOpenAllowed ? APP_OPEN_UNIT : null,
+    adUnitId: consentReady ? APP_OPEN_UNIT : null,
   });
 
   useEffect(() => {
@@ -117,10 +108,12 @@ export default function AppRoot({
 
 `status` (`'idle'`, `'loading'`, `'loaded'`, `'showing'`, `'closed'`, `'no-fill'`, `'error'`) is
 also returned for diagnostics. A load that ends in `'no-fill'` or `'error'` is not retried
-automatically; the next `showAdIfAvailable()` call or warm foreground starts a new load.
+automatically; the next `showAdIfAvailable()` call or warm foreground starts a new load (unless
+`autoLoad` is `false`).
 
-The hook has no separate switch for warm-foreground auto-show; `adUnitId: null` and unmounting are
-the only ways to turn it off. Google recommends waiting until users have opened your app a few
+The hook has no separate switch for warm-foreground auto-show. `autoLoad: false` stops new
+requests but still shows an ad already held; `adUnitId: null` and unmounting are the only ways to
+turn auto-show off completely. Google recommends waiting until users have opened your app a few
 times before showing app open ads; skip the cold-start `showAdIfAvailable()` call yourself when that
 applies.
 
