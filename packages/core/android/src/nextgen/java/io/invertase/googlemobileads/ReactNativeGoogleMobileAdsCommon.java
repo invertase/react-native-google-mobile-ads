@@ -261,6 +261,13 @@ public final class ReactNativeGoogleMobileAdsCommon {
         }
       }
     }
+    if (adRequestOptions.hasKey("categoryExclusions")) {
+      ReadableArray values =
+          Objects.requireNonNull(adRequestOptions.getArray("categoryExclusions"));
+      for (int i = 0; i < values.size(); i++) {
+        builder.addCategoryExclusion(Objects.requireNonNull(values.getString(i)));
+      }
+    }
     if (adRequestOptions.hasKey("publisherProvidedId")) {
       builder.setPublisherProvidedId(
           Objects.requireNonNull(adRequestOptions.getString("publisherProvidedId")));
@@ -349,6 +356,13 @@ public final class ReactNativeGoogleMobileAdsCommon {
         }
       }
     }
+    if (adRequestOptions.hasKey("categoryExclusions")) {
+      ReadableArray values =
+          Objects.requireNonNull(adRequestOptions.getArray("categoryExclusions"));
+      for (int i = 0; i < values.size(); i++) {
+        builder.addCategoryExclusion(Objects.requireNonNull(values.getString(i)));
+      }
+    }
     if (adRequestOptions.hasKey("publisherProvidedId")) {
       builder.setPublisherProvidedId(
           Objects.requireNonNull(adRequestOptions.getString("publisherProvidedId")));
@@ -425,6 +439,12 @@ public final class ReactNativeGoogleMobileAdsCommon {
           }
           builder.putCustomTargeting(key, target);
         }
+      }
+    }
+    if (options.hasKey("categoryExclusions")) {
+      ReadableArray values = Objects.requireNonNull(options.getArray("categoryExclusions"));
+      for (int index = 0; index < values.size(); index++) {
+        builder.addCategoryExclusion(Objects.requireNonNull(values.getString(index)));
       }
     }
     if (options.hasKey("publisherProvidedId")) {

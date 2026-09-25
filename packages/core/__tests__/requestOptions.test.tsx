@@ -427,4 +427,46 @@ describe('Admob RequestOptions', () => {
       expect(result.customTargeting?.ages).not.toBe(ages);
     });
   });
+
+  describe('categoryExclusions', () => {
+    it('passes an array of strings through', () => {
+      const result = validateAdRequestOptions({ categoryExclusions: ['airline', 'automotive'] });
+      expect(result.categoryExclusions).toEqual(['airline', 'automotive']);
+    });
+
+    it('omits undefined', () => {
+      const result = validateAdRequestOptions({ categoryExclusions: undefined });
+      expect('categoryExclusions' in result).toBe(false);
+    });
+
+    it('omits an empty array', () => {
+      const result = validateAdRequestOptions({ categoryExclusions: [] });
+      expect('categoryExclusions' in result).toBe(false);
+    });
+
+    it.each([
+      ['string', 'airline'],
+      ['null', null],
+      ['object', { airline: true }],
+      ['array containing a number', ['airline', 1]],
+      ['array containing null', [null]],
+      ['nested array', [['airline']]],
+      // eslint-disable-next-line no-sparse-arrays
+      ['sparse array', [, 'airline']],
+    ])('throws if the value is a %s', (_label, value) => {
+      expect(() =>
+        validateAdRequestOptions({
+          // @ts-expect-error intentional invalid input
+          categoryExclusions: value,
+        }),
+      ).toThrow("'options.categoryExclusions' expected an array containing string values");
+    });
+
+    it('does not alias the caller array', () => {
+      const categoryExclusions = ['airline'];
+      const result = validateAdRequestOptions({ categoryExclusions });
+      expect(result.categoryExclusions).not.toBe(categoryExclusions);
+      expect(categoryExclusions).toEqual(['airline']);
+    });
+  });
 });

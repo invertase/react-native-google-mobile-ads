@@ -99,6 +99,10 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
     request.customTargeting = adRequestOptions[@"customTargeting"];
   }
 
+  if (adRequestOptions[@"categoryExclusions"]) {
+    request.categoryExclusions = adRequestOptions[@"categoryExclusions"];
+  }
+
   if (adRequestOptions[@"publisherProvidedId"]) {
     request.publisherProvidedID = adRequestOptions[@"publisherProvidedId"];
   }
