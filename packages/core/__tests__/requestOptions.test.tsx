@@ -338,5 +338,91 @@ describe('Admob RequestOptions', () => {
       });
       expect(result.customTargeting).toEqual({ key: 'value' });
     });
+
+    it('passes string and string array values through unchanged', () => {
+      const result = validateAdRequestOptions({
+        customTargeting: { section: 'sports', interests: ['football', 'running'], empty: [] },
+      });
+      expect(result.customTargeting).toEqual({
+        section: 'sports',
+        interests: ['football', 'running'],
+        empty: [],
+      });
+    });
+
+    it('converts number values to strings', () => {
+      const result = validateAdRequestOptions({
+        customTargeting: { subscriber: 1, ratio: 0.5, negative: -3 },
+      });
+      expect(result.customTargeting).toEqual({ subscriber: '1', ratio: '0.5', negative: '-3' });
+    });
+
+    it('converts number members of mixed arrays to strings', () => {
+      const result = validateAdRequestOptions({
+        customTargeting: { ages: [18, '25-34', 65] },
+      });
+      expect(result.customTargeting).toEqual({ ages: ['18', '25-34', '65'] });
+    });
+
+    it('omits keys whose value is undefined', () => {
+      const result = validateAdRequestOptions({
+        // @ts-expect-error intentional invalid input
+        customTargeting: { section: 'sports', audience: undefined },
+      });
+      expect(result.customTargeting).toEqual({ section: 'sports' });
+      expect(Object.keys(result.customTargeting ?? {})).toEqual(['section']);
+    });
+
+    it.each([
+      ['NaN', NaN],
+      ['Infinity', Infinity],
+      ['-Infinity', -Infinity],
+    ])('throws if a value is %s', (_label, value) => {
+      expect(() =>
+        validateAdRequestOptions({
+          customTargeting: { bad: value },
+        }),
+      ).toThrow('\'options.customTargeting\' expected a finite number for object key "bad"');
+    });
+
+    it('throws if an array member is a non-finite number', () => {
+      expect(() =>
+        validateAdRequestOptions({
+          customTargeting: { bad: ['ok', NaN] },
+        }),
+      ).toThrow('\'options.customTargeting\' expected a finite number for object key "bad"');
+    });
+
+    it.each([
+      ['boolean', true],
+      ['null', null],
+      ['object', { nested: 'value' }],
+      ['nested array', [['a']]],
+      ['array containing a boolean', ['a', false]],
+      ['array containing null', [null]],
+    ])('throws if a value is a %s', (_label, value) => {
+      expect(() =>
+        validateAdRequestOptions({
+          // @ts-expect-error intentional invalid input
+          customTargeting: { bad: value },
+        }),
+      ).toThrow(
+        '\'options.customTargeting\' expected a string, number, or array of strings and numbers for object key "bad"',
+      );
+    });
+
+    it('does not mutate the caller object', () => {
+      const ages = [18, '25-34'];
+      const customTargeting = { subscriber: 1, ages };
+      const options = { customTargeting };
+
+      const result = validateAdRequestOptions(options);
+
+      expect(options.customTargeting).toBe(customTargeting);
+      expect(customTargeting).toEqual({ subscriber: 1, ages: [18, '25-34'] });
+      expect(customTargeting.ages).toBe(ages);
+      expect(result.customTargeting).not.toBe(customTargeting);
+      expect(result.customTargeting?.ages).not.toBe(ages);
+    });
   });
 });

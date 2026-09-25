@@ -114,8 +114,11 @@ export interface RequestOptions {
   /**
    * key-value pairs used for custom targeting
    *
-   * Takes an object of keys whose values are passed to the native SDK unchanged. Pass each value
-   * as a string or an array of strings.
+   * Takes an object whose values are strings, finite numbers, or arrays of strings and numbers.
+   * Numbers are converted to strings before the request reaches the native SDK. Keys whose value
+   * is `undefined` are omitted; any other value type (including non-finite numbers, `null`,
+   * booleans, objects, and nested arrays) is rejected when the request options are validated: a
+   * synchronous throw, or a rejected promise for async APIs such as `AdPools.create`.
    */
   customTargeting?: Record<string, string | number | (string | number)[]>;
 
