@@ -4,6 +4,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import { findOverrideMismatches } from './appium-home.mjs';
 import {
   loadManifest,
   loadPackageJson,
@@ -73,6 +74,8 @@ for (const driver of manifest.drivers) {
   }
 }
 
+failures.push(...findOverrideMismatches(appiumHome, manifest.overrides));
+
 if (failures.length > 0) {
   throw new Error(`Appium driver verify failed:\n- ${failures.join('\n- ')}`);
 }
@@ -80,5 +83,5 @@ if (failures.length > 0) {
 console.log(
   `OK: Appium ${manifest.appium}; drivers ${manifest.drivers
     .map(d => `${d.name}@${d.version}`)
-    .join(', ')} under ${appiumHome}`,
+    .join(', ')}; overrides ${JSON.stringify(manifest.overrides ?? {})} under ${appiumHome}`,
 );
