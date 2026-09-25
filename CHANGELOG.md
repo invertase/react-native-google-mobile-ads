@@ -1,3 +1,35 @@
+## [17.2.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v17.1.0...v17.2.0) (2026-09-25)
+
+### Features
+
+* **hooks:** add options-only useGAMInterstitialAd with onAppEvent ([c6ac231](https://github.com/invertase/react-native-google-mobile-ads/commit/c6ac231a07d2e8d9b92b7f28e2e84e71f72df214))
+* **hooks:** add useAppOpenAdManager for app-open lifecycle ([40573d8](https://github.com/invertase/react-native-google-mobile-ads/commit/40573d87c8a6936b536429f2b402e777821c0ae6))
+* **hooks:** add useNativeAd with lifecycle-safe NativeAd ownership ([1093613](https://github.com/invertase/react-native-google-mobile-ads/commit/1093613a03691d90989cbdcbbd7a00318b31210f))
+* **js:** export TestDeviceIds and clarify test device docs ([2f90580](https://github.com/invertase/react-native-google-mobile-ads/commit/2f90580a6bbfee1d315b3bd721fed131cc1d5048))
+* **pools:** gate AdPoolProvider creates with enabled for consent ([dcabb4e](https://github.com/invertase/react-native-google-mobile-ads/commit/dcabb4e7e3bdf0151bdefec85cd998d58f6cf80b))
+* report android-next-gen AdCapabilities when linked ([2edad12](https://github.com/invertase/react-native-google-mobile-ads/commit/2edad123414cd99a2b39750b7a59c2c232369502))
+
+### Bug Fixes
+
+* **ads:** apply categoryExclusions to ad requests ([904b85c](https://github.com/invertase/react-native-google-mobile-ads/commit/904b85c9a23b872e2263f431d0524eaee7cec2a6))
+* **ads:** coerce numeric customTargeting values to strings ([1387579](https://github.com/invertase/react-native-google-mobile-ads/commit/1387579a51b3bb38931ec8f6bfabbc57a9102b69))
+* **ads:** reject sparse customTargeting arrays ([9a29f44](https://github.com/invertase/react-native-google-mobile-ads/commit/9a29f44d0f9ce2d22deb92b51e50fadfcc415d9f))
+* **ads:** unify MobileAd/PooledAd show() failure channels ([6ee6a7b](https://github.com/invertase/react-native-google-mobile-ads/commit/6ee6a7b76641d92471a236acc6f2bfd4fa0fad24))
+* **android:** skip kotlin-android when AGP built-in Kotlin is present ([28ea492](https://github.com/invertase/react-native-google-mobile-ads/commit/28ea49250fe8340b61ea1da4bc4a02b4c125306e))
+* **appium, example:** stabilize pool poll and Ad Inspector dismiss ([7a47e09](https://github.com/invertase/react-native-google-mobile-ads/commit/7a47e09f51e3ee70b5cc0a49b3a9cae41251a8cb))
+* **appium:** dismiss Android immersive fullscreen education ([69a4cad](https://github.com/invertase/react-native-google-mobile-ads/commit/69a4cadff55e816af399de5a2386bd3ffc741903))
+* **appium:** harden iOS serial startup and Rewarded dismiss flake ([b5b3ff1](https://github.com/invertase/react-native-google-mobile-ads/commit/b5b3ff17786b51b38251a883bd885469d59a0984))
+* **appium:** stabilize iOS overlay dismiss and parallel startup ([7de852a](https://github.com/invertase/react-native-google-mobile-ads/commit/7de852a6147acc0eb09ee27af4e374a08c878827))
+* **core:** gate pool peek on capabilities with structured AdError ([da9bee6](https://github.com/invertase/react-native-google-mobile-ads/commit/da9bee6dc3f48fb11840097c04b694e77163a528))
+* **e2e:** pin Appium driver transitive dependencies ([006bd65](https://github.com/invertase/react-native-google-mobile-ads/commit/006bd65afbc38fba98597656de14e6749118da5b))
+* **e2e:** scope Android host recovery to the focused window ([959e622](https://github.com/invertase/react-native-google-mobile-ads/commit/959e6229feee2b0e7b941c16f5e086ad990d924d))
+* **e2e:** wait for rewarded dismiss chrome before Android close taps ([90522eb](https://github.com/invertase/react-native-google-mobile-ads/commit/90522eb68c1922a4cd91a6f3cd3c488372eebe8e))
+* **hooks:** avoid dynamic delete and redundant cast in usePooledAd ([f54f116](https://github.com/invertase/react-native-google-mobile-ads/commit/f54f116cbffd504283d1df495bd9e2ccc44e7d8e))
+* **hooks:** make useAppOpenAdManager autoLoad the master request gate ([7c168ee](https://github.com/invertase/react-native-google-mobile-ads/commit/7c168eea77b8ab44bffa3967ba7d4ebe7a6c374a))
+* **hooks:** preserve PooledAd.show() two-channel contract in usePooledAd ([b2630e4](https://github.com/invertase/react-native-google-mobile-ads/commit/b2630e42ee4f26871c00df8c2c1f5d7da564cd55))
+* **hooks:** suppress app-open auto-show after another fullscreen ad (AO-2) ([7402f9f](https://github.com/invertase/react-native-google-mobile-ads/commit/7402f9f0640a26e9077b16084126087994456494))
+* **js:** name GAM unit remedy in AdMob banner pool/multi-format errors ([f463de9](https://github.com/invertase/react-native-google-mobile-ads/commit/f463de9ffd280a6aa5797f47f5fbe4253ea0b197))
+
 ## [17.1.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v17.0.0...v17.1.0) (2026-09-23)
 
 ### Features

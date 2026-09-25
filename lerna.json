@@ -22,6 +22,6 @@
     "**/tooling/appium/**",
     "**/RNGoogleMobileAdsExample/**"
   ],
-  "version": "17.1.0",
+  "version": "17.2.0",
   "$schema": "node_modules/lerna/schemas/lerna-schema.json"
 }

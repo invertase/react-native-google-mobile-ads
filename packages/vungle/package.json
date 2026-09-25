@@ -1,6 +1,6 @@
 {
   "name": "@react-native-google-mobile-ads/vungle",
-  "version": "17.1.0",
+  "version": "17.2.0",
   "description": "Liftoff Monetize (Vungle) Google Mobile Ads (GAM) mediation adapter for react-native-google-mobile-ads. Links the official Google mediation adapter on Android and iOS; does not add JS ad APIs.",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "license": "Apache-2.0",

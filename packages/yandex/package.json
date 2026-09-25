@@ -1,6 +1,6 @@
 {
   "name": "@react-native-google-mobile-ads/yandex",
-  "version": "17.1.0",
+  "version": "17.2.0",
   "description": "Yandex Google Mobile Ads (GAM/AdMob) mediation adapter for react-native-google-mobile-ads. Links Yandex’s published AdMob custom-event adapters on iOS only; does not add JS ad APIs. Not Yandex-as-host / MAX / CloudX.",
   "author": "Invertase <oss@invertase.io> (http://invertase.io)",
   "license": "Apache-2.0",
