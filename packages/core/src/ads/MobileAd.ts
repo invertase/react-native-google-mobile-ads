@@ -21,6 +21,7 @@ import {
   adErrorFromNativeEvent,
   parseResponseInfoPayload,
 } from '../internal/adErrorFromNativeEvent';
+import { markFullscreenAdClosed, markFullscreenAdOpened } from '../internal/fullscreenAdPresence';
 import { AdEventType } from '../AdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { SharedEventEmitter } from '../internal/SharedEventEmitter';
@@ -64,6 +65,10 @@ export abstract class MobileAd implements MobileAdInterface {
   protected _adEventListenerId: number;
   protected _nativeListener: EmitterSubscription;
   protected _responseInfo: ResponseInfo | null;
+  // AO-2: whether this instance currently counts toward the process-wide
+  // fullscreen-ad-presence signal (raised on OPENED, lowered on CLOSED / show
+  // ERROR / destroy). Kept per-instance so the shared counter stays balanced.
+  protected _presenceMarked: boolean;
 
   protected constructor(
     type: AdType,
@@ -87,6 +92,7 @@ export abstract class MobileAd implements MobileAdInterface {
     this._showRequested = false;
     this._destroyed = false;
     this._responseInfo = null;
+    this._presenceMarked = false;
     this._adEventsListeners = new Map();
     this._adEventListenersMap = new Map();
     Object.values({
@@ -140,11 +146,25 @@ export abstract class MobileAd implements MobileAdInterface {
       }
     }
 
+    // AO-2: maintain the process-wide fullscreen-ad-presence signal. Raise on
+    // OPENED and lower on CLOSED / ERROR, once per instance, so a warm
+    // foreground caused purely by this ad Activity dismissing does not make the
+    // app-open manager auto-show a second fullscreen ad. See
+    // internal/fullscreenAdPresence.ts.
+    if (type === AdEventType.OPENED && !this._presenceMarked) {
+      this._presenceMarked = true;
+      markFullscreenAdOpened();
+    }
+
     if (type === AdEventType.CLOSED) {
       this._loaded = false;
       this._isLoadCalled = false;
       this._showRequested = false;
       this._responseInfo = null;
+      if (this._presenceMarked) {
+        this._presenceMarked = false;
+        markFullscreenAdClosed();
+      }
     }
 
     if (type === AdEventType.ERROR) {
@@ -153,6 +173,10 @@ export abstract class MobileAd implements MobileAdInterface {
       this._showRequested = false;
       if (nestedResponseInfo) {
         this._responseInfo = nestedResponseInfo;
+      }
+      if (this._presenceMarked) {
+        this._presenceMarked = false;
+        markFullscreenAdClosed();
       }
     }
 
@@ -348,6 +372,11 @@ export abstract class MobileAd implements MobileAdInterface {
       return;
     }
     this._destroyed = true;
+    if (this._presenceMarked) {
+      // Balance the presence counter if destroyed while still presenting.
+      this._presenceMarked = false;
+      markFullscreenAdClosed();
+    }
     this._nativeListener.remove();
     this.removeAllListeners();
     this._loaded = false;
