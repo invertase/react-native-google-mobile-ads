@@ -39,6 +39,7 @@ function App() {
           section: 'sports',
           subscriber: 1,
         },
+        categoryExclusions: ['airline'],
       }}
       onPaid={event => {
         console.log('GAM banner revenue', event.value, event.currency);
@@ -69,6 +70,7 @@ const requestOptions = {
     section: 'sports',
     interests: ['football', 'running'],
   },
+  categoryExclusions: ['airline'],
 };
 
 export default function GAMInterstitialButton({ consentReady }: { consentReady: boolean }) {
@@ -118,12 +120,15 @@ Both examples pass the shared `RequestOptions` supported by the GAM request:
   value is a string, a number, or an array of strings and numbers; numbers are converted to
   strings before the request reaches the native SDK. Non-finite numbers (`NaN`, `Infinity`) are
   rejected.
+- `categoryExclusions` takes an array of Ad Manager ad exclusion labels; line items and creatives
+  with any of those labels are not served for that request. An empty array sends no exclusions,
+  and non-string members are rejected.
 - `publisherProvidedId` and `publisherProvidedSignals` are available for publishers whose Ad
   Manager setup uses those features.
 - `networkExtras` sends adapter-specific values; it is not a replacement for GAM custom targeting.
 
-Define the matching keys, values, and line-item rules in Ad Manager. The client API
-supplies request signals; it does not create or select line items by ID. See Google's
+Define the matching keys, values, exclusion labels, and line-item rules in Ad Manager. The client
+API supplies request signals; it does not create or select line items by ID. See Google's
 [Ad Manager targeting guide](https://developers.google.com/ad-manager/mobile-ads-sdk/android/targeting)
 for the upstream concepts.
 

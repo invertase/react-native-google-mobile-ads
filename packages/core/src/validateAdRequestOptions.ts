@@ -192,6 +192,26 @@ export function validateAdRequestOptions(options?: RequestOptions) {
     out.customTargeting = customTargeting;
   }
 
+  if (!isUndefined(options.categoryExclusions)) {
+    const categoryExclusions: unknown = options.categoryExclusions;
+    if (!Array.isArray(categoryExclusions)) {
+      throw new Error("'options.categoryExclusions' expected an array containing string values");
+    }
+
+    const values: string[] = [];
+    for (let i = 0; i < categoryExclusions.length; i++) {
+      const value: unknown = categoryExclusions[i];
+      if (!isString(value)) {
+        throw new Error("'options.categoryExclusions' expected an array containing string values");
+      }
+      values.push(value);
+    }
+
+    if (values.length > 0) {
+      out.categoryExclusions = values;
+    }
+  }
+
   if (options.publisherProvidedId) {
     if (!isString(options.publisherProvidedId)) {
       throw new Error("'options.publisherProvidedId' expected a string value");

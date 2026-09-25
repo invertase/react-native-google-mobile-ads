@@ -41,6 +41,8 @@ class ReactNativeGoogleMobileAdsRequestTest {
         ),
         "publisherProvidedId",
         "publisher-user",
+        "categoryExclusions",
+        JavaOnlyArray.of("airline", "automotive"),
       )
 
     val request =
@@ -60,6 +62,7 @@ class ReactNativeGoogleMobileAdsRequestTest {
     assertEquals("publisher-user", request.publisherProvidedId)
     assertEquals("value", request.customTargeting["single"])
     assertEquals("first,second", request.customTargeting["multiple"])
+    assertEquals(setOf("airline", "automotive"), request.categoryExclusions)
     assertEquals("1", request.googleExtrasBundle.getString("npa"))
     assertEquals("mediation_value", request.googleExtrasBundle.getString("mediation_key"))
     assertEquals(
@@ -77,6 +80,8 @@ class ReactNativeGoogleMobileAdsRequestTest {
         JavaOnlyArray.of("sports"),
         "customTargeting",
         JavaOnlyMap.of("section", "front"),
+        "categoryExclusions",
+        JavaOnlyArray.of("airline", "automotive"),
       )
     val banner =
       ReactNativeGoogleMobileAdsCommon.buildBannerAdRequest(
@@ -89,6 +94,7 @@ class ReactNativeGoogleMobileAdsRequestTest {
     assertEquals(listOf(AdSize.BANNER, AdSize.MEDIUM_RECTANGLE), banner.adSizes)
     assertTrue(banner.manualImpressionRequested)
     assertEquals("front", banner.customTargeting["section"])
+    assertEquals(setOf("airline", "automotive"), banner.categoryExclusions)
 
     val native =
       ReactNativeGoogleMobileAdsCommon
@@ -103,6 +109,7 @@ class ReactNativeGoogleMobileAdsRequestTest {
       native.nativeAdTypes,
     )
     assertEquals(setOf("sports"), native.keywords)
+    assertEquals(setOf("airline", "automotive"), native.categoryExclusions)
   }
 
   @Test

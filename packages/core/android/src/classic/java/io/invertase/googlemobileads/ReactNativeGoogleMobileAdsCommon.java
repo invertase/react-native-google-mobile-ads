@@ -309,6 +309,14 @@ public class ReactNativeGoogleMobileAdsCommon {
       }
     }
 
+    if (adRequestOptions.hasKey("categoryExclusions")) {
+      ReadableArray categoryExclusions =
+          Objects.requireNonNull(adRequestOptions.getArray("categoryExclusions"));
+      for (int i = 0; i < categoryExclusions.size(); i++) {
+        builder.addCategoryExclusion(Objects.requireNonNull(categoryExclusions.getString(i)));
+      }
+    }
+
     if (adRequestOptions.hasKey("publisherProvidedId")) {
       builder.setPublisherProvidedId(
           Objects.requireNonNull(adRequestOptions.getString("publisherProvidedId")));

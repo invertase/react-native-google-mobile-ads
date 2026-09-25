@@ -123,9 +123,25 @@ export interface RequestOptions {
   customTargeting?: Record<string, string | number | (string | number)[]>;
 
   /**
-   * GAM-only category exclusions for the request.
+   * Google Ad Manager ad exclusion labels for the request. Line items and creatives carrying any
+   * of these labels are not served for this request. Define the labels in Ad Manager first.
    *
-   * Not currently applied to requests: this option is not forwarded to the native SDK.
+   * Takes an array of strings. An empty array sends no exclusions. Any other value (including
+   * `null` or an array containing non-string members) is rejected when the request options are
+   * validated: a synchronous throw, or a rejected promise for async APIs such as `AdPools.create`.
+   *
+   * Category exclusions are an Ad Manager feature; use them with Ad Manager ad units.
+   *
+   * #### Example
+   *
+   * ```js
+   * InterstitialAd.createForAdRequest('/12345/ad-unit', {
+   *   categoryExclusions: ['airline', 'automotive'],
+   * });
+   * ```
+   *
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/android/targeting#category_exclusions
+   * @see https://developers.google.com/ad-manager/mobile-ads-sdk/ios/api/reference/Classes/GAMRequest
    */
   categoryExclusions?: string[];
 
