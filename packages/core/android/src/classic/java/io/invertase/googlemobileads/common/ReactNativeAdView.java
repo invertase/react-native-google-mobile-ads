@@ -1,10 +1,18 @@
 package io.invertase.googlemobileads.common;
 
 import android.content.Context;
+import android.view.KeyEvent;
+import android.view.View;
 import android.widget.FrameLayout;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.BaseAdView;
+import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdFocus;
+import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdLayout;
+import io.invertase.googlemobileads.ReactNativeGoogleMobileAdsBannerAdPresentation;
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * Using FrameLayout instead of ReactViewGroup
@@ -17,6 +25,7 @@ import java.util.List;
  */
 public class ReactNativeAdView extends FrameLayout {
   private AdRequest request;
+  private List<String> sizeNames;
   private List<AdSize> sizes;
   private float maxAdHeight;
   private float adWidth;
@@ -24,6 +33,9 @@ public class ReactNativeAdView extends FrameLayout {
   private boolean manualImpressionsEnabled;
   private boolean propsChanged;
   private boolean isFluid;
+  private boolean isCollapsible;
+  private boolean adTornDown;
+  @Nullable private LifecycleEventListener hostDestroyListener;
 
   @Override
   public void requestLayout() {
@@ -33,27 +45,35 @@ public class ReactNativeAdView extends FrameLayout {
 
   /**
    * This ensures the adview is properly measured and laid out if its layout changed after being
-   * loaded This happens everytime for fluid ads, but cannot happen for fixed size ads loading
-   * additional content
+   * loaded. Required for FLUID ads and for collapsible banners whose height changes after load
+   * (#594). Fixed-size ads stay on the Yoga EXACTLY path.
    *
    * <p>See https://github.com/facebook/react-native/issues/17968 for more details
    */
   private final Runnable measureAndLayout =
       () -> {
         /**
-         * For fluid ads, we usually don't specify the ad height from JS side, so mark it as
-         * unspecified and let it dynamically determine its size
+         * For fluid / collapsible ads, mark height as unspecified and let the AdView determine its
+         * size, then layout to {@link #getMeasuredHeight()} — not stale Yoga {@link #getHeight()} —
+         * otherwise dynamic ads fight onSizeChange (#801 / #594).
          *
          * <p>See
          * https://developers.google.com/ad-manager/mobile-ads-sdk/android/native/styles#fluid_size
          */
+        boolean dynamicHeight =
+            ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(isFluid, isCollapsible);
         int heightMeasureSpec =
-            isFluid
+            dynamicHeight
                 ? MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
                 : MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.EXACTLY);
 
         measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY), heightMeasureSpec);
-        layout(getLeft(), getTop(), getRight(), getTop() + getHeight());
+        int bottom =
+            dynamicHeight
+                ? ReactNativeGoogleMobileAdsBannerAdLayout.fluidLayoutBottom(
+                    getTop(), getMeasuredHeight())
+                : getTop() + getHeight();
+        layout(getLeft(), getTop(), getRight(), bottom);
       };
 
   public ReactNativeAdView(final Context context) {
@@ -65,6 +85,75 @@ public class ReactNativeAdView extends FrameLayout {
     // com.facebook.ads.internal.util.parcelable.WrappedParcelable") when a fragment
     // (e.g. react-native-screens) restores its view hierarchy state.
     setSaveFromParentEnabled(false);
+    // Keep hardware BACK for React Navigation / OnBackPressedDispatcher (#813).
+    ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(this);
+  }
+
+  /**
+   * Never consume hardware BACK. Banner WebViews historically stole focus and finished the Activity
+   * instead of letting nested navigators pop (#813).
+   */
+  @Override
+  public boolean dispatchKeyEvent(KeyEvent event) {
+    if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+      return false;
+    }
+    return super.dispatchKeyEvent(event);
+  }
+
+  @Override
+  public boolean onKeyPreIme(int keyCode, KeyEvent event) {
+    if (keyCode == KeyEvent.KEYCODE_BACK) {
+      return false;
+    }
+    return super.onKeyPreIme(keyCode, event);
+  }
+
+  /**
+   * Kick the child AdView when this wrapper first becomes a non-zero, window-visible box so hybrid
+   * image+video creatives are not stuck until leave+return (#711). Classic GMA exposes
+   * [BaseAdView.resume].
+   */
+  public void refreshBannerPresentation() {
+    ReactNativeGoogleMobileAdsBannerAdPresentation.refreshIfPresentable(
+        getWidth(),
+        getHeight(),
+        getVisibility(),
+        () -> {
+          if (getChildCount() == 0) {
+            return;
+          }
+          View child = getChildAt(0);
+          if (child instanceof BaseAdView) {
+            // resume() forwards to the embedded WebView — the same path leave+return uses (#711).
+            ((BaseAdView) child).resume();
+            child.requestLayout();
+          }
+        });
+  }
+
+  @Override
+  protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+    super.onSizeChanged(w, h, oldw, oldh);
+    if (ReactNativeGoogleMobileAdsBannerAdPresentation.shouldRefreshAfterSizeChange(
+        oldw, oldh, w, h)) {
+      refreshBannerPresentation();
+    }
+  }
+
+  @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    refreshBannerPresentation();
+  }
+
+  @Override
+  protected void onWindowVisibilityChanged(int visibility) {
+    super.onWindowVisibilityChanged(visibility);
+    if (ReactNativeGoogleMobileAdsBannerAdPresentation.shouldRefreshAfterWindowVisibility(
+        visibility, getWidth(), getHeight())) {
+      refreshBannerPresentation();
+    }
   }
 
   public void setRequest(AdRequest request) {
@@ -77,6 +166,14 @@ public class ReactNativeAdView extends FrameLayout {
 
   public void setSizes(List<AdSize> sizes) {
     this.sizes = sizes;
+  }
+
+  public void setSizeNames(List<String> sizeNames) {
+    this.sizeNames = sizeNames;
+  }
+
+  public List<String> getSizeNames() {
+    return this.sizeNames;
   }
 
   public List<AdSize> getSizes() {
@@ -129,5 +226,38 @@ public class ReactNativeAdView extends FrameLayout {
 
   public boolean getIsFluid() {
     return this.isFluid;
+  }
+
+  public void setIsCollapsible(boolean isCollapsible) {
+    this.isCollapsible = isCollapsible;
+  }
+
+  public boolean getIsCollapsible() {
+    return this.isCollapsible;
+  }
+
+  /**
+   * Marks this banner wrapper as torn down. Returns true only on the first call so destroy is
+   * idempotent across onDropViewInstance and host Activity destroy (#892).
+   */
+  public boolean beginAdTeardown() {
+    if (adTornDown) {
+      return false;
+    }
+    adTornDown = true;
+    return true;
+  }
+
+  public boolean isAdTornDown() {
+    return adTornDown;
+  }
+
+  public void setHostDestroyListener(@Nullable LifecycleEventListener hostDestroyListener) {
+    this.hostDestroyListener = hostDestroyListener;
+  }
+
+  @Nullable
+  public LifecycleEventListener getHostDestroyListener() {
+    return hostDestroyListener;
   }
 }

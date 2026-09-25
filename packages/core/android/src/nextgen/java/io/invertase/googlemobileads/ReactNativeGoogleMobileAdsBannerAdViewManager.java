@@ -1,15 +1,16 @@
 package io.invertase.googlemobileads;
 
 import android.app.Activity;
+import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.PixelUtil;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
@@ -27,6 +28,7 @@ import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError;
 import io.invertase.googlemobileads.common.ReactNativeAdView;
 import io.invertase.googlemobileads.common.SharedUtils;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
@@ -58,13 +60,20 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @Nonnull
   @Override
   public ReactNativeAdView createViewInstance(@Nonnull ThemedReactContext context) {
-    return new ReactNativeAdView(context);
+    ReactNativeAdView view = new ReactNativeAdView(context);
+    LifecycleEventListener listener =
+        ReactNativeGoogleMobileAdsBannerAdHostDestroy.attach(context, () -> destroyAdView(view));
+    view.setHostDestroyListener(listener);
+    return view;
   }
 
   @Override
   public Map<String, Object> getExportedCustomDirectEventTypeConstants() {
-    return MapBuilder.of(
-        OnNativeEvent.EVENT_NAME, MapBuilder.of("registrationName", "onNativeEvent"));
+    Map<String, Object> registration = new HashMap<>();
+    registration.put("registrationName", "onNativeEvent");
+    Map<String, Object> constants = new HashMap<>();
+    constants.put(OnNativeEvent.EVENT_NAME, registration);
+    return constants;
   }
 
   @Override
@@ -86,6 +95,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @ReactProp(name = "unitId")
   public void setUnitId(ReactNativeAdView view, String value) {
+    if (value != null && value.equals(view.getUnitId())) {
+      return;
+    }
     view.setUnitId(value);
     view.setPropsChanged(true);
   }
@@ -104,15 +116,15 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   @ReactProp(name = "sizeConfig")
   public void setSizeConfig(ReactNativeAdView view, ReadableMap config) {
     if (config == null) return;
-    view.setMaxAdHeight(
+    float maxHeight =
         config.hasKey("maxHeight") && !config.isNull("maxHeight")
             ? (float) config.getDouble("maxHeight")
-            : 0);
-    view.setAdWidth(
-        config.hasKey("width") && !config.isNull("width") ? (float) config.getDouble("width") : 0);
+            : 0;
+    float width =
+        config.hasKey("width") && !config.isNull("width") ? (float) config.getDouble("width") : 0;
+    List<String> sizeNames = new ArrayList<>();
     if (config.hasKey("sizes") && !config.isNull("sizes")) {
       ReadableArray values = config.getArray("sizes");
-      List<String> sizeNames = new ArrayList<>();
       if (values != null) {
         for (int index = 0; index < values.size(); index++) {
           if (values.getType(index) == ReadableType.String) {
@@ -120,14 +132,33 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
           }
         }
       }
-      view.setSizeNames(sizeNames);
+    }
+
+    boolean requiresReload =
+        ReactNativeGoogleMobileAdsBannerAdLayout.sizeConfigRequiresReload(
+            view.getSizeNames(),
+            view.getMaxAdHeight(),
+            view.getAdWidth(),
+            sizeNames,
+            maxHeight,
+            width);
+
+    view.setMaxAdHeight(maxHeight);
+    view.setAdWidth(width);
+    view.setSizeNames(sizeNames);
+    if (!sizeNames.isEmpty()) {
       NextGenMobileAdsGate.run(() -> view.post(() -> resolveSizes(view)));
     }
-    view.setPropsChanged(true);
+    if (requiresReload) {
+      view.setPropsChanged(true);
+    }
   }
 
   @ReactProp(name = "manualImpressionsEnabled")
   public void setManualImpressionsEnabled(ReactNativeAdView view, boolean value) {
+    if (view.getManualImpressionsEnabled() == value && view.getSizeNames() != null) {
+      return;
+    }
     view.setManualImpressionsEnabled(value);
     view.setPropsChanged(true);
   }
@@ -141,12 +172,30 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @Override
   public void onDropViewInstance(@NonNull ReactNativeAdView view) {
-    AdView adView = getAdView(view);
-    if (adView != null) {
-      adView.destroy();
-      view.removeView(adView);
-    }
+    destroyAdView(view);
     super.onDropViewInstance(view);
+  }
+
+  /**
+   * Idempotent AdView teardown for JS unmount ([onDropViewInstance]) and host Activity destroy
+   * (#892 configuration-change leak when AppState stays active).
+   */
+  private void destroyAdView(@NonNull ReactNativeAdView view) {
+    if (!view.beginAdTeardown()) {
+      return;
+    }
+    ReactContext reactContext = (ReactContext) view.getContext();
+    ReactNativeGoogleMobileAdsBannerAdHostDestroy.detach(
+        reactContext, view.getHostDestroyListener());
+    view.setHostDestroyListener(null);
+
+    View child = view.getChildCount() == 0 ? null : view.getChildAt(0);
+    if (child instanceof AdView) {
+      ((AdView) child).destroy();
+    }
+    if (child != null) {
+      view.removeView(child);
+    }
   }
 
   private void requestAd(ReactNativeAdView view) {
@@ -180,6 +229,9 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   }
 
   private void requestAdInitialized(ReactNativeAdView view) {
+    if (view.isAdTornDown()) {
+      return;
+    }
     if (view.getSizes() == null
         || view.getSizes().isEmpty()
         || view.getUnitId() == null
@@ -194,8 +246,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     Activity activity = ((ReactContext) view.getContext()).getCurrentActivity();
     if (activity == null) return;
     AdView adView = new AdView(activity);
-    adView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+    // FOCUS_BLOCK_DESCENDANTS alone is insufficient after creative load (#813).
+    ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
+    ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(view);
     view.setIsFluid(view.getSizes().contains(AdSize.FLUID));
+    view.setIsCollapsible(false);
     view.addView(adView);
     loadAd(view, adView);
   }
@@ -207,35 +262,47 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
             view.getSizes(),
             view.getRequestOptions(),
             view.getManualImpressionsEnabled());
-    Activity activity = ((ReactContext) view.getContext()).getCurrentActivity();
-    if (activity == null) return;
-    BannerAd.load(
+    // BannerAd.load is @Deprecated ("Use AdView.loadAd() or BannerAdPreloader instead.").
+    adView.loadAd(
         request,
         new AdLoadCallback<BannerAd>() {
           @Override
           public void onAdLoaded(BannerAd ad) {
             view.post(
                 () -> {
-                  adView.registerBannerAd(ad, activity);
+                  // Creatives / mediation can re-enable focus on the AdView after load (#813).
+                  ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
+                  ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(view);
                   ad.setAdEventCallback(buildEventCallback(view, ad));
                   AdSize size = ad.getAdSize();
+                  boolean collapsible = ad.isCollapsible();
+                  view.setIsCollapsible(collapsible);
                   int width;
                   int height;
+                  boolean trackLayoutChanges =
+                      ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(
+                          view.getIsFluid(), collapsible);
                   if (view.getIsFluid()) {
                     width = view.getWidth();
                     height = view.getHeight();
-                    adView.addOnLayoutChangeListener(
-                        (v, l, t, r, b, oldL, oldT, oldR, oldB) -> {
-                          WritableMap changed = Arguments.createMap();
-                          changed.putDouble("width", PixelUtil.toDIPFromPixel(r - l));
-                          changed.putDouble("height", PixelUtil.toDIPFromPixel(b - t));
-                          sendEvent(view, EVENT_SIZE_CHANGE, changed);
-                        });
                   } else {
                     width = size.getWidthInPixels(view.getContext());
                     height = size.getHeightInPixels(view.getContext());
                     adView.measure(width, height);
                     adView.layout(0, 0, width, height);
+                  }
+                  if (trackLayoutChanges) {
+                    adView.addOnLayoutChangeListener(
+                        (v, l, t, r, b, oldL, oldT, oldR, oldB) -> {
+                          if (!ReactNativeGoogleMobileAdsBannerAdLayout.shouldEmitSizeChange(
+                              oldR - oldL, oldB - oldT, r - l, b - t)) {
+                            return;
+                          }
+                          WritableMap changed = Arguments.createMap();
+                          changed.putDouble("width", PixelUtil.toDIPFromPixel(r - l));
+                          changed.putDouble("height", PixelUtil.toDIPFromPixel(b - t));
+                          sendEvent(view, EVENT_SIZE_CHANGE, changed);
+                        });
                   }
                   WritableMap payload = Arguments.createMap();
                   payload.putDouble("width", PixelUtil.toDIPFromPixel(width));
@@ -244,6 +311,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
                       ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(ad.getResponseInfo());
                   if (response != null) payload.putMap("responseInfo", response);
                   sendEvent(view, EVENT_AD_LOADED, payload);
+                  // Best-effort Next-Gen surface kick once presentable (#711; no pause/resume API).
+                  view.refreshBannerPresentation();
                 });
           }
 
@@ -306,7 +375,11 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
   @Nullable
   private AdView getAdView(ViewGroup parent) {
-    return parent.getChildCount() == 0 ? null : (AdView) parent.getChildAt(0);
+    if (parent.getChildCount() == 0) {
+      return null;
+    }
+    View child = parent.getChildAt(0);
+    return child instanceof AdView ? (AdView) child : null;
   }
 
   private void sendEvent(ReactNativeAdView view, String type, @Nullable WritableMap payload) {
@@ -314,8 +387,10 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     event.putString("type", type);
     if (payload != null) event.merge(payload);
     ThemedReactContext context = (ThemedReactContext) view.getContext();
-    EventDispatcher dispatcher =
-        UIManagerHelper.getEventDispatcherForReactTag(context, view.getId());
-    if (dispatcher != null) dispatcher.dispatchEvent(new OnNativeEvent(view.getId(), event));
+    EventDispatcher dispatcher = UIManagerHelper.getEventDispatcher(context);
+    if (dispatcher != null) {
+      dispatcher.dispatchEvent(
+          new OnNativeEvent(UIManagerHelper.getSurfaceId(view), view.getId(), event));
+    }
   }
 }

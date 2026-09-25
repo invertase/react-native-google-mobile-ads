@@ -16,7 +16,7 @@ buildscript {
 
     dependencies {
       classpath("com.android.tools.build:gradle:8.6.0")
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.9.25')}"
+      classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.9.25')}")
     }
   } else {
     repositories {
@@ -24,7 +24,7 @@ buildscript {
     }
 
     dependencies {
-      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.9.25')}"
+      classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.9.25')}")
     }
   }
 }
@@ -168,8 +168,10 @@ if (!appJSONGoogleMobileAdsAppIDString) {
 }
 
 android {
+  namespace = "io.invertase.googlemobileads"
+
   defaultConfig {
-    multiDexEnabled true
+    multiDexEnabled = true
     manifestPlaceholders = [
       appJSONGoogleMobileAdsAppID                  : appJSONGoogleMobileAdsAppIDString,
       appJSONGoogleMobileAdsDelayAppMeasurementInit: appJSONGoogleMobileAdsDelayAppMeasurementInitBool,
@@ -196,7 +198,7 @@ android {
   }
   lintOptions {
     disable 'GradleCompatible'
-    abortOnError false
+    abortOnError = false
   }
   compileOptions {
     sourceCompatibility JavaVersion.VERSION_1_8
@@ -236,10 +238,13 @@ dependencies {
       exclude group: "com.google.android.gms", module: "play-services-ads-lite"
     }
   }
-  api "com.google.android.ump:user-messaging-platform:${ReactNative.ext.getVersion("ads", "consent")}"
+  api("com.google.android.ump:user-messaging-platform:${ReactNative.ext.getVersion("ads", "consent")}")
+  // Prefer Maven coordinates over io.invertase.gradle.build's local-maven helper, which still
+  // uses Groovy space-assignment (`url`/`name`) deprecated for Gradle 10.
+  api("com.facebook.react:react-android")
 
-  testImplementation "junit:junit:4.13.2"
-  testImplementation "org.robolectric:robolectric:4.14.1"
+  testImplementation("junit:junit:4.13.2")
+  testImplementation("org.robolectric:robolectric:4.14.1")
 }
 
 def versionParts = { String version ->
@@ -270,5 +275,4 @@ if (androidBackend == "nextgen") {
 ReactNative.shared.applyPackageVersion()
 ReactNative.shared.applyDefaultExcludes()
 ReactNative.module.applyAndroidVersions()
-ReactNative.module.applyReactNativeDependency("api")
 

@@ -151,3 +151,165 @@ The sample reuses the same `InterstitialAd` instance: after `CLOSED`, it calls `
 advert is ready for the next transition.
 Forward `AdEventType.PAID` payloads to your
 [revenue telemetry](/revenue-telemetry-and-auction-diagnostics) pipeline.
+
+## Caveats / limitations
+
+On iOS, if the interstitial close control is hard to tap (especially on notched devices), see
+[iOS: interstitial close control unreachable (status bar / notch / creatives)](#ios-interstitial-close-control-unreachable-status-bar--notch--creatives).
+
+        // See "iOS: interstitial close control unreachable" below
+### iOS: interstitial close control unreachable (status bar / notch / creatives)
+
+On iOS, this package resolves a presenting `UIViewController` and calls Google's
+`GADInterstitialAd` / `GADRewardedAd` / `GADRewardedInterstitialAd` / `GADAppOpenAd`
+`presentFromRootViewController:`. It does **not** host the fullscreen creative, draw a close
+button, insert a touch overlay, or restyle AdMob chrome. Close controls, countdown / exit steps,
+and any stacked creative UI belong to the Google Mobile Ads SDK and the serving creative (including
+mediation partners).
+
+If taps on the close (X) control do nothing — especially on notched phones (for example iPhone 11 /
+12 / 13) where the control sits near the status bar — or you see **two** close icons stacked:
+
+1. Hide the React Native status bar while the ad is open (the example above uses
+   `StatusBar.setHidden(true)` on `OPENED` and restores it on `CLOSED`). A visible status bar can
+   sit over the creative's hit target even though the icon still draws.
+2. Confirm you are not keeping a React Native `Modal`, absolute-positioned view, toast, coachmark,
+   or Expo / system UI layer above the ad while it is presented. The SDK presents its own view
+   controller; package JS does not insert chrome on top of it.
+3. Distinguish this from unrelated tip fixes: NativeAsset Fabric recycle leaving
+   `userInteractionEnabled = NO` on **host** views after native ads (not interstitial close during
+   presentation), and fullscreen dismiss-recovery when `CLOSED` is skipped after a non-interactive
+   dismiss (touches dead **after** the ad is gone).
+4. Re-test on a current Google Mobile Ads iOS SDK (tip pin: `packages/core/package.json`
+   `sdkVersions.ios.googleMobileAds`) and with Google test units. Dual close chrome or a close
+   control that does not receive taps and only appears on some creatives is usually upstream
+   creative / mediation UI — capture SDK logs, device / OS, GMA SDK version, mediation adapters,
+   and whether [High-engagement ads](https://support.google.com/admob/answer/15525707) is enabled
+   under AdMob **App settings**, then escalate to Google. This React Native package cannot relocate
+   or force hit-testing on Google's close control.
+
+### Android: host UI flicker after fullscreen dismiss
+
+After a normal close of an interstitial, app open, rewarded, or rewarded interstitial ad on Android, some apps see the
+host screen briefly **push and return** (a one-frame layout jump / flicker). iOS is often unaffected because fullscreen
+ads present from a view controller, not a separate activity with its own window and system UI policy.
+
+On Android, Google Mobile Ads shows those creatives in Google's own `AdActivity` (classic:
+`com.google.android.gms.ads.AdActivity` with `@android:style/Theme.Translucent`; Next-Gen:
+`com.google.android.libraries.ads.mobile.sdk.common.AdActivity` with `@style/Theme.GoogleMobileAds`). When that activity
+finishes, your `MainActivity` resumes. System bars, immersive mode, window insets, soft-input mode, and activity
+transitions can all change in that resume transition. React Native layout (Safe Area, `react-native-screens`, keyboard
+controllers, navigation stacks) then recalculates — which can look like a push/back flicker even though no navigation
+`push` / `pop` ran.
+
+This package's Android show path only:
+
+- calls the SDK `show(activity, …)` APIs,
+- optionally forwards `show({ immersiveModeEnabled })` to `setImmersiveMode(boolean)` (Android system UI immersive
+  mode on the ad window — **not** a host-window or React Navigation API),
+
+then emits `AdEventType.CLOSED` from `onAdDismissedFullScreenContent`. It does **not** set `MainActivity` window
+flags, `windowSoftInputMode`, override activity transitions, or drive React Navigation / `react-native-screens`.
+
+This is a **different** class from [fullscreen ads closing after Home → resume](#android-fullscreen-ads-closing-after-home--resume)
+(`singleTask` clearing `AdActivity`). Here the ad closed intentionally; the host UI is what jumps.
+
+Ways to investigate or mitigate in **your** app (not in this library):
+
+1. Re-test with `immersiveModeEnabled` omitted or `false`. Leaving immersive mode when `AdActivity` finishes is a
+   common source of system bar / inset restore animation on the resumed activity.
+2. Check `MainActivity` `android:windowSoftInputMode` (templates often use `adjustResize`). A focus or inset change on
+   resume can resize the React root once; try `adjustPan` or `adjustNothing` if that matches your keyboard behavior.
+3. Prefer current Google Mobile Ads / Play services builds and compare against a minimal native AdMob sample (no React
+   Navigation). Tip pins: `packages/core/package.json` `sdkVersions`. Classic creative chrome still ships via the
+   remote GMS ads module.
+4. If the jump tracks Safe Area or navigation chrome, audit app-side listeners on `AdEventType.CLOSED` /
+   `AppState` that remount screens, toggle status-bar style, or call navigation `reset` / `navigate` — those are app
+   code, not this package.
+5. Activity enter/exit animations and translucent `AdActivity` themes are owned by the SDK / your app theme. Do **not**
+   expect this React Native package to zero Google's transitions or pad host insets after dismiss.
+
+If a pure Google Mobile Ads sample still flickers on the same device / OS, escalate to Google with Mobile Ads SDK logs.
+This package cannot keep host layout stable across Google's `AdActivity` finish.
+
+On Android 15+ (`targetSdk` 35+), if interstitial content draws under the system navigation bar, see
+[Android: interstitial content under the system navigation bar (API 35+)](#android-interstitial-content-under-the-system-navigation-bar-api-35).
+
+### Android: interstitial content under the system navigation bar (API 35+)
+
+On Android 15+ (`targetSdk` 35+), the platform can enforce edge-to-edge drawing on activities. Google Mobile Ads presents
+fullscreen creatives (interstitial, rewarded, rewarded interstitial, app open) in Google's own `AdActivity`, not in a
+view owned by this package:
+
+- Classic SDK: `com.google.android.gms.ads.AdActivity` with `@android:style/Theme.Translucent`
+- Next-Gen SDK: `com.google.android.libraries.ads.mobile.sdk.common.AdActivity` with `@style/Theme.GoogleMobileAds`
+  (transparent status and navigation bar colors)
+
+This package calls `show()` and forwards Google's fullscreen callbacks. It does **not** apply `WindowInsets`, host the
+creative layout, or replace Google's activity theme. If interstitial (or other fullscreen) content draws under the
+system navigation bar on API 35+, that layout is controlled by the Google Mobile Ads SDK / GMS module for `AdActivity`.
+
+Ways to mitigate this in **your** app (not in this library):
+
+- Prefer a current Google Mobile Ads SDK build and re-test after SDK / Google Play services updates. This package's tip
+  pins live in `packages/core/package.json` `sdkVersions`; they do **not** freeze classic fullscreen creative layout —
+  classic UI is delivered by the remote GMS ads module, not a fixed in-app layout in the client AAR.
+- Temporary app-side opt-out: define a custom theme that **parents** the SDK theme your backend already uses
+  (`@android:style/Theme.Translucent` for classic, `@style/Theme.GoogleMobileAds` for Next-Gen) and **only adds**
+  `android:windowOptOutEdgeToEdgeEnforcement=true` (API 35+ only; typically under `res/values-v35/`). Do **not** replace
+  those parents with an opt-out-only theme — that can break translucent / transparent-bar behavior on `AdActivity`.
+  Then merge-override Google's `AdActivity` in **your** `AndroidManifest.xml` with the matching `android:name`,
+  `tools:replace="android:theme"`, and `xmlns:tools` on the manifest root. Opt-out is a platform migration escape
+  hatch — validate immersive / video creatives and plan to remove it when the SDK no longer needs it.
+- Do **not** expect this React Native package to pad Google's `AdActivity` content; there is no public bridge API for
+  that window.
+
+Minimal classic example (Next-Gen: parent `@style/Theme.GoogleMobileAds` and
+`com.google.android.libraries.ads.mobile.sdk.common.AdActivity`):
+
+```xml
+<!-- res/values-v35/styles.xml -->
+<style name="Theme.AdActivity.OptOutEdgeToEdge" parent="@android:style/Theme.Translucent">
+  <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+</style>
+```
+
+```xml
+<!-- AndroidManifest.xml -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
+  <application>
+    <activity
+      android:name="com.google.android.gms.ads.AdActivity"
+      android:theme="@style/Theme.AdActivity.OptOutEdgeToEdge"
+      tools:replace="android:theme" />
+  </application>
+</manifest>
+```
+
+- On Android, if an app open ad closes when returning from the background via the launcher icon, see
+  [Android: fullscreen ads closing after Home → resume](#android-fullscreen-ads-closing-after-home--resume).
+### Android: fullscreen ads closing after Home → resume
+
+On Android, Google Mobile Ads presents interstitial, app open, rewarded, and rewarded interstitial creatives in a separate
+`AdActivity`. This package only emits `AdEventType.CLOSED` when that activity reports dismissal
+(`onAdDismissedFullScreenContent`). Other helpers may listen to React Native `AppState` (for example `useForeground` /
+`AdPoolProvider`), but they do **not** destroy a showing fullscreen ad or emit `CLOSED` from `AppState` alone.
+
+If a fullscreen ad disappears when the user presses Home and then returns via the **launcher icon**, check your app
+`AndroidManifest.xml` `MainActivity` `android:launchMode`. React Native and Expo templates commonly set
+`android:launchMode="singleTask"`. With that mode, bringing `MainActivity` to the front can clear activities above it in
+the same task — including Google's `AdActivity` — which dismisses the creative and fires `CLOSED` (including before any
+delayed close button appears).
+
+Ways to mitigate this in **your** app (not in this library):
+
+- Prefer `android:launchMode="singleTop"` on `MainActivity` when it is compatible with your deep-link and cold-start
+  behavior (Flutter AdMob samples commonly use `singleTop`).
+- After Expo prebuild, edit the generated `android/app/src/main/AndroidManifest.xml`, or apply the same change with a
+  small config plugin, then re-verify launcher resume and any auth / deep-link flows that originally needed `singleTask`.
+- Confirm the dismiss is not your own JS calling `destroy()` / reloading on `AppState` `'active'`.
+
+This package cannot keep Google's `AdActivity` alive across an app-manifest task clear. Changing `launchMode` has
+side effects beyond ads — validate carefully before shipping.
+

@@ -93,3 +93,23 @@ configuration changes.
 
 See [Testing ads](/testing) for the complete checklist and
 [Ad Inspector and the debug menu](/ad-inspector) for request-level inspection.
+
+## `googleMobileAds/timeout` on load
+
+A load that fails with `googleMobileAds/timeout` (structured `reason: 'timeout'`) is the library mapping Google Mobile Ads iOS `GADErrorTimeout` (native error code `5`) from the SDK completion handler. The React Native bridge does **not** invent or extend a request timer on interstitial, rewarded, rewarded interstitial, app open, or banner load paths — it forwards that iOS SDK `NSError`. Android error mappers have no timeout arm for this code (an equivalent native code would surface as `unknown`, not `googleMobileAds/timeout`).
+
+When every format fails at a fixed ~ten seconds after `initialize()` while the same session can `fetch` ad hosts successfully:
+
+1. Confirm `initialize()` resolved and consent / `canRequestAds` allow requests.
+2. Treat app-level URL fetch success as **not** proof the SDK auction path works; the Mobile Ads SDK uses its own request machinery.
+3. Do not look for a package “request timeout” knob — none exists (pinned SDK request configuration has no request-timeout API).
+4. Capture Mobile Ads SDK logs, try a second physical device, and escalate to Google with the Google Mobile Ads SDK version plus device/OS when Google **test** unit IDs fail this way after a successful initialize.
+
+New Architecture vs Paper does not change this mapping: both call the same native `loadWithAdUnitID` / load APIs and pass through the completion error.
+
+## Extra links
+
+- Mobile Ads SDK [iOS](https://developers.google.com/admob/ios/quick-start), [Android](https://developers.google.com/admob/android/quick-start)
+- [Common reasons for ads not showing](https://support.google.com/admob/answer/9469204)
+- [Migrating to v17](/migrating-to-v17) — structured errors, no-fill vs failure, diagnostics
+- [Revenue telemetry and auction diagnostics](/revenue-telemetry-and-auction-diagnostics) — `ResponseInfo` after load

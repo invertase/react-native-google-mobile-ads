@@ -89,4 +89,12 @@ public abstract class NativeGoogleMobileAdsModuleSpec extends ReactContextBaseJa
   @ReactMethod
   @DoNotStrip
   public abstract void setAppMuted(boolean muted);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void setAudioSessionIsApplicationManaged(boolean managed);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void registerWebView(double viewTag, Promise promise);
 }

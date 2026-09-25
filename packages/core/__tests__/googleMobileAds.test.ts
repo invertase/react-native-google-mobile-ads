@@ -158,6 +158,34 @@ describe('Admob', function () {
         admob().setAppMuted(true);
         expect(RNGoogleMobileAdsModule.setAppMuted).toHaveBeenCalledTimes(1);
       });
+
+      it('does call native setAudioSessionIsApplicationManaged method', () => {
+        jest.clearAllMocks();
+        admob().setAudioSessionIsApplicationManaged(true);
+        expect(RNGoogleMobileAdsModule.setAudioSessionIsApplicationManaged).toHaveBeenCalledWith(
+          true,
+        );
+      });
+
+      it('does call native registerWebView method', () => {
+        jest.clearAllMocks();
+        admob().registerWebView(42);
+        expect(RNGoogleMobileAdsModule.registerWebView).toHaveBeenCalledWith(42);
+      });
+
+      it('throws if registerWebView viewTag is not a finite number', function () {
+        expect(() => {
+          // @ts-ignore
+          admob().registerWebView('42');
+        }).toThrow(
+          "googleMobileAds.registerWebView(*) 'viewTag' expected a finite number (React Native view tag)",
+        );
+        expect(() => {
+          admob().registerWebView(Number.NaN);
+        }).toThrow(
+          "googleMobileAds.registerWebView(*) 'viewTag' expected a finite number (React Native view tag)",
+        );
+      });
     });
   });
 });

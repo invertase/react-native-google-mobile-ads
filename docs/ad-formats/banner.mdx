@@ -56,6 +56,12 @@ function App() {
 The `size` prop takes a [`BannerAdSize`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/BannerAdSize.ts) type, and once the advert is available, will
 fill the space for the chosen size.
 
+Prefer [`BannerAdSize.LARGE_ANCHORED_ADAPTIVE_BANNER`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/BannerAdSize.ts).
+[`BannerAdSize.ANCHORED_ADAPTIVE_BANNER`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/BannerAdSize.ts)
+is deprecated and, on Android, resolves to the same large anchored adaptive height as
+`LARGE_ANCHORED_ADAPTIVE_BANNER` (the SDK no longer exposes a non-deprecated anchored size
+capped at 50 density-independent pixels).
+
 <Info>
   If no inventory for the requested size is available, `onAdFailedToLoad` receives the load error.
 </Info>
@@ -66,11 +72,11 @@ View the [`RequestOptions`](https://github.com/invertase/react-native-google-mob
 
 The component also exposes props for listening to user, lifecycle, and revenue events:
 
-- `onAdClosed`
+- `onAdClosed` &mdash; Full-screen overlay from a banner click was dismissed.
 - `onAdFailedToLoad`
-- `onAdOpened`
+- `onAdOpened` &mdash; A full-screen overlay is about to present after a click. Not every click presents an overlay (especially on iOS); use `onAdClicked` to observe every recorded tap.
 - `onAdImpression`
-- `onAdClicked`
+- `onAdClicked` &mdash; A click was recorded. Prefer this when counting taps or hiding the banner after N clicks.
 - `onPaid` &mdash; On [impression-level ad revenue](https://support.google.com/admob/answer/11322405?hl=en) events.
 
 Use `onPaid` to forward impression-level revenue to your telemetry pipeline. See
@@ -168,6 +174,38 @@ function App() {
   );
 }
 ```
+
+## Caveats / limitations
+
+### Android: hybrid image+video banner creatives
+
+Some banner inventory is a **hybrid** creative (static image beside or above an in-banner video). Google's banner `AdView` renders that inside an embedded WebView. On Android, video halves historically could stay frozen after `onAdLoaded` until the user left the app and returned — the Activity leave+return cycle recreates the WebView surface / resume path.
+
+When the banner wrapper first has a non-zero size and is window-visible (including after load and on window-VISIBLE), this package:
+
+- **Classic GMA:** calls `BaseAdView.resume()`, which forwards into the embedded WebView — the same recovery path leave+return uses, without requiring a manual background/refocus workaround.
+- **Next-Gen GMA:** has no banner `AdView` pause/resume API. The package best-effort `requestLayout` / `invalidate`s the child view. That is **not** equivalent to leave+return and may not recover every hybrid video creative.
+
+If hybrid video still fails to paint after upgrading:
+
+1. Confirm the host `Activity` has **hardware acceleration** enabled. Google requires it for video in banner ad views ([Set up banner ads](https://developers.google.com/admob/android/banner#hardware_acceleration_for_video_ads)). Expo / React Native templates usually enable it globally; do not set `android:hardwareAccelerated="false"` on `MainActivity`.
+2. Confirm the banner has a real laid-out width and height before or when the creative loads (avoid mounting a 0×0 placeholder that never grows).
+3. Distinguish this from [native video in pagers](/native-ads#fullscreen-pagers-and-native-video) — that path uses `NativeMediaView` / `mediaContent`, not `<BannerAd>`.
+
+Some banner inventory is a **hybrid** creative (static image beside or above an in-banner video). Google's banner `AdView` renders that inside an embedded WebView. On Android, video halves historically could stay frozen after `onAdLoaded` until the user scrolled or otherwise interacted, or left the app and returned — the Activity leave+return cycle recreates the WebView surface / resume path ([#655](https://github.com/invertase/react-native-google-mobile-ads/issues/655), [#711](https://github.com/invertase/react-native-google-mobile-ads/issues/711)).
+
+
+### Banners inside scrolling content (iOS momentum)
+
+Banner creatives are rendered by the Google Mobile Ads SDK (typically a nested `WKWebView`). This package does **not** expose nested web-view scroll settings such as `decelerationRate` — the public `GADBannerView` / `GAMBannerView` APIs have no such knobs, so React Native `WebView` `decelerationRate` workarounds do not apply here.
+
+On iOS, finger-tracking scroll can feel fine while momentum after lift feels choppy when live banners sit inside a `ScrollView`. That mismatch is an upstream SDK embedding limitation, not a missing prop on `<BannerAd>`. To reduce it on the app side:
+
+- Prefer fewer concurrent live banners (for example one anchored banner outside the scrollable content).
+- Prefer `FlatList` / `SectionList` (or similar) recycling so off-screen rows unmount and tear down their banner views.
+- Avoid mounting many banners at once in a long non-recycling `ScrollView`.
+
+A separate Fabric retain-cycle bug that could keep banners alive after unmount (device heat / scroll death under dense lists) was fixed independently; that is not the same as momentum choppiness when banners are destroyed correctly on unmount.
 
 <Info>
   Looking for a Google Ad Manager banner (`GAMBannerAd` with multiple `sizes`)? See the [Google Ad

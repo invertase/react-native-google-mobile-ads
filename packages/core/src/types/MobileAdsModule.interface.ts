@@ -79,6 +79,67 @@ export interface MobileAdsModuleInterface {
   setAppMuted(muted: boolean): void;
 
   /**
+   * iOS only. Tells the Google Mobile Ads SDK whether the app manages `AVAudioSession`.
+   *
+   * Maps to `GADAudioVideoManager.audioSessionIsApplicationManaged` on
+   * `GADMobileAds.sharedInstance.audioVideoManager`. When `true`, the SDK stops
+   * changing the shared audio session during video ad playback (category switches
+   * that can interrupt or pause in-page video). When `false` (default), the SDK
+   * may manage `AVAudioSession` itself.
+   *
+   * No-op on Android: classic `play-services-ads` 25.4.0 and Next-Gen
+   * `ads-mobile-sdk` 1.4.0 have no equivalent API.
+   *
+   * Must be applied on the main thread (this module already dispatches there on iOS).
+   *
+   * #### Example
+   *
+   * ```js
+   * import mobileAds from 'react-native-google-mobile-ads';
+   *
+   * // Call before ads that may play video, if your app owns AVAudioSession.
+   * mobileAds().setAudioSessionIsApplicationManaged(true);
+   * ```
+   *
+   * @param managed `true` if the application manages the audio session; `false` otherwise.
+   */
+  setAudioSessionIsApplicationManaged(managed: boolean): void;
+
+  /**
+   * Registers an in-app WebView with the Google Mobile Ads SDK so ad traffic inside that
+   * WebView is classified as in-app (WebView API for Ads).
+   *
+   * Pass a React Native view tag from `findNodeHandle` (or equivalent) for any host that
+   * owns an `android.webkit.WebView` / `WKWebView` — typically a `react-native-webview`
+   * ref after mount. Nested WebViews under the tagged view are resolved automatically.
+   * This package does not depend on `react-native-webview`.
+   *
+   * Call after `initialize()`. Rejects when the tag cannot be resolved to a WebView.
+   *
+   * #### Example
+   *
+   * ```js
+   * import { findNodeHandle } from 'react-native';
+   * import { WebView } from 'react-native-webview';
+   * import mobileAds from 'react-native-google-mobile-ads';
+   *
+   * const ref = useRef(null);
+   * <WebView
+   *   ref={ref}
+   *   onLoadEnd={() => {
+   *     const tag = findNodeHandle(ref.current);
+   *     if (tag != null) {
+   *       mobileAds().registerWebView(tag);
+   *     }
+   *   }}
+   * />
+   * ```
+   *
+   * @param viewTag React Native view tag for the WebView host (or a parent containing one).
+   */
+  registerWebView(viewTag: number): Promise<void>;
+
+  /**
    * Prevents the Google Mobile Ads SDK from initializing mediation adapters.
    * Stub today: no-op. When native-wired: queued until `initialize()`;
    * rejected if called after initialization.

@@ -17,8 +17,8 @@ package io.invertase.googlemobileads;
  *
  */
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -111,7 +111,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
 
       ConsentRequestParameters consentRequestParameters = paramsBuilder.build();
 
-      Activity currentActivity = getCurrentActivity();
+      Activity currentActivity = getReactApplicationContext().getCurrentActivity();
 
       if (currentActivity == null) {
         rejectPromiseWithCodeAndMessage(
@@ -138,7 +138,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   @ReactMethod
   public void showForm(final Promise promise) {
     try {
-      Activity currentActivity = getCurrentActivity();
+      Activity currentActivity = getReactApplicationContext().getCurrentActivity();
 
       if (currentActivity == null) {
         rejectPromiseWithCodeAndMessage(
@@ -174,7 +174,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   @ReactMethod
   public void showPrivacyOptionsForm(final Promise promise) {
     try {
-      Activity currentActivity = getCurrentActivity();
+      Activity currentActivity = getReactApplicationContext().getCurrentActivity();
 
       if (currentActivity == null) {
         rejectPromiseWithCodeAndMessage(
@@ -204,7 +204,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   @ReactMethod
   public void loadAndShowConsentFormIfRequired(final Promise promise) {
     try {
-      Activity currentActivity = getCurrentActivity();
+      Activity currentActivity = getReactApplicationContext().getCurrentActivity();
 
       if (currentActivity == null) {
         rejectPromiseWithCodeAndMessage(
@@ -245,8 +245,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   @ReactMethod
   public void getTCString(Promise promise) {
     try {
-      SharedPreferences prefs =
-          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+      SharedPreferences prefs = defaultSharedPreferences(getReactApplicationContext());
       // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
       String tcString = prefs.getString("IABTCF_TCString", null);
       promise.resolve(tcString);
@@ -258,8 +257,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   @ReactMethod
   public void getGdprApplies(Promise promise) {
     try {
-      SharedPreferences prefs =
-          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+      SharedPreferences prefs = defaultSharedPreferences(getReactApplicationContext());
       int gdprApplies = prefs.getInt("IABTCF_gdprApplies", 0);
       promise.resolve(gdprApplies == 1);
     } catch (Exception e) {
@@ -270,8 +268,7 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   @ReactMethod
   public void getPurposeConsents(Promise promise) {
     try {
-      SharedPreferences prefs =
-          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+      SharedPreferences prefs = defaultSharedPreferences(getReactApplicationContext());
       String purposeConsents = prefs.getString("IABTCF_PurposeConsents", "");
       promise.resolve(purposeConsents);
     } catch (Exception e) {
@@ -282,12 +279,21 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   @ReactMethod
   public void getPurposeLegitimateInterests(Promise promise) {
     try {
-      SharedPreferences prefs =
-          PreferenceManager.getDefaultSharedPreferences(getReactApplicationContext());
+      SharedPreferences prefs = defaultSharedPreferences(getReactApplicationContext());
       String purposeLegitimateInterests = prefs.getString("IABTCF_PurposeLegitimateInterests", "");
       promise.resolve(purposeLegitimateInterests);
     } catch (Exception e) {
       rejectPromiseWithCodeAndMessage(promise, "consent-string-error", e.toString());
     }
+  }
+
+  /**
+   * Same store as deprecated {@code
+   * android.preference.PreferenceManager#getDefaultSharedPreferences} ({@code
+   * <packageName>_preferences}) without using that deprecated class.
+   */
+  private static SharedPreferences defaultSharedPreferences(Context context) {
+    return context.getSharedPreferences(
+        context.getPackageName() + "_preferences", Context.MODE_PRIVATE);
   }
 }

@@ -47,6 +47,9 @@ class ReactNativeGoogleMobileAdsNativeModule(
   private val adHolders = HashMap<String, NativeAdHolder>()
   private val multiFormatHolders = HashMap<String, MultiFormatHolder>()
 
+  /** In-flight single-format loads — keeps holders reachable until promise settle (#870). */
+  private val pendingLoadHolders = HashSet<NativeAdHolder>()
+
   override fun getName() = NAME
 
   @ReactMethod
@@ -56,24 +59,34 @@ class ReactNativeGoogleMobileAdsNativeModule(
     promise: Promise,
   ) {
     val holder = NativeAdHolder(adUnitId, requestOptions)
+    pendingLoadHolders.add(holder)
     holder.loadAd(
       onLoaded = { nativeAd ->
-        val responseId = nativeAd.responseInfo?.responseId
-        if (responseId == null) {
-          val error =
-            ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(
-              "internal-error",
-              "Failed to get a valid response ID from the loaded ad.",
-              "load",
+        pendingLoadHolders.remove(holder)
+        when (
+          val outcome =
+            ReactNativeGoogleMobileAdsNativeAdLoad.outcomeForLoadedResponseId(
+              nativeAd.responseInfo?.responseId,
             )
-          promise.reject(error.getString("code"), error.getString("message"), error)
-          return@loadAd
+        ) {
+          is ReactNativeGoogleMobileAdsNativeAdLoad.Outcome.Reject -> {
+            nativeAd.destroy()
+            val error =
+              ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(
+                outcome.code,
+                outcome.message,
+                "load",
+              )
+            promise.reject(error.getString("code"), error.getString("message"), error)
+          }
+          is ReactNativeGoogleMobileAdsNativeAdLoad.Outcome.Resolve -> {
+            adHolders[outcome.responseId] = holder
+            promise.resolve(nativeAdToWritableMap(nativeAd, outcome.responseId))
+          }
         }
-        adHolders[responseId] = holder
-
-        promise.resolve(nativeAdToWritableMap(nativeAd, responseId))
       },
       onFailedToLoad = { loadAdError ->
+        pendingLoadHolders.remove(holder)
         val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(loadAdError, "load")
         ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.responseInfo)?.let {
           error.putMap("responseInfo", it)
@@ -250,6 +263,8 @@ class ReactNativeGoogleMobileAdsNativeModule(
 
   override fun invalidate() {
     super.invalidate()
+    pendingLoadHolders.forEach { it.destroy() }
+    pendingLoadHolders.clear()
     adHolders.values.forEach { it.destroy() }
     adHolders.clear()
     multiFormatHolders.values.forEach { it.destroy() }
@@ -269,12 +284,12 @@ class ReactNativeGoogleMobileAdsNativeModule(
   ): WritableMap {
     val data = Arguments.createMap()
     data.putString("responseId", responseId)
-    data.putString("advertiser", nativeAd.advertiser)
-    data.putString("body", nativeAd.body)
-    data.putString("callToAction", nativeAd.callToAction)
-    data.putString("headline", nativeAd.headline)
-    data.putString("price", nativeAd.price)
-    data.putString("store", nativeAd.store)
+    putNullableString(data, "advertiser", nativeAd.advertiser)
+    putNullableString(data, "body", nativeAd.body)
+    putNullableString(data, "callToAction", nativeAd.callToAction)
+    putNullableString(data, "headline", nativeAd.headline)
+    putNullableString(data, "price", nativeAd.price)
+    putNullableString(data, "store", nativeAd.store)
     nativeAd.starRating?.let {
       data.putDouble("starRating", it)
     } ?: run {
@@ -283,22 +298,52 @@ class ReactNativeGoogleMobileAdsNativeModule(
     nativeAd.icon?.let {
       val icon = Arguments.createMap()
       icon.putDouble("scale", it.scale)
-      icon.putString("url", it.uri.toString())
+      putNullableString(icon, "url", it.uri?.toString())
       data.putMap("icon", icon)
     } ?: run {
       data.putNull("icon")
     }
+    val images = nativeAd.images
+    if (images.isNullOrEmpty()) {
+      data.putNull("images")
+    } else {
+      val imageArray = Arguments.createArray()
+      for (image in images) {
+        val row = Arguments.createMap()
+        putNullableString(row, "url", image.uri?.toString())
+        row.putDouble("scale", image.scale)
+        imageArray.pushMap(row)
+      }
+      data.putArray("images", imageArray)
+    }
+    val mediaContent = Arguments.createMap()
     nativeAd.mediaContent?.let {
-      val mediaContent = Arguments.createMap()
       mediaContent.putDouble("aspectRatio", it.aspectRatio.toDouble())
       mediaContent.putBoolean("hasVideoContent", it.hasVideoContent())
       mediaContent.putDouble("duration", it.duration.toDouble())
-      data.putMap("mediaContent", mediaContent)
+    } ?: run {
+      mediaContent.putDouble("aspectRatio", 0.0)
+      mediaContent.putBoolean("hasVideoContent", false)
+      mediaContent.putDouble("duration", 0.0)
     }
+    data.putMap("mediaContent", mediaContent)
+    data.putNull("extras")
     ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(nativeAd.responseInfo)?.let {
       data.putMap("responseInfo", it)
     }
     return data
+  }
+
+  private fun putNullableString(
+    map: WritableMap,
+    key: String,
+    value: String?,
+  ) {
+    if (value == null) {
+      map.putNull(key)
+    } else {
+      map.putString(key, value)
+    }
   }
 
   private fun multiFormatNoneResult(
@@ -390,6 +435,9 @@ class ReactNativeGoogleMobileAdsNativeModule(
     var nativeAd: NativeAd? = null
       private set
 
+    private val loaderRetention = ReactNativeGoogleMobileAdsNativeAdLoad.LoaderRetention()
+    private val loadSettled = AtomicBoolean(false)
+
     private val adListener: AdListener =
       object : AdListener() {
         override fun onAdImpression() {
@@ -409,6 +457,10 @@ class ReactNativeGoogleMobileAdsNativeModule(
         }
 
         override fun onAdFailedToLoad(error: LoadAdError) {
+          if (!loadSettled.compareAndSet(false, true)) {
+            return
+          }
+          loaderRetention.clear()
           failedToLoadListener?.invoke(error)
           failedToLoadListener = null
         }
@@ -452,10 +504,17 @@ class ReactNativeGoogleMobileAdsNativeModule(
           .withNativeAdOptions(buildNativeAdOptions(requestOptions))
           .withAdListener(adListener)
           .forNativeAd { loaded ->
+            if (!loadSettled.compareAndSet(false, true)) {
+              loaded.destroy()
+              return@forNativeAd
+            }
+            loaderRetention.clear()
             failedToLoadListener = null
             bindLoadedNativeAd(loaded)
             onLoaded.onNativeAdLoaded(loaded)
           }.build()
+      // Strongly retain until settle — local-only AdLoader was the #870 GC hang.
+      loaderRetention.retain(adLoader)
       val adRequest = ReactNativeGoogleMobileAdsCommon.buildAdRequest(requestOptions)
       adLoader.loadAd(adRequest)
     }
@@ -474,6 +533,8 @@ class ReactNativeGoogleMobileAdsNativeModule(
     }
 
     fun destroy() {
+      loaderRetention.clear()
+      failedToLoadListener = null
       nativeAd?.destroy()
       nativeAd = null
     }

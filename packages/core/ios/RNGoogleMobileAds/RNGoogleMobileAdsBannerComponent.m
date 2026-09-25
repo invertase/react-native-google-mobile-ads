@@ -19,16 +19,14 @@
 
 #import "RNGoogleMobileAdsBannerComponent.h"
 #import <React/RCTLog.h>
+#import "RNGoogleMobileAdsBannerEventMapping.h"
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
 
 @implementation RNGoogleMobileAdsBannerComponent
 
 - (void)dealloc {
-  if (_banner) {
-    [_banner removeFromSuperview];
-    _banner = nil;
-  }
+  [self destroyBanner];
 }
 
 - (void)didSetProps:(NSArray<NSString *> *)changedProps {
@@ -38,9 +36,22 @@
   _propsChanged = false;
 }
 
+- (void)destroyBanner {
+  if (_banner == nil) {
+    return;
+  }
+  _banner.paidEventHandler = nil;
+  _banner.delegate = nil;
+  if ([_banner isKindOfClass:[GAMBannerView class]]) {
+    ((GAMBannerView *)_banner).appEventDelegate = nil;
+  }
+  [_banner removeFromSuperview];
+  _banner = nil;
+}
+
 - (void)initBanner:(GADAdSize)adSize {
   if (_requested) {
-    [_banner removeFromSuperview];
+    [self destroyBanner];
   }
   if ([RNGoogleMobileAdsCommon isAdManagerUnit:_unitId]) {
     _banner = [[GAMBannerView alloc] initWithAdSize:adSize];
@@ -192,15 +203,24 @@
 }
 
 - (void)bannerViewWillPresentScreen:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdOpened" payload:nil];
+  [self sendEvent:
+            [RNGoogleMobileAdsBannerEventMapping
+                nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackWillPresentScreen]
+          payload:nil];
 }
 
 - (void)bannerViewDidRecordImpression:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdImpression" payload:nil];
+  [self sendEvent:[RNGoogleMobileAdsBannerEventMapping
+                      nativeEventTypeForCallback:
+                          RNGoogleMobileAdsBannerDelegateCallbackDidRecordImpression]
+          payload:nil];
 }
 
 - (void)bannerViewDidRecordClick:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdClicked" payload:nil];
+  [self sendEvent:
+            [RNGoogleMobileAdsBannerEventMapping
+                nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackDidRecordClick]
+          payload:nil];
 }
 
 - (void)bannerViewWillDismissScreen:(GADBannerView *)bannerView {
@@ -208,7 +228,10 @@
 }
 
 - (void)bannerViewDidDismissScreen:(GADBannerView *)bannerView {
-  [self sendEvent:@"onAdClosed" payload:nil];
+  [self sendEvent:
+            [RNGoogleMobileAdsBannerEventMapping
+                nativeEventTypeForCallback:RNGoogleMobileAdsBannerDelegateCallbackDidDismissScreen]
+          payload:nil];
 }
 
 - (void)adView:(nonnull GADBannerView *)banner

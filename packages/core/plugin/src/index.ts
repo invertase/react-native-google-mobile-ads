@@ -18,6 +18,60 @@ type PluginParameters = {
   userTrackingUsageDescription?: string;
 };
 
+/** Keys accepted by the core Expo config plugin. Unknown keys are warned, not applied. */
+export const KNOWN_PLUGIN_PARAMETER_KEYS = [
+  'androidSdk',
+  'androidAppId',
+  'iosAppId',
+  'delayAppMeasurementInit',
+  'optimizeInitialization',
+  'optimizeAdLoading',
+  'skAdNetworkItems',
+  'userTrackingUsageDescription',
+] as const;
+
+const META_PLUGIN_KEYS_HINT =
+  'Meta Audience Network options (for example metaAdvertiserTrackingEnabled) are not core plugin keys. ' +
+  'Install @react-native-google-mobile-ads/facebook and call setAdvertiserTrackingEnabled() from JS ' +
+  'before mobileAds().initialize(). See that package README / Mediation docs.';
+
+/**
+ * Warn when Expo plugin options include keys the core plugin does not apply.
+ * Exported for unit tests.
+ */
+export function warnUnknownPluginParameters(
+  params: Record<string, unknown> | undefined,
+): void {
+  if (params == null || typeof params !== 'object' || Array.isArray(params)) {
+    return;
+  }
+
+  const known = new Set<string>(KNOWN_PLUGIN_PARAMETER_KEYS);
+  const unknownKeys = Object.keys(params).filter(key => !known.has(key));
+  if (unknownKeys.length === 0) {
+    return;
+  }
+
+  const metaKeys = unknownKeys.filter(key => /^meta/i.test(key));
+  const otherKeys = unknownKeys.filter(key => !/^meta/i.test(key));
+
+  if (metaKeys.length > 0) {
+    console.warn(
+      `[react-native-google-mobile-ads] Ignoring unknown Expo plugin option(s): ${metaKeys.join(
+        ', ',
+      )}. ${META_PLUGIN_KEYS_HINT}`,
+    );
+  }
+
+  if (otherKeys.length > 0) {
+    console.warn(
+      `[react-native-google-mobile-ads] Ignoring unknown Expo plugin option(s): ${otherKeys.join(
+        ', ',
+      )}. Known keys: ${KNOWN_PLUGIN_PARAMETER_KEYS.join(', ')}.`,
+    );
+  }
+}
+
 const ANDROID_BACKEND_PROPERTY = 'RNGMA_ANDROID_BACKEND';
 
 export const setAndroidSdkGradleProperties = (
@@ -199,9 +253,10 @@ const withIosUserTrackingUsageDescription: ConfigPlugin<
   });
 };
 
-const withReactNativeGoogleMobileAds: ConfigPlugin<PluginParameters> = (
-  config,
-  {
+const withReactNativeGoogleMobileAds: ConfigPlugin<PluginParameters> = (config, props = {}) => {
+  warnUnknownPluginParameters(props as Record<string, unknown>);
+
+  const {
     androidSdk,
     androidAppId,
     delayAppMeasurementInit,
@@ -210,8 +265,8 @@ const withReactNativeGoogleMobileAds: ConfigPlugin<PluginParameters> = (
     iosAppId,
     skAdNetworkItems,
     userTrackingUsageDescription,
-  } = {},
-) => {
+  } = props;
+
   if (androidAppId === undefined) {
     console.warn(
       "No 'androidAppId' was provided. The native Google Mobile Ads SDK will crash on Android without it.",

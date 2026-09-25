@@ -19,9 +19,9 @@ buildscript {
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:8.7.2"
+    classpath("com.android.tools.build:gradle:8.7.2")
     // noinspection DifferentKotlinGradleVersion
-    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}")
   }
 }
 
@@ -30,12 +30,12 @@ apply plugin: "kotlin-android"
 apply plugin: "com.facebook.react"
 
 android {
-  namespace "com.invertase.rngmatesting"
+  namespace = "com.invertase.rngmatesting"
 
-  compileSdkVersion getExtOrDefault("compileSdkVersion")
+  compileSdk = getExtOrDefault("compileSdkVersion")
 
   defaultConfig {
-    minSdkVersion getExtOrDefault("minSdkVersion")
+    minSdk = getExtOrDefault("minSdkVersion")
   }
 
   compileOptions {
@@ -45,5 +45,5 @@ android {
 }
 
 dependencies {
-  implementation "com.facebook.react:react-android"
+  implementation("com.facebook.react:react-android")
 }

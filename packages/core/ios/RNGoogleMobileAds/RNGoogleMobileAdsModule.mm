@@ -18,9 +18,11 @@
 #if !TARGET_OS_MACCATALYST
 #import <GoogleMobileAds/GoogleMobileAds.h>
 #endif
+#import <React/RCTBridgeModule.h>
 #import <React/RCTUtils.h>
 
 #import "RNGoogleMobileAdsModule.h"
+#import "RNGoogleMobileAdsWebViewRegistration.h"
 #ifdef RCT_NEW_ARCH_ENABLED
 #import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
 #endif
@@ -31,6 +33,8 @@
 #pragma mark Module Setup
 
 RCT_EXPORT_MODULE();
+
+@synthesize viewRegistry_DEPRECATED = _viewRegistry_DEPRECATED;
 
 - (dispatch_queue_t)methodQueue {
   return dispatch_get_main_queue();
@@ -60,16 +64,13 @@ RCT_EXPORT_METHOD(initialize : (RCTPromiseResolveBlock)resolve : (RCTPromiseReje
   [self initialize:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(setRequestConfiguration
-                  : (NSDictionary *)requestConfiguration
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(setRequestConfiguration : (NSDictionary *)requestConfiguration : (
+    RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
   [self setRequestConfiguration:requestConfiguration resolve:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(openAdInspector
-                  : (RCTPromiseResolveBlock)resolve
-                  : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(openAdInspector : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)
+                      reject) {
   [self openAdInspector:resolve reject:reject];
 }
 
@@ -94,6 +95,19 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL)muted) {
 #if !TARGET_OS_MACCATALYST
   GADMobileAds.sharedInstance.applicationMuted = muted;
 #endif
+}
+
+RCT_EXPORT_METHOD(setAudioSessionIsApplicationManaged : (BOOL)managed) {
+#if !TARGET_OS_MACCATALYST
+  // GMA 13.6.0: GADAudioVideoManager.audioSessionIsApplicationManaged
+  GADMobileAds.sharedInstance.audioVideoManager
+      .audioSessionIsApplicationManaged = managed;
+#endif
+}
+
+RCT_EXPORT_METHOD(registerWebView : (double)viewTag : (RCTPromiseResolveBlock)
+                      resolve : (RCTPromiseRejectBlock)reject) {
+  [self registerWebView:viewTag resolve:resolve reject:reject];
 }
 
 #ifdef RCT_NEW_ARCH_ENABLED
@@ -201,6 +215,43 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL)muted) {
                              resolve(nil);
                            }
                          }];
+#endif
+}
+
+- (void)registerWebView:(double)viewTag
+                resolve:(RCTPromiseResolveBlock)resolve
+                 reject:(RCTPromiseRejectBlock)reject {
+#if TARGET_OS_MACCATALYST
+  reject(@"unsupported", @"registerWebView is not supported on Mac Catalyst.", nil);
+#else
+  NSNumber *reactTag = @((NSInteger)viewTag);
+  RCTViewRegistry *viewRegistry = self.viewRegistry_DEPRECATED;
+  if (viewRegistry == nil) {
+    [RNSharedUtils
+        rejectPromiseWithUserInfo:reject
+                         userInfo:[@{
+                           @"code" : @"webview-registry-missing",
+                           @"message" : @"RCTViewRegistry is unavailable; cannot resolve "
+                                        @"the WebView tag.",
+                         } mutableCopy]];
+    return;
+  }
+  [viewRegistry addUIBlock:^(RCTViewRegistry *registry) {
+    UIView *host = [registry viewForReactTag:reactTag];
+    WKWebView *webView = [RNGoogleMobileAdsWebViewRegistration findWebViewInView:host];
+    if (webView == nil) {
+      [RNSharedUtils
+          rejectPromiseWithUserInfo:reject
+                           userInfo:[@{
+                             @"code" : @"webview-not-found",
+                             @"message" : [NSString
+                                 stringWithFormat:@"No WKWebView found for view tag %@.", reactTag],
+                           } mutableCopy]];
+      return;
+    }
+    [GADMobileAds.sharedInstance registerWebView:webView];
+    resolve([NSNull null]);
+  }];
 #endif
 }
 

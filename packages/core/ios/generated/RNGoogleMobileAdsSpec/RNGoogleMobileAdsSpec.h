@@ -229,6 +229,10 @@ namespace JS {
 - (void)openDebugMenu:(NSString *)adUnit;
 - (void)setAppVolume:(double)volume;
 - (void)setAppMuted:(BOOL)muted;
+- (void)setAudioSessionIsApplicationManaged:(BOOL)managed;
+- (void)registerWebView:(double)viewTag
+                resolve:(RCTPromiseResolveBlock)resolve
+                 reject:(RCTPromiseRejectBlock)reject;
 - (facebook::react::ModuleConstants<JS::NativeGoogleMobileAdsModule::Constants>)constantsToExport;
 - (facebook::react::ModuleConstants<JS::NativeGoogleMobileAdsModule::Constants>)getConstants;
 
