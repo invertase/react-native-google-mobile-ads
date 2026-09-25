@@ -416,30 +416,3 @@ setHasUserConsent(true)
 </TabItem>
 </Tabs>
 
-## Meta Audience Network (Facebook)
-
-Install the scoped adapter package and call Meta’s privacy hooks **before** `mobileAds().initialize()`:
-
-```ts
-import mobileAds from 'react-native-google-mobile-ads';
-import {
-  setAdvertiserTrackingEnabled,
-  setDataProcessingOptions,
-} from '@react-native-google-mobile-ads/facebook';
-
-// After App Tracking Transparency resolves (when you use ATT):
-setAdvertiserTrackingEnabled(trackingGranted);
-// Optional Limited Data Use:
-// setDataProcessingOptions(['LDU']);
-
-await mobileAds().initialize();
-```
-
-On iOS this sets `FBAdSettings.setAdvertiserTrackingEnabled`. On Android, advertiser tracking is a no-op (Meta’s Android SDK has no equivalent setter); use `setDataProcessingOptions` when you need Limited Data Use.
-
-Do **not** put `metaAdvertiserTrackingEnabled` / `metaDataProcessingOptions` / `metaAudienceNetworkEnabled` on the core Expo plugin — those keys are not recognized. The core and `@react-native-google-mobile-ads/facebook` Expo plugins warn on unknown options. The facebook adapter plugin only merges `skAdNetworkItems`; advertiser tracking remains a runtime JS call because ATT status is not knowable at prebuild time.
-
-See the [facebook adapter package documentation](https://github.com/invertase/react-native-google-mobile-ads/tree/main/packages/facebook) for class names and pins.
-
-A third-party mediation adapter might have specific Android or iOS APIs that aren't exposed to your React Native code. In these cases, you can create a custom "bridge" to expose that native functionality.
-

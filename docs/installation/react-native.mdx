@@ -181,3 +181,14 @@ your project's configuration file, you have to provide a user tracking usage des
 
 See [Consent & privacy basics](/consent-basics) for how to request App Tracking Transparency
 authorization at runtime.
+
+## iOS App ID Build Phase (`ios_config.sh`)
+
+CocoaPods installs an Xcode Build Phase (`[RNGoogleMobileAds] Configuration`) that writes `GADApplicationIdentifier` into the built app `Info.plist` from `app.json`.
+
+If a release build fails with `unable to locate Info.plist`, upgrade this package and
+re-run `pod install` so the embedded `ios_config.sh` polls briefly for
+`$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)` before failing (Xcode can start the phase
+before Process Info.plist finishes writing that file). Phase timing metadata alone is
+not enough. Do not move that script earlier in Build Phases. Expo apps that use the
+config plugin below set the App ID at prebuild time and do not rely on this Build Phase.
