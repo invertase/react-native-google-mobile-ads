@@ -1,5 +1,5 @@
 PODS:
-  - Coverage (0.2.0):
+  - Coverage (0.2.2):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2251,7 +2251,7 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Coverage: febe395ab731aa9a65ac818451d4c1a5ce641310
+  Coverage: a5960747ee03c401627ebadb68242c2a42ea4646
   FBLazyVector: b3e7ad108f0d882e30445c5527d774e3fd432f3d
   Google-Mobile-Ads-SDK: 6e501ace4af8d63e967bd45497c8b2b05821163d
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
