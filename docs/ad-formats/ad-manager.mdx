@@ -37,7 +37,7 @@ function App() {
       requestOptions={{
         customTargeting: {
           section: 'sports',
-          subscriber: '1',
+          subscriber: 1,
         },
       }}
       onPaid={event => {
@@ -114,8 +114,10 @@ synchronously (a programmer error to fix at the call site).
 
 Both examples pass the shared `RequestOptions` supported by the GAM request:
 
-- `customTargeting` sends key/value pairs that Ad Manager can use in line-item targeting. Pass
-  each value as a string or an array of strings.
+- `customTargeting` sends key/value pairs that Ad Manager can use in line-item targeting. Each
+  value is a string, a number, or an array of strings and numbers; numbers are converted to
+  strings before the request reaches the native SDK. Non-finite numbers (`NaN`, `Infinity`) are
+  rejected.
 - `publisherProvidedId` and `publisherProvidedSignals` are available for publishers whose Ad
   Manager setup uses those features.
 - `networkExtras` sends adapter-specific values; it is not a replacement for GAM custom targeting.

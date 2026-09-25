@@ -19,6 +19,7 @@ import {
   isPropertySet,
   isArray,
   isBoolean,
+  isNumber,
   isObject,
   isString,
   isUndefined,
@@ -26,6 +27,21 @@ import {
 } from './common';
 import { version } from './version';
 import { RequestOptions } from './types/RequestOptions';
+
+function customTargetingValueToString(key: string, value: unknown): string {
+  if (isString(value)) {
+    return value;
+  }
+  if (isNumber(value)) {
+    if (!Number.isFinite(value)) {
+      throw new Error(`'options.customTargeting' expected a finite number for object key "${key}"`);
+    }
+    return String(value);
+  }
+  throw new Error(
+    `'options.customTargeting' expected a string, number, or array of strings and numbers for object key "${key}"`,
+  );
+}
 
 export function validateAdRequestOptions(options?: RequestOptions) {
   const out: RequestOptions = {
@@ -160,7 +176,20 @@ export function validateAdRequestOptions(options?: RequestOptions) {
     if (!isObject(options.customTargeting)) {
       throw new Error("'options.customTargeting' expected an object of key/value pairs");
     }
-    out.customTargeting = options.customTargeting;
+
+    const customTargeting: Record<string, string | string[]> = {};
+    Object.entries(options.customTargeting).forEach(([key, value]) => {
+      if (isUndefined(value)) {
+        return;
+      }
+      if (Array.isArray(value)) {
+        customTargeting[key] = value.map(item => customTargetingValueToString(key, item));
+      } else {
+        customTargeting[key] = customTargetingValueToString(key, value);
+      }
+    });
+
+    out.customTargeting = customTargeting;
   }
 
   if (options.publisherProvidedId) {
