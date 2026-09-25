@@ -10,6 +10,11 @@ import {
   type SdkUtilitySurfaceContract,
 } from '../../src/formats.ts';
 import {
+  androidFocusedForeignApps,
+  androidFocusedSystemDialog,
+  focusIncludesAndroidForeignApp,
+} from '../../src/androidFocus.ts';
+import {
   classifyHookLoadOutcome,
   classifyPoolFilledOutcome,
   classifyPoolStructuredUnsupportedGate,
@@ -1130,19 +1135,8 @@ const ANDROID_AD_ACTIVITY_MARKERS = [
   'com.google.android.libraries.ads.mobile.sdk.common.AdActivity',
 ] as const;
 
-/** Off-app surfaces that looking like "AdActivity gone" must not count as dismiss. */
-const ANDROID_FOREIGN_FOCUS_MARKERS = [
-  'com.android.chrome',
-  'com.android.vending',
-  'com.google.android.finsky',
-] as const;
-
 function focusIncludesAndroidAdActivity(focus: string): boolean {
   return ANDROID_AD_ACTIVITY_MARKERS.some(marker => focus.includes(marker));
-}
-
-function focusIncludesAndroidForeignApp(focus: string): boolean {
-  return ANDROID_FOREIGN_FOCUS_MARKERS.some(marker => focus.includes(marker));
 }
 
 function invalidateAndroidWindowFocusDump(): void {
@@ -1187,7 +1181,7 @@ async function androidWindowFocusDump(): Promise<string> {
 
 async function dismissChromeFirstRunIfPresent(): Promise<boolean> {
   const focus = await androidWindowFocusDump();
-  if (!focus.includes('com.android.chrome')) {
+  if (!androidFocusedForeignApps(focus).includes('com.android.chrome')) {
     return false;
   }
   for (const fragment of [
@@ -1298,20 +1292,21 @@ async function recoverAndroidForeignAppIfPresent(reason: string): Promise<boolea
   }
   invalidateAndroidWindowFocusDump();
   const focus = await androidWindowFocusDump();
-  if (!focusIncludesAndroidForeignApp(focus)) {
+  const foreign = androidFocusedForeignApps(focus);
+  if (foreign.length === 0) {
     return false;
   }
   logAndroidHostTrace('recover.foreign', {
     reason,
     focus: androidFocusSnippet(focus),
   });
-  if (focus.includes('com.android.chrome')) {
+  if (foreign.includes('com.android.chrome')) {
     await driver.execute('mobile: shell', {
       command: 'am',
       args: ['force-stop', 'com.android.chrome'],
     });
   }
-  if (focus.includes('com.android.vending') || focus.includes('com.google.android.finsky')) {
+  if (foreign.includes('com.android.vending') || foreign.includes('com.google.android.finsky')) {
     await driver.execute('mobile: shell', {
       command: 'am',
       args: ['force-stop', 'com.android.vending'],
@@ -1325,6 +1320,32 @@ async function recoverAndroidForeignAppIfPresent(reason: string): Promise<boolea
   return true;
 }
 
+/** Answer a focused system ANR ("Wait") or crash ("Close app") dialog; true when one was focused. */
+async function dismissAndroidSystemDialogIfPresent(reason: string): Promise<boolean> {
+  const focus = await androidWindowFocusDump();
+  const dialog = androidFocusedSystemDialog(focus);
+  if (!dialog) {
+    return false;
+  }
+  logAndroidHostTrace('recover.systemDialog', {
+    reason,
+    dialog,
+    focus: androidFocusSnippet(focus),
+  });
+  const fragments =
+    dialog === 'anr'
+      ? ['resourceId("android:id/aerr_wait")', 'text("Wait")']
+      : ['resourceId("android:id/aerr_close")', 'text("Close app")'];
+  for (const fragment of fragments) {
+    if (await tapAndroidSelectorIfDisplayed(`android=new UiSelector().${fragment}`)) {
+      break;
+    }
+  }
+  await sleep(dialog === 'anr' ? 2000 : 600);
+  invalidateAndroidWindowFocusDump();
+  return true;
+}
+
 async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
   if (!isAndroid()) {
     return;
@@ -1333,6 +1354,9 @@ async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
     await dismissChromeFirstRunIfPresent();
     await dismissAndroidImmersiveModeEducationIfPresent();
     if (await recoverAndroidForeignAppIfPresent(`${reason}.foreign`)) {
+      continue;
+    }
+    if (await dismissAndroidSystemDialogIfPresent(`${reason}.systemDialog`)) {
       continue;
     }
     const focus = await androidWindowFocusDump();
