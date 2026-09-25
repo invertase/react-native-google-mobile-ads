@@ -8,9 +8,20 @@
     "dark": "/img/logo_admob_192px.svg"
   },
   "theme": {
-    "primary": "#2D303A"
+    "primary": "#E69135",
+    "primaryLight": "#A86525",
+    "primaryDark": "#E69135"
+  },
+  "header": {
+    "links": [
+      {
+        "title": "Built by Invertase",
+        "href": "https://invertase.io/?utm_source=docs&utm_medium=header&utm_campaign=react-native-google-mobile-ads"
+      }
+    ]
   },
   "social": {
+    "website": "https://invertase.io/?utm_source=docs&utm_medium=footer&utm_campaign=react-native-google-mobile-ads",
     "x": "invertaseio",
     "github": "invertase/react-native-google-mobile-ads"
   },
