@@ -5,9 +5,12 @@
  *
  * Drivers are not fully guaranteed by yarn.lock alone; this script + verify
  * is the pin contract. Idempotent: matching pins are skipped (exit 0).
+ * Manifest `overrides` pin known-breaking transitive driver deps via npm
+ * overrides in APPIUM_HOME/package.json; a home that violates them is reinstalled.
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import { applyAppiumHomeOverrides, findOverrideMismatches } from './appium-home.mjs';
 import {
   loadManifest,
   loadPackageJson,
@@ -83,14 +86,24 @@ assertPinsMatchPackageJson(manifest, pkg);
 
 const appiumHome = resolveAppiumHome(manifest);
 fs.mkdirSync(appiumHome, { recursive: true });
+if (applyAppiumHomeOverrides(appiumHome, manifest.overrides)) {
+  console.log(`Wrote npm overrides ${JSON.stringify(manifest.overrides ?? {})} to APPIUM_HOME.`);
+}
 
 const installed = listInstalledDrivers(appiumHome);
+const staleTransitives =
+  Object.keys(installed).length > 0 ? findOverrideMismatches(appiumHome, manifest.overrides) : [];
+if (staleTransitives.length > 0) {
+  console.log(
+    `Reinstalling all drivers; transitive pins not satisfied:\n- ${staleTransitives.join('\n- ')}`,
+  );
+}
 
 for (const driver of manifest.drivers) {
   const installSpec = `${driver.package}@${driver.version}`;
   const current = installedVersion(installed[driver.name]);
 
-  if (current === driver.version) {
+  if (current === driver.version && staleTransitives.length === 0) {
     console.log(`Skipping Appium driver ${driver.name}@${driver.version} (already installed).`);
     continue;
   }
@@ -105,6 +118,13 @@ for (const driver of manifest.drivers) {
   console.log(`Installing Appium driver ${driver.name} from npm (${installSpec})…`);
   // Exact npm version keeps the install reproducible (yarn.lock alone is not enough).
   runAppium(['driver', 'install', '--source=npm', installSpec], appiumHome);
+}
+
+const transitiveFailures = findOverrideMismatches(appiumHome, manifest.overrides);
+if (transitiveFailures.length > 0) {
+  throw new Error(
+    `Appium driver install left unpinned transitives:\n- ${transitiveFailures.join('\n- ')}`,
+  );
 }
 
 console.log(`Drivers installed under APPIUM_HOME=${appiumHome}`);

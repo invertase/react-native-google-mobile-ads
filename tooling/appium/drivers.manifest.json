@@ -13,5 +13,8 @@
       "package": "appium-xcuitest-driver",
       "version": "12.8.0"
     }
-  ]
+  ],
+  "overrides": {
+    "bplist-parser": "0.3.2"
+  }
 }
