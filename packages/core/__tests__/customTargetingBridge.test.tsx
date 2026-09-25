@@ -108,9 +108,7 @@ describe('customTargeting reaches every native bridge as strings', () => {
         requestOptions={{ customTargeting: NUMERIC_TARGETING }}
       />,
     );
-    expect(JSON.parse(lastBannerProps.request ?? '{}').customTargeting).toEqual(
-      COERCED_TARGETING,
-    );
+    expect(JSON.parse(lastBannerProps.request ?? '{}').customTargeting).toEqual(COERCED_TARGETING);
   });
 
   it('GAMBannerAd sends coerced customTargeting in the native request prop', () => {
@@ -121,9 +119,7 @@ describe('customTargeting reaches every native bridge as strings', () => {
         requestOptions={{ customTargeting: NUMERIC_TARGETING }}
       />,
     );
-    expect(JSON.parse(lastBannerProps.request ?? '{}').customTargeting).toEqual(
-      COERCED_TARGETING,
-    );
+    expect(JSON.parse(lastBannerProps.request ?? '{}').customTargeting).toEqual(COERCED_TARGETING);
   });
 
   it('BannerAd rejects invalid customTargeting values', () => {

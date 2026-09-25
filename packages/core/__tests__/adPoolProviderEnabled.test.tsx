@@ -137,13 +137,9 @@ describe('AdPoolProvider enabled gate', () => {
 
   it('does not recreate surviving pools when enabled flips false then true', async () => {
     const createSpy = jest.spyOn(AdPools, 'create');
-    const config = AdPoolPresets.fullscreen(
-      AdFormat.INTERSTITIAL,
-      'provider-enabled-no-recreate',
-      {
-        bufferSize: 1,
-      },
-    );
+    const config = AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, 'provider-enabled-no-recreate', {
+      bufferSize: 1,
+    });
 
     const { rerender } = render(
       <AdPoolProvider pools={[config]} enabled={true}>

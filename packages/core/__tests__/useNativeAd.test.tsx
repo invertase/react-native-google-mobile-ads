@@ -326,9 +326,7 @@ describe('useNativeAd', () => {
 
   it('coalesces concurrent retries onto one in-flight request', async () => {
     const deferred = createDeferredNativeAd();
-    const create = jest
-      .spyOn(NativeAd, 'createForAdRequest')
-      .mockReturnValue(deferred.promise);
+    const create = jest.spyOn(NativeAd, 'createForAdRequest').mockReturnValue(deferred.promise);
     const fake = createFakeNativeAd(TestIds.NATIVE);
     let result: UseNativeAdResult | undefined;
 
@@ -385,9 +383,7 @@ describe('useNativeAd', () => {
 
   it('no-ops retry and destroy after unmount, and retry while adUnitId is null', async () => {
     const deferred = createDeferredNativeAd();
-    const create = jest
-      .spyOn(NativeAd, 'createForAdRequest')
-      .mockReturnValue(deferred.promise);
+    const create = jest.spyOn(NativeAd, 'createForAdRequest').mockReturnValue(deferred.promise);
     let result: UseNativeAdResult | undefined;
     let adUnitId: string | null = TestIds.NATIVE;
 
