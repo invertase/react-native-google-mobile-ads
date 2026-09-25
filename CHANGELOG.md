@@ -9,9 +9,7 @@
 * **android:** keep hardware BACK for React Navigation when `<BannerAd>` is mounted ([#813](https://github.com/invertase/react-native-google-mobile-ads/issues/813))
 * **plugin:** warn on unknown Expo config plugin keys (including ignored Meta `meta*` options) ([#828](https://github.com/invertase/react-native-google-mobile-ads/issues/828))
 
-## [Unreleased]
-
-## [Unreleased]
+### Documentation
 
 * **displaying-ads:** document Android host UI flicker after fullscreen dismiss as AdActivity resume / insets (not package window flags) ([#732](https://github.com/invertase/react-native-google-mobile-ads/issues/732))
 * **displaying-ads:** document Android rewarded close / progress chrome under high-engagement as upstream AdActivity / creative UI ([#743](https://github.com/invertase/react-native-google-mobile-ads/issues/743))
