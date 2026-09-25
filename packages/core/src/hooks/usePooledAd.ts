@@ -147,6 +147,12 @@ function restoreHookWrappedShow(ad: PooledAd): void {
  * latest `poolId`. Coalescing is per hook instance, not per pool: two
  * placements polling the same depth-1 pool can starve each other.
  *
+ * A hook-owned fullscreen ad's `show()` keeps `PooledAd.show()`'s two error
+ * channels: the promise rejects when a show was already requested or the
+ * platform declines, and a destroyed ad (or invalid options with no show in
+ * flight) throws synchronously. Unlike the fullscreen hooks' `show`, it is not
+ * press-safe, so `.catch()` the promise and do not call it on a destroyed ad.
+ *
  * @example Release when post-show events must outlive the hook
  * ```tsx
  * const { poll, release } = usePooledAd(poolConfig.poolId);
@@ -164,6 +170,7 @@ function restoreHookWrappedShow(ad: PooledAd): void {
  *     off();
  *     ad.destroy();
  *   });
+ *   // Just released and not destroyed, so show() can only reject here.
  *   await ad.show().catch(() => {
  *     off();
  *     ad.destroy();

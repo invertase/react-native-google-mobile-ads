@@ -207,6 +207,19 @@ export type PooledAd =
         | AdFormat.REWARDED
         | AdFormat.REWARDED_INTERSTITIAL
         | AdFormat.APP_OPEN;
+      /**
+       * Presents the ad. Resolves once presentation starts, not when the ad
+       * closes; listen for `AdEventType.CLOSED` for that.
+       *
+       * Same two error channels as `MobileAd.show()`, and **not** press-safe
+       * like the fullscreen hooks' `show`:
+       * - the returned promise **rejects** when a show was already requested
+       *   or the platform declines to present, so `.catch()` it;
+       * - it **throws synchronously** on a destroyed ad, and on invalid
+       *   `options` when no show is in flight (programmer errors).
+       *
+       * Also applies to the ad returned by `usePooledAd`.
+       */
       show(options?: AdShowOptions): Promise<void>;
       /** Same listener contract as fullscreen MobileAd / GAMInterstitialAd. */
       addAdEventListener<T extends AdEventType | RewardedAdEventType | GAMAdEventType>(
@@ -428,6 +441,7 @@ export type AdPoolsApi = {
    *       offClosed();
    *       ad.destroy();
    *     });
+   *     // Rejects on decline; a destroyed ad would throw synchronously instead.
    *     await ad.show().catch(error => {
    *       offClosed();
    *       ad.destroy();

@@ -107,6 +107,14 @@ export function AppWithFullscreenPool({ consentReady }: { consentReady: boolean 
   `{ bufferSize: 2 }` when you want that depth under the app-wide cap.
 - There is no separate “pooled interstitial hook”: a polled fullscreen `PooledAd`
   already exposes `show()` and the same event listeners.
+- Pooled `show()`, on an imperative `PooledAd` or on the ad `usePooledAd` returns, has the
+  same two error channels as `InterstitialAd.show()`. A show already in flight or a platform
+  decline rejects the promise, so `.catch()` it. A destroyed ad throws synchronously, and so do
+  invalid `showOptions` when no show is in flight. It is not press-safe like the fullscreen
+  hooks' `show`, and `PooledAd` has no destroyed or loaded flag to check. Call `show()` only on
+  the ad you just polled or released (or on the hook's `ad` while `status === 'filled'`), never
+  after you have destroyed it, keep one clear owner, and `await` it inside `try` / `catch` or
+  `.catch()` it.
 
 Imperative equivalent (no React provider; run after consent is resolved):
 
@@ -134,6 +142,7 @@ if (result.status === 'filled' && result.ad.format === AdFormat.INTERSTITIAL) {
       ad.destroy();
     });
     try {
+      // Awaiting inside try catches both the rejection and a synchronous throw.
       await ad.show();
     } catch (error) {
       offClosed();

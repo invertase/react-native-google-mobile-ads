@@ -22,6 +22,9 @@ description: Every React hook in the library, plus the shared lifecycle for app 
 | `usePooledAd`               | Poll a pool at show time and own the returned ad.                                        | [Fullscreen pool recipe](/preload-pools-and-multiformat-recipes#recipe-fullscreen-interstitial-pool)       |
 | `useForeground`             | Run a callback when the app returns from the background (not on cold start).             | [API reference](https://invertase.github.io/react-native-google-mobile-ads/useForeground.html)             |
 
+On Android, `useForeground` also fires when a fullscreen ad closes, so if your callback shows a
+fullscreen ad, guard against showing two back-to-back.
+
 The rest of this page covers the four fullscreen hooks for app open, interstitial, rewarded, and
 rewarded interstitial ads. Their v17 options form loads automatically by default and exposes one
 shared lifecycle model. `useGAMInterstitialAd` uses the same model.
@@ -243,7 +246,7 @@ The fullscreen hooks' `show` is press-safe: it absorbs both the synchronous thro
 invalid options on a loaded ad) and the promise rejection (not loaded, already showing, platform
 decline), so `onPress={() => show()}` needs no `.catch` or `try`. A press while the ad isn't showable is a
 silent no-op and changes no hook state; a platform show failure reported by the ad's `ERROR` event
-surfaces as `status: 'error'` with `error` set. This does not apply to the ad returned by `usePooledAd`, which has its own `show()`.
+surfaces as `status: 'error'` with `error` set. This does not apply to the ad returned by `usePooledAd`: its `show()` is not press-safe and uses the imperative two-channel contract (`.catch()` the promise; a destroyed ad throws synchronously). See [preload pools](/preload-pools-and-multiformat-recipes#recipe-fullscreen-interstitial-pool).
 
 ```jsx
 import { useEffect } from 'react';

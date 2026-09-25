@@ -48,11 +48,10 @@ export type UseAppOpenAdManagerOptions = {
    */
   requestOptions?: RequestOptions;
   /**
-   * Controls **automatic** preloading. Defaults to `true`.
+   * Master switch for issuing ad requests, on every path. Defaults to `true`.
    *
-   * This is the master "may I issue an ad request" switch. While `false` — set
-   * it so until consent / SDK init is ready — **no** path issues a load: not
-   * the automatic preload, not a warm foreground, not
+   * While `false` — set it so until consent / SDK init is ready — **no** path
+   * issues a load: not the automatic preload, not a warm foreground, not
    * {@link UseAppOpenAdManagerResult.showAdIfAvailable}, and not a post-close
    * reload. Warm foreground and `showAdIfAvailable` still *show* an ad that is
    * already held and fresh, but they never *start* a request while it is
@@ -126,15 +125,17 @@ function requestSignatureOf(adUnitId: string | null, requestOptions: RequestOpti
  * - On Android a foreground return caused by another library
  *   fullscreen ad Activity (interstitial / rewarded / app-open) dismissing does
  *   **not** trigger the warm-foreground auto-show, so two fullscreen ads never
- *   stack back-to-back. A real home / app-switcher return still shows. See
- *   `internal/fullscreenAdPresence.ts`.
- * - Guards with `isShowing`; reloads after `CLOSED` and show-phase errors.
+ *   stack back-to-back. A real home / app-switcher return still shows. iOS
+ *   does not background the app for these ads.
+ * - Guards with `isShowing`; reloads after `CLOSED` and show-phase errors
+ *   while `autoLoad` is not `false`.
  *
  * #### Consent
  *
  * While `autoLoad` is `false`, no path starts an ad request, so keep it
- * `false` until consent is resolved. Passing `adUnitId: null` (or not mounting
- * the hook) also prevents every load.
+ * `false` until consent is resolved; an ad already held can still show.
+ * Passing `adUnitId: null` (or not mounting the hook) is the strongest gate: it
+ * prevents every load and destroys any held ad.
  *
  * #### Inventory source
  *
@@ -152,15 +153,21 @@ function requestSignatureOf(adUnitId: string | null, requestOptions: RequestOpti
  * });
  *
  * // Cold start loading screen (after the first launch, if you follow Google's
- * // "don't show on the very first app start" guidance yourself):
+ * // "don't show on the very first app start" guidance yourself). Offer once,
+ * // as soon as assets are ready, and never wait on consent: if consent is
+ * // unresolved, skip the offer and continue.
+ * const coldStartOffered = useRef(false);
  * useEffect(() => {
- *   if (assetsReady && consentReady) {
+ *   if (!assetsReady || coldStartOffered.current) {
+ *     return;
+ *   }
+ *   coldStartOffered.current = true;
+ *   if (consentReady) {
  *     showAdIfAvailable();
  *   }
  * }, [assetsReady, consentReady, showAdIfAvailable]);
- * // Hold a loading screen only for this cold-start pass, and never make it
- * // wait on consent: if consent is unresolved, skip the offer and continue.
- * // Keep the app tree mounted while a warm-foreground ad shows.
+ * // Hold a loading screen only for this cold-start pass. Keep the app tree
+ * // mounted while a warm-foreground ad shows.
  * ```
  */
 export function useAppOpenAdManager(

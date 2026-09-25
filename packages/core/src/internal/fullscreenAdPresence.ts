@@ -19,7 +19,7 @@
  * Process-wide signal for "a library fullscreen ad Activity is currently
  * presenting" (interstitial / rewarded / rewarded-interstitial / app-open).
  *
- * #### Why this exists (AO-2)
+ * #### Why this exists
  *
  * On Android, React Native's `AppState` reports `background` whenever ANOTHER
  * Activity covers the host `ReactActivity` — and the Google Mobile Ads SDK

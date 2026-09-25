@@ -56,7 +56,8 @@ smooths a real rough edge: the two most common "not right now" conditions on `sh
 and already showing — now come back on the returned promise, like a platform decline, so a single
 `.catch()` (or `try { await } catch`) covers them. A destroyed ad, or invalid show options on a
 loaded ad, still throw synchronously, on purpose, as a loud programmer-error signal. If you drive fullscreen ads through
-the hooks, nothing changes — the hook `show` was always press-safe.
+the fullscreen hooks, nothing changes — the hook `show` was always press-safe. Pooled ads have a
+small delta of their own, described at the end of this section.
 
 What changed for `MobileAd.show()` (`InterstitialAd`, `RewardedAd`, `RewardedInterstitialAd`,
 `AppOpenAd`, `GAMInterstitialAd`):
@@ -94,6 +95,27 @@ The existing fullscreen hooks (`useInterstitialAd`, `useRewardedAd`, `useRewarde
 `useAppOpenAd`) are unchanged: their `show` absorbs both channels, so an `onPress={() => show()}`
 is a no-op on failure and hook call sites need no change. The new `useGAMInterstitialAd` shares
 the same press-safe `show`.
+
+Preload pools have been public since the first v17 release, so pooled fullscreen ads get a small
+delta of their own. A
+destroyed `PooledAd` now **throws synchronously** instead of rejecting, matching `MobileAd` and
+the rest of the API's "using a destroyed object is a programmer error" convention. If you were
+relying on `pooledAd.show()` rejecting after the ad was destroyed, move that handling to a
+synchronous `try` / `catch` (or simply don't call `show()` on a destroyed or consumed pooled ad).
+
+The ad returned by `usePooledAd` moves a little further. In v17.1 and earlier its `show()` was
+an `async` wrapper, so every failure, including a destroyed ad and invalid options, came back as
+a rejection. It now keeps the same two channels as `PooledAd.show()`. Neither is press-safe like
+the fullscreen hooks' `show`.
+
+| Condition                                | v17.1 and earlier `PooledAd` | v17.1 and earlier `usePooledAd` ad | v17.2 and newer (both)                          |
+| ---------------------------------------- | ---------------------------- | ---------------------------------- | ----------------------------------------------- |
+| Show already requested (in flight)       | Rejects                      | Rejects                            | Rejects (unchanged)                             |
+| Platform declines to present             | Rejects                      | Rejects                            | Rejects (unchanged)                             |
+| Ad has been destroyed                    | Rejects                      | Rejects                            | Throws synchronously                            |
+| Invalid `showOptions`, no show in flight | Throws synchronously         | Rejects                            | Throws synchronously (unchanged for `PooledAd`) |
+
+A pooled ad is always loaded when you poll it, so there is no not-loaded case.
 
 ## Additive: `ResponseInfo` and paid telemetry
 
@@ -324,11 +346,11 @@ opt-in; v18 flips the default).
 
 ### Destroy / ownership surprises
 
-| Symptom                                                | Likely cause / fix                                                                                      |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| Hook still reports filled after you called `destroy()` | Destroyed hook-owned inventory — `release()` first, or let the hook destroy                             |
-| Post-show events never fire after pooled show          | Hook-owned show destroys on show-promise settle — `release()` before show if you need `CLOSED` / reward |
-| Late `LOADED` after a newer `load()` / `destroy()`     | Stale generation — ignored by design; do not treat as a second fill                                     |
+| Symptom                                                | Likely cause / fix                                                                                   |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Hook still reports filled after you called `destroy()` | Destroyed hook-owned inventory — `release()` first, or let the hook destroy                          |
+| Post-show events never fire after pooled show          | Hook-owned show destroys the ad on `CLOSED` — `release()` before show if you need events after close |
+| Late `LOADED` after a newer `load()` / `destroy()`     | Stale generation — ignored by design; do not treat as a second fill                                  |
 
 ### Hooks and pools
 
