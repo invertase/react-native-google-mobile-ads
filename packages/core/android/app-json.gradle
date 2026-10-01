@@ -50,7 +50,7 @@ if (jsonFile != null && jsonFile.exists()) {
       }
     }
   } else {
-    rootProject.ext.googleAdsJson = false
+    rootProject.ext.googleMobileAdsJson = false
     rootProject.logger.info ":${project.name} ${fileName} found with no ${jsonRoot} config, skipping"
     android {
       defaultConfig {

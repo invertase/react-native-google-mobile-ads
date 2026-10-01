@@ -120,7 +120,7 @@ apply from: file("./app-json.gradle")
 
 def requestedAndroidBackend = (
   project.findProperty("RNGMA_ANDROID_BACKEND") ?:
-    (rootProject.ext.googleMobileAdsJson
+    (rootProject.ext.has("googleMobileAdsJson") && rootProject.ext.googleMobileAdsJson
       ? rootProject.ext.googleMobileAdsJson.getStringValue("android_sdk", "classic")
       : "classic")
 ).toString().toLowerCase()
