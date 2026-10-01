@@ -32,6 +32,12 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   BOOL _terminalEmitted;
   BOOL _observingForeground;
   BOOL _presentationContextCaptured;
+  /** YES after a non-nil presented VC was bound at show/present — sticky if weak nils. */
+  BOOL _presentedIdentityBound;
+  /** YES after the present-time capture attempt ran (even if presented was still nil). */
+  BOOL _presentedIdentityCaptureAttempted;
+  /** YES once recovery starts — deferred present-time capture must not bind afterwards. */
+  BOOL _presentedIdentityCaptureClosed;
   __weak UIViewController *_presenterViewController;
   __weak UIWindow *_presentationWindow;
   __weak UIWindowScene *_presentationScene;
@@ -61,6 +67,9 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
     _presentationScene = window.windowScene;
   }
   _presentationContextCaptured = (viewController != nil);
+  _presentedIdentityBound = NO;
+  _presentedIdentityCaptureAttempted = NO;
+  _presentedIdentityCaptureClosed = NO;
   _capturedPresentedViewController = nil;
 }
 
@@ -70,7 +79,16 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   _presenting = YES;
   _willDismissSeen = NO;
   _terminalEmitted = NO;
-  [self rngma_refreshCapturedPresentedViewController];
+  [self rngma_capturePresentedIdentityAtPresentTime];
+  // Presentation can finish attaching after willPresent — one deferred capture only.
+  __weak __typeof(self) weakSelf = self;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (!strongSelf) {
+      return;
+    }
+    [strongSelf rngma_capturePresentedIdentityAtPresentTime];
+  });
   [self rngma_startObservingForeground];
   [self sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_OPENED error:nil data:nil];
 }
@@ -118,7 +136,7 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
 
 #pragma mark - Private
 
-- (void)rngma_refreshCapturedPresentedViewController {
+- (void)rngma_refreshPresentationWindowFromPresenter {
   UIViewController *presenter = _presenterViewController;
   if (presenter == nil) {
     return;
@@ -130,9 +148,33 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
       _presentationScene = window.windowScene;
     }
   }
-  UIViewController *presented = presenter.presentedViewController;
-  if (presented != nil) {
-    _capturedPresentedViewController = presented;
+}
+
+/**
+ * Bind presented-VC identity only at show/present time. Never called from recovery —
+ * rebinding after the ad disappears would adopt a host modal as the ad identity.
+ */
+- (void)rngma_capturePresentedIdentityAtPresentTime {
+  if (_presentedIdentityCaptureClosed || _terminalEmitted || _willDismissSeen) {
+    return;
+  }
+  [self rngma_refreshPresentationWindowFromPresenter];
+  _presentedIdentityCaptureAttempted = YES;
+  UIViewController *presenter = _presenterViewController;
+  if (presenter == nil) {
+    return;
+  }
+  UIViewController *candidate = presenter.presentedViewController;
+  UIViewController *existing = _capturedPresentedViewController;
+  id bound = [RNGoogleMobileAdsFullScreenDismissRecovery
+      presentedIdentityByBindingExisting:existing
+                               candidate:candidate
+                        identityWasBound:_presentedIdentityBound];
+  if (bound != existing) {
+    _capturedPresentedViewController = bound;
+  }
+  if (bound != nil) {
+    _presentedIdentityBound = YES;
   }
 }
 
@@ -249,6 +291,9 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
 
 - (void)rngma_clearPresentationContext {
   _presentationContextCaptured = NO;
+  _presentedIdentityBound = NO;
+  _presentedIdentityCaptureAttempted = NO;
+  _presentedIdentityCaptureClosed = NO;
   _presenterViewController = nil;
   _presentationWindow = nil;
   _presentationScene = nil;
@@ -260,20 +305,26 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
     return;
   }
 
-  // Presentation can finish attaching after willPresent — refresh before deciding.
-  [self rngma_refreshCapturedPresentedViewController];
+  // Close the present-time capture window before deciding — never rebind identity here.
+  _presentedIdentityCaptureClosed = YES;
+  [self rngma_refreshPresentationWindowFromPresenter];
 
   UIApplication *app = [UIApplication sharedApplication];
   BOOL capturedStillPresent = [self rngma_capturedPresentationStillPresent];
   BOOL hasPresentedInScene = [self rngma_hasPresentedInCapturedScene];
   BOOL isIgnoring = [app isIgnoringInteractionEvents];
 
+  // Prefer sticky presented-identity bind over presenter-only capture when deciding
+  // whether the creative is gone (weak may be nil after a successful bind).
+  BOOL identityContextCaptured = _presentedIdentityBound || (_presentationContextCaptured &&
+                                                             _presentedIdentityCaptureAttempted);
+
   RNGoogleMobileAdsFullScreenDismissRecoveryActions actions =
       [RNGoogleMobileAdsFullScreenDismissRecovery
           actionsForForegroundResumeWithPresenting:_presenting
                                    terminalEmitted:_terminalEmitted
                                    willDismissSeen:_willDismissSeen
-                       presentationContextCaptured:_presentationContextCaptured
+                       presentationContextCaptured:identityContextCaptured
                   capturedPresentationStillPresent:capturedStillPresent
                        hasPresentedInCapturedScene:hasPresentedInScene
                        isIgnoringInteractionEvents:isIgnoring];
