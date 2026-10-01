@@ -108,12 +108,11 @@ describe('ios_config.sh Info.plist wait (#568)', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout + result.stderr).toMatch(/build script finished/);
-    const plistBuddy = spawnSync(
-      '/usr/libexec/PlistBuddy',
-      ['-c', 'Print :GADApplicationIdentifier', fixture.infoPlist],
-      { encoding: 'utf8' },
+    // CI Jest runs on Linux (no /usr/libexec/PlistBuddy). Assert the written
+    // key via XML contents so macOS and Linux agree.
+    const plistXml = fs.readFileSync(fixture.infoPlist, 'utf8');
+    expect(plistXml).toMatch(
+      /<key>GADApplicationIdentifier<\/key>\s*<string>ca-app-pub-568568568~568568568<\/string>/,
     );
-    expect(plistBuddy.status).toBe(0);
-    expect(plistBuddy.stdout.trim()).toBe('ca-app-pub-568568568~568568568');
   });
 });
