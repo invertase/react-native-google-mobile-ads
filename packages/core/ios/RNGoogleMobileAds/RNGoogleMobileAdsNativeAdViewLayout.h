@@ -25,7 +25,17 @@ NS_ASSUME_NONNULL_BEGIN
  * @3x). Origin is unchanged. Safe for the lightweight XCTest harness (no GMA).
  *
  * Regression for invertase/react-native-google-mobile-ads#700.
+ *
+ * Defined in a .m (C linkage). Keep extern "C" so .mm call sites do not mangle.
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 CGRect RNGoogleMobileAdsCeilNativeAdViewFrame(CGRect frame);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 NS_ASSUME_NONNULL_END
