@@ -353,6 +353,9 @@ static void RNGoogleMobileAdsRetainFullScreenDelegate(id ad, id delegate) {
     return;
   }
 
+  RNGoogleMobileAdsFullScreenContentDelegate *delegate = self.delegateMap[@(requestId)];
+  [delegate capturePresentationContextFromViewController:viewController];
+
   if ([ad isKindOfClass:[GADAppOpenAd class]]) {
     [(GADAppOpenAd *)ad presentFromRootViewController:viewController];
   } else if ([ad isKindOfClass:[GADInterstitialAd class]]) {

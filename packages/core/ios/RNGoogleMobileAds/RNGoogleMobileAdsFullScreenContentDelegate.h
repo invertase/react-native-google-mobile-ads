@@ -33,6 +33,12 @@
                           requestId:(int)requestId
                            adUnitId:(NSString *)adUnitId;
 
+/**
+ * Capture the exact presenter / window / scene used for `presentFromRootViewController:`
+ * so dismiss recovery never guesses an unordered multi-scene keyWindow.
+ */
+- (void)capturePresentationContextFromViewController:(UIViewController *)viewController;
+
 @end
 
 #endif
