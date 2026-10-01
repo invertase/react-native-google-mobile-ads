@@ -66,4 +66,31 @@
   return drained;
 }
 
++ (BOOL)isPlausibleGMAFullScreenAdClassName:(NSString *)className {
+  if (className.length == 0) {
+    return NO;
+  }
+  // Public and private GMA / Ad Manager prefixes observed on fullscreen presentations.
+  static NSArray<NSString *> *needles = nil;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    needles = @[
+      @"GAD",
+      @"GAM",
+      @"DFP",
+      @"AdMob",
+      @"FullScreenAd",
+      @"InterstitialAd",
+      @"RewardedAd",
+      @"AppOpenAd",
+    ];
+  });
+  for (NSString *needle in needles) {
+    if ([className rangeOfString:needle].location != NSNotFound) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
 @end

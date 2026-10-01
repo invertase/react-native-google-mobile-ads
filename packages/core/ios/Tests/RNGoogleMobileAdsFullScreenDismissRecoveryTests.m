@@ -144,4 +144,38 @@
   XCTAssertEqual(ignoreDepth, 7u);
 }
 
+- (void)testProductionMaxDrainsBalancesOnlyOneIgnore {
+  // Delegate uses maxDrains:1 so host beginIgnoring stacks stay locked.
+  __block NSUInteger ignoreDepth = 3;
+  NSUInteger drained = [RNGoogleMobileAdsFullScreenDismissRecovery
+      drainIgnoringInteractionEventsWhile:^BOOL {
+        return ignoreDepth > 0;
+      }
+      end:^{
+        ignoreDepth--;
+      }
+      maxDrains:1];
+  XCTAssertEqual(drained, 1u);
+  XCTAssertEqual(ignoreDepth, 2u);
+}
+
+- (void)testPlausibleGMAClassNames {
+  XCTAssertTrue([RNGoogleMobileAdsFullScreenDismissRecovery
+      isPlausibleGMAFullScreenAdClassName:@"GADFullScreenAdViewController"]);
+  XCTAssertTrue([RNGoogleMobileAdsFullScreenDismissRecovery
+      isPlausibleGMAFullScreenAdClassName:@"_GADInterstitialViewController"]);
+  XCTAssertTrue([RNGoogleMobileAdsFullScreenDismissRecovery
+      isPlausibleGMAFullScreenAdClassName:@"GAMRewardedAdViewController"]);
+  XCTAssertTrue([RNGoogleMobileAdsFullScreenDismissRecovery
+      isPlausibleGMAFullScreenAdClassName:@"SomeAppOpenAdPresenter"]);
+  XCTAssertFalse([RNGoogleMobileAdsFullScreenDismissRecovery
+      isPlausibleGMAFullScreenAdClassName:@"UIViewController"]);
+  XCTAssertFalse([RNGoogleMobileAdsFullScreenDismissRecovery
+      isPlausibleGMAFullScreenAdClassName:@"MySettingsModalViewController"]);
+  XCTAssertFalse(
+      [RNGoogleMobileAdsFullScreenDismissRecovery isPlausibleGMAFullScreenAdClassName:@""]);
+  XCTAssertFalse(
+      [RNGoogleMobileAdsFullScreenDismissRecovery isPlausibleGMAFullScreenAdClassName:nil]);
+}
+
 @end
