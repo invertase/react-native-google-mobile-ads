@@ -115,11 +115,15 @@ typedef NS_OPTIONS(NSUInteger, RNGoogleMobileAdsFullScreenDismissRecoveryActions
  * One-shot presented-VC identity bind for show/present time.
  * Once `identityWasBound` is YES, always returns `existing` — never rebinds to a
  * later candidate (e.g. a host modal that appears after the ad disappears).
+ * Once `identityCaptureAttempted` is YES without a bind, also returns `existing`
+ * (typically nil) — a nil first attempt seals eligibility so a later host modal
+ * cannot be adopted.
  * Weak `existing` becoming nil after a successful bind must stay nil.
  */
 + (nullable id)presentedIdentityByBindingExisting:(nullable id)existing
                                         candidate:(nullable id)candidate
-                                 identityWasBound:(BOOL)identityWasBound;
+                                 identityWasBound:(BOOL)identityWasBound
+                         identityCaptureAttempted:(BOOL)identityCaptureAttempted;
 
 @end
 

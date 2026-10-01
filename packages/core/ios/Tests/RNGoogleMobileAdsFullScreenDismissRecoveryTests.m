@@ -311,14 +311,16 @@
   NSObject *adVC = [NSObject new];
   id first = [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:nil
                                                                                   candidate:adVC
-                                                                           identityWasBound:NO];
+                                                                           identityWasBound:NO
+                                                                   identityCaptureAttempted:NO];
   XCTAssertEqualObjects(first, adVC);
 
   NSObject *hostModal = [NSObject new];
   id rebound =
       [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:adVC
                                                                            candidate:hostModal
-                                                                    identityWasBound:YES];
+                                                                    identityWasBound:YES
+                                                            identityCaptureAttempted:YES];
   XCTAssertEqualObjects(rebound, adVC, @"must not replace show-time identity with a later VC");
 }
 
@@ -329,7 +331,8 @@
   id rebound =
       [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:nil
                                                                            candidate:hostModal
-                                                                    identityWasBound:YES];
+                                                                    identityWasBound:YES
+                                                            identityCaptureAttempted:YES];
   XCTAssertNil(rebound, @"weak-nil after bind must stay nil — never adopt host modal");
 }
 
@@ -338,9 +341,60 @@
   id bound =
       [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:nil
                                                                            candidate:lateAttachedAd
-                                                                    identityWasBound:NO];
+                                                                    identityWasBound:NO
+                                                            identityCaptureAttempted:NO];
   XCTAssertEqualObjects(bound, lateAttachedAd,
-                        @"deferred present-time capture may bind once before identityWasBound");
+                        @"first present-time capture may bind when not yet attempted");
+}
+
+- (void)testNilFirstCaptureDoesNotAdoptLaterHostModal {
+  // Sync capture saw nil — eligibility seals. A later host modal must not bind.
+  id first = [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:nil
+                                                                                  candidate:nil
+                                                                           identityWasBound:NO
+                                                                   identityCaptureAttempted:NO];
+  XCTAssertNil(first);
+
+  NSObject *hostModal = [NSObject new];
+  id second =
+      [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:nil
+                                                                           candidate:hostModal
+                                                                    identityWasBound:NO
+                                                            identityCaptureAttempted:YES];
+  XCTAssertNil(second, @"nil-first capture must not adopt a host modal on deferred attempt");
+
+  RNGoogleMobileAdsFullScreenDismissRecoveryActions actions =
+      [RNGoogleMobileAdsFullScreenDismissRecovery actionsForForegroundResumeWithPresenting:YES
+                                                                           terminalEmitted:NO
+                                                                           willDismissSeen:NO
+                                                               presentationContextCaptured:NO
+                                                          capturedPresentationStillPresent:NO
+                                                               hasPresentedInCapturedScene:YES
+                                                               isIgnoringInteractionEvents:NO];
+  XCTAssertEqual(actions, RNGoogleMobileAdsFullScreenDismissRecoveryActionNone,
+                 @"unbound identity + host modal must not synthesize CLOSED or dismiss");
+}
+
+- (void)testHostInteractionLockWithoutBoundIdentityDoesNotDrain {
+  // Capture was attempted but never bound — must not attribute a host beginIgnoring
+  // lock to the ad (presentationContextCaptured must be the bound-identity flag).
+  XCTAssertFalse([RNGoogleMobileAdsFullScreenDismissRecovery
+      adAttributedInteractionLockWithWillDismissSeen:NO
+                         presentationContextCaptured:NO
+                    capturedPresentationStillPresent:NO]);
+
+  RNGoogleMobileAdsFullScreenDismissRecoveryActions actions =
+      [RNGoogleMobileAdsFullScreenDismissRecovery actionsForForegroundResumeWithPresenting:YES
+                                                                           terminalEmitted:NO
+                                                                           willDismissSeen:NO
+                                                               presentationContextCaptured:NO
+                                                          capturedPresentationStillPresent:NO
+                                                               hasPresentedInCapturedScene:NO
+                                                               isIgnoringInteractionEvents:YES];
+  XCTAssertFalse(actions & RNGoogleMobileAdsFullScreenDismissRecoveryActionDrainIgnoringEvents,
+                 @"host interaction lock without bound identity must not drain");
+  XCTAssertEqual(actions, RNGoogleMobileAdsFullScreenDismissRecoveryActionSynthesizeClosed,
+                 @"edge path may still synthesize CLOSED when nothing is presented");
 }
 
 @end

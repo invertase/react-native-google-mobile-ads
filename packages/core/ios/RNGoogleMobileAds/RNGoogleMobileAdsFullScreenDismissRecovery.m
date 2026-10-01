@@ -125,9 +125,14 @@
 
 + (id)presentedIdentityByBindingExisting:(id)existing
                                candidate:(id)candidate
-                        identityWasBound:(BOOL)identityWasBound {
+                        identityWasBound:(BOOL)identityWasBound
+                identityCaptureAttempted:(BOOL)identityCaptureAttempted {
   // Sticky after first successful bind: weak nil means the ad is gone, not "try again".
   if (identityWasBound) {
+    return existing;
+  }
+  // Nil (or any) first attempt seals eligibility — do not adopt a later host modal.
+  if (identityCaptureAttempted) {
     return existing;
   }
   if (candidate != nil) {
