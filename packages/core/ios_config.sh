@@ -37,7 +37,9 @@ _JSON_ROOT="'react-native-google-mobile-ads'"
 _JSON_FILE_NAME='app.json'
 _JSON_OUTPUT_BASE64='e30=' # { }
 _CURRENT_SEARCH_DIR=${PROJECT_DIR}
-_PLIST_BUDDY=/usr/libexec/PlistBuddy
+# Production Xcode uses /usr/libexec/PlistBuddy. Tests may inject RNGMA_PLIST_BUDDY
+# (Linux CI has no system PlistBuddy; setPlistValue would otherwise no-op via ||).
+_PLIST_BUDDY="${RNGMA_PLIST_BUDDY:-/usr/libexec/PlistBuddy}"
 _TARGET_PLIST="${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}"
 _DSYM_PLIST="${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist"
 _PACKAGE_JSON_NAME='package.json'

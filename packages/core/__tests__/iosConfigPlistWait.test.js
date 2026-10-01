@@ -5,6 +5,10 @@
  * config script before Process Info.plist has written
  * $(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH). Tip hardens with after_compile +
  * input_files + always_out_of_date; the script must also wait briefly.
+ *
+ * Production runs under Xcode (macOS + /usr/libexec/PlistBuddy). CI Jest is
+ * Linux — inject RNGMA_PLIST_BUDDY with a minimal Add stub so the wait +
+ * inject path is exercised without a silent no-op.
  */
 
 const { spawn, spawnSync } = require('child_process');
@@ -24,6 +28,35 @@ const MINIMAL_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
 </plist>
 `;
 
+const PLIST_BUDDY_STUB = `#!/usr/bin/env bash
+# Minimal PlistBuddy stand-in for ios_config.sh tests (Add :Key type 'value').
+set -euo pipefail
+if [[ "\${1:-}" != "-c" || \$# -lt 3 ]]; then
+  echo "stub PlistBuddy: expected -c <cmd> <file>" >&2
+  exit 2
+fi
+python3 - "\$2" "\$3" <<'PY'
+import plistlib, re, sys
+
+cmd, path = sys.argv[1], sys.argv[2]
+match = re.match(r"Add :(\\S+)\\s+(\\S+)\\s+'(.*)'\\s*$", cmd, re.DOTALL)
+if not match:
+    sys.stderr.write(f"stub PlistBuddy: unsupported: {cmd!r}\\n")
+    sys.exit(2)
+key, typ, value = match.groups()
+with open(path, "rb") as handle:
+    data = plistlib.load(handle)
+if typ == "bool":
+    data[key] = value in ("YES", "true", "1")
+elif typ == "array":
+    data[key] = []
+else:
+    data[key] = value
+with open(path, "wb") as handle:
+    plistlib.dump(data, handle)
+PY
+`;
+
 function setupFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rngma-568-'));
   // ios_config walks PROJECT_DIR parents (max 2) for app.json.
@@ -37,6 +70,10 @@ function setupFixture() {
       },
     }),
   );
+  const binDir = path.join(root, 'bin');
+  fs.mkdirSync(binDir, { recursive: true });
+  const plistBuddy = path.join(binDir, 'PlistBuddy');
+  fs.writeFileSync(plistBuddy, PLIST_BUDDY_STUB, { mode: 0o755 });
   const built = path.join(root, 'build');
   const appBundle = path.join(built, 'App.app');
   fs.mkdirSync(appBundle, { recursive: true });
@@ -47,6 +84,7 @@ function setupFixture() {
     built,
     infoPlistRel,
     infoPlist: path.join(built, infoPlistRel),
+    plistBuddy,
   };
 }
 
@@ -59,6 +97,7 @@ function runScript(fixture, extraEnv = {}, timeoutMs = 20000) {
       INFOPLIST_PATH: fixture.infoPlistRel,
       DWARF_DSYM_FOLDER_PATH: path.join(fixture.root, 'dsyms-missing'),
       DWARF_DSYM_FILE_NAME: 'App.app.dSYM',
+      RNGMA_PLIST_BUDDY: fixture.plistBuddy,
       ...extraEnv,
     },
     encoding: 'utf8',
@@ -106,10 +145,9 @@ describe('ios_config.sh Info.plist wait (#568)', () => {
       // already exited
     }
 
+    const combined = result.stdout + result.stderr;
     expect(result.status).toBe(0);
-    expect(result.stdout + result.stderr).toMatch(/build script finished/);
-    // CI Jest runs on Linux (no /usr/libexec/PlistBuddy). Assert the written
-    // key via XML contents so macOS and Linux agree.
+    expect(combined).toMatch(/build script finished/);
     const plistXml = fs.readFileSync(fixture.infoPlist, 'utf8');
     expect(plistXml).toMatch(
       /<key>GADApplicationIdentifier<\/key>\s*<string>ca-app-pub-568568568~568568568<\/string>/,
