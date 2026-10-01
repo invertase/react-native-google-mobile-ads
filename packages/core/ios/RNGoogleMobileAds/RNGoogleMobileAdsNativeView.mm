@@ -265,8 +265,10 @@ RCT_EXPORT_VIEW_PROPERTY(responseId, NSString)
   return [[RNGoogleMobileAdsNativeView alloc] initWithBridge:self.bridge];
 }
 
-RCT_EXPORT_METHOD(registerAsset : (nonnull NSNumber *)reactTag assetType : (nonnull NSString *)
-                      assetType assetReactTag : (nonnull NSNumber *)assetReactTag) {
+RCT_EXPORT_METHOD(registerAsset
+                  : (nonnull NSNumber *)reactTag assetType
+                  : (nonnull NSString *)assetType assetReactTag
+                  : (nonnull NSNumber *)assetReactTag) {
   [self.bridge.uiManager
       addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
         RNGoogleMobileAdsNativeView *view = viewRegistry[reactTag];
