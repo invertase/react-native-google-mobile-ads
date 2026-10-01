@@ -190,7 +190,7 @@ If hybrid video still fails to paint after upgrading:
 
 1. Confirm the host `Activity` has **hardware acceleration** enabled. Google requires it for video in banner ad views ([Set up banner ads](https://developers.google.com/admob/android/banner#hardware_acceleration_for_video_ads)). Expo / React Native templates usually enable it globally; do not set `android:hardwareAccelerated="false"` on `MainActivity`.
 2. Confirm the banner has a real laid-out width and height before or when the creative loads (avoid mounting a 0×0 placeholder that never grows).
-3. Distinguish this from [native video in pagers](/native-ads#fullscreen-pagers-and-native-video) — that path uses `NativeMediaView` / `mediaContent`, not `<BannerAd>`.
+3. Distinguish this from [native video in pagers](/ad-formats/native#fullscreen-pagers-and-native-video) — that path uses `NativeMediaView` / `mediaContent`, not `<BannerAd>`.
 
 Some banner inventory is a **hybrid** creative (static image beside or above an in-banner video). Google's banner `AdView` renders that inside an embedded WebView. On Android, video halves historically could stay frozen after `onAdLoaded` until the user scrolled or otherwise interacted, or left the app and returned — the Activity leave+return cycle recreates the WebView surface / resume path ([#655](https://github.com/invertase/react-native-google-mobile-ads/issues/655), [#711](https://github.com/invertase/react-native-google-mobile-ads/issues/711)).
 
