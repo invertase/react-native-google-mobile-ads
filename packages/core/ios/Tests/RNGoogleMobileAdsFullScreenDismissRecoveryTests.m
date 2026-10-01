@@ -143,6 +143,37 @@
                  @"#859: creative gone from hierarchy with no CLOSED must synthesize");
 }
 
+- (void)testAdGoneThenHostModalDoesNotDismissStillSynthesizesClosed {
+  // Ad identity captured at present, then ad disappears and host presents a modal
+  // before recovery runs. Identity must stay "gone" (not rebound to the modal):
+  // synthesize CLOSED, never dismiss the host modal.
+  RNGoogleMobileAdsFullScreenDismissRecoveryActions actions =
+      [RNGoogleMobileAdsFullScreenDismissRecovery actionsForForegroundResumeWithPresenting:YES
+                                                                           terminalEmitted:NO
+                                                                           willDismissSeen:NO
+                                                               presentationContextCaptured:YES
+                                                          capturedPresentationStillPresent:NO
+                                                               hasPresentedInCapturedScene:YES
+                                                               isIgnoringInteractionEvents:NO];
+  XCTAssertEqual(actions, RNGoogleMobileAdsFullScreenDismissRecoveryActionSynthesizeClosed,
+                 @"host modal after ad teardown must not block CLOSED synthesis");
+  XCTAssertFalse(actions & RNGoogleMobileAdsFullScreenDismissRecoveryActionDismissPresentedChain,
+                 @"must not dismiss a host modal that replaced the ad");
+}
+
+- (void)testWillDismissAdGoneHostModalDoesNotDismiss {
+  RNGoogleMobileAdsFullScreenDismissRecoveryActions actions =
+      [RNGoogleMobileAdsFullScreenDismissRecovery actionsForForegroundResumeWithPresenting:YES
+                                                                           terminalEmitted:NO
+                                                                           willDismissSeen:YES
+                                                               presentationContextCaptured:YES
+                                                          capturedPresentationStillPresent:NO
+                                                               hasPresentedInCapturedScene:YES
+                                                               isIgnoringInteractionEvents:NO];
+  XCTAssertEqual(actions, RNGoogleMobileAdsFullScreenDismissRecoveryActionSynthesizeClosed);
+  XCTAssertFalse(actions & RNGoogleMobileAdsFullScreenDismissRecoveryActionDismissPresentedChain);
+}
+
 - (void)testUnknownPresentedWithoutCaptureDoesNotDismiss {
   // No show-time identity: a presented VC in-scene must not be dismissed.
   RNGoogleMobileAdsFullScreenDismissRecoveryActions actions =
@@ -274,6 +305,42 @@
                       candidateWindows:@[ windowB ]
                   candidateSceneTokens:@[ [NSObject new] ]];
   XCTAssertNil(resolved, @"must not fall back to an unordered global keyWindow guess");
+}
+
+- (void)testPresentedIdentityBindsOnceAtPresentTime {
+  NSObject *adVC = [NSObject new];
+  id first = [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:nil
+                                                                                  candidate:adVC
+                                                                           identityWasBound:NO];
+  XCTAssertEqualObjects(first, adVC);
+
+  NSObject *hostModal = [NSObject new];
+  id rebound =
+      [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:adVC
+                                                                           candidate:hostModal
+                                                                    identityWasBound:YES];
+  XCTAssertEqualObjects(rebound, adVC, @"must not replace show-time identity with a later VC");
+}
+
+- (void)testPresentedIdentityDoesNotRebindAfterWeakClears {
+  // Ad dealloc'd → weak existing is nil, but identityWasBound stays YES. A host
+  // modal candidate must not become the captured identity.
+  NSObject *hostModal = [NSObject new];
+  id rebound =
+      [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:nil
+                                                                           candidate:hostModal
+                                                                    identityWasBound:YES];
+  XCTAssertNil(rebound, @"weak-nil after bind must stay nil — never adopt host modal");
+}
+
+- (void)testPresentedIdentityAllowsFirstBindWhenNotYetBound {
+  NSObject *lateAttachedAd = [NSObject new];
+  id bound =
+      [RNGoogleMobileAdsFullScreenDismissRecovery presentedIdentityByBindingExisting:nil
+                                                                           candidate:lateAttachedAd
+                                                                    identityWasBound:NO];
+  XCTAssertEqualObjects(bound, lateAttachedAd,
+                        @"deferred present-time capture may bind once before identityWasBound");
 }
 
 @end

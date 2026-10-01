@@ -123,4 +123,17 @@
   return nil;
 }
 
++ (id)presentedIdentityByBindingExisting:(id)existing
+                               candidate:(id)candidate
+                        identityWasBound:(BOOL)identityWasBound {
+  // Sticky after first successful bind: weak nil means the ad is gone, not "try again".
+  if (identityWasBound) {
+    return existing;
+  }
+  if (candidate != nil) {
+    return candidate;
+  }
+  return existing;
+}
+
 @end
