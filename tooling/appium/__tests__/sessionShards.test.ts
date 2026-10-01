@@ -102,9 +102,11 @@ test('smoke cases cover every contracts.ts e2e-outcome behavior', () => {
   }
 });
 
-test('request-outcome contracts are packed before navigation smoke cases', () => {
-  const firstNavigationIndex = SMOKE_CASES.findIndex(smokeCase => smokeCase.kind === 'navigation');
-  assert.equal(firstNavigationIndex, REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.length);
+test('navigation smoke cases are packed before request-outcome contracts', () => {
+  const firstRequestOutcomeIndex = SMOKE_CASES.findIndex(
+    smokeCase => smokeCase.kind === 'request-outcome',
+  );
+  assert.equal(firstRequestOutcomeIndex, NAVIGATION_SMOKE_CASES.length);
 });
 
 test('derived shards partition every case in order without empties', () => {

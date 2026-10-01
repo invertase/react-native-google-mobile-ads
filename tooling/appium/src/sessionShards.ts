@@ -64,25 +64,29 @@ export type SmokeShard = {
 };
 
 /**
- * Every device case the smoke suite owns, in packing order. The bounded-retry
- * request-outcome contracts are ordered first so they stay inside the first
- * positional shard instead of spreading across every configured slot.
+ * Every device case the smoke suite owns, in packing order. Navigation-only
+ * cases lead so Fluid/Consent are not packed after Multi-Format Hook native
+ * render-proof (SDK click overlay #893). Request-outcome contracts follow.
  */
 export const SMOKE_CASES: readonly SmokeShardCase[] = [
-  ...REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.map(
-    (contract): SmokeShardCase => ({
-      kind: 'request-outcome',
-      id: contract.id,
-      testTitle: `proves ${contract.title}`,
-      contract,
-    }),
-  ),
+  // Navigation-only cases first so Fluid/Consent are not packed after
+  // Multi-Format Hook native render-proof (SDK click overlay #893 steals the
+  // next formats-section tap into AdActivity; terminateApp then crashes UA2 —
+  // classic slot-2 runs 19–21).
   ...NAVIGATION_SMOKE_CASES.map(
     (navigation): SmokeShardCase => ({
       kind: 'navigation',
       id: navigation.id,
       testTitle: `opens ${navigation.title}`,
       navigation,
+    }),
+  ),
+  ...REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.map(
+    (contract): SmokeShardCase => ({
+      kind: 'request-outcome',
+      id: contract.id,
+      testTitle: `proves ${contract.title}`,
+      contract,
     }),
   ),
   ...SDK_UTILITY_SURFACE_CONTRACTS.map(
