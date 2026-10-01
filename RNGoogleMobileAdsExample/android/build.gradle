@@ -58,8 +58,14 @@ def rnCoverageRoot = new File(rnCoveragePackageJson).parentFile
 apply from: new File(rnCoverageRoot, "android/rn-coverage.gradle")
 
 // RNTA owns android/app/build.gradle in node_modules — enable app coverage + Jacoco report tasks here.
+// play-services-ads 25.4 / ads-mobile-sdk ship Kotlin 2.3 metadata; RN still compiles the
+// example :app with Kotlin 2.1. Mirror packages/core's -Xskip-metadata-version-check on
+// every KotlinCompile in this harness so Warm Gradle / assembleDebug can succeed.
 subprojects { subproject ->
     subproject.afterEvaluate {
+        subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions.freeCompilerArgs += ["-Xskip-metadata-version-check"]
+        }
         if (subproject.name != 'app' || !subproject.plugins.hasPlugin('com.android.application')) {
             return
         }
