@@ -20,11 +20,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_OPTIONS(NSUInteger, RNGoogleMobileAdsFullScreenDismissRecoveryActions) {
   RNGoogleMobileAdsFullScreenDismissRecoveryActionNone = 0,
-  /** Call endIgnoringInteractionEvents until the ignore stack is clear. */
+  /**
+   * Call endIgnoringInteractionEvents once (GMA may have left a single unmatched
+   * beginIgnoring). Do not drain the global ignore stack in a loop — that can unlock
+   * unrelated beginIgnoringInteractionEvents from the host app.
+   */
   RNGoogleMobileAdsFullScreenDismissRecoveryActionDrainIgnoringEvents = 1 << 0,
   /** Emit CLOSED once and evict — GMA never called adDidDismissFullScreenContent. */
   RNGoogleMobileAdsFullScreenDismissRecoveryActionSynthesizeClosed = 1 << 1,
-  /** Dismiss a leftover presented VC chain (ghost ad UI eating touches). */
+  /**
+   * Dismiss a leftover presented VC only when it looks like a GMA fullscreen ad
+   * (see `isPlausibleGMAFullScreenAdClassName:`). Skip dismiss when uncertain so
+   * host modals are not torn down.
+   */
   RNGoogleMobileAdsFullScreenDismissRecoveryActionDismissPresentedChain = 1 << 2,
 };
 
@@ -49,10 +57,20 @@ typedef NS_OPTIONS(NSUInteger, RNGoogleMobileAdsFullScreenDismissRecoveryActions
 /**
  * Invokes `endIgnoring` while `isIgnoring` remains true, up to `maxDrains`.
  * Returns how many times `endIgnoring` ran.
+ *
+ * Production recovery should pass `maxDrains:1` so only one unmatched GMA
+ * beginIgnoring is balanced. Higher caps remain for unit tests of the helper.
  */
 + (NSUInteger)drainIgnoringInteractionEventsWhile:(BOOL (^)(void))isIgnoring
                                               end:(void (^)(void))endIgnoring
                                         maxDrains:(NSUInteger)maxDrains;
+
+/**
+ * Heuristic for whether a presented view controller is plausibly a Google Mobile
+ * Ads / Ad Manager fullscreen creative (class name contains known GMA prefixes).
+ * Returns NO when uncertain — callers must skip dismiss in that case.
+ */
++ (BOOL)isPlausibleGMAFullScreenAdClassName:(nullable NSString *)className;
 
 @end
 
