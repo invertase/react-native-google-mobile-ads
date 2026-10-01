@@ -64,13 +64,16 @@ RCT_EXPORT_METHOD(initialize : (RCTPromiseResolveBlock)resolve : (RCTPromiseReje
   [self initialize:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(setRequestConfiguration : (NSDictionary *)requestConfiguration : (
-    RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(setRequestConfiguration
+                  : (NSDictionary *)requestConfiguration
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   [self setRequestConfiguration:requestConfiguration resolve:resolve reject:reject];
 }
 
-RCT_EXPORT_METHOD(openAdInspector : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)
-                      reject) {
+RCT_EXPORT_METHOD(openAdInspector
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   [self openAdInspector:resolve reject:reject];
 }
 
@@ -100,13 +103,14 @@ RCT_EXPORT_METHOD(setAppMuted : (BOOL)muted) {
 RCT_EXPORT_METHOD(setAudioSessionIsApplicationManaged : (BOOL)managed) {
 #if !TARGET_OS_MACCATALYST
   // GMA 13.6.0: GADAudioVideoManager.audioSessionIsApplicationManaged
-  GADMobileAds.sharedInstance.audioVideoManager
-      .audioSessionIsApplicationManaged = managed;
+  GADMobileAds.sharedInstance.audioVideoManager.audioSessionIsApplicationManaged = managed;
 #endif
 }
 
-RCT_EXPORT_METHOD(registerWebView : (double)viewTag : (RCTPromiseResolveBlock)
-                      resolve : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(registerWebView
+                  : (double)viewTag
+                  : (RCTPromiseResolveBlock)resolve
+                  : (RCTPromiseRejectBlock)reject) {
   [self registerWebView:viewTag resolve:resolve reject:reject];
 }
 
