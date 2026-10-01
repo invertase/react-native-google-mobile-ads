@@ -104,8 +104,10 @@ typedef NS_OPTIONS(NSUInteger, RNGoogleMobileAdsFullScreenDismissRecoveryActions
 
 /**
  * Ad-attributable evidence that this ad owns an unmatched interaction lock.
- * Global `isIgnoring` alone is insufficient — require willDismiss and/or a
- * show-time presentation capture whose identity is no longer present.
+ * Global `isIgnoring` alone is insufficient — every drain path requires a
+ * show-time presentation capture (`presentationContextCaptured` /
+ * `_presentedIdentityBound`), plus either willDismiss or that the captured
+ * identity is no longer present. willDismiss alone must not authorize drain.
  */
 + (BOOL)adAttributedInteractionLockWithWillDismissSeen:(BOOL)willDismissSeen
                            presentationContextCaptured:(BOOL)presentationContextCaptured

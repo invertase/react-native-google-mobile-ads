@@ -21,12 +21,17 @@
 + (BOOL)adAttributedInteractionLockWithWillDismissSeen:(BOOL)willDismissSeen
                            presentationContextCaptured:(BOOL)presentationContextCaptured
                       capturedPresentationStillPresent:(BOOL)capturedPresentationStillPresent {
+  // Drain requires show-time bound identity — willDismiss alone must not unlock a
+  // host-owned global beginIgnoring stack when identity capture was nil.
+  if (!presentationContextCaptured) {
+    return NO;
+  }
   if (willDismissSeen) {
     return YES;
   }
   // Our show-time presentation disappeared while we still think we are presenting —
   // GMA ghost teardown leaving an unmatched beginIgnoring is attributable to this ad.
-  return presentationContextCaptured && !capturedPresentationStillPresent;
+  return !capturedPresentationStillPresent;
 }
 
 + (RNGoogleMobileAdsFullScreenDismissRecoveryActions)
