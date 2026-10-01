@@ -31,12 +31,11 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   BOOL _willDismissSeen;
   BOOL _terminalEmitted;
   BOOL _observingForeground;
-  BOOL _presentationContextCaptured;
   /** YES after a non-nil presented VC was bound at show/present — sticky if weak nils. */
   BOOL _presentedIdentityBound;
   /** YES after the present-time capture attempt ran (even if presented was still nil). */
   BOOL _presentedIdentityCaptureAttempted;
-  /** YES once recovery starts — deferred present-time capture must not bind afterwards. */
+  /** YES once recovery starts — further present-time capture must not bind afterwards. */
   BOOL _presentedIdentityCaptureClosed;
   __weak UIViewController *_presenterViewController;
   __weak UIWindow *_presentationWindow;
@@ -66,7 +65,6 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   if (@available(iOS 13.0, *)) {
     _presentationScene = window.windowScene;
   }
-  _presentationContextCaptured = (viewController != nil);
   _presentedIdentityBound = NO;
   _presentedIdentityCaptureAttempted = NO;
   _presentedIdentityCaptureClosed = NO;
@@ -79,16 +77,9 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   _presenting = YES;
   _willDismissSeen = NO;
   _terminalEmitted = NO;
+  // Single synchronous capture attempt — deferred rebind could adopt a host modal
+  // after ad teardown when the first attempt saw nil.
   [self rngma_capturePresentedIdentityAtPresentTime];
-  // Presentation can finish attaching after willPresent — one deferred capture only.
-  __weak __typeof(self) weakSelf = self;
-  dispatch_async(dispatch_get_main_queue(), ^{
-    __strong __typeof(weakSelf) strongSelf = weakSelf;
-    if (!strongSelf) {
-      return;
-    }
-    [strongSelf rngma_capturePresentedIdentityAtPresentTime];
-  });
   [self rngma_startObservingForeground];
   [self sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_OPENED error:nil data:nil];
 }
@@ -153,15 +144,18 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
 /**
  * Bind presented-VC identity only at show/present time. Never called from recovery —
  * rebinding after the ad disappears would adopt a host modal as the ad identity.
+ * Eligibility is immutable after the first attempt (including a nil result).
  */
 - (void)rngma_capturePresentedIdentityAtPresentTime {
   if (_presentedIdentityCaptureClosed || _terminalEmitted || _willDismissSeen) {
     return;
   }
   [self rngma_refreshPresentationWindowFromPresenter];
-  _presentedIdentityCaptureAttempted = YES;
+  BOOL alreadyAttempted = _presentedIdentityCaptureAttempted;
   UIViewController *presenter = _presenterViewController;
   if (presenter == nil) {
+    // Still seal the attempt so a later host modal cannot bind.
+    _presentedIdentityCaptureAttempted = YES;
     return;
   }
   UIViewController *candidate = presenter.presentedViewController;
@@ -169,7 +163,9 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   id bound = [RNGoogleMobileAdsFullScreenDismissRecovery
       presentedIdentityByBindingExisting:existing
                                candidate:candidate
-                        identityWasBound:_presentedIdentityBound];
+                        identityWasBound:_presentedIdentityBound
+                identityCaptureAttempted:alreadyAttempted];
+  _presentedIdentityCaptureAttempted = YES;
   if (bound != existing) {
     _capturedPresentedViewController = bound;
   }
@@ -290,7 +286,6 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
 }
 
 - (void)rngma_clearPresentationContext {
-  _presentationContextCaptured = NO;
   _presentedIdentityBound = NO;
   _presentedIdentityCaptureAttempted = NO;
   _presentedIdentityCaptureClosed = NO;
@@ -314,10 +309,9 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   BOOL hasPresentedInScene = [self rngma_hasPresentedInCapturedScene];
   BOOL isIgnoring = [app isIgnoringInteractionEvents];
 
-  // Prefer sticky presented-identity bind over presenter-only capture when deciding
-  // whether the creative is gone (weak may be nil after a successful bind).
-  BOOL identityContextCaptured = _presentedIdentityBound || (_presentationContextCaptured &&
-                                                             _presentedIdentityCaptureAttempted);
+  // Interaction-lock attribution and identity-based CLOSED require a real bind —
+  // a nil capture attempt must not count as ad-owned identity evidence.
+  BOOL identityContextCaptured = _presentedIdentityBound;
 
   RNGoogleMobileAdsFullScreenDismissRecoveryActions actions =
       [RNGoogleMobileAdsFullScreenDismissRecovery
