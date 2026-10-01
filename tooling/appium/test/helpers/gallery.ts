@@ -82,8 +82,21 @@ async function scrollGalleryIos(testId: string): Promise<void> {
   await driver.execute('mobile: scroll', { direction: 'down' });
 }
 
-/** True when gallery home is showing (format back button hidden). */
+/**
+ * True when gallery home chrome is showing.
+ * Require a positive signal (section chip / root). Absence of Back alone is true
+ * on the launcher and false-negatives when a Native creative overlay keeps
+ * `gma.gallery.back` "displayed" after the React screen already popped (#893).
+ */
 async function isGalleryHome(): Promise<boolean> {
+  const allChip = await findByTestId(AppiumTestIds.section.all);
+  if (await allChip.isDisplayed().catch(() => false)) {
+    return true;
+  }
+  const root = await findByTestId(AppiumTestIds.root);
+  if (!(await root.isDisplayed().catch(() => false))) {
+    return false;
+  }
   const back = await findByTestId(AppiumTestIds.galleryBack);
   return !(await back.isDisplayed().catch(() => false));
 }
@@ -409,7 +422,24 @@ export async function selectGallerySection(
 }
 
 async function clickAndroidOpenerByTitle(galleryTitle: string): Promise<boolean> {
-  for (const label of [galleryTitle.toUpperCase(), galleryTitle]) {
+  const labels = [galleryTitle.toUpperCase(), galleryTitle];
+  // Last Hooks row (Multi-Format Hook) often starts below the fold; scroll
+  // before measuring bounds so we do not tap a stale/off-screen node.
+  for (let scroll = 0; scroll < 8; scroll += 1) {
+    let visible = false;
+    for (const label of labels) {
+      const el = await $(`android=new UiSelector().text("${label}")`);
+      if (await el.isDisplayed().catch(() => false)) {
+        visible = true;
+        break;
+      }
+    }
+    if (visible) {
+      break;
+    }
+    await androidSwipeUp(0.5);
+  }
+  for (const label of labels) {
     const byText = await $(`android=new UiSelector().text("${label}")`);
     if (!(await byText.isExisting().catch(() => false))) {
       continue;
@@ -419,11 +449,13 @@ async function clickAndroidOpenerByTitle(galleryTitle: string): Promise<boolean>
       let size = await byText.getSize();
       const { height, width } = await driver.getWindowSize();
       let centerY = rect.y + size.height / 2;
-      // Lift only while measured bounds are clipped/unsafe, and stop if a swipe
-      // did not move the row. This avoids the former repeated double-drag tax.
+      // Lift while clipped/unsafe. Multi-Format Hook is last in Hooks and sits
+      // just above Flush — use a stricter mid-band than the generic 0.72 cut
+      // so taps do not land on the teardown control (classic slot-2 run-10/11).
+      const unsafeY = height * 0.62;
       for (
         let lift = 0;
-        lift < 2 && (size.height <= 8 || centerY < 0 || centerY > height * 0.72);
+        lift < 4 && (size.height <= 8 || centerY < 0 || centerY > unsafeY);
         lift++
       ) {
         const previousCenterY = centerY;
@@ -440,6 +472,13 @@ async function clickAndroidOpenerByTitle(galleryTitle: string): Promise<boolean>
       }
       const x = Math.floor(Math.min(Math.max(rect.x + size.width / 2, width * 0.1), width * 0.9));
       const y = Math.floor(centerY);
+      logAndroidHostTrace('gallery.opener.titleTap', {
+        label,
+        x,
+        y,
+        centerY,
+        height,
+      });
       await driver.execute('mobile: shell', {
         command: 'input',
         args: ['tap', String(x), String(y)],
@@ -514,6 +553,15 @@ async function ensureBannerAccordionClosed(): Promise<void> {
 }
 
 async function formatLooksOpen(formatId: string): Promise<boolean> {
+  // Multi-Format Hook auto-shows a fullscreen creative that covers RN chrome.
+  // Count AdActivity as open; observe dismisses it before reading the loaded marker.
+  if (
+    isAndroid() &&
+    formatId === AppiumTestIds.format.multiFormatHook &&
+    (await isAndroidAdActivityForeground())
+  ) {
+    return true;
+  }
   const back = await findByTestId(AppiumTestIds.galleryBack);
   const container = await findByTestId(formatId);
   return (
@@ -537,9 +585,11 @@ async function waitForFormatOpen(formatId: string, timeoutMs: number): Promise<b
 export async function openFormat(formatId: string, galleryTitle?: string): Promise<void> {
   await withInstrumentationRecovery(async () => {
     const openId = AppiumTestIds.openFormat(formatId);
-    // Android: one fast miss-retry with title-text fallback covers residual RWI / Flush
+    // Android: miss-retry with title-text fallback covers residual RWI / Flush
     // adjacency flakes without tripling every opener's worst-case wait.
-    const maxAttempts = isAndroid() ? 2 : 1;
+    // Multi-Format Hook is last in Hooks (Flush-adjacent) — allow one extra try.
+    const maxAttempts =
+      isAndroid() && formatId === AppiumTestIds.format.multiFormatHook ? 3 : isAndroid() ? 2 : 1;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       if (!(await isGalleryHome())) {
         await backToGallery();
@@ -590,6 +640,20 @@ export async function openFormat(formatId: string, galleryTitle?: string): Promi
           } catch {
             await resetAppState();
           }
+        } else if (formatId === AppiumTestIds.format.multiFormatHook) {
+          // Autoload dismiss can overshoot to gallery (waitForFormatOpen). A
+          // terminateApp cold restart here frequently kills UiAutomator2 after
+          // native creatives (classic slot-2 run-22). Stay on home and retap.
+          // Also clear a leftover native click overlay from the prior
+          // multi-format-request render-proof (#893 / run-25).
+          logAndroidHostTrace('gallery.open.retry-home', { formatId, attempt });
+          await driver.execute('mobile: shell', {
+            command: 'input',
+            args: ['keyevent', '4'],
+          });
+          await new Promise<void>(resolve => setTimeout(resolve, 400));
+          await recoverAndroidTestHost('multi-format-hook-retry');
+          await scrollGalleryToTop();
         } else {
           // Likely tapped Flush (same home) — cold restart clears sticky scroll/section.
           await resetAppState();
@@ -631,6 +695,16 @@ async function openFormatStrict(formatId: string, galleryTitle?: string): Promis
 
 export async function backToGallery(): Promise<void> {
   logAndroidHostTrace('gallery.back.begin');
+  // Multi-Format Hook (and similar auto-show paths) may leave AdActivity up;
+  // dismiss before looking for RN back chrome (run-16 Fluid stuck under it).
+  if (isAndroid() && (await isAndroidAdActivityForeground())) {
+    logAndroidHostTrace('gallery.back.fallback', { method: 'dismiss-ad-activity' });
+    await dismissFullscreenAdWithoutCreativeTap();
+    if (await isGalleryHome()) {
+      logAndroidHostTrace('gallery.back.done', { galleryHome: true });
+      return;
+    }
+  }
   const back = await findByTestId(AppiumTestIds.galleryBack);
   if (await back.isDisplayed().catch(() => false)) {
     await clickElement(back, 'backToGallery');
@@ -644,12 +718,39 @@ export async function backToGallery(): Promise<void> {
       timeoutMsg: 'Gallery home did not restore after back',
     });
   } catch (error) {
-    if (!isAndroid()) {
-      await captureIosStallEvidence('backToGallery');
-      await dismissIosBlockingOverlays('backToGallery:stall');
+    if (isAndroid()) {
+      // Native creatives keep an SDK overlay above React content for clicks (#893).
+      // If positive gallery chrome is already up, do not send another system Back —
+      // that backgrounds the app to the launcher (classic slot-2 run-4).
+      if (await isGalleryHome()) {
+        logAndroidHostTrace('gallery.back.fallback', { method: 'already-home' });
+        return;
+      }
+      logAndroidHostTrace('gallery.back.fallback', {
+        method: 'driver.back-after-overlay-stall',
+      });
+      await driver.back();
+      await recoverAndroidTestHost('gallery.back.overlay');
       if (await isGalleryHome()) {
         return;
       }
+      try {
+        await driver.waitUntil(async () => isGalleryHome(), {
+          timeout: 8000,
+          timeoutMsg: 'Gallery home did not restore after back',
+        });
+      } catch {
+        // Native SDK overlays can swallow both coordinate taps and KEYCODE_BACK
+        // (#893). Cold restart is the reliable escape so later formats still run.
+        logAndroidHostTrace('gallery.back.fallback', { method: 'resetAppState' });
+        await resetAppState();
+      }
+      return;
+    }
+    await captureIosStallEvidence('backToGallery');
+    await dismissIosBlockingOverlays('backToGallery:stall');
+    if (await isGalleryHome()) {
+      return;
     }
     throw error;
   } finally {
@@ -1036,6 +1137,22 @@ async function observeRepresentativeRequestOutcome(
   detail: string;
   fingerprint: RequestFingerprint;
 }> {
+  // Multi-Format Hook auto-show covers the loaded marker; dismiss AdActivity
+  // first. Prefer close chrome; allow KEYCODE_BACK as last resort. If BACK
+  // overshoots to gallery, throw so remount retry can re-open (run-23).
+  if (
+    isAndroid() &&
+    formatId === AppiumTestIds.format.multiFormatHook &&
+    (await isAndroidAdActivityForeground())
+  ) {
+    logAndroidHostTrace('request-outcome.dismiss-autoload', { formatId, attempt });
+    await dismissFullscreenAdWithoutCreativeTap();
+    if (await isGalleryHome()) {
+      throw new Error(
+        `[request-outcome] ${formatId}: autoload dismiss returned to gallery before marker read`,
+      );
+    }
+  }
   const testId = AppiumTestIds.action.loaded(formatId);
   let lastSeen = '';
   const marker = await findByTestId(testId);
@@ -1163,6 +1280,8 @@ async function tapAndroidShellPoint(x: number, y: number): Promise<void> {
 let cachedAndroidWindowFocusDump = { at: 0, value: '' };
 /** When true, skip top-right blind taps unless Close/end-card is visible (Rewarded). */
 let androidSkipBlindCloseFallback = false;
+/** When true, never KEYCODE_BACK to finish AdActivity (Multi-Format Hook autoload). */
+let androidSkipKeyBackDismiss = false;
 
 async function androidWindowFocusDump(): Promise<string> {
   const now = Date.now();
@@ -1695,9 +1814,14 @@ async function withAndroidRewardedDismissGuard<T>(
   formatId: string,
   fn: () => Promise<T>,
 ): Promise<T> {
+  // Suppress blind top-right taps only during the mandatory-watch wait. Once
+  // dismiss is actionable (Close / end-card / elapsed AdActivity), blind
+  // fallback must be allowed again — WebView creatives often hide Close from
+  // UiAutomator (classic slot-2: ready via adActivityElapsed, then 90s no-op).
   androidSkipBlindCloseFallback = true;
   try {
     await waitForAndroidRewardedDismissReady(formatId);
+    androidSkipBlindCloseFallback = false;
     return await fn();
   } finally {
     androidSkipBlindCloseFallback = false;
@@ -1719,6 +1843,9 @@ async function tapAndroidInterstitialCloseAttempt(): Promise<void> {
     'resourceId("com.google.android.gms.ads:id/dismiss")',
     'descriptionContains("Close ad")',
     'descriptionContains("Interstitial close")',
+    'descriptionContains("Skip")',
+    'text("Skip")',
+    'textContains("Skip")',
   ]) {
     const el = await $(`android=new UiSelector().${fragment}`);
     if (!(await el.isExisting().catch(() => false))) {
@@ -1789,6 +1916,23 @@ async function tapAndroidInterstitialCloseAttempt(): Promise<void> {
       y: Math.floor(height * fy),
     });
     await sleep(300);
+  }
+  // Rewarded WebView creatives often ignore coordinate Close taps after the
+  // mandatory watch (classic slot-2: 90s of top-right gestures, AdActivity stuck).
+  // KEYCODE_BACK finishes AdActivity once dismiss is past the guarded wait.
+  // Multi-Format Hook autoload must not KEYCODE_BACK — it pops the format screen
+  // under the ad (classic slot-2 run-23: dismiss → gallery every attempt).
+  if (
+    !androidSkipBlindCloseFallback &&
+    !androidSkipKeyBackDismiss &&
+    (await isAndroidAdActivityForeground())
+  ) {
+    logAndroidHostTrace('interstitial.dismiss.keyBack', {});
+    await driver.execute('mobile: shell', {
+      command: 'input',
+      args: ['keyevent', '4'],
+    });
+    await sleep(400);
   }
   invalidateAndroidWindowFocusDump();
 }
@@ -3469,10 +3613,10 @@ async function runFormatContract(opts: {
 }): Promise<void> {
   // Cold restarts are opt-in for formats with demonstrated state leakage.
   // Instrumentation-crash recovery remains in withInstrumentationRecovery().
-  if (opts.requiresAppRestart) {
-    await resetAppState();
-  }
   await withInstrumentationRecovery(async () => {
+    if (opts.requiresAppRestart) {
+      await resetAppState();
+    }
     await openFormat(opts.formatId, opts.galleryTitle);
     await assertDisplayed(opts.containerId);
     if (opts.actionId && opts.expectedText) {
@@ -3540,7 +3684,19 @@ export async function proveRepresentativeRequestOutcome(
       (format.path === 'multi-format' && format.multiFormatHookAutoLoad === true),
     runtime: {
       navigate: async () => {
-        await openFormatStrict(format.id, format.galleryTitle);
+        // Use openFormat (Android miss-retry + reset) — openFormatStrict is
+        // single-shot and flakes on multi-format-hook after long sessions
+        // (classic slot-2 run-8: imperative multi-format passed, hook miss).
+        await openFormat(format.id, format.galleryTitle);
+        // Autoload may already be on AdActivity; container is under it — observe
+        // dismisses before reading markers (run-16 loaded under AdActivity path).
+        if (
+          isAndroid() &&
+          format.id === AppiumTestIds.format.multiFormatHook &&
+          (await isAndroidAdActivityForeground())
+        ) {
+          return;
+        }
         await assertDisplayed(format.containerId);
       },
       backToGallery,
@@ -3624,6 +3780,18 @@ export async function proveRepresentativeRequestOutcome(
               rectangle,
             })}`,
           );
+          // Native SDK click overlay (#893) steals the next gallery opener tap
+          // (classic slot-2 run-25: Multi-Format Hook titleTap stayed on home).
+          if (isAndroid()) {
+            logAndroidHostTrace('render-proof.clear-native-overlay', {
+              format: format.id,
+            });
+            await driver.execute('mobile: shell', {
+              command: 'input',
+              args: ['keyevent', '4'],
+            });
+            await new Promise<void>(resolve => setTimeout(resolve, 400));
+          }
         } else {
           const evidence = await assertRenderedBannerSubtree(
             AppiumTestIds.action.rendered(format.id),
