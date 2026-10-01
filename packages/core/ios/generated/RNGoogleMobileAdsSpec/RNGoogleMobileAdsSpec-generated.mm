@@ -340,14 +340,14 @@ namespace facebook::react {
         
         
         methodMap_["setAppMuted"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_setAppMuted};
-
-
+        
+        
         methodMap_["setAudioSessionIsApplicationManaged"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_setAudioSessionIsApplicationManaged};
-
-
+        
+        
         methodMap_["registerWebView"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_registerWebView};
-
-
+        
+        
         methodMap_["getConstants"] = MethodMetadata {0, __hostFunction_NativeGoogleMobileAdsModuleSpecJSI_getConstants};
         
   }
