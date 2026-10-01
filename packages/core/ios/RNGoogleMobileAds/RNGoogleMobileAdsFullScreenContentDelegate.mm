@@ -31,6 +31,11 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   BOOL _willDismissSeen;
   BOOL _terminalEmitted;
   BOOL _observingForeground;
+  BOOL _presentationContextCaptured;
+  __weak UIViewController *_presenterViewController;
+  __weak UIWindow *_presentationWindow;
+  __weak UIWindowScene *_presentationScene;
+  __weak UIViewController *_capturedPresentedViewController;
 }
 
 - (instancetype)initWithAdEventName:(NSString *)adEventName
@@ -48,12 +53,24 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   [self rngma_stopObservingForeground];
 }
 
+- (void)capturePresentationContextFromViewController:(UIViewController *)viewController {
+  _presenterViewController = viewController;
+  UIWindow *window = viewController.view.window;
+  _presentationWindow = window;
+  if (@available(iOS 13.0, *)) {
+    _presentationScene = window.windowScene;
+  }
+  _presentationContextCaptured = (viewController != nil);
+  _capturedPresentedViewController = nil;
+}
+
 #pragma mark - GADFullScreenContentDelegate
 
 - (void)adWillPresentFullScreenContent:(id<GADFullScreenPresentingAd>)ad {
   _presenting = YES;
   _willDismissSeen = NO;
   _terminalEmitted = NO;
+  [self rngma_refreshCapturedPresentedViewController];
   [self rngma_startObservingForeground];
   [self sendAdEventWithType:GOOGLE_MOBILE_ADS_EVENT_OPENED error:nil data:nil];
 }
@@ -101,6 +118,24 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
 
 #pragma mark - Private
 
+- (void)rngma_refreshCapturedPresentedViewController {
+  UIViewController *presenter = _presenterViewController;
+  if (presenter == nil) {
+    return;
+  }
+  UIWindow *window = presenter.view.window;
+  if (window != nil) {
+    _presentationWindow = window;
+    if (@available(iOS 13.0, *)) {
+      _presentationScene = window.windowScene;
+    }
+  }
+  UIViewController *presented = presenter.presentedViewController;
+  if (presented != nil) {
+    _capturedPresentedViewController = presented;
+  }
+}
+
 - (void)rngma_startObservingForeground {
   if (_observingForeground) {
     return;
@@ -135,76 +170,89 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   });
 }
 
-- (UIWindow *)rngma_keyWindow {
-  UIApplication *app = [UIApplication sharedApplication];
-  if (@available(iOS 13.0, *)) {
-    UIWindow *foregroundFallback = nil;
-    for (UIScene *scene in app.connectedScenes) {
-      if (scene.activationState != UISceneActivationStateForegroundActive) {
-        continue;
-      }
-      if (![scene isKindOfClass:[UIWindowScene class]]) {
-        continue;
-      }
-      UIWindowScene *windowScene = (UIWindowScene *)scene;
-      for (UIWindow *candidate in windowScene.windows) {
-        if (candidate.isKeyWindow) {
-          return candidate;
-        }
-        if (foregroundFallback == nil && candidate.rootViewController != nil) {
-          foregroundFallback = candidate;
-        }
-      }
-    }
-    if (foregroundFallback != nil) {
-      return foregroundFallback;
-    }
-  }
-
-  UIWindow *window = app.delegate.window;
+- (UIWindow *)rngma_presentationWindow {
+  UIWindow *window = _presentationWindow;
   if (window != nil) {
     return window;
   }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  // Last-resort pre-scene / Catalyst fallback only.
-  return app.keyWindow;
-#pragma clang diagnostic pop
-}
-
-- (UIViewController *)rngma_windowRootViewController {
-  return [self rngma_keyWindow].rootViewController;
-}
-
-- (BOOL)rngma_hasActivePresentedViewController {
-  UIViewController *root = [self rngma_windowRootViewController];
-  if (root == nil) {
-    return NO;
+  UIViewController *presenter = _presenterViewController;
+  if (presenter != nil && presenter.view.window != nil) {
+    return presenter.view.window;
   }
-  UIViewController *presented = root.presentedViewController;
-  return presented != nil && ![presented isBeingDismissed];
+
+  if (@available(iOS 13.0, *)) {
+    UIWindowScene *scene = _presentationScene;
+    if (scene != nil) {
+      UIWindow *sceneKey = nil;
+      UIWindow *sceneFallback = nil;
+      for (UIWindow *candidate in scene.windows) {
+        if (candidate.isKeyWindow) {
+          sceneKey = candidate;
+          break;
+        }
+        if (sceneFallback == nil && candidate.rootViewController != nil) {
+          sceneFallback = candidate;
+        }
+      }
+      return sceneKey ?: sceneFallback;
+    }
+  }
+
+  // Never guess across unordered connectedScenes — multi-scene unsafe.
+  return nil;
 }
 
-- (BOOL)rngma_presentedChainLooksLikeGMAAd:(UIViewController *)presented {
-  UIViewController *current = presented;
+- (UIViewController *)rngma_presentationRootViewController {
+  UIViewController *presenter = _presenterViewController;
+  if (presenter != nil) {
+    return presenter;
+  }
+  return [self rngma_presentationWindow].rootViewController;
+}
+
+- (NSArray<UIViewController *> *)rngma_presentedChainFromPresenter:(UIViewController *)presenter {
+  NSMutableArray<UIViewController *> *chain = [NSMutableArray array];
+  UIViewController *current = presenter.presentedViewController;
   while (current != nil) {
-    if ([RNGoogleMobileAdsFullScreenDismissRecovery
-            isPlausibleGMAFullScreenAdClassName:NSStringFromClass([current class])]) {
-      return YES;
-    }
-    for (UIViewController *child in current.childViewControllers) {
-      if ([RNGoogleMobileAdsFullScreenDismissRecovery
-              isPlausibleGMAFullScreenAdClassName:NSStringFromClass([child class])]) {
-        return YES;
-      }
-    }
+    [chain addObject:current];
     if ([current isBeingDismissed]) {
       break;
     }
     current = current.presentedViewController;
   }
-  return NO;
+  return chain;
+}
+
+- (BOOL)rngma_capturedPresentationStillPresent {
+  UIViewController *captured = _capturedPresentedViewController;
+  UIViewController *presenter = [self rngma_presentationRootViewController];
+  if (captured == nil || presenter == nil) {
+    return NO;
+  }
+  NSArray<UIViewController *> *chain = [self rngma_presentedChainFromPresenter:presenter];
+  if (![RNGoogleMobileAdsFullScreenDismissRecovery presentedChain:chain
+                                                 containsCaptured:captured]) {
+    return NO;
+  }
+  return ![captured isBeingDismissed];
+}
+
+- (BOOL)rngma_hasPresentedInCapturedScene {
+  UIViewController *presenter = [self rngma_presentationRootViewController];
+  if (presenter == nil) {
+    return NO;
+  }
+  UIViewController *presented = presenter.presentedViewController;
+  return presented != nil && ![presented isBeingDismissed];
+}
+
+- (void)rngma_clearPresentationContext {
+  _presentationContextCaptured = NO;
+  _presenterViewController = nil;
+  _presentationWindow = nil;
+  _presentationScene = nil;
+  _capturedPresentedViewController = nil;
 }
 
 - (void)rngma_recoverIfNeeded {
@@ -212,8 +260,12 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
     return;
   }
 
+  // Presentation can finish attaching after willPresent — refresh before deciding.
+  [self rngma_refreshCapturedPresentedViewController];
+
   UIApplication *app = [UIApplication sharedApplication];
-  BOOL hasPresented = [self rngma_hasActivePresentedViewController];
+  BOOL capturedStillPresent = [self rngma_capturedPresentationStillPresent];
+  BOOL hasPresentedInScene = [self rngma_hasPresentedInCapturedScene];
   BOOL isIgnoring = [app isIgnoringInteractionEvents];
 
   RNGoogleMobileAdsFullScreenDismissRecoveryActions actions =
@@ -221,7 +273,9 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
           actionsForForegroundResumeWithPresenting:_presenting
                                    terminalEmitted:_terminalEmitted
                                    willDismissSeen:_willDismissSeen
-                        hasPresentedViewController:hasPresented
+                       presentationContextCaptured:_presentationContextCaptured
+                  capturedPresentationStillPresent:capturedStillPresent
+                       hasPresentedInCapturedScene:hasPresentedInScene
                        isIgnoringInteractionEvents:isIgnoring];
 
   if (actions == RNGoogleMobileAdsFullScreenDismissRecoveryActionNone) {
@@ -240,12 +294,20 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   }
 
   if (actions & RNGoogleMobileAdsFullScreenDismissRecoveryActionDismissPresentedChain) {
-    UIViewController *root = [self rngma_windowRootViewController];
-    UIViewController *presented = root.presentedViewController;
-    // Only dismiss when the presented chain looks like a GMA fullscreen ad.
-    // Uncertain hosts (custom modals) keep their presentation; CLOSED still synthesizes.
-    if (presented != nil && [self rngma_presentedChainLooksLikeGMAAd:presented]) {
-      [root dismissViewControllerAnimated:NO completion:nil];
+    UIViewController *presenter = [self rngma_presentationRootViewController];
+    UIViewController *captured = _capturedPresentedViewController;
+    UIViewController *presented = presenter.presentedViewController;
+    // Only dismiss when the presented chain still holds our show-time identity.
+    if (presenter != nil &&
+        [RNGoogleMobileAdsFullScreenDismissRecovery isCapturedPresentation:captured
+                                                           sameAsPresented:presented]) {
+      [presenter dismissViewControllerAnimated:NO completion:nil];
+    } else if (presenter != nil && captured != nil) {
+      NSArray<UIViewController *> *chain = [self rngma_presentedChainFromPresenter:presenter];
+      if ([RNGoogleMobileAdsFullScreenDismissRecovery presentedChain:chain
+                                                    containsCaptured:captured]) {
+        [presenter dismissViewControllerAnimated:NO completion:nil];
+      }
     }
   }
 
@@ -260,6 +322,7 @@ static const NSUInteger kRNGoogleMobileAdsMaxIgnoreDrains = 1;
   }
   _terminalEmitted = YES;
   _presenting = NO;
+  [self rngma_clearPresentationContext];
   [self rngma_stopObservingForeground];
 
   __weak __typeof(self) weakSelf = self;
