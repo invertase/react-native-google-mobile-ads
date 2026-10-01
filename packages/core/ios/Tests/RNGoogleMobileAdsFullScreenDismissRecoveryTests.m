@@ -397,4 +397,26 @@
                  @"edge path may still synthesize CLOSED when nothing is presented");
 }
 
+- (void)testWillDismissWithoutBoundIdentityDoesNotDrainHostLock {
+  // willDismissSeen alone must not authorize drain when identity was unbound —
+  // a host beginIgnoring must remain locked; still synthesize CLOSED.
+  XCTAssertFalse([RNGoogleMobileAdsFullScreenDismissRecovery
+      adAttributedInteractionLockWithWillDismissSeen:YES
+                         presentationContextCaptured:NO
+                    capturedPresentationStillPresent:NO]);
+
+  RNGoogleMobileAdsFullScreenDismissRecoveryActions actions =
+      [RNGoogleMobileAdsFullScreenDismissRecovery actionsForForegroundResumeWithPresenting:YES
+                                                                           terminalEmitted:NO
+                                                                           willDismissSeen:YES
+                                                               presentationContextCaptured:NO
+                                                          capturedPresentationStillPresent:NO
+                                                               hasPresentedInCapturedScene:NO
+                                                               isIgnoringInteractionEvents:YES];
+  XCTAssertFalse(actions & RNGoogleMobileAdsFullScreenDismissRecoveryActionDrainIgnoringEvents,
+                 @"willDismiss without bound identity must not drain host interaction lock");
+  XCTAssertEqual(actions, RNGoogleMobileAdsFullScreenDismissRecoveryActionSynthesizeClosed,
+                 @"willDismiss without didDismiss must still synthesize CLOSED");
+}
+
 @end
