@@ -69,7 +69,7 @@ import {
 
 | Platform | Coordinate | Version pin |
 | -------- | ---------- | ----------- |
-| Android | `com.google.ads.mediation:facebook` | `6.22.0.0` |
+| Android | `com.google.ads.mediation:facebook` | `6.22.0.1` |
 | iOS | CocoaPods `GoogleMobileAdsMediationFacebook` | `6.22.0.0` |
 
 Citations (verify at upgrade time):

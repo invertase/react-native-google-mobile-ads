@@ -61,7 +61,7 @@ repositories {
 
 dependencies {
   // Google-published InMobi GAM mediation adapter.
-  // Pin: package.json sdkVersions.android.googleMobileAdsMediation (docs/Maven: 11.4.1.1 as of package publish; verify against current docs/Maven).
+  // Pin: package.json sdkVersions.android.googleMobileAdsMediation (docs/Maven: 11.4.1.2 as of package publish; verify against current docs/Maven).
   // Core GMA is provided by react-native-google-mobile-ads; do not re-pin it here.
   // InMobi SDK host (`com.inmobi.monetization:inmobi-ads-kotlin`) is on Maven Central.
   // https://developers.google.com/ad-manager/mobile-ads-sdk/android/mediation/inmobi

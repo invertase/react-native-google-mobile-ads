@@ -78,7 +78,7 @@
   },
   "sdkVersions": {
     "ios": {
-      "googleMobileAdsMediation": "8.4.0.0"
+      "googleMobileAdsMediation": "8.6.0.0"
     },
     "android": {
       "minSdk": 24,

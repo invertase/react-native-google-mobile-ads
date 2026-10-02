@@ -33,14 +33,14 @@ import {
 
 | Platform | Coordinate | Version pin |
 | -------- | ---------- | ----------- |
-| Android | `com.google.ads.mediation:moloco` | `4.12.0.0` |
+| Android | `com.google.ads.mediation:moloco` | `4.12.0.1` |
 | iOS | CocoaPods `GoogleMobileAdsMediationMoloco` | `4.10.0.0` |
 
 Citations (verify at upgrade time):
 
 - Android (GAM): https://developers.google.com/ad-manager/mobile-ads-sdk/android/mediation/moloco
 - iOS (GAM): https://developers.google.com/ad-manager/mobile-ads-sdk/ios/mediation/moloco
-- Google Maven: `com.google.ads.mediation:moloco` (`latest` / `release` = `4.12.0.0`)
+- Google Maven: `com.google.ads.mediation:moloco` (`latest` / `release` = `4.12.0.1`)
 - CocoaPods: https://cocoapods.org/pods/GoogleMobileAdsMediationMoloco
 
 Core continues to own `play-services-ads` / `Google-Mobile-Ads-SDK`. This package does not re-pin the GMA SDK.
