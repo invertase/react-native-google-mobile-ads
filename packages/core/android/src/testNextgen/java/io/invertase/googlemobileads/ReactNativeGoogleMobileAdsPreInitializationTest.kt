@@ -31,7 +31,7 @@ class ReactNativeGoogleMobileAdsPreInitializationTest {
 
   @Test
   fun constantsAreSafeBeforeInitialization() {
-    assertEquals("1.4.0", module.constants["sdkVersion"])
+    assertEquals("1.5.0", module.constants["sdkVersion"])
     assertEquals("android-next-gen", module.constants["backend"])
   }
 

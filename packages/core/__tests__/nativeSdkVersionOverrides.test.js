@@ -36,7 +36,7 @@ describe('native SDK version overrides', () => {
     expect(androidBuild).toContain('sdk: googleMobileAdsVersion');
     expect(androidBuild).toContain('consent: googleUmpVersion');
     expect(googleMobileAds).toBe('25.5.0');
-    expect(googleMobileAdsNextGen).toBe('1.4.0');
+    expect(googleMobileAdsNextGen).toBe('1.5.0');
     expect(googleUmp).toBe('4.0.0');
   });
 
