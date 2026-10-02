@@ -56,20 +56,20 @@ Custom-event parameter JSON (Yandex Ad Unit ID) must still be configured in the 
 
 | Platform | Coordinate | Version pin |
 | -------- | ---------- | ----------- |
-| iOS | CocoaPods `YandexMobileAdsAdMobAdapters` | `8.4.0.0` |
+| iOS | CocoaPods `YandexMobileAdsAdMobAdapters` | `8.6.0.0` |
 | Android | — | **not linked** |
 
 Citations (verify at upgrade time):
 
 - iOS AdMob (Yandex → Google mediation): https://ads.yandex.com/helpcenter/en/dev/ios/admob-third (`pod 'YandexMobileAdsAdMobAdapters', '8.0.0.0'` example; pin uses current CocoaPods Trunk latest)
-- CocoaPods: https://cocoapods.org/pods/YandexMobileAdsAdMobAdapters (Trunk latest `8.4.0.0` as of 2026-09-04)
-- CocoaPods Specs podspec `8.4.0.0`: depends on `YandexMobileAds ~> 8.4.0`, `Google-Mobile-Ads-SDK ~> 13.6.0`, `platforms.ios` `13.0`
+- CocoaPods: https://cocoapods.org/pods/YandexMobileAdsAdMobAdapters (Trunk latest `8.6.0.0` as of 2026-10-01)
+- CocoaPods Specs podspec `8.6.0.0`: depends on `YandexMobileAds ~> 8.6.0`, `Google-Mobile-Ads-SDK ~> 13.8.0`, `platforms.ios` `15.0`
 - Android AdMob adapter exists at Maven Central but is **not** used here: https://central.sonatype.com/artifact/com.yandex.ads.adapter/admob-mobileads (`8.4.0.0`); Yandex guide: https://ads.yandex.com/helpcenter/en/dev/android/admob-third
 - Do **not** use `GoogleYandexMobileAdsAdapters` — that enables Google **inside Yandex Mobile Mediation** (Yandex-as-host), which is out of RNGMA adapter scope
 
 Core continues to own `play-services-ads` / `Google-Mobile-Ads-SDK`. This package does not re-pin the GMA SDK.
 
-`YandexMobileAdsAdMobAdapters@8.4.0.0` requires `Google-Mobile-Ads-SDK ~> 13.6.0` (`>= 13.6.0, < 13.7.0`). Core’s iOS GMA pin (`13.10.0`) does **not** satisfy that pessimistic operator. Apps that enable Yandex mediation on iOS must resolve the CocoaPods conflict (override the adapter’s GMA dependency, wait for an adapter release whose range includes the core pin, or pin core’s iOS GMA lower).
+`YandexMobileAdsAdMobAdapters@8.6.0.0` requires `Google-Mobile-Ads-SDK ~> 13.8.0` (`>= 13.8.0, < 13.9.0`). Core’s iOS GMA pin (`13.10.0`) does **not** satisfy that pessimistic operator. Apps that enable Yandex mediation on iOS must resolve the CocoaPods conflict (override the adapter’s GMA dependency, wait for an adapter release whose range includes the core pin, or pin core’s iOS GMA lower).
 
 Platform floors align with core: iOS **15.1** and Android minSdk **24**. The mediation integration remains iOS-only.
 

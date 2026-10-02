@@ -33,14 +33,14 @@ import {
 
 | Platform | Coordinate | Version pin |
 | -------- | ---------- | ----------- |
-| Android | `com.google.ads.mediation:inmobi` | `11.4.1.1` |
+| Android | `com.google.ads.mediation:inmobi` | `11.4.1.2` |
 | iOS | CocoaPods `GoogleMobileAdsMediationInMobi` | `11.4.1.0` |
 
 Citations (verify at upgrade time):
 
 - Android (GAM): https://developers.google.com/ad-manager/mobile-ads-sdk/android/mediation/inmobi
 - iOS (GAM): https://developers.google.com/ad-manager/mobile-ads-sdk/ios/mediation/inmobi
-- Google Maven: `com.google.ads.mediation:inmobi` (`latest` / `release` = `11.4.1.1`)
+- Google Maven: `com.google.ads.mediation:inmobi` (`latest` / `release` = `11.4.1.2`)
 - CocoaPods: https://cocoapods.org/pods/GoogleMobileAdsMediationInMobi
 - Android host SDK: `com.inmobi.monetization:inmobi-ads-kotlin` on Maven Central (pulled transitively)
 

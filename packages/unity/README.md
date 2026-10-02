@@ -33,8 +33,8 @@ import {
 
 | Platform | Coordinate | Version pin |
 | -------- | ---------- | ----------- |
-| Android | `com.google.ads.mediation:unity` | `4.20.0.1` |
-| iOS | CocoaPods `GoogleMobileAdsMediationUnity` | `4.20.0.0` |
+| Android | `com.google.ads.mediation:unity` | `4.20.1.0` |
+| iOS | CocoaPods `GoogleMobileAdsMediationUnity` | `4.20.1.0` |
 
 Citations (verify at upgrade time):
 

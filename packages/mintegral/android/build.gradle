@@ -67,7 +67,7 @@ repositories {
 
 dependencies {
   // Google-published Mintegral GAM mediation adapter.
-  // Pin: package.json sdkVersions.android.googleMobileAdsMediation (docs/Maven: 17.1.81.0 as of package publish; verify against current docs/Maven).
+  // Pin: package.json sdkVersions.android.googleMobileAdsMediation (docs/Maven: 17.1.81.1 as of package publish; verify against current docs/Maven).
   // Core GMA is provided by react-native-google-mobile-ads; do not re-pin it here.
   // https://developers.google.com/ad-manager/mobile-ads-sdk/android/mediation/mintegral
   api(mediationArtifact) {

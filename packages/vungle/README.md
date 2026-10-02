@@ -33,14 +33,14 @@ import {
 
 | Platform | Coordinate | Version pin |
 | -------- | ---------- | ----------- |
-| Android | `com.google.ads.mediation:vungle` | `7.7.8.0` |
+| Android | `com.google.ads.mediation:vungle` | `7.7.8.1` |
 | iOS | CocoaPods `GoogleMobileAdsMediationVungle` | `7.7.7.0` |
 
 Citations (verify at upgrade time):
 
 - Android (GAM): https://developers.google.com/ad-manager/mobile-ads-sdk/android/mediation/liftoff-monetize
 - iOS (GAM): https://developers.google.com/ad-manager/mobile-ads-sdk/ios/mediation/liftoff-monetize
-- Google Maven: `com.google.ads.mediation:vungle` (`latest` / `release` = `7.7.8.0`)
+- Google Maven: `com.google.ads.mediation:vungle` (`latest` / `release` = `7.7.8.1`)
 - CocoaPods: https://cocoapods.org/pods/GoogleMobileAdsMediationVungle
 
 Core continues to own `play-services-ads` / `Google-Mobile-Ads-SDK`. This package does not re-pin the GMA SDK.

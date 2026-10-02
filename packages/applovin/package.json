@@ -75,7 +75,7 @@
       "targetSdk": 36,
       "compileSdk": 36,
       "buildTools": "36.0.0",
-      "googleMobileAdsMediation": "13.6.4.1"
+      "googleMobileAdsMediation": "13.6.4.2"
     }
   },
   "react-native-builder-bob": {

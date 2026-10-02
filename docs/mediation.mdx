@@ -33,6 +33,17 @@ packages do not change that SDK pin. If you must override the package's supporte
 follow [Native SDK version overrides](/migrating-to-v17#native-sdk-version-overrides)
 and test the app-owned combination.
 
+Tip pins for each scoped adapter live in that package's
+`packages/<network>/package.json` under `sdkVersions`
+(`android.googleMobileAdsMediation` / `ios.googleMobileAdsMediation`). Prefer those pins
+(or the scoped npm package) over hard-coding older Expo `expo-build-properties` versions.
+
+Yandex (`@react-native-google-mobile-ads/yandex`) is iOS-only. Its CocoaPods pin
+(`YandexMobileAdsAdMobAdapters` in `packages/yandex/package.json` `sdkVersions`) still
+requires `Google-Mobile-Ads-SDK ~> 13.8.0`, which does **not** admit core's iOS tip pin
+(`13.10.0`). See the [yandex adapter package documentation](https://github.com/invertase/react-native-google-mobile-ads/tree/main/packages/yandex)
+for the conflict and options before enabling that network.
+
 ### Android Next-Gen and mediation hosts
 
 When the Android build selects [GMA Next-Gen](/next-gen-sdk), the scoped adapter
@@ -154,8 +165,8 @@ If AppLovin / Unity mediation start fine and only Meta fails at launch:
    plugin). A missing AdMob App ID also crashes at start; that is unrelated to Meta and is already
    covered in [Getting Started](/index#getting-started).
 2. Set `NSUserTrackingUsageDescription` (core plugin `userTrackingUsageDescription`) when you use ATT.
-3. Prefer the scoped package pin (`GoogleMobileAdsMediationFacebook` **6.22.0.0** / `FBAudienceNetwork`
-   **6.22.0** with current core) over an older Expo `expo-build-properties` pod pin.
+3. Prefer the scoped package tip pin in `packages/facebook/package.json` `sdkVersions`
+   over an older Expo `expo-build-properties` pod pin.
 4. Retest on a **non-beta** iOS release. Beta OS builds have shown the same Meta launch abort with older
    adapter pins (for example mediation **6.17.1.0** on iOS 26 beta).
 
@@ -166,7 +177,7 @@ See the [facebook adapter package documentation](https://github.com/invertase/re
 
 ## Pangle (ByteDance)
 
-Prefer the scoped mediation package (`@react-native-google-mobile-ads/pangle`) so Pangle participates in AdMob / GAM mediation through Google’s adapter. That package links `GoogleMobileAdsMediationPangle` / `com.google.ads.mediation:pangle` and does **not** add JS load/show APIs — use core `initialize()`, fullscreen / native / banner surfaces, and adapter status as usual.
+Prefer the scoped mediation package (`@react-native-google-mobile-ads/pangle`) so Pangle participates in AdMob / GAM mediation through Google’s adapter. That package links `GoogleMobileAdsMediationPangle` / `com.google.ads.mediation:pangle` (tip pins in `packages/pangle/package.json` `sdkVersions`) and does **not** add JS load/show APIs — use core `initialize()`, fullscreen / native / banner surfaces, and adapter status as usual.
 
 ### Lifecycle: `destroy()` already exists
 
