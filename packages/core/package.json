@@ -65,7 +65,7 @@
   ],
   "sdkVersions": {
     "ios": {
-      "googleMobileAds": "13.6.0",
+      "googleMobileAds": "13.10.0",
       "googleUmp": "3.1.0"
     },
     "android": {

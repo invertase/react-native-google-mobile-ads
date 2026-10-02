@@ -11,12 +11,14 @@ multi-format requests, and scoped mediation adapter packages.
 The platform baseline does change: v17 requires React Native 0.86.0 or newer and the
 New Architecture, and native installation fails only when the New Architecture is
 explicitly disabled. The Legacy Architecture is no longer supported. iOS requires a
-minimum deployment target of 15.1, matching React Native 0.86.0. Android requires
-minimum API level 24. The supported and tested Android host baseline uses compile /
-target API level 36 and Build Tools 36.0.0. Standalone package builds use Android Gradle
-Plugin 8.6.0; the library does not enforce the host application's Android Gradle Plugin
-version. Kotlin 1.9.25 or newer is required. Builds using Kotlin versions earlier than
-2.3 receive a module-scoped metadata compatibility compiler flag; Kotlin 2.3 and newer
+minimum deployment target of 15.1, matching React Native 0.86.0. On Xcode 27+, also clamp
+pod `IPHONEOS_DEPLOYMENT_TARGET` values to ≥ 15.1 in your `Podfile` `post_install` —
+see [iOS CocoaPods deployment targets](/prerequisites#ios-cocoapods-deployment-targets).
+Android requires minimum API level 24. The supported and tested Android host baseline uses
+compile / target API level 36 and Build Tools 36.0.0. Standalone package builds use Android
+Gradle Plugin 8.6.0; the library does not enforce the host application's Android Gradle
+Plugin version. Kotlin 1.9.25 or newer is required. Builds using Kotlin versions earlier
+than 2.3 receive a module-scoped metadata compatibility compiler flag; Kotlin 2.3 and newer
 do not. See [Android Kotlin compatibility](/prerequisites#android-kotlin-compatibility).
 
 Use this guide for the deltas publishers hit on upgrade, plus honest troubleshooting.
@@ -300,14 +302,14 @@ override the Next-Gen pin; classic builds ignore it.
 On iOS, set either Podfile globals before declaring the React Native pods:
 
 ```ruby
-$RNGoogleMobileAdsSDKVersion = '13.6.0'
+$RNGoogleMobileAdsSDKVersion = '13.10.0'
 $RNGoogleUmpSDKVersion = '3.1.0'
 ```
 
 or set the prefixed environment variables while installing pods:
 
 ```bash
-RNGMA_IOS_GOOGLE_MOBILE_ADS_SDK_VERSION=13.6.0 \
+RNGMA_IOS_GOOGLE_MOBILE_ADS_SDK_VERSION=13.10.0 \
 RNGMA_IOS_GOOGLE_UMP_SDK_VERSION=3.1.0 \
 bundle exec pod install
 ```
