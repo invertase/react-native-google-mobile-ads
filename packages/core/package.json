@@ -74,7 +74,7 @@
       "compileSdk": 36,
       "buildTools": "36.0.0",
       "googleMobileAds": "25.5.0",
-      "googleMobileAdsNextGen": "1.4.0",
+      "googleMobileAdsNextGen": "1.5.0",
       "googleUmp": "4.0.0"
     }
   },
