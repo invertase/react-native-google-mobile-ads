@@ -77,7 +77,7 @@ The component also exposes props for listening to user, lifecycle, and revenue e
 - `onAdOpened` &mdash; A full-screen overlay is about to present after a click. Not every click presents an overlay (especially on iOS); use `onAdClicked` to observe every recorded tap.
 - `onAdImpression`
 - `onAdClicked` &mdash; A click was recorded. Prefer this when counting taps or hiding the banner after N clicks.
-- `onPaid` &mdash; On [impression-level ad revenue](https://support.google.com/admob/answer/11322405?hl=en) events.
+- `onPaid` &mdash; On [impression-level ad revenue](https://developers.google.com/admob/android/impression-level-ad-revenue) events.
 
 Use `onPaid` to forward impression-level revenue to your telemetry pipeline. See
 [Impression-level ad revenue](/impression-level-ad-revenue) for the event shape.
@@ -193,7 +193,6 @@ If hybrid video still fails to paint after upgrading:
 3. Distinguish this from [native video in pagers](/ad-formats/native#fullscreen-pagers-and-native-video) — that path uses `NativeMediaView` / `mediaContent`, not `<BannerAd>`.
 
 Some banner inventory is a **hybrid** creative (static image beside or above an in-banner video). Google's banner `AdView` renders that inside an embedded WebView. On Android, video halves historically could stay frozen after `onAdLoaded` until the user scrolled or otherwise interacted, or left the app and returned — the Activity leave+return cycle recreates the WebView surface / resume path ([#655](https://github.com/invertase/react-native-google-mobile-ads/issues/655), [#711](https://github.com/invertase/react-native-google-mobile-ads/issues/711)).
-
 
 ### Banners inside scrolling content (iOS momentum)
 

@@ -20,7 +20,9 @@ How to author a product change. Gate state is maintained outside this repo per [
 
 `gap-analysis?` → `baseline-capture?` → `implementation` (`unit-focused`) → `documentation?` → `independent-review` (`area-focused`, frozen) → `commit` → `pre-merge-validation` (`full`) if merging.
 
-OKF, `AGENTS.md`, and `CONTRIBUTING.md` edits belong in `documentation?` **on the same change set** as the product work they describe. `independent-review` of that frozen tree **is** the [OKF bundle scan](validation-checklist.md#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md` (including a `CONTRIBUTING.md`-only tree). Do not add OKF after a frozen review without another `independent-review`. Close `commit` only after that scan (when OKF/`AGENTS.md`/`CONTRIBUTING.md` changed).
+After `implementation` closes, run `documentation` as its **own** work type when the product change would leave user-facing docs (`docs/**`, README tip-pins) and/or durable OKF / `AGENTS.md` / `CONTRIBUTING.md` stale. Complete that pass **before** `independent-review` freezes the tree. Keep `documentation?` only for changes with **no** such doc impact — it is required, not optional fluff, when those surfaces would go stale. Whether or not that pass edits `docs/**`, close `documentation` / `independent-review` / `commit` only after the [CI docs gate](validation-checklist.md#ci-docs-gate) (`yarn lint:spellcheck` and `yarn lint:docs-links`) exits 0 — CI runs both on every PR with no path filter.
+
+OKF, `AGENTS.md`, and `CONTRIBUTING.md` edits belong in `documentation` **on the same change set** as the product work they describe. `independent-review` of that frozen tree **is** the [OKF bundle scan](validation-checklist.md#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md` (including a `CONTRIBUTING.md`-only tree). Do not add OKF after a frozen review without another `independent-review`. Close `commit` only after that scan (when OKF/`AGENTS.md`/`CONTRIBUTING.md` changed).
 
 | Work type | Tier | Edits | Commit |
 |-----------|------|-------|--------|
@@ -41,10 +43,10 @@ Tiers: `unit-focused` = Jest + optional `.only`/narrow e2e for **diagnosis only*
 | Gate | Closes when |
 |------|-------------|
 | `implementation` (`implementation_gate`) | Unit-focused green; [platform coverage](running-e2e.md#platform-coverage-gate-blocking); [lint](validation-checklist.md#lint-and-formatting) |
-| `independent-review` (`review_gate`) | `documentation?` already done when OKF/`AGENTS.md`/`CONTRIBUTING.md`/user docs changed; area-focused green on frozen tree; **all** findings fixed ([§ quality](#quality-standards)); apply per [§ frozen tree](#frozen-tree) (not every finding → `documentation?`); OKF scan when `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md` is in the frozen tree |
+| `independent-review` (`review_gate`) | Required `documentation` already done when user-facing docs / durable OKF / `AGENTS.md` / `CONTRIBUTING.md` would have gone stale ([§ loop](#loop)); area-focused green on frozen tree; [CI docs gate](validation-checklist.md#ci-docs-gate) green; **all** findings fixed ([§ quality](#quality-standards)); apply per [§ frozen tree](#frozen-tree) (not every finding → `documentation`); OKF scan when `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md` is in the frozen tree |
 | `coverage_evidence_gate` | Closes per [coverage evidence](coverage-design.md#coverage-evidence-package) (`n/a` unless the diff includes `packages/core/src/` **or** `packages/core/android/` **or** `packages/core/ios/` **or** `packages/core/plugin/` TS; `packages/core/app.plugin.js`-only is `n/a` unless plugin TS changed — plugin Jest still follows [§ Expo plugin](validation-checklist.md#expo-plugin)) |
-| `commit` (`commit_gate`) | Prior gates closed with [evidence package](validation-checklist.md#validation-evidence-package) |
-| `pre-merge-validation` | [Validation-checklist work types](validation-checklist.md#work-types) pre-merge row recorded (platform coverage + lint/evidence in addition to [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error)) |
+| `commit` (`commit_gate`) | Prior gates closed with [evidence package](validation-checklist.md#validation-evidence-package), including [CI docs gate](validation-checklist.md#ci-docs-gate) |
+| `pre-merge-validation` | [Validation-checklist work types](validation-checklist.md#work-types) pre-merge row recorded (platform coverage + lint/evidence + [CI docs gate](validation-checklist.md#ci-docs-gate) in addition to [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error)) |
 
 Open `review_gate` = unverified.
 
@@ -70,13 +72,13 @@ Only with **user confirmation**: (1) intractable platform/SDK/toolchain limit + 
 
 ### Review findings
 
-Findings `critical`/`serious`/`minor`/`nit`. `review_gate` closes only when all are fixed or an [exception](#acceptable-exceptions) applies. Where to apply: [§ frozen tree](#frozen-tree) — split by **what failed**, not every frozen finding → `documentation?`.
+Findings `critical`/`serious`/`minor`/`nit`. `review_gate` closes only when all are fixed or an [exception](#acceptable-exceptions) applies. Where to apply: [§ frozen tree](#frozen-tree) — split by **what failed**, not every frozen finding → `documentation`.
 
 <a id="frozen-tree"></a>
 
 ## Frozen tree
 
-No edits during `independent-review` except revert `.only`: product trees (above); `okf-bundle/`; `AGENTS.md`; `CONTRIBUTING.md`. This pass is report-only ([lint-and-formatting](validation-checklist.md#lint-and-formatting), [OKF bundle review](validation-checklist.md#okf-bundle-review)). Follow-up owner is **what failed**: findings in `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` → new `documentation?`, then another frozen scan; findings in product / tests / lint (including iOS `:fix` after check failure, and Android format) → `implementation`. Do not send every frozen-review finding to `documentation?`. Separate implementation/`documentation` and review passes.
+No edits during `independent-review` except revert `.only`: product trees (above); `okf-bundle/`; `AGENTS.md`; `CONTRIBUTING.md`. This pass is report-only ([lint-and-formatting](validation-checklist.md#lint-and-formatting), [OKF bundle review](validation-checklist.md#okf-bundle-review)). Follow-up owner is **what failed**: findings in `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` → new `documentation`, then another frozen scan; findings in product / tests / lint (including iOS `:fix` after check failure, and Android format) → `implementation`. Do not send every frozen-review finding to `documentation`. Separate `implementation` / `documentation` and review passes.
 
 <a id="host-rule"></a>
 

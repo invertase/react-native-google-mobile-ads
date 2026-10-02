@@ -182,7 +182,7 @@ class ReactNativeGoogleMobileAdsModule(
 
   /**
    * iOS-only GMA API (`audioSessionIsApplicationManaged`). No equivalent on
-   * play-services-ads 25.4.0 — TurboModule Spec requires a matching method.
+   * play-services-ads 25.5.0 — TurboModule Spec requires a matching method.
    */
   @ReactMethod
   @Suppress("UNUSED_PARAMETER")

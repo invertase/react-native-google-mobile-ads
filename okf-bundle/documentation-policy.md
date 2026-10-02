@@ -79,7 +79,7 @@ Confirm:
 | **Link hygiene** | Cross-links resolve; indexes list canonical entry points |
 | **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, or PR titles, except a [cumulative verification-evidence table](#verification-evidence-tables). Private items stay off GitHub. `.agents/` staging follows the [canonical rule](#durable-vs-ephemeral). Do not add ephemeral files under `okf-bundle/` |
 
-**Blocking on `commit`.** Fix violations before `git commit` ([change authoring § commit](testing/change-authoring-workflow.md#commit)). Gate close is not a later escape hatch. Frozen `independent-review` **reports only**; `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings apply in `documentation?` then another frozen scan — product/lint findings are not this dump ([§ frozen tree](testing/change-authoring-workflow.md#frozen-tree)). Commands: [validation-checklist § OKF bundle review](testing/validation-checklist.md#okf-bundle-review). Loop: [change authoring](testing/change-authoring-workflow.md#loop).
+**Blocking on `commit`.** Fix violations before `git commit` ([change authoring § commit](testing/change-authoring-workflow.md#commit)). Gate close is not a later escape hatch. Frozen `independent-review` **reports only**; `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings apply in `documentation` then another frozen scan — product/lint findings are not this dump ([§ frozen tree](testing/change-authoring-workflow.md#frozen-tree)). Commands: [validation-checklist § OKF bundle review](testing/validation-checklist.md#okf-bundle-review). Loop: [change authoring](testing/change-authoring-workflow.md#loop).
 
 <a id="efficiency"></a>
 

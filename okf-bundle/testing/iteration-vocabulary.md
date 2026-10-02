@@ -17,7 +17,7 @@ Order is **not** implied by this table; sequence: [change authoring § loop](cha
 | `gap-analysis` | Read-only feasibility / semantics |
 | `baseline-capture` | Before snapshots |
 | `implementation` | Product code + tests |
-| `documentation` | User docs + durable OKF + `AGENTS.md` + `CONTRIBUTING.md` |
+| `documentation` | User docs + durable OKF + `AGENTS.md` + `CONTRIBUTING.md` (own pass when those would go stale — [§ loop](change-authoring-workflow.md#loop)) |
 | `independent-review` | Frozen-diff verify |
 | `commit` | One focused commit |
 | `pre-merge-validation` | Branch merge gate |
