@@ -87,8 +87,8 @@ export interface MobileAdsModuleInterface {
    * that can interrupt or pause in-page video). When `false` (default), the SDK
    * may manage `AVAudioSession` itself.
    *
-   * No-op on Android: classic `play-services-ads` 25.4.0 and Next-Gen
-   * `ads-mobile-sdk` 1.4.0 have no equivalent API.
+   * No-op on Android: classic `play-services-ads` 25.5.0 and Next-Gen
+   * `ads-mobile-sdk` 1.5.0 have no equivalent API.
    *
    * Must be applied on the main thread (this module already dispatches there on iOS).
    *

@@ -473,6 +473,7 @@ devices, not an API-level or library stub gap
 [#754](https://github.com/invertase/react-native-google-mobile-ads/issues/754)).
 
 ### FlatList, FlashList, and recycled list cells
+
 `FlatList`, [FlashList](https://shopify.github.io/flash-list/), and similar lists **reuse cell component instances**. React state inside a recycled cell survives the row change. A card that loads once in `useEffect([])` and deliberately avoids remount `key`s will keep showing the previous row's `NativeAd` after scroll — that looks like "the same ad repeating," even when each mount once called `NativeAd.createForAdRequest`.
 
 **Load against list-item identity** (or remount the card):

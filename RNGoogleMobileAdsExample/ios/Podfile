@@ -51,5 +51,18 @@ use_test_app!(
       end
       user_project.save
     end
+
+    # Xcode 27 rejects IPHONEOS_DEPLOYMENT_TARGET < 15.0. RN's
+    # updateOSDeploymentTarget only touches pod native_target configs; GMA/UMP
+    # resource-bundle targets still inherit platforms.ios 12.0 from the pods.
+    min_ios = '15.1'
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        current = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        next if current && current.to_f >= min_ios.to_f
+
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios
+      end
+    end
   }
 )

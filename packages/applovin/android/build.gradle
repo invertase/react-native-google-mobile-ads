@@ -61,7 +61,7 @@ repositories {
 
 dependencies {
   // Google-published AppLovin GAM mediation adapter (classic + Next-Gen share coordinates).
-  // Pin: package.json sdkVersions.android.googleMobileAdsMediation (docs: 13.6.4.1 as of package publish; verify against current docs/Maven).
+  // Pin: package.json sdkVersions.android.googleMobileAdsMediation (docs: 13.6.4.2 as of package publish; verify against current docs/Maven).
   // Core GMA is provided by react-native-google-mobile-ads; do not re-pin it here.
   // https://developers.google.com/admob/android/mediation/applovin
   api(mediationArtifact) {

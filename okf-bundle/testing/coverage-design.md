@@ -36,7 +36,7 @@ Consume the **published** package — do **not** copy RNFB coverage scripts into
 | Pull / report | Package CLI `rn-coverage` (bin). Run from the example workspace so config resolves. |
 
 For the Android Next-Gen backend, keep AGP app-wide `testCoverageEnabled` off on
-`:app`. Its dependency transform rewrites Mobile Ads SDK 1.4.0 bytecode and
+`:app`. Its dependency transform rewrites Mobile Ads SDK 1.5.0 bytecode and
 causes an Android 16 `VerifyError` in `ads_mobile_sdk.ho3` while parsing a valid
 test-mode Banner response. `rn-coverage.gradle` still instruments the owned
 library project. Build, execute, pull, and report with the same

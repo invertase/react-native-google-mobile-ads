@@ -43,14 +43,14 @@ import {
 
 | Platform | Coordinate | Version pin |
 | -------- | ---------- | ----------- |
-| Android | `com.google.ads.mediation:mintegral` | `17.1.81.0` |
+| Android | `com.google.ads.mediation:mintegral` | `17.1.81.1` |
 | iOS | CocoaPods `GoogleMobileAdsMediationMintegral` | `8.1.7.0` |
 
 Citations (verify at upgrade time):
 
 - Android (GAM): https://developers.google.com/ad-manager/mobile-ads-sdk/android/mediation/mintegral
 - iOS (GAM): https://developers.google.com/ad-manager/mobile-ads-sdk/ios/mediation/mintegral
-- Google Maven: `com.google.ads.mediation:mintegral` (`latest` / `release` = `17.1.81.0`)
+- Google Maven: `com.google.ads.mediation:mintegral` (`latest` / `release` = `17.1.81.1`)
 - CocoaPods: https://cocoapods.org/pods/GoogleMobileAdsMediationMintegral
 - Mintegral Android Maven: `https://dl-maven-android.mintegral.com/repository/mbridge_android_sdk_oversea`
 

@@ -35,8 +35,8 @@ describe('native SDK version overrides', () => {
     );
     expect(androidBuild).toContain('sdk: googleMobileAdsVersion');
     expect(androidBuild).toContain('consent: googleUmpVersion');
-    expect(googleMobileAds).toBe('25.4.0');
-    expect(googleMobileAdsNextGen).toBe('1.4.0');
+    expect(googleMobileAds).toBe('25.5.0');
+    expect(googleMobileAdsNextGen).toBe('1.5.0');
     expect(googleUmp).toBe('4.0.0');
   });
 
@@ -72,7 +72,7 @@ describe('native SDK version overrides', () => {
     expect(umpEnv).toBeLessThan(umpGlobal);
     expect(umpGlobal).toBeLessThan(umpDependency);
     expect(packageJson.sdkVersions.ios).toEqual({
-      googleMobileAds: '13.6.0',
+      googleMobileAds: '13.10.0',
       googleUmp: '3.1.0',
     });
   });
@@ -88,7 +88,7 @@ describe('native SDK version overrides', () => {
     expect(iosModule).not.toContain('GADGetStringFromVersionNumber');
     expect(capabilitySource).toContain('NativeGoogleMobileAdsModule.getConstants()');
     expect(capabilitySource).toContain('backend:');
-    expect(capabilitySource).not.toMatch(/25\.4\.0|13\.6\.0|SDK_VERSION/);
+    expect(capabilitySource).not.toMatch(/25\.5\.0|13\.10\.0|SDK_VERSION/);
     expect(capabilitySource).not.toContain("backend = isIos ? 'ios' : 'android-classic'");
   });
 

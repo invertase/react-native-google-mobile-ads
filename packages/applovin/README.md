@@ -33,7 +33,7 @@ import {
 
 | Platform | Coordinate | Version pin |
 | -------- | ---------- | ----------- |
-| Android | `com.google.ads.mediation:applovin` | `13.6.4.1` |
+| Android | `com.google.ads.mediation:applovin` | `13.6.4.2` |
 | iOS | CocoaPods `GoogleMobileAdsMediationAppLovin` | `13.6.4.0` |
 
 Citations (verify at upgrade time):
