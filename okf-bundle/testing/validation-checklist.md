@@ -17,9 +17,9 @@ Coverage: [coverage design](coverage-design.md). Tiers: [change authoring](chang
 | `gap-analysis` | Read APIs/docs |
 | `baseline-capture` | Only the [platform coverage](running-e2e.md#platform-coverage-gate-blocking) rows for this diff; no `.only` |
 | `implementation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](#lint-and-formatting) for this diff; `.only` local OK |
-| `documentation` | Promote durable OKF / user docs / `AGENTS.md` / `CONTRIBUTING.md`. [Lint](#lint-and-formatting) if the [markdown lint scope](#markdown-lint-scope) is touched. **Do not** run the independent OKF scan here. |
-| `independent-review` | Rows that apply to **this** diff ([platform coverage](running-e2e.md#platform-coverage-gate-blocking), check-only [lint-by-tree](#lint-and-formatting)), frozen, no `.only`. [OKF scan](#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md`. |
-| `pre-merge-validation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) for this diff; [lint-by-tree](#lint-and-formatting) / evidence rows that already apply; [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error) |
+| `documentation` | Promote durable OKF / user docs / `AGENTS.md` / `CONTRIBUTING.md` after `implementation` when those would go stale, before `independent-review` ([change authoring § loop](change-authoring-workflow.md#loop)). [Lint](#lint-and-formatting) if the [markdown lint scope](#markdown-lint-scope) is touched. Always run the [CI docs gate](#ci-docs-gate) before closing this pass when the change set will be committed or PR'd. **Do not** run the independent OKF scan here. |
+| `independent-review` | Rows that apply to **this** diff ([platform coverage](running-e2e.md#platform-coverage-gate-blocking), check-only [lint-by-tree](#lint-and-formatting)), frozen, no `.only`. Always include the [CI docs gate](#ci-docs-gate). [OKF scan](#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md`. |
+| `pre-merge-validation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) for this diff; [lint-by-tree](#lint-and-formatting) / evidence rows that already apply; [CI docs gate](#ci-docs-gate); [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error) |
 
 <a id="lint-and-formatting"></a>
 
@@ -37,26 +37,46 @@ This heading owns lint-by-tree, check vs `:fix`/`--replace` by work type, and wh
 
 **Docs.** The **markdown lint scope** is `docs/**`, `README.md`, root `AGENTS.md`,
 `packages/core/AGENTS.md`, and `reference-api-readme.md` (the globs in the root `package.json`
-scripts). Run `yarn lint:markdown:check` and `yarn lint:spellcheck` when the diff touches that
-scope; run `yarn lint:docs-links` **only** when the diff includes `docs/**`. A diff limited to
-`okf-bundle/` / `CONTRIBUTING.md` runs no docs checks. Which of these CI runs:
-[CI workflows](../ci-workflows/index.md#workflows). Link-check behavior:
+scripts). Run `yarn lint:markdown:check` when the diff touches that scope (local-only; CI does
+not run it). Separately, always run the [CI docs gate](#ci-docs-gate) before closing
+`documentation`, `independent-review`, `commit`, or `pre-merge-validation` for any change that
+will be committed or PR'd — [Documentation](../ci-workflows/index.md#workflows) runs
+`yarn lint:spellcheck` and `yarn lint:docs-links` on **every** PR with no path filter, including
+OKF-only / `CONTRIBUTING.md`-only diffs. Link-check behavior:
 [§ docs.page link check](#docs-page-link-check). Allowlist:
 [agent command policy](agent-command-policy.md). User-docs sidebar:
 [documentation site maintenance](../documentation-site-maintenance.md).
+
+<a id="ci-docs-gate"></a>
+
+### CI docs gate (every PR)
+
+**Blocking for any PR-bound change set.** Match
+[`.github/workflows/docs.yml`](../../.github/workflows/docs.yml) job `spelling`:
+
+1. `yarn lint:spellcheck` — exit 0.
+2. `yarn lint:docs-links` — exit 0, with error and warning counts recorded ([§ docs.page link check](#docs-page-link-check)).
+
+Do not skip these because the diff omitted `docs/**` or touched only `okf-bundle/` /
+`CONTRIBUTING.md`. CI has no path filter. Closing `documentation` / `independent-review` /
+`commit_gate` without both exit codes is a process failure.
 
 <a id="docs-page-link-check"></a>
 
 ### Docs.page link check
 
 `yarn lint:docs-links` runs `docs check .` with the exact root-pinned
-`@docs.page/cli` version. Exit 0 is blocking when `docs/**` changes. Fix internal failures and
-external 404, 5xx, DNS, abort, and timeout errors; retry transient external failures before
-classifying them. External 401, 403, 405, and 429 bot-gate responses are warnings and do not
-justify rewriting a valid link or weakening checker severity. Do not exclude or special-case the
-generated reference host, locally or in CI. A 404 there for a symbol the deployed reference does
-not have yet (before the first deployment, or a new symbol before the next Publish run) is resolved
-by deploying the reference ([CI workflows](../ci-workflows/index.md#workflows)), not by exclusion.
+`@docs.page/cli` version. Exit 0 is blocking for the [CI docs gate](#ci-docs-gate). Fix internal
+failures and external 404, 5xx, DNS, abort, and timeout errors. Retry abort / timeout / 5xx at
+least twice; only a later exit 0 closes the gate — a retried abort that still fails is still a
+hard fail. When the checker reports abort/timeout, probe the URL (for example `curl -sI -L`)
+before rewriting: HTTP 404 means replace the link with a current working official URL; do not
+treat abort as “transient pass” without exit 0. External 401, 403, 405, and 429 bot-gate
+responses are warnings and do not justify rewriting a valid link or weakening checker severity.
+Do not exclude or special-case the generated reference host, locally or in CI. A 404 there for a
+symbol the deployed reference does not have yet (before the first deployment, or a new symbol
+before the next Publish run) is resolved by deploying the reference
+([CI workflows](../ci-workflows/index.md#workflows)), not by exclusion.
 
 <a id="api-reference"></a>
 
@@ -91,7 +111,7 @@ This scan **is** `independent-review` of the frozen tree when `okf-bundle/`, `AG
 
 1. Confirm durable learnings landed in the owning `okf-bundle/` doc. If the frozen tree is `AGENTS.md`-only or `CONTRIBUTING.md`-only, still confirm those files against the [OKF update contract](../documentation-policy.md#okf-update-contract) rows that apply to them, and still complete step 3.
 2. Check `okf-bundle/testing/` for conflicts with verified behavior; report drift (do not edit on this frozen pass).
-3. Independent scan of the **entire** `okf-bundle/` tree **and** `AGENTS.md` / `CONTRIBUTING.md` (an `AGENTS.md`-only or `CONTRIBUTING.md`-only frozen tree still scans all three). Include a short summary of what changed and which files were touched. Confirm every contract row: Canonical location, DRY, [Efficiency](../documentation-policy.md#efficiency), link hygiene, Durability. This frozen scan **reports only** ([§ frozen tree](change-authoring-workflow.md#frozen-tree)). Apply `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings in a new `documentation?` pass, then another frozen scan — product/lint findings are [§ frozen tree](change-authoring-workflow.md#frozen-tree) (`implementation`), not this dump. Close `commit` only with a clean scan: [OKF update contract](../documentation-policy.md#okf-update-contract) and [§ commit](change-authoring-workflow.md#commit). Gate close is not a later escape hatch.
+3. Independent scan of the **entire** `okf-bundle/` tree **and** `AGENTS.md` / `CONTRIBUTING.md` (an `AGENTS.md`-only or `CONTRIBUTING.md`-only frozen tree still scans all three). Include a short summary of what changed and which files were touched. Confirm every contract row: Canonical location, DRY, [Efficiency](../documentation-policy.md#efficiency), link hygiene, Durability. This frozen scan **reports only** ([§ frozen tree](change-authoring-workflow.md#frozen-tree)). Apply `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings in a new `documentation` pass, then another frozen scan — product/lint findings are [§ frozen tree](change-authoring-workflow.md#frozen-tree) (`implementation`), not this dump. Close `commit` only with a clean scan: [OKF update contract](../documentation-policy.md#okf-update-contract) and [§ commit](change-authoring-workflow.md#commit). Gate close is not a later escape hatch.
 
 Goal: each iteration improves OKF and removes conflicting guidance. The contract owns check meanings; this scan hops there — do not skip the hop by treating this list as a thinner substitute.
 
@@ -111,8 +131,8 @@ Goal: each iteration improves OKF and removes conflicting guidance. The contract
 | e2e iOS / Android | Android/iOS named-script trios on [platform coverage](running-e2e.md#platform-coverage-gate-blocking); [named-owner logs + optional tee](running-e2e.md#local-e2e-commands) | 0 | counts + printed invocation log root (or additional unique tee) — only if that table requires e2e |
 | lint | [§ lint](#lint-and-formatting) for this diff (`lint:js` only if `packages/core/src/`; not plugin; not `packages/core/__tests__/`). `yarn lint:code` / `yarn lint` only when this diff includes `packages/core/src/` **and** `packages/core/android/` **and** `packages/core/ios/` and the work type may `--replace` | 0 | matching linters |
 | whitespace | [§ lint](#lint-and-formatting) scoped `git diff --check` | 0 | all handwritten files; generated trees excluded |
-| docs | `yarn lint:markdown:check` and `yarn lint:spellcheck` | 0 | if the [markdown lint scope](#markdown-lint-scope) is touched |
-| docs links | `yarn lint:docs-links` | 0 | if `docs/**` — [§ docs.page link check](#docs-page-link-check); record error and warning counts |
+| docs markdown | `yarn lint:markdown:check` | 0 | if the [markdown lint scope](#markdown-lint-scope) is touched (local-only) |
+| CI docs gate | `yarn lint:spellcheck` then `yarn lint:docs-links` | 0, 0 | **always** for PR-bound change sets — [§ CI docs gate](#ci-docs-gate); record docs-links error and warning counts |
 | API reference | `yarn reference:api`, `yarn reference:api:gh-pages` | 0, warning-clean | when [§ API reference](#api-reference) applies |
 | plugin | `yarn tests:jest packages/core/plugin/__tests__/` | 0 | if `packages/core/plugin/` or `packages/core/app.plugin.js` — [§ Expo plugin](#expo-plugin) |
 | coverage | [evidence package](coverage-design.md#coverage-evidence-package) | — | required when `packages/core/src/` **or** `packages/core/android/` **or** `packages/core/ios/` **or** `packages/core/plugin/` TS; `packages/core/app.plugin.js`-only is `n/a` unless plugin TS changed |
