@@ -34,6 +34,33 @@ installing pods / building Android.
   Architecture as mandatory on both platforms — do not rely on the Legacy Architecture path.
 </Info>
 
+### iOS CocoaPods deployment targets
+
+Xcode 27 rejects `IPHONEOS_DEPLOYMENT_TARGET` values below **15.0**. This package's podspec
+floor is **15.1**, but Google Mobile Ads / UMP resource-bundle targets can still inherit
+`platforms.ios` **12.0** from those pods. Clamp every pod target in your app `Podfile`
+`post_install` so nothing stays below 15.1:
+
+```ruby
+post_install do |installer|
+  # ...existing post_install hooks...
+
+  min_ios = '15.1'
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      current = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+      next if current && current.to_f >= min_ios.to_f
+
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios
+    end
+  end
+end
+```
+
+React Native's `updateOSDeploymentTarget` only rewrites pod _native_ target configs; the
+resource-bundle targets still need this clamp. The example app's `Podfile` applies the same
+pattern.
+
 ### Android host notes
 
 The supported and tested Android host baseline uses compile / target API level **36** and Build
