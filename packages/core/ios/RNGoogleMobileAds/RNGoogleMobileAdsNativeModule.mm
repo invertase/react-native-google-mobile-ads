@@ -21,6 +21,7 @@
 #import <GoogleMobileAds/GAMBannerView.h>
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsNativeAdRegistry.h"
+#import "RNGoogleMobileAdsOwnedMappers.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
 #import "RNSharedUtils.h"
 
@@ -159,6 +160,8 @@ static NSMutableDictionary *RNGMANativeAdPayload(GADNativeAd *nativeAd) {
   } else {
     payload[@"icon"] = [NSNull null];
   }
+  payload[@"images"] =
+      [RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:nativeAd.images] ?: [NSNull null];
   NSMutableDictionary *mediaContent = [NSMutableDictionary dictionary];
   mediaContent[@"aspectRatio"] = @(nativeAd.mediaContent.aspectRatio);
   mediaContent[@"hasVideoContent"] = @(nativeAd.mediaContent.hasVideoContent);

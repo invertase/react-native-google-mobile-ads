@@ -75,6 +75,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSDictionary *)compactPaidResponseInfoFromFull:(NSDictionary *)full;
 
+/**
+ * Maps native ad images (objects exposing `imageURL` and `scale`, e.g.
+ * GADNativeAdImage) to JS `{ url, scale }` rows. Images without a URL are
+ * skipped; returns nil (JS `null`) when no rows remain, matching Android.
+ */
++ (nullable NSArray<NSDictionary *> *)nativeAdImageRowsFromImages:(nullable NSArray *)images;
+
 @end
 
 NS_ASSUME_NONNULL_END

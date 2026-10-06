@@ -26,6 +26,15 @@
 @interface RNGoogleMobileAdsOwnedMappersTests : XCTestCase
 @end
 
+/** Stand-in for GADNativeAdImage (`imageURL` + `scale`) without linking GMA. */
+@interface RNGMAFakeNativeAdImage : NSObject
+@property(nonatomic, strong, nullable) NSURL *imageURL;
+@property(nonatomic, assign) CGFloat scale;
+@end
+
+@implementation RNGMAFakeNativeAdImage
+@end
+
 @implementation RNGoogleMobileAdsOwnedMappersTests
 
 - (void)testIsAdManagerUnit {
@@ -173,6 +182,30 @@
   NSDictionary *compact = [RNGoogleMobileAdsOwnedMappers compactPaidResponseInfoFromFull:full];
   XCTAssertEqualObjects(compact[@"responseId"], @"abc");
   XCTAssertNil(compact[@"adapterResponses"]);
+}
+
+- (void)testNativeAdImageRowsFromImages {
+  XCTAssertNil([RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:nil]);
+  XCTAssertNil([RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:@[]]);
+
+  RNGMAFakeNativeAdImage *noURL = [RNGMAFakeNativeAdImage new];
+  noURL.scale = 1;
+  XCTAssertNil([RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:@[ noURL ]]);
+
+  RNGMAFakeNativeAdImage *first = [RNGMAFakeNativeAdImage new];
+  first.imageURL = [NSURL URLWithString:@"https://example.com/a.png"];
+  first.scale = 2;
+  RNGMAFakeNativeAdImage *second = [RNGMAFakeNativeAdImage new];
+  second.imageURL = [NSURL URLWithString:@"https://example.com/b.png"];
+  second.scale = 1;
+
+  NSArray *rows =
+      [RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:@[ first, noURL, second ]];
+  XCTAssertEqual(rows.count, 2u);
+  XCTAssertEqualObjects(rows[0][@"url"], @"https://example.com/a.png");
+  XCTAssertEqualObjects(rows[0][@"scale"], @(2));
+  XCTAssertEqualObjects(rows[1][@"url"], @"https://example.com/b.png");
+  XCTAssertEqualObjects(rows[1][@"scale"], @(1));
 }
 
 @end
