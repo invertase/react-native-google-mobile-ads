@@ -208,4 +208,17 @@ static const NSInteger kRNGMAErrorReceivedInvalidAdString = 21;
   return compact;
 }
 
++ (nullable NSArray<NSDictionary *> *)nativeAdImageRowsFromImages:(nullable NSArray *)images {
+  NSMutableArray<NSDictionary *> *rows = [NSMutableArray array];
+  for (id image in images) {
+    NSURL *url = [image valueForKey:@"imageURL"];
+    if (![url isKindOfClass:[NSURL class]] || url.absoluteString.length == 0) {
+      continue;
+    }
+    NSNumber *scale = [image valueForKey:@"scale"];
+    [rows addObject:@{@"url" : url.absoluteString, @"scale" : scale ?: @(1)}];
+  }
+  return rows.count > 0 ? rows : nil;
+}
+
 @end
