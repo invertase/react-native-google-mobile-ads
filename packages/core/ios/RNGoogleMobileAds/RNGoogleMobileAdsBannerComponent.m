@@ -19,6 +19,7 @@
 
 #import "RNGoogleMobileAdsBannerComponent.h"
 #import <React/RCTLog.h>
+#import <React/RCTUtils.h>
 #import "RNGoogleMobileAdsBannerEventMapping.h"
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
@@ -67,7 +68,7 @@
   } else {
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
   }
-  _banner.rootViewController = [UIApplication sharedApplication].delegate.window.rootViewController;
+  _banner.rootViewController = RCTKeyWindow().rootViewController;
   _banner.delegate = self;
 }
 

@@ -81,10 +81,9 @@ RCT_EXPORT_METHOD(openDebugMenu : (NSString *)adUnit) {
 #if !TARGET_OS_MACCATALYST
   GADDebugOptionsViewController *debugOptionsViewController =
       [GADDebugOptionsViewController debugOptionsViewControllerWithAdUnitID:adUnit];
-  [RCTSharedApplication().delegate.window.rootViewController
-      presentViewController:debugOptionsViewController
-                   animated:YES
-                 completion:nil];
+  [RCTPresentedViewController() presentViewController:debugOptionsViewController
+                                             animated:YES
+                                           completion:nil];
 #endif
 }
 
@@ -203,7 +202,7 @@ RCT_EXPORT_METHOD(registerWebView
 - (void)openAdInspector:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
 #if !TARGET_OS_MACCATALYST
   [GADMobileAds.sharedInstance
-      presentAdInspectorFromViewController:RCTSharedApplication().delegate.window.rootViewController
+      presentAdInspectorFromViewController:RCTPresentedViewController()
                          completionHandler:^(NSError *_Nullable error) {
                            if (error != nil) {
                              [RNSharedUtils
