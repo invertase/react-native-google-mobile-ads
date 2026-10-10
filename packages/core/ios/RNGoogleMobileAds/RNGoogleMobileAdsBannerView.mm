@@ -3,6 +3,7 @@
 // This guard prevent the code from being compiled in the old architecture
 #ifdef RCT_NEW_ARCH_ENABLED
 #import "RNGoogleMobileAdsBannerView.h"
+#import <React/RCTUtils.h>
 #import "RNGoogleMobileAdsBannerEventMapping.h"
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
@@ -180,7 +181,7 @@ using namespace facebook::react;
           .responseInfoJson = responseInfoJsonStd,
         });
   };
-  _banner.rootViewController = [UIApplication sharedApplication].delegate.window.rootViewController;
+  _banner.rootViewController = RCTKeyWindow().rootViewController;
   _banner.delegate = self;
 }
 

@@ -18,6 +18,7 @@
 #if !TARGET_OS_MACCATALYST
 
 #import "RNGoogleMobileAdsMultiFormatBannerView.h"
+#import <React/RCTUtils.h>
 #import "RNGoogleMobileAdsNativeModule.h"
 
 #import <GoogleMobileAds/GAMBannerView.h>
@@ -125,7 +126,7 @@ using namespace facebook::react;
   if (banner.superview != nil && banner.superview != self) {
     [banner removeFromSuperview];
   }
-  banner.rootViewController = [UIApplication sharedApplication].delegate.window.rootViewController;
+  banner.rootViewController = RCTKeyWindow().rootViewController;
   banner.frame = self.bounds;
   banner.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
   [self addSubview:banner];

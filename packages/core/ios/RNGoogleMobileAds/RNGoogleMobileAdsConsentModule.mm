@@ -228,8 +228,7 @@ RCT_EXPORT_METHOD(getPurposeLegitimateInterests
                                         @"message" : loadError.localizedDescription,
                                       } mutableCopy]];
     } else {
-      [form presentFromViewController:[UIApplication sharedApplication]
-                                          .delegate.window.rootViewController
+      [form presentFromViewController:RCTPresentedViewController()
                     completionHandler:^(NSError *_Nullable dismissError) {
                       if (dismissError) {
                         [RNSharedUtils
@@ -251,8 +250,7 @@ RCT_EXPORT_METHOD(getPurposeLegitimateInterests
                         reject:(RCTPromiseRejectBlock)reject {
 #if !TARGET_OS_MACCATALYST
   [UMPConsentForm
-      presentPrivacyOptionsFormFromViewController:[UIApplication sharedApplication]
-                                                      .delegate.window.rootViewController
+      presentPrivacyOptionsFormFromViewController:RCTPresentedViewController()
                                 completionHandler:^(NSError *_Nullable formError) {
                                   if (formError) {
                                     [RNSharedUtils
@@ -273,8 +271,7 @@ RCT_EXPORT_METHOD(getPurposeLegitimateInterests
                                   reject:(RCTPromiseRejectBlock)reject {
 #if !TARGET_OS_MACCATALYST
   [UMPConsentForm
-      loadAndPresentIfRequiredFromViewController:[UIApplication sharedApplication]
-                                                     .delegate.window.rootViewController
+      loadAndPresentIfRequiredFromViewController:RCTPresentedViewController()
                                completionHandler:^(NSError *_Nullable formError) {
                                  if (formError) {
                                    [RNSharedUtils
