@@ -26,9 +26,12 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdLoadCallback
+import com.google.android.gms.ads.AdValue
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.OnPaidEventListener
+import com.google.android.gms.ads.OnUserEarnedRewardListener
+import com.google.android.gms.ads.ResponseInfo
 import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.admanager.AdManagerInterstitialAd
 import com.google.android.gms.ads.appopen.AppOpenAd
@@ -58,7 +61,8 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
     adLoadCallback: AdLoadCallback<T>,
   )
 
-  private fun sendAdEvent(
+  /** Spy-friendly seam for owned JVM tests (parity with Next-Gen). */
+  protected open fun sendAdEvent(
     type: String,
     requestId: Int,
     adUnitId: String,
@@ -74,6 +78,135 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
       data,
     )
   }
+
+  protected open fun createEventMap(): WritableMap = Arguments.createMap()
+
+  protected open fun paidEventPayload(
+    adValue: AdValue,
+    responseInfo: ResponseInfo?,
+  ): WritableMap = ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(adValue, responseInfo)
+
+  /** Spy-friendly seam: load / adopt attach paid listeners through here. */
+  protected open fun attachPaidEventListener(
+    ad: T,
+    listener: OnPaidEventListener,
+  ) {
+    when (ad) {
+      is InterstitialAd -> ad.onPaidEventListener = listener
+      is AppOpenAd -> ad.onPaidEventListener = listener
+      is RewardedAd -> ad.onPaidEventListener = listener
+      is RewardedInterstitialAd -> ad.onPaidEventListener = listener
+    }
+  }
+
+  /** Spy-friendly seam: load / adopt attach fullscreen content callbacks through here. */
+  protected open fun attachFullScreenContentCallback(
+    ad: T,
+    callback: FullScreenContentCallback,
+  ) {
+    ReactNativeGoogleMobileAdsAdHelper(ad).setFullScreenContentCallback(callback)
+  }
+
+  /** Spy-friendly seam: show wires the earned-reward listener through here. */
+  protected open fun presentAd(
+    ad: T,
+    activity: Activity,
+    onUserEarnedRewardListener: OnUserEarnedRewardListener?,
+  ) {
+    ReactNativeGoogleMobileAdsAdHelper(ad).show(activity, onUserEarnedRewardListener)
+  }
+
+  internal fun emitPaidEvent(
+    requestId: Int,
+    adUnitId: String,
+    adValue: AdValue,
+    responseInfo: ResponseInfo?,
+  ) {
+    sendAdEvent(
+      ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_PAID,
+      requestId,
+      adUnitId,
+      null,
+      paidEventPayload(adValue, responseInfo),
+    )
+  }
+
+  internal fun emitEarnedReward(
+    requestId: Int,
+    adUnitId: String,
+    type: String,
+    amount: Int,
+  ) {
+    val data = createEventMap()
+    data.putString("type", type)
+    data.putInt("amount", amount)
+    sendAdEvent(
+      ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD,
+      requestId,
+      adUnitId,
+      null,
+      data,
+    )
+  }
+
+  internal fun presentingContentCallback(
+    requestId: Int,
+    adUnitId: String,
+  ): FullScreenContentCallback =
+    object : FullScreenContentCallback() {
+      override fun onAdShowedFullScreenContent() {
+        sendAdEvent(
+          ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_OPENED,
+          requestId,
+          adUnitId,
+          null,
+          null,
+        )
+      }
+
+      override fun onAdDismissedFullScreenContent() {
+        slots.evict(requestId)
+        sendAdEvent(
+          ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLOSED,
+          requestId,
+          adUnitId,
+          null,
+          null,
+        )
+      }
+
+      override fun onAdClicked() {
+        sendAdEvent(
+          ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLICKED,
+          requestId,
+          adUnitId,
+          null,
+          null,
+        )
+      }
+
+      override fun onAdImpression() {
+        sendAdEvent(
+          ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_IMPRESSION,
+          requestId,
+          adUnitId,
+          null,
+          null,
+        )
+      }
+
+      override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+        slots.evict(requestId)
+        val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(adError, "show")
+        sendAdEvent(
+          ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
+          requestId,
+          adUnitId,
+          error,
+          null,
+        )
+      }
+    }
 
   fun load(
     requestId: Int,
@@ -149,17 +282,8 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
       }
       adHelper.setImmersiveMode(immersiveModeEnabled)
 
-      adHelper.show(activity) { rewardItem ->
-        val data = Arguments.createMap()
-        data.putString("type", rewardItem.type)
-        data.putInt("amount", rewardItem.amount)
-        sendAdEvent(
-          ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD,
-          requestId,
-          adUnitId,
-          null,
-          data,
-        )
+      presentAd(ad, activity) { rewardItem ->
+        emitEarnedReward(requestId, adUnitId, rewardItem.type, rewardItem.amount)
       }
       promise.resolve(null)
     }
@@ -182,7 +306,8 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
     ad: T,
   ) {
     slots.adopt(requestId, ad)
-    wirePresentingCallbacks(requestId, adUnitId, ad, Arguments.createMap())
+    // createEventMap() is the spy-friendly WritableMap seam (avoids Arguments/JNI in JVM tests).
+    wirePresentingCallbacks(requestId, adUnitId, ad, createEventMap())
   }
 
   /** Pool poll passes a concrete preloader ad; star-projection entry for shared helpers. */
@@ -194,7 +319,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
   ) {
     val typed = ad as T
     slots.adopt(requestId, typed)
-    wirePresentingCallbacks(requestId, adUnitId, typed, Arguments.createMap())
+    wirePresentingCallbacks(requestId, adUnitId, typed, createEventMap())
   }
 
   private fun wirePresentingCallbacks(
@@ -205,27 +330,8 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
   ) {
     val adHelper = ReactNativeGoogleMobileAdsAdHelper(ad)
 
-    val paidEventListener =
-      OnPaidEventListener { adValue ->
-        val payload =
-          ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(
-            adValue,
-            adHelper.responseInfo,
-          )
-        sendAdEvent(
-          ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_PAID,
-          requestId,
-          adUnitId,
-          null,
-          payload,
-        )
-      }
-
-    when (ad) {
-      is InterstitialAd -> ad.onPaidEventListener = paidEventListener
-      is AppOpenAd -> ad.onPaidEventListener = paidEventListener
-      is RewardedAd -> ad.onPaidEventListener = paidEventListener
-      is RewardedInterstitialAd -> ad.onPaidEventListener = paidEventListener
+    attachPaidEventListener(ad) { adValue ->
+      emitPaidEvent(requestId, adUnitId, adValue, adHelper.responseInfo)
     }
 
     if (ad is RewardedAd || ad is RewardedInterstitialAd) {
@@ -258,48 +364,7 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
       }
     }
 
-    val fullScreenContentCallback: FullScreenContentCallback =
-      object : FullScreenContentCallback() {
-        override fun onAdShowedFullScreenContent() {
-          sendLocal(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_OPENED)
-        }
-
-        override fun onAdDismissedFullScreenContent() {
-          slots.evict(requestId)
-          sendLocal(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLOSED)
-        }
-
-        override fun onAdClicked() {
-          sendLocal(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLICKED)
-        }
-
-        override fun onAdImpression() {
-          sendLocal(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_IMPRESSION)
-        }
-
-        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-          slots.evict(requestId)
-          val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(adError, "show")
-          sendAdEvent(
-            ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
-            requestId,
-            adUnitId,
-            error,
-            null,
-          )
-        }
-
-        private fun sendLocal(type: String) {
-          sendAdEvent(
-            type,
-            requestId,
-            adUnitId,
-            null,
-            null,
-          )
-        }
-      }
-    adHelper.setFullScreenContentCallback(fullScreenContentCallback)
+    attachFullScreenContentCallback(ad, presentingContentCallback(requestId, adUnitId))
   }
 
   override fun invalidate() {
@@ -325,29 +390,6 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
         var eventType = ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_LOADED
         var data: WritableMap? = null
 
-        val paidEventListener =
-          OnPaidEventListener { adValue ->
-            val payload =
-              ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(
-                adValue,
-                adHelper.responseInfo,
-              )
-            sendAdEvent(
-              ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_PAID,
-              requestId,
-              adUnitId,
-              null,
-              payload,
-            )
-          }
-
-        when (ad) {
-          is AdManagerInterstitialAd -> ad.onPaidEventListener = paidEventListener
-          is AppOpenAd -> ad.onPaidEventListener = paidEventListener
-          is RewardedAd -> ad.onPaidEventListener = paidEventListener
-          is RewardedInterstitialAd -> ad.onPaidEventListener = paidEventListener
-        }
-
         val responseInfoMap =
           ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(adHelper.responseInfo)
 
@@ -361,82 +403,13 @@ abstract class ReactNativeGoogleMobileAdsFullScreenAdModule<T : Any>(
           if (responseInfoMap != null) {
             data.putMap("responseInfo", responseInfoMap)
           }
-
-          adRequestOptions
-            .getMap("serverSideVerificationOptions")
-            ?.let { serverSideVerificationOptions ->
-              val options =
-                ServerSideVerificationOptions.Builder()
-              serverSideVerificationOptions.getString("userId")?.let {
-                options.setUserId(it)
-              }
-              serverSideVerificationOptions.getString("customData")?.let {
-                options.setCustomData(it)
-              }
-              adHelper.setServerSideVerificationOptions(options.build())
-            }
         } else if (responseInfoMap != null) {
           data = Arguments.createMap()
           data.putMap("responseInfo", responseInfoMap)
         }
 
-        if (ad is AdManagerInterstitialAd) {
-          adHelper.setAppEventListener { name, eventData ->
-            val payload = Arguments.createMap()
-            payload.putString("name", name)
-            payload.putString("data", eventData)
-            sendAdEvent(
-              GOOGLE_MOBILE_ADS_EVENT_APP_EVENT,
-              requestId,
-              adUnitId,
-              null,
-              payload,
-            )
-          }
-        }
-
-        val fullScreenContentCallback: FullScreenContentCallback =
-          object : FullScreenContentCallback() {
-            override fun onAdShowedFullScreenContent() {
-              sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_OPENED)
-            }
-
-            override fun onAdDismissedFullScreenContent() {
-              slots.evict(requestId)
-              sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLOSED)
-            }
-
-            override fun onAdClicked() {
-              sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLICKED)
-            }
-
-            override fun onAdImpression() {
-              sendAdEvent(ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_IMPRESSION)
-            }
-
-            override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-              slots.evict(requestId)
-              val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(adError, "show")
-              sendAdEvent(
-                ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
-                requestId,
-                adUnitId,
-                error,
-                null,
-              )
-            }
-
-            private fun sendAdEvent(type: String) {
-              sendAdEvent(
-                type,
-                requestId,
-                adUnitId,
-                null,
-                null,
-              )
-            }
-          }
-        adHelper.setFullScreenContentCallback(fullScreenContentCallback)
+        // Shared attach site with adoptPolledAd (paid / click / SSV / app-event / fullscreen).
+        wirePresentingCallbacks(requestId, adUnitId, ad, adRequestOptions)
 
         sendAdEvent(
           eventType,

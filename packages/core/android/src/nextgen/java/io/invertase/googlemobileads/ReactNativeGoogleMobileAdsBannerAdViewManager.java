@@ -25,6 +25,7 @@ import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRequest;
 import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback;
 import com.google.android.libraries.ads.mobile.sdk.common.AdValue;
 import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError;
+import com.google.android.libraries.ads.mobile.sdk.common.ResponseInfo;
 import io.invertase.googlemobileads.common.ReactNativeAdView;
 import io.invertase.googlemobileads.common.SharedUtils;
 import java.util.ArrayList;
@@ -80,17 +81,25 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   public void receiveCommand(
       @NonNull ReactNativeAdView view, String commandId, @Nullable ReadableArray args) {
     super.receiveCommand(view, commandId, args);
-    view.post(
-        () -> {
-          AdView adView = getAdView(view);
-          if (adView == null) return;
-          if (COMMAND_RECORD_MANUAL_IMPRESSION.equals(commandId)) {
-            BannerAd ad = adView.getBannerAd();
-            if (ad != null) ad.recordManualImpression();
-          } else if (COMMAND_LOAD.equals(commandId)) {
-            loadAd(view, adView);
-          }
-        });
+    view.post(() -> routeCommand(view, commandId));
+  }
+
+  /** Package-visible for owned JVM command-routing tests. */
+  void routeCommand(@NonNull ReactNativeAdView view, String commandId) {
+    AdView adView = getAdView(view);
+    if (adView == null) return;
+    if (COMMAND_RECORD_MANUAL_IMPRESSION.equals(commandId)) {
+      recordManualImpression(adView.getBannerAd());
+    } else if (COMMAND_LOAD.equals(commandId)) {
+      loadAd(view, adView);
+    }
+  }
+
+  /** Package-visible for owned JVM manual-impression routing tests. */
+  void recordManualImpression(@Nullable BannerAd ad) {
+    if (ad != null) {
+      ad.recordManualImpression();
+    }
   }
 
   @ReactProp(name = "unitId")
@@ -327,7 +336,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
         });
   }
 
-  private BannerAdEventCallback buildEventCallback(ReactNativeAdView view, BannerAd ad) {
+  /** Package-visible for owned JVM paid/click callback tests. */
+  BannerAdEventCallback buildEventCallback(ReactNativeAdView view, BannerAd ad) {
     return new BannerAdEventCallback() {
       @Override
       public void onAdImpression() {
@@ -351,13 +361,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
       @Override
       public void onAdPaid(AdValue value) {
-        view.post(
-            () ->
-                sendEvent(
-                    view,
-                    EVENT_PAID,
-                    ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(
-                        value, ad.getResponseInfo())));
+        view.post(() -> sendEvent(view, EVENT_PAID, paidEventPayload(value, ad.getResponseInfo())));
       }
 
       @Override
@@ -382,7 +386,13 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     return child instanceof AdView ? (AdView) child : null;
   }
 
-  private void sendEvent(ReactNativeAdView view, String type, @Nullable WritableMap payload) {
+  /** Spy-friendly seam for owned JVM tests (avoids RN Arguments in Robolectric). */
+  protected WritableMap paidEventPayload(AdValue value, ResponseInfo responseInfo) {
+    return ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(value, responseInfo);
+  }
+
+  /** Spy-friendly seam for owned JVM event tests. */
+  protected void sendEvent(ReactNativeAdView view, String type, @Nullable WritableMap payload) {
     WritableMap event = Arguments.createMap();
     event.putString("type", type);
     if (payload != null) event.merge(payload);
