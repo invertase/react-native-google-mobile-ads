@@ -5,6 +5,7 @@
 #import "RNGoogleMobileAdsBannerView.h"
 #import "RNGoogleMobileAdsBannerEventMapping.h"
 #import "RNGoogleMobileAdsCommon.h"
+#import "RNGoogleMobileAdsOwnedCallbacks.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
 
 #import <GoogleMobileAds/GAMBannerView.h>
@@ -144,7 +145,11 @@ using namespace facebook::react;
 
     ((GAMBannerView *)_banner).validAdSizes = _sizeConfig[@"sizes"];
     ((GAMBannerView *)_banner).appEventDelegate = self;
-    ((GAMBannerView *)_banner).enableManualImpressions = [_manualImpressionsEnabled boolValue];
+    if ([RNGoogleMobileAdsOwnedCallbacks
+            shouldApplyEnableManualImpressions:[_manualImpressionsEnabled boolValue]
+                               isAdManagerUnit:YES]) {
+      ((GAMBannerView *)_banner).enableManualImpressions = YES;
+    }
   } else {
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
   }
@@ -214,15 +219,24 @@ using namespace facebook::react;
 }
 
 - (void)handleCommand:(const NSString *)commandName args:(const NSArray *)args {
-  if ([commandName isEqual:@"recordManualImpression"]) {
-    [self recordManualImpression];
-  } else if ([commandName isEqual:@"load"]) {
-    [self load];
+  NSString *name = (NSString *)commandName;
+  switch ([RNGoogleMobileAdsOwnedCallbacks actionForCommandName:name]) {
+    case RNGoogleMobileAdsBannerCommandActionRecordManualImpression:
+      [self recordManualImpression];
+      break;
+    case RNGoogleMobileAdsBannerCommandActionLoad:
+      [self load];
+      break;
+    case RNGoogleMobileAdsBannerCommandActionUnknown:
+    default:
+      break;
   }
 }
 
 - (void)recordManualImpression {
-  if ([_banner class] == [GAMBannerView class]) {
+  if ([RNGoogleMobileAdsOwnedCallbacks
+          shouldRecordManualImpressionForBannerClass:[_banner class]
+                                adManagerBannerClass:[GAMBannerView class]]) {
     [((GAMBannerView *)_banner) recordImpression];
   }
 }

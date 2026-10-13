@@ -23,7 +23,9 @@ test('every executable Appium contract has a Jacoco checkpoint with existing nat
 });
 
 test('device native coverage gaps stay documented for slot-6 closure', () => {
-  assert.ok(DEVICE_NATIVE_COVERAGE_GAPS.length >= 5);
+  // ios-lcov-export removed: react-native-coverage@0.2.2 proves universal LCOV
+  // via auto arch selection and explicit --arch (ED-07).
+  assert.ok(DEVICE_NATIVE_COVERAGE_GAPS.length >= 4);
   assert.ok(
     DEVICE_NATIVE_COVERAGE_GAPS.every(
       gap => gap.summary.trim().split(/\s+/).length >= 8 && gap.deviceProof.trim().length > 0,

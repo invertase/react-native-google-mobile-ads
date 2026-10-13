@@ -279,13 +279,6 @@ export const DEVICE_NATIVE_COVERAGE_GAPS = [
     deviceProof: 'Consent module branches stay excluded until a configured UMP test app exists.',
   },
   {
-    id: 'ios-lcov-export',
-    summary:
-      'react-native-coverage@0.2.0 cannot export universal simulator LCOV without architecture selection; preserve raw profraw until exporter fix.',
-    deviceProof:
-      'Slot-6 iOS run: rn-coverage ios pull then export; report limitation if percentage cannot be claimed.',
-  },
-  {
     id: 'android-baseline-final',
     summary:
       'E9 closure requires before/after Android reports/jacoco/<backend>/jacocoTestReport/jacocoTestReport.xml from a full multi-shard Appium run with teardown flush.',
