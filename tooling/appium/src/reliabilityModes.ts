@@ -1,6 +1,5 @@
 /**
- * Named single-slot / single-platform reliability campaign modes.
- * Elastic multi-slot control lands later; modes stay stable.
+ * Named reliability campaign modes (single-slot worker and elastic controller).
  */
 
 export const RELIABILITY_MODES = ['diagnose', 'burn-in', 'qualify'] as const;

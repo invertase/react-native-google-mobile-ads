@@ -22,7 +22,7 @@ Once: `yarn && yarn prepare`; on iOS also root `BUNDLE_FROZEN=true bundle instal
 
 **Names only.** Which of these to run is [platform coverage](#platform-coverage-gate-blocking). When running e2e, use only these named scripts (no `yarn tests:android:*` / `yarn tests:ios:*` globs). Do **not** run every named script unless that table requires it.
 
-Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:build:nextgen`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:check`, `yarn tests:appium:release`, `yarn tests:appium:force-acquire`, `yarn tests:appium:provision <android|ios|both>`, `yarn tests:appium:android`, `yarn tests:appium:android:nextgen`, `yarn tests:appium:ios`, `yarn tests:appium:parallel`, `yarn tests:appium:android:parallel`, `yarn tests:appium:ios:parallel`, `yarn tests:appium:android:parallel:external`, `yarn tests:appium:ios:parallel:external`, `yarn tests:appium:reliability`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
+Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:build:nextgen`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:check`, `yarn tests:appium:release`, `yarn tests:appium:force-acquire`, `yarn tests:appium:provision <android|ios|both>`, `yarn tests:appium:android`, `yarn tests:appium:android:nextgen`, `yarn tests:appium:ios`, `yarn tests:appium:parallel`, `yarn tests:appium:android:parallel`, `yarn tests:appium:ios:parallel`, `yarn tests:appium:android:parallel:external`, `yarn tests:appium:ios:parallel:external`, `yarn tests:appium:reliability`, `yarn tests:appium:reliability:campaign`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
 
 `yarn tests:e2e:codegen` generates **app-source iOS** metadata for the example and `@invertase/rngma-testing` probe before CocoaPods. [GMA-AD-3](../architecture-decisions.md#gma-ad-3) core library output is committed and skipped. Android Gradle generates the remaining app/probe metadata during its build, so Android paths do not invoke this iOS-only command or delete any generated tree. The canonical iOS run and Appium preflight invoke the same yarn target rather than duplicating its implementation. The frozen `tests:ios:pod:install` script remains exactly the bundled pod command and is called by `tests:ios:run` after codegen.
 
@@ -158,9 +158,9 @@ These parallel commands are local-only. GitHub Actions remains on the serial com
 
 <a id="reliability-worker"></a>
 
-## Single-slot reliability worker
+## Reliability worker and elastic campaign controller
 
-`yarn tests:appium:reliability` owns the campaign single-slot / single-platform reliability harness in `tooling/appium/` (`reliabilityModes`, `reliabilityLayouts`, `reliabilityReceipts`, `reliabilityLogs`, `reliabilityOwnership`, `reliabilityWorker`). It is local-only and never replaces serial or three-slot parallel Appium.
+`yarn tests:appium:reliability` owns the single-slot / single-platform reliability harness in `tooling/appium/` (`reliabilityModes`, `reliabilityLayouts`, `reliabilityReceipts`, `reliabilityLogs`, `reliabilityOwnership`, `reliabilityMetro`, `reliabilityWorker`). `yarn tests:appium:reliability:campaign` owns the elastic multi-slot controller (`reliabilityCapacity`, `reliabilityLeases`, `reliabilityCampaign`). Both are local-only and never replace serial or three-slot parallel Appium.
 
 **Modes.** Pass `diagnose`, `burn-in`, or `qualify` (positional or `--mode=`). All modes keep runner-level bail off (`RNGMA_WDIO_RUNNER_BAIL=0` on shard children) and Mocha bail on within a shard. Only `qualify` marks append-only receipts as statistically countable.
 
@@ -168,9 +168,13 @@ These parallel commands are local-only. GitHub Actions remains on the serial com
 
 **Receipts and logs.** Each job gets an immutable `jobId`, a write-once identity sidecar, and an append-only JSONL receipt ledger with explicit `startup` / `preamble` / `test` cells. Credits are exactly-once per `(jobId, iteration, cellKind, cellId, shardId)`. Failure shard logs stay full; passing shard logs are sampled and gzip-compressed; a measured disk ceiling deletes oldest pass archives first.
 
-**Ownership.** The worker models single-slot states `not-requested` → `acquiring` → `owned-idle` → `owned-running` → `draining` → `released` (or `release-failed`). Elastic multi-slot leases land later; do not invent parallel capacity flags here.
+**Ownership and leases.** Per `(slot, platform)` states are `not-requested` → `acquiring` → `owned-idle` → `owned-running` → `draining` → `released` (or `release-failed`). The single-slot worker applies them to one lease; the elastic controller acquires many leases, heartbeats them, steals expired or busy-affinity work onto idle lanes, and can restart with a different capacity after stop. Graceful drain refuses while any lease is `owned-running` (finish work first), then moves `owned-idle` → `draining` via `begin-release` before release (`owned-running` → `draining` via `begin-release` remains valid for the single-slot release path). Capacity may pause/resume accepting work without inventing a second ownership vocabulary.
 
-**Device-free execution.** Device-free harness pilots use `--dry-run` with `--platform` / `--slot` (or `RNGMA_E2E_PLATFORM` / `RNGMA_E2E_SLOT`). Live single-slot Appium shard execution is not attached to this command yet — use the named serial/parallel Appium scripts for device runs. Optional `--receipt-root` / `--log-root` / `--iterations` override defaults under `/tmp/rngma-e2e-reliability/`.
+**Metro per slot/platform.** Reliability shard env always treats Android and iOS Metro as distinct listeners for the same slot number (ports and cache/temp roots from the platform-separated slot math). Do not collapse both platforms onto one packager.
+
+**Elastic capacity flags.** On `yarn tests:appium:reliability:campaign`, pass `--slots=<n>,…` for both platforms, or override with `--android-slots=` / `--ios-slots=`. Device-free measured lane pilots use `--pilot-lanes=2|4|6|8|10` or `--run-capacity-pilots` (leases/heartbeats/steal/drain/restart simulation only — no live Metro burn-in). Prefer `--dry-run` on product-edit checkouts; the campaign command refuses non-dry-run multi-slot device starts.
+
+**Single-slot execution.** Device-free harness pilots use `--dry-run` with `--platform` / `--slot` (or `RNGMA_E2E_PLATFORM` / `RNGMA_E2E_SLOT`). Omitting `--dry-run` attaches the live Appium shard runner path (platform WDIO conf under the worker). Keep live runners on a dedicated checkout that does not share Metros with product edits. Optional `--receipt-root` / `--log-root` / `--iterations` override defaults under `/tmp/rngma-e2e-reliability/`.
 
 <a id="ios-wda-prebuilt-validation"></a>
 

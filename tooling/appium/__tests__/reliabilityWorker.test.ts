@@ -286,6 +286,9 @@ describe('reliability worker', () => {
     const env = reliabilityShardEnv(options, './test/specs/formats.smoke.a-primary.spec.ts', {});
     assert.equal(env[RELIABILITY_RUNNER_BAIL_ENV], '0');
     assert.equal(env.RNGMA_E2E_SLOT, '1');
+    assert.equal(env.RNGMA_E2E_METRO_SLOT, '1');
+    assert.equal(env.RNGMA_METRO_PORT, '13007');
+    assert.match(env.RNGMA_METRO_CACHE_ROOT ?? '', /slot-1\/android\/cache$/);
   });
 
   test('parses positional mode after space-separated flag values', () => {
