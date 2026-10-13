@@ -1,6 +1,6 @@
 /**
  * Elastic reliability campaign controller: capacity flags, leases, heartbeats,
- * steal/drain, pause/resume, and device-free lane pilots.
+ * steal/drain, pause/resume, device-free lane pilots, and adaptive flake reduction.
  */
 
 import path from 'node:path';
@@ -16,6 +16,11 @@ import {
   type ElasticSlotSet,
 } from './reliabilityCapacity.ts';
 import {
+  createCircuitBreaker,
+  type CircuitBreaker,
+  type CircuitSnapshot,
+} from './reliabilityCircuitBreaker.ts';
+import {
   createLeaseController,
   type LeaseController,
   type LeaseSnapshot,
@@ -23,6 +28,14 @@ import {
 } from './reliabilityLeases.ts';
 import { parseReliabilityMode, type ReliabilityMode } from './reliabilityModes.ts';
 import { parseLayoutKind, type LayoutKind } from './reliabilityLayouts.ts';
+import {
+  caseIdsForReducedContext,
+  createFlakeReducer,
+  type FlakeReducer,
+  type ReduceFailureInput,
+  type ReduceFailureResult,
+} from './reliabilityReducer.ts';
+import type { ScheduledUnit } from './reliabilityRisk.ts';
 
 export type CampaignControllerOptions = {
   mode: ReliabilityMode;
@@ -35,12 +48,16 @@ export type CampaignControllerOptions = {
   /** When set, run the measured lane pilot instead of an operator slot set. */
   pilotLanes?: CapacityPilotLanes;
   heartbeatTimeoutMs?: number;
+  /** Root for exact failure artifacts (defaults under receiptRoot). */
+  artifactRoot?: string;
 };
 
 export type CampaignController = {
   options: CampaignControllerOptions;
   capacity: CapacityController;
   leases: LeaseController;
+  reducer: FlakeReducer;
+  breaker: CircuitBreaker;
   pause(): void;
   resume(): void;
   heartbeat(leaseId: string, workerId: string): void;
@@ -55,6 +72,18 @@ export type CampaignController = {
     release?: (slot: number, platform: 'android' | 'ios') => Promise<void>,
   ): Promise<{ released: number; failed: number; states: LeaseSnapshot[] }>;
   restartWithCapacity(next: ElasticSlotSet): Promise<LeaseSnapshot[]>;
+  /** Risk-aware schedule: isolated high-risk first, then low-risk affinity groups. */
+  scheduleCases(platform: 'android' | 'ios', caseIds: readonly string[]): ScheduledUnit[];
+  /**
+   * Record a failure into the flake reducer and circuit breaker. Trips pause the
+   * campaign capacity when ad-service failures cluster.
+   */
+  noteFailure(input: ReduceFailureInput): {
+    reduction: ReduceFailureResult;
+    circuit: CircuitSnapshot;
+    paused: boolean;
+  };
+  circuitState(): CircuitSnapshot;
 };
 
 function flagValue(argv: readonly string[], name: string): string | undefined {
@@ -84,6 +113,7 @@ const CAMPAIGN_FLAGS_WITH_VALUE = new Set([
   '--pilot-lanes',
   '--receipt-root',
   '--log-root',
+  '--artifact-root',
   '--heartbeat-timeout-ms',
 ]);
 
@@ -146,6 +176,11 @@ export function parseReliabilityCampaignArgv(
     }
   }
 
+  const receiptRoot =
+    flagValue(argv, '--receipt-root') ??
+    path.join('/tmp/rngma-e2e-reliability', 'campaign-receipts');
+  const artifactRoot = flagValue(argv, '--artifact-root');
+
   return {
     mode,
     layoutKind,
@@ -153,11 +188,10 @@ export function parseReliabilityCampaignArgv(
     dryRun: hasFlag(argv, '--dry-run'),
     allowForceAcquire:
       hasFlag(argv, '--authorize-force-acquire') || env.RNGMA_E2E_FORCE_ACQUIRE === '1',
-    receiptRoot:
-      flagValue(argv, '--receipt-root') ??
-      path.join('/tmp/rngma-e2e-reliability', 'campaign-receipts'),
+    receiptRoot,
     logRoot:
       flagValue(argv, '--log-root') ?? path.join('/tmp/rngma-e2e-reliability', 'campaign-logs'),
+    ...(artifactRoot != null ? { artifactRoot } : {}),
     ...(pilotLanes != null ? { pilotLanes } : {}),
     ...(heartbeatTimeoutMs != null ? { heartbeatTimeoutMs } : {}),
   };
@@ -173,32 +207,67 @@ export function createCampaignController(
     heartbeatTimeoutMs: options.heartbeatTimeoutMs,
     now: clock.now,
   });
+  const artifactRoot =
+    options.artifactRoot ?? path.join(options.receiptRoot, 'failure-artifacts');
+  const reducer = createFlakeReducer({ artifactRoot });
+  const breaker = createCircuitBreaker({ now: clock.now });
+
+  function pauseInternal(): void {
+    // Idempotent: repeated circuit observations must not throw once already paused.
+    if (capacity.state === 'running') {
+      capacity.pause();
+    }
+    leases.setAcceptingWork(false);
+  }
+
+  function resumeInternal(): void {
+    breaker.reset();
+    if (capacity.state === 'paused') {
+      capacity.resume();
+    }
+    leases.setAcceptingWork(true);
+  }
 
   return {
     options,
     capacity,
     leases,
-    pause() {
-      capacity.pause();
-      leases.setAcceptingWork(false);
-    },
-    resume() {
-      capacity.resume();
-      leases.setAcceptingWork(true);
-    },
+    reducer,
+    breaker,
+    pause: pauseInternal,
+    resume: resumeInternal,
     heartbeat(leaseId, workerId) {
       leases.heartbeat(leaseId, workerId);
     },
     dispatch(item, workerId) {
+      if (breaker.shouldPauseCampaign()) {
+        pauseInternal();
+        return null;
+      }
       if (capacity.state === 'paused' || capacity.state === 'draining') {
         return null;
       }
       return leases.assignWork(item, workerId);
     },
     stealExpired(workerId) {
+      // Same pause/breaker gate as dispatch: trip pauses acceptingWork so reclaim
+      // cannot startOnLease idle lanes. stealBusy shares this path via accept gate.
+      if (breaker.shouldPauseCampaign()) {
+        pauseInternal();
+      }
+      if (capacity.state === 'paused' || capacity.state === 'draining') {
+        leases.setAcceptingWork(false);
+      }
       return leases.stealExpired({ workerId });
     },
     stealBusy(item, workerId) {
+      if (breaker.shouldPauseCampaign()) {
+        pauseInternal();
+        return null;
+      }
+      if (capacity.state === 'paused' || capacity.state === 'draining') {
+        return null;
+      }
       return leases.stealWorkFromBusy(item, workerId);
     },
     finish(leaseId) {
@@ -244,6 +313,22 @@ export function createCampaignController(
         },
       });
       return leases.list();
+    },
+    scheduleCases(platform, caseIds) {
+      return reducer.schedule(platform, caseIds);
+    },
+    noteFailure(input) {
+      const reduction = reducer.reduceFailure(input);
+      const circuit = breaker.observe(reduction.artifact);
+      let paused = false;
+      if (breaker.shouldPauseCampaign()) {
+        pauseInternal();
+        paused = true;
+      }
+      return { reduction, circuit, paused };
+    },
+    circuitState() {
+      return breaker.state();
     },
   };
 }
@@ -392,3 +477,135 @@ export async function runAllCapacityPilots(): Promise<CapacityPilotResult[]> {
   }
   return results;
 }
+
+export type RiskPilotResult = {
+  scheduledIsolated: number;
+  scheduledAffinity: number;
+  artifactsWritten: number;
+  circuitTripped: boolean;
+  circuitState: CircuitSnapshot['state'];
+  probabilisticNeighbors: number;
+  dispatchBlockedWhileOpen: boolean;
+  resumedAcceptingWork: boolean;
+};
+
+/**
+ * Device-free adaptive flake-reducer pilot: risk scheduling, isolation,
+ * probabilistic context reduction, exact artifacts, and ad-service circuit trip.
+ */
+export async function runRiskPilot(
+  options: {
+    artifactRoot?: string;
+    now?: () => number;
+    random?: () => number;
+  } = {},
+): Promise<RiskPilotResult> {
+  let clock = 5_000;
+  const now = options.now ?? (() => clock);
+  const artifactRoot =
+    options.artifactRoot ??
+    path.join('/tmp/rngma-e2e-reliability', 'risk-pilot-artifacts');
+  const controller = createCampaignController(
+    {
+      mode: 'diagnose',
+      layoutKind: 'temporary',
+      slotSet: { android: [1, 2], ios: [] },
+      dryRun: true,
+      allowForceAcquire: false,
+      receiptRoot: '/tmp/rngma-e2e-reliability/risk-pilot-receipts',
+      logRoot: '/tmp/rngma-e2e-reliability/risk-pilot-logs',
+      artifactRoot,
+    },
+    { now },
+  );
+
+  // Seed low-risk passes so affinity grouping can form.
+  for (let i = 0; i < 30; i += 1) {
+    controller.reducer.recordPass('banner', 'android', 'candidate-shard');
+    controller.reducer.recordPass('native', 'android', 'candidate-shard');
+  }
+  for (let i = 0; i < 10; i += 1) {
+    controller.reducer.recordPass('interstitial', 'android', 'individual');
+  }
+
+  const schedule = controller.scheduleCases('android', [
+    'rewarded',
+    'banner',
+    'native',
+    'interstitial',
+  ]);
+  const scheduledIsolated = schedule.filter(unit => unit.kind === 'isolated').length;
+  const scheduledAffinity = schedule.filter(unit => unit.kind === 'affinity').length;
+
+  // Correlated ad-service failures across distinct cases trip the breaker.
+  let circuitTripped = false;
+  for (const caseId of ['rewarded', 'app-open', 'gam-interstitial'] as const) {
+    const noted = controller.noteFailure({
+      caseId,
+      platform: 'android',
+      detail: 'ERROR_CODE_NO_FILL inventory exhausted',
+      neighbors: ['banner', 'native', 'interstitial'],
+      retentionProbability: 0.5,
+    });
+    if (noted.paused) {
+      circuitTripped = true;
+    }
+  }
+
+  const reduction = controller.noteFailure({
+    caseId: 'rewarded',
+    platform: 'android',
+    detail: 'ERROR_CODE_NO_FILL inventory exhausted',
+    neighbors: ['banner', 'native'],
+    retentionProbability: 0,
+  });
+
+  await controller.leases.acquireAll({ dryRun: true, async checkClear() { return true; } });
+  const blocked = controller.dispatch(
+    { workItemId: reduction.reduction.isolated.focusCaseId },
+    'risk-pilot',
+  );
+  const dispatchBlockedWhileOpen = blocked == null && controller.circuitState().state === 'open';
+
+  clock += 60_001;
+  controller.breaker.maybeHalfOpen();
+  if (controller.capacity.state === 'paused') {
+    controller.resume();
+  } else {
+    controller.breaker.reset();
+    controller.leases.setAcceptingWork(true);
+  }
+  const resumed = controller.dispatch({ workItemId: 'after-resume' }, 'risk-pilot');
+  const resumedAcceptingWork = resumed != null;
+  if (resumed != null) {
+    controller.finish(resumed.leaseId);
+  }
+
+  // Deterministic probabilistic reduction sample for the pilot receipt.
+  const random = options.random ?? (() => 0.25);
+  const reducer = createFlakeReducer({
+    artifactRoot: path.join(artifactRoot, 'probabilistic'),
+    random,
+    defaultRetentionProbability: 0.5,
+  });
+  const probabilistic = reducer.reduceFailure({
+    caseId: 'collapsible-banner',
+    platform: 'android',
+    detail: 'timeout waiting for assertion',
+    neighbors: ['banner', 'native', 'fluid'],
+  });
+
+  return {
+    scheduledIsolated,
+    scheduledAffinity,
+    artifactsWritten: controller.reducer.artifacts.list().length,
+    circuitTripped,
+    circuitState: controller.circuitState().state,
+    probabilisticNeighbors: probabilistic.probabilistic.retainedNeighbors.length,
+    dispatchBlockedWhileOpen,
+    resumedAcceptingWork,
+  };
+}
+
+/** Re-export for callers that build diagnose case lists from reduced context. */
+export { caseIdsForReducedContext };

@@ -5,6 +5,7 @@ import {
   parseReliabilityCampaignArgv,
   runAllCapacityPilots,
   runCapacityPilot,
+  runRiskPilot,
 } from '../src/reliabilityCampaign.ts';
 import { laneCount } from '../src/reliabilityCapacity.ts';
 
@@ -29,6 +30,43 @@ async function main(): Promise<void> {
       throw new Error(
         `Capacity pilots failed for lanes: ${failed.map(result => result.lanes).join(', ')}.`,
       );
+    }
+    return;
+  }
+
+  if (argv.includes('--run-risk-pilot')) {
+    console.log(
+      '[reliability-campaign] device-free risk scheduler / flake reducer / circuit breaker pilot',
+    );
+    // Parse shared flags (including --artifact-root) before the pilot; mode is
+    // unused by runRiskPilot but required by the campaign argv parser.
+    const pilotArgv = argv.some(
+      argument =>
+        argument === '--mode' ||
+        argument.startsWith('--mode=') ||
+        (!argument.startsWith('-') &&
+          (argument === 'diagnose' || argument === 'burn-in' || argument === 'qualify')),
+    )
+      ? argv
+      : ['diagnose', ...argv];
+    const pilotOptions = parseReliabilityCampaignArgv(pilotArgv, process.env);
+    const result = await runRiskPilot(
+      pilotOptions.artifactRoot != null
+        ? { artifactRoot: pilotOptions.artifactRoot }
+        : {},
+    );
+    console.log(
+      `[reliability-campaign] riskPilot isolated=${result.scheduledIsolated} affinity=${result.scheduledAffinity} artifacts=${result.artifactsWritten} circuitTripped=${result.circuitTripped} circuit=${result.circuitState} probabilisticNeighbors=${result.probabilisticNeighbors} dispatchBlocked=${result.dispatchBlockedWhileOpen} resumed=${result.resumedAcceptingWork}`,
+    );
+    if (
+      !result.circuitTripped ||
+      !result.dispatchBlockedWhileOpen ||
+      !result.resumedAcceptingWork ||
+      result.scheduledIsolated < 1 ||
+      result.scheduledAffinity < 1 ||
+      result.artifactsWritten < 1
+    ) {
+      throw new Error('Risk pilot failed adaptive flake-reducer checks.');
     }
     return;
   }
