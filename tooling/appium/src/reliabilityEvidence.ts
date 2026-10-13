@@ -192,8 +192,9 @@ export type EvidenceLedger = {
   listSuiteSignals(): SuiteSignal[];
   schedule(): ScheduledQualificationWork[];
   /**
-   * Non-authoritative projection for pilots/tests. Dashboard consumers must
-   * keep the manual/untested disclaimer until a later authoritative wire-up.
+   * Non-authoritative in-memory projection for pilots/tests. Campaign dashboards
+   * must go through `reliabilityDashboard` (ledger-derived); only pilot/live
+   * ledgers with credits promote statistical counts there.
    */
   projection(): StatsProjection;
   listCredits(filter?: { validOnly?: boolean; cellKey?: StatCellKey }): EvidenceCredit[];

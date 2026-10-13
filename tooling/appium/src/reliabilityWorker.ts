@@ -126,7 +126,7 @@ export type ReliabilityWorkerSummary = {
   failureArtifacts: number;
   /**
    * Non-authoritative statistical projection from this worker's evidence ledger.
-   * Live dashboards must keep the manual/untested disclaimer until later wire-up.
+   * Campaign dashboards use `reliabilityDashboard` for ledger-derived authority.
    */
   statsProjection: StatsProjection;
   diskBytes: number;

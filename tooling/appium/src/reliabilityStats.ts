@@ -3,8 +3,9 @@
  * failure checkpoints, and a device-free scheduler for per-cell remaining work.
  *
  * Suite-level reliability is a separate signal from per-cell confidence.
- * Projection payloads are non-authoritative until a later dashboard item wires
- * ledger-derived UI; keep the manual/untested disclaimer on exports.
+ * In-memory projection payloads stay non-authoritative for pilots/workers.
+ * Campaign truth is the ledger-derived dashboard in `reliabilityDashboard`
+ * (authoritative only for real pilot/live ledgers with credits).
  */
 
 import type { ReceiptCellKind } from './reliabilityReceipts.ts';
@@ -344,7 +345,11 @@ export const STATS_PROJECTION_DISCLAIMER =
 
 export type StatsProjection = {
   kind: 'manual-untested-projection';
-  /** Dashboard must not treat these counts as authoritative until wired later. */
+  /**
+   * Always false for the in-memory worker/campaign projection. Authoritative
+   * statistical counts live only on ledger-derived dashboard documents from
+   * `reliabilityDashboard` when the ledger source is pilot/live with credits.
+   */
   authoritative: false;
   disclaimer: typeof STATS_PROJECTION_DISCLAIMER;
   policy: QualificationPolicy;

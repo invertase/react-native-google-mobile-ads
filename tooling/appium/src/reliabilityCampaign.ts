@@ -127,7 +127,10 @@ export type CampaignController = {
     scopeId: string,
     options?: { reason?: string; matchingDigest?: string },
   ): InvalidateScopeResult;
-  /** Non-authoritative stats projection for pilots/tests (not live dashboard truth). */
+  /**
+   * Non-authoritative in-memory stats projection for pilots/tests.
+   * Ledger-derived campaign dashboards use `reliabilityDashboard`.
+   */
   statsProjection(): StatsProjection;
 };
 
@@ -723,7 +726,7 @@ export type StatsPilotResult = {
 /**
  * Device-free statistical qualification pilot: CP checkpoints, independent cell
  * credits, scoped invalidation + epoch freeze, suite signal separation, and a
- * non-authoritative projection payload for later dashboard consumers.
+ * non-authoritative in-memory projection (dashboard authority is separate).
  */
 export async function runStatsPilot(
   options: {
