@@ -31,7 +31,7 @@ export function parseProvisionPlatforms(
 ): ProvisionPlatform[] {
   if (value !== 'android' && value !== 'ios' && value !== 'both') {
     throw new Error(
-      'Usage: RNGMA_E2E_SLOT=<1|2|4-7> yarn tests:appium:provision <android|ios|both>',
+      'Usage: RNGMA_E2E_SLOT=<1-7> yarn tests:appium:provision <android|ios|both>',
     );
   }
   const platform = env.RNGMA_E2E_PLATFORM;

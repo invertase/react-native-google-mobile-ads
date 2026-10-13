@@ -1,13 +1,23 @@
 import {
   assertRngmaSlotAllowed,
   parseSlot,
+  RNFB_COEXISTENCE_SLOT,
   SERIAL_APPIUM_PORT,
   SERIAL_METRO_PORT,
   slotResources,
   worktreeMetroPort,
 } from './slots.ts';
 
-export const OPERATIONAL_SLOTS = [1, 2, 4, 5, 6, 7] as const;
+/** Explicit RNGMA operational slots (includes temporary coexistence slot 3). */
+export const OPERATIONAL_SLOTS = [1, 2, 3, 4, 5, 6, 7] as const;
+
+/**
+ * Slots swept by `--all-slots` with serial.
+ * Omits coexistence slot 3 so dedicated-host clears never silently displace RNFB.
+ */
+export const ALL_SLOTS_HOST_SLOTS = OPERATIONAL_SLOTS.filter(
+  slot => slot !== RNFB_COEXISTENCE_SLOT,
+);
 export const SERIAL_ANDROID_SERIAL = 'emulator-5554';
 export const SERIAL_ANDROID_AVD = 'TestingAVD';
 export const SERIAL_IOS_SIMULATOR = 'iPhone 17';
@@ -226,7 +236,7 @@ export function parseResourceOptions(
     }
   }
   if (allSlots) {
-    slots = [undefined, ...OPERATIONAL_SLOTS];
+    slots = [undefined, ...ALL_SLOTS_HOST_SLOTS];
   } else if (selectedSlotValue != null && selectedSlotValue !== '') {
     try {
       const slot = parseSlot(selectedSlotValue)!;

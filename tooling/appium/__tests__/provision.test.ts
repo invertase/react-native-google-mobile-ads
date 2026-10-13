@@ -287,7 +287,7 @@ describe('create-only slot provisioning', () => {
     );
   });
 
-  test('all generated commands are create-only and slot 3 is guarded', () => {
+  test('all generated commands are create-only and slot 3 may be provisioned explicitly', () => {
     const commands = [
       ...androidProvisionCommands({
         slot: 7,
@@ -302,16 +302,25 @@ describe('create-only slot provisioning', () => {
     executeCreateOnly(commands, command => executed.push(command));
     assert.deepEqual(executed, commands);
     assert.doesNotMatch(JSON.stringify(commands), /\b(delete|erase|remove|rename)\b/i);
+    const slot3Android = androidProvisionCommands({
+      slot: 3,
+      architecture: 'arm64',
+      avdNames: [],
+      installedPackages: [],
+    });
+    assert.match(JSON.stringify(slot3Android), /TestingAVD-3/);
+    assert.doesNotThrow(() => assertCreateOnly(slot3Android));
+    const slot3Ios = iosProvisionCommands(3, iosInventory());
+    assert.match(JSON.stringify(slot3Ios), /RN E2E iOS slot-3/);
     assert.throws(
       () =>
         androidProvisionCommands({
-          slot: 3,
+          slot: 0,
           architecture: 'arm64',
           avdNames: [],
           installedPackages: [],
         }),
-      /reserved for RNFB/,
+      /not an operational/,
     );
-    assert.throws(() => iosProvisionCommands(3, iosInventory()), /reserved for RNFB/);
   });
 });

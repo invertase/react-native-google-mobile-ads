@@ -333,9 +333,9 @@ test('parallel mapping rejects forbidden, duplicate, and missing entries', () =>
   const zero = copy();
   zero[0]!.slot = 0;
   assert.throws(() => validateParallelAssignments(zero), /slot 0/);
-  const reserved = copy();
-  reserved[0]!.slot = 3;
-  assert.throws(() => validateParallelAssignments(reserved), /slot 3/);
+  const coexistence = copy();
+  coexistence[0]!.slot = 3;
+  assert.doesNotThrow(() => validateParallelAssignments(coexistence));
   const duplicate = copy();
   duplicate[1]!.slot = 1;
   assert.throws(() => validateParallelAssignments(duplicate), /duplicate slot/);
@@ -349,9 +349,10 @@ test('parallel mapping rejects forbidden, duplicate, and missing entries', () =>
 });
 
 test('parallel slot configuration rejects malformed, forbidden, duplicate, and conflicting input', () => {
-  for (const value of ['', '1,4', '1,4,5,6', '1,,5', '1,1,5', '0,4,5', '1,3,5', '1,4,8']) {
+  for (const value of ['', '1,4', '1,4,5,6', '1,,5', '1,1,5', '0,4,5', '1,4,8']) {
     assert.throws(() => parseParallelSlots(value));
   }
+  assert.deepEqual(parseParallelSlots('1,3,5'), [1, 3, 5]);
   assert.throws(
     () =>
       createParallelPlan('android', {

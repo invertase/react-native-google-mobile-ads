@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { describe, test } from 'node:test';
 import { releaseResources } from '../src/resourceHost.ts';
 import {
+  ALL_SLOTS_HOST_SLOTS,
   classifyResources,
   isBusy,
-  OPERATIONAL_SLOTS,
   parseResourceOptions,
   ResourceArgumentError,
   resourceKey,
@@ -210,8 +210,8 @@ describe('Appium check/release resources', () => {
     }
   });
 
-  test('rejects slots 0 and 3 before resource work', () => {
-    for (const slot of ['', '0', '3']) {
+  test('rejects slot 0 and empty --slot before resource work', () => {
+    for (const slot of ['', '0']) {
       assert.throws(
         () => parseResourceOptions([`--slot=${slot}`], {}, 'release'),
         ResourceArgumentError,
@@ -219,7 +219,18 @@ describe('Appium check/release resources', () => {
     }
   });
 
-  test('--all-slots contains serial and operational slots but never slot 3', () => {
+  test('accepts explicit slot 3 for check/release', () => {
+    const options = parseResourceOptions(
+      ['--slot=3', '--platform=android'],
+      {},
+      'check',
+    );
+    assert.equal(options.targets[0]?.slot, 3);
+    assert.equal(options.targets[0]?.androidAvdName, 'TestingAVD-3');
+    assert.equal(options.targets[0]?.appiumPort, 15013);
+  });
+
+  test('--all-slots contains serial and host slots but never coexistence slot 3', () => {
     const options = parseResourceOptions(
       ['--all-slots', '--platform=android'],
       {},
@@ -227,7 +238,7 @@ describe('Appium check/release resources', () => {
     );
     assert.deepEqual(
       options.targets.map(target => target.slot),
-      [undefined, ...OPERATIONAL_SLOTS],
+      [undefined, ...ALL_SLOTS_HOST_SLOTS],
     );
     const rendered = JSON.stringify(options.targets);
     assert.doesNotMatch(rendered, /TestingAVD-3|emulator-5562|1500[7]|1501[3-5]/);

@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 export const MIN_SLOT = 0;
 export const MAX_SLOT = 7;
-export const RNGMA_RESERVED_SLOT = 3;
+/** Traditionally RNFB's slot; RNGMA may allocate it temporarily when requested explicitly. */
+export const RNFB_COEXISTENCE_SLOT = 3;
 export const SERIAL_METRO_PORT = 8081;
 export const SERIAL_APPIUM_PORT = 4725;
 
@@ -47,7 +48,7 @@ export function parseSlot(value: string | undefined): number | undefined {
   return slot;
 }
 
-/** Generic slot math intentionally supports all slots, including RNFB's slot 3. */
+/** Generic slot math intentionally supports all slots, including coexistence slot 3. */
 export function slotResources(slot: number, platform: SlotPlatform): SlotResources {
   if (!Number.isInteger(slot) || slot < MIN_SLOT || slot > MAX_SLOT) {
     throw new Error(`slot must be an integer from ${MIN_SLOT} to ${MAX_SLOT}; received "${slot}".`);
@@ -78,7 +79,7 @@ export function requireRngmaSlot(value: string | undefined): number {
   const slot = parseSlot(value);
   if (slot == null) {
     throw new Error(
-      'RNGMA_E2E_SLOT is required. Choose an RNGMA slot (1, 2, or 4-7); serial devices are never provisioned.',
+      'RNGMA_E2E_SLOT is required. Choose an RNGMA slot (1-7); serial devices are never provisioned.',
     );
   }
   assertRngmaSlotAllowed(slot);
@@ -86,14 +87,9 @@ export function requireRngmaSlot(value: string | undefined): number {
 }
 
 export function assertRngmaSlotAllowed(slot: number): void {
-  if (slot === RNGMA_RESERVED_SLOT) {
-    throw new Error(
-      'RNGMA_E2E_SLOT=3 is reserved for RNFB and cannot be provisioned, selected, or run by RNGMA.',
-    );
-  }
   if (slot === 0) {
     throw new Error(
-      'RNGMA_E2E_SLOT=0 is library-supported but not an operational RNGMA slot; choose 1, 2, or 4-7.',
+      'RNGMA_E2E_SLOT=0 is library-supported but not an operational RNGMA slot; choose 1-7.',
     );
   }
 }
