@@ -50,6 +50,7 @@ import type {
   AdErrorPayload,
   AdEventListener,
   AdEventPayload,
+  GAMBannerAdProps,
   AdsConsentInfo,
   AdsConsentInfoOptions,
   AdsConsentInterface,
@@ -942,6 +943,38 @@ const paidListener: AdEventListener<AdEventType.PAID> = (payload: PaidEvent) => 
   console.log(payload.currency, payload.valueMicros);
 };
 console.log(paidPayloadExact, paidListener);
+
+// EARNED_REWARD payload is exactly RewardedAdReward (not undefined / PaidEvent).
+type EarnedRewardPayloadIsReward = Equal<
+  AdEventPayload<RewardedAdEventType.EARNED_REWARD>,
+  RewardedAdReward
+>;
+const earnedRewardPayloadExact: EarnedRewardPayloadIsReward = true;
+const earnedRewardListener: AdEventListener<RewardedAdEventType.EARNED_REWARD> = (
+  payload: RewardedAdReward,
+) => {
+  console.log(payload.type, payload.amount);
+};
+console.log(earnedRewardPayloadExact, earnedRewardListener);
+
+// GAM banner manual-impression prop stays optional boolean.
+type ManualImpressionsEnabledProp = Equal<
+  GAMBannerAdProps['manualImpressionsEnabled'],
+  boolean | undefined
+>;
+const manualImpressionsEnabledExact: ManualImpressionsEnabledProp = true;
+console.log(manualImpressionsEnabledExact);
+
+// GAM banner instance ref exposes recordManualImpression + load.
+type GAMBannerRefMethods = {
+  recordManualImpression: () => void;
+  load: () => void;
+};
+type GAMBannerInstanceHasManualImpression = GAMBannerAd extends GAMBannerRefMethods
+  ? true
+  : false;
+const gamBannerRefMethodsLock: GAMBannerInstanceHasManualImpression = true;
+console.log(gamBannerRefMethodsLock);
 
 // ERROR payload keeps structured AdErrorPayload fields on a real Error.
 type ErrorPayloadIsStructured = Equal<AdEventPayload<AdEventType.ERROR>, Error & AdErrorPayload>;
