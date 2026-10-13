@@ -308,6 +308,12 @@ export function createLeaseController(options: LeaseControllerOptions): LeaseCon
       if (stolenWork != null) {
         const workItemId = stealOptions.reassignWorkTo ?? stolenWork;
         const workerId = stealOptions.workerId ?? 'stealer';
+        // Pause / circuit-open: reclaim the expired lease but do not start work on
+        // idle lanes (same acceptingWork gate as assignWork / stealWorkFromBusy).
+        if (!acceptingWork) {
+          queue.unshift({ workItemId, preferred: expired.key });
+          return { stolen, reassignedTo: null };
+        }
         // Prefer a different idle lane. When every other lane is busy (or the set
         // is one-lane), queue the stolen work and drain onto the reclaimed idle.
         const alternate = idleLeases().find(lease => lease.leaseId !== expired.leaseId);

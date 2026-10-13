@@ -35,6 +35,11 @@ import {
   type ReliabilityJobIdentity,
 } from './reliabilityReceipts.ts';
 import { reliabilityMetroEnv } from './reliabilityMetro.ts';
+import {
+  createFlakeReducer,
+  type FlakeReducer,
+} from './reliabilityReducer.ts';
+import { greenScopeForWorkerPass } from './reliabilityRisk.ts';
 import { assertRngmaSlotAllowed, parseSlot } from './slots.ts';
 import type { ShardId } from './sessionShards.ts';
 
@@ -101,6 +106,8 @@ export type ReliabilityWorkerSummary = {
     test: number;
   };
   shardFailures: number;
+  /** Exact failure artifacts written by the adaptive flake reducer. */
+  failureArtifacts: number;
   diskBytes: number;
   diskCeilingBytes: number;
 };
@@ -369,6 +376,8 @@ export async function runReliabilityWorker(
     acquire?: SlotAcquireDeps;
     release?: (slot: number, platform: ReliabilityPlatform) => Promise<void>;
     logs?: LogManager;
+    /** Optional adaptive flake reducer; defaults to a store under receiptRoot. */
+    reducer?: FlakeReducer;
   },
 ): Promise<ReliabilityWorkerSummary> {
   const policy = reliabilityModePolicy(options.mode);
@@ -397,6 +406,12 @@ export async function runReliabilityWorker(
       path.join(options.logRoot, job.jobId),
       options.logPolicy ?? DEFAULT_LOG_POLICY,
     );
+  const reducer =
+    deps.reducer ??
+    createFlakeReducer({
+      artifactRoot: path.join(options.receiptRoot, 'failure-artifacts'),
+      now,
+    });
   const ownership: SlotOwnership = createSlotOwnership(options.slot, options.platform);
 
   if (options.dryRun) {
@@ -414,6 +429,7 @@ export async function runReliabilityWorker(
   let iterationsCompleted = 0;
   let shardFailures = 0;
   let passIndex = 0;
+  let failureArtifacts = 0;
 
   try {
     for (let iteration = 1; iteration <= options.iterations; iteration += 1) {
@@ -443,6 +459,7 @@ export async function runReliabilityWorker(
 
         const expectedCases = [...entry.caseIds];
         const reported = new Map(result.tests.map(test => [test.caseId, test.outcome]));
+        const failedCaseIds: string[] = [];
         for (const caseId of expectedCases) {
           const outcome = reported.get(caseId) ?? 'skipped';
           store.append({
@@ -453,6 +470,16 @@ export async function runReliabilityWorker(
             outcome,
             counted: policy.creditsReceipts && outcome === 'pass',
           });
+          if (outcome === 'pass') {
+            const scope = greenScopeForWorkerPass({
+              mode: options.mode,
+              layoutKind: options.layoutKind,
+              coRunCaseCount: expectedCases.length,
+            });
+            reducer.recordPass(caseId, options.platform, scope);
+          } else if (outcome === 'fail') {
+            failedCaseIds.push(caseId);
+          }
           reported.delete(caseId);
         }
         for (const [caseId, outcome] of reported) {
@@ -465,6 +492,20 @@ export async function runReliabilityWorker(
             counted: false,
             detail: 'not in layout digest',
           });
+        }
+
+        for (const caseId of failedCaseIds) {
+          reducer.reduceFailure({
+            caseId,
+            platform: options.platform,
+            detail: result.detail,
+            neighbors: expectedCases.filter(id => id !== caseId),
+            shardId: entry.shardId,
+            jobId: job.jobId,
+            iteration,
+            logPath,
+          });
+          failureArtifacts += 1;
         }
 
         if (result.outcome !== 'pass') {
@@ -520,6 +561,7 @@ export async function runReliabilityWorker(
       test: store.countCredits({ cellKind: 'test', outcome: 'pass' }),
     },
     shardFailures,
+    failureArtifacts,
     diskBytes: logs.measureDiskUsage(),
     diskCeilingBytes: logs.policy.diskCeilingBytes,
   };

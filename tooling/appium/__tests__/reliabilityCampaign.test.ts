@@ -95,6 +95,18 @@ describe('elastic capacity parsing', () => {
     );
     assert.equal(pilot.pilotLanes, 4);
     assert.equal(laneCount(pilot.slotSet), 4);
+
+    const withArtifacts = parseReliabilityCampaignArgv(
+      [
+        'diagnose',
+        '--slots=1',
+        '--dry-run',
+        '--run-risk-pilot',
+        '--artifact-root=/tmp/rngma-risk-artifacts',
+      ],
+      {},
+    );
+    assert.equal(withArtifacts.artifactRoot, '/tmp/rngma-risk-artifacts');
   });
 
   test('campaign CLI refuses non-dry-run except capacity pilots entry', () => {
