@@ -64,7 +64,7 @@ const REQUEST_OUTCOME_NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckp
     androidSources: [android('ReactNativeGoogleMobileAdsBannerAdViewManager.java')],
     iosSources: [ios('RNGoogleMobileAdsBannerViewManager.mm')],
     jacocoExpectation:
-      'GAM anchored adaptive sizes execute the GAM banner bridge; fluid-only navigation remains a separate gap.',
+      'GAM anchored adaptive sizes execute the GAM banner bridge; manual-impression canary is non-blocking and fluid-only navigation remains a separate gap.',
   },
   {
     contractId: REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS[3].id,
@@ -116,7 +116,7 @@ const REQUEST_OUTCOME_NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckp
       ios('RNGoogleMobileAdsFullScreenAd.mm'),
     ],
     jacocoExpectation:
-      'Rewarded load/show/close executes rewarded module; earned-reward branches may remain uncovered by design.',
+      'Rewarded load/show/close executes rewarded module; official test-unit earned-reward is a blocking Appium success marker.',
   },
   {
     contractId: REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS[7].id,
@@ -129,7 +129,7 @@ const REQUEST_OUTCOME_NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckp
       ios('RNGoogleMobileAdsFullScreenAd.mm'),
     ],
     jacocoExpectation:
-      'Rewarded-interstitial load/show/close executes RWI module where platform capability allows pool/preload creation.',
+      'Rewarded-interstitial load/show/close executes RWI module; official test-unit earned-reward is a blocking Appium success marker.',
   },
   {
     contractId: REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS[8].id,
@@ -163,14 +163,14 @@ const REQUEST_OUTCOME_NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckp
     androidSources: [android('ReactNativeGoogleMobileAdsRewardedModule.kt')],
     iosSources: [ios('RNGoogleMobileAdsRewardedModule.mm')],
     jacocoExpectation:
-      'Rewarded hook load/show/close executes rewarded module; paid/earned-reward branches stay non-blocking.',
+      'Rewarded hook load/show/close executes rewarded module; official test-unit earned-reward is blocking while paid-event absence stays non-blocking.',
   },
   {
     contractId: REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS[12].id,
     androidSources: [android('ReactNativeGoogleMobileAdsRewardedInterstitialModule.kt')],
     iosSources: [ios('RNGoogleMobileAdsRewardedInterstitialModule.mm')],
     jacocoExpectation:
-      'Rewarded-interstitial hook executes RWI module on platforms where the format is supported.',
+      'Rewarded-interstitial hook executes RWI module; official test-unit earned-reward is blocking while paid-event absence stays non-blocking.',
   },
   {
     contractId: REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS[13].id,

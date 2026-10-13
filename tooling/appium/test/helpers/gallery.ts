@@ -26,6 +26,11 @@ import {
   type RequestOutcomeClassification,
   type RequestFingerprint,
 } from '../../src/requestOutcomes.ts';
+import {
+  assertEarnedRewardLifecycleText,
+  manualImpressionCanaryFromText,
+  paidEventCanaryFromLifecycle,
+} from '../../src/rewardedOutcomes.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
 
 /** Repo root from `tooling/appium/test/helpers/` — no host-absolute checkout paths. */
@@ -3524,7 +3529,7 @@ async function runAndroidHookShowCloseLifecycle(formatId: string): Promise<void>
   }
 }
 
-/** Hook screens publish `Hook lifecycle:` markers; reward/paid delivery stays non-blocking. */
+/** Hook screens publish `Hook lifecycle:` markers; paid-event absence stays non-blocking. */
 async function assertHookShowCloseLifecycle(formatId: string): Promise<void> {
   await tapFormatAction(AppiumTestIds.action.show(formatId));
   if (isAndroid()) {
@@ -3547,6 +3552,62 @@ async function assertHookShowCloseLifecycle(formatId: string): Promise<void> {
       showing: HOOK_LIFECYCLE_SHOWING,
       closed: HOOK_LIFECYCLE_CLOSED,
     })}`,
+  );
+}
+
+async function assertEarnedRewardAndPaidCanary(formatId: string): Promise<void> {
+  const platform = isAndroid() ? 'android' : 'ios';
+  const lifecycleText = await safeShowLifecycleText(formatId);
+  assertEarnedRewardLifecycleText(formatId, lifecycleText);
+  console.log(
+    `[earned-reward-proof] ${JSON.stringify({
+      format: formatId,
+      platform,
+      earned: true,
+    })}`,
+  );
+  console.log(
+    `[paid-event-canary] ${JSON.stringify(
+      paidEventCanaryFromLifecycle(formatId, platform, lifecycleText),
+    )}`,
+  );
+}
+
+/**
+ * Non-blocking GAM banner canary: tap recordManualImpression and log recorded/callback
+ * markers. Absence of callback must never fail (no server-reporting claim).
+ */
+async function observeManualImpressionCanary(formatId: string): Promise<void> {
+  const platform = isAndroid() ? 'android' : 'ios';
+  try {
+    await tapFormatAction(AppiumTestIds.action.recordImpression(formatId), 'recordManualImpression');
+  } catch (error) {
+    console.log(
+      `[manual-impression-canary] ${JSON.stringify({
+        format: formatId,
+        platform,
+        recorded: false,
+        callback: false,
+        blocking: false,
+        error: String(error),
+      })}`,
+    );
+    return;
+  }
+  // Brief poll for an optional onAdImpression callback; never throw on absence.
+  const deadline = Date.now() + 3000;
+  let lifecycleText = '';
+  while (Date.now() < deadline) {
+    lifecycleText = await safeShowLifecycleText(formatId);
+    if (lifecycleText.includes('callback=true')) {
+      break;
+    }
+    await sleep(250);
+  }
+  console.log(
+    `[manual-impression-canary] ${JSON.stringify(
+      manualImpressionCanaryFromText(formatId, platform, lifecycleText),
+    )}`,
   );
 }
 
@@ -3812,6 +3873,12 @@ export async function proveRepresentativeRequestOutcome(
         await assertShowCloseLifecycle(format.id);
       } else if (format.showClose) {
         await assertShowCloseLifecycle(format.id);
+      }
+      if (format.requireEarnedReward) {
+        await assertEarnedRewardAndPaidCanary(format.id);
+      }
+      if (format.manualImpressionCanary) {
+        await observeManualImpressionCanary(format.id);
       }
     },
   });
