@@ -1,6 +1,6 @@
 /**
- * Single-slot ownership transitions for the reliability worker.
- * Elastic multi-slot leases generalize these states later.
+ * Per-slot ownership transitions for the reliability worker.
+ * Elastic multi-slot leases compose these states via the campaign controller.
  */
 
 export const OWNERSHIP_STATES = [

@@ -1,4 +1,5 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { createWriteStream, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   buildReliabilityLayout,
@@ -33,6 +34,7 @@ import {
   type ReceiptStore,
   type ReliabilityJobIdentity,
 } from './reliabilityReceipts.ts';
+import { reliabilityMetroEnv } from './reliabilityMetro.ts';
 import { assertRngmaSlotAllowed, parseSlot } from './slots.ts';
 import type { ShardId } from './sessionShards.ts';
 
@@ -226,12 +228,118 @@ export function reliabilityShardEnv(
   baseEnv: NodeJS.ProcessEnv = process.env,
 ): NodeJS.ProcessEnv {
   return {
-    ...baseEnv,
-    RNGMA_E2E_SLOT: String(options.slot),
-    RNGMA_E2E_PLATFORM: options.platform,
-    RNGMA_E2E_METRO_SLOT: String(options.slot),
+    ...reliabilityMetroEnv(options.slot, options.platform, baseEnv),
     RNGMA_WDIO_SPEC: spec,
     [RELIABILITY_RUNNER_BAIL_ENV]: '0',
+  };
+}
+
+export type LiveAppiumShardSpawnRequest = {
+  platform: ReliabilityPlatform;
+  slot: number;
+  spec: string;
+  logPath: string;
+  env: NodeJS.ProcessEnv;
+};
+
+export type LiveAppiumShardSpawnResult = {
+  exitCode: number;
+  /** Optional structured outcomes when the spawn wrapper can parse them. */
+  startup?: ShardRunResult['startup'];
+  preamble?: ShardRunResult['preamble'];
+  tests?: ShardRunResult['tests'];
+  detail?: string;
+};
+
+/**
+ * Spawn a child and tee stdout/stderr into `logPath` (append; the worker pre-creates
+ * the file with `wx`). Truncated text is returned as `detail` for receipts; full
+ * output stays on disk for failure retention / pass sampling / disk ceiling.
+ */
+export function spawnProcessToLog(options: {
+  bin: string;
+  args: readonly string[];
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+  logPath: string;
+}): Promise<LiveAppiumShardSpawnResult> {
+  return new Promise((resolve, reject) => {
+    mkdirSync(path.dirname(options.logPath), { recursive: true });
+    const log = createWriteStream(options.logPath, { flags: 'a' });
+    const child = spawn(options.bin, [...options.args], {
+      cwd: options.cwd,
+      env: options.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const chunks: Buffer[] = [];
+    const onChunk = (chunk: Buffer) => {
+      chunks.push(chunk);
+      log.write(chunk);
+    };
+    child.stdout?.on('data', onChunk);
+    child.stderr?.on('data', onChunk);
+    child.on('error', error => {
+      log.end(() => reject(error));
+    });
+    child.on('close', code => {
+      log.end(() => {
+        const detail = Buffer.concat(chunks).toString('utf8').slice(-4000);
+        resolve({
+          exitCode: code ?? 1,
+          detail:
+            detail.length > 0
+              ? detail
+              : `process exited ${code ?? 1} (log ${options.logPath})`,
+        });
+      });
+    });
+  });
+}
+
+/**
+ * Live Appium shard runner path for the reliability worker.
+ * Inject `spawn` in tests; production wiring launches the platform WDIO conf.
+ * Prefer `--dry-run` / mocked runners on product-edit checkouts — do not share
+ * a checkout with live campaign Metros.
+ */
+export function createLiveAppiumShardRunner(deps: {
+  platform: ReliabilityPlatform;
+  slot: number;
+  spawn: (request: LiveAppiumShardSpawnRequest) => Promise<LiveAppiumShardSpawnResult>;
+}): ReliabilityRunner {
+  return {
+    async runShard(request) {
+      const result = await deps.spawn({
+        platform: deps.platform,
+        slot: deps.slot,
+        spec: request.spec,
+        logPath: request.logPath,
+        env: request.env,
+      });
+      const passed = result.exitCode === 0;
+      const startup =
+        result.startup ??
+        ({
+          'session-create': passed ? 'pass' : 'fail',
+          'app-launch': passed ? 'pass' : 'skipped',
+          'bundle-load': passed ? 'pass' : 'skipped',
+          'gallery-ready': passed ? 'pass' : 'skipped',
+        } as ShardRunResult['startup']);
+      const preamble = result.preamble ?? (passed ? 'pass' : 'skipped');
+      const tests =
+        result.tests ??
+        request.caseIds.map(caseId => ({
+          caseId,
+          outcome: (passed ? 'pass' : 'skipped') as 'pass' | 'skipped',
+        }));
+      return {
+        outcome: passed ? 'pass' : 'fail',
+        startup,
+        preamble,
+        tests,
+        detail: result.detail ?? (passed ? 'live appium shard pass' : 'live appium shard fail'),
+      };
+    },
   };
 }
 
