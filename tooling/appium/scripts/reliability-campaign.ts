@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   assertCampaignDryRun,
   createCampaignController,
@@ -9,7 +11,33 @@ import {
   runStatsPilot,
 } from '../src/reliabilityCampaign.ts';
 import { laneCount } from '../src/reliabilityCapacity.ts';
+import {
+  DASHBOARD_NON_AUTHORITATIVE_BANNER,
+  defaultDashboardReportRoot,
+  refreshReliabilityDashboard,
+  resolveRefreshDashboardLedgerSource,
+  runDashboardPilot,
+} from '../src/reliabilityDashboard.ts';
 import { STATS_PROJECTION_DISCLAIMER } from '../src/reliabilityStats.ts';
+
+const repositoryRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../..',
+);
+
+function flagValue(argv: readonly string[], name: string): string | undefined {
+  const prefix = `${name}=`;
+  for (const argument of argv) {
+    if (argument.startsWith(prefix)) {
+      return argument.slice(prefix.length);
+    }
+  }
+  const index = argv.indexOf(name);
+  if (index >= 0) {
+    return argv[index + 1];
+  }
+  return undefined;
+}
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
@@ -91,6 +119,60 @@ async function main(): Promise<void> {
       result.projectionDisclaimer !== STATS_PROJECTION_DISCLAIMER
     ) {
       throw new Error('Stats pilot failed statistical qualification checks.');
+    }
+    return;
+  }
+
+  if (argv.includes('--run-dashboard-pilot')) {
+    console.log(
+      '[reliability-campaign] device-free ledger-derived dashboard / integrity / ETA pilot',
+    );
+    const reportRoot = flagValue(argv, '--dashboard-root');
+    const result = await runDashboardPilot(
+      reportRoot != null ? { reportRoot } : {},
+    );
+    console.log(
+      `[reliability-campaign] dashboardPilot authoritativeEmpty=${result.authoritativeEmpty} authoritativePilot=${result.authoritativePilot} integrityOk=${result.integrityOk} snapshotWritten=${result.snapshotWritten} etaBaseMs=${result.etaBaseMs} canvasDeferred=${result.canvasDeferred} disclaimerEmpty=${JSON.stringify(result.disclaimerEmpty)} disclaimerPilot=${JSON.stringify(result.disclaimerPilot)}`,
+    );
+    if (
+      result.authoritativeEmpty !== false ||
+      result.authoritativePilot !== true ||
+      !result.integrityOk ||
+      !result.snapshotWritten ||
+      result.etaBaseMs == null ||
+      result.disclaimerEmpty !== DASHBOARD_NON_AUTHORITATIVE_BANNER ||
+      result.disclaimerPilot != null
+    ) {
+      throw new Error('Dashboard pilot failed ledger-derived dashboard checks.');
+    }
+    return;
+  }
+
+  if (argv.includes('--refresh-dashboard')) {
+    // Formats: --dashboard-ledger=EvidenceLedgerSnapshot (kind evidence-ledger-snapshot;
+    // typically ledger-snapshot.json). snapshots/epoch-<n>.json is DashboardDocument
+    // and is rejected. Omitted --dashboard-source with a ledger file defaults to
+    // fixture (non-authoritative); pass pilot|live explicitly to promote credits.
+    const reportRoot =
+      flagValue(argv, '--dashboard-root') ??
+      defaultDashboardReportRoot(repositoryRoot);
+    const ledgerSnapshotPath = flagValue(argv, '--dashboard-ledger');
+    const campaignMetaPath = flagValue(argv, '--dashboard-meta');
+    const ledgerSource = resolveRefreshDashboardLedgerSource({
+      explicitSource: flagValue(argv, '--dashboard-source'),
+      ledgerSnapshotPresent: ledgerSnapshotPath != null,
+    });
+    const written = refreshReliabilityDashboard({
+      reportRoot,
+      ...(ledgerSnapshotPath != null ? { ledgerSnapshotPath } : {}),
+      ...(campaignMetaPath != null ? { campaignMetaPath } : {}),
+      ledgerSource,
+    });
+    console.log(
+      `[reliability-campaign] refreshed dashboard root=${reportRoot} json=${written.jsonPath} md=${written.markdownPath} epochSnapshot=${written.snapshotPath} ledgerSnapshot=${written.ledgerSnapshotPath ?? 'n/a'} source=${ledgerSource} authoritative=${written.document.authoritative} integrityOk=${written.document.integrity.ok} epoch=${written.document.epoch}`,
+    );
+    if (!written.document.integrity.ok) {
+      throw new Error('Dashboard refresh failed integrity checks.');
     }
     return;
   }
