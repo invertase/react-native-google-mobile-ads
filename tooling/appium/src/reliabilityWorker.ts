@@ -36,10 +36,21 @@ import {
 } from './reliabilityReceipts.ts';
 import { reliabilityMetroEnv } from './reliabilityMetro.ts';
 import {
+  createEvidenceLedger,
+  defaultCellDependencyDigests,
+  type EvidenceLedger,
+} from './reliabilityEvidence.ts';
+import {
   createFlakeReducer,
   type FlakeReducer,
 } from './reliabilityReducer.ts';
 import { greenScopeForWorkerPass } from './reliabilityRisk.ts';
+import {
+  configurationForPlatformBackend,
+  isQualifyingConfiguration,
+  STATS_PROJECTION_DISCLAIMER,
+  type StatsProjection,
+} from './reliabilityStats.ts';
 import { assertRngmaSlotAllowed, parseSlot } from './slots.ts';
 import type { ShardId } from './sessionShards.ts';
 
@@ -81,6 +92,11 @@ export type ReliabilityWorkerOptions = {
   /** When true, do not invoke live device acquire — used by unit/harness pilots. */
   dryRun: boolean;
   allowForceAcquire: boolean;
+  /**
+   * Android backend selection for statistical configuration mapping.
+   * Classic is canary-only and never receives statistical credits.
+   */
+  androidBackend?: 'classic' | 'nextgen';
   temporaryShardIds?: readonly ShardId[];
   layout?: ReliabilityLayout;
   logPolicy?: LogPolicy;
@@ -108,6 +124,11 @@ export type ReliabilityWorkerSummary = {
   shardFailures: number;
   /** Exact failure artifacts written by the adaptive flake reducer. */
   failureArtifacts: number;
+  /**
+   * Non-authoritative statistical projection from this worker's evidence ledger.
+   * Live dashboards must keep the manual/untested disclaimer until later wire-up.
+   */
+  statsProjection: StatsProjection;
   diskBytes: number;
   diskCeilingBytes: number;
 };
@@ -159,7 +180,19 @@ const RELIABILITY_FLAGS_WITH_VALUE = new Set([
   '--receipt-root',
   '--log-root',
   '--temporary-shards',
+  '--android-backend',
 ]);
+
+function parseAndroidBackend(
+  value: string | undefined,
+): 'classic' | 'nextgen' | undefined {
+  if (value == null || value === '') return undefined;
+  if (value === 'classic' || value === 'legacy') return 'classic';
+  if (value === 'nextgen') return 'nextgen';
+  throw new Error(
+    `android-backend must be classic, legacy, or nextgen; received "${value}".`,
+  );
+}
 
 /**
  * First non-flag positional that is not a known flag's value (e.g. `--slot 1 diagnose`).
@@ -211,6 +244,9 @@ export function parseReliabilityWorkerArgv(
   const logRoot =
     flagValue(argv, '--log-root') ?? path.join('/tmp/rngma-e2e-reliability', 'logs');
   const temporary = flagValue(argv, '--temporary-shards');
+  const androidBackend = parseAndroidBackend(
+    flagValue(argv, '--android-backend') ?? env.RNGMA_ANDROID_BACKEND,
+  );
   return {
     mode,
     platform,
@@ -222,6 +258,7 @@ export function parseReliabilityWorkerArgv(
     dryRun: hasFlag(argv, '--dry-run'),
     allowForceAcquire:
       hasFlag(argv, '--authorize-force-acquire') || env.RNGMA_E2E_FORCE_ACQUIRE === '1',
+    ...(androidBackend != null ? { androidBackend } : {}),
     ...(temporary
       ? { temporaryShardIds: temporary.split(',') as ShardId[] }
       : {}),
@@ -356,9 +393,10 @@ function recordStartup(
   shardId: ShardId,
   startup: ShardRunResult['startup'],
   counted: boolean,
-): void {
+): Record<(typeof STARTUP_CELL_IDS)[number], string> {
+  const receiptIds = {} as Record<(typeof STARTUP_CELL_IDS)[number], string>;
   for (const cellId of STARTUP_CELL_IDS) {
-    store.append({
+    const receipt = store.append({
       iteration,
       cellKind: 'startup',
       cellId,
@@ -366,7 +404,9 @@ function recordStartup(
       outcome: startup[cellId],
       counted: counted && startup[cellId] === 'pass',
     });
+    receiptIds[cellId] = receipt.receiptId;
   }
+  return receiptIds;
 }
 
 export async function runReliabilityWorker(
@@ -378,6 +418,8 @@ export async function runReliabilityWorker(
     logs?: LogManager;
     /** Optional adaptive flake reducer; defaults to a store under receiptRoot. */
     reducer?: FlakeReducer;
+    /** Optional statistical evidence ledger; defaults to an in-memory ledger. */
+    evidence?: EvidenceLedger;
   },
 ): Promise<ReliabilityWorkerSummary> {
   const policy = reliabilityModePolicy(options.mode);
@@ -412,6 +454,41 @@ export async function runReliabilityWorker(
       artifactRoot: path.join(options.receiptRoot, 'failure-artifacts'),
       now,
     });
+  const evidence = deps.evidence ?? createEvidenceLedger({ now });
+  const configuration = configurationForPlatformBackend(
+    options.platform,
+    options.platform === 'android' ? (options.androidBackend ?? 'nextgen') : undefined,
+  );
+  const qualifyingConfiguration = isQualifyingConfiguration(configuration)
+    ? configuration
+    : null;
+  const statisticalCredits = policy.creditsReceipts && qualifyingConfiguration != null;
+
+  const creditStatistical = (
+    cellKind: 'startup' | 'preamble' | 'test',
+    cellId: string,
+    outcome: 'pass' | 'fail' | 'skipped' | 'cancelled',
+    receiptId?: string,
+  ): void => {
+    if (!statisticalCredits || qualifyingConfiguration == null) return;
+    if (outcome !== 'pass' && outcome !== 'fail') return;
+    const cellKey = {
+      configuration: qualifyingConfiguration,
+      cellKind,
+      cellId,
+    };
+    evidence.credit({
+      cellKey,
+      outcome,
+      retainedInSample: outcome === 'fail',
+      dependencyDigests: defaultCellDependencyDigests({
+        cellKey,
+        layoutDigest: layout.digest,
+      }),
+      ...(receiptId != null ? { receiptId } : {}),
+    });
+  };
+
   const ownership: SlotOwnership = createSlotOwnership(options.slot, options.platform);
 
   if (options.dryRun) {
@@ -434,6 +511,7 @@ export async function runReliabilityWorker(
   try {
     for (let iteration = 1; iteration <= options.iterations; iteration += 1) {
       ownership.apply('start-work');
+      let iterationShardFailures = 0;
       for (const entry of layout.entries) {
         const logPath = logs.shardLogPath(iteration, entry.shardId);
         mkdirSync(path.dirname(logPath), { recursive: true });
@@ -447,8 +525,22 @@ export async function runReliabilityWorker(
           env: reliabilityShardEnv(options, entry.spec),
         });
 
-        recordStartup(store, iteration, entry.shardId, result.startup, policy.creditsReceipts);
-        store.append({
+        const startupReceiptIds = recordStartup(
+          store,
+          iteration,
+          entry.shardId,
+          result.startup,
+          policy.creditsReceipts,
+        );
+        for (const cellId of STARTUP_CELL_IDS) {
+          creditStatistical(
+            'startup',
+            cellId,
+            result.startup[cellId],
+            startupReceiptIds[cellId],
+          );
+        }
+        const preambleReceipt = store.append({
           iteration,
           cellKind: 'preamble',
           cellId: 'gallery-home',
@@ -456,13 +548,19 @@ export async function runReliabilityWorker(
           outcome: result.preamble,
           counted: policy.creditsReceipts && result.preamble === 'pass',
         });
+        creditStatistical(
+          'preamble',
+          'gallery-home',
+          result.preamble,
+          preambleReceipt.receiptId,
+        );
 
         const expectedCases = [...entry.caseIds];
         const reported = new Map(result.tests.map(test => [test.caseId, test.outcome]));
         const failedCaseIds: string[] = [];
         for (const caseId of expectedCases) {
           const outcome = reported.get(caseId) ?? 'skipped';
-          store.append({
+          const testReceipt = store.append({
             iteration,
             cellKind: 'test',
             cellId: caseId,
@@ -470,6 +568,7 @@ export async function runReliabilityWorker(
             outcome,
             counted: policy.creditsReceipts && outcome === 'pass',
           });
+          creditStatistical('test', caseId, outcome, testReceipt.receiptId);
           if (outcome === 'pass') {
             const scope = greenScopeForWorkerPass({
               mode: options.mode,
@@ -510,6 +609,7 @@ export async function runReliabilityWorker(
 
         if (result.outcome !== 'pass') {
           shardFailures += 1;
+          iterationShardFailures += 1;
         }
         await logs.finalizeShardLog({
           iteration,
@@ -522,6 +622,14 @@ export async function runReliabilityWorker(
         }
         logs.enforceDiskCeiling();
         // Runner-level bail is off: continue to the next shard regardless.
+      }
+      if (qualifyingConfiguration != null && statisticalCredits && options.layoutKind === 'final') {
+        // Suite signal is independent of per-cell confidence and never erases
+        // earlier cell receipts when a later shard in another iteration fails.
+        evidence.creditSuite({
+          configuration: qualifyingConfiguration,
+          outcome: iterationShardFailures === 0 ? 'pass' : 'fail',
+        });
       }
       ownership.apply('finish-work');
       iterationsCompleted += 1;
@@ -543,6 +651,11 @@ export async function runReliabilityWorker(
     }
   }
 
+  const statsProjection = evidence.projection();
+  if (statsProjection.disclaimer !== STATS_PROJECTION_DISCLAIMER) {
+    throw new Error('Statistical projection missing required non-authoritative disclaimer.');
+  }
+
   const summary: ReliabilityWorkerSummary = {
     job,
     mode: options.mode,
@@ -562,6 +675,7 @@ export async function runReliabilityWorker(
     },
     shardFailures,
     failureArtifacts,
+    statsProjection,
     diskBytes: logs.measureDiskUsage(),
     diskCeilingBytes: logs.policy.diskCeilingBytes,
   };

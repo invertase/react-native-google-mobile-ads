@@ -21,6 +21,12 @@ import {
   type CircuitSnapshot,
 } from './reliabilityCircuitBreaker.ts';
 import {
+  createEvidenceLedger,
+  defaultCellDependencyDigests,
+  type EvidenceLedger,
+  type InvalidateScopeResult,
+} from './reliabilityEvidence.ts';
+import {
   createLeaseController,
   type LeaseController,
   type LeaseSnapshot,
@@ -36,6 +42,17 @@ import {
   type ReduceFailureResult,
 } from './reliabilityReducer.ts';
 import type { ScheduledUnit } from './reliabilityRisk.ts';
+import {
+  configurationForPlatformBackend,
+  isQualifyingConfiguration,
+  PRE_REGISTERED_FAILURE_CHECKPOINTS,
+  ZERO_FAILURE_OBSERVATION_TARGET,
+  type QualifyingConfiguration,
+  type ScheduledQualificationWork,
+  type StatsProjection,
+  type StatCellKey,
+} from './reliabilityStats.ts';
+import type { ReceiptCellKind } from './reliabilityReceipts.ts';
 
 export type CampaignControllerOptions = {
   mode: ReliabilityMode;
@@ -58,6 +75,7 @@ export type CampaignController = {
   leases: LeaseController;
   reducer: FlakeReducer;
   breaker: CircuitBreaker;
+  evidence: EvidenceLedger;
   pause(): void;
   resume(): void;
   heartbeat(leaseId: string, workerId: string): void;
@@ -84,6 +102,33 @@ export type CampaignController = {
     paused: boolean;
   };
   circuitState(): CircuitSnapshot;
+  /** Statistical remaining-work schedule (qualifying configurations only). */
+  scheduleQualification(): ScheduledQualificationWork[];
+  /** Credit a qualifying cell observation into the evidence ledger. */
+  creditObservation(input: {
+    platform: 'android' | 'ios';
+    backend?: 'classic' | 'legacy' | 'nextgen';
+    cellKind: ReceiptCellKind;
+    cellId: string;
+    outcome: 'pass' | 'fail';
+    retainedInSample?: boolean;
+    layoutDigest: string;
+    receiptId?: string;
+    extraDigests?: Readonly<Record<string, string>>;
+  }): ReturnType<EvidenceLedger['credit']> | null;
+  /** Suite-level signal (independent of per-cell confidence). */
+  creditSuiteOutcome(input: {
+    platform: 'android' | 'ios';
+    backend?: 'classic' | 'legacy' | 'nextgen';
+    outcome: 'pass' | 'fail';
+  }): ReturnType<EvidenceLedger['creditSuite']> | null;
+  /** Scoped invalidation + epoch freeze after a reviewed dependency fix. */
+  invalidateDependencyScope(
+    scopeId: string,
+    options?: { reason?: string; matchingDigest?: string },
+  ): InvalidateScopeResult;
+  /** Non-authoritative stats projection for pilots/tests (not live dashboard truth). */
+  statsProjection(): StatsProjection;
 };
 
 function flagValue(argv: readonly string[], name: string): string | undefined {
@@ -211,6 +256,17 @@ export function createCampaignController(
     options.artifactRoot ?? path.join(options.receiptRoot, 'failure-artifacts');
   const reducer = createFlakeReducer({ artifactRoot });
   const breaker = createCircuitBreaker({ now: clock.now });
+  const evidence = createEvidenceLedger({
+    now: clock.now != null ? () => new Date(clock.now!()) : undefined,
+  });
+
+  function resolveQualifyingConfiguration(
+    platform: 'android' | 'ios',
+    backend?: 'classic' | 'legacy' | 'nextgen',
+  ): QualifyingConfiguration | null {
+    const configuration = configurationForPlatformBackend(platform, backend);
+    return isQualifyingConfiguration(configuration) ? configuration : null;
+  }
 
   function pauseInternal(): void {
     // Idempotent: repeated circuit observations must not throw once already paused.
@@ -234,6 +290,7 @@ export function createCampaignController(
     leases,
     reducer,
     breaker,
+    evidence,
     pause: pauseInternal,
     resume: resumeInternal,
     heartbeat(leaseId, workerId) {
@@ -329,6 +386,48 @@ export function createCampaignController(
     },
     circuitState() {
       return breaker.state();
+    },
+    scheduleQualification() {
+      return evidence.schedule();
+    },
+    creditObservation(input) {
+      const configuration = resolveQualifyingConfiguration(input.platform, input.backend);
+      if (configuration == null) {
+        return null;
+      }
+      const cellKey: StatCellKey = {
+        configuration,
+        cellKind: input.cellKind,
+        cellId: input.cellId,
+      };
+      const dependencyDigests = defaultCellDependencyDigests({
+        cellKey,
+        layoutDigest: input.layoutDigest,
+        extra: input.extraDigests,
+      });
+      return evidence.credit({
+        cellKey,
+        outcome: input.outcome,
+        retainedInSample: input.retainedInSample,
+        dependencyDigests,
+        ...(input.receiptId != null ? { receiptId: input.receiptId } : {}),
+      });
+    },
+    creditSuiteOutcome(input) {
+      const configuration = resolveQualifyingConfiguration(input.platform, input.backend);
+      if (configuration == null) {
+        return null;
+      }
+      return evidence.creditSuite({
+        configuration,
+        outcome: input.outcome,
+      });
+    },
+    invalidateDependencyScope(scopeId, invalidateOptions) {
+      return evidence.invalidateScopeAndFreezeEpoch(scopeId, invalidateOptions);
+    },
+    statsProjection() {
+      return evidence.projection();
     },
   };
 }
@@ -604,6 +703,150 @@ export async function runRiskPilot(
     probabilisticNeighbors: probabilistic.probabilistic.retainedNeighbors.length,
     dispatchBlockedWhileOpen,
     resumedAcceptingWork,
+  };
+}
+
+export type StatsPilotResult = {
+  zeroFailureTarget: number;
+  checkpointsLocked: number;
+  creditedPasses: number;
+  retainedFailures: number;
+  unaffectedCellStillValid: boolean;
+  invalidatedCredits: number;
+  epochAfterInvalidation: number;
+  suiteIndependent: boolean;
+  scheduleRemaining: number;
+  projectionAuthoritative: false;
+  projectionDisclaimer: string;
+};
+
+/**
+ * Device-free statistical qualification pilot: CP checkpoints, independent cell
+ * credits, scoped invalidation + epoch freeze, suite signal separation, and a
+ * non-authoritative projection payload for later dashboard consumers.
+ */
+export async function runStatsPilot(
+  options: {
+    layoutDigest?: string;
+  } = {},
+): Promise<StatsPilotResult> {
+  const layoutDigest = options.layoutDigest ?? 'layout-digest-pilot';
+  const controller = createCampaignController({
+    mode: 'qualify',
+    layoutKind: 'final',
+    slotSet: { android: [1], ios: [1] },
+    dryRun: true,
+    allowForceAcquire: false,
+    receiptRoot: '/tmp/rngma-e2e-reliability/stats-pilot-receipts',
+    logRoot: '/tmp/rngma-e2e-reliability/stats-pilot-logs',
+  });
+
+  const bannerDigests = {
+    'case:android-nextgen:banner': 'digest-banner-v1',
+  };
+  const nativeDigests = {
+    'case:android-nextgen:native': 'digest-native-v1',
+  };
+
+  // Credit cells independently; a later native failure must not erase banner.
+  for (let i = 0; i < 3; i += 1) {
+    controller.creditObservation({
+      platform: 'android',
+      backend: 'nextgen',
+      cellKind: 'test',
+      cellId: 'banner',
+      outcome: 'pass',
+      layoutDigest,
+      extraDigests: bannerDigests,
+    });
+  }
+  controller.creditObservation({
+    platform: 'android',
+    backend: 'nextgen',
+    cellKind: 'test',
+    cellId: 'native',
+    outcome: 'pass',
+    layoutDigest,
+    extraDigests: nativeDigests,
+  });
+  controller.creditObservation({
+    platform: 'android',
+    backend: 'nextgen',
+    cellKind: 'test',
+    cellId: 'native',
+    outcome: 'fail',
+    retainedInSample: true,
+    layoutDigest,
+    extraDigests: nativeDigests,
+  });
+  // Classic never enters the statistical ledger.
+  const classicIgnored = controller.creditObservation({
+    platform: 'android',
+    backend: 'classic',
+    cellKind: 'test',
+    cellId: 'banner',
+    outcome: 'pass',
+    layoutDigest,
+  });
+
+  controller.creditSuiteOutcome({
+    platform: 'android',
+    backend: 'nextgen',
+    outcome: 'pass',
+  });
+  controller.creditSuiteOutcome({
+    platform: 'android',
+    backend: 'nextgen',
+    outcome: 'fail',
+  });
+
+  const beforeBanner = controller.evidence.cellStatus({
+    configuration: 'android-nextgen',
+    cellKind: 'test',
+    cellId: 'banner',
+  });
+  const invalidation = controller.invalidateDependencyScope(
+    'case:android-nextgen:native',
+    {
+      reason: 'reviewed-native-fix',
+      matchingDigest: 'digest-native-v1',
+    },
+  );
+  const afterBanner = controller.evidence.cellStatus({
+    configuration: 'android-nextgen',
+    cellKind: 'test',
+    cellId: 'banner',
+  });
+  const afterNative = controller.evidence.cellStatus({
+    configuration: 'android-nextgen',
+    cellKind: 'test',
+    cellId: 'native',
+  });
+  const suite = controller.evidence.suiteSignal('android-nextgen');
+  const projection = controller.statsProjection();
+  const schedule = controller.scheduleQualification();
+
+  return {
+    zeroFailureTarget: ZERO_FAILURE_OBSERVATION_TARGET,
+    checkpointsLocked: PRE_REGISTERED_FAILURE_CHECKPOINTS.length,
+    creditedPasses: beforeBanner.validPasses,
+    retainedFailures: 1,
+    unaffectedCellStillValid:
+      classicIgnored == null &&
+      afterBanner.validPasses === beforeBanner.validPasses &&
+      afterBanner.validPasses === 3 &&
+      afterNative.validPasses === 0 &&
+      afterNative.retainedFailures === 0,
+    invalidatedCredits: invalidation.invalidatedCredits,
+    epochAfterInvalidation: invalidation.newEpoch,
+    suiteIndependent:
+      suite.independentOfPerCell === true &&
+      suite.creditedSuitePasses === 1 &&
+      suite.suiteFailures === 1 &&
+      afterBanner.qualified === false,
+    scheduleRemaining: schedule.reduce((sum, row) => sum + row.remaining, 0),
+    projectionAuthoritative: projection.authoritative,
+    projectionDisclaimer: projection.disclaimer,
   };
 }
 

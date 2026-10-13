@@ -6,8 +6,10 @@ import {
   runAllCapacityPilots,
   runCapacityPilot,
   runRiskPilot,
+  runStatsPilot,
 } from '../src/reliabilityCampaign.ts';
 import { laneCount } from '../src/reliabilityCapacity.ts';
+import { STATS_PROJECTION_DISCLAIMER } from '../src/reliabilityStats.ts';
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
@@ -67,6 +69,28 @@ async function main(): Promise<void> {
       result.artifactsWritten < 1
     ) {
       throw new Error('Risk pilot failed adaptive flake-reducer checks.');
+    }
+    return;
+  }
+
+  if (argv.includes('--run-stats-pilot')) {
+    console.log(
+      '[reliability-campaign] device-free statistical qualification / scoped invalidation pilot',
+    );
+    const result = await runStatsPilot();
+    console.log(
+      `[reliability-campaign] statsPilot zeroFailureTarget=${result.zeroFailureTarget} checkpoints=${result.checkpointsLocked} creditedPasses=${result.creditedPasses} retainedFailures=${result.retainedFailures} unaffectedValid=${result.unaffectedCellStillValid} invalidated=${result.invalidatedCredits} epoch=${result.epochAfterInvalidation} suiteIndependent=${result.suiteIndependent} scheduleRemaining=${result.scheduleRemaining} authoritative=${result.projectionAuthoritative} disclaimer=${JSON.stringify(result.projectionDisclaimer)}`,
+    );
+    if (
+      result.zeroFailureTarget !== 2995 ||
+      result.checkpointsLocked < 1 ||
+      !result.unaffectedCellStillValid ||
+      result.invalidatedCredits < 1 ||
+      !result.suiteIndependent ||
+      result.projectionAuthoritative !== false ||
+      result.projectionDisclaimer !== STATS_PROJECTION_DISCLAIMER
+    ) {
+      throw new Error('Stats pilot failed statistical qualification checks.');
     }
     return;
   }
