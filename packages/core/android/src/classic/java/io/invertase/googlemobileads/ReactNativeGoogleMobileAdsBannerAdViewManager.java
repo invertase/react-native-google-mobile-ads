@@ -100,16 +100,26 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
   public void receiveCommand(
       @NonNull ReactNativeAdView reactViewGroup, String commandId, @Nullable ReadableArray args) {
     super.receiveCommand(reactViewGroup, commandId, args);
+    routeCommand(reactViewGroup, commandId);
+  }
 
+  /** Package-visible for owned JVM command-routing tests. */
+  void routeCommand(@NonNull ReactNativeAdView reactViewGroup, String commandId) {
     if (commandId.equals(COMMAND_ID_RECORD_MANUAL_IMPRESSION)) {
-      BaseAdView adView = getAdView(reactViewGroup);
-      if (adView instanceof AdManagerAdView) {
-        ((AdManagerAdView) adView).recordManualImpression();
-      }
+      recordManualImpression(getAdView(reactViewGroup));
     } else if (commandId.equals(COMMAND_ID_LOAD)) {
       BaseAdView adView = getAdView(reactViewGroup);
       AdRequest request = reactViewGroup.getRequest();
-      adView.loadAd(request);
+      if (adView != null && request != null) {
+        adView.loadAd(request);
+      }
+    }
+  }
+
+  /** Package-visible for owned JVM manual-impression routing tests. */
+  void recordManualImpression(@Nullable BaseAdView adView) {
+    if (adView instanceof AdManagerAdView) {
+      ((AdManagerAdView) adView).recordManualImpression();
     }
   }
 
@@ -279,103 +289,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     // FOCUS_BLOCK_DESCENDANTS alone is insufficient after creative load (#813).
     ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
     ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(reactViewGroup);
-    adView.setOnPaidEventListener(
-        new OnPaidEventListener() {
-          @Override
-          public void onPaidEvent(AdValue adValue) {
-            WritableMap payload =
-                ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(
-                    adValue, adView.getResponseInfo());
-            sendEvent(reactViewGroup, EVENT_PAID, payload);
-          }
-        });
-    adView.setAdListener(
-        new AdListener() {
-          @Override
-          public void onAdLoaded() {
-            // Creatives / mediation can re-enable focus on the AdView after load (#813).
-            ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
-            ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(reactViewGroup);
-            AdSize adSize = adView.getAdSize();
-            boolean collapsible = adView.isCollapsible();
-            reactViewGroup.setIsCollapsible(collapsible);
-            int width, height;
-            boolean trackLayoutChanges =
-                ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(
-                    reactViewGroup.getIsFluid(), collapsible);
-            if (reactViewGroup.getIsFluid()) {
-              width = reactViewGroup.getWidth();
-              height = reactViewGroup.getHeight();
-            } else {
-              int left = adView.getLeft();
-              int top = adView.getTop();
-              width = adSize.getWidthInPixels(reactViewGroup.getContext());
-              height = adSize.getHeightInPixels(reactViewGroup.getContext());
-
-              adView.measure(width, height);
-              adView.layout(left, top, left + width, top + height);
-            }
-
-            if (trackLayoutChanges) {
-              adView.addOnLayoutChangeListener(
-                  (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-                    if (!ReactNativeGoogleMobileAdsBannerAdLayout.shouldEmitSizeChange(
-                        oldRight - oldLeft, oldBottom - oldTop, right - left, bottom - top)) {
-                      return;
-                    }
-                    WritableMap sizePayload = Arguments.createMap();
-                    sizePayload.putDouble("width", PixelUtil.toDIPFromPixel(right - left));
-                    sizePayload.putDouble("height", PixelUtil.toDIPFromPixel(bottom - top));
-                    sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, sizePayload);
-                  });
-            }
-
-            WritableMap payload = Arguments.createMap();
-            payload.putDouble("width", PixelUtil.toDIPFromPixel(width));
-            payload.putDouble("height", PixelUtil.toDIPFromPixel(height));
-            WritableMap responseInfo =
-                ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(adView.getResponseInfo());
-            if (responseInfo != null) {
-              payload.putMap("responseInfo", responseInfo);
-            }
-
-            sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
-            // Hybrid image+video creatives need a resume kick once presentable (#711).
-            reactViewGroup.refreshBannerPresentation();
-          }
-
-          @Override
-          public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-            int errorCode = loadAdError.getCode();
-            WritableMap payload = ReactNativeGoogleMobileAdsCommon.errorCodeToMap(errorCode);
-            WritableMap responseInfo =
-                ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.getResponseInfo());
-            if (responseInfo != null) {
-              payload.putMap("responseInfo", responseInfo);
-            }
-            sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
-          }
-
-          @Override
-          public void onAdOpened() {
-            sendEvent(reactViewGroup, EVENT_AD_OPENED, null);
-          }
-
-          @Override
-          public void onAdClosed() {
-            sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
-          }
-
-          @Override
-          public void onAdImpression() {
-            sendEvent(reactViewGroup, EVENT_AD_IMPRESSION, null);
-          }
-
-          @Override
-          public void onAdClicked() {
-            sendEvent(reactViewGroup, EVENT_AD_CLICKED, null);
-          }
-        });
+    adView.setOnPaidEventListener(createPaidEventListener(reactViewGroup, adView));
+    adView.setAdListener(createAdListener(reactViewGroup, adView));
     if (adView instanceof AdManagerAdView) {
       ((AdManagerAdView) adView)
           .setAppEventListener(
@@ -437,7 +352,114 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     }
   }
 
-  private void sendEvent(ReactNativeAdView reactViewGroup, String type, WritableMap payload) {
+  /** Spy-friendly seam for owned JVM tests (avoids RN Arguments in Robolectric). */
+  protected WritableMap paidEventPayload(AdValue adValue, @Nullable Object responseInfo) {
+    return ReactNativeGoogleMobileAdsResponseInfo.paidEventPayload(
+        adValue, (com.google.android.gms.ads.ResponseInfo) responseInfo);
+  }
+
+  /** Package-visible for owned JVM paid/click callback tests. */
+  OnPaidEventListener createPaidEventListener(ReactNativeAdView reactViewGroup, BaseAdView adView) {
+    return new OnPaidEventListener() {
+      @Override
+      public void onPaidEvent(AdValue adValue) {
+        sendEvent(reactViewGroup, EVENT_PAID, paidEventPayload(adValue, adView.getResponseInfo()));
+      }
+    };
+  }
+
+  /** Package-visible for owned JVM click/lifecycle callback tests. */
+  AdListener createAdListener(ReactNativeAdView reactViewGroup, BaseAdView adView) {
+    return new AdListener() {
+      @Override
+      public void onAdLoaded() {
+        // Creatives / mediation can re-enable focus on the AdView after load (#813).
+        ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
+        ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(reactViewGroup);
+        AdSize adSize = adView.getAdSize();
+        boolean collapsible = adView.isCollapsible();
+        reactViewGroup.setIsCollapsible(collapsible);
+        int width, height;
+        boolean trackLayoutChanges =
+            ReactNativeGoogleMobileAdsBannerAdLayout.usesDynamicHeight(
+                reactViewGroup.getIsFluid(), collapsible);
+        if (reactViewGroup.getIsFluid()) {
+          width = reactViewGroup.getWidth();
+          height = reactViewGroup.getHeight();
+        } else {
+          int left = adView.getLeft();
+          int top = adView.getTop();
+          width = adSize.getWidthInPixels(reactViewGroup.getContext());
+          height = adSize.getHeightInPixels(reactViewGroup.getContext());
+
+          adView.measure(width, height);
+          adView.layout(left, top, left + width, top + height);
+        }
+
+        if (trackLayoutChanges) {
+          adView.addOnLayoutChangeListener(
+              (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                if (!ReactNativeGoogleMobileAdsBannerAdLayout.shouldEmitSizeChange(
+                    oldRight - oldLeft, oldBottom - oldTop, right - left, bottom - top)) {
+                  return;
+                }
+                WritableMap sizePayload = Arguments.createMap();
+                sizePayload.putDouble("width", PixelUtil.toDIPFromPixel(right - left));
+                sizePayload.putDouble("height", PixelUtil.toDIPFromPixel(bottom - top));
+                sendEvent(reactViewGroup, EVENT_SIZE_CHANGE, sizePayload);
+              });
+        }
+
+        WritableMap payload = Arguments.createMap();
+        payload.putDouble("width", PixelUtil.toDIPFromPixel(width));
+        payload.putDouble("height", PixelUtil.toDIPFromPixel(height));
+        WritableMap responseInfo =
+            ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(adView.getResponseInfo());
+        if (responseInfo != null) {
+          payload.putMap("responseInfo", responseInfo);
+        }
+
+        sendEvent(reactViewGroup, EVENT_AD_LOADED, payload);
+        // Hybrid image+video creatives need a resume kick once presentable (#711).
+        reactViewGroup.refreshBannerPresentation();
+      }
+
+      @Override
+      public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+        int errorCode = loadAdError.getCode();
+        WritableMap payload = ReactNativeGoogleMobileAdsCommon.errorCodeToMap(errorCode);
+        WritableMap responseInfo =
+            ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.getResponseInfo());
+        if (responseInfo != null) {
+          payload.putMap("responseInfo", responseInfo);
+        }
+        sendEvent(reactViewGroup, EVENT_AD_FAILED_TO_LOAD, payload);
+      }
+
+      @Override
+      public void onAdOpened() {
+        sendEvent(reactViewGroup, EVENT_AD_OPENED, null);
+      }
+
+      @Override
+      public void onAdClosed() {
+        sendEvent(reactViewGroup, EVENT_AD_CLOSED, null);
+      }
+
+      @Override
+      public void onAdImpression() {
+        sendEvent(reactViewGroup, EVENT_AD_IMPRESSION, null);
+      }
+
+      @Override
+      public void onAdClicked() {
+        sendEvent(reactViewGroup, EVENT_AD_CLICKED, null);
+      }
+    };
+  }
+
+  /** Spy-friendly seam for owned JVM event tests. */
+  protected void sendEvent(ReactNativeAdView reactViewGroup, String type, WritableMap payload) {
     WritableMap event = Arguments.createMap();
     event.putString("type", type);
 

@@ -84,10 +84,17 @@ subprojects { subproject ->
 
 // RNTA evaluates :app before autolinked libraries. Refresh only the report's
 // workspace-library inputs after every project has applied its Android plugin.
+// Isolate report outputs by selected Android backend so classic and Next-Gen
+// Jacoco XML/HTML do not overwrite each other. Include the backend source root
+// (`src/classic/java` or `src/nextgen/java`) alongside `src/main`.
 gradle.projectsEvaluated {
     def coverageLibrary = findProject(':react-native-google-mobile-ads')
     def coverageApp = findProject(':app')
     def excludes = coverageApp.ext.rnCoverageClassExcludes
+    def backend = rootProject.ext.has('rngmaAndroidBackend')
+        ? rootProject.ext.rngmaAndroidBackend.toString()
+        : 'classic'
+    def backendSourceDir = "${coverageLibrary.projectDir}/src/${backend}/java"
     coverageApp.tasks.withType(JacocoReport).configureEach { report ->
         report.classDirectories.setFrom(files(
             fileTree(
@@ -102,6 +109,19 @@ gradle.projectsEvaluated {
         report.sourceDirectories.setFrom(files(
             "${coverageLibrary.projectDir}/src/main/java",
             "${coverageLibrary.projectDir}/src/main/kotlin",
+            backendSourceDir,
         ))
+        // Keep e2e-only (`jacocoAndroidTestReport`) and other report tasks under a
+        // backend-scoped directory so Next-Gen experiments do not clobber classic.
+        report.reports {
+            xml.required = true
+            xml.outputLocation = coverageApp.layout.buildDirectory.file(
+                "reports/jacoco/${backend}/${report.name}/${report.name}.xml",
+            )
+            html.required = true
+            html.outputLocation = coverageApp.layout.buildDirectory.dir(
+                "reports/jacoco/${backend}/${report.name}/html",
+            )
+        }
     }
 }

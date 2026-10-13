@@ -2,8 +2,26 @@
  * Pattern C — dedicated test harness (RNGoogleMobileAdsExample) only.
  * Consumes published react-native-coverage; do not copy RNFB scripts.
  *
+ * Jacoco XML lives under the backend-isolated Gradle layout from
+ * `android/build.gradle`: `reports/jacoco/<backend>/<report.name>/…`.
+ * `rn-coverage android report` runs `jacocoTestReport`; keep assert paths in
+ * sync. Select backend with the same `RNGMA_ANDROID_BACKEND` used for Appium
+ * builds (`classic` default; `nextgen` when selected; `legacy` → classic).
+ *
  * @type {import('react-native-coverage/node').CoverageConfig}
  */
+
+function resolveAndroidBackend() {
+  const raw = (process.env.RNGMA_ANDROID_BACKEND || 'classic').toLowerCase();
+  return raw === 'nextgen' ? 'nextgen' : 'classic';
+}
+
+/** Matches the Gradle task invoked by `rn-coverage android report`. */
+const JACOCO_REPORT_TASK = 'jacocoTestReport';
+
+const androidBackend = resolveAndroidBackend();
+const jacocoXmlPath = `android/app/build/reports/jacoco/${androidBackend}/${JACOCO_REPORT_TASK}/${JACOCO_REPORT_TASK}.xml`;
+
 module.exports = {
   nativeModuleName: 'Coverage',
   app: {
@@ -21,7 +39,7 @@ module.exports = {
     libraryProjectMatchers: ['react-native-google-mobile-ads'],
     detoxStagingPath: '/data/local/tmp/coverage/coverage.ec',
     coverageRelativePath: 'files/coverage.ec',
-    jacocoReportXml: 'android/app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml',
+    jacocoReportXml: jacocoXmlPath,
   },
   sourcePathRewrite: [
     { kind: 'after-marker', marker: '/packages/', includeMarker: true },
@@ -37,6 +55,6 @@ module.exports = {
     // Owned bridge package only — not Google GMA/adapter SDK packages.
     jacocoPackageIncludes: ['io/invertase/googlemobileads'],
     defaultLcovPath: 'coverage/ios-native/lcov.info',
-    defaultJacocoXmlPath: 'android/app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml',
+    defaultJacocoXmlPath: jacocoXmlPath,
   },
 };

@@ -13,6 +13,19 @@ plugins {
 
 rootProject.name = "RNGoogleMobileAdsExample"
 
+// Bridge agent/Appium `RNGMA_ANDROID_BACKEND` env into a Gradle project property
+// when `-P` / `ORG_GRADLE_PROJECT_*` was not passed. Keeps `rn-coverage android
+// report` (`./gradlew jacocoTestReport`) writing XML under the same
+// `reports/jacoco/<backend>/…` segment that react-native-coverage.config.js resolves.
+def envAndroidBackend = (System.getenv("RNGMA_ANDROID_BACKEND") ?: "").trim()
+if (envAndroidBackend) {
+    gradle.beforeProject { project ->
+        if (!project.hasProperty("RNGMA_ANDROID_BACKEND")) {
+            project.extensions.extraProperties.set("RNGMA_ANDROID_BACKEND", envAndroidBackend)
+        }
+    }
+}
+
 apply(from: {
     def searchDir = rootDir.toPath()
     do {
