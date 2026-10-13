@@ -141,7 +141,7 @@ describe('Appium check/release resources', () => {
       {},
       'check',
     );
-    assert.equal(iosOwner.targets[0]?.metroPort, 13007);
+    assert.equal(iosOwner.targets[0]?.metroPort, 13107);
     assert.equal(iosOwner.targets[0]?.appiumPort, 13113);
     assert.equal(iosOwner.targets[0]?.metroOwned, true);
 
@@ -246,7 +246,7 @@ describe('Appium check/release resources', () => {
     assert.ok(options.targets.every(target => target.metroPort == null));
   });
 
-  test('--all-slots reports one explicitly owned shared Metro', () => {
+  test('--all-slots reports platform-separated owned Metros', () => {
     const options = parseResourceOptions(
       ['--all-slots', '--metro-owner-slot=5', '--services'],
       {},
@@ -254,12 +254,21 @@ describe('Appium check/release resources', () => {
     );
     const metro = classifyResources(
       options,
-      inventory({ listeners: new Map([[17007, [505]]]) }),
+      inventory({
+        listeners: new Map([
+          [17007, [505]],
+          [17107, [506]],
+        ]),
+      }),
     ).filter(finding => finding.detail.includes('(metro)'));
-    assert.equal(metro.length, 1);
-    assert.equal(metro[0]?.target.slot, 5);
-    assert.equal(metro[0]?.target.metroOwned, true);
-    assert.equal(metro[0]?.state, 'BUSY');
+    assert.equal(metro.length, 2);
+    assert.deepEqual(
+      metro.map(finding => finding.port).sort((a, b) => (a ?? 0) - (b ?? 0)),
+      [17007, 17107],
+    );
+    assert.ok(metro.every(finding => finding.target.slot === 5));
+    assert.ok(metro.every(finding => finding.target.metroOwned === true));
+    assert.ok(metro.every(finding => finding.state === 'BUSY'));
   });
 
   test('whole-name iOS matching excludes longer and Detox names', () => {

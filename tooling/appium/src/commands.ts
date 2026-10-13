@@ -4,6 +4,7 @@ import {
 } from './hostPreflight.ts';
 import {
   runtimeResources,
+  slotMetroPackagerEnv,
   type RuntimeResources,
 } from './slots.ts';
 
@@ -25,7 +26,9 @@ export function packagerCommand(
       'RNGMA_E2E_PLATFORM must be android or ios when RNGMA_E2E_SLOT selects a Metro port.',
     );
   }
-  const runtime = runtimeResources(platform === 'ios' ? 'ios' : 'android', env);
+  const operationalPlatform = platform === 'ios' ? 'ios' : 'android';
+  const runtime = runtimeResources(operationalPlatform, env);
+  const metroOwnerSlot = runtime.metroOwnerSlot ?? runtime.slot;
   return {
     bin: 'yarn',
     args: [
@@ -36,6 +39,11 @@ export function packagerCommand(
       ...(resetCache ? ['--reset-cache'] : []),
       ...(runtime.slot == null ? [] : ['--port', String(runtime.metroPort)]),
     ],
+    ...(metroOwnerSlot == null
+      ? {}
+      : {
+          env: slotMetroPackagerEnv(metroOwnerSlot, operationalPlatform, env),
+        }),
   };
 }
 

@@ -5,7 +5,7 @@ import {
   SERIAL_APPIUM_PORT,
   SERIAL_METRO_PORT,
   slotResources,
-  worktreeMetroPort,
+  platformMetroPort,
 } from './slots.ts';
 
 /** Explicit RNGMA operational slots (includes temporary coexistence slot 3). */
@@ -111,7 +111,7 @@ function slottedTarget(
     ...(metroOwnerSlot == null
       ? {}
       : {
-          metroPort: worktreeMetroPort(metroOwnerSlot),
+          metroPort: platformMetroPort(metroOwnerSlot, platform),
         }),
     metroOwned: slot === metroOwnerSlot,
     appiumPort: resources.appiumPort,
@@ -329,10 +329,17 @@ export function classifyResources(
 ): ResourceFinding[] {
   const findings: ResourceFinding[] = [];
   const seenPorts = new Set<number>();
-  const metroTarget =
-    options.targets.find(target => target.metroOwned && target.metroPort != null) ??
-    options.targets.find(target => target.metroPort != null);
-  if (metroTarget?.metroPort != null) {
+  // Prefer owned targets per unique Metro port so platform-separated listeners
+  // (Android BASE+7 vs iOS BASE+7) each appear once.
+  const metroByPort = new Map<number, ResourceTarget>();
+  for (const target of options.targets) {
+    if (target.metroPort == null) continue;
+    const existing = metroByPort.get(target.metroPort);
+    if (!existing || (target.metroOwned && !existing.metroOwned)) {
+      metroByPort.set(target.metroPort, target);
+    }
+  }
+  for (const metroTarget of metroByPort.values()) {
     const metroFinding = portFindings(
       metroTarget,
       inventory,
@@ -340,7 +347,7 @@ export function classifyResources(
     ).find(finding => finding.detail.includes('(metro)'));
     if (metroFinding) {
       findings.push(metroFinding);
-      seenPorts.add(metroTarget.metroPort);
+      seenPorts.add(metroTarget.metroPort!);
     }
   }
   for (const target of options.targets) {

@@ -73,10 +73,11 @@ export async function runPackager(
   options: PackagerOptions = {},
 ): Promise<void> {
   const command = packagerCommand(resetCache);
-  const runtime = runtimeResources(
-    process.env.RNGMA_E2E_PLATFORM === 'ios' ? 'ios' : 'android',
-  );
+  const platform = process.env.RNGMA_E2E_PLATFORM === 'ios' ? 'ios' : 'android';
+  const runtime = runtimeResources(platform);
   const paths = options.paths ?? invocationPaths();
+  const metroLog =
+    runtime.slot == null ? paths.metro : paths.metroFor(platform);
   const drain = options.drain ?? stopAndDrain;
   const owned: RunningCommand[] = [];
   let draining: Promise<void> | undefined;
@@ -106,7 +107,7 @@ export async function runPackager(
     child = (options.spawn ?? spawnOwned)(command.bin, command.args, {
       cwd: command.cwd ? path.join(repoRoot, command.cwd) : repoRoot,
       env: command.env ?? process.env,
-      logPath: paths.metro,
+      logPath: metroLog,
     });
   } catch (error) {
     disarm();
@@ -138,7 +139,7 @@ export async function runPackager(
   try {
     await waitForMetroReadiness(startup, waitForTcp);
     console.log(
-      `[e2e-startup] invocation=${paths.id} phase=metro-ready log=${paths.metro}`,
+      `[e2e-startup] invocation=${paths.id} phase=metro-ready log=${metroLog}`,
     );
     const code = await Promise.race([child.completion, startup.failure]);
     if (!stopping) {

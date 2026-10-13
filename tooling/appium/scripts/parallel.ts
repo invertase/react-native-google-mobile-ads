@@ -117,7 +117,7 @@ export class NodeParallelRunner implements ParallelRunner {
   async assertPortListening(port: number): Promise<void> {
     if (!(await isListening(port))) {
       throw new Error(
-        `External worktree Metro 127.0.0.1:${port} is not listening; consumer parents never start it.`,
+        `External platform Metro 127.0.0.1:${port} is not listening; consumer parents never start it.`,
       );
     }
   }

@@ -251,7 +251,7 @@ class MockRunner implements ParallelRunner {
   }
 }
 
-test('parallel plan maps configured 1/4/5 slots to one Metro and positional specs', () => {
+test('parallel plan maps configured 1/4/5 slots to platform Metro and positional specs', () => {
   const env = { RNGMA_E2E_PARALLEL_SLOTS: '1,4,5' };
   const android = createParallelPlan('android', env);
   assert.deepEqual(
@@ -296,7 +296,7 @@ test('parallel plan maps configured 1/4/5 slots to one Metro and positional spec
   const ios = createParallelPlan('ios', env);
   assert.deepEqual(
     ios.map(item => item.metroPort),
-    [13007, 13007, 13007],
+    [13107, 13107, 13107],
   );
   assert.deepEqual(
     ios.map(item => item.appiumPort),
@@ -475,11 +475,13 @@ test('Android builds once and fans the same APK out before concurrent children',
     destination: slotAndroidApkPath(slot),
   })));
   const lastCopy = runner.events.lastIndexOf(`copy:${slotAndroidApkPath(5)}`);
-  const firstPackager = runner.events.findIndex(event => event.includes('worktree Metro owner'));
+  const firstPackager = runner.events.findIndex(event =>
+    event.includes('slot 1 android Metro packager'),
+  );
   assert.ok(lastCopy < firstPackager);
   assert.deepEqual(
     runner.events.filter(event => event.includes('packager') && event.startsWith('start:')),
-    ['start:worktree Metro owner slot 1 packager'],
+    ['start:slot 1 android Metro packager'],
   );
   const appiums = runner.commands.filter(item => item.role.endsWith('Appium'));
   assert.deepEqual(
@@ -666,7 +668,11 @@ test('combined barrier launches all six Appium children only after both preps', 
       runner.children.some(item => item.command.role === 'shared WDA prebuild'),
   );
   const metroChildren = runner.children.filter(item => item.command.role.endsWith('packager'));
-  assert.equal(metroChildren.length, 1);
+  assert.equal(metroChildren.length, 2);
+  assert.deepEqual(
+    metroChildren.map(item => item.command.role).sort(),
+    ['slot 1 android Metro packager', 'slot 1 ios Metro packager'],
+  );
   assert.equal(
     runner.events.some(event => event.startsWith('listening:')),
     false,
@@ -675,6 +681,7 @@ test('combined barrier launches all six Appium children only after both preps', 
     runner.events.indexOf('ready:13007') <
       runner.events.indexOf('start:shared Android build for Metro 13007'),
   );
+  assert.ok(runner.events.includes('ready:13107'));
 
   const iosPrep = runner.children.find(item => item.command.role === 'shared WDA prebuild')!;
   androidCopy.resolve(0);
@@ -706,10 +713,10 @@ test('combined barrier launches all six Appium children only after both preps', 
     );
     assert.ok(platform.slots.every(item => item.testCount <= SESSION_TEST_CAP));
   }
-  assert.equal(metroChildren[0]?.stops, 1);
+  assert.ok(metroChildren.every(item => item.stops === 1));
 });
 
-test('combined preparation failure cancels sibling prep and one Metro', async () => {
+test('combined preparation failure cancels sibling prep and both Metros', async () => {
   const runner = new MockRunner();
   runner.heldRoles.add('shared codegen');
   runner.copyErrors.set(slotAndroidApkPath(6), new Error('slot 6 APK copy failed'));
@@ -775,7 +782,7 @@ test('combined Appium failure cancels sibling platform and Metro once', async ()
   const runtime = runner.children.filter(
     item => item.command.role.endsWith('packager') || item.command.role.endsWith('Appium'),
   );
-  assert.equal(runtime.length, 7);
+  assert.equal(runtime.length, 8);
   assert.ok(runtime.every(item => item === failed || item.stops === 1));
 });
 
@@ -788,9 +795,11 @@ test('combined unexpected Metro exit cancels all six Appium children', async () 
   await waitFor(
     () => runner.children.filter(item => item.command.role.endsWith('Appium')).length === 6,
   );
-  const metro = runner.children.find(item => item.command.role.endsWith('packager'))!;
+  const metro = runner.children.find(
+    item => item.command.role === 'slot 1 android Metro packager',
+  )!;
   metro.deferred.resolve(8);
-  await assert.rejects(run, /Metro owner exited unexpectedly with code 8/);
+  await assert.rejects(run, /Metro packager exited unexpectedly with code 8/);
   assert.ok(
     runner.children
       .filter(item => item.command.role.endsWith('Appium'))
@@ -868,10 +877,10 @@ test('combined Metro readiness failure prevents all preparation', async () => {
     /Metro never opened/,
   );
   assert.deepEqual(
-    runner.commands.map(item => item.role),
-    ['worktree Metro owner slot 1 packager'],
+    runner.commands.map(item => item.role).sort(),
+    ['slot 1 android Metro packager', 'slot 1 ios Metro packager'],
   );
-  assert.equal(runner.children[0]?.stops, 1);
+  assert.ok(runner.children.every(item => item.stops === 1));
 });
 
 test('iOS isolates selections, builds serially, and prebuilds WDA once', async () => {
