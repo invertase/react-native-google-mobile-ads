@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,8 +8,11 @@ export const MAX_SLOT = 7;
 export const RNFB_COEXISTENCE_SLOT = 3;
 export const SERIAL_METRO_PORT = 8081;
 export const SERIAL_APPIUM_PORT = 4725;
+/** Host-local roots for platform-separated Metro cache/temp (not invocation logs). */
+export const METRO_RESOURCE_ROOT = '/tmp/rngma-e2e-metro';
 
 export type SlotPlatform = 'android' | 'ios' | 'macos';
+export type OperationalPlatform = Exclude<SlotPlatform, 'macos'>;
 
 const PLATFORM_OFFSETS: Record<SlotPlatform, number> = {
   android: 0,
@@ -70,9 +74,50 @@ export function slotResources(slot: number, platform: SlotPlatform): SlotResourc
   };
 }
 
-/** One Metro belongs to the worktree slot, independent of consumer platform. */
-export function worktreeMetroPort(slot: number): number {
-  return slotResources(slot, 'android').metroPort;
+/**
+ * Platform Metro port for a slot+platform pair (same BASE+7 formula as raw slot math).
+ * Not a single collapsed worktree port: Android and iOS differ by platform offset.
+ * Slot 1: Android `13007`, iOS `13107`.
+ */
+export function platformMetroPort(slot: number, platform: OperationalPlatform): number {
+  return slotResources(slot, platform).metroPort;
+}
+
+export type SlotMetroRoots = {
+  root: string;
+  cache: string;
+  tmp: string;
+};
+
+/** Per-slot, per-platform Metro cache and temp roots. */
+export function slotMetroRoots(slot: number, platform: OperationalPlatform): SlotMetroRoots {
+  slotResources(slot, platform);
+  const root = path.join(METRO_RESOURCE_ROOT, `slot-${slot}`, platform);
+  return {
+    root,
+    cache: path.join(root, 'cache'),
+    tmp: path.join(root, 'tmp'),
+  };
+}
+
+export function ensureSlotMetroRoots(roots: SlotMetroRoots): void {
+  mkdirSync(roots.cache, { recursive: true });
+  mkdirSync(roots.tmp, { recursive: true });
+}
+
+/** Env isolation for a slotted packager: dedicated TMPDIR + cache root. */
+export function slotMetroPackagerEnv(
+  slot: number,
+  platform: OperationalPlatform,
+  baseEnv: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  const roots = slotMetroRoots(slot, platform);
+  ensureSlotMetroRoots(roots);
+  return {
+    ...baseEnv,
+    TMPDIR: roots.tmp,
+    RNGMA_METRO_CACHE_ROOT: roots.cache,
+  };
 }
 
 export function requireRngmaSlot(value: string | undefined): number {
@@ -180,8 +225,8 @@ export function runtimeResources(
   }
   const metroPort =
     metroOwnerSlot == null
-      ? worktreeMetroPort(slot)
-      : worktreeMetroPort(metroOwnerSlot);
+      ? platformMetroPort(slot, platform)
+      : platformMetroPort(metroOwnerSlot, platform);
   for (const [name, value, expected] of [
     ['RNGMA_METRO_PORT', env.RNGMA_METRO_PORT, metroPort],
     ['RNGMA_APPIUM_PORT', env.RNGMA_APPIUM_PORT, resources.appiumPort],

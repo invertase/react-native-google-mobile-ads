@@ -92,7 +92,7 @@ No edits during `independent-review` except revert `.only`: product trees (above
 
 Before any edit under product trees (including `tooling/appium/` and `RNGoogleMobileAdsExample/`):
 
-1. **Are e2e tests running in your slots?** Check the parallel tee / `[parallel-summary]` / live wdio+Appium for the slots this checkout owns — configured `RNGMA_E2E_PARALLEL_SLOTS` (Metro owner = first configured slot). See [running e2e § parallel Appium](running-e2e.md#parallel-appium).
+1. **Are e2e tests running in your slots?** Check the parallel tee / `[parallel-summary]` / live wdio+Appium for the slots this checkout owns — configured `RNGMA_E2E_PARALLEL_SLOTS` (platform Metro owner = first configured slot per platform). See [running e2e § parallel Appium](running-e2e.md#parallel-appium).
 2. **If yes — wait** until the run finishes (or deliberately stop it and confirm sessions are dead). Do not edit “in parallel” with a live run.
 3. **If no — proceed** with edits, then start a **fresh** e2e run.
 

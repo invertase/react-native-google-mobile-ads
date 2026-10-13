@@ -347,9 +347,9 @@ async function runConcurrentPhase(
             named(
               'tests:packager',
               childEnv(metroEntry),
-              `worktree Metro owner slot ${metroEntry.slot} packager`,
+              `slot ${metroEntry.slot} ${platform} Metro packager`,
               undefined,
-              paths.metro,
+              paths.metroFor(platform),
             ),
           ),
         ]
@@ -397,14 +397,16 @@ async function runConcurrentPhase(
               [item.entry.slot, slotResult(item.entry, 'fail', outcome.code)],
             ]);
             throw withSummary(
-              new Error(`Worktree Metro owner exited before readiness with code ${outcome.code}.`),
+              new Error(
+                `Slot ${item.entry.slot} ${platform} Metro packager exited before readiness with code ${outcome.code}.`,
+              ),
               platform,
               plan,
               results,
             );
           }
           console.log(
-            `[e2e-startup] invocation=${paths.id} phase=metro-ready log=${paths.metro}`,
+            `[e2e-startup] invocation=${paths.id} phase=metro-ready log=${paths.metroFor(platform)}`,
           );
         }),
       );
@@ -515,7 +517,9 @@ async function runConcurrentPhase(
         void finishFailure(
           outcome.kind === 'error'
             ? outcome.error
-            : new Error(`Worktree Metro owner exited unexpectedly with code ${code}.`),
+            : new Error(
+                `Slot ${item.entry.slot} ${platform} Metro packager exited unexpectedly with code ${code}.`,
+              ),
           { entry: item.entry, exitCode: code },
         );
       });
@@ -737,7 +741,7 @@ async function runCombinedSessions(
   plans: Record<ParallelPlatform, ParallelPlanEntry[]>,
   runner: ParallelRunner,
   context: AbortContext,
-  metro: LongLivedChild,
+  metros: readonly LongLivedChild[],
   startup: StartupSupervisor,
   paths: InvocationPaths,
 ): Promise<CombinedParallelRunSummary> {
@@ -867,16 +871,21 @@ async function runCombinedSessions(
       });
     }
 
-    void metro.outcome.then(outcome => {
-      if (settled) return;
-      context.active.delete(metro.child);
-      const code = outcome.kind === 'exit' ? outcome.code : UNKNOWN_FAILURE_EXIT_CODE;
-      void finishFailure(
-        outcome.kind === 'error'
-          ? outcome.error
-          : new Error(`Worktree Metro owner exited unexpectedly with code ${code}.`),
-      );
-    });
+    for (const metro of metros) {
+      void metro.outcome.then(outcome => {
+        if (settled) return;
+        context.active.delete(metro.child);
+        const platform = metro.entry.env.RNGMA_E2E_PLATFORM ?? 'android';
+        const code = outcome.kind === 'exit' ? outcome.code : UNKNOWN_FAILURE_EXIT_CODE;
+        void finishFailure(
+          outcome.kind === 'error'
+            ? outcome.error
+            : new Error(
+                `Slot ${metro.entry.slot} ${platform} Metro packager exited unexpectedly with code ${code}.`,
+              ),
+        );
+      });
+    }
   });
 }
 
@@ -938,25 +947,34 @@ export async function runCombinedParallelE2e(
       entry.env.RNGMA_E2E_LOG_ROOT = paths.root;
       entry.logPath = paths.child('ios', `slot-${entry.slot}-${entry.label}`);
     }
-    const metroEntry = androidPlan[0]!;
+    const androidMetroEntry = androidPlan[0]!;
+    const iosMetroEntry = iosPlan[0]!;
     const ports = new Set([
-      metroEntry.metroPort,
+      androidMetroEntry.metroPort,
+      iosMetroEntry.metroPort,
       ...androidPlan.flatMap(entry => [entry.appiumPort, entry.automationPort, entry.mjpegPort]),
       ...iosPlan.flatMap(entry => [entry.appiumPort, entry.automationPort, entry.mjpegPort]),
     ]);
     await runner.assertPortsFree([...ports]);
     context.throwIfAborted();
 
-    const metro = startLongLived(
-      runner,
-      context,
-      metroEntry,
-      named(
-        'tests:packager',
-        childEnv(metroEntry),
-        `worktree Metro owner slot ${metroEntry.slot} packager`,
-        undefined,
-        paths.metro,
+    const metros = (
+      [
+        ['android', androidMetroEntry],
+        ['ios', iosMetroEntry],
+      ] as const
+    ).map(([platform, entry]) =>
+      startLongLived(
+        runner,
+        context,
+        entry,
+        named(
+          'tests:packager',
+          childEnv(entry),
+          `slot ${entry.slot} ${platform} Metro packager`,
+          undefined,
+          paths.metroFor(platform),
+        ),
       ),
     );
     const startup = new StartupSupervisor(
@@ -973,25 +991,41 @@ export async function runCombinedParallelE2e(
       },
     );
     startup.onFailure(() => void context.stopActive());
-    superviseLines(startup, 'metro', metro.child);
-    const readiness = waitForMetroReadiness(startup, signal =>
-      runner.waitForPort(metroEntry.metroPort, metro.child, signal),
+    // Each platform Metro needs its own readiness envelope; a shared Metro-phase
+    // supervisor can only wait once and would collapse distinct ports/caches.
+    await Promise.all(
+      metros.map(async metro => {
+        const platform = metro.entry.env.RNGMA_E2E_PLATFORM === 'ios' ? 'ios' : 'android';
+        const metroStartup = new StartupSupervisor([]);
+        metroStartup.onFailure(() => void context.stopActive());
+        superviseLines(metroStartup, 'metro', metro.child);
+        const readiness = waitForMetroReadiness(metroStartup, signal =>
+          runner.waitForPort(metro.entry.metroPort, metro.child, signal),
+        );
+        const readyOutcome = await Promise.race([
+          readiness.then(() => ({ kind: 'ready' as const })),
+          metroStartup.failure,
+          metro.outcome,
+          context.aborted.then(() => ({ kind: 'aborted' as const })),
+        ]);
+        if (readyOutcome.kind === 'aborted') context.throwIfAborted();
+        if (readyOutcome.kind === 'error') throw readyOutcome.error;
+        if (readyOutcome.kind === 'exit') {
+          throw new Error(
+            `Slot ${metro.entry.slot} ${platform} Metro packager exited before readiness with code ${readyOutcome.code}.`,
+          );
+        }
+        // Keep hard-failure supervision on the combined supervisor after ready.
+        superviseLines(startup, 'metro', metro.child);
+      }),
     );
-    const readyOutcome = await Promise.race([
-      readiness.then(() => ({ kind: 'ready' as const })),
-      startup.failure,
-      metro.outcome,
-      context.aborted.then(() => ({ kind: 'aborted' as const })),
-    ]);
-    if (readyOutcome.kind === 'aborted') context.throwIfAborted();
-    if (readyOutcome.kind === 'error') throw readyOutcome.error;
-    if (readyOutcome.kind === 'exit') {
-      throw new Error(
-        `Worktree Metro owner exited before readiness with code ${readyOutcome.code}.`,
-      );
-    }
+    // Platform Metros used private readiness envelopes; advance the shared
+    // supervisor into the worker phase before Appium children start.
+    startup.recordMetroTcpReady();
+    startup.recordLine('metro', 'Dev server ready');
+    await startup.waitForMetro();
     console.log(
-      `[e2e-startup] invocation=${paths.id} phase=metro-ready log=${paths.metro}`,
+      `[e2e-startup] invocation=${paths.id} phase=metro-ready logs=${paths.metroFor('android')},${paths.metroFor('ios')}`,
     );
     context.throwIfAborted();
 
@@ -1002,14 +1036,14 @@ export async function runCombinedParallelE2e(
     const prepOutcome = await Promise.race([
       preparations.then(() => ({ kind: 'prepared' as const })),
       startup.failure,
-      metro.outcome,
+      ...metros.map(metro => metro.outcome),
       context.aborted.then(() => ({ kind: 'aborted' as const })),
     ]);
     if (prepOutcome.kind === 'aborted') context.throwIfAborted();
     if (prepOutcome.kind === 'error') throw prepOutcome.error;
     if (prepOutcome.kind === 'exit') {
       throw new Error(
-        `Worktree Metro owner exited during preparation with code ${prepOutcome.code}.`,
+        `Platform-separated Metro packager exited during preparation with code ${prepOutcome.code}.`,
       );
     }
     context.throwIfAborted();
@@ -1020,7 +1054,7 @@ export async function runCombinedParallelE2e(
       { android: androidPlan, ios: iosPlan },
       runner,
       context,
-      metro,
+      metros,
       startup,
       paths,
     );

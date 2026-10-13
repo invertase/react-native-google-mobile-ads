@@ -115,7 +115,9 @@ function createInvocationId(now = new Date(), random = randomUUID()): string {
 export type InvocationPaths = {
   id: string;
   root: string;
+  /** Serial / unspecified-platform Metro log. Prefer {@link metroFor} when platform is known. */
   metro: string;
+  metroFor(platform: 'android' | 'ios'): string;
   child(platform: 'android' | 'ios', label: string): string;
   selection(slot: number): string;
   device(platform: 'android' | 'ios', label: string): string;
@@ -127,6 +129,7 @@ export function invocationPaths(id = createInvocationId()): InvocationPaths {
     id,
     root,
     metro: path.join(root, 'metro.log'),
+    metroFor: platform => path.join(root, `metro-${platform}.log`),
     child: (platform, label) => path.join(root, `${platform}-${label}.log`),
     selection: slot => path.join(root, `ios-slot-${slot}-selection.env`),
     device: (platform, label) => path.join(root, `${platform}-${label}-device.log`),
