@@ -1,4 +1,5 @@
 import type { PublicApiExport, PublicApiKind } from './publicApiMatrix.ts';
+import { productRuntimeBehaviors } from './publicApiMatrix.ts';
 import { AppiumTestIds } from './testIds.ts';
 import {
   REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS,
@@ -60,12 +61,14 @@ function excluded(api: string, kind: PublicApiKind, reason: string): ReasonedDis
   return { api, kind, disposition: 'not-appium-capable', reason };
 }
 
-function absent(api: string, kind: PublicApiKind): ReasonedDisposition {
+function absent(api: string, kind: PublicApiKind, reason?: string): ReasonedDisposition {
   return {
     api,
     kind,
     disposition: 'absent-from-example',
-    reason: `${api} is part of the v17 pool/provider/multi-format surface, but RNGoogleMobileAdsExample has no screen that exercises this behavior.`,
+    reason:
+      reason ??
+      `${api} is a public product surface, but RNGoogleMobileAdsExample has no screen that exercises this behavior yet.`,
   };
 }
 
@@ -82,6 +85,314 @@ const staticToken = (api: string): ReasonedDisposition =>
     'const/preset',
     `${api} is a runtime token/value set with no independent operation or observable successful outcome; consumers of the value are dispositioned separately.`,
   );
+
+/** Per-method rows for classic fullscreen ad classes; class-level e2e-outcome remains the device owner. */
+function fullscreenAdMembers(className: string): ReasonedDisposition[] {
+  const viaClass = (method: string, kind: PublicApiKind = 'function'): ReasonedDisposition =>
+    lower(
+      `${className}.${method}`,
+      kind,
+      `${className}.${method} is exercised through the ${className} gallery e2e-outcome load/show/close path; Jest owns request-option validation and event-payload mapping for this surface.`,
+    );
+  return [
+    viaClass('createForAdRequest'),
+    viaClass('load'),
+    viaClass('show'),
+    viaClass('addAdEventListener'),
+    viaClass('addAdEventsListener'),
+    viaClass('removeAllListeners'),
+    viaClass('destroy'),
+    viaClass('responseInfo', 'const/preset'),
+  ];
+}
+
+function bannerProp(
+  api: string,
+  reason: string,
+  kind: PublicApiKind = 'const/preset',
+): ReasonedDisposition {
+  return lower(api, kind, reason);
+}
+
+const MEMBER_API_CONTRACTS: readonly PublicApiContract[] = [
+  ...fullscreenAdMembers('AppOpenAd'),
+  ...fullscreenAdMembers('InterstitialAd'),
+  ...fullscreenAdMembers('RewardedAd'),
+  ...fullscreenAdMembers('RewardedInterstitialAd'),
+  ...fullscreenAdMembers('GAMInterstitialAd'),
+  lower(
+    'NativeAd.createForAdRequest',
+    'function',
+    'NativeAd.createForAdRequest is exercised by the NativeAd gallery e2e-outcome load path; Jest owns request-option validation and createForAdRequest error mapping.',
+  ),
+  lower(
+    'NativeAd.addAdEventListener',
+    'function',
+    'NativeAd.addAdEventListener wiring is covered by Jest native event tests; the NativeAd e2e-outcome owns the rendered NativeAdView success path without creative clicks.',
+  ),
+  lower(
+    'NativeAd.removeAllAdEventListeners',
+    'function',
+    'NativeAd.removeAllAdEventListeners is covered by Jest listener cleanup; Appium does not assert listener teardown as a separate device outcome.',
+  ),
+  lower(
+    'NativeAd.destroy',
+    'function',
+    'NativeAd.destroy is covered by Jest unmount/destroy lifecycle; the NativeAd e2e-outcome owns the rendered success path.',
+  ),
+  lower(
+    'NativeAd.responseInfo',
+    'const/preset',
+    'NativeAd.responseInfo snapshots are asserted in Jest ResponseInfo fixtures; Appium consumes structured load outcomes rather than responseInfo fields.',
+  ),
+  lower(
+    'MultiFormatAdRequest.create',
+    'function',
+    'MultiFormatAdRequest.create is exercised by the MultiFormatAdRequest gallery e2e-outcome; Jest owns preset/config validation for competitive requests.',
+  ),
+  lower(
+    'MultiFormatAdRequest.load',
+    'function',
+    'MultiFormatAdRequest.load is the gallery Load path for the MultiFormatAdRequest e2e-outcome; Jest owns winner-format handle mapping.',
+  ),
+  lower(
+    'MultiFormatAdRequest.destroy',
+    'function',
+    'MultiFormatAdRequest.destroy ownership is covered by Jest multi-format lifecycle tests; Appium owns the competitive render outcome on the same screen.',
+  ),
+  lower(
+    'MobileAds.initialize',
+    'function',
+    'MobileAds().initialize runs during gallery startup and debug-menu pre-init; Jest covers initialize call-through while ad e2e-outcomes prove initialization indirectly.',
+  ),
+  lower(
+    'MobileAds.setRequestConfiguration',
+    'function',
+    'MobileAds().setRequestConfiguration validation and native forward are owned by Jest request-configuration tests; no independent Appium UI outcome exists for the setter alone.',
+  ),
+  lower(
+    'MobileAds.openAdInspector',
+    'function',
+    'MobileAds().openAdInspector is the MobileAds barrel e2e-outcome utility-open-close path; this member row records method-level ownership without a second device contract.',
+  ),
+  lower(
+    'MobileAds.openDebugMenu',
+    'function',
+    'MobileAds().openDebugMenu is the default-export gallery e2e-outcome utility-open-close path; this member row records method-level ownership without a second device contract.',
+  ),
+  lower(
+    'MobileAds.setAppVolume',
+    'function',
+    'MobileAds().setAppVolume validation and native forward are owned by Jest; volume has no honest Appium success assertion beyond call-through.',
+  ),
+  lower(
+    'MobileAds.setAppMuted',
+    'function',
+    'MobileAds().setAppMuted native forward is owned by Jest; mute state has no honest Appium success assertion beyond call-through.',
+  ),
+  lower(
+    'MobileAds.setAudioSessionIsApplicationManaged',
+    'function',
+    'MobileAds().setAudioSessionIsApplicationManaged is iOS AVAudioSession ownership; Jest owns call-through and Android no-op behavior without an Appium audio-session outcome.',
+  ),
+  lower(
+    'MobileAds.registerWebView',
+    'function',
+    'MobileAds().registerWebView is owned by Jest plus Android/iOS WebViewRegistration unit tests; Appium does not host a WebView registration gallery outcome yet.',
+  ),
+  lower(
+    'MobileAds.disableMediationAdapterInitialization',
+    'function',
+    'MobileAds().disableMediationAdapterInitialization is a documented stub no-op until native wiring; type-test call sites own the stub contract, not Appium.',
+  ),
+  lower(
+    'MobileAds.disableSdkCrashReporting',
+    'function',
+    'MobileAds().disableSdkCrashReporting is a documented stub no-op until native wiring; type-test call sites own the stub contract, not Appium.',
+  ),
+  lower(
+    'MobileAds.setPublisherFirstPartyIdEnabled',
+    'function',
+    'MobileAds().setPublisherFirstPartyIdEnabled is a documented stub that resolves immediately; type-test owns the stub contract until native wiring lands.',
+  ),
+  lower(
+    'MobileAds.getVersion',
+    'function',
+    'MobileAds().getVersion currently returns the JS package version stub; package version tooling and type-test own it until native SDK version wiring lands.',
+  ),
+  lower(
+    'MobileAds.subscribeToNativeModuleEvent',
+    'function',
+    'MobileAds().subscribeToNativeModuleEvent is internal event-bridge wiring invoked from the module constructor; Jest owns emitter subscription behavior rather than an Appium outcome.',
+  ),
+  lower(
+    'AdPoolProvider.children',
+    'const/preset',
+    'AdPoolProvider children is standard React composition on the pooled-interstitial provider e2e-outcome screen; no independent device assertion exists for the prop alone.',
+  ),
+  lower(
+    'AdPoolProvider.enabled',
+    'const/preset',
+    'AdPoolProvider enabled consent gating is covered by Jest provider tests; the gallery e2e-outcome runs with enabled pools rather than a dedicated enabled=false device contract.',
+  ),
+  lower(
+    'AdPoolProvider.pools',
+    'namespace/object',
+    'AdPoolProvider pools config is exercised by the pooled-interstitial provider e2e-outcome and Jest provider registration tests.',
+  ),
+  lower(
+    'BannerAd.load',
+    'function',
+    'BannerAd.load / reload is part of the BannerAd rendered-nonzero-view e2e-outcome path; Jest owns banner command wiring.',
+  ),
+  bannerProp(
+    'BannerAd.unitId',
+    'BannerAd.unitId is required gallery configuration for the BannerAd e2e-outcome; Jest owns invalid-unit validation separately.',
+  ),
+  bannerProp(
+    'BannerAd.size',
+    'BannerAd.size selects the smoke banner variant under the BannerAd e2e-outcome; additional size variants remain navigation/manual until a later coverage slice.',
+  ),
+  bannerProp(
+    'BannerAd.maxHeight',
+    'BannerAd.maxHeight is an adaptive-banner layout option covered below Appium; the smoke BannerAd e2e-outcome does not require a maxHeight assertion.',
+  ),
+  bannerProp(
+    'BannerAd.width',
+    'BannerAd.width is an adaptive-banner layout option covered below Appium; the smoke BannerAd e2e-outcome does not require a width assertion.',
+  ),
+  bannerProp(
+    'BannerAd.requestOptions',
+    'BannerAd.requestOptions validation is Jest-owned; successful banner load/render is dispositioned on the BannerAd e2e-outcome.',
+  ),
+  bannerProp(
+    'BannerAd.onAdLoaded',
+    'BannerAd.onAdLoaded drives the gallery loaded marker for the BannerAd e2e-outcome; Jest owns payload mapping including responseInfo dimensions.',
+  ),
+  bannerProp(
+    'BannerAd.onAdFailedToLoad',
+    'BannerAd.onAdFailedToLoad structured error mapping is Jest-owned; Appium retries non-loaded terminals on request-outcome contracts rather than treating failure as success.',
+  ),
+  bannerProp(
+    'BannerAd.onAdOpened',
+    'BannerAd.onAdOpened follows overlay presentation after click; automated Appium never clicks creatives (proposed EX-CREATIVE-CLICK), so Jest owns callback wiring only.',
+  ),
+  bannerProp(
+    'BannerAd.onAdClosed',
+    'BannerAd.onAdClosed follows overlay dismiss after click; automated Appium never clicks creatives (proposed EX-CREATIVE-CLICK), so Jest owns callback wiring only.',
+  ),
+  bannerProp(
+    'BannerAd.onAdImpression',
+    'BannerAd.onAdImpression delivery is inventory-dependent; Jest owns wiring while Appium render proof does not require an impression ack (related proposed EX-IMPRESSION-ACK).',
+  ),
+  bannerProp(
+    'BannerAd.onAdClicked',
+    'BannerAd.onAdClicked requires creative interaction, which automated Appium deliberately avoids (proposed EX-CREATIVE-CLICK); Jest owns callback wiring only.',
+  ),
+  bannerProp(
+    'BannerAd.onPaid',
+    'BannerAd.onPaid delivery is nondeterministic on Google test inventory (proposed EX-PAID-EVENT); Jest owns paid payload mapping.',
+  ),
+  bannerProp(
+    'BannerAd.onSizeChange',
+    'BannerAd.onSizeChange is covered by Jest banner size-change wiring; the BannerAd e2e-outcome asserts nonzero render rather than size-change events.',
+  ),
+  lower(
+    'GAMBannerAd.load',
+    'function',
+    'GAMBannerAd.load / reload is part of the GAMBannerAd rendered-nonzero-view e2e-outcome path; Jest owns banner command wiring.',
+  ),
+  lower(
+    'GAMBannerAd.recordManualImpression',
+    'function',
+    'GAMBannerAd.recordManualImpression has no SDK acknowledgement callback (proposed EX-IMPRESSION-ACK); Jest owns ref method exposure while Appium must not claim impression success.',
+  ),
+  bannerProp(
+    'GAMBannerAd.unitId',
+    'GAMBannerAd.unitId is required gallery configuration for the GAMBannerAd e2e-outcome; Jest owns invalid-unit validation separately.',
+  ),
+  bannerProp(
+    'GAMBannerAd.sizes',
+    'GAMBannerAd.sizes selects the smoke GAM banner variant under the GAMBannerAd e2e-outcome; Fluid and other sizes remain navigation-only until a later coverage slice.',
+  ),
+  bannerProp(
+    'GAMBannerAd.maxHeight',
+    'GAMBannerAd.maxHeight is an adaptive-banner layout option covered below Appium; the smoke GAMBannerAd e2e-outcome does not require a maxHeight assertion.',
+  ),
+  bannerProp(
+    'GAMBannerAd.width',
+    'GAMBannerAd.width is an adaptive-banner layout option covered below Appium; the smoke GAMBannerAd e2e-outcome does not require a width assertion.',
+  ),
+  bannerProp(
+    'GAMBannerAd.requestOptions',
+    'GAMBannerAd.requestOptions validation is Jest-owned; successful GAM banner load/render is dispositioned on the GAMBannerAd e2e-outcome.',
+  ),
+  bannerProp(
+    'GAMBannerAd.manualImpressionsEnabled',
+    'GAMBannerAd.manualImpressionsEnabled gates recordManualImpression; Appium must not claim impression ack success (proposed EX-IMPRESSION-ACK).',
+  ),
+  bannerProp(
+    'GAMBannerAd.onAdLoaded',
+    'GAMBannerAd.onAdLoaded drives the gallery loaded marker for the GAMBannerAd e2e-outcome; Jest owns payload mapping including responseInfo dimensions.',
+  ),
+  bannerProp(
+    'GAMBannerAd.onAdFailedToLoad',
+    'GAMBannerAd.onAdFailedToLoad structured error mapping is Jest-owned; Appium retries non-loaded terminals on request-outcome contracts rather than treating failure as success.',
+  ),
+  bannerProp(
+    'GAMBannerAd.onAdOpened',
+    'GAMBannerAd.onAdOpened follows overlay presentation after click; automated Appium never clicks creatives (proposed EX-CREATIVE-CLICK), so Jest owns callback wiring only.',
+  ),
+  bannerProp(
+    'GAMBannerAd.onAdClosed',
+    'GAMBannerAd.onAdClosed follows overlay dismiss after click; automated Appium never clicks creatives (proposed EX-CREATIVE-CLICK), so Jest owns callback wiring only.',
+  ),
+  bannerProp(
+    'GAMBannerAd.onAdImpression',
+    'GAMBannerAd.onAdImpression delivery is inventory-dependent; Jest owns wiring while Appium render proof does not require an impression ack (proposed EX-IMPRESSION-ACK).',
+  ),
+  bannerProp(
+    'GAMBannerAd.onAdClicked',
+    'GAMBannerAd.onAdClicked requires creative interaction, which automated Appium deliberately avoids (proposed EX-CREATIVE-CLICK); Jest owns callback wiring only.',
+  ),
+  bannerProp(
+    'GAMBannerAd.onPaid',
+    'GAMBannerAd.onPaid delivery is nondeterministic on Google test inventory (proposed EX-PAID-EVENT); Jest owns paid payload mapping.',
+  ),
+  bannerProp(
+    'GAMBannerAd.onSizeChange',
+    'GAMBannerAd.onSizeChange is covered by Jest banner size-change wiring; the GAMBannerAd e2e-outcome asserts nonzero render rather than size-change events.',
+  ),
+  bannerProp(
+    'GAMBannerAd.onAppEvent',
+    'GAMBannerAd.onAppEvent delivery depends on ad-server inventory (proposed EX-GAM-APP-EVENT); Jest owns app-event payload mapping.',
+  ),
+  bannerProp(
+    'MultiFormatBannerAdView.handle',
+    'MultiFormatBannerAdView.handle is required on the multi-format gallery render path; the MultiFormatBannerAdView e2e-outcome owns nonzero banner-winner display.',
+  ),
+  bannerProp(
+    'NativeAdView.nativeAd',
+    'NativeAdView.nativeAd binds the loaded NativeAd on the NativeAdView e2e-outcome; Jest owns recycle/identity edge cases.',
+    'namespace/object',
+  ),
+  bannerProp(
+    'NativeAdView.children',
+    'NativeAdView children compose asset views inside the NativeAdView e2e-outcome; Appium measures the enclosing NativeAdView rather than each child.',
+  ),
+  bannerProp(
+    'NativeAsset.assetType',
+    'NativeAsset.assetType registration is covered by Jest native asset tests; the Native Appium contract does not identify each asset.',
+  ),
+  bannerProp(
+    'NativeAsset.children',
+    'NativeAsset children are composition-only; Jest owns asset registration while Appium measures the enclosing NativeAdView.',
+  ),
+  bannerProp(
+    'NativeMediaView.resizeMode',
+    'NativeMediaView.resizeMode is covered below Appium; the Native outcome does not require video inventory or assert media playback.',
+  ),
+];
 
 export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
   lower(
@@ -321,7 +632,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertionTestIdExpression: 'AppiumTestIds.action.rendered(formatId)',
     success: 'rendered-nonzero-view',
     assertion:
-      'When the competitive multi-format request selects the banner winner, MultiFormatBannerAdView is displayed with nonzero width and height on the imperative gallery surface without issuing a second ad request.',
+      'Winner-conditional: when the competitive multi-format request selects the banner winner, MultiFormatBannerAdView is displayed with nonzero width and height on the imperative gallery surface without issuing a second ad request; a native winner exercises NativeAdView instead.',
   }),
   outcome('NativeAd', 'class', {
     contractId: AppiumTestIds.format.native,
@@ -439,25 +750,25 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertion:
       'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives.',
   }),
-  lower(
+  absent(
     'useAppOpenAdManager',
     'hook',
-    'Jest owns AppOpenAdManager lifecycle (4h freshness, warm-foreground show via useForeground, isShowing guard, reload after close/show-error, no cold-start auto-show). Dedicated manager e2e / example screen is deferred; useAppOpenAd already has an app-open e2e-outcome. Full-tier platform coverage may still require an app-open manager e2e later.',
+    'useAppOpenAdManager has no dedicated example screen yet. Jest owns AppOpenAdManager lifecycle (4h freshness, warm-foreground show via useForeground, isShowing guard, reload after close/show-error, no cold-start auto-show); useAppOpenAd already has an app-open e2e-outcome.',
   ),
   lower(
     'useForeground',
     'hook',
     'Jest drives deterministic AppState transitions and listener cleanup; device foreground timing is not asserted as an ad-success outcome.',
   ),
-  lower(
+  absent(
     'useGAMInterstitialAd',
     'hook',
-    'Jest owns options-form lifecycle parity with useInterstitialAd plus onAppEvent delivery; GAMInterstitialAd already has an e2e-outcome for the imperative Ad Manager interstitial path, and the example has no dedicated hook screen yet.',
+    'useGAMInterstitialAd has no dedicated example hook screen yet. Jest owns options-form lifecycle parity with useInterstitialAd plus onAppEvent delivery; GAMInterstitialAd already has an e2e-outcome for the imperative Ad Manager interstitial path.',
   ),
-  lower(
+  absent(
     'useNativeAd',
     'hook',
-    'Jest owns NativeAd create/unmount/identity lifecycle; NativeAd / NativeAdView already have e2e-outcomes for the imperative render path, and the example has no dedicated useNativeAd screen yet.',
+    'useNativeAd has no dedicated example hook screen yet. Jest owns NativeAd create/unmount/identity lifecycle; NativeAd / NativeAdView already have e2e-outcomes for the imperative render path.',
   ),
   outcome('useInterstitialAd', 'hook', {
     contractId: AppiumTestIds.format.interstitialHook,
@@ -517,7 +828,8 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertion:
       'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives; paid-event and earned-reward delivery are not blocking success conditions.',
   }),
-] as const;
+  ...MEMBER_API_CONTRACTS,
+];
 
 export function dispositionSummary(
   contracts: readonly PublicApiContract[] = PUBLIC_API_CONTRACTS,
@@ -572,15 +884,7 @@ export function validatePublicApiContracts(
   exampleSourceText: string,
 ): string[] {
   const errors: string[] = [];
-  const publicBehaviors = new Map<string, PublicApiKind>();
-  for (const exported of matrix) {
-    if (exported.runtime) {
-      publicBehaviors.set(exported.name, exported.kind);
-      for (const member of exported.members) {
-        publicBehaviors.set(member.name, member.kind);
-      }
-    }
-  }
+  const publicBehaviors = productRuntimeBehaviors(matrix);
 
   const contractsByApi = new Map<string, PublicApiContract>();
   for (const contract of contracts) {

@@ -14,12 +14,27 @@ import {
   BannerAdSize,
   MultiFormatAdPresets,
   MultiFormatBannerAdView,
+  NativeAdView,
+  NativeAsset,
+  NativeAssetType,
+  NativeMediaView,
   TestIds,
   useAdPool,
+  useAppOpenAdManager,
+  useGAMInterstitialAd,
   useMultiFormatAd,
+  useNativeAd,
   usePooledAd,
   type AdErrorPayload,
   type MultiFormatBannerAdHandle,
+  type UseAppOpenAdManagerOptions,
+  type UseAppOpenAdManagerResult,
+  type UseAppOpenAdManagerStatus,
+  type UseGAMInterstitialAdOptions,
+  type UseGAMInterstitialAdResult,
+  type UseNativeAdOptions,
+  type UseNativeAdResult,
+  type UseNativeAdStatus,
   type UsePooledAdStatus,
 } from './src';
 
@@ -85,6 +100,54 @@ function PoolHookTreeExample(): React.JSX.Element {
   );
 }
 
+// High-value hooks previously missing from type-test.
+function DeferredHooksTypeProof(): React.JSX.Element | null {
+  const managerOptions: UseAppOpenAdManagerOptions = {
+    adUnitId: TestIds.APP_OPEN,
+    autoLoad: false,
+  };
+  const manager: UseAppOpenAdManagerResult = useAppOpenAdManager(managerOptions);
+  const managerStatus: UseAppOpenAdManagerStatus = manager.status;
+
+  const gamOptions: UseGAMInterstitialAdOptions = {
+    adUnitId: TestIds.GAM_INTERSTITIAL,
+    autoLoad: false,
+    onAppEvent: (event: { name: string; data?: string }) => {
+      console.log(event.name, event.data);
+    },
+  };
+  const gam: UseGAMInterstitialAdResult = useGAMInterstitialAd(gamOptions);
+
+  const nativeOptions: UseNativeAdOptions = {
+    adUnitId: TestIds.GAM_NATIVE,
+    autoLoad: false,
+  };
+  const native: UseNativeAdResult = useNativeAd(nativeOptions);
+  const nativeStatus: UseNativeAdStatus = native.status;
+
+  console.log(managerStatus, gam.status, nativeStatus, native.nativeAd);
+  return null;
+}
+
+// Native component JSX props previously missing from type-test.
+function NativeComponentsTypeProof(): React.JSX.Element | null {
+  const native: UseNativeAdResult = useNativeAd({
+    adUnitId: TestIds.GAM_NATIVE,
+    autoLoad: false,
+  });
+  if (!native.nativeAd) {
+    return null;
+  }
+  return (
+    <NativeAdView nativeAd={native.nativeAd}>
+      <NativeAsset assetType={NativeAssetType.HEADLINE} />
+      <NativeMediaView resizeMode="cover" />
+    </NativeAdView>
+  );
+}
+
 void BannerFailedLoadExample;
 void MultiFormatBannerExample;
 void PoolHookTreeExample;
+void DeferredHooksTypeProof;
+void NativeComponentsTypeProof;

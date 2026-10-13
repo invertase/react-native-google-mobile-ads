@@ -50,6 +50,11 @@ import type {
   AdErrorPayload,
   AdEventListener,
   AdEventPayload,
+  AdsConsentInfo,
+  AdsConsentInfoOptions,
+  AdsConsentInterface,
+  AdsConsentUserChoices,
+  AppEvent,
   KnownAdErrorReason,
   AdExpiry,
   AdIdentity,
@@ -71,6 +76,7 @@ import type {
   MultiFormatBannerSize,
   MultiFormatLoadResult,
   PaidEvent,
+  PaidEventListener,
   PollResult,
   PooledAd,
   ResponseInfo,
@@ -105,6 +111,10 @@ mobileAds().setAudioSessionIsApplicationManaged(true);
 mobileAds().registerWebView(1).then();
 mobileAds().setRequestConfiguration({ maxAdContentRating: MaxAdContentRating.G }).then();
 mobileAds().subscribeToNativeModuleEvent('foo');
+mobileAds().disableMediationAdapterInitialization();
+mobileAds().disableSdkCrashReporting();
+mobileAds().setPublisherFirstPartyIdEnabled(true).then();
+console.log(mobileAds().getVersion());
 
 // MobileAds
 MobileAds()
@@ -118,6 +128,10 @@ MobileAds().setAudioSessionIsApplicationManaged(true);
 MobileAds().registerWebView(1).then();
 MobileAds().setRequestConfiguration({ maxAdContentRating: MaxAdContentRating.G }).then();
 MobileAds().subscribeToNativeModuleEvent('foo');
+MobileAds().disableMediationAdapterInitialization();
+MobileAds().disableSdkCrashReporting();
+MobileAds().setPublisherFirstPartyIdEnabled(true).then();
+console.log(MobileAds().getVersion());
 
 // AdsConsentDebugGeography
 console.log(AdsConsentDebugGeography.DISABLED);
@@ -647,6 +661,64 @@ type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ?
   ? true
   : false;
 type AssertNever<T extends never> = T;
+
+// Type-only consent / app-event / paid-listener exports (Equal locks).
+type AdsConsentInfoKeys = Equal<
+  keyof AdsConsentInfo,
+  'status' | 'canRequestAds' | 'privacyOptionsRequirementStatus' | 'isConsentFormAvailable'
+>;
+type AdsConsentInfoOptionsKeys = Equal<
+  keyof AdsConsentInfoOptions,
+  'debugGeography' | 'tagForUnderAgeOfConsent' | 'testDeviceIdentifiers'
+>;
+type AdsConsentUserChoicesKeys = Equal<
+  keyof AdsConsentUserChoices,
+  | 'activelyScanDeviceCharacteristicsForIdentification'
+  | 'applyMarketResearchToGenerateAudienceInsights'
+  | 'createAPersonalisedAdsProfile'
+  | 'createAPersonalisedContentProfile'
+  | 'developAndImproveProducts'
+  | 'measureAdPerformance'
+  | 'measureContentPerformance'
+  | 'selectBasicAds'
+  | 'selectPersonalisedAds'
+  | 'selectPersonalisedContent'
+  | 'storeAndAccessInformationOnDevice'
+  | 'usePreciseGeolocationData'
+>;
+type AdsConsentRuntimeIsInterface = Equal<typeof AdsConsent, AdsConsentInterface>;
+type AdsConsentInterfaceMethodKeys = Equal<
+  keyof AdsConsentInterface,
+  | 'requestInfoUpdate'
+  | 'showForm'
+  | 'showPrivacyOptionsForm'
+  | 'loadAndShowConsentFormIfRequired'
+  | 'getConsentInfo'
+  | 'gatherConsent'
+  | 'getTCString'
+  | 'getTCModel'
+  | 'getGdprApplies'
+  | 'getPurposeConsents'
+  | 'getPurposeLegitimateInterests'
+  | 'getUserChoices'
+  | 'reset'
+>;
+type AppEventKeys = Equal<keyof AppEvent, 'name' | 'data'>;
+type PaidEventListenerShape = Equal<PaidEventListener, (event: PaidEvent) => void>;
+const consentAndEventTypeLocks: [
+  AdsConsentInfoKeys,
+  AdsConsentInfoOptionsKeys,
+  AdsConsentUserChoicesKeys,
+  AdsConsentRuntimeIsInterface,
+  AdsConsentInterfaceMethodKeys,
+  AppEventKeys,
+  PaidEventListenerShape,
+] = [true, true, true, true, true, true, true];
+const paidEventListenerProof: PaidEventListener = (event: PaidEvent) => {
+  console.log(event.currency, event.value);
+};
+const appEventSample: AppEvent = { name: 'gad', data: 'x' };
+console.log(consentAndEventTypeLocks, paidEventListenerProof, appEventSample);
 
 const pooledStatusEqualsResult: Equal<UsePooledAdStatus, UsePooledAdResult['status']> = true;
 const pooledStatusEqualsExport: Equal<UsePooledAdStatus, ExportedUsePooledAdResult['status']> =
