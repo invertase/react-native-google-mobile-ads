@@ -22,7 +22,7 @@ Once: `yarn && yarn prepare`; on iOS also root `BUNDLE_FROZEN=true bundle instal
 
 **Names only.** Which of these to run is [platform coverage](#platform-coverage-gate-blocking). When running e2e, use only these named scripts (no `yarn tests:android:*` / `yarn tests:ios:*` globs). Do **not** run every named script unless that table requires it.
 
-Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:build:nextgen`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:check`, `yarn tests:appium:release`, `yarn tests:appium:force-acquire`, `yarn tests:appium:provision <android|ios|both>`, `yarn tests:appium:android`, `yarn tests:appium:android:nextgen`, `yarn tests:appium:ios`, `yarn tests:appium:parallel`, `yarn tests:appium:android:parallel`, `yarn tests:appium:ios:parallel`, `yarn tests:appium:android:parallel:external`, `yarn tests:appium:ios:parallel:external`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
+Named scripts: `yarn tests:packager`, `yarn tests:packager:reset-cache`, `yarn tests:e2e:codegen`, `yarn tests:android:build`, `yarn tests:android:build:nextgen`, `yarn tests:android:run`, `yarn tests:ios:pod:install`, `yarn tests:ios:run`, `yarn tests:appium:check`, `yarn tests:appium:release`, `yarn tests:appium:force-acquire`, `yarn tests:appium:provision <android|ios|both>`, `yarn tests:appium:android`, `yarn tests:appium:android:nextgen`, `yarn tests:appium:ios`, `yarn tests:appium:parallel`, `yarn tests:appium:android:parallel`, `yarn tests:appium:ios:parallel`, `yarn tests:appium:android:parallel:external`, `yarn tests:appium:ios:parallel:external`, `yarn tests:appium:reliability`, `yarn tests:appium:ios:select-and-boot`, `yarn tests:appium:ios:prebuild-wda`.
 
 `yarn tests:e2e:codegen` generates **app-source iOS** metadata for the example and `@invertase/rngma-testing` probe before CocoaPods. [GMA-AD-3](../architecture-decisions.md#gma-ad-3) core library output is committed and skipped. Android Gradle generates the remaining app/probe metadata during its build, so Android paths do not invoke this iOS-only command or delete any generated tree. The canonical iOS run and Appium preflight invoke the same yarn target rather than duplicating its implementation. The frozen `tests:ios:pod:install` script remains exactly the bundled pod command and is called by `tests:ios:run` after codegen.
 
@@ -150,6 +150,22 @@ Wait for both Shell B and Shell C to exit. Only then return to Shell A and inter
 Each invocation creates a new `/tmp/rngma-e2e/<invocation-id>/` tree; it never truncates evidence from an earlier invocation. The tree holds `metro.log`, one platform/slot/label child log per Appium stream, and exact-device startup logs. Parallel summaries print the invocation ID and log root, and each result row retains slot/spec/tests/status/numeric exit/log. Startup failure and cleanup semantics are canonical in [§ enforced startup supervision](#enforced-startup-supervision). A successful run prints one passing row per positional shard and the derived total from `tooling/appium/src/sessionShards.ts` ([§ Appium](#appium-scaffold)), then an owner parent stops its one Metro; an external parent never does. Release interrupted slots individually; release the shared Metro only from its explicit owner slot scope.
 
 These parallel commands are local-only. GitHub Actions remains on the serial commands and serial `8081`/`4725` resources documented in [CI workflows](../ci-workflows/index.md#workflows).
+
+<a id="reliability-worker"></a>
+
+## Single-slot reliability worker
+
+`yarn tests:appium:reliability` owns the campaign single-slot / single-platform reliability harness in `tooling/appium/` (`reliabilityModes`, `reliabilityLayouts`, `reliabilityReceipts`, `reliabilityLogs`, `reliabilityOwnership`, `reliabilityWorker`). It is local-only and never replaces serial or three-slot parallel Appium.
+
+**Modes.** Pass `diagnose`, `burn-in`, or `qualify` (positional or `--mode=`). All modes keep runner-level bail off (`RNGMA_WDIO_RUNNER_BAIL=0` on shard children) and Mocha bail on within a shard. Only `qualify` marks append-only receipts as statistically countable.
+
+**Layout.** `--layout=temporary|final` (default `final`) selects a data-driven shard list with a sha256 layout digest. Temporary layouts may pass `--temporary-shards=<id>,…`; final layouts use every derived smoke shard from `sessionShards.ts`.
+
+**Receipts and logs.** Each job gets an immutable `jobId`, a write-once identity sidecar, and an append-only JSONL receipt ledger with explicit `startup` / `preamble` / `test` cells. Credits are exactly-once per `(jobId, iteration, cellKind, cellId, shardId)`. Failure shard logs stay full; passing shard logs are sampled and gzip-compressed; a measured disk ceiling deletes oldest pass archives first.
+
+**Ownership.** The worker models single-slot states `not-requested` → `acquiring` → `owned-idle` → `owned-running` → `draining` → `released` (or `release-failed`). Elastic multi-slot leases land later; do not invent parallel capacity flags here.
+
+**Device-free execution.** Device-free harness pilots use `--dry-run` with `--platform` / `--slot` (or `RNGMA_E2E_PLATFORM` / `RNGMA_E2E_SLOT`). Live single-slot Appium shard execution is not attached to this command yet — use the named serial/parallel Appium scripts for device runs. Optional `--receipt-root` / `--log-root` / `--iterations` override defaults under `/tmp/rngma-e2e-reliability/`.
 
 <a id="ios-wda-prebuilt-validation"></a>
 

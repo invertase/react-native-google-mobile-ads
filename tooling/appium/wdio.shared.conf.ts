@@ -20,7 +20,9 @@ export const config: Options.Testrunner = {
   // Startup ownership consumes WDIO/Appium's session-created evidence before
   // allowing the slower app/JS readiness phase to begin.
   logLevel: 'info',
-  bail: 1,
+  // Reliability worker sets RNGMA_WDIO_RUNNER_BAIL=0 so a failed shard process
+  // never implies cross-shard runner bail; mocha bail stays on within a shard.
+  bail: process.env.RNGMA_WDIO_RUNNER_BAIL === '0' ? 0 : 1,
   waitforTimeout: 15000,
   connectionRetryTimeout: 120000,
   connectionRetryCount: 2,
