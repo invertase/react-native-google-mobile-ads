@@ -164,3 +164,36 @@ only; do not invent a dual-host bridge.
 **Pinned formats.** Picture-in-Picture, dedicated `IconAd`, and swipeable
 interstitial are out of scope for the initial dual-backend ingest; follow-on
 queues own them.
+
+<a id="gma-ad-6"></a>
+
+## GMA-AD-6 — Exclude four external outcomes, not owned integration behavior — **Accepted**
+
+Blocking success criteria exclude only live generation or observation of these
+four externally controlled outcomes:
+
+- a UMP consent outcome that requires a maintained production-configured app
+  ID and consent form;
+- a Google Ad Manager app event emitted by served inventory;
+- execution paths internal to Google or third-party mediation SDK binaries;
+  and
+- successful fill from a real mediation network.
+
+Owned integration behavior at each boundary remains in scope. Type contracts,
+request/configuration forwarding, callback and delegate wiring, app-event
+name and payload mapping, lifecycle ordering, adapter/plugin configuration,
+and deterministic error handling require Jest, type-test, Android JVM, iOS
+XCTest, or Appium ownership as appropriate.
+
+This decision accepts no other coverage exception. In particular, paid-event
+delivery, click callbacks, manual-impression command and lifecycle behavior,
+reward-earned behavior, official test-ad load/reward flows, and native
+JaCoCo/LCOV collection remain candidates for test ownership or a separate
+evidence-backed decision.
+
+Tests may use fakes, spies, direct callback invocation, and official test ad
+units without claiming those four external outcomes are deterministic. Live
+evidence for one of the four may be retained as a non-blocking diagnostic,
+but its absence is not a product-test failure. Procedures:
+[API-wide e2e coverage](testing/running-e2e.md#api-wide-e2e-coverage) and
+[coverage design](testing/coverage-design.md).
