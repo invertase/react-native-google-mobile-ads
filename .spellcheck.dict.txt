@@ -279,6 +279,8 @@ GoogleUtilities
 BOM
 disableSPM
 forceStaticLinking
+force-acquire
+coexistence
 prebuilt
 CocoaPods-only
 config-script

@@ -23,6 +23,7 @@
     "appium:ios:parallel:external": "tsx ./scripts/parallel.ts ios --metro=external",
     "check": "tsx ./scripts/check-resources.ts",
     "release": "tsx ./scripts/release-resources.ts",
+    "force-acquire": "tsx ./scripts/force-acquire.ts",
     "provision": "tsx ./scripts/provision.ts",
     "ios:select-and-boot": "tsx ./scripts/preflight.ts ios --select-and-boot",
     "ios:prebuild-wda": "tsx ./scripts/prebuild-wda.ts"

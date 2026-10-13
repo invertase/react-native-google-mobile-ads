@@ -87,8 +87,8 @@ export function validateParallelAssignments(
     );
   }
   const slots = assignments.map(entry => entry.slot);
-  if (slots.some(slot => slot === 0 || slot === 3)) {
-    throw new Error('Parallel mapping must never include slot 0 or reserved slot 3.');
+  if (slots.some(slot => slot === 0)) {
+    throw new Error('Parallel mapping must never include slot 0.');
   }
   if (new Set(slots).size !== slots.length) {
     throw new Error('Parallel mapping contains a duplicate slot.');

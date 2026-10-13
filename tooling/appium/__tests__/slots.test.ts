@@ -57,12 +57,12 @@ describe('cross-platform e2e slots', () => {
     assert.throws(() => slotResources(1.5, 'android'), /integer from 0 to 7/);
   });
 
-  test('keeps generic slot 3 math separate from RNGMA reservation policy', () => {
+  test('keeps generic slot 3 math and allows temporary RNGMA allocation', () => {
     assert.equal(slotResources(3, 'android').metroPort, 15007);
-    assert.throws(() => assertRngmaSlotAllowed(3), /reserved for RNFB/);
-    assert.throws(() => requireRngmaSlot('3'), /reserved for RNFB/);
+    assert.doesNotThrow(() => assertRngmaSlotAllowed(3));
+    assert.equal(requireRngmaSlot('3'), 3);
     assert.throws(() => assertRngmaSlotAllowed(0), /not an operational RNGMA slot/);
-    for (const slot of [1, 2, 4, 5, 6, 7]) {
+    for (const slot of [1, 2, 3, 4, 5, 6, 7]) {
       assert.doesNotThrow(() => assertRngmaSlotAllowed(slot));
     }
   });
@@ -205,7 +205,9 @@ describe('cross-platform e2e slots', () => {
       /conflicts with the android command/,
     );
     assert.throws(() => androidRunCommands({ RNGMA_E2E_SLOT: '0' }), /not an operational/);
-    assert.throws(() => androidRunCommands({ RNGMA_E2E_SLOT: '3' }), /reserved for RNFB/);
+    assert.doesNotThrow(() =>
+      androidRunCommands({ RNGMA_E2E_SLOT: '3', RNGMA_E2E_PLATFORM: 'android' }),
+    );
   });
 
   test('iOS slot run requires the selector exact name, UDID, and runtime', () => {

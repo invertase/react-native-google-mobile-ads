@@ -62,6 +62,7 @@
     "tests:appium:drivers:verify": "yarn workspace @invertase/rngma-appium drivers:verify",
     "tests:appium:check": "yarn workspace @invertase/rngma-appium check",
     "tests:appium:release": "yarn workspace @invertase/rngma-appium release",
+    "tests:appium:force-acquire": "yarn workspace @invertase/rngma-appium force-acquire",
     "tests:appium:provision": "yarn workspace @invertase/rngma-appium provision",
     "tests:appium:android": "yarn workspace @invertase/rngma-appium appium:android",
     "tests:appium:android:nextgen": "cross-env RNGMA_ANDROID_BACKEND=nextgen yarn workspace @invertase/rngma-appium appium:android",
