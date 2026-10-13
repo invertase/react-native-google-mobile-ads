@@ -12,6 +12,8 @@ import {
   AdPoolProvider,
   BannerAd,
   BannerAdSize,
+  GAMBannerAd,
+  GAMBannerAdSize,
   MultiFormatAdPresets,
   MultiFormatBannerAdView,
   NativeAdView,
@@ -26,6 +28,7 @@ import {
   useNativeAd,
   usePooledAd,
   type AdErrorPayload,
+  type GAMBannerAdProps,
   type MultiFormatBannerAdHandle,
   type UseAppOpenAdManagerOptions,
   type UseAppOpenAdManagerResult,
@@ -146,8 +149,32 @@ function NativeComponentsTypeProof(): React.JSX.Element | null {
   );
 }
 
+// GAM banner ref + manualImpressionsEnabled prop (JSX surface).
+function GAMBannerManualImpressionTypeProof(): React.JSX.Element {
+  const ref = React.useRef<GAMBannerAd>(null);
+  type ManualImpressionsEnabledIsOptionalBoolean = Equal<
+    GAMBannerAdProps['manualImpressionsEnabled'],
+    boolean | undefined
+  >;
+  const manualImpressionsEnabledLock: ManualImpressionsEnabledIsOptionalBoolean = true;
+  const recordManualImpression = (): void => {
+    ref.current?.recordManualImpression();
+    ref.current?.load();
+  };
+  console.log(manualImpressionsEnabledLock, recordManualImpression);
+  return (
+    <GAMBannerAd
+      ref={ref}
+      unitId={TestIds.GAM_BANNER}
+      sizes={[GAMBannerAdSize.BANNER]}
+      manualImpressionsEnabled={true}
+    />
+  );
+}
+
 void BannerFailedLoadExample;
 void MultiFormatBannerExample;
 void PoolHookTreeExample;
 void DeferredHooksTypeProof;
 void NativeComponentsTypeProof;
+void GAMBannerManualImpressionTypeProof;

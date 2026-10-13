@@ -6,13 +6,17 @@ import {
   AdFormat,
   AdPoolPresets,
   AdStalenessGuidanceMillis,
+  GAMBannerAd,
   MultiFormatAdPresets,
+  RewardedAdEventType,
   useMultiFormatAd,
   usePooledAd,
   type AdEventPayload,
   type AdPoolAvailability,
   type AdPoolProviderProps,
+  type GAMBannerAdProps,
   type PaidEvent,
+  type RewardedAdReward,
   type UseAdPoolResult,
   type UseAdPoolStatus,
   type UseMultiFormatAdResult,
@@ -33,12 +37,29 @@ type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ?
   : false;
 
 type PaidPayloadLock = Equal<AdEventPayload<AdEventType.PAID>, PaidEvent>;
+type EarnedRewardPayloadLock = Equal<
+  AdEventPayload<RewardedAdEventType.EARNED_REWARD>,
+  RewardedAdReward
+>;
+type ManualImpressionsEnabledLock = Equal<
+  GAMBannerAdProps['manualImpressionsEnabled'],
+  boolean | undefined
+>;
+type GAMBannerRefMethodsLock = GAMBannerAd extends {
+  recordManualImpression: () => void;
+  load: () => void;
+}
+  ? true
+  : false;
 type AvailabilityLock = Equal<AdPoolAvailability, { available: boolean; observedCount: number }>;
 type PooledStatusLock = Equal<UsePooledAdStatus, UsePooledAdResult['status']>;
 type MultiStatusLock = Equal<UseMultiFormatAdStatus, UseMultiFormatAdResult['status']>;
 type AdPoolStatusLock = Equal<UseAdPoolStatus, UseAdPoolResult['status']>;
 
 const paidPayloadLock: PaidPayloadLock = true;
+const earnedRewardPayloadLock: EarnedRewardPayloadLock = true;
+const manualImpressionsEnabledLock: ManualImpressionsEnabledLock = true;
+const gamBannerRefMethodsLock: GAMBannerRefMethodsLock = true;
 const availabilityLock: AvailabilityLock = true;
 const statusLocks: [PooledStatusLock, MultiStatusLock, AdPoolStatusLock] = [true, true, true];
 
@@ -64,6 +85,9 @@ const barrelTypesAlive: BarrelTypesAlive = [
 describe('type contract locks', () => {
   it('keeps guidance millis, nativeOrBanner literals, and barrel aliases live', () => {
     expect(paidPayloadLock).toBe(true);
+    expect(earnedRewardPayloadLock).toBe(true);
+    expect(manualImpressionsEnabledLock).toBe(true);
+    expect(gamBannerRefMethodsLock).toBe(true);
     expect(availabilityLock).toBe(true);
     expect(statusLocks).toEqual([true, true, true]);
     expect(barrelTypesAlive[0]).toEqual([]);
