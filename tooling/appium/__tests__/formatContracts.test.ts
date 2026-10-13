@@ -775,6 +775,9 @@ test('retires blanket per-attempt acceptance and locks real render probes', () =
   assert.match(gallerySource, /attempt\.classification !== 'loaded'/);
   assert.match(gallerySource, /\[show-close-proof\]/);
   assert.match(gallerySource, /\[hook-lifecycle-proof\]/);
+  assert.match(gallerySource, /\[earned-reward-proof\]/);
+  assert.match(gallerySource, /\[paid-event-canary\]/);
+  assert.match(gallerySource, /\[manual-impression-canary\]/);
   assert.match(gallerySource, /classifyHookLoadOutcome/);
   assert.match(gallerySource, /classifyPoolFilledOutcome/);
   assert.match(gallerySource, /observePoolFilledOutcome/);

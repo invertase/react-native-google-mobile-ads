@@ -39,7 +39,6 @@ export const TYPE_PROOF_DEFERRED: Readonly<Record<string, string>> = {
   CollapsiblePlacement: 'Banner collapsible placement union; pending type-test Equal lock.',
   FullscreenAdFormat: 'Type-only fullscreen format union; pending type-test Equal lock.',
   FullScreenAdHookOptions: 'Shared fullscreen hook options; pending type-test Equal lock.',
-  GAMBannerAdProps: 'GAM banner props; pending type-test.tsx JSX lock.',
   MobileAd: 'Type-only MobileAd interface; pending type-test Equal lock.',
   MultiFormatAdFormat: 'Type-only multi-format union; pending type-test Equal lock.',
   NativeAdRequestOptions: 'Native request options; pending type-test Equal lock.',

@@ -185,11 +185,15 @@ name and payload mapping, lifecycle ordering, adapter/plugin configuration,
 and deterministic error handling require Jest, type-test, Android JVM, iOS
 XCTest, or Appium ownership as appropriate.
 
-This decision accepts no other coverage exception. In particular, paid-event
-delivery, click callbacks, manual-impression command and lifecycle behavior,
-reward-earned behavior, official test-ad load/reward flows, and native
-JaCoCo/LCOV collection remain candidates for test ownership or a separate
-evidence-backed decision.
+This decision accepts no other coverage exception and does not expand the
+four exclusions above. Official Google test-unit reward-earned delivery
+(`earned=true` after show-close on rewarded and rewarded-interstitial paths,
+both platforms) is Appium-owned and blocking. Paid-event counter/payload
+markers and manual-impression lifecycle canaries may be logged as
+diagnostics; their absence must not fail product tests and must not claim
+server impression reporting. Creative-click callbacks stay below Appium
+(Jest / native ownership) without becoming a fifth external exclusion.
+Native JaCoCo/LCOV collection remains a separate evidence path.
 
 Tests may use fakes, spies, direct callback invocation, and official test ad
 units without claiming those four external outcomes are deterministic. Live

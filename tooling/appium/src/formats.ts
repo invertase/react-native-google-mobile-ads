@@ -73,8 +73,18 @@ export type RepresentativeRequestOutcomeContract = {
   retry?: RepresentativeRequestRetry;
   /** After an accepted loaded outcome, tap Show and dismiss without clicking ad creatives. */
   showClose?: boolean;
-  /** After an accepted loaded outcome, assert Hook lifecycle markers (showing/closed; reward non-blocking). */
+  /** After an accepted loaded outcome, assert Hook lifecycle markers (showing/closed). */
   hookLifecycle?: boolean;
+  /**
+   * After show-close / hook lifecycle, require gallery lifecycle marker `earned=true`
+   * (official Google rewarded / rewarded-interstitial test units; both platforms).
+   */
+  requireEarnedReward?: boolean;
+  /**
+   * After accepted GAM banner render, tap recordManualImpression and log a non-blocking
+   * lifecycle canary (no server-reporting claim; absence must not fail).
+   */
+  manualImpressionCanary?: boolean;
   /** After poll reaches filled, assert pooled fullscreen show-open/close lifecycle markers. */
   poolShowClose?: boolean;
   /** Capability gate surfaces report structured unsupported results instead of ad fill. */
@@ -163,6 +173,7 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     path: 'gam',
     renderProof: 'banner',
     retry: 'remount',
+    manualImpressionCanary: true,
   },
   {
     id: AppiumTestIds.format.native,
@@ -204,6 +215,7 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     path: 'fullscreen',
     renderProof: 'none',
     showClose: true,
+    requireEarnedReward: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.rewarded),
   },
   {
@@ -215,6 +227,7 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     path: 'fullscreen',
     renderProof: 'none',
     showClose: true,
+    requireEarnedReward: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.rewardedInterstitial),
   },
   {
@@ -258,6 +271,7 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     path: 'hook',
     renderProof: 'none',
     hookLifecycle: true,
+    requireEarnedReward: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.rewardedHook),
   },
   {
@@ -269,6 +283,7 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     path: 'hook',
     renderProof: 'none',
     hookLifecycle: true,
+    requireEarnedReward: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.rewardedInterstitialHook),
   },
   {

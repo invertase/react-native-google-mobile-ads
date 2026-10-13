@@ -305,7 +305,7 @@ const MEMBER_API_CONTRACTS: readonly PublicApiContract[] = [
   lower(
     'GAMBannerAd.recordManualImpression',
     'function',
-    'GAMBannerAd.recordManualImpression has no SDK acknowledgement callback (proposed EX-IMPRESSION-ACK); Jest owns ref method exposure while Appium must not claim impression success.',
+    'GAMBannerAd.recordManualImpression is exercised as a non-blocking Appium canary after GAM banner render (recorded/callback markers; no server-reporting claim). Jest owns ref method exposure and command routing.',
   ),
   bannerProp(
     'GAMBannerAd.unitId',
@@ -329,7 +329,7 @@ const MEMBER_API_CONTRACTS: readonly PublicApiContract[] = [
   ),
   bannerProp(
     'GAMBannerAd.manualImpressionsEnabled',
-    'GAMBannerAd.manualImpressionsEnabled gates recordManualImpression; Appium must not claim impression ack success (proposed EX-IMPRESSION-ACK).',
+    'GAMBannerAd.manualImpressionsEnabled gates recordManualImpression; Appium logs a non-blocking lifecycle canary and must not claim server impression reporting.',
   ),
   bannerProp(
     'GAMBannerAd.onAdLoaded',
@@ -349,7 +349,7 @@ const MEMBER_API_CONTRACTS: readonly PublicApiContract[] = [
   ),
   bannerProp(
     'GAMBannerAd.onAdImpression',
-    'GAMBannerAd.onAdImpression delivery is inventory-dependent; Jest owns wiring while Appium render proof does not require an impression ack (proposed EX-IMPRESSION-ACK).',
+    'GAMBannerAd.onAdImpression may appear on the non-blocking manual-impression canary marker; absence must not fail Appium. Jest owns callback wiring.',
   ),
   bannerProp(
     'GAMBannerAd.onAdClicked',
@@ -547,7 +547,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertionTestIdExpression: 'AppiumTestIds.action.rendered(formatId)',
     success: 'rendered-nonzero-view',
     assertion:
-      'After a loaded GAM banner request outcome, the rendered wrapper and a displayed native descendant both have nonzero width and height; manual impression recording is not a blocking success condition because the SDK exposes no acknowledgement callback.',
+      'After a loaded GAM banner request outcome, the rendered wrapper and a displayed native descendant both have nonzero width and height; recordManualImpression is then tapped as a non-blocking lifecycle canary (recorded/callback markers; no server-reporting claim; absence must not fail).',
   }),
   staticToken('GAMBannerAdSize'),
   outcome('GAMInterstitialAd', 'class', {
@@ -693,12 +693,12 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertionTestIdExpression: 'AppiumTestIds.action.loaded(props.formatId)',
     success: 'lifecycle-event',
     assertion:
-      'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives; paid-event delivery is not a blocking success condition.',
+      'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives; the closed marker must include earned=true for the official rewarded test unit; paid-event counter/payload markers are diagnostic only and their absence must not fail.',
   }),
   lower(
     'RewardedAdEventType',
     'const/preset',
-    'Jest covers rewarded lifecycle and reward payload mapping; earning a reward requires showing a creative, which the automated Appium suite deliberately avoids.',
+    'Appium owns blocking earned=true on official rewarded / rewarded-interstitial test-unit show-close paths; Jest owns reward payload mapping and earned-reward listener wiring.',
   ),
   outcome('RewardedInterstitialAd', 'class', {
     contractId: AppiumTestIds.format.rewardedInterstitial,
@@ -709,7 +709,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertionTestIdExpression: 'AppiumTestIds.action.loaded(props.formatId)',
     success: 'lifecycle-event',
     assertion:
-      'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives; paid-event delivery is not a blocking success condition.',
+      'A fresh Load request reaches the structured loaded lifecycle outcome, then Show drives the lifecycle marker through opened and closed without tapping ad creatives; the closed marker must include earned=true for the official rewarded-interstitial test unit; paid-event counter/payload markers are diagnostic only and their absence must not fail.',
   }),
   excluded(
     'SDK_VERSION',
@@ -814,7 +814,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertionTestIdExpression: 'AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedHook)',
     success: 'hook-state-transition',
     assertion:
-      'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives; paid-event and earned-reward delivery are not blocking success conditions.',
+      'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives; the closed marker must include earned=true for the official rewarded test unit; paid-event counter markers are diagnostic only and their absence must not fail.',
   }),
   outcome('useRewardedInterstitialAd', 'hook', {
     contractId: AppiumTestIds.format.rewardedInterstitialHook,
@@ -826,7 +826,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
       'AppiumTestIds.action.loaded(AppiumTestIds.format.rewardedInterstitialHook)',
     success: 'hook-state-transition',
     assertion:
-      'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives; paid-event and earned-reward delivery are not blocking success conditions.',
+      'Load drives a hook state transition to loaded, then Show advances the Hook lifecycle marker through showing and closed without tapping ad creatives; the closed marker must include earned=true for the official rewarded-interstitial test unit; paid-event counter markers are diagnostic only and their absence must not fail.',
   }),
   ...MEMBER_API_CONTRACTS,
 ];

@@ -123,8 +123,18 @@ function requestOutcomeLabel(state: RequestState): string {
 type ShowLifecyclePhase = 'idle' | 'opened' | 'closed';
 type UtilityLifecyclePhase = 'idle' | 'opened' | 'closed';
 
-function showLifecycleLabel(phase: ShowLifecyclePhase): string {
-  return `Show lifecycle: ${phase}`;
+function showLifecycleLabel(
+  phase: ShowLifecyclePhase,
+  extras?: { earnedReward?: boolean; paidCount?: number },
+): string {
+  const parts = [`Show lifecycle: ${phase}`];
+  if (extras?.earnedReward !== undefined) {
+    parts.push(`earned=${extras.earnedReward}`);
+  }
+  if (extras?.paidCount !== undefined) {
+    parts.push(`paid=${extras.paidCount}`);
+  }
+  return parts.join('; ');
 }
 
 function utilityLifecycleLabel(phase: UtilityLifecyclePhase): string {
@@ -225,6 +235,7 @@ function hookLifecycleLabel(fields: {
   impression: boolean;
   clicked: boolean;
   earnedReward?: boolean;
+  paidCount?: number;
 }): string {
   const parts = [
     `status=${fields.status}`,
@@ -234,7 +245,17 @@ function hookLifecycleLabel(fields: {
   if (fields.earnedReward !== undefined) {
     parts.push(`earned=${fields.earnedReward}`);
   }
+  if (fields.paidCount !== undefined) {
+    parts.push(`paid=${fields.paidCount}`);
+  }
   return `Hook lifecycle: ${parts.join('; ')}`;
+}
+
+function manualImpressionLifecycleLabel(fields: {
+  recorded: boolean;
+  callback: boolean;
+}): string {
+  return `Manual impression: recorded=${fields.recorded}; callback=${fields.callback}`;
 }
 
 const GALLERY_SECTION_CHIPS: Array<{ id: GallerySection; title: string }> = [
@@ -436,18 +457,28 @@ const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
 const gamInterstitial = GAMInterstitialAd.createForAdRequest(TestIds.GAM_INTERSTITIAL);
 
 function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId: string }) {
+  const tracksReward =
+    props.formatId === AppiumTestIds.format.rewarded ||
+    props.formatId === AppiumTestIds.format.rewardedInterstitial;
   const [requestState, setRequestState] = useState<RequestState>({
     requestId: 0,
     attempt: 0,
     outcome: REQUEST_OUTCOME_PENDING,
   });
   const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
+  const [earnedReward, setEarnedReward] = useState(false);
+  const [paidCount, setPaidCount] = useState(0);
 
   useEffect(() => {
     const adListener = props.mobileAd.addAdEventsListener(({ type, payload }) => {
       console.log(`${Platform.OS} ${props.type} ad event: ${type}`);
       if (type === AdEventType.PAID) {
+        setPaidCount(current => current + 1);
         console.log(payload);
+      }
+      if (type === RewardedAdEventType.EARNED_REWARD) {
+        setEarnedReward(true);
+        console.log(`${Platform.OS} ${props.type} earned reward: ${JSON.stringify(payload)}`);
       }
       if (type === AdEventType.ERROR) {
         setRequestState(current => ({ ...current, outcome: requestErrorOutcome(payload) }));
@@ -474,6 +505,8 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
         onPress={() => {
           try {
             setShowPhase('idle');
+            setEarnedReward(false);
+            setPaidCount(0);
             setRequestState(current => freshRequestState(current.attempt + 1));
             props.mobileAd.load();
           } catch (e) {
@@ -486,7 +519,9 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
         {requestOutcomeLabel(requestState)}
       </Text>
       <Text testID={AppiumTestIds.action.lifecycle(props.formatId)}>
-        {showLifecycleLabel(showPhase)}
+        {tracksReward
+          ? showLifecycleLabel(showPhase, { earnedReward, paidCount })
+          : showLifecycleLabel(showPhase)}
       </Text>
       <Button
         title={`Show ${props.type} Ad`}
@@ -783,9 +818,10 @@ function InterstitialHookFormat() {
 }
 
 function RewardedHookFormat() {
-  const { load, show, status, error, reward, earnedReward, clicked, impression } = useRewardedAd({
-    adUnitId: TestIds.REWARDED,
-  });
+  const { load, show, status, error, reward, earnedReward, clicked, impression, revenue } =
+    useRewardedAd({
+      adUnitId: TestIds.REWARDED,
+    });
   useEffect(() => {
     if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} rewarded hook error: ${error.message}`);
@@ -815,7 +851,13 @@ function RewardedHookFormat() {
         Status: {status}
       </Text>
       <Text testID={AppiumTestIds.action.lifecycle(AppiumTestIds.format.rewardedHook)}>
-        {hookLifecycleLabel({ status, impression, clicked, earnedReward })}
+        {hookLifecycleLabel({
+          status,
+          impression,
+          clicked,
+          earnedReward,
+          paidCount: revenue ? 1 : 0,
+        })}
       </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
@@ -831,7 +873,7 @@ function RewardedHookFormat() {
 }
 
 function RewardedInterstitialHookFormat() {
-  const { load, show, status, error, reward, earnedReward, clicked, impression } =
+  const { load, show, status, error, reward, earnedReward, clicked, impression, revenue } =
     useRewardedInterstitialAd({
       adUnitId: TestIds.REWARDED_INTERSTITIAL,
     });
@@ -864,7 +906,13 @@ function RewardedInterstitialHookFormat() {
         Status: {status}
       </Text>
       <Text testID={AppiumTestIds.action.lifecycle(AppiumTestIds.format.rewardedInterstitialHook)}>
-        {hookLifecycleLabel({ status, impression, clicked, earnedReward })}
+        {hookLifecycleLabel({
+          status,
+          impression,
+          clicked,
+          earnedReward,
+          paidCount: revenue ? 1 : 0,
+        })}
       </Text>
       <Text>Error? {error ? error.message : 'false'}</Text>
       <Button
@@ -1348,6 +1396,10 @@ function GAMBannerFormat(props: {
   const bannerRef = useRef<GAMBannerAd>(null);
   const formatId = AppiumTestIds.gamBannerVariant(gamSizesKey(props.sizes));
   const [requestState, setRequestState] = useState<RequestState>(() => freshRequestState(1));
+  const [manualImpression, setManualImpression] = useState({
+    recorded: false,
+    callback: false,
+  });
 
   return (
     <View style={styles.testSpacing} testID={formatId}>
@@ -1367,16 +1419,23 @@ function GAMBannerFormat(props: {
             setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
             console.log(`${Platform.OS} GAM banner error: ${error.message}`);
           }}
+          onAdImpression={() => {
+            setManualImpression(current => ({ ...current, callback: true }));
+          }}
         />
       </View>
       <Text testID={AppiumTestIds.action.loaded(formatId)}>
         {requestOutcomeLabel(requestState)}
+      </Text>
+      <Text testID={AppiumTestIds.action.lifecycle(formatId)}>
+        {manualImpressionLifecycleLabel(manualImpression)}
       </Text>
       <Button
         title="recordManualImpression"
         testID={AppiumTestIds.action.recordImpression(formatId)}
         onPress={() => {
           bannerRef.current?.recordManualImpression();
+          setManualImpression(current => ({ ...current, recorded: true }));
         }}
       />
     </View>
