@@ -193,9 +193,10 @@ markers and manual-impression lifecycle canaries may be logged as
 diagnostics; their absence must not fail product tests and must not claim
 server impression reporting. Owned paid-event, creative-click, reward-callback, and GAM
 manual-impression wiring stays below Appium (Jest / native; Android
-classic and Next-Gen JVM OwnedCallbacks) without becoming a fifth
-external exclusion. Native JaCoCo/LCOV collection remains a separate
-evidence path ([coverage design § native agent collection](testing/coverage-design.md#native-agent-collection)).
+classic and Next-Gen JVM OwnedCallbacks; iOS XCTest OwnedCallbacks)
+without becoming a fifth external exclusion. Native JaCoCo/LCOV
+collection remains a separate evidence path ([coverage design § native
+agent collection](testing/coverage-design.md#native-agent-collection)).
 
 Tests may use fakes, spies, direct callback invocation, and official test ad
 units without claiming those four external outcomes are deterministic. Live

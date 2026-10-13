@@ -22,6 +22,7 @@
 #import <React/RCTUtils.h>
 #import "RNGoogleMobileAdsBannerEventMapping.h"
 #import "RNGoogleMobileAdsCommon.h"
+#import "RNGoogleMobileAdsOwnedCallbacks.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
 
 @implementation RNGoogleMobileAdsBannerComponent
@@ -64,7 +65,11 @@
 
     ((GAMBannerView *)_banner).validAdSizes = _sizeConfig[@"sizes"];
     ((GAMBannerView *)_banner).appEventDelegate = self;
-    ((GAMBannerView *)_banner).enableManualImpressions = [_manualImpressionsEnabled boolValue];
+    if ([RNGoogleMobileAdsOwnedCallbacks
+            shouldApplyEnableManualImpressions:[_manualImpressionsEnabled boolValue]
+                               isAdManagerUnit:YES]) {
+      ((GAMBannerView *)_banner).enableManualImpressions = YES;
+    }
   } else {
     _banner = [[GADBannerView alloc] initWithAdSize:adSize];
   }
@@ -110,8 +115,11 @@
   _propsChanged = true;
 }
 
-- (void)setManualImpressionsEnabled:(BOOL *)manualImpressionsEnabled {
-  _manualImpressionsEnabled = [NSNumber numberWithBool:manualImpressionsEnabled];
+- (void)setManualImpressionsEnabled:(BOOL)manualImpressionsEnabled {
+  // RCT_EXPORT_VIEW_PROPERTY(..., BOOL) passes a scalar BOOL. A BOOL* signature
+  // coerces the parameter address through numberWithBool and breaks false.
+  _manualImpressionsEnabled = [RNGoogleMobileAdsOwnedCallbacks
+      manualImpressionsEnabledNumberFromBool:manualImpressionsEnabled];
   _propsChanged = true;
 }
 
@@ -246,7 +254,9 @@
 }
 
 - (void)recordManualImpression {
-  if ([_banner class] == [GAMBannerView class]) {
+  if ([RNGoogleMobileAdsOwnedCallbacks
+          shouldRecordManualImpressionForBannerClass:[_banner class]
+                                adManagerBannerClass:[GAMBannerView class]]) {
     [((GAMBannerView *)_banner) recordImpression];
   }
 }
