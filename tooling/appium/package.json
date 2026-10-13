@@ -21,6 +21,7 @@
     "appium:android:parallel:external": "tsx ./scripts/parallel.ts android --metro=external",
     "appium:ios:parallel": "tsx ./scripts/parallel.ts ios",
     "appium:ios:parallel:external": "tsx ./scripts/parallel.ts ios --metro=external",
+    "reliability": "tsx ./scripts/reliability-worker.ts",
     "check": "tsx ./scripts/check-resources.ts",
     "release": "tsx ./scripts/release-resources.ts",
     "force-acquire": "tsx ./scripts/force-acquire.ts",
