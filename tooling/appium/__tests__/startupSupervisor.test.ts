@@ -392,6 +392,16 @@ test('worker and app phase timeouts reject at their exact deadlines', async () =
   workerClock.advance(WORKER_STARTUP_TIMEOUT_MS);
   await workerRejected;
 
+  const androidClock = new FakeClock();
+  const androidWorker = new StartupSupervisor(['serial-android'], androidClock);
+  await metroReady(androidWorker);
+  const androidRejected = assert.rejects(
+    androidWorker.waitForWorkers(),
+    /INSTALL_FAILED_UPDATE_INCOMPATIBLE|vending dex2oat/,
+  );
+  androidClock.advance(WORKER_STARTUP_TIMEOUT_MS);
+  await androidRejected;
+
   const appClock = new FakeClock();
   const app = new StartupSupervisor(['child'], appClock);
   await metroReady(app);
