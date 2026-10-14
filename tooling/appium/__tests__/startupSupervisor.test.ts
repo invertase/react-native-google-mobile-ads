@@ -202,6 +202,19 @@ test('WebDriver COMMAND findElement probe lines embedding redbox text are not ha
   }
 });
 
+test('WebDriver DATA value: selector probe lines embedding redbox text are not hard markers', () => {
+  for (const line of [
+    // Exact CI classic+nextgen shape after COMMAND findElement (post-4082891 abort).
+    `value: 'new UiSelector().textContains("Could not connect to development server")'`,
+    `  value: 'new UiSelector().descriptionContains("Could not connect to development server")'`,
+    `[0-0]   value: 'new UiSelector().textContains("Cannot connect to the development server")'`,
+    `value: "new UiSelector().textContains(\\"Unable to load script\\")"`,
+    `value: '-ios predicate string: label CONTAINS "Could not connect to development server"'`,
+  ]) {
+    assert.equal(hardFailureForLine(line), undefined, line);
+  }
+});
+
 test('WebDriver COMMAND findElement development-server probes do not abort startup', async () => {
   const supervisor = new StartupSupervisor(['serial-android'], new FakeClock());
   await metroReady(supervisor);
@@ -213,6 +226,32 @@ test('WebDriver COMMAND findElement development-server probes do not abort start
   supervisor.recordLine(
     'serial-android',
     'COMMAND findElement("android uiautomator", "new UiSelector().textContains(\\"Could not connect to development server\\")")',
+  );
+  assert.equal(supervisor.abortCount, 0);
+  supervisor.recordLine('serial-android', STARTUP_READY_MARKER);
+  await apps;
+  assert.equal(supervisor.phase, 'complete');
+});
+
+test('WebDriver DATA value: development-server selector probes do not abort startup', async () => {
+  const supervisor = new StartupSupervisor(['serial-android'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-android', 'Execution of 1 worker started');
+  supervisor.recordLine('serial-android', 'Appium session created successfully');
+  await workers;
+  const apps = supervisor.waitForApps();
+  supervisor.recordLine(
+    'serial-android',
+    'COMMAND findElement("android uiautomator", "new UiSelector().textContains(\\"Could not connect to development server\\")")',
+  );
+  supervisor.recordLine(
+    'serial-android',
+    `value: 'new UiSelector().textContains("Could not connect to development server")'`,
+  );
+  supervisor.recordLine(
+    'serial-android',
+    `value: 'new UiSelector().descriptionContains("Could not connect to development server")'`,
   );
   assert.equal(supervisor.abortCount, 0);
   supervisor.recordLine('serial-android', STARTUP_READY_MARKER);

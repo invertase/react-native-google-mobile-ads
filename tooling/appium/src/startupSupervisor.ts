@@ -113,17 +113,31 @@ export const HARD_FAILURE_MARKERS: readonly HardFailureMarker[] = [
 ] as const;
 
 /**
- * WDIO/Appium protocol COMMAND lines that embed UiAutomator/XCUITest selectors.
- * Gallery probes (e.g. assertNoVisibleJsLoadFailure) call findElement with
- * textContains("Could not connect to development server"); those COMMAND logs
- * must not trip HARD_FAILURE_MARKERS as if the redbox were real.
+ * WDIO/Appium protocol lines that embed UiAutomator/XCUITest selectors used as
+ * gallery probes (e.g. assertNoVisibleJsLoadFailure). Both the COMMAND
+ * findElement line and the following DATA `value:` payload — which can still
+ * contain textContains("Could not connect to development server") — must not
+ * trip HARD_FAILURE_MARKERS as if the redbox were real.
  */
-export function isWebDriverCommandProbeLine(line: string): boolean {
-  return /\bCOMMAND\b/i.test(line) && /\bfindElement\b/i.test(line);
+export function isWebDriverSelectorProbeLine(line: string): boolean {
+  if (/\bCOMMAND\b/i.test(line) && /\bfindElement\b/i.test(line)) {
+    return true;
+  }
+  // WDIO DATA dumps the selector on its own line after COMMAND, e.g.
+  // value: 'new UiSelector().textContains("Could not connect to development server")'
+  return (
+    /\bvalue\s*:/i.test(line) &&
+    /UiSelector\(\)\.(?:text|description)Contains|XCUIElementType|(?:-ios\s+)?(?:predicate|class chain)|label\s+CONTAINS/i.test(
+      line,
+    )
+  );
 }
 
+/** @deprecated Prefer {@link isWebDriverSelectorProbeLine}. */
+export const isWebDriverCommandProbeLine = isWebDriverSelectorProbeLine;
+
 export function hardFailureForLine(line: string): HardFailureMarker | undefined {
-  if (isWebDriverCommandProbeLine(line)) {
+  if (isWebDriverSelectorProbeLine(line)) {
     return undefined;
   }
   return HARD_FAILURE_MARKERS.find(marker => marker.pattern.test(line));
