@@ -78,6 +78,7 @@ deprecations
 Deprecations
 Detox
 DEVEX
+dex2oat
 Diarmid
 displayPreload
 DNS
@@ -146,6 +147,7 @@ IPs
 isClicked
 isClosed
 isEarnedReward
+isHeadless
 isLoaded
 isOpened
 isShowing
@@ -282,6 +284,13 @@ forceStaticLinking
 force-acquire
 coexistence
 prebuilt
+bootstatusTail
+bootstatusTimedOut
+listState
+recoverSkipped
+simulatorUiPids
+UPDATE_INCOMPATIBLE
+vending
 CocoaPods-only
 config-script
 RNFB's

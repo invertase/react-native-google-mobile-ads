@@ -37,6 +37,16 @@ test('android capabilities force a fresh app install', async () => {
     'expected app launch only after instrumentation startup',
   );
   assert.equal(typeof config.before, 'function', 'expected a post-session Android launch hook');
+  assert.equal(
+    typeof config.onPrepare,
+    'function',
+    'expected onPrepare pre-uninstall before enforceAppInstall',
+  );
+  assert.equal(
+    typeof config.beforeSession,
+    'function',
+    'expected beforeSession POST /session begin instrumentation',
+  );
   const adbCalls: string[][] = [];
   const startupCalls: Array<{ operation: string; value: unknown }> = [];
   await prepareAndroidApp(
@@ -149,6 +159,17 @@ test('ios capabilities force a fresh app install', async () => {
   const cap = firstCapability(config);
   assert.equal(cap['appium:enforceAppInstall'], true, 'expected appium:enforceAppInstall to be true');
   assert.equal(cap['appium:noReset'], false, 'expected appium:noReset to remain false');
+});
+
+test('ios capabilities include isHeadless from resolveIosIsHeadless', async () => {
+  const { resolveIosIsHeadless } = await import('../src/iosBootDiagnostics.ts');
+  const { config } = await import('../wdio.ios.conf.ts');
+  const cap = firstCapability(config);
+  assert.equal(cap['appium:isHeadless'], resolveIosIsHeadless());
+  assert.equal(resolveIosIsHeadless({ CI: 'true' }), true);
+  assert.equal(resolveIosIsHeadless({}), false);
+  assert.equal(resolveIosIsHeadless({ CI: 'true', RNGMA_IOS_HEADLESS: '0' }), false);
+  assert.equal(resolveIosIsHeadless({ RNGMA_IOS_HEADLESS: '1' }), true);
 });
 
 test('ios timeout ordering lets WDA finish before WDIO gives up', async () => {
