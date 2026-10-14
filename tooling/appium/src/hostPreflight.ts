@@ -112,6 +112,14 @@ export type GithubEnvAppend = (path: string, data: string) => void;
 /** Bound for `simctl boot` itself (not bootstatus -b). */
 export const IOS_SIMCTL_BOOT_TIMEOUT_MS = 60_000;
 
+/**
+ * Bounded retries for CoreSimulator `bootstatus -b` / confirm ETIMEDOUT flakes.
+ * Attempt 1 is immediate; later attempts sleep the matching backoff entry first.
+ */
+export const IOS_BOOTSTATUS_ETIMEDOUT_ATTEMPTS = 3;
+/** Backoff before attempts 2 and 3 (ms). Index is `attempt - 2`. */
+export const IOS_BOOTSTATUS_ETIMEDOUT_BACKOFF_MS = [2_000, 5_000] as const;
+
 function runSelectAndBootSimctl(
   execFile: SimctlExec,
   args: string[],
@@ -128,11 +136,30 @@ function runSelectAndBootSimctl(
   }
 }
 
+function isSelectAndBootEtimedoutAbort(error: unknown): boolean {
+  if (isXcrunTimedOutError(error)) {
+    return true;
+  }
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  return /ETIMEDOUT|timed out/i.test(error.message) && /retryable abort/i.test(error.message);
+}
+
+function backoffBeforeAttempt(attempt: number): number {
+  if (attempt <= 1) {
+    return 0;
+  }
+  return IOS_BOOTSTATUS_ETIMEDOUT_BACKOFF_MS[attempt - 2] ?? 5_000;
+}
+
 /**
  * Boot an already-selected simulator and persist its UDID and runtime version.
  * Does not inventory or create devices; callers supply the selection.
  * Persists only after bootstatus and a settle/re-probe confirm Booted — never
  * when list/bootstatus hit ETIMEDOUT or the device is not Booted.
+ * `bootstatus -b` and the confirm gate retry a few times on ETIMEDOUT with
+ * backoff; non-timeout confirm failures and exhausted retries still fail fast.
  */
 export function bootAndPersistSelectedSimulator(
   selected: { udid: string; state: string; runtimeVersion: string },
@@ -149,6 +176,8 @@ export function bootAndPersistSelectedSimulator(
     execCapture?: ExecCapture;
     /** Bound for `simctl bootstatus <udid> -b` (defaults to SIMULATOR_STARTUP_TIMEOUT_MS). */
     bootstatusWaitTimeoutMs?: number;
+    /** Bounded ETIMEDOUT retries for bootstatus -b + confirm (default 3). */
+    bootstatusEtimedoutAttempts?: number;
     log?: (line: string) => void;
   },
 ): void {
@@ -157,6 +186,10 @@ export function bootAndPersistSelectedSimulator(
   const execCapture = options?.execCapture ?? defaultExecCapture;
   const bootstatusWaitTimeoutMs =
     options?.bootstatusWaitTimeoutMs ?? SIMULATOR_STARTUP_TIMEOUT_MS;
+  const etimedoutAttempts = Math.max(
+    1,
+    options?.bootstatusEtimedoutAttempts ?? IOS_BOOTSTATUS_ETIMEDOUT_ATTEMPTS,
+  );
   const log = options?.log;
 
   if (selected.state !== 'Booted') {
@@ -192,18 +225,66 @@ export function bootAndPersistSelectedSimulator(
       }
     }
   }
-  runSelectAndBootSimctl(
-    execFile,
-    ['simctl', 'bootstatus', selected.udid, '-b'],
-    bootstatusWaitTimeoutMs,
-  );
+
+  let bootstatusOk = false;
+  for (let attempt = 1; attempt <= etimedoutAttempts; attempt++) {
+    const backoffMs = backoffBeforeAttempt(attempt);
+    if (backoffMs > 0) {
+      log?.(
+        `[e2e-ios-boot] phase=select-and-boot:bootstatus-retry udid=${selected.udid} attempt=${attempt}/${etimedoutAttempts} backoffMs=${backoffMs}`,
+      );
+      sleep(backoffMs);
+    }
+    try {
+      runSelectAndBootSimctl(
+        execFile,
+        ['simctl', 'bootstatus', selected.udid, '-b'],
+        bootstatusWaitTimeoutMs,
+      );
+      bootstatusOk = true;
+      break;
+    } catch (error) {
+      if (!isSelectAndBootEtimedoutAbort(error) || attempt >= etimedoutAttempts) {
+        throw error;
+      }
+    }
+  }
+  if (!bootstatusOk) {
+    throw formatSelectAndBootTimeoutError(
+      `xcrun simctl bootstatus ${selected.udid} -b`,
+    );
+  }
+
   if (settleMs > 0) {
     log?.(
       `[e2e-ios-boot] phase=select-and-boot:settle udid=${selected.udid} settleMs=${settleMs}`,
     );
     sleep(settleMs);
   }
-  const confirmed = assertSimulatorReadyForPersist(selected.udid, execCapture);
+
+  let confirmed: { state: string; name: string } | undefined;
+  for (let attempt = 1; attempt <= etimedoutAttempts; attempt++) {
+    const backoffMs = backoffBeforeAttempt(attempt);
+    if (backoffMs > 0) {
+      log?.(
+        `[e2e-ios-boot] phase=select-and-boot:confirm-retry udid=${selected.udid} attempt=${attempt}/${etimedoutAttempts} backoffMs=${backoffMs}`,
+      );
+      sleep(backoffMs);
+    }
+    try {
+      confirmed = assertSimulatorReadyForPersist(selected.udid, execCapture);
+      break;
+    } catch (error) {
+      if (!isSelectAndBootEtimedoutAbort(error) || attempt >= etimedoutAttempts) {
+        throw error;
+      }
+    }
+  }
+  if (confirmed == null) {
+    throw new Error(
+      `select-and-boot: confirm exhausted ${etimedoutAttempts} ETIMEDOUT attempts — retryable abort.`,
+    );
+  }
   log?.(
     `[e2e-ios-boot] phase=select-and-boot:confirmed udid=${selected.udid} name=${confirmed.name} state=${confirmed.state}`,
   );

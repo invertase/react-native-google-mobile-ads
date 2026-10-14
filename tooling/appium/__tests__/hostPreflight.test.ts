@@ -360,8 +360,10 @@ describe('hostPreflight', () => {
     assert.deepEqual(calls, [['xcrun', 'simctl', 'bootstatus', 'udid', '-b']]);
   });
 
-  test('aborts without persisting when bootstatus -b hits ETIMEDOUT', () => {
+  test('aborts without persisting when bootstatus -b ETIMEDOUT retries are exhausted', () => {
     const writes: Array<{ path: string; data: string }> = [];
+    const sleeps: number[] = [];
+    let bootstatusCalls = 0;
     assert.throws(
       () =>
         bootAndPersistSelectedSimulator(
@@ -369,6 +371,7 @@ describe('hostPreflight', () => {
           ['--github-env', '/tmp/github.env'],
           (_bin, args) => {
             if (args.includes('bootstatus')) {
+              bootstatusCalls += 1;
               throw Object.assign(new Error('spawnSync ETIMEDOUT'), { code: 'ETIMEDOUT' });
             }
           },
@@ -378,17 +381,148 @@ describe('hostPreflight', () => {
           {
             afterBoot: () => undefined,
             settleMs: 0,
+            sleep: ms => {
+              sleeps.push(ms);
+            },
             execCapture: confirmReadyCapture('slow-udid'),
           },
         ),
       /retryable abort.*ETIMEDOUT|ETIMEDOUT.*retryable abort/,
     );
+    assert.equal(bootstatusCalls, 3);
+    assert.deepEqual(sleeps, [2_000, 5_000]);
     assert.deepEqual(writes, []);
   });
 
-  test('settles then refuses to persist when list confirm times out', () => {
+  test('retries bootstatus -b on ETIMEDOUT then persists after success', () => {
     const writes: Array<{ path: string; data: string }> = [];
     const sleeps: number[] = [];
+    let bootstatusCalls = 0;
+    bootAndPersistSelectedSimulator(
+      { udid: 'flaky-udid', state: 'Booted', runtimeVersion: '26.2' },
+      ['--github-env', '/tmp/github.env'],
+      (_bin, args) => {
+        if (args.includes('bootstatus')) {
+          bootstatusCalls += 1;
+          if (bootstatusCalls < 2) {
+            throw Object.assign(new Error('spawnSync ETIMEDOUT'), { code: 'ETIMEDOUT' });
+          }
+        }
+      },
+      (path, data) => {
+        writes.push({ path, data });
+      },
+      {
+        afterBoot: () => undefined,
+        settleMs: 0,
+        sleep: ms => {
+          sleeps.push(ms);
+        },
+        execCapture: confirmReadyCapture('flaky-udid'),
+      },
+    );
+    assert.equal(bootstatusCalls, 2);
+    assert.deepEqual(sleeps, [2_000]);
+    assert.deepEqual(writes, [
+      {
+        path: '/tmp/github.env',
+        data: githubEnvSelectionLines('flaky-udid', '26.2'),
+      },
+    ]);
+  });
+
+  test('retries confirm gate on ETIMEDOUT then persists after success', () => {
+    const writes: Array<{ path: string; data: string }> = [];
+    const sleeps: number[] = [];
+    let confirmCalls = 0;
+    bootAndPersistSelectedSimulator(
+      { udid: 'confirm-udid', state: 'Booted', runtimeVersion: '26.2' },
+      ['--github-env', '/tmp/github.env'],
+      () => {},
+      (path, data) => {
+        writes.push({ path, data });
+      },
+      {
+        afterBoot: () => undefined,
+        settleMs: 0,
+        sleep: ms => {
+          sleeps.push(ms);
+        },
+        execCapture: (bin, args) => {
+          if (args.includes('list')) {
+            confirmCalls += 1;
+            if (confirmCalls < 2) {
+              return {
+                stdout: '',
+                stderr: '',
+                status: null,
+                timedOut: true,
+                error: 'spawnSync ETIMEDOUT',
+              };
+            }
+            return {
+              stdout: readyListJson('confirm-udid', 'Booted'),
+              stderr: '',
+              status: 0,
+            };
+          }
+          return { stdout: 'Booted\n', stderr: '', status: 0 };
+        },
+      },
+    );
+    assert.equal(confirmCalls, 2);
+    assert.deepEqual(sleeps, [2_000]);
+    assert.deepEqual(writes, [
+      {
+        path: '/tmp/github.env',
+        data: githubEnvSelectionLines('confirm-udid', '26.2'),
+      },
+    ]);
+  });
+
+  test('does not retry confirm when simulator state is not Booted', () => {
+    const writes: Array<{ path: string; data: string }> = [];
+    const sleeps: number[] = [];
+    let confirmCalls = 0;
+    assert.throws(
+      () =>
+        bootAndPersistSelectedSimulator(
+          { udid: 'creating-udid', state: 'Booted', runtimeVersion: '26.2' },
+          ['--github-env', '/tmp/github.env'],
+          () => {},
+          (path, data) => {
+            writes.push({ path, data });
+          },
+          {
+            afterBoot: () => undefined,
+            settleMs: 0,
+            sleep: ms => {
+              sleeps.push(ms);
+            },
+            execCapture: (bin, args) => {
+              if (args.includes('list')) {
+                confirmCalls += 1;
+                return {
+                  stdout: readyListJson('creating-udid', 'Creating'),
+                  stderr: '',
+                  status: 0,
+                };
+              }
+              return { stdout: 'Creating\n', stderr: '', status: 0 };
+            },
+          },
+        ),
+      /state=Creating.*refusing to persist/,
+    );
+    assert.equal(confirmCalls, 1);
+    assert.deepEqual(sleeps, []);
+    assert.deepEqual(writes, []);
+  });
+
+  test('settles then refuses to persist when list confirm ETIMEDOUT retries are exhausted', () => {
+    const writes: Array<{ path: string; data: string }> = [];
+    const sleeps: number[] = [];
+    let confirmCalls = 0;
     assert.throws(
       () =>
         bootAndPersistSelectedSimulator(
@@ -404,18 +538,22 @@ describe('hostPreflight', () => {
             sleep: ms => {
               sleeps.push(ms);
             },
-            execCapture: () => ({
-              stdout: '',
-              stderr: '',
-              status: null,
-              timedOut: true,
-              error: 'spawnSync ETIMEDOUT',
-            }),
+            execCapture: () => {
+              confirmCalls += 1;
+              return {
+                stdout: '',
+                stderr: '',
+                status: null,
+                timedOut: true,
+                error: 'spawnSync ETIMEDOUT',
+              };
+            },
           },
         ),
       /refusing to persist UDID as ready.*retryable abort/,
     );
-    assert.deepEqual(sleeps, [50]);
+    assert.equal(confirmCalls, 3);
+    assert.deepEqual(sleeps, [50, 2_000, 5_000]);
     assert.deepEqual(writes, []);
   });
 
