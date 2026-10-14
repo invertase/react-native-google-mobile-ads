@@ -42,7 +42,12 @@ jobs:
         run: |
           yarn lint:spellcheck
       - name: Docs.page links
-        run: yarn lint:docs-links
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          retry_wait_seconds: 60
+          max_attempts: 3
+          command: yarn lint:docs-links
 
   api-reference:
     name: 'API reference (strict TypeDoc)'
