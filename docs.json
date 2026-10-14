@@ -28,6 +28,11 @@
   "content": {
     "automaticallyInferNextPrevious": true
   },
+  "check": {
+    "severityOverrideHosts": {
+      "support.google.com": "warn"
+    }
+  },
   "tabs": [
     {
       "id": "root",
