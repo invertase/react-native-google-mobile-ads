@@ -9,6 +9,7 @@ import {
   type RepresentativeRequestOutcomeContract,
   type SdkUtilitySurfaceContract,
 } from '../../src/formats.ts';
+import { dismissAndroidAnrDialogsViaAdb } from '../../src/androidAnrDismiss.ts';
 import {
   androidFocusedForeignApps,
   androidFocusedSystemDialog,
@@ -1511,9 +1512,23 @@ async function dismissAndroidSystemDialogIfPresent(reason: string): Promise<bool
     dialog === 'anr'
       ? ['resourceId("android:id/aerr_wait")', 'text("Wait")']
       : ['resourceId("android:id/aerr_close")', 'text("Close app")'];
+  let tapped = false;
   for (const fragment of fragments) {
     if (await tapAndroidSelectorIfDisplayed(`android=new UiSelector().${fragment}`)) {
+      tapped = true;
       break;
+    }
+  }
+  // System / launcher ANRs often wedge UiAutomator; fall back to adb taps on Wait.
+  if (dialog === 'anr' && !tapped) {
+    const serial = process.env.RNGMA_ANDROID_UDID;
+    if (serial) {
+      const viaAdb = dismissAndroidAnrDialogsViaAdb(serial);
+      logAndroidHostTrace('recover.systemDialog.adb', {
+        reason,
+        ...viaAdb,
+      });
+      tapped = viaAdb.tapped > 0;
     }
   }
   await sleep(dialog === 'anr' ? 2000 : 600);

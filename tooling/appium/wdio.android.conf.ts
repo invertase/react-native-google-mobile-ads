@@ -5,6 +5,7 @@ import {
   EXAMPLE_ANDROID_PACKAGE,
   androidDebugApkPath,
 } from './src/formats.ts';
+import { dismissAndroidAnrDialogsViaAdb } from './src/androidAnrDismiss.ts';
 import {
   ensureAndroidMetroReverse,
   type AndroidExec,
@@ -78,6 +79,15 @@ export async function prepareAndroidApp(
   console.log(
     `Android device ${serial} retained this checkout's Metro reverse through session setup on tcp:${runtime.metroPort}.`,
   );
+
+  // Multi-AVD load often stacks System UI / launcher / "Process system" ANRs.
+  // UiAutomator cannot click those reliably; dismiss Wait via adb before launch.
+  const anr = dismissAndroidAnrDialogsViaAdb(serial);
+  if (anr.tapped > 0) {
+    console.log(
+      `Android device ${serial} ANR dismiss via adb: cleared=${anr.cleared} rounds=${anr.rounds} taps=${anr.tapped}.`,
+    );
+  }
 
   // Appium clears app data during session creation, so establish the selected device's
   // reversed localhost as React Native's debug host only after that reset, then launch.

@@ -504,6 +504,11 @@ export async function runReliabilityWorker(
      */
     recoverDeviceLost?: () => Promise<void>;
     maxDeviceLostRecoveries?: number;
+    /**
+     * Optional host housekeeping before each shard (e.g. Xcode 27 DeviceHub
+     * suppress so orphan UI processes do not accumulate mid burn-in).
+     */
+    beforeShard?: () => void | Promise<void>;
   },
 ): Promise<ReliabilityWorkerSummary> {
   const policy = reliabilityModePolicy(options.mode);
@@ -621,6 +626,8 @@ export async function runReliabilityWorker(
         const logPath = logs.shardLogPath(iteration, entry.shardId);
         mkdirSync(path.dirname(logPath), { recursive: true });
         writeFileSync(logPath, '', { flag: 'wx' });
+
+        await deps.beforeShard?.();
 
         let result = await deps.runner.runShard({
           iteration,
