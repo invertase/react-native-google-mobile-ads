@@ -390,6 +390,7 @@ export function spawnProcessToLog(options: {
  * burning remaining iterations (missing Appium driver, session create, etc.).
  */
 export const RELIABILITY_INFRA_ABORT_MARKERS = new Set([
+  'device-lost',
   'session-create',
   'appium-prepare',
   'address-in-use',
@@ -402,7 +403,11 @@ export function reliabilityInfraAbortReason(detail: string): string | undefined 
   if (marker == null || !RELIABILITY_INFRA_ABORT_MARKERS.has(marker.name)) {
     return undefined;
   }
-  return `Reliability infra abort (${marker.name}): refusing further iterations after hard startup failure.`;
+  const kind =
+    marker.name === 'device-lost'
+      ? 'emulator/device process lost (host infra, not a product flake)'
+      : 'hard startup failure';
+  return `Reliability infra abort (${marker.name}): ${kind}; refusing further iterations.`;
 }
 
 /**
@@ -689,18 +694,21 @@ export async function runReliabilityWorker(
           });
         }
 
-        for (const caseId of failedCaseIds) {
-          reducer.reduceFailure({
-            caseId,
-            platform: options.platform,
-            detail: result.detail,
-            neighbors: expectedCases.filter(id => id !== caseId),
-            shardId: entry.shardId,
-            jobId: job.jobId,
-            iteration,
-            logPath,
-          });
-          failureArtifacts += 1;
+        // Never mint product flake artifacts for host infra (emulator crash, etc.).
+        if (abortReason == null) {
+          for (const caseId of failedCaseIds) {
+            reducer.reduceFailure({
+              caseId,
+              platform: options.platform,
+              detail: result.detail,
+              neighbors: expectedCases.filter(id => id !== caseId),
+              shardId: entry.shardId,
+              jobId: job.jobId,
+              iteration,
+              logPath,
+            });
+            failureArtifacts += 1;
+          }
         }
 
         if (result.outcome !== 'pass') {

@@ -146,6 +146,11 @@ test('hard marker registry recognizes every alternation in compound markers', ()
       'Error in "onPrepare"',
       'Appium listener failed',
     ],
+    'device-lost': [
+      'Device emulator-5560 was not in the list of connected devices',
+      "detected a hanging thread 'QEMU2 main loop'",
+      'adb: device offline',
+    ],
     'session-create': [
       'Failed to create session',
       'Could not create a new session',

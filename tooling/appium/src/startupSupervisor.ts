@@ -94,9 +94,16 @@ export const HARD_FAILURE_MARKERS: readonly HardFailureMarker[] = [
     pattern: /(?:onPrepare hook failed|Error in "onPrepare"|Appium.*listener.*failed)/i,
   },
   {
+    // Emulator/simulator process death or adb disappearance — host infra, not a
+    // product flake. Matched before generic session-create.
+    name: 'device-lost',
+    pattern:
+      /(?:was not in the list of connected devices|emulator-\d+ was not in the list|Could not find device|adb: device ['"]?offline|device ['"]?[\w.:-]+['"]? (?:is )?offline|detected a hanging thread ['"]QEMU)/i,
+  },
+  {
     name: 'session-create',
     pattern:
-      /(?:Failed to create session|Could not create a new session|session not created|Could not find a driver|Could not find installed driver|Have you installed a driver|was not in the list of connected devices|device .* offline|emulator-\d+ was not in the list)/i,
+      /(?:Failed to create session|Could not create a new session|session not created|Could not find a driver|Could not find installed driver|Have you installed a driver)/i,
   },
   {
     name: 'preflight-rejection',
