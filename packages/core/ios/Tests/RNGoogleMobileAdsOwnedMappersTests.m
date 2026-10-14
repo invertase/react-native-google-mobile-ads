@@ -184,6 +184,7 @@
   XCTAssertNil(compact[@"adapterResponses"]);
 }
 
+// load + multi-format native payloads both build images via RNGMANativeAdPayload.
 - (void)testNativeAdImageRowsFromImages {
   XCTAssertNil([RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:nil]);
   XCTAssertNil([RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:@[]]);
@@ -192,20 +193,31 @@
   noURL.scale = 1;
   XCTAssertNil([RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:@[ noURL ]]);
 
+  RNGMAFakeNativeAdImage *emptyURL = [RNGMAFakeNativeAdImage new];
+  emptyURL.imageURL = [NSURL URLWithString:@""];
+  emptyURL.scale = 1;
+  XCTAssertNil([RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:@[ emptyURL ]]);
+
   RNGMAFakeNativeAdImage *first = [RNGMAFakeNativeAdImage new];
   first.imageURL = [NSURL URLWithString:@"https://example.com/a.png"];
   first.scale = 2;
   RNGMAFakeNativeAdImage *second = [RNGMAFakeNativeAdImage new];
   second.imageURL = [NSURL URLWithString:@"https://example.com/b.png"];
   second.scale = 1;
+  // No `scale` key → mapper falls back to @(1).
+  NSDictionary *missingScale = @{
+    @"imageURL" : [NSURL URLWithString:@"https://example.com/c.png"],
+  };
 
-  NSArray *rows =
-      [RNGoogleMobileAdsOwnedMappers nativeAdImageRowsFromImages:@[ first, noURL, second ]];
-  XCTAssertEqual(rows.count, 2u);
+  NSArray *rows = [RNGoogleMobileAdsOwnedMappers
+      nativeAdImageRowsFromImages:@[ first, noURL, emptyURL, second, missingScale ]];
+  XCTAssertEqual(rows.count, 3u);
   XCTAssertEqualObjects(rows[0][@"url"], @"https://example.com/a.png");
   XCTAssertEqualObjects(rows[0][@"scale"], @(2));
   XCTAssertEqualObjects(rows[1][@"url"], @"https://example.com/b.png");
   XCTAssertEqualObjects(rows[1][@"scale"], @(1));
+  XCTAssertEqualObjects(rows[2][@"url"], @"https://example.com/c.png");
+  XCTAssertEqualObjects(rows[2][@"scale"], @(1));
 }
 
 @end
