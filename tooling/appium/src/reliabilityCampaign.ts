@@ -50,6 +50,19 @@ import {
   type ScheduledUnit,
 } from './reliabilityRisk.ts';
 import {
+  createClassicCanaryScheduler,
+  createCoverageFlushGateReceipt,
+  createWarmEpochTracker,
+  evaluateCoverageFlushGate,
+  evaluateHardwareDiversity,
+  type ClassicCanaryDecision,
+  type ClassicCanaryReceipt,
+  type ClassicCanaryScheduler,
+  type HardwareDiversityAssessment,
+  type WarmEpochState,
+  type WarmEpochTracker,
+} from './reliabilityQualificationOps.ts';
+import {
   configurationForPlatformBackend,
   isQualifyingConfiguration,
   PRE_REGISTERED_FAILURE_CHECKPOINTS,
@@ -83,6 +96,10 @@ export type CampaignController = {
   reducer: FlakeReducer;
   breaker: CircuitBreaker;
   evidence: EvidenceLedger;
+  /** Warm-epoch suite-credit tracker (cap before cold task-owned restart). */
+  warmEpoch: WarmEpochTracker;
+  /** Classic Android canary cadence against credited Next-Gen suite passes. */
+  classicCanary: ClassicCanaryScheduler;
   pause(): void;
   resume(): void;
   heartbeat(leaseId: string, workerId: string): void;
@@ -131,6 +148,29 @@ export type CampaignController = {
     backend?: 'classic' | 'legacy' | 'nextgen';
     outcome: 'pass' | 'fail';
   }): ReturnType<EvidenceLedger['creditSuite']> | null;
+  /** Current warm-epoch cap state after suite credits / cold restarts. */
+  warmEpochState(): WarmEpochState;
+  /** Cold task-owned state restart after the warm-epoch suite cap. */
+  coldRestartWarmEpoch(): WarmEpochState;
+  /** Classic canary due decision (interval / executable change / final). */
+  classicCanaryDue(input?: {
+    executableChangedSinceLastCanary?: boolean;
+    finalValidation?: boolean;
+  }): ClassicCanaryDecision;
+  /** Record a completed classic Android canary receipt. */
+  recordClassicCanary(input: {
+    trigger: ClassicCanaryReceipt['trigger'];
+    outcome: 'pass' | 'fail';
+    layoutDigest: string;
+    executableDigest: string;
+    detail?: string;
+  }): ClassicCanaryReceipt;
+  /** Hardware diversity assessment for a configuration's slot/time-block set. */
+  assessHardwareDiversity(input: {
+    availableSlots: number;
+    timeBlocks?: number;
+    coldEpochCount?: number;
+  }): HardwareDiversityAssessment;
   /** Scoped invalidation + epoch freeze after a reviewed dependency fix. */
   invalidateDependencyScope(
     scopeId: string,
@@ -271,6 +311,10 @@ export function createCampaignController(
   const evidence = createEvidenceLedger({
     now: clock.now != null ? () => new Date(clock.now!()) : undefined,
   });
+  const warmEpoch = createWarmEpochTracker();
+  const classicCanary = createClassicCanaryScheduler({
+    now: clock.now != null ? () => new Date(clock.now!()) : undefined,
+  });
 
   function resolveQualifyingConfiguration(
     platform: 'android' | 'ios',
@@ -303,6 +347,8 @@ export function createCampaignController(
     reducer,
     breaker,
     evidence,
+    warmEpoch,
+    classicCanary,
     pause: pauseInternal,
     resume: resumeInternal,
     heartbeat(leaseId, workerId) {
@@ -433,9 +479,35 @@ export function createCampaignController(
       if (configuration == null) {
         return null;
       }
-      return evidence.creditSuite({
+      const signal = evidence.creditSuite({
         configuration,
         outcome: input.outcome,
+      });
+      if (input.outcome === 'pass') {
+        warmEpoch.noteCreditedSuitePass();
+        if (configuration === 'android-nextgen') {
+          classicCanary.noteNextGenSuitePass();
+        }
+      }
+      return signal;
+    },
+    warmEpochState() {
+      return warmEpoch.state();
+    },
+    coldRestartWarmEpoch() {
+      return warmEpoch.coldRestart();
+    },
+    classicCanaryDue(input = {}) {
+      return classicCanary.decision(input);
+    },
+    recordClassicCanary(input) {
+      return classicCanary.recordCanary(input);
+    },
+    assessHardwareDiversity(input) {
+      return evaluateHardwareDiversity({
+        availableSlots: input.availableSlots,
+        timeBlocks: input.timeBlocks,
+        coldEpochCount: input.coldEpochCount ?? warmEpoch.state().coldEpochCount,
       });
     },
     invalidateDependencyScope(scopeId, invalidateOptions) {
@@ -795,6 +867,16 @@ export type StatsPilotResult = {
   scheduleRemaining: number;
   projectionAuthoritative: false;
   projectionDisclaimer: string;
+  warmEpochCapReached: boolean;
+  warmEpochColdRestartClearsCap: boolean;
+  hardwareDiversityReducedDisclosed: boolean;
+  hardwareDiversityRequirementMetAfterColdEpochs: boolean;
+  classicCanaryDueAtInterval: boolean;
+  classicCanaryDueOnExecutableChange: boolean;
+  /** True when complete pass receipts for flush/pull/report evaluate ok. */
+  coverageFlushGateOk: boolean;
+  /** True when missing or failed flush-gate receipts evaluate not-ok. */
+  coverageFlushGateFailsWhenIncomplete: boolean;
 };
 
 /**
@@ -903,6 +985,88 @@ export async function runStatsPilot(
   const projection = controller.statsProjection();
   const schedule = controller.scheduleQualification();
 
+  // Warm-epoch cap: credit suites to the cap, then cold-restart clears it.
+  while (!controller.warmEpochState().mustColdRestart) {
+    controller.creditSuiteOutcome({
+      platform: 'android',
+      backend: 'nextgen',
+      outcome: 'pass',
+    });
+  }
+  const warmEpochCapReached = controller.warmEpochState().mustColdRestart;
+  const afterCold = controller.coldRestartWarmEpoch();
+  const warmEpochColdRestartClearsCap =
+    afterCold.mustColdRestart === false &&
+    afterCold.creditedSuitesInWarmEpoch === 0 &&
+    afterCold.coldEpochCount >= 1;
+
+  // Hardware diversity: fewer than preferred slots requires cold epochs + disclosure.
+  const reducedDiversity = controller.assessHardwareDiversity({
+    availableSlots: 1,
+    coldEpochCount: 0,
+  });
+  const reducedDiversityMet = controller.assessHardwareDiversity({
+    availableSlots: 1,
+    coldEpochCount: 60,
+  });
+
+  // Classic canary cadence: continue Next-Gen suite credits to the interval, plus executable change.
+  while (!controller.classicCanaryDue().triggers.includes('interval')) {
+    controller.creditSuiteOutcome({
+      platform: 'android',
+      backend: 'nextgen',
+      outcome: 'pass',
+    });
+  }
+  const classicIntervalDue = controller.classicCanaryDue();
+  const classicExecutableDue = controller.classicCanaryDue({
+    executableChangedSinceLastCanary: true,
+  });
+
+  // Coverage flush gate: missing/failed receipts fail; complete pass receipts succeed.
+  const incompleteFlushGate = evaluateCoverageFlushGate([
+    createCoverageFlushGateReceipt({
+      stage: 'flush',
+      outcome: 'pass',
+      receiptId: 'stats-pilot-flush-incomplete',
+    }),
+  ]);
+  const failedFlushGate = evaluateCoverageFlushGate([
+    createCoverageFlushGateReceipt({
+      stage: 'flush',
+      outcome: 'fail',
+      receiptId: 'stats-pilot-flush-fail',
+      detail: 'control missing',
+    }),
+    createCoverageFlushGateReceipt({
+      stage: 'pull',
+      outcome: 'pass',
+      receiptId: 'stats-pilot-pull-fail-case',
+    }),
+    createCoverageFlushGateReceipt({
+      stage: 'report',
+      outcome: 'pass',
+      receiptId: 'stats-pilot-report-fail-case',
+    }),
+  ]);
+  const completeFlushGate = evaluateCoverageFlushGate([
+    createCoverageFlushGateReceipt({
+      stage: 'flush',
+      outcome: 'pass',
+      receiptId: 'stats-pilot-flush-ok',
+    }),
+    createCoverageFlushGateReceipt({
+      stage: 'pull',
+      outcome: 'pass',
+      receiptId: 'stats-pilot-pull-ok',
+    }),
+    createCoverageFlushGateReceipt({
+      stage: 'report',
+      outcome: 'pass',
+      receiptId: 'stats-pilot-report-ok',
+    }),
+  ]);
+
   return {
     zeroFailureTarget: ZERO_FAILURE_OBSERVATION_TARGET,
     checkpointsLocked: PRE_REGISTERED_FAILURE_CHECKPOINTS.length,
@@ -918,12 +1082,27 @@ export async function runStatsPilot(
     epochAfterInvalidation: invalidation.newEpoch,
     suiteIndependent:
       suite.independentOfPerCell === true &&
-      suite.creditedSuitePasses === 1 &&
+      suite.creditedSuitePasses >= 1 &&
       suite.suiteFailures === 1 &&
       afterBanner.qualified === false,
     scheduleRemaining: schedule.reduce((sum, row) => sum + row.remaining, 0),
     projectionAuthoritative: projection.authoritative,
     projectionDisclaimer: projection.disclaimer,
+    warmEpochCapReached,
+    warmEpochColdRestartClearsCap,
+    hardwareDiversityReducedDisclosed:
+      reducedDiversity.reducedHardwareDiversity === true &&
+      reducedDiversity.diversityRequirementMet === false,
+    hardwareDiversityRequirementMetAfterColdEpochs:
+      reducedDiversityMet.reducedHardwareDiversity === true &&
+      reducedDiversityMet.diversityRequirementMet === true,
+    classicCanaryDueAtInterval: classicIntervalDue.due === true,
+    classicCanaryDueOnExecutableChange:
+      classicExecutableDue.due === true &&
+      classicExecutableDue.triggers.includes('executable-change'),
+    coverageFlushGateOk: completeFlushGate.ok === true,
+    coverageFlushGateFailsWhenIncomplete:
+      incompleteFlushGate.ok === false && failedFlushGate.ok === false,
   };
 }
 
