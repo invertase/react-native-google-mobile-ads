@@ -30,7 +30,8 @@
   },
   "check": {
     "severityOverrideHosts": {
-      "support.google.com": "warn"
+      "support.google.com": "warn",
+      "github.com": "warn"
     }
   },
   "tabs": [
