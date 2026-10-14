@@ -66,7 +66,7 @@ async function main(): Promise<void> {
 
   if (argv.includes('--run-risk-pilot')) {
     console.log(
-      '[reliability-campaign] device-free risk scheduler / flake reducer / circuit breaker pilot',
+      '[reliability-campaign] device-free risk scheduler / flake reducer / circuit breaker / burn-in gate pilot',
     );
     // Parse shared flags (including --artifact-root) before the pilot; mode is
     // unused by runRiskPilot but required by the campaign argv parser.
@@ -86,7 +86,7 @@ async function main(): Promise<void> {
         : {},
     );
     console.log(
-      `[reliability-campaign] riskPilot isolated=${result.scheduledIsolated} affinity=${result.scheduledAffinity} artifacts=${result.artifactsWritten} circuitTripped=${result.circuitTripped} circuit=${result.circuitState} probabilisticNeighbors=${result.probabilisticNeighbors} dispatchBlocked=${result.dispatchBlockedWhileOpen} resumed=${result.resumedAcceptingWork}`,
+      `[reliability-campaign] riskPilot isolated=${result.scheduledIsolated} affinity=${result.scheduledAffinity} artifacts=${result.artifactsWritten} circuitTripped=${result.circuitTripped} circuit=${result.circuitState} probabilisticNeighbors=${result.probabilisticNeighbors} dispatchBlocked=${result.dispatchBlockedWhileOpen} resumed=${result.resumedAcceptingWork} burnInGateClosed=${result.burnInGateClosed} burnInGateCells=${result.burnInGateCellCount} burnInGateReady=${result.burnInGateQualificationReady} hostLoadRejected=${result.hostLoadClaimRejected}`,
     );
     if (
       !result.circuitTripped ||
@@ -94,9 +94,12 @@ async function main(): Promise<void> {
       !result.resumedAcceptingWork ||
       result.scheduledIsolated < 1 ||
       result.scheduledAffinity < 1 ||
-      result.artifactsWritten < 1
+      result.artifactsWritten < 1 ||
+      !result.burnInGateClosed ||
+      result.burnInGateQualificationReady < 1 ||
+      !result.hostLoadClaimRejected
     ) {
-      throw new Error('Risk pilot failed adaptive flake-reducer checks.');
+      throw new Error('Risk pilot failed adaptive flake-reducer / burn-in gate checks.');
     }
     return;
   }

@@ -1,11 +1,12 @@
 /**
  * Exact failure artifacts for reliability hardening: stable signatures, log
- * pointers, and enough context for later interstitial fix commits.
+ * pointers, and enough context for later burn-in failure-interstitial fix commits.
  */
 
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { isRejectedRootCauseClaim } from './reliabilityRisk.ts';
 
 export const FAILURE_CLASSIFICATIONS = [
   'ad-service',
@@ -20,7 +21,7 @@ export type FailureArtifact = {
   artifactId: string;
   /**
    * Exact cell signature: classification + platform + caseId + normalized detail.
-   * Stable identity for a single failing cell (interstitial fix naming).
+   * Stable identity for a single failing cell (failure-interstitial correlation).
    */
   signature: string;
   /**
@@ -36,6 +37,12 @@ export type FailureArtifact = {
   logPath?: string;
   detail?: string;
   classification: FailureClassification;
+  /**
+   * True when detail blames host load / resource pressure. Never accepted as a
+   * root cause — classification still targets the observable failure class
+   * (often `unknown` when no other signal is present).
+   */
+  rejectedRootCauseClaim: boolean;
   /** Co-running case ids at the moment of failure (order/context pollution). */
   neighbors: readonly string[];
   recordedAt: string;
@@ -80,6 +87,11 @@ export function normalizeFailureDetail(detail: string | undefined): string {
     .slice(0, 240);
 }
 
+/**
+ * Classify the observable failure. Host-load excuses are not a classification —
+ * callers stamp `rejectedRootCauseClaim` via `isRejectedRootCauseClaim` so those
+ * details are not silently treated as an unexplained `unknown` close.
+ */
 export function classifyFailureDetail(detail: string | undefined): FailureClassification {
   const text = detail ?? '';
   if (AD_SERVICE_PATTERNS.some(pattern => pattern.test(text))) {
@@ -97,6 +109,17 @@ export function classifyFailureDetail(detail: string | undefined): FailureClassi
   return 'unknown';
 }
 
+/** Classification plus host-load rejection stamp for artifact builders. */
+export function classifyFailureDetailWithRejection(detail: string | undefined): {
+  classification: FailureClassification;
+  rejectedRootCauseClaim: boolean;
+} {
+  return {
+    classification: classifyFailureDetail(detail),
+    rejectedRootCauseClaim: isRejectedRootCauseClaim(detail),
+  };
+}
+
 /** Exact per-cell signature (includes caseId). */
 export function failureSignature(input: {
   caseId: string;
@@ -111,6 +134,25 @@ export function failureSignature(input: {
     normalizeFailureDetail(input.detail),
   ].join('\n');
   return createHash('sha256').update(payload).digest('hex');
+}
+
+/**
+ * Durable public commit-subject suggestion for a receipt-backed flake fix.
+ * Keys off case id + classification + short signature prefix — never host-load
+ * excuses and never private campaign interstitial sequence numbers.
+ */
+export function flakeInterstitialCommitSubject(input: {
+  caseId: string;
+  classification: FailureClassification;
+  signature: string;
+}): string {
+  const caseSlug = input.caseId
+    .replace(/^gma\./, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+  const shortSig = input.signature.slice(0, 8);
+  return `fix(appium): harden ${caseSlug} after ${input.classification} (${shortSig})`;
 }
 
 /** Correlated cluster key shared by the same failure class across cases. */
@@ -146,7 +188,14 @@ export type BuildFailureArtifactInput = {
 };
 
 export function buildFailureArtifact(input: BuildFailureArtifactInput): FailureArtifact {
-  const classification = input.classification ?? classifyFailureDetail(input.detail);
+  const classified =
+    input.classification != null
+      ? {
+          classification: input.classification,
+          rejectedRootCauseClaim: isRejectedRootCauseClaim(input.detail),
+        }
+      : classifyFailureDetailWithRejection(input.detail);
+  const { classification, rejectedRootCauseClaim } = classified;
   const signature = failureSignature({
     caseId: input.caseId,
     platform: input.platform,
@@ -170,6 +219,7 @@ export function buildFailureArtifact(input: BuildFailureArtifactInput): FailureA
     ...(input.logPath != null ? { logPath: input.logPath } : {}),
     ...(input.detail != null ? { detail: input.detail } : {}),
     classification,
+    rejectedRootCauseClaim,
     neighbors: input.neighbors ?? [],
     recordedAt: input.recordedAt ?? new Date().toISOString(),
   };

@@ -44,7 +44,12 @@ import {
   createFlakeReducer,
   type FlakeReducer,
 } from './reliabilityReducer.ts';
-import { greenScopeForWorkerPass } from './reliabilityRisk.ts';
+import {
+  evaluateBurnInGate,
+  evaluateBurnInSuiteGate,
+  greenScopeForWorkerPass,
+  type BurnInSuiteGateDecision,
+} from './reliabilityRisk.ts';
 import {
   configurationForPlatformBackend,
   isQualifyingConfiguration,
@@ -124,6 +129,12 @@ export type ReliabilityWorkerSummary = {
   shardFailures: number;
   /** Exact failure artifacts written by the adaptive flake reducer. */
   failureArtifacts: number;
+  /**
+   * Burn-in gate snapshot for cells observed on this worker's risk ledger.
+   * Closing the gate (`closed: true`) is consecutive-green hardening only — it
+   * does not invent statistical qualification counts.
+   */
+  burnInGate: BurnInSuiteGateDecision;
   /**
    * Non-authoritative statistical projection from this worker's evidence ledger.
    * Campaign dashboards use `reliabilityDashboard` for ledger-derived authority.
@@ -472,6 +483,17 @@ export async function runReliabilityWorker(
   ): void => {
     if (!statisticalCredits || qualifyingConfiguration == null) return;
     if (outcome !== 'pass' && outcome !== 'fail') return;
+    // Test cells: burn-in gate must be closed (qualification-ready) before
+    // evidence-ledger statistical credits. Startup/preamble are outside the
+    // per-test risk ledger and credit under qualify policy alone.
+    if (cellKind === 'test') {
+      const gate = evaluateBurnInGate(
+        reducer.ledger.get({ caseId: cellId, platform: options.platform }),
+      );
+      if (!gate.qualificationReady) {
+        return;
+      }
+    }
     const cellKey = {
       configuration: qualifyingConfiguration,
       cellKind,
@@ -568,7 +590,8 @@ export async function runReliabilityWorker(
             outcome,
             counted: policy.creditsReceipts && outcome === 'pass',
           });
-          creditStatistical('test', caseId, outcome, testReceipt.receiptId);
+          // Risk ledger advances before statistical credit so the pass that
+          // closes the burn-in gate can also mint the first evidence credit.
           if (outcome === 'pass') {
             const scope = greenScopeForWorkerPass({
               mode: options.mode,
@@ -579,6 +602,7 @@ export async function runReliabilityWorker(
           } else if (outcome === 'fail') {
             failedCaseIds.push(caseId);
           }
+          creditStatistical('test', caseId, outcome, testReceipt.receiptId);
           reported.delete(caseId);
         }
         for (const [caseId, outcome] of reported) {
@@ -656,6 +680,10 @@ export async function runReliabilityWorker(
     throw new Error('Statistical projection missing required non-authoritative disclaimer.');
   }
 
+  const burnInGate = evaluateBurnInSuiteGate(
+    reducer.ledger.list().filter(cell => cell.platform === options.platform),
+  );
+
   const summary: ReliabilityWorkerSummary = {
     job,
     mode: options.mode,
@@ -675,6 +703,7 @@ export async function runReliabilityWorker(
     },
     shardFailures,
     failureArtifacts,
+    burnInGate,
     statsProjection,
     diskBytes: logs.measureDiskUsage(),
     diskCeilingBytes: logs.policy.diskCeilingBytes,

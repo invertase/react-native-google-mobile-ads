@@ -12,6 +12,7 @@ import {
   buildFailureArtifact,
   classifyFailureDetail,
   failureSignature,
+  flakeInterstitialCommitSubject,
   normalizeFailureDetail,
   openFailureArtifactStore,
 } from '../src/reliabilityFailureArtifacts.ts';
@@ -23,7 +24,10 @@ import {
   RISK_THRESHOLDS,
   createRiskLedger,
   deriveRiskColor,
+  evaluateBurnInGate,
+  evaluateBurnInSuiteGate,
   greenScopeForWorkerPass,
+  isRejectedRootCauseClaim,
   scheduleByRisk,
 } from '../src/reliabilityRisk.ts';
 
@@ -55,6 +59,14 @@ describe('risk ledger and scheduler', () => {
     );
     assert.equal(
       greenScopeForWorkerPass({
+        mode: 'burn-in',
+        layoutKind: 'final',
+        coRunCaseCount: 4,
+      }),
+      'final-layout',
+    );
+    assert.equal(
+      greenScopeForWorkerPass({
         mode: 'diagnose',
         layoutKind: 'final',
         coRunCaseCount: 4,
@@ -64,7 +76,7 @@ describe('risk ledger and scheduler', () => {
     assert.equal(
       greenScopeForWorkerPass({
         mode: 'burn-in',
-        layoutKind: 'final',
+        layoutKind: 'temporary',
         coRunCaseCount: 4,
       }),
       'candidate-shard',
@@ -150,6 +162,87 @@ describe('risk ledger and scheduler', () => {
       true,
     );
   });
+
+  test('evaluateBurnInGate reports thresholds and suite closed only when ready', () => {
+    const ledger = createRiskLedger();
+    const key = { caseId: 'banner', platform: 'android' as const };
+    let decision = evaluateBurnInGate(ledger.get(key));
+    assert.equal(decision.color, 'red');
+    assert.equal(decision.affinityEligible, false);
+    assert.equal(decision.qualificationReady, false);
+    assert.equal(decision.progress.nextColor, 'amber');
+    assert.equal(decision.progress.remaining, RISK_THRESHOLDS.amberIndividualGreens);
+
+    for (let i = 0; i < RISK_THRESHOLDS.amberIndividualGreens; i += 1) {
+      ledger.recordPass(key, 'individual');
+    }
+    decision = evaluateBurnInGate(ledger.get(key));
+    assert.equal(decision.color, 'amber');
+    assert.equal(decision.progress.nextColor, 'green');
+    assert.equal(
+      decision.progress.remaining,
+      RISK_THRESHOLDS.greenCandidateShardGreens,
+    );
+
+    for (let i = 0; i < RISK_THRESHOLDS.greenCandidateShardGreens; i += 1) {
+      ledger.recordPass(key, 'candidate-shard');
+    }
+    decision = evaluateBurnInGate(ledger.get(key));
+    assert.equal(decision.color, 'green');
+    assert.equal(decision.affinityEligible, true);
+    assert.equal(decision.progress.nextColor, 'qualification-ready');
+
+    for (
+      let i = 0;
+      i < RISK_THRESHOLDS.qualificationReadyFinalLayoutGreens;
+      i += 1
+    ) {
+      ledger.recordPass(key, 'final-layout');
+    }
+    decision = evaluateBurnInGate(ledger.get(key));
+    assert.equal(decision.qualificationReady, true);
+    assert.equal(decision.progress.remaining, 0);
+
+    const openSuite = evaluateBurnInSuiteGate([
+      ledger.get(key),
+      ledger.get({ caseId: 'rewarded', platform: 'android' }),
+    ]);
+    assert.equal(openSuite.closed, false);
+    assert.equal(openSuite.blocking.length, 1);
+    assert.equal(openSuite.blocking[0]!.reason, 'below-threshold');
+
+    const closedSuite = evaluateBurnInSuiteGate([ledger.get(key)]);
+    assert.equal(closedSuite.closed, true);
+    assert.equal(evaluateBurnInSuiteGate([]).closed, false);
+  });
+
+  test('rejects host-load root-cause claims and names durable interstitial subjects', () => {
+    assert.equal(isRejectedRootCauseClaim('host load caused the flake'), true);
+    assert.equal(isRejectedRootCauseClaim('CPU pressure on the Mac'), true);
+    assert.equal(isRejectedRootCauseClaim('timeout waiting for assertion'), false);
+    assert.equal(
+      classifyFailureDetail('failed because of host load / CPU pressure'),
+      'unknown',
+    );
+    const hostLoadArtifact = buildFailureArtifact({
+      caseId: 'rewarded',
+      platform: 'android',
+      detail: 'failed because of host load / CPU pressure on the Mac',
+      createArtifactId: () => 'fail_host_load',
+    });
+    assert.equal(hostLoadArtifact.rejectedRootCauseClaim, true);
+    assert.equal(hostLoadArtifact.classification, 'unknown');
+    const subject = flakeInterstitialCommitSubject({
+      caseId: 'gma.format.rewarded',
+      classification: 'assertion',
+      signature: 'abcdef0123456789',
+    });
+    assert.equal(
+      subject,
+      'fix(appium): harden format-rewarded after assertion (abcdef01)',
+    );
+    assert.equal(/ED-\d+/i.test(subject), false);
+  });
 });
 
 describe('failure artifacts', () => {
@@ -202,6 +295,7 @@ describe('failure artifacts', () => {
     store.write(artifact);
     const loaded = store.read('fail_fixed');
     assert.equal(loaded.classification, 'ad-service');
+    assert.equal(loaded.rejectedRootCauseClaim, false);
     assert.deepEqual(loaded.neighbors, ['banner', 'native']);
     assert.equal(loaded.logPath, '/tmp/shard.log');
     assert.equal(store.findBySignature(loaded.signature).length, 1);
@@ -286,6 +380,7 @@ describe('flake reducer', () => {
       neighbors: ['banner', 'native', 'fluid'],
     });
     assert.equal(result.cell.color, 'red');
+    assert.equal(result.artifact.rejectedRootCauseClaim, false);
     assert.equal(result.isolated.retainedNeighbors.length, 0);
     assert.deepEqual(result.probabilistic.retainedNeighbors, ['banner', 'fluid']);
     assert.deepEqual(caseIdsForReducedContext(result.isolated), ['rewarded']);
@@ -295,6 +390,15 @@ describe('flake reducer', () => {
       'fluid',
     ]);
     assert.equal(reducer.artifacts.list().length, 1);
+
+    const hostLoad = reducer.reduceFailure({
+      caseId: 'app-open',
+      platform: 'android',
+      detail: 'flake blamed on host load / system under load',
+      neighbors: [],
+    });
+    assert.equal(hostLoad.artifact.rejectedRootCauseClaim, true);
+    assert.equal(hostLoad.artifact.classification, 'unknown');
   });
 });
 
@@ -388,7 +492,7 @@ describe('campaign wiring', () => {
     assert.equal(controller.dispatch({ workItemId: 'blocked' }, 'w'), null);
   });
 
-  test('runRiskPilot exercises scheduler reducer and circuit breaker', async () => {
+  test('runRiskPilot exercises scheduler reducer circuit breaker and burn-in gate', async () => {
     const root = mkdtempSync(path.join(tmpdir(), 'rngma-risk-pilot-'));
     const result = await runRiskPilot({
       artifactRoot: root,
@@ -401,5 +505,9 @@ describe('campaign wiring', () => {
     assert.equal(result.dispatchBlockedWhileOpen, true);
     assert.equal(result.resumedAcceptingWork, true);
     assert.equal(result.probabilisticNeighbors, 3);
+    assert.equal(result.burnInGateClosed, true);
+    assert.equal(result.burnInGateCellCount, 1);
+    assert.equal(result.burnInGateQualificationReady, 1);
+    assert.equal(result.hostLoadClaimRejected, true);
   });
 });
