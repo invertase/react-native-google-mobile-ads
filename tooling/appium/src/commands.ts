@@ -3,6 +3,7 @@ import {
   selectIosSimulator,
 } from './hostPreflight.ts';
 import {
+  ANDROID_SLOT_EMULATOR_RUNTIME_ARGS,
   runtimeResources,
   slotMetroPackagerEnv,
   type RuntimeResources,
@@ -57,7 +58,13 @@ export function androidSlotBootCommand(
   }
   return {
     bin: 'emulator',
-    args: ['-avd', slot.androidAvdName, '-port', String(slot.androidConsolePort)],
+    args: [
+      '-avd',
+      slot.androidAvdName,
+      '-port',
+      String(slot.androidConsolePort),
+      ...ANDROID_SLOT_EMULATOR_RUNTIME_ARGS,
+    ],
   };
 }
 

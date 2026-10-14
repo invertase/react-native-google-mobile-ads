@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { describe, test } from 'node:test';
 import {
   androidProvisionCommands,
   androidSystemImage,
+  applyAndroidSlotAvdHardwareDefaults,
   assertCreateOnly,
   executeCreateOnly,
   iosProvisionCommands,
@@ -216,9 +220,28 @@ describe('create-only slot provisioning', () => {
         run(command) {
           calls.push([command.bin, ...command.args].join(' '));
         },
+        applyAndroidAvdHardwareDefaults(avdName) {
+          calls.push(`apply-hw ${avdName}`);
+        },
       },
     };
   }
+
+  test('applyAndroidSlotAvdHardwareDefaults sets 2 cores and disables audio', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'rngma-avd-hw-'));
+    const avdDir = path.join(root, 'TestingAVD-1.avd');
+    mkdirSync(avdDir);
+    writeFileSync(
+      path.join(avdDir, 'config.ini'),
+      'hw.cpu.ncore=4\nhw.audioInput=yes\nhw.audioOutput=yes\nAvdId=TestingAVD-1\n',
+    );
+    applyAndroidSlotAvdHardwareDefaults('TestingAVD-1', root);
+    const body = readFileSync(path.join(avdDir, 'config.ini'), 'utf8');
+    assert.match(body, /^hw\.cpu\.ncore=2$/m);
+    assert.match(body, /^hw\.audioInput=no$/m);
+    assert.match(body, /^hw\.audioOutput=no$/m);
+    assert.match(body, /^AvdId=TestingAVD-1$/m);
+  });
 
   test('unsupported host architecture fails before Android inventory or mutation', () => {
     for (const target of ['android', 'both'] as const) {
@@ -256,6 +279,7 @@ describe('create-only slot provisioning', () => {
       /sdkmanager system-images;android-36;google_apis_playstore;arm64-v8a/,
     );
     assert.match(calls[3] ?? '', /avdmanager create avd --name TestingAVD-6/);
+    assert.equal(calls[4], 'apply-hw TestingAVD-6');
   });
 
   test('creates exact iPhone 17 on newest available iOS runtime', () => {
