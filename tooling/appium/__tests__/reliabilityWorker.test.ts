@@ -42,8 +42,10 @@ import {
   createDryRunReliabilityRunner,
   parseReliabilityWorkerArgv,
   RELIABILITY_RUNNER_BAIL_ENV,
+  reliabilityInfraAbortReason,
   reliabilityShardEnv,
   runReliabilityWorker,
+  type ReliabilityRunner,
 } from '../src/reliabilityWorker.ts';
 import { SMOKE_SHARDS } from '../src/sessionShards.ts';
 
@@ -496,5 +498,62 @@ describe('reliability worker', () => {
       const cell = reducer.ledger.get({ caseId, platform: 'android' });
       assert.equal(cell.consecutiveFinalLayoutGreens >= 1, true, mode);
     }
+  });
+
+  test('infra session-create / missing-driver detail aborts remaining iterations', async () => {
+    assert.match(
+      reliabilityInfraAbortReason(
+        "Could not find a driver for automationName 'UiAutomator2'",
+      ) ?? '',
+      /session-create/,
+    );
+
+    const root = tempRoot('infra-abort');
+    const layout = buildReliabilityLayout('temporary', SMOKE_SHARDS, {
+      temporaryShardIds: [SMOKE_SHARDS[0]!.id],
+    });
+    let runs = 0;
+    const runner: ReliabilityRunner = {
+      async runShard(request) {
+        runs += 1;
+        writeFileSync(request.logPath, 'Could not find a driver for automationName UiAutomator2\n', {
+          flag: 'a',
+        });
+        return {
+          outcome: 'fail',
+          startup: {
+            'session-create': 'fail',
+            'app-launch': 'skipped',
+            'bundle-load': 'skipped',
+            'gallery-ready': 'skipped',
+          },
+          preamble: 'skipped',
+          tests: request.caseIds.map(caseId => ({ caseId, outcome: 'skipped' as const })),
+          detail: "Could not find a driver for automationName 'UiAutomator2'",
+        };
+      },
+    };
+
+    await assert.rejects(
+      runReliabilityWorker(
+        {
+          mode: 'burn-in',
+          platform: 'android',
+          slot: 1,
+          layoutKind: 'temporary',
+          iterations: 5,
+          receiptRoot: path.join(root, 'receipts'),
+          logRoot: path.join(root, 'logs'),
+          dryRun: true,
+          allowForceAcquire: false,
+          layout,
+          createJobId: () => 'job_infraabort0001',
+          now: () => new Date('2026-10-13T21:00:00.000Z'),
+        },
+        { runner },
+      ),
+      /infra abort \(session-create\)/,
+    );
+    assert.equal(runs, 1, 'must not continue iterating after infra abort');
   });
 });
