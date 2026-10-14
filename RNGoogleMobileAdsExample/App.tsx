@@ -120,6 +120,24 @@ function requestOutcomeLabel(state: RequestState): string {
   return `Request id: ${state.requestId}; Request attempt: ${state.attempt}; ${state.outcome}`;
 }
 
+/** Harness-facing JS marker so Ads silence vs onAdLoaded/onAdFailedToLoad is obvious in logcat. */
+function logGalleryRequest(
+  formatId: string,
+  event: 'mount' | 'onAdLoaded' | 'onAdFailedToLoad',
+  state: RequestState,
+  extra: Record<string, unknown> = {},
+): void {
+  console.log(
+    `[gallery-request] ${JSON.stringify({
+      formatId,
+      event,
+      requestId: state.requestId,
+      attempt: state.attempt,
+      ...extra,
+    })}`,
+  );
+}
+
 type ShowLifecyclePhase = 'idle' | 'opened' | 'closed';
 type UtilityLifecyclePhase = 'idle' | 'opened' | 'closed';
 
@@ -594,6 +612,13 @@ function BannerFormat(props: {
 function CollapsibleBannerFormat() {
   const formatId = AppiumTestIds.format.collapsibleBanner;
   const [requestState, setRequestState] = useState<RequestState>(() => freshRequestState(1));
+  const mountRequestRef = useRef(requestState);
+
+  useEffect(() => {
+    logGalleryRequest(formatId, 'mount', mountRequestRef.current, {
+      collapsible: 'top',
+    });
+  }, [formatId]);
 
   return (
     <View style={styles.testSpacing} testID={formatId}>
@@ -607,10 +632,18 @@ function CollapsibleBannerFormat() {
             },
           }}
           onAdLoaded={() => {
-            setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
+            setRequestState(current => {
+              logGalleryRequest(formatId, 'onAdLoaded', current);
+              return { ...current, outcome: REQUEST_OUTCOME_LOADED };
+            });
           }}
-          onAdFailedToLoad={error => {
-            setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
+          onAdFailedToLoad={(error: Error) => {
+            setRequestState(current => {
+              logGalleryRequest(formatId, 'onAdFailedToLoad', current, {
+                message: error.message,
+              });
+              return { ...current, outcome: requestErrorOutcome(error) };
+            });
           }}
         />
       </View>
@@ -1400,6 +1433,14 @@ function GAMBannerFormat(props: {
     recorded: false,
     callback: false,
   });
+  const mountRequestRef = useRef(requestState);
+
+  useEffect(() => {
+    logGalleryRequest(formatId, 'mount', mountRequestRef.current, {
+      unitId: props.unitId,
+      sizes: props.sizes,
+    });
+  }, [formatId, props.unitId, props.sizes]);
 
   return (
     <View style={styles.testSpacing} testID={formatId}>
@@ -1413,11 +1454,18 @@ function GAMBannerFormat(props: {
           }}
           manualImpressionsEnabled={true}
           onAdLoaded={() => {
-            setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
+            setRequestState(current => {
+              logGalleryRequest(formatId, 'onAdLoaded', current);
+              return { ...current, outcome: REQUEST_OUTCOME_LOADED };
+            });
           }}
           onAdFailedToLoad={(error: Error) => {
-            setRequestState(current => ({ ...current, outcome: requestErrorOutcome(error) }));
-            console.log(`${Platform.OS} GAM banner error: ${error.message}`);
+            setRequestState(current => {
+              logGalleryRequest(formatId, 'onAdFailedToLoad', current, {
+                message: error.message,
+              });
+              return { ...current, outcome: requestErrorOutcome(error) };
+            });
           }}
           onAdImpression={() => {
             setManualImpression(current => ({ ...current, callback: true }));
