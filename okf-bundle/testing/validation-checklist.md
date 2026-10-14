@@ -78,7 +78,8 @@ before rewriting: HTTP 404 means replace the link with a current working officia
 treat abort as “transient pass” without exit 0. External 401, 403, 405, and 429 bot-gate
 responses are warnings and do not justify rewriting a valid link or weakening checker severity.
 `docs.json` `check.severityOverrideHosts` may map a host to `warn` when that host's
-timeouts/bot-gates are known CI noise (today: `support.google.com`); do not blanket-ignore hosts.
+timeouts/bot-gates are known CI noise (today: `support.google.com`, `github.com`); do not
+blanket-ignore hosts.
 Do not exclude or special-case the generated reference host, locally or in CI. A 404 there for a
 symbol the deployed reference does not have yet (before the first deployment, or a new symbol
 before the next Publish run) is resolved by deploying the reference
