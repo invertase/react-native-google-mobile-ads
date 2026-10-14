@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
   IOS_SESSION_RETRY_TIMEOUT_MS,
+  SIMULATOR_STARTUP_TIMEOUT_MS,
   WDA_LAUNCH_TIMEOUT_MS,
 } from '../src/hostPreflight.ts';
 
@@ -135,4 +136,5 @@ test('named prebuild producer and XCUITest consumer use the shared DerivedData p
 test('iOS WDA and WDIO session timeouts retain their reviewed CI budgets', () => {
   assert.equal(WDA_LAUNCH_TIMEOUT_MS, 300_000);
   assert.equal(IOS_SESSION_RETRY_TIMEOUT_MS, 330_000);
+  assert.equal(SIMULATOR_STARTUP_TIMEOUT_MS, 180_000);
 });
