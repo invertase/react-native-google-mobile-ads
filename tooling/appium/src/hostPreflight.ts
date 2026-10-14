@@ -1,6 +1,7 @@
 import { existsSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { reconcileIosDeviceHub } from './iosDeviceHub.ts';
 
 /** Appium UiAutomator2 requires Android 8.0+ (API 26). */
 export const MIN_ANDROID_API = 26;
@@ -96,6 +97,10 @@ export function bootAndPersistSelectedSimulator(
   argv: string[],
   execFile: SimctlExec,
   appendFile: GithubEnvAppend,
+  options?: {
+    /** Defaults to Xcode 27 DeviceHub suppress (kill UI; set reconcile for windows). */
+    afterBoot?: () => void;
+  },
 ): void {
   if (selected.state !== 'Booted') {
     try {
@@ -128,6 +133,11 @@ export function bootAndPersistSelectedSimulator(
     requireGithubEnvPath(argv),
     githubEnvSelectionLines(selected.udid, selected.runtimeVersion),
   );
+  try {
+    (options?.afterBoot ?? (() => reconcileIosDeviceHub()))();
+  } catch {
+    // DeviceHub reconcile must never fail select-and-boot.
+  }
 }
 
 export type IosSimulator = {
