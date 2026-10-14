@@ -65,7 +65,7 @@ Do not skip these because the diff omitted `docs/**` or touched only `okf-bundle
 
 ### Docs.page link check
 
-`yarn lint:docs-links` runs `docs check .` with the exact root-pinned
+`yarn lint:docs-links` runs `docs check . --debug` with the exact root-pinned
 `@docs.page/cli` version. Exit 0 is blocking for the [CI docs gate](#ci-docs-gate). Fix internal
 failures and external 404, 5xx, DNS, abort, and timeout errors. Retry abort / timeout / 5xx at
 least twice; only a later exit 0 closes the gate — a retried abort that still fails is still a
@@ -73,6 +73,8 @@ hard fail. When the checker reports abort/timeout, probe the URL (for example `c
 before rewriting: HTTP 404 means replace the link with a current working official URL; do not
 treat abort as “transient pass” without exit 0. External 401, 403, 405, and 429 bot-gate
 responses are warnings and do not justify rewriting a valid link or weakening checker severity.
+`docs.json` `check.severityOverrideHosts` may map a host to `warn` when that host's
+timeouts/bot-gates are known CI noise (today: `support.google.com`); do not blanket-ignore hosts.
 Do not exclude or special-case the generated reference host, locally or in CI. A 404 there for a
 symbol the deployed reference does not have yet (before the first deployment, or a new symbol
 before the next Publish run) is resolved by deploying the reference

@@ -23,6 +23,8 @@ When adding or renaming user docs pages:
 - Paths in the sidebar are docs.page routes (for example `/ad-formats`), not GitHub file paths.
 - docs.page renders frontmatter `title` as the page heading; do not repeat it as a `# ` H1 in the
   page body. Start body sections at `##`.
+- Optional `check.*` knobs (for example `check.severityOverrideHosts`) tune link-check severity per
+  host; see [§ docs.page link check](testing/validation-checklist.md#docs-page-link-check).
 - Run the canonical prose and link checks owned by
   [validation checklist § lint](testing/validation-checklist.md#lint-and-formatting) and
   [§ docs.page link check](testing/validation-checklist.md#docs-page-link-check).
