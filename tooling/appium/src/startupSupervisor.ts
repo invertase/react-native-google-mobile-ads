@@ -96,7 +96,7 @@ export const HARD_FAILURE_MARKERS: readonly HardFailureMarker[] = [
   {
     name: 'session-create',
     pattern:
-      /(?:Failed to create session|Could not create a new session|session not created|Could not find a driver|Could not find installed driver|Have you installed a driver)/i,
+      /(?:Failed to create session|Could not create a new session|session not created|Could not find a driver|Could not find installed driver|Have you installed a driver|was not in the list of connected devices|device .* offline|emulator-\d+ was not in the list)/i,
   },
   {
     name: 'preflight-rejection',
