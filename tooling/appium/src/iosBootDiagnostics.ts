@@ -13,25 +13,43 @@ import {
   parseDeviceHubMode,
 } from './iosDeviceHub.ts';
 
+/** Where `appium:isHeadless` came from (for one-shot cap-resolve logging). */
+export type IosIsHeadlessSource = 'RNGMA_IOS_HEADLESS' | 'CI' | 'default';
+
+export type IosIsHeadlessResolution = {
+  isHeadless: boolean;
+  source: IosIsHeadlessSource;
+};
+
 /**
- * Resolve `appium:isHeadless` for XCUITest.
+ * Resolve `appium:isHeadless` for XCUITest, including the decision source.
  *
  * CI (`CI` / `GITHUB_ACTIONS`) defaults true: select-and-boot leaves a headless
  * Booted guest, and Appium's default `isHeadless=false` shuts it down to launch
  * Simulator UI — guest death + bootstatus hang. Local/slotted defaults false so
  * an operator UI client remains valid; override with `RNGMA_IOS_HEADLESS=0|1`.
  */
+export function resolveIosIsHeadlessResolution(
+  env: NodeJS.ProcessEnv = process.env,
+): IosIsHeadlessResolution {
+  const raw = (env.RNGMA_IOS_HEADLESS ?? '').trim().toLowerCase();
+  if (raw === '1' || raw === 'true' || raw === 'yes') {
+    return { isHeadless: true, source: 'RNGMA_IOS_HEADLESS' };
+  }
+  if (raw === '0' || raw === 'false' || raw === 'no') {
+    return { isHeadless: false, source: 'RNGMA_IOS_HEADLESS' };
+  }
+  if (env.CI === 'true' || env.GITHUB_ACTIONS === 'true') {
+    return { isHeadless: true, source: 'CI' };
+  }
+  return { isHeadless: false, source: 'default' };
+}
+
+/** Boolean-only wrapper for capability assignment. */
 export function resolveIosIsHeadless(
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  const raw = (env.RNGMA_IOS_HEADLESS ?? '').trim().toLowerCase();
-  if (raw === '1' || raw === 'true' || raw === 'yes') {
-    return true;
-  }
-  if (raw === '0' || raw === 'false' || raw === 'no') {
-    return false;
-  }
-  return env.CI === 'true' || env.GITHUB_ACTIONS === 'true';
+  return resolveIosIsHeadlessResolution(env).isHeadless;
 }
 
 /** appium-ios-simulator STARTUP_TIMEOUT_MS when the capability is unset. */
@@ -207,6 +225,21 @@ export function formatIosBootDiagnosticLine(
     .map(([key, value]) => `${key}=${value}`)
     .join(' ');
   return `[e2e-ios-boot] ts=${now().toISOString()} ${body}`;
+}
+
+/** One-shot `[e2e-ios-boot]` line for grepping resolved `appium:isHeadless`. */
+export function formatIosIsHeadlessCapResolveLine(
+  resolution: IosIsHeadlessResolution,
+  now: () => Date = () => new Date(),
+): string {
+  return formatIosBootDiagnosticLine(
+    {
+      phase: 'cap-resolve',
+      'appium:isHeadless': resolution.isHeadless,
+      source: resolution.source,
+    },
+    now,
+  );
 }
 
 export type CollectIosBootDiagnosticsOptions = {
@@ -445,7 +478,13 @@ const realHangClock: SessionCreateHangClock = {
 };
 
 export type IosSessionCreateHangWatchdog = {
+  /** Disarm probes (teardown / finally). Does not emit `:complete`. */
   stop: () => void;
+  /**
+   * WebDriver session id exists — emit `:complete` and disarm recover/abort.
+   * Call as soon as POST /session succeeds; do not wait for `afterSession`.
+   */
+  markSessionCreated: (sessionId?: string) => void;
 };
 
 export type SessionCreateHangProbeEvidence = {
@@ -472,6 +511,7 @@ export function isSimulatorTransitionState(simState: string | undefined): boolea
  * Decide whether a prolonged POST /session hang should keep waiting, attempt
  * one WDA settle recovery, or abort early with a clear `[e2e-ios-boot]` error.
  * Pure: injectable clocks/exec live in the watchdog wrapper.
+ * Never recover/abort once `postSessionInFlight` is false (session id exists).
  */
 export function decideSessionCreateHangAction(input: {
   hangTick: number;
@@ -481,7 +521,15 @@ export function decideSessionCreateHangAction(input: {
   recoveredOnce: boolean;
   recoverAfterTicks?: number;
   abortAfterTicks?: number;
+  /**
+   * True only while POST /session is still open. Defaults true for call sites
+   * that have not yet threaded the flag; false disarms recover/abort.
+   */
+  postSessionInFlight?: boolean;
 }): SessionCreateHangDecision {
+  if (input.postSessionInFlight === false) {
+    return { action: 'continue' };
+  }
   const recoverAfter =
     input.recoverAfterTicks ?? IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS;
   const abortAfter = input.abortAfterTicks ?? IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS;
@@ -576,7 +624,8 @@ export function formatSessionCreateHangAbortError(reason: string): Error {
  * While WDIO's POST /session is in flight, periodically re-emit `[e2e-ios-boot]`
  * lines plus an Appium/WDA hang hint. After prolonged xcrun ETIMEDOUT evidence,
  * optionally recover once (terminate WDA) then abort early via `onAbort` instead
- * of burning the full supervisor ceiling. Stop when the session is created.
+ * of burning the full supervisor ceiling. Call `markSessionCreated` (or `stop`)
+ * as soon as a session id exists — never WDA-terminate mid-suite.
  */
 export function startIosSessionCreateHangWatchdog(
   udid: string,
@@ -605,6 +654,8 @@ export function startIosSessionCreateHangWatchdog(
   const now = options.now ?? (() => new Date());
   let ticks = 0;
   let stopped = false;
+  /** False once a WebDriver session id exists — gates recover/abort. */
+  let postSessionInFlight = true;
   let consecutiveXcrunEtimedout = 0;
   let recoveredOnce = false;
   let lastSimState: string | undefined;
@@ -624,8 +675,20 @@ export function startIosSessionCreateHangWatchdog(
     ),
   );
 
-  const timer = clock.setInterval(() => {
+  let timer: unknown;
+  const disarm = (): void => {
+    postSessionInFlight = false;
     if (stopped) {
+      return;
+    }
+    stopped = true;
+    if (timer != null) {
+      clock.clearInterval(timer);
+    }
+  };
+
+  timer = clock.setInterval(() => {
+    if (stopped || !postSessionInFlight) {
       return;
     }
     ticks += 1;
@@ -662,6 +725,11 @@ export function startIosSessionCreateHangWatchdog(
       }
     }
 
+    // Session may have completed while probes ran — never recover/abort after.
+    if (stopped || !postSessionInFlight) {
+      return;
+    }
+
     const decision = decideSessionCreateHangAction({
       hangTick: ticks,
       consecutiveXcrunEtimedout,
@@ -669,6 +737,7 @@ export function startIosSessionCreateHangWatchdog(
       recoveredOnce,
       recoverAfterTicks: options.recoverAfterTicks,
       abortAfterTicks: options.abortAfterTicks,
+      postSessionInFlight,
     });
 
     if (decision.action === 'skip-recover') {
@@ -690,6 +759,9 @@ export function startIosSessionCreateHangWatchdog(
     }
 
     if (decision.action === 'recover') {
+      if (stopped || !postSessionInFlight) {
+        return;
+      }
       recoveredOnce = true;
       write(
         formatIosBootDiagnosticLine(
@@ -709,6 +781,10 @@ export function startIosSessionCreateHangWatchdog(
             execCapture: options.execCapture,
           }));
       try {
+        // Final gate: session id may have landed between decide and recover.
+        if (stopped || !postSessionInFlight) {
+          return;
+        }
         recover(udid, decision.reason);
       } catch (error) {
         write(
@@ -726,6 +802,9 @@ export function startIosSessionCreateHangWatchdog(
     }
 
     if (decision.action === 'abort') {
+      if (stopped || !postSessionInFlight) {
+        return;
+      }
       const error = formatSessionCreateHangAbortError(decision.reason);
       write(
         formatIosBootDiagnosticLine(
@@ -739,19 +818,31 @@ export function startIosSessionCreateHangWatchdog(
           now,
         ),
       );
-      stopped = true;
-      clock.clearInterval(timer);
+      disarm();
       options.onAbort?.(error);
     }
   }, intervalMs);
 
   return {
     stop: () => {
-      if (stopped) {
+      disarm();
+    },
+    markSessionCreated: (sessionId?: string) => {
+      if (!postSessionInFlight && stopped) {
         return;
       }
-      stopped = true;
-      clock.clearInterval(timer);
+      write(
+        formatIosBootDiagnosticLine(
+          {
+            phase: `${options.phase}:complete`,
+            udid,
+            sessionId: sessionId ?? '(present)',
+            hint: 'WebDriver session created; hang recover/abort disarmed',
+          },
+          now,
+        ),
+      );
+      disarm();
     },
   };
 }
