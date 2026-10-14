@@ -507,6 +507,12 @@ describe('reliability worker', () => {
       ) ?? '',
       /session-create/,
     );
+    assert.match(
+      reliabilityInfraAbortReason(
+        'Device emulator-5560 was not in the list of connected devices',
+      ) ?? '',
+      /device-lost|not a product flake/,
+    );
 
     const root = tempRoot('infra-abort');
     const layout = buildReliabilityLayout('temporary', SMOKE_SHARDS, {
