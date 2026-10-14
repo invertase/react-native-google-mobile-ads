@@ -39,7 +39,7 @@ const MODE_POLICIES: Record<ReliabilityMode, ReliabilityModePolicy> = {
     mochaBailWithinShard: true,
     creditsReceipts: false,
     summary:
-      'Repeated layout iterations for consecutive-green hardening; receipts are not qualification credits.',
+      'Repeated layout iterations for the burn-in gate (consecutive-green hardening toward qualification-ready); receipts are not statistical qualification credits.',
   },
   qualify: {
     mode: 'qualify',

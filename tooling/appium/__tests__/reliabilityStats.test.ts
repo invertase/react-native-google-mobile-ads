@@ -32,6 +32,8 @@ import {
   createDryRunReliabilityRunner,
   runReliabilityWorker,
 } from '../src/reliabilityWorker.ts';
+import { createFlakeReducer } from '../src/reliabilityReducer.ts';
+import { RISK_THRESHOLDS } from '../src/reliabilityRisk.ts';
 import { buildReliabilityLayout } from '../src/reliabilityLayouts.ts';
 import { SMOKE_SHARDS } from '../src/sessionShards.ts';
 
@@ -335,6 +337,12 @@ describe('campaign and worker statistical surfaces', () => {
       credits.some(credit => credit.cellKey.cellKind === 'startup' && credit.receiptId != null),
       true,
     );
+    // Per-test evidence credits wait for burn-in gate closure (temporary never
+    // reaches qualification-ready via final-layout risk greens).
+    assert.equal(
+      credits.every(credit => credit.cellKey.cellKind !== 'test'),
+      true,
+    );
     assert.equal(
       credits.every(credit => {
         const cellScope = cellDependencyScopeId(credit.cellKey);
@@ -342,6 +350,92 @@ describe('campaign and worker statistical surfaces', () => {
       }),
       true,
     );
+  });
+
+  test('qualify withholds test evidence credits until burn-in gate is closed', async () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'rngma-stats-gate-'));
+    const layout = buildReliabilityLayout('final', SMOKE_SHARDS);
+    const caseIds = layout.entries.flatMap(entry => [...entry.caseIds]);
+    assert.equal(caseIds.length > 1, true);
+
+    const blockedEvidence = createEvidenceLedger();
+    const blockedReducer = createFlakeReducer({
+      artifactRoot: path.join(root, 'blocked-artifacts'),
+    });
+    await runReliabilityWorker(
+      {
+        mode: 'qualify',
+        platform: 'android',
+        slot: 1,
+        layoutKind: 'final',
+        iterations: 1,
+        receiptRoot: path.join(root, 'blocked-receipts'),
+        logRoot: path.join(root, 'blocked-logs'),
+        dryRun: true,
+        allowForceAcquire: false,
+        androidBackend: 'nextgen',
+        layout,
+      },
+      {
+        runner: createDryRunReliabilityRunner(),
+        evidence: blockedEvidence,
+        reducer: blockedReducer,
+      },
+    );
+    assert.equal(
+      blockedEvidence
+        .listCredits({ validOnly: true })
+        .every(credit => credit.cellKey.cellKind !== 'test'),
+      true,
+    );
+    assert.equal(blockedReducer.ledger.get({
+      caseId: caseIds[0]!,
+      platform: 'android',
+    }).color !== 'qualification-ready', true);
+
+    const readyEvidence = createEvidenceLedger();
+    const readyReducer = createFlakeReducer({
+      artifactRoot: path.join(root, 'ready-artifacts'),
+    });
+    for (const caseId of caseIds) {
+      for (let i = 0; i < RISK_THRESHOLDS.amberIndividualGreens; i += 1) {
+        readyReducer.recordPass(caseId, 'android', 'individual');
+      }
+      for (let i = 0; i < RISK_THRESHOLDS.greenCandidateShardGreens; i += 1) {
+        readyReducer.recordPass(caseId, 'android', 'candidate-shard');
+      }
+      for (
+        let i = 0;
+        i < RISK_THRESHOLDS.qualificationReadyFinalLayoutGreens;
+        i += 1
+      ) {
+        readyReducer.recordPass(caseId, 'android', 'final-layout');
+      }
+    }
+    await runReliabilityWorker(
+      {
+        mode: 'qualify',
+        platform: 'android',
+        slot: 1,
+        layoutKind: 'final',
+        iterations: 1,
+        receiptRoot: path.join(root, 'ready-receipts'),
+        logRoot: path.join(root, 'ready-logs'),
+        dryRun: true,
+        allowForceAcquire: false,
+        androidBackend: 'nextgen',
+        layout,
+      },
+      {
+        runner: createDryRunReliabilityRunner(),
+        evidence: readyEvidence,
+        reducer: readyReducer,
+      },
+    );
+    const testCredits = readyEvidence
+      .listCredits({ validOnly: true })
+      .filter(credit => credit.cellKey.cellKind === 'test');
+    assert.equal(testCredits.length >= caseIds.length, true);
   });
 
   test('diagnose and burn-in workers mint zero statistical cell credits', async () => {

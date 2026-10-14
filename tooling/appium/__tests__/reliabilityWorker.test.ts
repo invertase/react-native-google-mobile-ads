@@ -342,6 +342,12 @@ describe('reliability worker', () => {
     assert.equal(summary.shardFailures, 1);
     assert.equal(summary.failureArtifacts, 1);
     assert.equal(summary.iterationsCompleted, 1);
+    assert.equal(summary.burnInGate.cellCount >= 1, true);
+    assert.equal(summary.burnInGate.closed, false);
+    assert.equal(
+      summary.burnInGate.blocking.some(cell => cell.reason === 'unresolved-failure'),
+      true,
+    );
     // Both shards still record all startup cells (including first-shard mocha bail).
     const passingStartupShards = layout.entries.length;
     assert.equal(
@@ -404,13 +410,40 @@ describe('reliability worker', () => {
     );
   });
 
-  test('diagnose/burn-in on final layout do not mint final-layout risk credits', async () => {
+  test('burn-in/qualify final layout mint final-layout risk credits; diagnose does not', async () => {
     const root = tempRoot('risk-scope');
     const layout = buildReliabilityLayout('final', SMOKE_SHARDS);
     const caseId = layout.entries[0]!.caseIds[0]!;
     assert.equal(layout.entries[0]!.caseIds.length > 1, true);
 
-    for (const mode of ['diagnose', 'burn-in'] as const) {
+    const diagnoseReducer = createFlakeReducer({
+      artifactRoot: path.join(root, 'diagnose-artifacts'),
+    });
+    await runReliabilityWorker(
+      {
+        mode: 'diagnose',
+        platform: 'android',
+        slot: 1,
+        layoutKind: 'final',
+        iterations: 1,
+        receiptRoot: path.join(root, 'diagnose-receipts'),
+        logRoot: path.join(root, 'diagnose-logs'),
+        dryRun: true,
+        allowForceAcquire: false,
+        layout,
+        createJobId: () => 'job_diagnose0001',
+        now: () => new Date('2026-10-13T21:00:00.000Z'),
+      },
+      {
+        runner: createDryRunReliabilityRunner(),
+        reducer: diagnoseReducer,
+      },
+    );
+    const diagnoseCell = diagnoseReducer.ledger.get({ caseId, platform: 'android' });
+    assert.equal(diagnoseCell.consecutiveFinalLayoutGreens, 0);
+    assert.equal(diagnoseCell.consecutiveCandidateShardGreens >= 1, true);
+
+    for (const mode of ['burn-in', 'qualify'] as const) {
       const reducer = createFlakeReducer({
         artifactRoot: path.join(root, `${mode}-artifacts`),
       });
@@ -435,34 +468,7 @@ describe('reliability worker', () => {
         },
       );
       const cell = reducer.ledger.get({ caseId, platform: 'android' });
-      assert.equal(cell.consecutiveFinalLayoutGreens, 0, mode);
-      assert.equal(cell.consecutiveCandidateShardGreens >= 1, true, mode);
+      assert.equal(cell.consecutiveFinalLayoutGreens >= 1, true, mode);
     }
-
-    const qualifyReducer = createFlakeReducer({
-      artifactRoot: path.join(root, 'qualify-artifacts'),
-    });
-    await runReliabilityWorker(
-      {
-        mode: 'qualify',
-        platform: 'android',
-        slot: 1,
-        layoutKind: 'final',
-        iterations: 1,
-        receiptRoot: path.join(root, 'qualify-receipts'),
-        logRoot: path.join(root, 'qualify-logs'),
-        dryRun: true,
-        allowForceAcquire: false,
-        layout,
-        createJobId: () => 'job_qualify0001',
-        now: () => new Date('2026-10-13T21:00:00.000Z'),
-      },
-      {
-        runner: createDryRunReliabilityRunner(),
-        reducer: qualifyReducer,
-      },
-    );
-    const qualifyCell = qualifyReducer.ledger.get({ caseId, platform: 'android' });
-    assert.equal(qualifyCell.consecutiveFinalLayoutGreens >= 1, true);
   });
 });

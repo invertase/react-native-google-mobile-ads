@@ -1,11 +1,14 @@
 /**
- * Per-test risk colors and risk-aware scheduling.
+ * Per-test risk colors, burn-in gate decisions, and risk-aware scheduling.
  * High-risk tests stay isolated; low-risk tests may share affinity groups.
  *
- * Progression (consecutive greens; any unresolved failure resets to red):
+ * Burn-in gate progression (consecutive greens; any unresolved failure resets):
  * - red → amber at 10 individual greens
  * - amber → green at 30 candidate-shard greens
  * - green → qualification-ready at 100 full final-layout greens
+ *
+ * Host load is never accepted as a root cause for a failure that resets this
+ * gate — see `isRejectedRootCauseClaim` and the OKF burn-in gate section.
  */
 
 export const RISK_COLORS = ['red', 'amber', 'green', 'qualification-ready'] as const;
@@ -20,28 +23,55 @@ export const RISK_THRESHOLDS = {
 export type GreenScope = 'individual' | 'candidate-shard' | 'final-layout';
 
 /**
- * Map a worker pass onto a risk green scope (ED-08 vocabulary).
+ * Map a worker pass onto a risk green scope (burn-in gate vocabulary).
  *
- * - isolated (single co-running case) → individual (amber@10)
- * - multi-case candidate shard → candidate-shard (green@30)
- * - full final layout in qualify only → final-layout (qualification-ready@100)
+ * - single co-running case (layout digest membership) → individual (amber@10)
+ * - multi-case temporary / diagnose shard → candidate-shard (green@30)
+ * - burn-in|qualify + final + multi-case → final-layout (qualification-ready@100)
  *
- * diagnose / burn-in never mint final-layout qualification credits, even on
- * `--layout=final`.
+ * Scope uses layout co-run case count, not `scheduleByRisk` isolation vs
+ * affinity. `diagnose` never mints final-layout risk credits (even on
+ * `--layout=final`). Final-layout risk credits are not statistical receipts —
+ * qualify still consults the burn-in gate before minting evidence-ledger stats.
  */
 export function greenScopeForWorkerPass(options: {
   mode: 'diagnose' | 'burn-in' | 'qualify';
   layoutKind: 'temporary' | 'final';
-  /** Cases that co-ran in the same shard/unit (layout digest membership). */
+  /** Cases that co-ran in the same shard entry (layout digest membership). */
   coRunCaseCount: number;
 }): GreenScope {
   if (options.coRunCaseCount <= 1) {
     return 'individual';
   }
-  if (options.mode === 'qualify' && options.layoutKind === 'final') {
+  if (
+    (options.mode === 'burn-in' || options.mode === 'qualify') &&
+    options.layoutKind === 'final'
+  ) {
     return 'final-layout';
   }
   return 'candidate-shard';
+}
+
+/**
+ * Free-text claims that must never close a burn-in cell as "explained".
+ * Operators still classify the observable failure (assertion, order-dependency,
+ * ad-service, startup, or unknown) and fix that — never host load.
+ */
+const REJECTED_ROOT_CAUSE_PATTERNS: readonly RegExp[] = [
+  /\bhost\s*load\b/i,
+  /\bmachine\s+was\s+busy\b/i,
+  /\bCPU\s+pressure\b/i,
+  /\bthermal\s+throttl/i,
+  /\bmemory\s+pressure\b/i,
+  /\bsystem\s+under\s+load\b/i,
+];
+
+/** True when detail tries to excuse a flake via host load / resource pressure. */
+export function isRejectedRootCauseClaim(detail: string | undefined): boolean {
+  if (detail == null || detail.trim() === '') {
+    return false;
+  }
+  return REJECTED_ROOT_CAUSE_PATTERNS.some(pattern => pattern.test(detail));
 }
 
 export type RiskCellKey = {
@@ -116,6 +146,145 @@ export function deriveRiskColor(state: Omit<RiskCellState, 'color'>): RiskColor 
     return 'amber';
   }
   return 'red';
+}
+
+export type BurnInThresholdProgress = {
+  /** Next color consecutive greens would unlock, or null when gate is closed. */
+  nextColor: RiskColor | null;
+  /** Green scope that advances toward nextColor (null when closed). */
+  scope: GreenScope | null;
+  required: number;
+  current: number;
+  remaining: number;
+};
+
+export type BurnInGateDecision = {
+  color: RiskColor;
+  /**
+   * Eligible for low-risk affinity grouping under default isolateAmber
+   * (green / qualification-ready only).
+   */
+  affinityEligible: boolean;
+  /** Burn-in gate closed for this cell (100 consecutive final-layout greens). */
+  qualificationReady: boolean;
+  blockedByUnresolvedFailure: boolean;
+  progress: BurnInThresholdProgress;
+};
+
+type BurnInGateInput = Pick<
+  RiskCellState,
+  | 'consecutiveIndividualGreens'
+  | 'consecutiveCandidateShardGreens'
+  | 'consecutiveFinalLayoutGreens'
+  | 'unresolvedFailure'
+>;
+
+function thresholdProgress(state: BurnInGateInput): BurnInThresholdProgress {
+  const color = deriveRiskColor(state);
+  if (color === 'qualification-ready') {
+    return {
+      nextColor: null,
+      scope: null,
+      required: RISK_THRESHOLDS.qualificationReadyFinalLayoutGreens,
+      current: state.consecutiveFinalLayoutGreens,
+      remaining: 0,
+    };
+  }
+  if (color === 'green') {
+    const required = RISK_THRESHOLDS.qualificationReadyFinalLayoutGreens;
+    const current = state.consecutiveFinalLayoutGreens;
+    return {
+      nextColor: 'qualification-ready',
+      scope: 'final-layout',
+      required,
+      current,
+      remaining: Math.max(0, required - current),
+    };
+  }
+  if (color === 'amber') {
+    const required = RISK_THRESHOLDS.greenCandidateShardGreens;
+    const current = state.consecutiveCandidateShardGreens;
+    return {
+      nextColor: 'green',
+      scope: 'candidate-shard',
+      required,
+      current,
+      remaining: Math.max(0, required - current),
+    };
+  }
+  const required = RISK_THRESHOLDS.amberIndividualGreens;
+  const current = state.consecutiveIndividualGreens;
+  return {
+    nextColor: 'amber',
+    scope: 'individual',
+    required,
+    current,
+    remaining: Math.max(0, required - current),
+  };
+}
+
+/** Per-cell burn-in gate decision from consecutive-green counters. */
+export function evaluateBurnInGate(state: BurnInGateInput): BurnInGateDecision {
+  const color = deriveRiskColor(state);
+  return {
+    color,
+    affinityEligible: color === 'green' || color === 'qualification-ready',
+    qualificationReady: color === 'qualification-ready',
+    blockedByUnresolvedFailure: state.unresolvedFailure,
+    progress: thresholdProgress(state),
+  };
+}
+
+export type BurnInSuiteBlockingCell = RiskCellKey & {
+  color: RiskColor;
+  reason: 'unresolved-failure' | 'below-threshold';
+};
+
+export type BurnInSuiteGateDecision = {
+  /**
+   * True only when at least one cell was observed and every cell is
+   * qualification-ready with no unresolved failure.
+   */
+  closed: boolean;
+  cellCount: number;
+  qualificationReadyCount: number;
+  blocking: readonly BurnInSuiteBlockingCell[];
+  decisions: ReadonlyArray<BurnInGateDecision & RiskCellKey>;
+};
+
+/** Suite-level burn-in gate over an observed risk-ledger snapshot. */
+export function evaluateBurnInSuiteGate(
+  cells: readonly RiskCellState[],
+): BurnInSuiteGateDecision {
+  const decisions = cells.map(cell => ({
+    caseId: cell.caseId,
+    platform: cell.platform,
+    ...evaluateBurnInGate(cell),
+  }));
+  const blocking: BurnInSuiteBlockingCell[] = [];
+  for (const decision of decisions) {
+    if (decision.qualificationReady && !decision.blockedByUnresolvedFailure) {
+      continue;
+    }
+    blocking.push({
+      caseId: decision.caseId,
+      platform: decision.platform,
+      color: decision.color,
+      reason: decision.blockedByUnresolvedFailure
+        ? 'unresolved-failure'
+        : 'below-threshold',
+    });
+  }
+  const qualificationReadyCount = decisions.filter(
+    decision => decision.qualificationReady,
+  ).length;
+  return {
+    closed: cells.length > 0 && blocking.length === 0,
+    cellCount: cells.length,
+    qualificationReadyCount,
+    blocking,
+    decisions,
+  };
 }
 
 export type RiskLedger = {

@@ -41,7 +41,14 @@ import {
   type ReduceFailureInput,
   type ReduceFailureResult,
 } from './reliabilityReducer.ts';
-import type { ScheduledUnit } from './reliabilityRisk.ts';
+import {
+  evaluateBurnInSuiteGate,
+  greenScopeForWorkerPass,
+  isRejectedRootCauseClaim,
+  RISK_THRESHOLDS,
+  type BurnInSuiteGateDecision,
+  type ScheduledUnit,
+} from './reliabilityRisk.ts';
 import {
   configurationForPlatformBackend,
   isQualifyingConfiguration,
@@ -92,6 +99,8 @@ export type CampaignController = {
   restartWithCapacity(next: ElasticSlotSet): Promise<LeaseSnapshot[]>;
   /** Risk-aware schedule: isolated high-risk first, then low-risk affinity groups. */
   scheduleCases(platform: 'android' | 'ios', caseIds: readonly string[]): ScheduledUnit[];
+  /** Burn-in gate snapshot over the campaign risk ledger. */
+  burnInGate(): BurnInSuiteGateDecision;
   /**
    * Record a failure into the flake reducer and circuit breaker. Trips pause the
    * campaign capacity when ad-service failures cluster.
@@ -377,6 +386,9 @@ export function createCampaignController(
     scheduleCases(platform, caseIds) {
       return reducer.schedule(platform, caseIds);
     },
+    burnInGate() {
+      return evaluateBurnInSuiteGate(reducer.ledger.list());
+    },
     noteFailure(input) {
       const reduction = reducer.reduceFailure(input);
       const circuit = breaker.observe(reduction.artifact);
@@ -589,11 +601,17 @@ export type RiskPilotResult = {
   probabilisticNeighbors: number;
   dispatchBlockedWhileOpen: boolean;
   resumedAcceptingWork: boolean;
+  /** Burn-in gate progression exercise (separate ledger; no live Metro). */
+  burnInGateClosed: boolean;
+  burnInGateCellCount: number;
+  burnInGateQualificationReady: number;
+  hostLoadClaimRejected: boolean;
 };
 
 /**
  * Device-free adaptive flake-reducer pilot: risk scheduling, isolation,
- * probabilistic context reduction, exact artifacts, and ad-service circuit trip.
+ * probabilistic context reduction, exact artifacts, ad-service circuit trip,
+ * and burn-in gate progression thresholds.
  */
 export async function runRiskPilot(
   options: {
@@ -697,6 +715,58 @@ export async function runRiskPilot(
     neighbors: ['banner', 'native', 'fluid'],
   });
 
+  // Separate burn-in gate ledger: prove red→amber→green→qualification-ready
+  // via worker-reachable green scopes (burn-in + final + multi-case may mint
+  // final-layout *risk* credits). Still no statistical receipts / live Metro.
+  const gateController = createCampaignController(
+    {
+      mode: 'burn-in',
+      layoutKind: 'final',
+      slotSet: { android: [1], ios: [] },
+      dryRun: true,
+      allowForceAcquire: false,
+      receiptRoot: path.join(artifactRoot, 'burn-in-gate-receipts'),
+      logRoot: path.join(artifactRoot, 'burn-in-gate-logs'),
+      artifactRoot: path.join(artifactRoot, 'burn-in-gate-artifacts'),
+    },
+    { now },
+  );
+  const gateCase = 'banner';
+  const gateMode = 'burn-in' as const;
+  const gateLayout = 'final' as const;
+  const individualScope = greenScopeForWorkerPass({
+    mode: gateMode,
+    layoutKind: gateLayout,
+    coRunCaseCount: 1,
+  });
+  const candidateScope = greenScopeForWorkerPass({
+    mode: gateMode,
+    layoutKind: 'temporary',
+    coRunCaseCount: 2,
+  });
+  const finalScope = greenScopeForWorkerPass({
+    mode: gateMode,
+    layoutKind: gateLayout,
+    coRunCaseCount: 2,
+  });
+  for (let i = 0; i < RISK_THRESHOLDS.amberIndividualGreens; i += 1) {
+    gateController.reducer.recordPass(gateCase, 'android', individualScope);
+  }
+  for (let i = 0; i < RISK_THRESHOLDS.greenCandidateShardGreens; i += 1) {
+    gateController.reducer.recordPass(gateCase, 'android', candidateScope);
+  }
+  for (
+    let i = 0;
+    i < RISK_THRESHOLDS.qualificationReadyFinalLayoutGreens;
+    i += 1
+  ) {
+    gateController.reducer.recordPass(gateCase, 'android', finalScope);
+  }
+  const burnInGate = gateController.burnInGate();
+  const hostLoadClaimRejected = isRejectedRootCauseClaim(
+    'failed because of host load / CPU pressure on the Mac',
+  );
+
   return {
     scheduledIsolated,
     scheduledAffinity,
@@ -706,6 +776,10 @@ export async function runRiskPilot(
     probabilisticNeighbors: probabilistic.probabilistic.retainedNeighbors.length,
     dispatchBlockedWhileOpen,
     resumedAcceptingWork,
+    burnInGateClosed: burnInGate.closed,
+    burnInGateCellCount: burnInGate.cellCount,
+    burnInGateQualificationReady: burnInGate.qualificationReadyCount,
+    hostLoadClaimRejected,
   };
 }
 
