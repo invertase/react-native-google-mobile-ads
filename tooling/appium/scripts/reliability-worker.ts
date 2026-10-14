@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { recoverAndroidSlot } from '../src/reliabilityDeviceRecover.ts';
 import { ensureReliabilityMetroReady } from '../src/reliabilityMetro.ts';
 import {
   createDryRunReliabilityRunner,
@@ -70,6 +71,19 @@ async function main(): Promise<void> {
             async release() {
               return undefined;
             },
+            ...(options.platform === 'android'
+              ? {
+                  async recoverDeviceLost() {
+                    await recoverAndroidSlot({
+                      slot: options.slot,
+                      logPath: path.join(
+                        options.logRoot,
+                        `device-recover-android-slot-${options.slot}.log`,
+                      ),
+                    });
+                  },
+                }
+              : {}),
           }),
     });
     console.log(`[reliability] job=${summary.job.jobId}`);

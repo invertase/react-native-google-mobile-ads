@@ -562,4 +562,81 @@ describe('reliability worker', () => {
     );
     assert.equal(runs, 1, 'must not continue iterating after infra abort');
   });
+
+  test('device-lost recovers and retries shard without product flake artifacts', async () => {
+    const root = tempRoot('device-lost-recover');
+    const layout = buildReliabilityLayout('temporary', SMOKE_SHARDS, {
+      temporaryShardIds: [SMOKE_SHARDS[0]!.id],
+    });
+    let runs = 0;
+    let recoveries = 0;
+    const runner: ReliabilityRunner = {
+      async runShard(request) {
+        runs += 1;
+        if (runs === 1) {
+          writeFileSync(
+            request.logPath,
+            'Device emulator-5560 was not in the list of connected devices\n',
+            { flag: 'a' },
+          );
+          return {
+            outcome: 'fail',
+            startup: {
+              'session-create': 'fail',
+              'app-launch': 'skipped',
+              'bundle-load': 'skipped',
+              'gallery-ready': 'skipped',
+            },
+            preamble: 'skipped',
+            tests: request.caseIds.map(caseId => ({
+              caseId,
+              outcome: 'skipped' as const,
+            })),
+            detail: 'Device emulator-5560 was not in the list of connected devices',
+          };
+        }
+        writeFileSync(request.logPath, 'outcome=pass\n', { flag: 'a' });
+        return {
+          outcome: 'pass',
+          startup: {
+            'session-create': 'pass',
+            'app-launch': 'pass',
+            'bundle-load': 'pass',
+            'gallery-ready': 'pass',
+          },
+          preamble: 'pass',
+          tests: request.caseIds.map(caseId => ({ caseId, outcome: 'pass' as const })),
+          detail: 'recovered',
+        };
+      },
+    };
+
+    const summary = await runReliabilityWorker(
+      {
+        mode: 'burn-in',
+        platform: 'android',
+        slot: 2,
+        layoutKind: 'temporary',
+        iterations: 1,
+        receiptRoot: path.join(root, 'receipts'),
+        logRoot: path.join(root, 'logs'),
+        dryRun: true,
+        allowForceAcquire: false,
+        layout,
+        createJobId: () => 'job_devicelost0001',
+        now: () => new Date('2026-10-13T21:00:00.000Z'),
+      },
+      {
+        runner,
+        async recoverDeviceLost() {
+          recoveries += 1;
+        },
+      },
+    );
+    assert.equal(runs, 2);
+    assert.equal(recoveries, 1);
+    assert.equal(summary.shardFailures, 0);
+    assert.equal(summary.failureArtifacts, 0);
+    assert.equal(summary.iterationsCompleted, 1);
+  });
 });

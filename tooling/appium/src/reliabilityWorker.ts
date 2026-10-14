@@ -34,6 +34,9 @@ import {
   type ReceiptStore,
   type ReliabilityJobIdentity,
 } from './reliabilityReceipts.ts';
+import {
+  DEFAULT_DEVICE_LOST_RECOVERIES,
+} from './reliabilityDeviceRecover.ts';
 import { reliabilityMetroEnv } from './reliabilityMetro.ts';
 import { slotResources } from './slots.ts';
 import { hardFailureForLine } from './startupSupervisor.ts';
@@ -495,6 +498,12 @@ export async function runReliabilityWorker(
     reducer?: FlakeReducer;
     /** Optional statistical evidence ledger; defaults to an in-memory ledger. */
     evidence?: EvidenceLedger;
+    /**
+     * Host-infra recovery when the Android emulator (or similar) disappears.
+     * Retries the same shard after recovery; does not mint product flake artifacts.
+     */
+    recoverDeviceLost?: () => Promise<void>;
+    maxDeviceLostRecoveries?: number;
   },
 ): Promise<ReliabilityWorkerSummary> {
   const policy = reliabilityModePolicy(options.mode);
@@ -594,6 +603,9 @@ export async function runReliabilityWorker(
   let passIndex = 0;
   let failureArtifacts = 0;
   let infraAbort: string | undefined;
+  let deviceLostRecoveries = 0;
+  const maxDeviceLostRecoveries =
+    deps.maxDeviceLostRecoveries ?? DEFAULT_DEVICE_LOST_RECOVERIES;
 
   try {
     for (let iteration = 1; iteration <= options.iterations; iteration += 1) {
@@ -609,7 +621,8 @@ export async function runReliabilityWorker(
         const logPath = logs.shardLogPath(iteration, entry.shardId);
         mkdirSync(path.dirname(logPath), { recursive: true });
         writeFileSync(logPath, '', { flag: 'wx' });
-        const result = await deps.runner.runShard({
+
+        let result = await deps.runner.runShard({
           iteration,
           shardId: entry.shardId,
           spec: entry.spec,
@@ -617,6 +630,46 @@ export async function runReliabilityWorker(
           logPath,
           env: reliabilityShardEnv(options, entry.spec),
         });
+
+        // Emulator process death is frequent under multi-AVD load. Recover and
+        // retry the same shard instead of aborting the whole burn-in job or
+        // recording a product flake.
+        while (
+          hardFailureForLine(result.detail)?.name === 'device-lost' &&
+          deps.recoverDeviceLost != null &&
+          deviceLostRecoveries < maxDeviceLostRecoveries
+        ) {
+          deviceLostRecoveries += 1;
+          console.warn(
+            `[reliability] device-lost on slot ${options.slot} ${options.platform}; recovering (${deviceLostRecoveries}/${maxDeviceLostRecoveries}) and retrying shard ${entry.shardId}`,
+          );
+          try {
+            await deps.recoverDeviceLost();
+          } catch (error) {
+            infraAbort = `Reliability infra abort (device-lost): recovery failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`;
+            console.error(`[reliability] ${infraAbort}`);
+            break;
+          }
+          // Append retry separator; keep the same log path for the operator.
+          writeFileSync(
+            logPath,
+            `\n[reliability] device-lost recovery ${deviceLostRecoveries}; retrying shard\n`,
+            { flag: 'a' },
+          );
+          result = await deps.runner.runShard({
+            iteration,
+            shardId: entry.shardId,
+            spec: entry.spec,
+            caseIds: entry.caseIds,
+            logPath,
+            env: reliabilityShardEnv(options, entry.spec),
+          });
+        }
+        if (infraAbort != null) {
+          break;
+        }
 
         const abortReason = reliabilityInfraAbortReason(result.detail);
         if (abortReason != null) {
