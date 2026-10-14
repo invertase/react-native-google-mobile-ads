@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissAndroidAnrDialogsViaAdb } from '../src/androidAnrDismiss.ts';
 import { recoverAndroidSlot } from '../src/reliabilityDeviceRecover.ts';
+import { reconcileIosDeviceHub } from '../src/iosDeviceHub.ts';
 import { ensureReliabilityMetroReady } from '../src/reliabilityMetro.ts';
 import { slotResources } from '../src/slots.ts';
 import {
@@ -94,7 +95,19 @@ async function main(): Promise<void> {
                     }
                   },
                 }
-              : {}),
+              : {
+                  beforeShard() {
+                    // Default suppress: DeviceHub UI is unused by Appium and
+                    // CoreSimulator floods windows under multi-slot load.
+                    // Opt into windows with RNGMA_IOS_DEVICE_HUB=reconcile.
+                    const result = reconcileIosDeviceHub();
+                    if (result.opened > 0 || result.killed > 0) {
+                      console.warn(
+                        `[reliability] DeviceHub ${result.mode} killed=${result.killed} opened=${result.opened} desired=${result.desired.length}`,
+                      );
+                    }
+                  },
+                }),
           }),
     });
     console.log(`[reliability] job=${summary.job.jobId}`);

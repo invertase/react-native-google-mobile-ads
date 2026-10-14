@@ -246,6 +246,7 @@ describe('hostPreflight', () => {
       (path, data) => {
         writes.push({ path, data });
       },
+      { afterBoot: () => undefined },
     );
     assert.deepEqual(calls, [
       ['xcrun', 'simctl', 'boot', 'shutdown-udid'],
@@ -269,6 +270,7 @@ describe('hostPreflight', () => {
         calls.push(args);
       },
       () => {},
+      { afterBoot: () => undefined },
     );
     assert.deepEqual(calls, [['simctl', 'bootstatus', 'booted-udid', '-b']]);
   });
@@ -289,6 +291,7 @@ describe('hostPreflight', () => {
         }
       },
       () => {},
+      { afterBoot: () => undefined },
     );
     assert.deepEqual(calls, [
       ['xcrun', 'simctl', 'boot', 'race-udid'],
@@ -315,6 +318,7 @@ describe('hostPreflight', () => {
           () => {
             assert.fail('must not persist without --github-env');
           },
+          { afterBoot: () => undefined },
         ),
       { message: SELECT_AND_BOOT_GITHUB_ENV_ERROR },
     );
