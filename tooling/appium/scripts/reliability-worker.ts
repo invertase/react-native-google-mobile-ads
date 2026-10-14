@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { dismissAndroidAnrDialogsViaAdb } from '../src/androidAnrDismiss.ts';
 import { recoverAndroidSlot } from '../src/reliabilityDeviceRecover.ts';
 import { ensureReliabilityMetroReady } from '../src/reliabilityMetro.ts';
+import { slotResources } from '../src/slots.ts';
 import {
   createDryRunReliabilityRunner,
   createLiveAppiumShardRunner,
@@ -81,6 +83,15 @@ async function main(): Promise<void> {
                         `device-recover-android-slot-${options.slot}.log`,
                       ),
                     });
+                  },
+                  beforeShard() {
+                    const serial = slotResources(options.slot, 'android').androidSerial;
+                    const anr = dismissAndroidAnrDialogsViaAdb(serial);
+                    if (anr.tapped > 0) {
+                      console.warn(
+                        `[reliability] Android ANR dismiss ${serial}: cleared=${anr.cleared} rounds=${anr.rounds} taps=${anr.tapped}`,
+                      );
+                    }
                   },
                 }
               : {}),
