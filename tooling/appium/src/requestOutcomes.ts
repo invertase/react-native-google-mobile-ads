@@ -445,6 +445,32 @@ export function requestIdFromText(text: string): number | undefined {
   return match ? Number(match[1]) : undefined;
 }
 
+/**
+ * After a waitUntil timeout, the marker may already show a terminal outcome
+ * (slow load race). Prefer accepting that re-read over throwing a contradictory
+ * timeout that still embeds `loaded` / `no-fill` in lastSeen.
+ */
+export function terminalOutcomeFromMarkerText(
+  lastSeen: string,
+  attempt: number,
+):
+  | {
+      requestId: number;
+      classification: RequestOutcomeClassification;
+      detail: string;
+    }
+  | undefined {
+  if (!lastSeen.includes(`Request attempt: ${attempt};`)) {
+    return undefined;
+  }
+  const classification = classifyRequestOutcome(lastSeen);
+  const requestId = requestIdFromText(lastSeen);
+  if (classification === undefined || requestId === undefined) {
+    return undefined;
+  }
+  return { requestId, classification, detail: lastSeen };
+}
+
 const NATIVE_RESPONSE_SIGNATURE =
   '<Google:HTML> Incorrect native ad response. Click actions were not properly specified';
 const NATIVE_RESPONSE_LOG_MESSAGE = `Received log message: ${NATIVE_RESPONSE_SIGNATURE}`;

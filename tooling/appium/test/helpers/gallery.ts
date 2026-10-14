@@ -35,6 +35,7 @@ import {
   REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED,
   requestIdFromText,
   runRepresentativeRequestOutcomeContract,
+  terminalOutcomeFromMarkerText,
   truncateLogSnippet,
   type RepresentativeRequestRetry,
   type RequestOutcomeClassification,
@@ -1389,6 +1390,14 @@ async function observeRepresentativeRequestOutcome(
     // [request-outcome-timeout]. Marker disappearance, post-wait hard-fails, etc.
     // must abort immediately even when lastSeen still looks pending.
     if (waitTimedOut) {
+      // Slow-load race: terminal marker arrived during/after the waitUntil timeout.
+      const lateTerminal = terminalOutcomeFromMarkerText(lastSeen, attempt);
+      if (lateTerminal !== undefined) {
+        return {
+          ...lateTerminal,
+          fingerprint: await collectRequestFingerprint(path, lateTerminal.classification),
+        };
+      }
       const elapsedMs = Math.max(0, Date.now() - startedAt);
       const requestId = requestIdFromText(lastSeen) ?? null;
       const adsLogSnippet = await readAndroidAdsReactNativeLogSnippet();
