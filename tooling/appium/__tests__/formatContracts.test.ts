@@ -31,6 +31,7 @@ import {
   resetAcceptedAdUnitMemory,
   runRepresentativeRequestOutcomeContract,
   sharedAdUnitCooldownRemainingMs,
+  terminalOutcomeFromMarkerText,
   truncateLogSnippet,
   REPRESENTATIVE_REQUEST_MAX_ATTEMPTS,
   REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
@@ -388,6 +389,21 @@ test('extracts the monotonic request identity from the runtime marker', () => {
     42,
   );
   assert.equal(requestIdFromText('Request attempt: 1; Request outcome: loaded'), undefined);
+});
+
+test('accepts a terminal marker from a post-timeout re-read', () => {
+  const loaded =
+    'Request id: 4; Request attempt: 1; Request outcome: loaded; Lifecycle: onAdLoaded';
+  assert.deepEqual(terminalOutcomeFromMarkerText(loaded, 1), {
+    requestId: 4,
+    classification: 'loaded',
+    detail: loaded,
+  });
+  assert.equal(terminalOutcomeFromMarkerText(loaded, 2), undefined);
+  assert.equal(
+    terminalOutcomeFromMarkerText('Request id: 4; Request attempt: 1; Request outcome: pending', 1),
+    undefined,
+  );
 });
 
 test('uses bounded exponential backoff for attempts two through ten', () => {
