@@ -54,6 +54,7 @@ test('android capabilities force a fresh app install', async () => {
         ? 'emulator-5554 tcp:8081 tcp:8081\n'
         : '';
     },
+    async () => true,
   );
   assert.deepEqual(adbCalls, [
     ['adb', '-s', 'emulator-5554', 'reverse', 'tcp:8081', 'tcp:8081'],
@@ -108,10 +109,38 @@ test('android startup fails before launch when the post-session reverse is absen
       },
       'emulator-5554',
       () => '',
+      async () => true,
     ),
     /did not retain the required tcp:8081 reverse/,
   );
   assert.equal(appTouched, false, 'app launch must not proceed without the reverse');
+});
+
+test('android startup fails before reverse when Metro packager is not running', async () => {
+  const { prepareAndroidApp } = await import('../wdio.android.conf.ts');
+  let appTouched = false;
+  let adbTouched = false;
+  await assert.rejects(
+    prepareAndroidApp(
+      {
+        execute: async () => {
+          appTouched = true;
+        },
+        activateApp: async () => {
+          appTouched = true;
+        },
+      },
+      'emulator-5554',
+      () => {
+        adbTouched = true;
+        return '';
+      },
+      async () => false,
+    ),
+    /packager-status:running/,
+  );
+  assert.equal(adbTouched, false, 'adb reverse must not run without Metro ready');
+  assert.equal(appTouched, false, 'app launch must not proceed without Metro ready');
 });
 
 test('ios capabilities force a fresh app install', async () => {

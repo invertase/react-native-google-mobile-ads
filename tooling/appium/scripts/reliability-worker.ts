@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ensureReliabilityMetroReady } from '../src/reliabilityMetro.ts';
 import {
   createDryRunReliabilityRunner,
   createLiveAppiumShardRunner,
@@ -10,6 +11,7 @@ import {
 } from '../src/reliabilityWorker.ts';
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(packageRoot, '../..');
 
 async function main(): Promise<void> {
   const options = parseReliabilityWorkerArgv(process.argv.slice(2), process.env);
@@ -32,38 +34,62 @@ async function main(): Promise<void> {
           }),
       });
 
+  let metroHandle: Awaited<ReturnType<typeof ensureReliabilityMetroReady>> | undefined;
   if (!options.dryRun) {
+    const metroLogPath = path.join(
+      options.logRoot,
+      `metro-${options.platform}-slot-${options.slot}.log`,
+    );
     console.log(
-      '[reliability] live Appium shard runner attached; ensure slot devices/Metro are ready and this checkout is not shared with other campaign Metros.',
+      `[reliability] ensuring slot ${options.slot} ${options.platform} Metro is packager-ready before Appium shards (log=${metroLogPath})`,
+    );
+    metroHandle = await ensureReliabilityMetroReady({
+      slot: options.slot,
+      platform: options.platform,
+      repoRoot,
+      logPath: metroLogPath,
+      env: process.env,
+    });
+    console.log(
+      `[reliability] Metro ready on 127.0.0.1:${metroHandle.metroPort} owned=${metroHandle.owned}`,
     );
   }
 
-  const summary = await runReliabilityWorker(options, {
-    runner,
-    ...(options.dryRun
-      ? {}
-      : {
-          acquire: {
-            async checkClear() {
-              // Live acquire is operator-owned via check/force-acquire before invoke.
-              return true;
+  try {
+    const summary = await runReliabilityWorker(options, {
+      runner,
+      ...(options.dryRun
+        ? {}
+        : {
+            acquire: {
+              async checkClear() {
+                // Live acquire is operator-owned via check/force-acquire before invoke.
+                return true;
+              },
             },
-          },
-          async release() {
-            return undefined;
-          },
-        }),
-  });
-  console.log(`[reliability] job=${summary.job.jobId}`);
-  console.log(`[reliability] layoutId=${summary.layout.id}`);
-  console.log(`[reliability] layoutDigest=${summary.layout.digest}`);
-  console.log(`[reliability] receipts=${summary.receiptsPath}`);
-  console.log(
-    `[reliability] credited startup=${summary.credited.startup} preamble=${summary.credited.preamble} test=${summary.credited.test}`,
-  );
-  console.log(
-    `[reliability] ownership=${summary.ownershipFinal} shardFailures=${summary.shardFailures} diskBytes=${summary.diskBytes}/${summary.diskCeilingBytes}`,
-  );
+            async release() {
+              return undefined;
+            },
+          }),
+    });
+    console.log(`[reliability] job=${summary.job.jobId}`);
+    console.log(`[reliability] layoutId=${summary.layout.id}`);
+    console.log(`[reliability] layoutDigest=${summary.layout.digest}`);
+    console.log(`[reliability] receipts=${summary.receiptsPath}`);
+    console.log(
+      `[reliability] credited startup=${summary.credited.startup} preamble=${summary.credited.preamble} test=${summary.credited.test}`,
+    );
+    console.log(
+      `[reliability] ownership=${summary.ownershipFinal} shardFailures=${summary.shardFailures} diskBytes=${summary.diskBytes}/${summary.diskCeilingBytes}`,
+    );
+  } finally {
+    if (metroHandle?.owned) {
+      console.log(
+        `[reliability] stopping task-owned Metro on 127.0.0.1:${metroHandle.metroPort}`,
+      );
+      await metroHandle.stop();
+    }
+  }
 }
 
 main().catch(error => {
