@@ -8,12 +8,17 @@ import {
   SIMULATOR_STARTUP_TIMEOUT_MS,
   WDA_LAUNCH_TIMEOUT_MS,
 } from './src/hostPreflight.ts';
-import { logIosBootDiagnostics } from './src/iosBootDiagnostics.ts';
+import {
+  logIosBootDiagnostics,
+  startIosSessionCreateHangWatchdog,
+  type IosSessionCreateHangWatchdog,
+} from './src/iosBootDiagnostics.ts';
 import { iosMetroProcessArguments, runtimeResources } from './src/slots.ts';
 import { config as shared } from './wdio.shared.conf.ts';
 
 const iosApp = iosAppPath();
 const runtime = runtimeResources('ios');
+let sessionCreateHangWatchdog: IosSessionCreateHangWatchdog | undefined;
 
 /**
  * iOS Appium smoke (XCUITest).
@@ -73,5 +78,15 @@ export const config: Options.Testrunner = {
       phase: 'wdio:beforeSession',
       simulatorStartupTimeoutMs: timeoutMs,
     });
+    sessionCreateHangWatchdog?.stop();
+    // POST /session runs after this hook returns; re-probe if it hangs.
+    sessionCreateHangWatchdog = startIosSessionCreateHangWatchdog(udid, {
+      phase: 'wdio:session-create',
+      simulatorStartupTimeoutMs: timeoutMs,
+    });
+  },
+  async afterSession() {
+    sessionCreateHangWatchdog?.stop();
+    sessionCreateHangWatchdog = undefined;
   },
 };

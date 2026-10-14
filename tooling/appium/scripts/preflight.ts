@@ -26,6 +26,7 @@ import { iosAppBundleResolution, iosAppPath } from '../src/formats.ts';
 import {
   formatIosBootDiagnosticLine,
   logIosBootDiagnostics,
+  startIosSessionCreateHangWatchdog,
 } from '../src/iosBootDiagnostics.ts';
 import { reconcileIosDeviceHub } from '../src/iosDeviceHub.ts';
 import { runtimeResources, type RuntimeResources } from '../src/slots.ts';
@@ -172,10 +173,16 @@ export async function runWdioOwned(
       listen: async () => true,
       probe: options.probeMetroPackager,
     });
+    let sessionHangWatchdog: { stop: () => void } | undefined;
     if (target === 'ios') {
       // Parent stdout (CI job log) + same shape as WDIO child `[e2e-ios-boot]` lines.
       logIosBootDiagnostics(exactTarget, {
         phase: 'serial:pre-wdio',
+        simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      });
+      // If POST /session hangs, re-probe from the supervisor parent before the 180s ceiling.
+      sessionHangWatchdog = startIosSessionCreateHangWatchdog(exactTarget, {
+        phase: 'serial:session-create',
         simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
       });
     }
@@ -189,7 +196,18 @@ export async function runWdioOwned(
       },
     );
     owned.push(wdio);
-    wdio.onLine(line => startup.recordLine(source, line));
+    wdio.onLine(line => {
+      startup.recordLine(source, line);
+      if (
+        sessionHangWatchdog &&
+        /(?:WebDriver|Appium) session (?:created|started)|\bsession created successfully\b|https?:\/\/\S+\/session\/[^/\s]+(?:\/|\s|$)/i.test(
+          line,
+        )
+      ) {
+        sessionHangWatchdog.stop();
+        sessionHangWatchdog = undefined;
+      }
+    });
     void wdio.completion.then(
       code => startup.recordProcessExit(source, code),
       () => startup.recordProcessExit(source, 1),
@@ -203,7 +221,11 @@ export async function runWdioOwned(
         await new Promise(resolve => setTimeout(resolve, 250));
       }
     })();
-    await Promise.race([startup.waitForWorkers(), startup.failure]);
+    try {
+      await Promise.race([startup.waitForWorkers(), startup.failure]);
+    } finally {
+      sessionHangWatchdog?.stop();
+    }
     console.log(
       `[e2e-startup] invocation=${paths.id} phase=worker-session-ready children=1/1 child=${paths.child(target, 'serial')}`,
     );
@@ -499,11 +521,15 @@ function selectAndBootIos(runtime: RuntimeResources): void {
     bootAndPersistSelectedSimulator(
       selected,
       process.argv,
-      (bin, args) => {
-        execFileSync(bin, args, { stdio: 'inherit' });
+      (bin, args, options) => {
+        execFileSync(bin, args, {
+          stdio: 'inherit',
+          timeout: options?.timeoutMs,
+        });
       },
       appendFileSync,
       {
+        log: line => console.log(line),
         afterBoot: () => {
           const result = reconcileIosDeviceHub([selected.udid]);
           console.log(

@@ -1,6 +1,15 @@
 import { existsSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  assertSimulatorReadyForPersist,
+  defaultExecCapture,
+  formatSelectAndBootTimeoutError,
+  IOS_BOOT_SETTLE_MS,
+  isXcrunTimedOutError,
+  sleepSync,
+  type ExecCapture,
+} from './iosBootDiagnostics.ts';
 import { reconcileIosDeviceHub } from './iosDeviceHub.ts';
 
 /** Appium UiAutomator2 requires Android 8.0+ (API 26). */
@@ -93,12 +102,37 @@ export function githubEnvSelectionLines(udid: string, runtimeVersion: string): s
   return `${githubEnvUdidLine(udid)}RNGMA_IOS_VERSION=${runtimeVersion}\n`;
 }
 
-export type SimctlExec = (bin: string, args: string[]) => void;
+export type SimctlExec = (
+  bin: string,
+  args: string[],
+  options?: { timeoutMs?: number },
+) => void;
 export type GithubEnvAppend = (path: string, data: string) => void;
+
+/** Bound for `simctl boot` itself (not bootstatus -b). */
+export const IOS_SIMCTL_BOOT_TIMEOUT_MS = 60_000;
+
+function runSelectAndBootSimctl(
+  execFile: SimctlExec,
+  args: string[],
+  timeoutMs: number,
+): void {
+  const label = `xcrun ${args.join(' ')}`;
+  try {
+    execFile('xcrun', args, { timeoutMs });
+  } catch (error) {
+    if (isXcrunTimedOutError(error)) {
+      throw formatSelectAndBootTimeoutError(label);
+    }
+    throw error;
+  }
+}
 
 /**
  * Boot an already-selected simulator and persist its UDID and runtime version.
  * Does not inventory or create devices; callers supply the selection.
+ * Persists only after bootstatus and a settle/re-probe confirm Booted — never
+ * when list/bootstatus hit ETIMEDOUT or the device is not Booted.
  */
 export function bootAndPersistSelectedSimulator(
   selected: { udid: string; state: string; runtimeVersion: string },
@@ -108,12 +142,34 @@ export function bootAndPersistSelectedSimulator(
   options?: {
     /** Defaults to Xcode 27 DeviceHub suppress (kill UI; set reconcile for windows). */
     afterBoot?: () => void;
+    /** Post-Data-Migration pause before list confirm. */
+    settleMs?: number;
+    sleep?: (ms: number) => void;
+    /** Injectable list/bootstatus confirm (defaults to spawnSync capture). */
+    execCapture?: ExecCapture;
+    /** Bound for `simctl bootstatus <udid> -b` (defaults to SIMULATOR_STARTUP_TIMEOUT_MS). */
+    bootstatusWaitTimeoutMs?: number;
+    log?: (line: string) => void;
   },
 ): void {
+  const sleep = options?.sleep ?? sleepSync;
+  const settleMs = options?.settleMs ?? IOS_BOOT_SETTLE_MS;
+  const execCapture = options?.execCapture ?? defaultExecCapture;
+  const bootstatusWaitTimeoutMs =
+    options?.bootstatusWaitTimeoutMs ?? SIMULATOR_STARTUP_TIMEOUT_MS;
+  const log = options?.log;
+
   if (selected.state !== 'Booted') {
     try {
-      execFile('xcrun', ['simctl', 'boot', selected.udid]);
+      runSelectAndBootSimctl(
+        execFile,
+        ['simctl', 'boot', selected.udid],
+        IOS_SIMCTL_BOOT_TIMEOUT_MS,
+      );
     } catch (error) {
+      if (error instanceof Error && /retryable abort/.test(error.message)) {
+        throw error;
+      }
       // Inventory can race with a concurrent boot. simctl exits non-zero when
       // already Booted (often status 149); continue to bootstatus which confirms.
       const detail = [
@@ -136,7 +192,21 @@ export function bootAndPersistSelectedSimulator(
       }
     }
   }
-  execFile('xcrun', ['simctl', 'bootstatus', selected.udid, '-b']);
+  runSelectAndBootSimctl(
+    execFile,
+    ['simctl', 'bootstatus', selected.udid, '-b'],
+    bootstatusWaitTimeoutMs,
+  );
+  if (settleMs > 0) {
+    log?.(
+      `[e2e-ios-boot] phase=select-and-boot:settle udid=${selected.udid} settleMs=${settleMs}`,
+    );
+    sleep(settleMs);
+  }
+  const confirmed = assertSimulatorReadyForPersist(selected.udid, execCapture);
+  log?.(
+    `[e2e-ios-boot] phase=select-and-boot:confirmed udid=${selected.udid} name=${confirmed.name} state=${confirmed.state}`,
+  );
   appendFile(
     requireGithubEnvPath(argv),
     githubEnvSelectionLines(selected.udid, selected.runtimeVersion),

@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import {
+  assertSimulatorReadyForPersist,
   collectIosBootDiagnosticLines,
+  confirmSimulatorReadyForPersist,
   findSimulatorDeviceInListJson,
   formatIosBootDiagnosticLine,
+  IOS_SESSION_CREATE_HANG_HINT,
+  isXcrunTimedOutError,
+  startIosSessionCreateHangWatchdog,
   summarizeBootstatusProbe,
   XCUITest_DEFAULT_SIMULATOR_STARTUP_TIMEOUT_MS,
   type ExecCapture,
@@ -135,5 +140,82 @@ describe('iosBootDiagnostics', () => {
   test('SIMULATOR_STARTUP_TIMEOUT_MS exceeds the XCUITest 120s default', () => {
     assert.equal(SIMULATOR_STARTUP_TIMEOUT_MS, 180_000);
     assert.ok(SIMULATOR_STARTUP_TIMEOUT_MS > XCUITest_DEFAULT_SIMULATOR_STARTUP_TIMEOUT_MS);
+  });
+
+  test('isXcrunTimedOutError detects code and message forms', () => {
+    assert.equal(isXcrunTimedOutError(Object.assign(new Error('x'), { code: 'ETIMEDOUT' })), true);
+    assert.equal(isXcrunTimedOutError(new Error('spawnSync ETIMEDOUT')), true);
+    assert.equal(isXcrunTimedOutError(new Error('other')), false);
+  });
+
+  test('confirmSimulatorReadyForPersist requires Booted list + non-timeout bootstatus', () => {
+    const ok = confirmSimulatorReadyForPersist('target-udid', (_bin, args) => {
+      if (args.includes('list')) {
+        return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+      }
+      return { stdout: 'Booted\n', stderr: '', status: 0 };
+    });
+    assert.deepEqual(ok, { ok: true, state: 'Booted', name: 'iPhone 17' });
+
+    const timedOut = confirmSimulatorReadyForPersist('target-udid', () => ({
+      stdout: '',
+      stderr: '',
+      status: null,
+      timedOut: true,
+      error: 'spawnSync ETIMEDOUT',
+    }));
+    assert.equal(timedOut.ok, false);
+    if (!timedOut.ok) {
+      assert.match(timedOut.reason, /list timed out/);
+    }
+
+    assert.throws(
+      () =>
+        assertSimulatorReadyForPersist('missing', (_bin, args) => {
+          if (args.includes('list')) {
+            return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+          }
+          return { stdout: '', stderr: '', status: 0 };
+        }),
+      /missing from simctl list.*retryable abort/,
+    );
+  });
+
+  test('session-create hang watchdog emits start then hang probes until stopped', () => {
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const watchdog = startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'wdio:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      write: line => lines.push(line),
+      execCapture: (_bin, args) => {
+        if (args.includes('list')) {
+          return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+        }
+        return { stdout: 'Booted\n', stderr: '', status: 0 };
+      },
+      deviceHubMode: 'suppress',
+      deviceHubPids: [],
+      now: () => new Date('2026-10-14T15:00:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+    });
+    assert.match(lines[0]!, /phase=wdio:session-create:start/);
+    assert.match(lines[0]!, /POST \/session beginning/);
+    assert.equal(callbacks.length, 1);
+    callbacks[0]!();
+    assert.ok(lines.some(line => /phase=wdio:session-create:hang\b/.test(line)));
+    assert.ok(lines.some(line => line.includes(IOS_SESSION_CREATE_HANG_HINT)));
+    assert.ok(lines.some(line => /phase=wdio:session-create:hang-probe/.test(line)));
+    watchdog.stop();
+    const count = lines.length;
+    callbacks[0]!();
+    assert.equal(lines.length, count);
   });
 });

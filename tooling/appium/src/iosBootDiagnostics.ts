@@ -19,6 +19,19 @@ export const XCUITest_DEFAULT_SIMULATOR_STARTUP_TIMEOUT_MS = 120_000;
 /** Short probe so diagnostics never block CI the way `bootstatus -b` can. */
 export const IOS_BOOTSTATUS_PROBE_TIMEOUT_MS = 5_000;
 
+/** Post-boot pause so CoreSimulator can finish Data Migration before list/confirm. */
+export const IOS_BOOT_SETTLE_MS = 3_000;
+
+/** Bound for the post-boot `simctl list` readiness confirm (must not hang CI). */
+export const IOS_LIST_CONFIRM_TIMEOUT_MS = 15_000;
+
+/** How often WDIO/supervisor re-probe while POST /session is still open. */
+export const IOS_SESSION_CREATE_HANG_POLL_MS = 30_000;
+
+/** Stable hint text for hung XCUITest session create (POST /session). */
+export const IOS_SESSION_CREATE_HANG_HINT =
+  'POST /session still open; check WDA (usePrebuiltWDA/derivedDataPath/xcodebuild), simctl Booted state, and appium:simulatorStartupTimeout — prefer fail-fast over waiting out the supervisor ceiling';
+
 export type ExecCaptureResult = {
   stdout: string;
   stderr: string;
@@ -218,4 +231,228 @@ export function logIosBootDiagnostics(
   for (const line of collectIosBootDiagnosticLines(udid, options)) {
     write(line);
   }
+}
+
+/** True when Node spawn/exec surfaced ETIMEDOUT (or an equivalent message). */
+export function isXcrunTimedOutError(error: unknown): boolean {
+  if (error == null) {
+    return false;
+  }
+  if (typeof error === 'object' && 'code' in error) {
+    if ((error as { code?: unknown }).code === 'ETIMEDOUT') {
+      return true;
+    }
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return /\bETIMEDOUT\b/i.test(message);
+}
+
+export function formatSelectAndBootTimeoutError(commandLabel: string): Error {
+  return new Error(
+    `select-and-boot: ${commandLabel} timed out (ETIMEDOUT); simulator not confirmed ready — retryable abort.`,
+  );
+}
+
+export type ConfirmSimulatorReadyResult =
+  | { ok: true; state: string; name: string }
+  | {
+      ok: false;
+      reason: string;
+      state?: string;
+      listError?: string;
+      bootstatus?: string;
+    };
+
+/**
+ * After `bootstatus -b`, re-probe list (+ short bootstatus) before persisting a
+ * UDID. Injectable `execCapture` keeps unit tests off real simulators.
+ */
+export function confirmSimulatorReadyForPersist(
+  udid: string,
+  execCapture: ExecCapture,
+  options?: {
+    listTimeoutMs?: number;
+    bootstatusTimeoutMs?: number;
+  },
+): ConfirmSimulatorReadyResult {
+  const listTimeoutMs = options?.listTimeoutMs ?? IOS_LIST_CONFIRM_TIMEOUT_MS;
+  const bootstatusTimeoutMs =
+    options?.bootstatusTimeoutMs ?? IOS_BOOTSTATUS_PROBE_TIMEOUT_MS;
+
+  const list = execCapture('xcrun', ['simctl', 'list', 'devices', '--json'], {
+    timeoutMs: listTimeoutMs,
+  });
+  if (list.timedOut || (list.error && list.stdout.trim() === '')) {
+    return {
+      ok: false,
+      reason:
+        'simctl list timed out or failed after boot; refusing to persist UDID as ready',
+      listError: list.error ?? 'ETIMEDOUT',
+    };
+  }
+
+  let device: IosSimulatorDeviceRow | null = null;
+  try {
+    device = findSimulatorDeviceInListJson(list.stdout, udid);
+  } catch (error) {
+    return {
+      ok: false,
+      reason: 'simctl list JSON unreadable after boot; refusing to persist UDID as ready',
+      listError: error instanceof Error ? error.message : String(error),
+    };
+  }
+  if (device == null) {
+    return {
+      ok: false,
+      reason: `UDID ${udid} missing from simctl list after boot; refusing to persist UDID as ready`,
+    };
+  }
+  if (device.state !== 'Booted') {
+    return {
+      ok: false,
+      reason: `simulator state=${device.state} after boot (want Booted); refusing to persist UDID as ready`,
+      state: device.state,
+    };
+  }
+
+  const bootstatus = execCapture('xcrun', ['simctl', 'bootstatus', udid], {
+    timeoutMs: bootstatusTimeoutMs,
+  });
+  if (bootstatus.timedOut) {
+    return {
+      ok: false,
+      reason:
+        'simctl bootstatus probe timed out after boot; refusing to persist UDID as ready',
+      state: device.state,
+      bootstatus: summarizeBootstatusProbe(bootstatus),
+    };
+  }
+
+  return { ok: true, state: device.state, name: device.name };
+}
+
+export function assertSimulatorReadyForPersist(
+  udid: string,
+  execCapture: ExecCapture,
+  options?: {
+    listTimeoutMs?: number;
+    bootstatusTimeoutMs?: number;
+  },
+): { state: string; name: string } {
+  const result = confirmSimulatorReadyForPersist(udid, execCapture, options);
+  if (!result.ok) {
+    const detail = [
+      result.reason,
+      result.state ? `state=${result.state}` : undefined,
+      result.listError ? `listError=${result.listError}` : undefined,
+      result.bootstatus ? `bootstatus=${result.bootstatus}` : undefined,
+    ]
+      .filter(Boolean)
+      .join('; ');
+    throw new Error(`select-and-boot: ${detail} — retryable abort.`);
+  }
+  return { state: result.state, name: result.name };
+}
+
+export function sleepSync(ms: number): void {
+  if (ms <= 0) {
+    return;
+  }
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+export type SessionCreateHangClock = {
+  setInterval(callback: () => void, milliseconds: number): unknown;
+  clearInterval(timer: unknown): void;
+};
+
+const realHangClock: SessionCreateHangClock = {
+  setInterval: (callback, milliseconds) => setInterval(callback, milliseconds),
+  clearInterval: timer => clearInterval(timer as NodeJS.Timeout),
+};
+
+export type IosSessionCreateHangWatchdog = {
+  stop: () => void;
+};
+
+/**
+ * While WDIO's POST /session is in flight, periodically re-emit `[e2e-ios-boot]`
+ * lines plus an Appium/WDA hang hint. Stop when the session is created or the
+ * process moves on.
+ */
+export function startIosSessionCreateHangWatchdog(
+  udid: string,
+  options: {
+    phase: string;
+    simulatorStartupTimeoutMs: number | null;
+    intervalMs?: number;
+    execCapture?: ExecCapture;
+    write?: (line: string) => void;
+    clock?: SessionCreateHangClock;
+    now?: () => Date;
+    deviceHubMode?: string;
+    deviceHubPids?: readonly number[];
+  },
+): IosSessionCreateHangWatchdog {
+  const write = options.write ?? ((line: string) => console.log(line));
+  const clock = options.clock ?? realHangClock;
+  const intervalMs = options.intervalMs ?? IOS_SESSION_CREATE_HANG_POLL_MS;
+  const now = options.now ?? (() => new Date());
+  let ticks = 0;
+  let stopped = false;
+
+  write(
+    formatIosBootDiagnosticLine(
+      {
+        phase: `${options.phase}:start`,
+        udid,
+        hint: 'POST /session beginning; watchdog will re-probe if it hangs',
+        'appium:simulatorStartupTimeout':
+          options.simulatorStartupTimeoutMs == null
+            ? `unset(default=${XCUITest_DEFAULT_SIMULATOR_STARTUP_TIMEOUT_MS})`
+            : String(options.simulatorStartupTimeoutMs),
+      },
+      now,
+    ),
+  );
+
+  const timer = clock.setInterval(() => {
+    if (stopped) {
+      return;
+    }
+    ticks += 1;
+    write(
+      formatIosBootDiagnosticLine(
+        {
+          phase: `${options.phase}:hang`,
+          udid,
+          elapsedMs: ticks * intervalMs,
+          hint: IOS_SESSION_CREATE_HANG_HINT,
+        },
+        now,
+      ),
+    );
+    logIosBootDiagnostics(
+      udid,
+      {
+        phase: `${options.phase}:hang-probe`,
+        simulatorStartupTimeoutMs: options.simulatorStartupTimeoutMs,
+        execCapture: options.execCapture,
+        deviceHubMode: options.deviceHubMode,
+        deviceHubPids: options.deviceHubPids,
+        now,
+      },
+      write,
+    );
+  }, intervalMs);
+
+  return {
+    stop: () => {
+      if (stopped) {
+        return;
+      }
+      stopped = true;
+      clock.clearInterval(timer);
+    },
+  };
 }
