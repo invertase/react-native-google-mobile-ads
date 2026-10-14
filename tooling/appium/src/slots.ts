@@ -75,6 +75,26 @@ export function slotResources(slot: number, platform: SlotPlatform): SlotResourc
 }
 
 /**
+ * Runtime flags for every slotted Android emulator boot (select-and-boot,
+ * device-lost recover). Matches CI's lighter footprint: 2 vCPUs and no host
+ * audio — HangDetector watches one looper per core, so fewer cores reduces
+ * false hang deaths under multi-AVD load.
+ */
+export const ANDROID_SLOT_EMULATOR_RUNTIME_ARGS = [
+  '-cores',
+  '2',
+  '-noaudio',
+] as const;
+
+/** Durable AVD `config.ini` keys aligned with {@link ANDROID_SLOT_EMULATOR_RUNTIME_ARGS}. */
+export const ANDROID_SLOT_AVD_HARDWARE_DEFAULTS: Readonly<Record<string, string>> =
+  {
+    'hw.cpu.ncore': '2',
+    'hw.audioInput': 'no',
+    'hw.audioOutput': 'no',
+  };
+
+/**
  * Platform Metro port for a slot+platform pair (same BASE+7 formula as raw slot math).
  * Not a single collapsed worktree port: Android and iOS differ by platform offset.
  * Slot 1: Android `13007`, iOS `13107`.

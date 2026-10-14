@@ -155,7 +155,15 @@ describe('cross-platform e2e slots', () => {
     ]);
     assert.deepEqual(androidSlotBootCommand(env), {
       bin: 'emulator',
-      args: ['-avd', 'TestingAVD-1', '-port', '5558'],
+      args: [
+        '-avd',
+        'TestingAVD-1',
+        '-port',
+        '5558',
+        '-cores',
+        '2',
+        '-noaudio',
+      ],
     });
     assert.deepEqual(androidRunCommands(env), [
       {

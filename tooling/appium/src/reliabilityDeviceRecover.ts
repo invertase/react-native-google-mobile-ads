@@ -9,7 +9,10 @@
 import { spawn } from 'node:child_process';
 import { appendFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { slotResources } from './slots.ts';
+import {
+  ANDROID_SLOT_EMULATOR_RUNTIME_ARGS,
+  slotResources,
+} from './slots.ts';
 
 export const DEFAULT_DEVICE_LOST_RECOVERIES = 5;
 
@@ -67,7 +70,15 @@ export async function recoverAndroidSlot(
 
   const child = spawnImpl(
     'emulator',
-    ['-avd', avd, '-port', String(port), '-no-snapshot-load', '-no-snapshot-save'],
+    [
+      '-avd',
+      avd,
+      '-port',
+      String(port),
+      ...ANDROID_SLOT_EMULATOR_RUNTIME_ARGS,
+      '-no-snapshot-load',
+      '-no-snapshot-save',
+    ],
     {
       detached: true,
       stdio: 'ignore',

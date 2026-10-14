@@ -29,7 +29,10 @@ describe('recoverAndroidSlot', () => {
         args =>
           args[0] === 'emulator' &&
           args.includes('TestingAVD-2') &&
-          args.includes('5560'),
+          args.includes('5560') &&
+          args.includes('-cores') &&
+          args.includes('2') &&
+          args.includes('-noaudio'),
       ),
       true,
     );

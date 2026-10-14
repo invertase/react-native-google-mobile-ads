@@ -1,4 +1,40 @@
-import { assertRngmaSlotAllowed, requireRngmaSlot, slotResources } from './slots.ts';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import {
+  ANDROID_SLOT_AVD_HARDWARE_DEFAULTS,
+  assertRngmaSlotAllowed,
+  requireRngmaSlot,
+  slotResources,
+} from './slots.ts';
+
+/**
+ * Upsert durable AVD hardware defaults (2 cores, audio in/out off) into
+ * `config.ini`. Create-only provisioning never deletes AVDs; this only writes
+ * keys after create (or when an operator applies defaults to an existing AVD).
+ */
+export function applyAndroidSlotAvdHardwareDefaults(
+  avdName: string,
+  androidHome: string = process.env.ANDROID_AVD_HOME ??
+    path.join(process.env.HOME ?? '', '.android', 'avd'),
+  defaults: Readonly<Record<string, string>> = ANDROID_SLOT_AVD_HARDWARE_DEFAULTS,
+): string {
+  const configPath = path.join(androidHome, `${avdName}.avd`, 'config.ini');
+  if (!existsSync(configPath)) {
+    throw new Error(`Missing AVD config.ini for ${avdName} at ${configPath}`);
+  }
+  let body = readFileSync(configPath, 'utf8');
+  for (const [key, value] of Object.entries(defaults)) {
+    const line = `${key}=${value}`;
+    const pattern = new RegExp(`^${key.replace(/\./g, '\\.')}=.*$`, 'm');
+    if (pattern.test(body)) {
+      body = body.replace(pattern, line);
+    } else {
+      body = `${body.trimEnd()}\n${line}\n`;
+    }
+  }
+  writeFileSync(configPath, body.endsWith('\n') ? body : `${body}\n`);
+  return configPath;
+}
 
 export type ProvisionPlatform = 'android' | 'ios';
 export type ProvisionCommand = {
@@ -169,6 +205,8 @@ export type ProvisionHost = {
   listInstalledPackages(): string[];
   listIosInventory(): string;
   run(command: ProvisionCommand): void;
+  /** Optional: apply 2-core / no-audio defaults after a new AVD create. */
+  applyAndroidAvdHardwareDefaults?(avdName: string): void;
 };
 
 export type ProvisionOutcome = {
@@ -202,7 +240,11 @@ export function runSlotProvisioning(options: {
       installedPackages,
     });
     executeCreateOnly(commands, options.host.run);
-    outcome.android = { name, reused: commands.length === 0 };
+    const reused = commands.length === 0;
+    if (!reused) {
+      options.host.applyAndroidAvdHardwareDefaults?.(name);
+    }
+    outcome.android = { name, reused };
   }
   if (platforms.includes('ios')) {
     const name = slotResources(slot, 'ios').iosSimulatorName;

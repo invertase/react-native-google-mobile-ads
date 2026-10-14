@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
 import {
+  applyAndroidSlotAvdHardwareDefaults,
   runSlotProvisioning,
   type ProvisionCommand,
 } from '../src/provision.ts';
@@ -62,6 +63,10 @@ function main(): void {
         return inventory;
       },
       run: execute,
+      applyAndroidAvdHardwareDefaults(avdName) {
+        const configPath = applyAndroidSlotAvdHardwareDefaults(avdName);
+        console.log(`Applied Android AVD hardware defaults at ${configPath}`);
+      },
     },
   });
   if (outcome.android) {
