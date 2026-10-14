@@ -23,21 +23,32 @@ import {
   isRepresentativeRequestWaitTimeout,
   nativeFingerprintFromAndroidLog,
   pendingTimeoutClassification,
+  noteAcceptedAdUnit,
   representativeRequestBackoffMs,
   representativeRequestOperation,
   requestIdFromText,
   requestOutcomeConfiguration,
+  resetAcceptedAdUnitMemory,
   runRepresentativeRequestOutcomeContract,
+  sharedAdUnitCooldownRemainingMs,
   truncateLogSnippet,
   REPRESENTATIVE_REQUEST_MAX_ATTEMPTS,
+  REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
+  REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
   REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED,
   REQUEST_OUTCOME_LOADED,
+  REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX,
   REQUEST_OUTCOME_NO_FILL,
   REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX,
+  SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS,
   type RequestOutcomeClassification,
   type RepresentativeRequestPath,
 } from '../src/requestOutcomes.ts';
 import { AppiumTestIds } from '../src/testIds.ts';
+
+test.beforeEach(() => {
+  resetAcceptedAdUnitMemory();
+});
 
 const NOT_APPLICABLE_FINGERPRINT = {
   status: 'not-applicable' as const,
@@ -386,6 +397,132 @@ test('uses bounded exponential backoff for attempts two through ten', () => {
     ),
     [0, 250, 500, 1000, 2000, 2000, 2000, 2000, 2000, 2000],
   );
+});
+
+test('uses a longer backoff schedule while a shared ad unit is recently accepted', () => {
+  assert.deepEqual(
+    Array.from({ length: REPRESENTATIVE_REQUEST_MAX_ATTEMPTS }, (_, index) =>
+      representativeRequestBackoffMs(index + 1, { recentSameUnit: true }),
+    ),
+    [
+      0,
+      REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
+      4_000,
+      8_000,
+      REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+      REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+      REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+      REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+      REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+      REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+    ],
+  );
+});
+
+test('rewarded and rewarded-hook share the same Google demo units', () => {
+  assert.equal(
+    googleTestAdUnitForFormat(AppiumTestIds.format.rewarded, 'android'),
+    googleTestAdUnitForFormat(AppiumTestIds.format.rewardedHook, 'android'),
+  );
+  assert.equal(
+    googleTestAdUnitForFormat(AppiumTestIds.format.rewarded, 'ios'),
+    googleTestAdUnitForFormat(AppiumTestIds.format.rewardedHook, 'ios'),
+  );
+  assert.equal(
+    googleTestAdUnitForFormat(AppiumTestIds.format.rewardedInterstitial, 'android'),
+    googleTestAdUnitForFormat(AppiumTestIds.format.rewardedInterstitialHook, 'android'),
+  );
+});
+
+test('cools down before attempt one when the shared ad unit was just accepted', async () => {
+  const adUnitId = googleTestAdUnitForFormat(AppiumTestIds.format.rewarded, 'android');
+  assert.ok(adUnitId);
+  const t0 = 1_000_000;
+  noteAcceptedAdUnit(adUnitId, t0);
+  assert.equal(sharedAdUnitCooldownRemainingMs(adUnitId, t0 + 1_000), SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS);
+  // Still hot after a same-shard gap of several minutes.
+  assert.equal(
+    sharedAdUnitCooldownRemainingMs(adUnitId, t0 + 5 * 60_000),
+    SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS,
+  );
+
+  const sleeps: number[] = [];
+  const lines: string[] = [];
+  const attempts = await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.rewardedHook,
+    platform: 'android',
+    path: 'hook',
+    configuration: 'android-nextgen',
+    now: () => t0 + 5 * 60_000,
+    sleep: async delayMs => {
+      sleeps.push(delayMs);
+    },
+    emit: line => {
+      lines.push(line);
+    },
+    runtime: runtimeRecorder([], [observedRequest(1, 'loaded')]),
+  });
+  assert.equal(attempts.length, 1);
+  assert.equal(attempts[0]!.backoffMs, SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS);
+  assert.deepEqual(sleeps, [SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS]);
+  assert.ok(lines.some(line => line.startsWith(REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX)));
+});
+
+test('uses recent-nofill retry backoff while the shared ad unit stays hot', async () => {
+  const adUnitId = googleTestAdUnitForFormat(AppiumTestIds.format.rewarded, 'android');
+  assert.ok(adUnitId);
+  const t0 = 2_000_000;
+  noteAcceptedAdUnit(adUnitId, t0);
+  let nowMs = t0 + 3 * 60_000;
+  const sleeps: number[] = [];
+  const attempts = await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.rewardedHook,
+    platform: 'android',
+    path: 'hook',
+    configuration: 'android-nextgen',
+    now: () => nowMs,
+    sleep: async delayMs => {
+      sleeps.push(delayMs);
+      nowMs += delayMs;
+    },
+    runtime: runtimeRecorder(
+      [],
+      [observedRequest(1, 'no-fill'), observedRequest(2, 'no-fill'), observedRequest(3, 'loaded')],
+    ),
+  });
+  assert.equal(attempts.length, 3);
+  assert.equal(attempts[0]!.backoffMs, SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS);
+  assert.equal(attempts[1]!.backoffMs, REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS);
+  assert.equal(attempts[2]!.backoffMs, 4_000);
+  assert.deepEqual(sleeps, [
+    SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS,
+    REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
+    4_000,
+  ]);
+});
+
+test('stamps shared-unit memory after onAccepted show-close, not at load accept', async () => {
+  const adUnitId = googleTestAdUnitForFormat(AppiumTestIds.format.rewarded, 'android');
+  assert.ok(adUnitId);
+  const order: string[] = [];
+  let nowMs = 3_000_000;
+  await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.rewarded,
+    platform: 'android',
+    path: 'fullscreen',
+    configuration: 'android-nextgen',
+    now: () => nowMs,
+    sleep: async () => {},
+    onAccepted: async () => {
+      order.push('onAccepted');
+      assert.equal(sharedAdUnitCooldownRemainingMs(adUnitId, nowMs), 0);
+      nowMs += 1_000;
+    },
+    runtime: runtimeRecorder([], [observedRequest(1, 'loaded')]),
+  });
+  order.push('after');
+  assert.deepEqual(order, ['onAccepted', 'after']);
+  assert.equal(sharedAdUnitCooldownRemainingMs(adUnitId, nowMs), SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS);
 });
 
 test('maps platform and RNGMA_ANDROID_BACKEND to request-outcome cell configuration', () => {
@@ -740,11 +877,13 @@ test('accepted callback distinguishes loaded render from Native fingerprint waiv
       evidence: 'request-scoped exact signature',
     }),
   ]) {
+    resetAcceptedAdUnitMemory();
     await runRepresentativeRequestOutcomeContract({
       format: 'gma.format.native',
       platform: 'android',
       path: 'native',
       runtime: runtimeRecorder([], [observation]),
+      sleep: async () => {},
       emit: () => {},
       onAccepted: async attempt => {
         accepted.push(attempt.classification);

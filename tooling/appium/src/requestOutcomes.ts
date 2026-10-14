@@ -182,8 +182,77 @@ export function hasNonzeroRectangle(rect: { width: number; height: number }): bo
 export const REPRESENTATIVE_REQUEST_MAX_ATTEMPTS = 10;
 export const REPRESENTATIVE_REQUEST_BASE_BACKOFF_MS = 250;
 export const REPRESENTATIVE_REQUEST_MAX_BACKOFF_MS = 2000;
+/**
+ * After a format finishes its accepted path (including show-close when owned),
+ * later formats that share the same Google demo unit (imperative → hook) treat
+ * that unit as "hot" for this window. Sized for same-shard gaps (several
+ * intervening show-close contracts), not just adjacent cases — inventory often
+ * no-fills after a prior fill+show of the same unit in one WDIO session.
+ */
+export const SHARED_AD_UNIT_RECENT_MS = 10 * 60_000;
+/** Cap on the pre-attempt-1 sleep when the format's ad unit is still hot. */
+export const SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS = 15_000;
+/** Retry backoff base while the shared unit is still hot (replaces 250 ms). */
+export const REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS = 2_000;
+/** Retry backoff cap while the shared unit is still hot (replaces 2000 ms). */
+export const REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS = 8_000;
 export const REQUEST_OUTCOME_LOG_PREFIX = '[request-outcome-attempt]';
+export const REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX = '[request-outcome-shared-cooldown]';
 export const REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX = '[request-outcome-timeout]';
+
+/** Session memory: adUnitId → wall clock of last accepted loaded outcome. */
+const acceptedAdUnitAtMs = new Map<string, number>();
+
+/** Test helper: clear shared-unit acceptance memory between cases. */
+export function resetAcceptedAdUnitMemory(): void {
+  acceptedAdUnitAtMs.clear();
+}
+
+/** Record that a Google demo unit just accepted (loaded) in this session. */
+export function noteAcceptedAdUnit(adUnitId: string | null, nowMs: number = Date.now()): void {
+  if (!adUnitId) {
+    return;
+  }
+  acceptedAdUnitAtMs.set(adUnitId, nowMs);
+}
+
+/**
+ * Remaining cool-down before the next format should request the same unit.
+ * Zero when the unit was never accepted or the recent window has elapsed.
+ */
+export function sharedAdUnitCooldownRemainingMs(
+  adUnitId: string | null,
+  nowMs: number = Date.now(),
+): number {
+  if (!adUnitId) {
+    return 0;
+  }
+  const acceptedAt = acceptedAdUnitAtMs.get(adUnitId);
+  if (acceptedAt === undefined) {
+    return 0;
+  }
+  const elapsed = nowMs - acceptedAt;
+  if (elapsed < 0 || elapsed >= SHARED_AD_UNIT_RECENT_MS) {
+    return 0;
+  }
+  return Math.min(SHARED_AD_UNIT_RECENT_MS - elapsed, SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS);
+}
+
+/** True while the unit is still inside the post-accept "hot" window. */
+export function isRecentlyAcceptedAdUnit(
+  adUnitId: string | null,
+  nowMs: number = Date.now(),
+): boolean {
+  if (!adUnitId) {
+    return false;
+  }
+  const acceptedAt = acceptedAdUnitAtMs.get(adUnitId);
+  if (acceptedAt === undefined) {
+    return false;
+  }
+  const elapsed = nowMs - acceptedAt;
+  return elapsed >= 0 && elapsed < SHARED_AD_UNIT_RECENT_MS;
+}
 
 export type RequestOutcomeTimeoutLog = {
   format: string;
@@ -535,15 +604,25 @@ export async function executeRepresentativeRequestOperation(
   return operation;
 }
 
-/** Delay before a retry (attempt 2+), capped to keep the device suite bounded. */
-export function representativeRequestBackoffMs(attempt: number): number {
+/**
+ * Delay before a retry (attempt 2+), capped to keep the device suite bounded.
+ * When `recentSameUnit` is set, use the longer no-fill schedule for shared demo
+ * units that recently accepted in this session (imperative → hook reuse).
+ */
+export function representativeRequestBackoffMs(
+  attempt: number,
+  options?: { recentSameUnit?: boolean },
+): number {
   if (attempt <= 1) {
     return 0;
   }
-  return Math.min(
-    REPRESENTATIVE_REQUEST_BASE_BACKOFF_MS * 2 ** (attempt - 2),
-    REPRESENTATIVE_REQUEST_MAX_BACKOFF_MS,
-  );
+  const base = options?.recentSameUnit
+    ? REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS
+    : REPRESENTATIVE_REQUEST_BASE_BACKOFF_MS;
+  const max = options?.recentSameUnit
+    ? REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS
+    : REPRESENTATIVE_REQUEST_MAX_BACKOFF_MS;
+  return Math.min(base * 2 ** (attempt - 2), max);
 }
 
 export function formatRequestOutcomeAttempt(attempt: RequestOutcomeAttempt): string {
@@ -576,9 +655,26 @@ export async function collectRepresentativeRequestOutcomes(options: {
   const requestIds = new Set<number>();
   let previousRequestId = 0;
   const startedAt = now();
+  const adUnitId = googleTestAdUnitForFormat(format, platform);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const delayMs = representativeRequestBackoffMs(attempt);
+    const recentSameUnit = isRecentlyAcceptedAdUnit(adUnitId, now());
+    let delayMs = representativeRequestBackoffMs(attempt, { recentSameUnit });
+    if (attempt === 1) {
+      const cooldownMs = sharedAdUnitCooldownRemainingMs(adUnitId, now());
+      if (cooldownMs > 0) {
+        delayMs = Math.max(delayMs, cooldownMs);
+        emit(
+          `${REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX} ${JSON.stringify({
+            format,
+            platform,
+            configuration,
+            adUnitId,
+            cooldownMs,
+          })}`,
+        );
+      }
+    }
     if (delayMs > 0) {
       await sleep(delayMs);
     }
@@ -600,7 +696,6 @@ export async function collectRepresentativeRequestOutcomes(options: {
     }
     requestIds.add(observed.requestId);
     previousRequestId = observed.requestId;
-    const adUnitId = googleTestAdUnitForFormat(format, platform);
     const result: RequestOutcomeAttempt = {
       format,
       platform,
@@ -739,6 +834,8 @@ export async function runRepresentativeRequestOutcomeContract(options: {
   if (onAccepted) {
     await onAccepted(attempts.at(-1)!);
   }
+  // Stamp after show-close (when owned) so the hot window covers later shared-unit formats.
+  noteAcceptedAdUnit(attempts.at(-1)!.adUnitId, (now ?? Date.now)());
   await runtime.backToGallery();
   return attempts;
 }
