@@ -186,21 +186,30 @@ and deterministic error handling require Jest, type-test, Android JVM, iOS
 XCTest, or Appium ownership as appropriate.
 
 This decision accepts no other coverage exception and does not expand the
-four exclusions above. Official Google test-unit reward-earned delivery
-(`earned=true` after show-close on rewarded and rewarded-interstitial paths,
-both platforms) is Appium-owned and blocking. Paid-event counter/payload
-markers and manual-impression lifecycle canaries may be logged as
-diagnostics; their absence must not fail product tests and must not claim
-server impression reporting. Owned paid-event, creative-click, reward-callback, and GAM
-manual-impression wiring stays below Appium (Jest / native; Android
-classic and Next-Gen JVM OwnedCallbacks; iOS XCTest OwnedCallbacks)
-without becoming a fifth external exclusion. Native JaCoCo/LCOV
-collection remains a separate evidence path ([coverage design § native
-agent collection](testing/coverage-design.md#native-agent-collection)).
+four exclusions above. The frozen executable candidate records them as the
+only accepted ledger labels (`GMA-AD-6:UMP-consent-outcome`,
+`GMA-AD-6:GAM-app-event-inventory`, `GMA-AD-6:vendor-SDK-internal`,
+`GMA-AD-6:mediation-network-fill`) in
+[executable freeze](testing/running-e2e.md#executable-freeze). Official
+Google test-unit reward-earned delivery (`earned=true` after show-close on
+rewarded and rewarded-interstitial paths, both platforms) is Appium-owned
+and blocking. Paid-event counter/payload markers and manual-impression
+lifecycle canaries may be logged as diagnostics; their absence must not fail
+product tests and must not claim server impression reporting. Owned
+paid-event, creative-click, reward-callback, and GAM manual-impression
+wiring stays below Appium (Jest / native; Android classic and Next-Gen JVM
+OwnedCallbacks; iOS XCTest OwnedCallbacks) without becoming a fifth
+external exclusion. Native JaCoCo/LCOV collection remains a separate
+evidence path ([coverage design § native agent
+collection](testing/coverage-design.md#native-agent-collection)). Broad
+paid/click/impression/reward exceptions, a general iOS LCOV exporter
+exception, and a broad Next-Gen Jacoco-validity exception are rejected
+there.
 
 Tests may use fakes, spies, direct callback invocation, and official test ad
 units without claiming those four external outcomes are deterministic. Live
 evidence for one of the four may be retained as a non-blocking diagnostic,
 but its absence is not a product-test failure. Procedures:
-[API-wide e2e coverage](testing/running-e2e.md#api-wide-e2e-coverage) and
+[API-wide e2e coverage](testing/running-e2e.md#api-wide-e2e-coverage),
+[executable freeze](testing/running-e2e.md#executable-freeze), and
 [coverage design](testing/coverage-design.md).

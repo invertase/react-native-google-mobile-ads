@@ -275,23 +275,23 @@ const MEMBER_API_CONTRACTS: readonly PublicApiContract[] = [
   ),
   bannerProp(
     'BannerAd.onAdOpened',
-    'BannerAd.onAdOpened follows overlay presentation after click; automated Appium never clicks creatives (proposed EX-CREATIVE-CLICK), so Jest owns callback wiring only.',
+    'BannerAd.onAdOpened follows overlay presentation after click; automated Appium never clicks creatives, so Jest / native OwnedCallbacks own callback wiring (GMA-AD-6: owned integration, not a coverage exception).',
   ),
   bannerProp(
     'BannerAd.onAdClosed',
-    'BannerAd.onAdClosed follows overlay dismiss after click; automated Appium never clicks creatives (proposed EX-CREATIVE-CLICK), so Jest owns callback wiring only.',
+    'BannerAd.onAdClosed follows overlay dismiss after click; automated Appium never clicks creatives, so Jest / native OwnedCallbacks own callback wiring (GMA-AD-6: owned integration, not a coverage exception).',
   ),
   bannerProp(
     'BannerAd.onAdImpression',
-    'BannerAd.onAdImpression delivery is inventory-dependent; Jest owns wiring while Appium render proof does not require an impression ack (related proposed EX-IMPRESSION-ACK).',
+    'BannerAd.onAdImpression delivery is inventory-dependent; Jest / native OwnedCallbacks own wiring while Appium render proof does not require an impression ack (GMA-AD-6: not a broad impression-ack exception).',
   ),
   bannerProp(
     'BannerAd.onAdClicked',
-    'BannerAd.onAdClicked requires creative interaction, which automated Appium deliberately avoids (proposed EX-CREATIVE-CLICK); Jest owns callback wiring only.',
+    'BannerAd.onAdClicked requires creative interaction, which automated Appium deliberately avoids; Jest / native OwnedCallbacks own callback wiring (GMA-AD-6: owned integration, not a coverage exception).',
   ),
   bannerProp(
     'BannerAd.onPaid',
-    'BannerAd.onPaid delivery is nondeterministic on Google test inventory (proposed EX-PAID-EVENT); Jest owns paid payload mapping.',
+    'BannerAd.onPaid live delivery is nondeterministic on Google test inventory; Appium must not fail on absence; Jest / native OwnedCallbacks own paid payload mapping (GMA-AD-6: not a broad paid-event exception).',
   ),
   bannerProp(
     'BannerAd.onSizeChange',
@@ -341,23 +341,23 @@ const MEMBER_API_CONTRACTS: readonly PublicApiContract[] = [
   ),
   bannerProp(
     'GAMBannerAd.onAdOpened',
-    'GAMBannerAd.onAdOpened follows overlay presentation after click; automated Appium never clicks creatives (proposed EX-CREATIVE-CLICK), so Jest owns callback wiring only.',
+    'GAMBannerAd.onAdOpened follows overlay presentation after click; automated Appium never clicks creatives, so Jest / native OwnedCallbacks own callback wiring (GMA-AD-6: owned integration, not a coverage exception).',
   ),
   bannerProp(
     'GAMBannerAd.onAdClosed',
-    'GAMBannerAd.onAdClosed follows overlay dismiss after click; automated Appium never clicks creatives (proposed EX-CREATIVE-CLICK), so Jest owns callback wiring only.',
+    'GAMBannerAd.onAdClosed follows overlay dismiss after click; automated Appium never clicks creatives, so Jest / native OwnedCallbacks own callback wiring (GMA-AD-6: owned integration, not a coverage exception).',
   ),
   bannerProp(
     'GAMBannerAd.onAdImpression',
-    'GAMBannerAd.onAdImpression may appear on the non-blocking manual-impression canary marker; absence must not fail Appium. Jest owns callback wiring.',
+    'GAMBannerAd.onAdImpression may appear on the non-blocking manual-impression canary marker; absence must not fail Appium. Jest / native OwnedCallbacks own callback wiring (GMA-AD-6: not a broad impression-ack exception).',
   ),
   bannerProp(
     'GAMBannerAd.onAdClicked',
-    'GAMBannerAd.onAdClicked requires creative interaction, which automated Appium deliberately avoids (proposed EX-CREATIVE-CLICK); Jest owns callback wiring only.',
+    'GAMBannerAd.onAdClicked requires creative interaction, which automated Appium deliberately avoids; Jest / native OwnedCallbacks own callback wiring (GMA-AD-6: owned integration, not a coverage exception).',
   ),
   bannerProp(
     'GAMBannerAd.onPaid',
-    'GAMBannerAd.onPaid delivery is nondeterministic on Google test inventory (proposed EX-PAID-EVENT); Jest owns paid payload mapping.',
+    'GAMBannerAd.onPaid live delivery is nondeterministic on Google test inventory; Appium must not fail on absence; Jest / native OwnedCallbacks own paid payload mapping (GMA-AD-6: not a broad paid-event exception).',
   ),
   bannerProp(
     'GAMBannerAd.onSizeChange',
@@ -365,7 +365,7 @@ const MEMBER_API_CONTRACTS: readonly PublicApiContract[] = [
   ),
   bannerProp(
     'GAMBannerAd.onAppEvent',
-    'GAMBannerAd.onAppEvent delivery depends on ad-server inventory (proposed EX-GAM-APP-EVENT); Jest owns app-event payload mapping.',
+    'GAMBannerAd.onAppEvent live delivery is inventory-controlled (GMA-AD-6 GAM app-event exclusion); Jest owns app-event name and payload mapping.',
   ),
   bannerProp(
     'MultiFormatBannerAdView.handle',

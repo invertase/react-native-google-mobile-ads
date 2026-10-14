@@ -203,6 +203,36 @@ Each test × platform cell progresses independently. Early runs assume flakes ma
 
 **Single-slot execution.** Device-free harness pilots use `--dry-run` with `--platform` / `--slot` (or `RNGMA_E2E_PLATFORM` / `RNGMA_E2E_SLOT`). Omitting `--dry-run` attaches the live Appium shard runner path (platform WDIO conf under the worker). Keep live runners on a dedicated checkout that does not share Metros with product edits. Optional `--receipt-root` / `--log-root` / `--iterations` override defaults under `/tmp/rngma-e2e-reliability/`. Optional `--android-backend=classic|nextgen` (or `RNGMA_ANDROID_BACKEND`) maps Android statistical configuration (classic never receives statistical credits). The worker records pass/fail into the risk ledger, writes failure artifacts for failed cases, and in `qualify` mode credits the evidence ledger / non-authoritative in-memory stats projection (per-test statistical credits only after the burn-in gate is closed for that cell) without changing runner-bail or Mocha-bail semantics.
 
+<a id="executable-freeze"></a>
+
+### Executable freeze candidate
+
+Before statistical qualification, one reviewed executable / layout / policy candidate is frozen. Source of truth: `tooling/appium/src/reliabilityFreeze.ts` plus the commit-able snapshot `tooling/appium/freeze-manifest.json`. `yarn tests:appium:validate` fail-closes when live digests drift from that snapshot.
+
+| Field | Meaning |
+|-------|---------|
+| `layout.digest` | sha256 of the final `final-smoke` reliability layout (`reliabilityLayouts`) |
+| `policy.digest` | sha256 dependency digest for scope `policy` over `QUALIFICATION_POLICY` (`reliabilityEvidence` / `reliabilityStats`) |
+| `executable.digest` | sha256 of ordered smoke case ids + derived shard membership |
+| `acceptedExceptions` | Only the four [GMA-AD-6](../architecture-decisions.md#gma-ad-6) external outcomes (see ledger below) |
+| `sourceAnchorCommit` | Parent commit identity before the freeze package commit |
+
+**Accepted exception ledger (frozen).** These labels are the only accepted coverage exceptions; they name GMA-AD-6 outcomes, not campaign item IDs:
+
+- `GMA-AD-6:UMP-consent-outcome`
+- `GMA-AD-6:GAM-app-event-inventory`
+- `GMA-AD-6:vendor-SDK-internal`
+- `GMA-AD-6:mediation-network-fill`
+
+**Rejected proposals (do not restore without new evidence and user acceptance).** Broad `PAID-EVENT` / `CREATIVE-CLICK` / `IMPRESSION-ACK` / `REWARD-EARNED` exceptions; stale `IOS-LCOV-EXPORT` (`react-native-coverage@0.2.2` proves universal export); broad Next-Gen Jacoco invalidity (only app-wide `:app` dependency instrumentation is known unsafe; owned-library Jacoco remains). Official test-unit `earned=true` stays Appium-owned and blocking. Type-proof deferred rows and adapter `plugin-fixture-pending` dispositions remain open work, not accepted exceptions.
+
+**Worker sync procedure (no push from product-edit checkouts).** After the freeze package is committed on the integration branch:
+
+1. On each dedicated reliability worker checkout: `git fetch` the integration remote, then `git checkout <freeze-commit>` (or hard-reset that worker branch to the freeze commit). Do **not** `git push` from a product-edit checkout to fast-forward workers.
+2. Run `yarn` / `yarn prepare` if the freeze commit changed deps or build outputs, then `yarn tests:appium:validate`. That suite fail-closes when `freeze-manifest.json` digests or durable snapshot bodies (`policy.body`, `layout.shards`, `executable.caseIds`, `notes`, exception ledgers, …) drift from `buildFreezeCandidate()` — operators read the lock from the checked-in manifest and the freeze unit test, not from validate stdout.
+3. Start `diagnose` / `burn-in` / `qualify` only on those worker checkouts with matching digests. Product edits stay on a separate checkout that never shares Metros with live workers.
+4. After a reviewed fix that changes layout, policy, or executable membership, land a new freeze commit (new digests / epoch) before continuing qualification; scoped invalidation follows the statistical evidence rules above.
+
 <a id="ios-wda-prebuilt-validation"></a>
 
 `yarn tests:appium:ios:select-and-boot` **always** requires `--github-env <path>`; a missing flag or path still boots the simulator, then fails the command without persisting anything. It selects the exact-name simulator, boots it, waits on `simctl bootstatus`, then **appends** `RNGMA_IOS_UDID=<udid>` and `RNGMA_IOS_VERSION=<runtime>` lines to that file and prints the same pair on stdout. It writes a file only — it cannot export into the calling shell, and `$GITHUB_ENV` is not a local requirement:
@@ -264,7 +294,7 @@ The smoke suite is gated by checked-in registries, not ad-hoc format lists alone
 
 **GAM app events.** Served inventory controls live app-event delivery, so it is not a blocking Appium outcome. Owned event-name and payload mapping remains lower-layer test work ([GMA-AD-6](../architecture-decisions.md#gma-ad-6)).
 
-**Rewarded earn vs paid / manual-impression canaries.** Ownership posture stays under [GMA-AD-6](../architecture-decisions.md#gma-ad-6) (four exclusions unchanged). Procedure: official Google rewarded and rewarded-interstitial test-unit show-close paths (imperative and hook) require gallery lifecycle marker `earned=true` on Android and iOS — a blocking Appium success condition (`requireEarnedReward` in `formats.ts`, helpers in `rewardedOutcomes.ts`). Paid-event counter/payload markers and the GAM banner `recordManualImpression` lifecycle canary are diagnostic only: log when present, never fail on absence, and never claim server impression reporting. Automated Appium never clicks ad creatives; owned paid/click/reward-callback and GAM manual-impression wiring stays Jest/native — Android classic and Next-Gen Robolectric OwnedCallbacks and iOS XCTest OwnedCallbacks per [coverage design](coverage-design.md).
+**Rewarded earn vs paid / manual-impression canaries.** Ownership posture stays under [GMA-AD-6](../architecture-decisions.md#gma-ad-6) (four exclusions unchanged; frozen ledger in [§ executable freeze](#executable-freeze)). Procedure: official Google rewarded and rewarded-interstitial test-unit show-close paths (imperative and hook) require gallery lifecycle marker `earned=true` on Android and iOS — a blocking Appium success condition (`requireEarnedReward` in `formats.ts`, helpers in `rewardedOutcomes.ts`). Paid-event counter/payload markers and the GAM banner `recordManualImpression` lifecycle canary are diagnostic only: log when present, never fail on absence, and never claim server impression reporting. Automated Appium never clicks ad creatives; owned paid/click/reward-callback and GAM manual-impression wiring stays Jest/native — Android classic and Next-Gen Robolectric OwnedCallbacks and iOS XCTest OwnedCallbacks per [coverage design](coverage-design.md).
 
 **Case inventory and derived shards.** Executable device cases are declared in `tooling/appium/src/formats.ts` (bounded-retry request-outcome contracts, navigation smoke, SDK utility surfaces, NativeRNGMATesting probe). `tooling/appium/src/sessionShards.ts` orders them into `SMOKE_CASES` (request-outcome cases first so they stay in the first positional shard), then `deriveSmokeShards()` packs them into whole waves of three positional sessions (`a-primary`, `b-secondary`, `c-tertiary`) under the fifteen-test session cap — growth adds waves (`a-primary-w2`, …), never a longer session. Every `e2e-outcome` `contractId` must appear in `SMOKE_CASES` (locked in `tooling/appium/__tests__/sessionShards.test.ts`). One WDIO spec exists per derived shard id (`tooling/appium/test/specs/formats.smoke.<shard-id>.spec.ts`); `yarn tests:appium:validate` imports each spec against the derived shard list.
 
