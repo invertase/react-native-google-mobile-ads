@@ -23,6 +23,7 @@
     "appium:ios:parallel:external": "tsx ./scripts/parallel.ts ios --metro=external",
     "reliability": "tsx ./scripts/reliability-worker.ts",
     "reliability:campaign": "tsx ./scripts/reliability-campaign.ts",
+    "reliability:operator-dashboard": "tsx ./scripts/refresh-operator-dashboard.ts",
     "check": "tsx ./scripts/check-resources.ts",
     "release": "tsx ./scripts/release-resources.ts",
     "force-acquire": "tsx ./scripts/force-acquire.ts",
