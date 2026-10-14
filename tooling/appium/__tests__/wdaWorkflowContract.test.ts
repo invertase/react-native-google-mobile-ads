@@ -101,6 +101,30 @@ test('CI prebuilds WDA before the WDIO command enables the prebuilt capability',
   assert.ok(prebuild >= 0, 'workflow must run the named WDA prebuild');
   assert.ok(enablePrebuilt > prebuild, 'workflow must enable prebuilt WDA after a successful build');
   assert.ok(appium > enablePrebuilt, 'workflow must start WDIO only after prebuilt WDA is enabled');
+
+  // Appium e2e must not use nick-fields/retry — that would re-run product fails.
+  // Session-create infra aborts in-process via the WDIO hang-watchdog hard marker.
+  const runAppiumHeading = workflow.indexOf('- name: Run Appium e2e');
+  assert.ok(runAppiumHeading >= 0, 'workflow must have a dedicated Run Appium e2e step');
+  const nextHeading = workflow.indexOf('\n      - name:', runAppiumHeading + 1);
+  const runAppiumStep = workflow.slice(
+    runAppiumHeading,
+    nextHeading >= 0 ? nextHeading : undefined,
+  );
+  assert.doesNotMatch(runAppiumStep, /nick-fields\/retry/);
+  assert.match(runAppiumStep, /^\s+run:\s*\|?\s*$/m);
+});
+
+test('wdio.ios.conf hang watchdog onAbort prints session-create abort hard marker', () => {
+  const wdioSource = readFileSync(
+    resolve(repositoryRoot, 'tooling/appium/wdio.ios.conf.ts'),
+    'utf8',
+  );
+  assert.match(wdioSource, /formatSessionCreateHangAbortError/);
+  assert.match(wdioSource, /onAbort:\s*abortWdioSessionCreateHang/);
+  assert.match(wdioSource, /console\.error\(marker\.message\)/);
+  // Source holds a regex literal: /\[e2e-ios-boot\] session-create abort/
+  assert.match(wdioSource, /session-create abort/);
 });
 
 test('named prebuild producer and XCUITest consumer use the shared DerivedData path', () => {

@@ -142,12 +142,19 @@ jobs:
         timeout-minutes: 20
         run: yarn tests:ios:run --udid "$RNGMA_IOS_UDID"
 
-      - name: Build and Run Appium e2e
-        timeout-minutes: 30
+      - name: Install Appium drivers and prebuild WDA
+        timeout-minutes: 15
         run: |
           yarn tests:appium:drivers:install
           yarn tests:appium:drivers:verify
           yarn tests:appium:ios:prebuild-wda
+
+      # In-process session-create hang recovery/abort (WDIO onAbort hard marker +
+      # serial preflight) is the retry surface — do not wrap this step in
+      # nick-fields/retry, which would also re-run product failures.
+      - name: Run Appium e2e
+        timeout-minutes: 30
+        run: |
           export RNGMA_WDA_PREBUILT=1
           yarn tests:appium:ios
 

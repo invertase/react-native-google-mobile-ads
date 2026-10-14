@@ -26,6 +26,7 @@ import { iosAppBundleResolution, iosAppPath } from '../src/formats.ts';
 import {
   formatIosBootDiagnosticLine,
   logIosBootDiagnostics,
+  recoverIosSessionCreateHang,
   startIosSessionCreateHangWatchdog,
 } from '../src/iosBootDiagnostics.ts';
 import { reconcileIosDeviceHub } from '../src/iosDeviceHub.ts';
@@ -180,10 +181,25 @@ export async function runWdioOwned(
         phase: 'serial:pre-wdio',
         simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
       });
-      // If POST /session hangs, re-probe from the supervisor parent before the 180s ceiling.
+      // If POST /session hangs with prolonged xcrun ETIMEDOUT, recover once
+      // (terminate WDA) then abort early with a clear [e2e-ios-boot] error
+      // instead of burning the full 180s supervisor ceiling.
       sessionHangWatchdog = startIosSessionCreateHangWatchdog(exactTarget, {
         phase: 'serial:session-create',
         simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+        onRecover: (udid, reason) => {
+          console.log(
+            formatIosBootDiagnosticLine({
+              phase: 'serial:session-create:hang-recover-exec',
+              udid,
+              hint: reason,
+            }),
+          );
+          recoverIosSessionCreateHang(udid);
+        },
+        onAbort: error => {
+          startup.recordFailure(source, error);
+        },
       });
     }
     const wdio = (options.spawn ?? spawnOwned)(
