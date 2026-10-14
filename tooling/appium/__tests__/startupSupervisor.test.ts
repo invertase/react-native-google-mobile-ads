@@ -155,6 +155,7 @@ test('hard marker registry recognizes every alternation in compound markers', ()
       'Failed to create session',
       'Could not create a new session',
       'session not created',
+      '[e2e-ios-boot] session-create abort: POST /session hung with prolonged xcrun ETIMEDOUT',
     ],
     'preflight-rejection': [
       'preflight failed',

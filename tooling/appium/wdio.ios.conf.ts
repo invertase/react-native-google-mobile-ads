@@ -9,6 +9,7 @@ import {
   WDA_LAUNCH_TIMEOUT_MS,
 } from './src/hostPreflight.ts';
 import {
+  formatSessionCreateHangAbortError,
   logIosBootDiagnostics,
   startIosSessionCreateHangWatchdog,
   type IosSessionCreateHangWatchdog,
@@ -19,6 +20,21 @@ import { config as shared } from './wdio.shared.conf.ts';
 const iosApp = iosAppPath();
 const runtime = runtimeResources('ios');
 let sessionCreateHangWatchdog: IosSessionCreateHangWatchdog | undefined;
+
+/**
+ * Print the stable hard marker and exit so parallel WDIO children abort early
+ * too — hang-abort phase lines alone are not matched by the startup supervisor.
+ * Serial preflight also wires onAbort → recordFailure; this path covers the
+ * in-WDIO watchdog every child runs (serial + parallel).
+ */
+function abortWdioSessionCreateHang(error: Error): never {
+  const marker =
+    /\[e2e-ios-boot\] session-create abort/i.test(error.message)
+      ? error
+      : formatSessionCreateHangAbortError(error.message);
+  console.error(marker.message);
+  process.exit(1);
+}
 
 /**
  * iOS Appium smoke (XCUITest).
@@ -83,6 +99,7 @@ export const config: Options.Testrunner = {
     sessionCreateHangWatchdog = startIosSessionCreateHangWatchdog(udid, {
       phase: 'wdio:session-create',
       simulatorStartupTimeoutMs: timeoutMs,
+      onAbort: abortWdioSessionCreateHang,
     });
   },
   async afterSession() {
