@@ -259,6 +259,14 @@ describe('campaign and worker statistical surfaces', () => {
     assert.equal(result.suiteIndependent, true);
     assert.equal(result.projectionAuthoritative, false);
     assert.equal(result.projectionDisclaimer, STATS_PROJECTION_DISCLAIMER);
+    assert.equal(result.warmEpochCapReached, true);
+    assert.equal(result.warmEpochColdRestartClearsCap, true);
+    assert.equal(result.hardwareDiversityReducedDisclosed, true);
+    assert.equal(result.hardwareDiversityRequirementMetAfterColdEpochs, true);
+    assert.equal(result.classicCanaryDueAtInterval, true);
+    assert.equal(result.classicCanaryDueOnExecutableChange, true);
+    assert.equal(result.coverageFlushGateOk, true);
+    assert.equal(result.coverageFlushGateFailsWhenIncomplete, true);
   });
 
   test('campaign controller refuses classic statistical credits', () => {

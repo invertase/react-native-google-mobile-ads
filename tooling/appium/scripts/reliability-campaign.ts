@@ -110,7 +110,7 @@ async function main(): Promise<void> {
     );
     const result = await runStatsPilot();
     console.log(
-      `[reliability-campaign] statsPilot zeroFailureTarget=${result.zeroFailureTarget} checkpoints=${result.checkpointsLocked} creditedPasses=${result.creditedPasses} retainedFailures=${result.retainedFailures} unaffectedValid=${result.unaffectedCellStillValid} invalidated=${result.invalidatedCredits} epoch=${result.epochAfterInvalidation} suiteIndependent=${result.suiteIndependent} scheduleRemaining=${result.scheduleRemaining} authoritative=${result.projectionAuthoritative} disclaimer=${JSON.stringify(result.projectionDisclaimer)}`,
+      `[reliability-campaign] statsPilot zeroFailureTarget=${result.zeroFailureTarget} checkpoints=${result.checkpointsLocked} creditedPasses=${result.creditedPasses} retainedFailures=${result.retainedFailures} unaffectedValid=${result.unaffectedCellStillValid} invalidated=${result.invalidatedCredits} epoch=${result.epochAfterInvalidation} suiteIndependent=${result.suiteIndependent} scheduleRemaining=${result.scheduleRemaining} warmEpochCap=${result.warmEpochCapReached} warmColdRestart=${result.warmEpochColdRestartClearsCap} diversityReduced=${result.hardwareDiversityReducedDisclosed} diversityColdOk=${result.hardwareDiversityRequirementMetAfterColdEpochs} classicInterval=${result.classicCanaryDueAtInterval} classicExecutable=${result.classicCanaryDueOnExecutableChange} coverageFlushGateOk=${result.coverageFlushGateOk} coverageFlushGateFailsWhenIncomplete=${result.coverageFlushGateFailsWhenIncomplete} authoritative=${result.projectionAuthoritative} disclaimer=${JSON.stringify(result.projectionDisclaimer)}`,
     );
     if (
       result.zeroFailureTarget !== 2995 ||
@@ -118,6 +118,14 @@ async function main(): Promise<void> {
       !result.unaffectedCellStillValid ||
       result.invalidatedCredits < 1 ||
       !result.suiteIndependent ||
+      !result.warmEpochCapReached ||
+      !result.warmEpochColdRestartClearsCap ||
+      !result.hardwareDiversityReducedDisclosed ||
+      !result.hardwareDiversityRequirementMetAfterColdEpochs ||
+      !result.classicCanaryDueAtInterval ||
+      !result.classicCanaryDueOnExecutableChange ||
+      !result.coverageFlushGateOk ||
+      !result.coverageFlushGateFailsWhenIncomplete ||
       result.projectionAuthoritative !== false ||
       result.projectionDisclaimer !== STATS_PROJECTION_DISCLAIMER
     ) {

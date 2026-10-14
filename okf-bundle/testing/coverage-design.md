@@ -32,8 +32,8 @@ Consume the **published** package — do **not** copy RNFB coverage scripts into
 | Config | `RNGoogleMobileAdsExample/react-native-coverage.config.js` (app ids, `RNGoogleMobileAds` / `react-native-google-mobile-ads` matchers; excludes Google GMA SDK) |
 | Android | Example `android/build.gradle` applies package `rn-coverage.gradle` + Jacoco report helper on RNTA `:app` |
 | iOS | Example `ios/Podfile` `post_install` → package `cocoapods/coverage_post_install.rb` (CocoaPods-first / static; `force_dynamic_frameworks: false`; `instrument_app: false` + app `OTHER_LDFLAGS` profile link only — avoids RNTA Swift/DevSupport break while resolving Coverage.a `__llvm_profile_*`; library prefixes + Coverage pod still get LLVM flags) |
-| Flush | Appium suite teardown taps gallery **Flush coverage** (`gma.debug.flushCoverage`) → package `flush()` (Istanbul dump when Metro instrumented, then Emma/LLVM). Host: `tooling/appium` `afterSuite` → `flushCoverageFromApp()` |
-| Pull / report | Package CLI `rn-coverage` (bin). Run from the example workspace so config resolves. |
+| Flush | Appium suite teardown taps gallery **Flush coverage** (`gma.debug.flushCoverage`) → package `flush()` (Istanbul dump when Metro instrumented, then Emma/LLVM). Host: `tooling/appium` `afterSuite` → soft-fail `flushCoverageFromApp()` (smoke must not fail on a missing control). Qualification / native coverage evidence uses receipt-bearing `flushCoverageForGate()` plus host pull/report receipts; `assertCoverageFlushGate` fails the coverage run when flush, pull, or report is missing or failed ([running-e2e § qualification evidence](running-e2e.md#qualification-evidence)). |
+| Pull / report | Package CLI `rn-coverage` (bin). Run from the example workspace so config resolves. Record pass/fail receipts for the coverage flush gate. |
 
 For the Android Next-Gen backend, keep AGP app-wide `testCoverageEnabled` off on
 `:app`. Its dependency transform rewrites Mobile Ads SDK 1.5.0 bytecode and
@@ -50,12 +50,20 @@ selection; isolate Jacoco XML/HTML under
 class IDs to report class inputs, disclose JaCoCo “classes do not match”
 warnings rather than reporting affected per-file figures as zero coverage.
 
-**Agent sequence after a device Appium run** (session still had flush before teardown):
+**Agent sequence after a device Appium run** — two paths (do not conflate them):
+
+1. **Smoke (soft-fail).** Product Appium `afterSuite` still calls soft-fail `flushCoverageFromApp()` so a missing Flush control does not fail semantic smoke. Host pull/report/`assert` below are operational collection only; they are **not** the coverage flush gate and must not be treated as fail-closed evidence for qualification.
+
+2. **Qualification / native coverage evidence (fail-closed).** While the Appium session is still alive, record a flush-stage receipt via `flushCoverageForGate()` (not the smoke soft-fail wrapper). Then on the host, record pass/fail receipts for pull and report, and call `assertCoverageFlushGate` so a missing or failed flush, pull, or report stage fails the coverage run ([running-e2e § qualification evidence](running-e2e.md#qualification-evidence)). Device-free contract: `--run-stats-pilot` locks the flush-gate evaluation.
 
 ```sh
 # From repo root — example cwd so react-native-coverage.config.js resolves.
 # Keep RNGMA_ANDROID_BACKEND aligned with the Appium build (unset/`classic` vs `nextgen`)
-# so Jacoco XML lands under reports/jacoco/<backend>/… and config assert paths match:
+# so Jacoco XML lands under reports/jacoco/<backend>/… and config assert paths match.
+#
+# Qualification / coverage-evidence only: after flushCoverageForGate() on-device,
+# record a pull/report receipt for each stage below (pass on CLI exit 0, fail otherwise),
+# then assertCoverageFlushGate(receipts). Smoke soft-fail teardown skips that gate.
 yarn workspace RNGoogleMobileAdsExample exec rn-coverage android pull
 yarn workspace RNGoogleMobileAdsExample exec rn-coverage android report
 # Next-Gen example:
@@ -71,6 +79,8 @@ yarn workspace RNGoogleMobileAdsExample exec rn-coverage ios pull --device <udid
 yarn workspace RNGoogleMobileAdsExample exec rn-coverage ios export --derived-data <path>
 yarn workspace RNGoogleMobileAdsExample exec rn-coverage ios export --derived-data <path> --arch arm64
 yarn workspace RNGoogleMobileAdsExample exec rn-coverage assert
+# Qualification / coverage-evidence: assertCoverageFlushGate over flush + pull + report
+# receipts (failed or missing stage fails the coverage run). Not required for smoke.
 ```
 
 Artifacts (defaults from config; adjust with CLI flags as needed):
