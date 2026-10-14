@@ -4,6 +4,7 @@ import {
   EXAMPLE_ANDROID_PACKAGE,
   EXAMPLE_IOS_BUNDLE_ID,
   gallerySectionForFormat,
+  SMOKE_GAM_FLUID_VARIANT,
   type GallerySectionId,
   type NavigationSmokeCase,
   type RepresentativeRequestOutcomeContract,
@@ -15,6 +16,11 @@ import {
   androidFocusedSystemDialog,
   focusIncludesAndroidForeignApp,
 } from '../../src/androidFocus.ts';
+import {
+  classifyFormatOpenObservation,
+  formatOpenDiagnosisMessage,
+  type FormatOpenObservation,
+} from '../../src/formatOpenDiagnostics.ts';
 import {
   classifyHookLoadOutcome,
   classifyPoolFilledOutcome,
@@ -626,22 +632,48 @@ async function formatLooksOpen(formatId: string): Promise<boolean> {
   ) {
     return true;
   }
-  const back = await findByTestId(AppiumTestIds.galleryBack);
+  // Require the format container — Back alone is insufficient (classic Fluid:
+  // gallery.back displayed while gma.format.gam-banner.Fluid never mounted).
   const container = await findByTestId(formatId);
-  return (
-    (await back.isDisplayed().catch(() => false)) ||
-    (await container.isDisplayed().catch(() => false))
-  );
+  return container.isDisplayed().catch(() => false);
+}
+
+async function observeFormatOpen(formatId: string): Promise<FormatOpenObservation> {
+  let jsLoadFailure: string | undefined;
+  try {
+    await assertNoVisibleJsLoadFailure();
+  } catch (error) {
+    if (error instanceof Error && /JS load failure/.test(error.message)) {
+      jsLoadFailure = error.message;
+    }
+  }
+  const galleryHome = await isGalleryHome().catch(() => false);
+  const back = await findByTestId(AppiumTestIds.galleryBack);
+  const backVisible = await back.isDisplayed().catch(() => false);
+  const container = await findByTestId(formatId);
+  const containerVisible = await container.isDisplayed().catch(() => false);
+  return { galleryHome, backVisible, containerVisible, jsLoadFailure };
 }
 
 async function waitForFormatOpen(formatId: string, timeoutMs: number): Promise<boolean> {
   try {
-    await driver.waitUntil(async () => formatLooksOpen(formatId), {
-      timeout: timeoutMs,
-      timeoutMsg: `Format ${formatId} did not open`,
-    });
+    await driver.waitUntil(
+      async () => {
+        // Fail fast inside the wait when a redbox is already up.
+        await assertNoVisibleJsLoadFailure();
+        return formatLooksOpen(formatId);
+      },
+      {
+        timeout: timeoutMs,
+        interval: 500,
+        timeoutMsg: `Format ${formatId} did not open`,
+      },
+    );
     return true;
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && /JS load failure/.test(error.message)) {
+      throw error;
+    }
     return formatLooksOpen(formatId);
   }
 }
@@ -651,12 +683,20 @@ export async function openFormat(formatId: string, galleryTitle?: string): Promi
     const openId = AppiumTestIds.openFormat(formatId);
     // Android: miss-retry with title-text fallback covers residual RWI / Flush
     // adjacency flakes without tripling every opener's worst-case wait.
-    // Multi-Format Hook is last in Hooks (Flush-adjacent) — allow one extra try.
-    const maxAttempts =
-      isAndroid() && formatId === AppiumTestIds.format.multiFormatHook ? 3 : isAndroid() ? 2 : 1;
+    // Multi-Format Hook (Flush-adjacent) and GAM Fluid (nav-stuck flake) get
+    // one extra try plus host recovery / back-and-retry.
+    const needsExtraAndroidAttempts =
+      formatId === AppiumTestIds.format.multiFormatHook ||
+      formatId === SMOKE_GAM_FLUID_VARIANT;
+    const maxAttempts = isAndroid() ? (needsExtraAndroidAttempts ? 3 : 2) : 1;
+    let lastObservation: FormatOpenObservation | undefined;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       if (!(await isGalleryHome())) {
         await backToGallery();
+      }
+      if (isAndroid()) {
+        await recoverAndroidTestHost(`gallery.open.pre:${formatId}`);
+        await assertNoVisibleJsLoadFailure();
       }
       await ensureBannerAccordionClosed();
       await selectGallerySection(gallerySectionForFormat(formatId));
@@ -693,16 +733,46 @@ export async function openFormat(formatId: string, galleryTitle?: string): Promi
       } else {
         await clickGalleryOpener(openId, galleryTitle);
       }
-      const waitMs = attempt < maxAttempts ? 12000 : 45000;
+      // Fluid / navigation-stuck: give the container more time on the final try
+      // (Back-only used to short-circuit openFormat before assertDisplayed's 20s).
+      const waitMs =
+        attempt < maxAttempts
+          ? formatId === SMOKE_GAM_FLUID_VARIANT
+            ? 20_000
+            : 12_000
+          : formatId === SMOKE_GAM_FLUID_VARIANT
+            ? 60_000
+            : 45_000;
       if (await waitForFormatOpen(formatId, waitMs)) {
         return;
       }
+      lastObservation = await observeFormatOpen(formatId);
+      const diagnosis = classifyFormatOpenObservation(lastObservation);
+      if (isAndroid()) {
+        logAndroidHostTrace('gallery.open.miss', {
+          formatId,
+          attempt,
+          maxAttempts,
+          diagnosis,
+          ...lastObservation,
+        });
+      }
+      if (diagnosis === 'js-dead') {
+        throw new Error(
+          formatOpenDiagnosisMessage(formatId, diagnosis, lastObservation),
+        );
+      }
       if (attempt < maxAttempts) {
-        if (!(await isGalleryHome())) {
+        if (diagnosis === 'navigation-stuck' || !(await isGalleryHome())) {
+          // Back chrome without container: leave the half-mounted screen and retap.
           try {
             await backToGallery();
           } catch {
             await resetAppState();
+          }
+          if (isAndroid()) {
+            await recoverAndroidTestHost(`gallery.open.nav-stuck:${formatId}`);
+            await assertNoVisibleJsLoadFailure();
           }
         } else if (formatId === AppiumTestIds.format.multiFormatHook) {
           // Autoload dismiss can overshoot to gallery (waitForFormatOpen). A
@@ -718,13 +788,27 @@ export async function openFormat(formatId: string, galleryTitle?: string): Promi
           await new Promise<void>(resolve => setTimeout(resolve, 400));
           await recoverAndroidTestHost('multi-format-hook-retry');
           await scrollGalleryToTop();
+        } else if (diagnosis === 'tap-miss' && formatId === SMOKE_GAM_FLUID_VARIANT) {
+          // Tap landed in logs but home stayed — recover host, scroll, retap.
+          logAndroidHostTrace('gallery.open.retry-tap-miss', { formatId, attempt });
+          await recoverAndroidTestHost('gallery.open.fluid-tap-miss');
+          await assertNoVisibleJsLoadFailure();
+          await scrollGalleryToTop();
         } else {
           // Likely tapped Flush (same home) — cold restart clears sticky scroll/section.
           await resetAppState();
         }
       }
     }
-    throw new Error(`Format ${formatId} did not open (container/back not visible)`);
+    const observation =
+      lastObservation ??
+      ({
+        galleryHome: true,
+        backVisible: false,
+        containerVisible: false,
+      } satisfies FormatOpenObservation);
+    const diagnosis = classifyFormatOpenObservation(observation);
+    throw new Error(formatOpenDiagnosisMessage(formatId, diagnosis, observation));
   });
 }
 
