@@ -290,6 +290,32 @@ describe('reliability worker', () => {
     assert.equal(env.RNGMA_E2E_METRO_SLOT, '1');
     assert.equal(env.RNGMA_METRO_PORT, '13007');
     assert.match(env.RNGMA_METRO_CACHE_ROOT ?? '', /slot-1\/android\/cache$/);
+    // Slot Android must pin the exact console serial so live WDIO cannot attach to
+    // an unrelated connected emulator when appium:udid would otherwise be unset.
+    assert.equal(env.RNGMA_ANDROID_UDID, 'emulator-5558');
+    assert.equal(env.RNGMA_ANDROID_DEVICE, 'TestingAVD-1');
+  });
+
+  test('reliability shard env refuses a conflicting Android UDID', () => {
+    assert.throws(
+      () =>
+        reliabilityShardEnv(
+          { platform: 'android', slot: 1 },
+          './test/specs/formats.smoke.a-primary.spec.ts',
+          { RNGMA_ANDROID_UDID: 'emulator-5554' },
+        ),
+      /conflicts with reliability slot 1.*emulator-5558/,
+    );
+  });
+
+  test('reliability shard env pins iOS simulator name for the slot', () => {
+    const env = reliabilityShardEnv(
+      { platform: 'ios', slot: 2 },
+      './test/specs/formats.smoke.a-primary.spec.ts',
+      {},
+    );
+    assert.equal(env.RNGMA_IOS_DEVICE, 'RN E2E iOS slot-2');
+    assert.equal(env.RNGMA_METRO_PORT, '14107');
   });
 
   test('parses positional mode after space-separated flag values', () => {

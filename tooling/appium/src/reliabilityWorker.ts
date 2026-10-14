@@ -35,6 +35,7 @@ import {
   type ReliabilityJobIdentity,
 } from './reliabilityReceipts.ts';
 import { reliabilityMetroEnv } from './reliabilityMetro.ts';
+import { slotResources } from './slots.ts';
 import {
   createEvidenceLedger,
   defaultCellDependencyDigests,
@@ -276,14 +277,46 @@ export function parseReliabilityWorkerArgv(
   };
 }
 
+/**
+ * Exact Android emulator serial for a reliability slot (`TestingAVD-N` console port).
+ * Live WDIO must pin `RNGMA_ANDROID_UDID` to this value — an unset udid lets Appium
+ * attach to any connected device (including a non-slot lab emulator).
+ */
+export function reliabilityAndroidSerial(slot: number): string {
+  return slotResources(slot, 'android').androidSerial;
+}
+
 /** Env for a single shard WDIO child under the reliability worker. */
 export function reliabilityShardEnv(
   options: Pick<ReliabilityWorkerOptions, 'platform' | 'slot'>,
   spec: string,
   baseEnv: NodeJS.ProcessEnv = process.env,
 ): NodeJS.ProcessEnv {
+  const metroEnv = reliabilityMetroEnv(options.slot, options.platform, baseEnv);
+  const deviceEnv: NodeJS.ProcessEnv = {};
+  if (options.platform === 'android') {
+    const expectedSerial = reliabilityAndroidSerial(options.slot);
+    const provided = baseEnv.RNGMA_ANDROID_UDID;
+    if (provided != null && provided !== '' && provided !== expectedSerial) {
+      throw new Error(
+        `RNGMA_ANDROID_UDID=${provided} conflicts with reliability slot ${options.slot}; expected ${expectedSerial} (${slotResources(options.slot, 'android').androidAvdName}).`,
+      );
+    }
+    deviceEnv.RNGMA_ANDROID_UDID = expectedSerial;
+    deviceEnv.RNGMA_ANDROID_DEVICE = slotResources(options.slot, 'android').androidAvdName;
+  } else {
+    const expectedName = slotResources(options.slot, 'ios').iosSimulatorName;
+    const providedName = baseEnv.RNGMA_IOS_DEVICE;
+    if (providedName != null && providedName !== '' && providedName !== expectedName) {
+      throw new Error(
+        `RNGMA_IOS_DEVICE=${providedName} conflicts with reliability slot ${options.slot}; expected ${expectedName}.`,
+      );
+    }
+    deviceEnv.RNGMA_IOS_DEVICE = expectedName;
+  }
   return {
-    ...reliabilityMetroEnv(options.slot, options.platform, baseEnv),
+    ...metroEnv,
+    ...deviceEnv,
     RNGMA_WDIO_SPEC: spec,
     [RELIABILITY_RUNNER_BAIL_ENV]: '0',
   };

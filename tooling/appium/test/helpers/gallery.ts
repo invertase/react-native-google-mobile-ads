@@ -31,6 +31,10 @@ import {
   manualImpressionCanaryFromText,
   paidEventCanaryFromLifecycle,
 } from '../../src/rewardedOutcomes.ts';
+import {
+  JS_LOAD_FAILURE_UI_SNIPPETS,
+  jsLoadFailureFromText,
+} from '../../src/jsLoadFailure.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
 
 /** Repo root from `tooling/appium/test/helpers/` — no host-absolute checkout paths. */
@@ -344,6 +348,45 @@ async function withInstrumentationRecovery<T>(fn: () => Promise<T>): Promise<T> 
   }
 }
 
+/**
+ * Fail fast when a Metro/JS redbox (or equivalent) is already on screen.
+ * Must run inside gallery-home waits so a dead Metro cannot burn a 90s timeout.
+ */
+async function assertNoVisibleJsLoadFailure(): Promise<void> {
+  if (isAndroid()) {
+    for (const snippet of JS_LOAD_FAILURE_UI_SNIPPETS) {
+      const byText = await $(`android=new UiSelector().textContains("${snippet}")`);
+      if (await byText.isDisplayed().catch(() => false)) {
+        throw new Error(
+          `Android JS load failure visible before gallery-ready: ${snippet}`,
+        );
+      }
+      const byDesc = await $(
+        `android=new UiSelector().descriptionContains("${snippet}")`,
+      );
+      if (await byDesc.isDisplayed().catch(() => false)) {
+        throw new Error(
+          `Android JS load failure visible before gallery-ready: ${snippet}`,
+        );
+      }
+    }
+    return;
+  }
+  // iOS redbox copy is easiest to catch from page source.
+  try {
+    const source = await driver.getPageSource();
+    const failure = jsLoadFailureFromText(source);
+    if (failure != null) {
+      throw new Error(failure);
+    }
+  } catch (error) {
+    if (error instanceof Error && /JS load failure/.test(error.message)) {
+      throw error;
+    }
+    // getPageSource can race during relaunch.
+  }
+}
+
 export async function waitForGalleryHome(): Promise<void> {
   if (isAndroid()) {
     await recoverAndroidTestHost();
@@ -379,12 +422,20 @@ export async function waitForGalleryHome(): Promise<void> {
       // Best-effort.
     }
   }
-  const root = await findByTestId(AppiumTestIds.root);
-  await root.waitForDisplayed({ timeout: 90000 });
-  await driver.waitUntil(async () => isGalleryHome(), {
-    timeout: 30000,
-    timeoutMsg: 'Gallery home did not become ready',
-  });
+  // Positive confirmation only: gallery home chrome. Probe JS-load failures on
+  // every tick so a redbox fails in ~interval, not after a 90s element timeout.
+  await driver.waitUntil(
+    async () => {
+      await assertNoVisibleJsLoadFailure();
+      return isGalleryHome();
+    },
+    {
+      timeout: 90000,
+      interval: 500,
+      timeoutMsg:
+        'Gallery home did not become ready (no gma.gallery root/section chrome; no JS-load failure visible either)',
+    },
+  );
 }
 
 export async function selectGallerySection(

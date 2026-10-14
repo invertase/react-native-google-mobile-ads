@@ -10,9 +10,38 @@ import {
   type AndroidExec,
 } from './src/hostPreflight.ts';
 import { runtimeResources } from './src/slots.ts';
+import { probeMetroPackagerHttp } from './src/startupSupervisor.ts';
 import { config as shared } from './wdio.shared.conf.ts';
 
 const runtime = runtimeResources('android');
+
+/**
+ * Slot Android Appium must pin an exact serial before session create. An unset
+ * `appium:udid` lets UiAutomator2 attach to any connected emulator (for example a
+ * non-slot lab AVD), install the APK there, and miss the slot Metro reverse.
+ */
+function resolveAndroidSessionUdid(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  if (runtime.slotResources) {
+    const expected = runtime.slotResources.androidSerial;
+    const provided = env.RNGMA_ANDROID_UDID;
+    if (provided == null || provided === '') {
+      throw new Error(
+        `RNGMA_ANDROID_UDID is required for slot ${runtime.slot} Android Appium; expected ${expected} (${runtime.slotResources.androidAvdName}). Refusing an unscoped session that could attach to another connected emulator.`,
+      );
+    }
+    if (provided !== expected) {
+      throw new Error(
+        `RNGMA_ANDROID_UDID=${provided} conflicts with RNGMA_E2E_SLOT=${runtime.slot}; expected ${expected} (${runtime.slotResources.androidAvdName}).`,
+      );
+    }
+    return expected;
+  }
+  return env.RNGMA_ANDROID_UDID || undefined;
+}
+
+const androidSessionUdid = resolveAndroidSessionUdid();
 
 type AndroidStartupBrowser = {
   execute(command: string, options: unknown): Promise<unknown>;
@@ -28,11 +57,19 @@ const systemAndroidExec: AndroidExec = (bin, args) =>
 
 export async function prepareAndroidApp(
   browser: AndroidStartupBrowser,
-  serial = process.env.RNGMA_ANDROID_UDID,
+  serial = androidSessionUdid ?? process.env.RNGMA_ANDROID_UDID,
   execFile: AndroidExec = systemAndroidExec,
+  metroReady: (port: number) => Promise<boolean> = probeMetroPackagerHttp,
 ): Promise<void> {
   if (!serial) {
     throw new Error('RNGMA_ANDROID_UDID is required for Android Appium startup.');
+  }
+  // Positive confirmation before launch: host Metro must already be serving.
+  // Activating into a dead packager produces a redbox and wastes gallery waits.
+  if (!(await metroReady(runtime.metroPort))) {
+    throw new Error(
+      `Metro on 127.0.0.1:${runtime.metroPort} is not packager-status:running; refusing to activate the Android app into a JS-load redbox. Start the named slot packager (yarn tests:packager with RNGMA_E2E_SLOT / RNGMA_E2E_PLATFORM) before Appium.`,
+    );
   }
   // UiAutomator2 session creation may restart adb transport while installing/resetting
   // the app. Re-establish and prove the reverse after that work, immediately before
@@ -81,8 +118,12 @@ export const config: Options.Testrunner = {
     {
       platformName: 'Android',
       'appium:automationName': 'UiAutomator2',
-      'appium:deviceName': process.env.RNGMA_ANDROID_DEVICE || 'Android Emulator',
-      'appium:udid': process.env.RNGMA_ANDROID_UDID,
+      'appium:deviceName':
+        process.env.RNGMA_ANDROID_DEVICE ||
+        runtime.slotResources?.androidAvdName ||
+        'Android Emulator',
+      // Never omit udid in slot mode — undefined means "any device".
+      'appium:udid': androidSessionUdid,
       'appium:app': androidDebugApkPath(),
       'appium:appPackage': EXAMPLE_ANDROID_PACKAGE,
       'appium:appActivity': EXAMPLE_ANDROID_ACTIVITY,
