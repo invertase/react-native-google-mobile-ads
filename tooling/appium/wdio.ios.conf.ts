@@ -5,8 +5,10 @@ import {
   IOS_SESSION_RETRY_TIMEOUT_MS,
   iosPrebuiltWdaCapabilities,
   requireIosUdid,
+  SIMULATOR_STARTUP_TIMEOUT_MS,
   WDA_LAUNCH_TIMEOUT_MS,
 } from './src/hostPreflight.ts';
+import { logIosBootDiagnostics } from './src/iosBootDiagnostics.ts';
 import { iosMetroProcessArguments, runtimeResources } from './src/slots.ts';
 import { config as shared } from './wdio.shared.conf.ts';
 
@@ -37,6 +39,8 @@ export const config: Options.Testrunner = {
           }
         : {}),
       'appium:wdaLaunchTimeout': WDA_LAUNCH_TIMEOUT_MS,
+      // Override appium-ios-simulator's 120s default; see SIMULATOR_STARTUP_TIMEOUT_MS.
+      'appium:simulatorStartupTimeout': SIMULATOR_STARTUP_TIMEOUT_MS,
       ...iosPrebuiltWdaCapabilities(),
       'appium:app': iosApp,
       'appium:newCommandTimeout': 240,
@@ -46,4 +50,28 @@ export const config: Options.Testrunner = {
       'appium:enforceAppInstall': true,
     },
   ],
+  async onPrepare(config, capabilities) {
+    const sharedPrepare = shared.onPrepare;
+    if (typeof sharedPrepare === 'function') {
+      await sharedPrepare.call(this, config, capabilities);
+    }
+    // Timestamped lines land in the supervised WDIO child log before session create.
+    logIosBootDiagnostics(requireIosUdid(), {
+      phase: 'wdio:onPrepare',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+    });
+  },
+  async beforeSession(_config, capabilities) {
+    const caps = (Array.isArray(capabilities) ? capabilities[0] : capabilities) as
+      | Record<string, unknown>
+      | undefined;
+    const timeoutRaw = caps?.['appium:simulatorStartupTimeout'];
+    const timeoutMs = typeof timeoutRaw === 'number' ? timeoutRaw : SIMULATOR_STARTUP_TIMEOUT_MS;
+    const udid =
+      typeof caps?.['appium:udid'] === 'string' ? caps['appium:udid'] : requireIosUdid();
+    logIosBootDiagnostics(udid, {
+      phase: 'wdio:beforeSession',
+      simulatorStartupTimeoutMs: timeoutMs,
+    });
+  },
 };

@@ -20,8 +20,14 @@ import {
   selectConnectedAndroidDevice,
   selectAndroidAvd,
   selectIosSimulator,
+  SIMULATOR_STARTUP_TIMEOUT_MS,
 } from '../src/hostPreflight.ts';
 import { iosAppBundleResolution, iosAppPath } from '../src/formats.ts';
+import {
+  formatIosBootDiagnosticLine,
+  logIosBootDiagnostics,
+} from '../src/iosBootDiagnostics.ts';
+import { reconcileIosDeviceHub } from '../src/iosDeviceHub.ts';
 import { runtimeResources, type RuntimeResources } from '../src/slots.ts';
 import { androidSlotBootCommand } from '../src/commands.ts';
 import { isParallelParentChild } from '../src/parentContract.ts';
@@ -166,6 +172,13 @@ export async function runWdioOwned(
       listen: async () => true,
       probe: options.probeMetroPackager,
     });
+    if (target === 'ios') {
+      // Parent stdout (CI job log) + same shape as WDIO child `[e2e-ios-boot]` lines.
+      logIosBootDiagnostics(exactTarget, {
+        phase: 'serial:pre-wdio',
+        simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      });
+    }
     const wdio = (options.spawn ?? spawnOwned)(
       'yarn',
       ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`],
@@ -478,6 +491,10 @@ function checkIos(
 
 function selectAndBootIos(runtime: RuntimeResources): void {
   const selected = checkIos(runtime, { checkAppBundle: false });
+  logIosBootDiagnostics(selected.udid, {
+    phase: 'select-and-boot:before',
+    simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+  });
   try {
     bootAndPersistSelectedSimulator(
       selected,
@@ -486,8 +503,27 @@ function selectAndBootIos(runtime: RuntimeResources): void {
         execFileSync(bin, args, { stdio: 'inherit' });
       },
       appendFileSync,
+      {
+        afterBoot: () => {
+          const result = reconcileIosDeviceHub([selected.udid]);
+          console.log(
+            formatIosBootDiagnosticLine({
+              phase: 'select-and-boot:devicehub',
+              udid: selected.udid,
+              mode: result.mode,
+              killed: result.killed,
+              opened: result.opened,
+              desired: result.desired.join(',') || '(none)',
+            }),
+          );
+        },
+      },
     );
   } catch (error) {
+    logIosBootDiagnostics(selected.udid, {
+      phase: 'select-and-boot:error',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+    });
     const message = error instanceof Error ? error.message : String(error);
     if (message === SELECT_AND_BOOT_GITHUB_ENV_ERROR) {
       console.error(message);
@@ -495,6 +531,10 @@ function selectAndBootIos(runtime: RuntimeResources): void {
     }
     throw error;
   }
+  logIosBootDiagnostics(selected.udid, {
+    phase: 'select-and-boot:after',
+    simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+  });
   console.log(
     `Booted and persisted RNGMA_IOS_UDID=${selected.udid} RNGMA_IOS_VERSION=${selected.runtimeVersion}.`,
   );
