@@ -11,6 +11,7 @@ import {
 import {
   formatSessionCreateHangAbortError,
   logIosBootDiagnostics,
+  resolveIosIsHeadless,
   startIosSessionCreateHangWatchdog,
   type IosSessionCreateHangWatchdog,
 } from './src/iosBootDiagnostics.ts';
@@ -19,6 +20,7 @@ import { config as shared } from './wdio.shared.conf.ts';
 
 const iosApp = iosAppPath();
 const runtime = runtimeResources('ios');
+const iosIsHeadless = resolveIosIsHeadless();
 let sessionCreateHangWatchdog: IosSessionCreateHangWatchdog | undefined;
 
 /**
@@ -69,6 +71,10 @@ export const config: Options.Testrunner = {
       // Mirror Android: force reinstall so a cached/pre-installed bundle never shadows the
       // freshly built app when the version is unchanged.
       'appium:enforceAppInstall': true,
+      // CI: select-and-boot leaves a headless Booted sim; default isHeadless=false makes
+      // Appium shut down + relaunch Simulator UI (guest death / bootstatus hang).
+      // Local/slotted: false unless RNGMA_IOS_HEADLESS=1.
+      'appium:isHeadless': iosIsHeadless,
     },
   ],
   async onPrepare(config, capabilities) {

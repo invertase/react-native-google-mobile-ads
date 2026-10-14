@@ -11,6 +11,7 @@ import {
   IOS_SESSION_CREATE_HANG_HINT,
   isXcrunTimedOutError,
   recoverIosSessionCreateHang,
+  resolveIosIsHeadless,
   sessionCreateHangEvidenceFromProbeLine,
   startIosSessionCreateHangWatchdog,
   summarizeBootstatusProbe,
@@ -98,6 +99,7 @@ describe('iosBootDiagnostics', () => {
       execCapture,
       deviceHubMode: 'suppress',
       deviceHubPids: [11, 22],
+      simulatorUiPids: [],
       now: () => new Date('2026-10-14T12:34:56.000Z'),
     });
     assert.ok(line);
@@ -107,6 +109,10 @@ describe('iosBootDiagnostics', () => {
     assert.match(line!, /state=Booted/);
     assert.match(line!, /name=iPhone 17/);
     assert.match(line!, /bootstatus=timedOut=true lines=0 tail="\(empty\)"/);
+    assert.match(line!, /bootstatusTimedOut=true/);
+    assert.match(line!, /listState=Booted/);
+    assert.match(line!, /bootstatusTail=/);
+    assert.match(line!, /simulatorUiPids=\(none\)/);
     assert.match(
       line!,
       new RegExp(`appium:simulatorStartupTimeout=${SIMULATOR_STARTUP_TIMEOUT_MS}`),
@@ -115,6 +121,14 @@ describe('iosBootDiagnostics', () => {
     assert.match(line!, /deviceHubPids=11,22/);
     assert.deepEqual(calls[0], ['simctl', 'list', 'devices', '--json']);
     assert.deepEqual(calls[1], ['simctl', 'bootstatus', 'target-udid']);
+  });
+
+  test('resolveIosIsHeadless defaults true on CI and respects RNGMA_IOS_HEADLESS', () => {
+    assert.equal(resolveIosIsHeadless({ CI: 'true' }), true);
+    assert.equal(resolveIosIsHeadless({ GITHUB_ACTIONS: 'true' }), true);
+    assert.equal(resolveIosIsHeadless({}), false);
+    assert.equal(resolveIosIsHeadless({ CI: 'true', RNGMA_IOS_HEADLESS: 'false' }), false);
+    assert.equal(resolveIosIsHeadless({ RNGMA_IOS_HEADLESS: 'true' }), true);
   });
 
   test('collect labels unset simulatorStartupTimeout with XCUITest default', () => {
@@ -252,6 +266,36 @@ describe('iosBootDiagnostics', () => {
     }
   });
 
+  test('decideSessionCreateHangAction skips WDA recover while Shutdown/Booting', () => {
+    const skipShutdown = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 1,
+      simState: 'Shutdown',
+      recoveredOnce: false,
+    });
+    assert.equal(skipShutdown.action, 'skip-recover');
+    if (skipShutdown.action === 'skip-recover') {
+      assert.match(skipShutdown.reason, /recoverSkipped/);
+    }
+    const skipBooting = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 1,
+      simState: 'Booting',
+      recoveredOnce: false,
+    });
+    assert.equal(skipBooting.action, 'skip-recover');
+    const abortTransition = decideSessionCreateHangAction({
+      hangTick: 3,
+      consecutiveXcrunEtimedout: 2,
+      simState: 'Shutdown',
+      recoveredOnce: true,
+    });
+    assert.equal(abortTransition.action, 'abort');
+    if (abortTransition.action === 'abort') {
+      assert.match(abortTransition.reason, /interrupting Appium boot monitor/);
+    }
+  });
+
   test('sessionCreateHangEvidenceFromProbeLine detects ETIMEDOUT while Booted', () => {
     const evidence = sessionCreateHangEvidenceFromProbeLine(
       '[e2e-ios-boot] phase=wdio:session-create:hang-probe state=Booted bootstatus=timedOut=true error="spawnSync xcrun ETIMEDOUT"',
@@ -321,6 +365,69 @@ describe('iosBootDiagnostics', () => {
     assert.equal(aborts.length, 1);
     assert.match(aborts[0]!.message, /\[e2e-ios-boot\] session-create abort/);
     assert.ok(lines.some(line => /phase=serial:session-create:hang-abort\b/.test(line)));
+  });
+
+  test('hang watchdog skips WDA recover while Shutdown and notes boot monitor on abort', () => {
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const recovers: string[] = [];
+    const aborts: Error[] = [];
+    const shutdownList = JSON.stringify({
+      devices: {
+        'com.apple.CoreSimulator.SimRuntime.iOS-26-2': [
+          {
+            name: 'iPhone 17',
+            udid: 'target-udid',
+            state: 'Shutdown',
+            isAvailable: true,
+          },
+        ],
+      },
+    });
+    startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'wdio:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      recoverAfterTicks: 2,
+      abortAfterTicks: 3,
+      write: line => lines.push(line),
+      execCapture: (_bin, args) => {
+        if (args.includes('list')) {
+          return { stdout: shutdownList, stderr: '', status: 0 };
+        }
+        return {
+          stdout: '',
+          stderr: '',
+          status: null,
+          timedOut: true,
+          error: 'spawnSync ETIMEDOUT',
+        };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      simulatorUiPids: [],
+      now: () => new Date('2026-10-14T17:00:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onRecover: (udid, reason) => {
+        recovers.push(`${udid}:${reason}`);
+      },
+      onAbort: error => {
+        aborts.push(error);
+      },
+    });
+    callbacks[0]!();
+    callbacks[0]!(); // tick 2 — skip-recover
+    assert.equal(recovers.length, 0);
+    assert.ok(lines.some(line => /hang-recoverSkipped/.test(line)));
+    callbacks[0]!(); // tick 3 — abort
+    assert.equal(aborts.length, 1);
+    assert.match(aborts[0]!.message, /interrupting Appium boot monitor/);
   });
 
   test('formatSessionCreateHangAbortError keeps stable prefix', () => {

@@ -13,6 +13,27 @@ import {
   parseDeviceHubMode,
 } from './iosDeviceHub.ts';
 
+/**
+ * Resolve `appium:isHeadless` for XCUITest.
+ *
+ * CI (`CI` / `GITHUB_ACTIONS`) defaults true: select-and-boot leaves a headless
+ * Booted guest, and Appium's default `isHeadless=false` shuts it down to launch
+ * Simulator UI — guest death + bootstatus hang. Local/slotted defaults false so
+ * an operator UI client remains valid; override with `RNGMA_IOS_HEADLESS=0|1`.
+ */
+export function resolveIosIsHeadless(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  const raw = (env.RNGMA_IOS_HEADLESS ?? '').trim().toLowerCase();
+  if (raw === '1' || raw === 'true' || raw === 'yes') {
+    return true;
+  }
+  if (raw === '0' || raw === 'false' || raw === 'no') {
+    return false;
+  }
+  return env.CI === 'true' || env.GITHUB_ACTIONS === 'true';
+}
+
 /** appium-ios-simulator STARTUP_TIMEOUT_MS when the capability is unset. */
 export const XCUITest_DEFAULT_SIMULATOR_STARTUP_TIMEOUT_MS = 120_000;
 
@@ -101,6 +122,27 @@ export function defaultExecCapture(
   };
 }
 
+/** Simulator.app / DeviceHub UI host PIDs (empty when truly headless). */
+export function listSimulatorUiPids(
+  execCapture: ExecCapture = defaultExecCapture,
+): number[] {
+  const names = ['Simulator', 'DeviceHub', 'DevicesTrampoline'];
+  const pids: number[] = [];
+  for (const name of names) {
+    const result = execCapture('pgrep', ['-x', name], { timeoutMs: 5_000 });
+    if (result.status !== 0 || result.stdout.trim() === '') {
+      continue;
+    }
+    for (const line of result.stdout.split(/\r?\n/)) {
+      const n = Number(line.trim());
+      if (Number.isInteger(n) && n > 0) {
+        pids.push(n);
+      }
+    }
+  }
+  return pids;
+}
+
 /**
  * Locate one UDID inside `xcrun simctl list devices --json` (all states).
  */
@@ -175,6 +217,8 @@ export type CollectIosBootDiagnosticsOptions = {
   bootstatusTimeoutMs?: number;
   deviceHubMode?: string;
   deviceHubPids?: readonly number[];
+  /** Override Simulator/DeviceHub UI PIDs (defaults to a live pgrep). */
+  simulatorUiPids?: readonly number[];
   now?: () => Date;
 };
 
@@ -220,6 +264,12 @@ export function collectIosBootDiagnosticLines(
     options.deviceHubMode ??
     parseDeviceHubMode(process.env.RNGMA_IOS_DEVICE_HUB, deviceHubAppPath() ?? null);
   const hubPids = options.deviceHubPids ?? listDeviceHubRelatedPids();
+  const uiPids = options.simulatorUiPids ?? listSimulatorUiPids(exec);
+  // Keep `state=(missing)` when the row is absent so hang decisions treat list
+  // failures like the prior contract; surface listError separately.
+  const listState = device?.state ?? '(missing)';
+  const bootstatusTimedOut = bootstatus.timedOut === true;
+  const bootstatusTail = summarizeBootstatusProbe(bootstatus);
 
   return [
     formatIosBootDiagnosticLine(
@@ -228,14 +278,18 @@ export function collectIosBootDiagnosticLines(
         udid,
         found: device != null,
         name: device?.name ?? '(missing)',
-        state: device?.state ?? '(missing)',
+        state: listState,
+        listState,
         available: device?.isAvailable ?? '(n/a)',
         runtime: device?.runtimeIdentifier ?? '(missing)',
         listError: listError ?? undefined,
-        bootstatus: summarizeBootstatusProbe(bootstatus),
+        bootstatus: bootstatusTail,
+        bootstatusTail,
+        bootstatusTimedOut,
         'appium:simulatorStartupTimeout': timeoutLabel,
         deviceHubMode: hubMode,
         deviceHubPids: hubPids.join(',') || '(none)',
+        simulatorUiPids: uiPids.join(',') || '(none)',
       },
       now,
     ),
@@ -406,7 +460,13 @@ export type SessionCreateHangProbeEvidence = {
 export type SessionCreateHangDecision =
   | { action: 'continue' }
   | { action: 'recover'; reason: string }
+  | { action: 'skip-recover'; reason: string }
   | { action: 'abort'; reason: string };
+
+/** States where WDA terminate cannot help — Appium's boot monitor owns the guest. */
+export function isSimulatorTransitionState(simState: string | undefined): boolean {
+  return simState === 'Shutdown' || simState === 'Booting';
+}
 
 /**
  * Decide whether a prolonged POST /session hang should keep waiting, attempt
@@ -429,20 +489,24 @@ export function decideSessionCreateHangAction(input: {
   if (etimedoutStreak <= 0) {
     return { action: 'continue' };
   }
+  const transitioning = isSimulatorTransitionState(input.simState);
   const bootedOrUnknown =
     input.simState == null ||
     input.simState === 'Booted' ||
     input.simState === '(missing)';
-  if (!bootedOrUnknown && input.simState !== 'Shutdown') {
+  if (!bootedOrUnknown && !transitioning) {
     return { action: 'continue' };
   }
   if (input.hangTick >= abortAfter && etimedoutStreak >= 2) {
+    const bootMonitorNote = transitioning
+      ? '; interrupting Appium boot monitor while simulator is Shutdown/Booting (often isHeadless=false relaunch)'
+      : '';
     return {
       action: 'abort',
       reason:
         `POST /session hung with prolonged xcrun ETIMEDOUT (hangTick=${input.hangTick}, ` +
         `consecutiveEtimedout=${etimedoutStreak}, state=${input.simState ?? 'unknown'}); ` +
-        `WDA not ready — aborting before supervisor ceiling`,
+        `WDA not ready — aborting before supervisor ceiling${bootMonitorNote}`,
     };
   }
   if (
@@ -450,6 +514,14 @@ export function decideSessionCreateHangAction(input: {
     etimedoutStreak >= 1 &&
     !input.recoveredOnce
   ) {
+    if (transitioning) {
+      return {
+        action: 'skip-recover',
+        reason:
+          `recoverSkipped: simulator state=${input.simState} — skip WDA terminate; ` +
+          `Appium boot monitor owns Shutdown/Booting (check appium:isHeadless)`,
+      };
+    }
     return {
       action: 'recover',
       reason:
@@ -518,6 +590,7 @@ export function startIosSessionCreateHangWatchdog(
     now?: () => Date;
     deviceHubMode?: string;
     deviceHubPids?: readonly number[];
+    simulatorUiPids?: readonly number[];
     recoverAfterTicks?: number;
     abortAfterTicks?: number;
     /** Invoked once when decision is `recover` (defaults to terminate WDA + settle). */
@@ -573,6 +646,7 @@ export function startIosSessionCreateHangWatchdog(
       execCapture: options.execCapture,
       deviceHubMode: options.deviceHubMode,
       deviceHubPids: options.deviceHubPids,
+      simulatorUiPids: options.simulatorUiPids,
       now,
     });
     for (const line of probeLines) {
@@ -596,6 +670,24 @@ export function startIosSessionCreateHangWatchdog(
       recoverAfterTicks: options.recoverAfterTicks,
       abortAfterTicks: options.abortAfterTicks,
     });
+
+    if (decision.action === 'skip-recover') {
+      // Count as the one recovery opportunity so we do not re-log every tick.
+      recoveredOnce = true;
+      write(
+        formatIosBootDiagnosticLine(
+          {
+            phase: `${options.phase}:hang-recoverSkipped`,
+            udid,
+            elapsedMs: ticks * intervalMs,
+            listState: lastSimState,
+            hint: decision.reason,
+          },
+          now,
+        ),
+      );
+      return;
+    }
 
     if (decision.action === 'recover') {
       recoveredOnce = true;
@@ -641,6 +733,7 @@ export function startIosSessionCreateHangWatchdog(
             phase: `${options.phase}:hang-abort`,
             udid,
             elapsedMs: ticks * intervalMs,
+            listState: lastSimState,
             hint: decision.reason,
           },
           now,

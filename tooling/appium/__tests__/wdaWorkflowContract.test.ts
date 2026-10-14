@@ -125,6 +125,8 @@ test('wdio.ios.conf hang watchdog onAbort prints session-create abort hard marke
   assert.match(wdioSource, /console\.error\(marker\.message\)/);
   // Source holds a regex literal: /\[e2e-ios-boot\] session-create abort/
   assert.match(wdioSource, /session-create abort/);
+  assert.match(wdioSource, /appium:isHeadless/);
+  assert.match(wdioSource, /resolveIosIsHeadless/);
 });
 
 test('named prebuild producer and XCUITest consumer use the shared DerivedData path', () => {
