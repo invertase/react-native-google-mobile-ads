@@ -36,6 +36,7 @@ import {
 } from './reliabilityReceipts.ts';
 import { reliabilityMetroEnv } from './reliabilityMetro.ts';
 import { slotResources } from './slots.ts';
+import { hardFailureForLine } from './startupSupervisor.ts';
 import {
   createEvidenceLedger,
   defaultCellDependencyDigests,
@@ -385,6 +386,26 @@ export function spawnProcessToLog(options: {
 }
 
 /**
+ * Infra hard-failures that must abort a reliability job immediately instead of
+ * burning remaining iterations (missing Appium driver, session create, etc.).
+ */
+export const RELIABILITY_INFRA_ABORT_MARKERS = new Set([
+  'session-create',
+  'appium-prepare',
+  'address-in-use',
+  'preflight-rejection',
+  'wrong-target',
+]);
+
+export function reliabilityInfraAbortReason(detail: string): string | undefined {
+  const marker = hardFailureForLine(detail);
+  if (marker == null || !RELIABILITY_INFRA_ABORT_MARKERS.has(marker.name)) {
+    return undefined;
+  }
+  return `Reliability infra abort (${marker.name}): refusing further iterations after hard startup failure.`;
+}
+
+/**
  * Live Appium shard runner path for the reliability worker.
  * Inject `spawn` in tests; production wiring launches the platform WDIO conf.
  * Prefer `--dry-run` / mocked runners on product-edit checkouts — do not share
@@ -405,13 +426,18 @@ export function createLiveAppiumShardRunner(deps: {
         env: request.env,
       });
       const passed = result.exitCode === 0;
+      const detail =
+        result.detail ?? (passed ? 'live appium shard pass' : 'live appium shard fail');
+      const infra = !passed ? reliabilityInfraAbortReason(detail) : undefined;
+      // Only blame session-create when detail proves infra/session failure.
+      // Ordinary non-zero WDIO exits (product flakes) still created a session.
       const startup =
         result.startup ??
         ({
-          'session-create': passed ? 'pass' : 'fail',
-          'app-launch': passed ? 'pass' : 'skipped',
-          'bundle-load': passed ? 'pass' : 'skipped',
-          'gallery-ready': passed ? 'pass' : 'skipped',
+          'session-create': passed || infra == null ? 'pass' : 'fail',
+          'app-launch': passed ? 'pass' : infra != null ? 'skipped' : 'pass',
+          'bundle-load': passed ? 'pass' : infra != null ? 'skipped' : 'pass',
+          'gallery-ready': passed ? 'pass' : infra != null ? 'skipped' : 'fail',
         } as ShardRunResult['startup']);
       const preamble = result.preamble ?? (passed ? 'pass' : 'skipped');
       const tests =
@@ -425,7 +451,7 @@ export function createLiveAppiumShardRunner(deps: {
         startup,
         preamble,
         tests,
-        detail: result.detail ?? (passed ? 'live appium shard pass' : 'live appium shard fail'),
+        detail: infra != null ? `${infra}\n${detail}` : detail,
       };
     },
   };
@@ -562,12 +588,19 @@ export async function runReliabilityWorker(
   let shardFailures = 0;
   let passIndex = 0;
   let failureArtifacts = 0;
+  let infraAbort: string | undefined;
 
   try {
     for (let iteration = 1; iteration <= options.iterations; iteration += 1) {
+      if (infraAbort != null) {
+        break;
+      }
       ownership.apply('start-work');
       let iterationShardFailures = 0;
       for (const entry of layout.entries) {
+        if (infraAbort != null) {
+          break;
+        }
         const logPath = logs.shardLogPath(iteration, entry.shardId);
         mkdirSync(path.dirname(logPath), { recursive: true });
         writeFileSync(logPath, '', { flag: 'wx' });
@@ -579,6 +612,12 @@ export async function runReliabilityWorker(
           logPath,
           env: reliabilityShardEnv(options, entry.spec),
         });
+
+        const abortReason = reliabilityInfraAbortReason(result.detail);
+        if (abortReason != null) {
+          infraAbort = abortReason;
+          console.error(`[reliability] ${abortReason}`);
+        }
 
         const startupReceiptIds = recordStartup(
           store,
@@ -678,7 +717,10 @@ export async function runReliabilityWorker(
           passIndex += 1;
         }
         logs.enforceDiskCeiling();
-        // Runner-level bail is off: continue to the next shard regardless.
+        // Product flake: continue shards/iterations. Infra hard-failure: abort above.
+      }
+      if (infraAbort != null) {
+        break;
       }
       if (qualifyingConfiguration != null && statisticalCredits && options.layoutKind === 'final') {
         // Suite signal is independent of per-cell confidence and never erases
@@ -748,11 +790,15 @@ export async function runReliabilityWorker(
       {
         ...summary,
         layoutTestTotal: layoutTestTotal(layout),
+        ...(infraAbort != null ? { infraAbort } : {}),
       },
       null,
       2,
     )}\n`,
   );
+  if (infraAbort != null) {
+    throw new Error(infraAbort);
+  }
   return summary;
 }
 
