@@ -14,15 +14,32 @@ export type RequestFingerprint = {
   evidence: string;
 };
 
+/** Cell configuration for request-outcome logs (classic canary vs nextgen / iOS). */
+export type RequestOutcomeConfiguration =
+  | 'android-classic'
+  | 'android-nextgen'
+  | 'ios';
+
 export type RequestOutcomeAttempt = {
   format: string;
   platform: 'android' | 'ios';
+  /** Backend/cell label so classic vs nextgen exhaustions are obvious in CI logs. */
+  configuration: RequestOutcomeConfiguration;
   attempt: number;
   requestId: number;
   classification: RequestOutcomeClassification;
   detail: string;
   fingerprint: RequestFingerprint;
+  /** Backoff applied before this attempt (0 for attempt 1). */
+  backoffMs: number;
+  /** Wall time from collection start to this attempt's emit (includes backoff + observe). */
+  elapsedMs: number;
 };
+
+type ObservedRequestOutcome = Omit<
+  RequestOutcomeAttempt,
+  'format' | 'platform' | 'configuration' | 'attempt' | 'backoffMs' | 'elapsedMs'
+>;
 
 export type RepresentativeRequestPath =
   | 'banner'
@@ -45,6 +62,29 @@ export const REPRESENTATIVE_REQUEST_MAX_ATTEMPTS = 10;
 export const REPRESENTATIVE_REQUEST_BASE_BACKOFF_MS = 250;
 export const REPRESENTATIVE_REQUEST_MAX_BACKOFF_MS = 2000;
 export const REQUEST_OUTCOME_LOG_PREFIX = '[request-outcome-attempt]';
+
+/**
+ * Map platform + `RNGMA_ANDROID_BACKEND` to the same classic/nextgen/ios cell
+ * labels used by reliability configuration (unset Android backend → classic).
+ */
+export function requestOutcomeConfiguration(
+  platform: 'android' | 'ios',
+  env: NodeJS.ProcessEnv = process.env,
+): RequestOutcomeConfiguration {
+  if (platform === 'ios') {
+    return 'ios';
+  }
+  const raw = (env.RNGMA_ANDROID_BACKEND ?? 'classic').trim().toLowerCase();
+  if (raw === 'nextgen') {
+    return 'android-nextgen';
+  }
+  if (raw === 'classic' || raw === 'legacy' || raw === '') {
+    return 'android-classic';
+  }
+  throw new Error(
+    `RNGMA_ANDROID_BACKEND must be classic, legacy, or nextgen; received "${env.RNGMA_ANDROID_BACKEND}".`,
+  );
+}
 
 export function requestOutcomeFromText(text: string): RequestOutcome {
   if (text.includes(REQUEST_OUTCOME_LOADED)) {
@@ -315,24 +355,29 @@ export function formatRequestOutcomeAttempt(attempt: RequestOutcomeAttempt): str
 export async function collectRepresentativeRequestOutcomes(options: {
   format: string;
   platform: 'android' | 'ios';
-  request: (attempt: number) => Promise<Omit<RequestOutcomeAttempt, 'format' | 'platform' | 'attempt'>>;
+  configuration?: RequestOutcomeConfiguration;
+  request: (attempt: number) => Promise<ObservedRequestOutcome>;
   sleep?: (delayMs: number) => Promise<void>;
   emit?: (line: string) => void;
+  now?: () => number;
   maxAttempts?: number;
   evaluateAcceptance: (attempt: RequestOutcomeAttempt) => RepresentativeRequestAcceptance;
 }): Promise<readonly RequestOutcomeAttempt[]> {
   const {
     format,
     platform,
+    configuration = requestOutcomeConfiguration(platform),
     request,
     sleep = delayMs => new Promise(resolve => setTimeout(resolve, delayMs)),
     emit = console.log,
+    now = () => Date.now(),
     maxAttempts = REPRESENTATIVE_REQUEST_MAX_ATTEMPTS,
     evaluateAcceptance,
   } = options;
   const attempts: RequestOutcomeAttempt[] = [];
   const requestIds = new Set<number>();
   let previousRequestId = 0;
+  const startedAt = now();
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const delayMs = representativeRequestBackoffMs(attempt);
@@ -357,7 +402,15 @@ export async function collectRepresentativeRequestOutcomes(options: {
     }
     requestIds.add(observed.requestId);
     previousRequestId = observed.requestId;
-    const result = { format, platform, attempt, ...observed };
+    const result: RequestOutcomeAttempt = {
+      format,
+      platform,
+      configuration,
+      attempt,
+      ...observed,
+      backoffMs: delayMs,
+      elapsedMs: Math.max(0, now() - startedAt),
+    };
     attempts.push(result);
     emit(formatRequestOutcomeAttempt(result));
     if (evaluateAcceptance(result).status === 'accepted') {
@@ -365,14 +418,18 @@ export async function collectRepresentativeRequestOutcomes(options: {
     }
   }
 
-  const diagnostic = attempts.map(({ attempt, requestId, classification, fingerprint }) => ({
-    attempt,
-    requestId,
-    classification,
-    fingerprint,
-  }));
+  const diagnostic = attempts.map(
+    ({ attempt, requestId, classification, fingerprint, backoffMs, elapsedMs }) => ({
+      attempt,
+      requestId,
+      classification,
+      fingerprint,
+      backoffMs,
+      elapsedMs,
+    }),
+  );
   throw new Error(
-    `[request-outcome] ${format}/${platform}: exhausted ${maxAttempts} attempts without acceptance; attempts=${JSON.stringify(diagnostic)}`,
+    `[request-outcome] ${format}/${platform}/${configuration}: exhausted ${maxAttempts} attempts without acceptance; attempts=${JSON.stringify(diagnostic)}`,
   );
 }
 
@@ -382,9 +439,7 @@ export type RepresentativeRequestRuntime = {
   clearNativeLogs: () => Promise<void>;
   reload: () => Promise<void>;
   load: () => Promise<void>;
-  observe: (
-    uiAttempt: number,
-  ) => Promise<Omit<RequestOutcomeAttempt, 'format' | 'platform' | 'attempt'>>;
+  observe: (uiAttempt: number) => Promise<ObservedRequestOutcome>;
 };
 
 /**
@@ -398,9 +453,12 @@ export async function runRepresentativeRequestOutcomeContract(options: {
   retry?: RepresentativeRequestRetry;
   /** Hook screens that auto-load on mount (no explicit Load control). */
   hookAutoLoad?: boolean;
+  /** Override cell configuration (defaults from platform + `RNGMA_ANDROID_BACKEND`). */
+  configuration?: RequestOutcomeConfiguration;
   runtime: RepresentativeRequestRuntime;
   sleep?: (delayMs: number) => Promise<void>;
   emit?: (line: string) => void;
+  now?: () => number;
   maxAttempts?: number;
   onAccepted?: (attempt: RequestOutcomeAttempt) => Promise<void>;
 }): Promise<readonly RequestOutcomeAttempt[]> {
@@ -410,17 +468,21 @@ export async function runRepresentativeRequestOutcomeContract(options: {
     path,
     retry = 'default',
     hookAutoLoad = false,
+    configuration = requestOutcomeConfiguration(platform),
     runtime,
     sleep,
     emit,
+    now,
     maxAttempts,
     onAccepted,
   } = options;
   const attempts = await collectRepresentativeRequestOutcomes({
     format,
     platform,
+    configuration,
     sleep,
     emit,
+    now,
     maxAttempts,
     evaluateAcceptance: attempt =>
       evaluateRepresentativeRequestAttempt({ path, platform, attempt }),
