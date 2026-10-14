@@ -1,3 +1,4 @@
+import { annotateAndroidSessionLogLine } from './androidSessionDiagnostics.ts';
 import {
   createParallelPlan,
   type ParallelPlanEntry,
@@ -261,7 +262,15 @@ function superviseLines(
   source: string,
   child: RunningCommand,
 ): void {
-  child.onLine(line => startup.recordLine(source, line));
+  const androidAnnotateState = /android/i.test(source)
+    ? { reinstallStartedAtMs: Date.now() }
+    : undefined;
+  child.onLine(line => {
+    startup.recordLine(source, line);
+    if (androidAnnotateState) {
+      annotateAndroidSessionLogLine(line, { state: androidAnnotateState });
+    }
+  });
   void child.completion.then(
     code => startup.recordProcessExit(source, code),
     () => startup.recordProcessExit(source, UNKNOWN_FAILURE_EXIT_CODE),

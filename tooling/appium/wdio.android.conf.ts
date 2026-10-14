@@ -7,6 +7,10 @@ import {
 } from './src/formats.ts';
 import { dismissAndroidAnrDialogsViaAdb } from './src/androidAnrDismiss.ts';
 import {
+  formatAndroidSessionDiagnosticLine,
+  prepareAndroidSessionInstall,
+} from './src/androidSessionDiagnostics.ts';
+import {
   ensureAndroidMetroReverse,
   type AndroidExec,
 } from './src/hostPreflight.ts';
@@ -121,6 +125,32 @@ export async function prepareAndroidApp(
  */
 export const config: Options.Testrunner = {
   ...shared,
+  async onPrepare(config, capabilities) {
+    const sharedPrepare = shared.onPrepare;
+    if (typeof sharedPrepare === 'function') {
+      await sharedPrepare.call(this, config, capabilities);
+    }
+    const serial = androidSessionUdid ?? process.env.RNGMA_ANDROID_UDID;
+    if (!serial) {
+      throw new Error(
+        'RNGMA_ANDROID_UDID is required before Android Appium session create (pre-uninstall).',
+      );
+    }
+    // Remove a stale package before enforceAppInstall so signature-mismatched
+    // upgrades cannot serialize behind Play Store dex2oat inside the 60s ceiling.
+    prepareAndroidSessionInstall(serial);
+  },
+  async beforeSession() {
+    const serial = androidSessionUdid ?? process.env.RNGMA_ANDROID_UDID;
+    console.log(
+      formatAndroidSessionDiagnosticLine({
+        phase: 'wdio:beforeSession:post-begin',
+        serial: serial ?? '(missing)',
+        package: EXAMPLE_ANDROID_PACKAGE,
+        hint: 'POST /session beginning; enforceAppInstall will clean-install after pre-uninstall',
+      }),
+    );
+  },
   async before(_capabilities, _specs, browser) {
     await prepareAndroidApp(browser);
   },
@@ -151,6 +181,8 @@ export const config: Options.Testrunner = {
       // CI caches the whole emulator (`~/.android/avd/*`) after the app is installed, so a
       // freshly built APK with the same versionCode is otherwise skipped and a stale app runs
       // against fresh Metro JS. Force reinstall so native always matches the built APK.
+      // Pre-uninstall in onPrepare clears a signature-mismatched package first so the
+      // reinstall is not INSTALL_FAILED_UPDATE_INCOMPATIBLE behind vending dex2oat.
       'appium:enforceAppInstall': true,
       'appium:uiautomator2ServerLaunchTimeout': 60000,
       'appium:adbExecTimeout': 60000,

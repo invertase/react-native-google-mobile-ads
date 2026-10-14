@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createConnection } from 'node:net';
 import path from 'node:path';
+import { formatAndroidWorkerTimeoutHint } from './androidSessionDiagnostics.ts';
 
 export const STARTUP_READY_MARKER = '[e2e-startup-ready]';
 const METRO_READY_MARKER = 'Dev server ready';
@@ -322,7 +323,10 @@ export class StartupSupervisor {
             }
             this.abort(
               new Error(
-                `Timed out after ${timeout}ms waiting for worker startup readiness (${source}; ${this.progress('worker')}).`,
+                formatAndroidWorkerTimeoutHint(
+                  source,
+                  `Timed out after ${timeout}ms waiting for worker startup readiness (${source}; ${this.progress('worker')}).`,
+                ),
               ),
             );
           }, timeout),

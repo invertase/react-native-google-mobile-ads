@@ -24,6 +24,10 @@ import {
 } from '../src/hostPreflight.ts';
 import { iosAppBundleResolution, iosAppPath } from '../src/formats.ts';
 import {
+  annotateAndroidSessionLogLine,
+  prepareAndroidSessionInstall,
+} from '../src/androidSessionDiagnostics.ts';
+import {
   formatIosBootDiagnosticLine,
   logIosBootDiagnostics,
   recoverIosSessionCreateHang,
@@ -175,6 +179,16 @@ export async function runWdioOwned(
       probe: options.probeMetroPackager,
     });
     let sessionHangWatchdog: { stop: () => void } | undefined;
+    const androidSessionAnnotateState: {
+      installFailedAtMs?: number;
+      uia2StartAtMs?: number;
+      reinstallStartedAtMs?: number;
+    } = { reinstallStartedAtMs: Date.now() };
+    if (target === 'android') {
+      // Parent + child both see pre-uninstall evidence before WDIO POST /session.
+      // WDIO onPrepare repeats the same uninstall (idempotent) inside the child log.
+      prepareAndroidSessionInstall(exactTarget);
+    }
     if (target === 'ios') {
       // Parent stdout (CI job log) + same shape as WDIO child `[e2e-ios-boot]` lines.
       logIosBootDiagnostics(exactTarget, {
@@ -214,6 +228,10 @@ export async function runWdioOwned(
     owned.push(wdio);
     wdio.onLine(line => {
       startup.recordLine(source, line);
+      if (target === 'android') {
+        // Structured lines land on parent stdout; child log already has raw Appium.
+        annotateAndroidSessionLogLine(line, { state: androidSessionAnnotateState });
+      }
       if (
         sessionHangWatchdog &&
         /(?:WebDriver|Appium) session (?:created|started)|\bsession created successfully\b|https?:\/\/\S+\/session\/[^/\s]+(?:\/|\s|$)/i.test(
