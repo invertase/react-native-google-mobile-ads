@@ -7,11 +7,13 @@ import {
   decideSessionCreateHangAction,
   findSimulatorDeviceInListJson,
   formatIosBootDiagnosticLine,
+  formatIosIsHeadlessCapResolveLine,
   formatSessionCreateHangAbortError,
   IOS_SESSION_CREATE_HANG_HINT,
   isXcrunTimedOutError,
   recoverIosSessionCreateHang,
   resolveIosIsHeadless,
+  resolveIosIsHeadlessResolution,
   sessionCreateHangEvidenceFromProbeLine,
   startIosSessionCreateHangWatchdog,
   summarizeBootstatusProbe,
@@ -129,6 +131,25 @@ describe('iosBootDiagnostics', () => {
     assert.equal(resolveIosIsHeadless({}), false);
     assert.equal(resolveIosIsHeadless({ CI: 'true', RNGMA_IOS_HEADLESS: 'false' }), false);
     assert.equal(resolveIosIsHeadless({ RNGMA_IOS_HEADLESS: 'true' }), true);
+    assert.deepEqual(resolveIosIsHeadlessResolution({ CI: 'true' }), {
+      isHeadless: true,
+      source: 'CI',
+    });
+    assert.deepEqual(resolveIosIsHeadlessResolution({ RNGMA_IOS_HEADLESS: '0' }), {
+      isHeadless: false,
+      source: 'RNGMA_IOS_HEADLESS',
+    });
+    assert.deepEqual(resolveIosIsHeadlessResolution({}), {
+      isHeadless: false,
+      source: 'default',
+    });
+    assert.match(
+      formatIosIsHeadlessCapResolveLine(
+        { isHeadless: true, source: 'CI' },
+        () => new Date('2026-10-14T18:00:00.000Z'),
+      ),
+      /phase=cap-resolve.*appium:isHeadless=true.*source=CI/,
+    );
   });
 
   test('collect labels unset simulatorStartupTimeout with XCUITest default', () => {
@@ -266,6 +287,29 @@ describe('iosBootDiagnostics', () => {
     }
   });
 
+  test('decideSessionCreateHangAction never recovers after session id exists', () => {
+    assert.deepEqual(
+      decideSessionCreateHangAction({
+        hangTick: 2,
+        consecutiveXcrunEtimedout: 2,
+        simState: 'Booted',
+        recoveredOnce: false,
+        postSessionInFlight: false,
+      }),
+      { action: 'continue' },
+    );
+    assert.deepEqual(
+      decideSessionCreateHangAction({
+        hangTick: 3,
+        consecutiveXcrunEtimedout: 5,
+        simState: '(missing)',
+        recoveredOnce: true,
+        postSessionInFlight: false,
+      }),
+      { action: 'continue' },
+    );
+  });
+
   test('decideSessionCreateHangAction skips WDA recover while Shutdown/Booting', () => {
     const skipShutdown = decideSessionCreateHangAction({
       hangTick: 2,
@@ -365,6 +409,54 @@ describe('iosBootDiagnostics', () => {
     assert.equal(aborts.length, 1);
     assert.match(aborts[0]!.message, /\[e2e-ios-boot\] session-create abort/);
     assert.ok(lines.some(line => /phase=serial:session-create:hang-abort\b/.test(line)));
+  });
+
+  test('hang watchdog markSessionCreated disarms recover before mid-suite ETIMEDOUT', () => {
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const recovers: string[] = [];
+    const aborts: Error[] = [];
+    const watchdog = startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'wdio:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      recoverAfterTicks: 2,
+      abortAfterTicks: 3,
+      write: line => lines.push(line),
+      execCapture: () => ({
+        stdout: '',
+        stderr: '',
+        status: null,
+        timedOut: true,
+        error: 'spawnSync ETIMEDOUT',
+      }),
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      now: () => new Date('2026-10-14T18:30:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onRecover: (udid, reason) => {
+        recovers.push(`${udid}:${reason}`);
+      },
+      onAbort: error => {
+        aborts.push(error);
+      },
+    });
+    callbacks[0]!(); // tick 1 — continue
+    watchdog.markSessionCreated('session-abc');
+    assert.ok(lines.some(line => /phase=wdio:session-create:complete/.test(line)));
+    assert.ok(lines.some(line => /sessionId=session-abc/.test(line)));
+    const count = lines.length;
+    callbacks[0]!(); // would have been recover — must stay disarmed
+    callbacks[0]!(); // would have been abort
+    assert.equal(lines.length, count);
+    assert.equal(recovers.length, 0);
+    assert.equal(aborts.length, 0);
   });
 
   test('hang watchdog skips WDA recover while Shutdown and notes boot monitor on abort', () => {

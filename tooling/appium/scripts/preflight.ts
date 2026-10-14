@@ -178,10 +178,13 @@ export async function runWdioOwned(
       listen: async () => true,
       probe: options.probeMetroPackager,
     });
-    let sessionHangWatchdog: { stop: () => void } | undefined;
+    let sessionHangWatchdog:
+      | { stop: () => void; markSessionCreated: (sessionId?: string) => void }
+      | undefined;
     const androidSessionAnnotateState: {
       installFailedAtMs?: number;
       uia2StartAtMs?: number;
+      sessionCreatedAtMs?: number;
       reinstallStartedAtMs?: number;
     } = { reinstallStartedAtMs: Date.now() };
     if (target === 'android') {
@@ -238,7 +241,8 @@ export async function runWdioOwned(
           line,
         )
       ) {
-        sessionHangWatchdog.stop();
+        // Prefer markSessionCreated so recover/abort stay gated off after session id.
+        sessionHangWatchdog.markSessionCreated();
         sessionHangWatchdog = undefined;
       }
     });

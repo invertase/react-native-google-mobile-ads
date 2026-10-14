@@ -126,7 +126,13 @@ test('wdio.ios.conf hang watchdog onAbort prints session-create abort hard marke
   // Source holds a regex literal: /\[e2e-ios-boot\] session-create abort/
   assert.match(wdioSource, /session-create abort/);
   assert.match(wdioSource, /appium:isHeadless/);
-  assert.match(wdioSource, /resolveIosIsHeadless/);
+  assert.match(wdioSource, /resolveIosIsHeadlessResolution/);
+  assert.match(wdioSource, /formatIosIsHeadlessCapResolveLine/);
+  // Stop on session create (before), not only afterSession — mid-suite ETIMEDOUT
+  // must not WDA-terminate an already-created session.
+  assert.match(wdioSource, /async before\(/);
+  assert.match(wdioSource, /markSessionCreated/);
+  assert.match(wdioSource, /async afterSession\(/);
 });
 
 test('named prebuild producer and XCUITest consumer use the shared DerivedData path', () => {

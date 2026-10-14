@@ -9,9 +9,10 @@ import {
   WDA_LAUNCH_TIMEOUT_MS,
 } from './src/hostPreflight.ts';
 import {
+  formatIosIsHeadlessCapResolveLine,
   formatSessionCreateHangAbortError,
   logIosBootDiagnostics,
-  resolveIosIsHeadless,
+  resolveIosIsHeadlessResolution,
   startIosSessionCreateHangWatchdog,
   type IosSessionCreateHangWatchdog,
 } from './src/iosBootDiagnostics.ts';
@@ -20,7 +21,10 @@ import { config as shared } from './wdio.shared.conf.ts';
 
 const iosApp = iosAppPath();
 const runtime = runtimeResources('ios');
-const iosIsHeadless = resolveIosIsHeadless();
+const iosIsHeadlessResolution = resolveIosIsHeadlessResolution();
+const iosIsHeadless = iosIsHeadlessResolution.isHeadless;
+// One-shot at cap resolve so CI logs show the effective headless decision.
+console.log(formatIosIsHeadlessCapResolveLine(iosIsHeadlessResolution));
 let sessionCreateHangWatchdog: IosSessionCreateHangWatchdog | undefined;
 
 /**
@@ -36,6 +40,18 @@ function abortWdioSessionCreateHang(error: Error): never {
       : formatSessionCreateHangAbortError(error.message);
   console.error(marker.message);
   process.exit(1);
+}
+
+function disarmSessionCreateHangWatchdog(sessionId?: string): void {
+  if (!sessionCreateHangWatchdog) {
+    return;
+  }
+  if (sessionId != null) {
+    sessionCreateHangWatchdog.markSessionCreated(sessionId);
+  } else {
+    sessionCreateHangWatchdog.stop();
+  }
+  sessionCreateHangWatchdog = undefined;
 }
 
 /**
@@ -108,8 +124,13 @@ export const config: Options.Testrunner = {
       onAbort: abortWdioSessionCreateHang,
     });
   },
+  async before(_capabilities, _specs, browser) {
+    // Session id exists — disarm before mid-suite xcrun ETIMEDOUT can WDA-terminate.
+    const sessionId =
+      browser && typeof browser.sessionId === 'string' ? browser.sessionId : undefined;
+    disarmSessionCreateHangWatchdog(sessionId ?? '(present)');
+  },
   async afterSession() {
-    sessionCreateHangWatchdog?.stop();
-    sessionCreateHangWatchdog = undefined;
+    disarmSessionCreateHangWatchdog();
   },
 };
