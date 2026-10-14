@@ -122,13 +122,26 @@ describe('androidSessionDiagnostics', () => {
       now: () => new Date('2026-10-14T12:00:02.000Z'),
       state,
     });
-    assert.ok(lines.some(line => /uia2-start/.test(line)));
+    assert.equal(lines.filter(line => /uia2-start/.test(line)).length, 1);
+    // Sticky: further UiAutomator2 chatter must not re-emit after the first start.
+    annotateAndroidSessionLogLine('UiAutomator2 server still starting…', {
+      write: line => lines.push(line),
+      now: () => new Date('2026-10-14T12:00:02.500Z'),
+      state,
+    });
+    assert.equal(lines.filter(line => /uia2-start/.test(line)).length, 1);
     annotateAndroidSessionLogLine('Appium session created successfully', {
       write: line => lines.push(line),
       now: () => new Date('2026-10-14T12:00:03.000Z'),
       state,
     });
-    assert.ok(lines.some(line => /session-created/.test(line)));
+    assert.equal(lines.filter(line => /session-created/.test(line)).length, 1);
+    annotateAndroidSessionLogLine('session created successfully again', {
+      write: line => lines.push(line),
+      now: () => new Date('2026-10-14T12:00:03.500Z'),
+      state,
+    });
+    assert.equal(lines.filter(line => /session-created/.test(line)).length, 1);
   });
 
   test('formatAndroidWorkerTimeoutHint only annotates Android sources', () => {

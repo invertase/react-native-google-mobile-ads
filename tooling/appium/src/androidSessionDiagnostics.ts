@@ -214,8 +214,13 @@ export function annotateAndroidSessionLogLine(
   options?: {
     write?: (line: string) => void;
     now?: () => Date;
-    /** Track first INSTALL_FAILED / uia2 timestamps for elapsed. */
-    state?: { installFailedAtMs?: number; uia2StartAtMs?: number; reinstallStartedAtMs?: number };
+    /** Track first INSTALL_FAILED / uia2 / session-created timestamps for elapsed + dedupe. */
+    state?: {
+      installFailedAtMs?: number;
+      uia2StartAtMs?: number;
+      sessionCreatedAtMs?: number;
+      reinstallStartedAtMs?: number;
+    };
   },
 ): string | undefined {
   const write = options?.write ?? ((text: string) => console.log(text));
@@ -242,7 +247,12 @@ export function annotateAndroidSessionLogLine(
     return annotated;
   }
   if (ANDROID_UIA2_START_PATTERN.test(line)) {
-    if (state && state.uia2StartAtMs == null) {
+    // Emit once per session-create: Appium repeats UiAutomator2 start chatter
+    // for tens of thousands of lines after the first hit (CI noise).
+    if (state?.uia2StartAtMs != null || state?.sessionCreatedAtMs != null) {
+      return undefined;
+    }
+    if (state) {
       state.uia2StartAtMs = now().getTime();
     }
     const annotated = formatAndroidSessionDiagnosticLine(
@@ -263,6 +273,12 @@ export function annotateAndroidSessionLogLine(
       line,
     )
   ) {
+    if (state?.sessionCreatedAtMs != null) {
+      return undefined;
+    }
+    if (state) {
+      state.sessionCreatedAtMs = now().getTime();
+    }
     const annotated = formatAndroidSessionDiagnosticLine(
       {
         phase: 'session-create:session-created',

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import {
   NAVIGATION_SMOKE_CASES,
   NATIVE_RNGMA_TESTING_PROBE,
@@ -17,6 +18,7 @@ import {
   formatRepresentativeRequestTimeoutMsg,
   formatRequestOutcomeAttempt,
   formatRequestOutcomeTimeout,
+  googleTestAdUnitForFormat,
   hasNonzeroRectangle,
   isRepresentativeRequestWaitTimeout,
   nativeFingerprintFromAndroidLog,
@@ -423,9 +425,98 @@ test('formats stable machine-readable attempt output', () => {
       },
       backoffMs: 250,
       elapsedMs: 1400,
+      adUnitId: 'ca-app-pub-3940256099942544/2247696110',
+      errorCode: 'internal-error',
     }),
-    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","configuration":"android-classic","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"},"backoffMs":250,"elapsedMs":1400}',
+    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","configuration":"android-classic","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"},"backoffMs":250,"elapsedMs":1400,"adUnitId":"ca-app-pub-3940256099942544/2247696110","errorCode":"internal-error"}',
   );
+});
+
+function platformTestIdFromSource(
+  source: string,
+  platform: 'android' | 'ios',
+  key: string,
+): string {
+  const block = new RegExp(`${platform}:\\s*\\{([\\s\\S]*?)\\n\\s*\\},`).exec(source);
+  assert.ok(block?.[1], `expected Platform.select ${platform} block in TestIds.ts`);
+  const match = new RegExp(`\\b${key}:\\s*'([^']+)'`).exec(block[1]);
+  assert.ok(match?.[1], `expected TestIds.${key} for ${platform}`);
+  return match[1];
+}
+
+function sharedTestIdFromSource(source: string, key: string): string {
+  const match = new RegExp(`\\b${key}:\\s*'([^']+)'`).exec(source);
+  assert.ok(match?.[1], `expected TestIds.${key}`);
+  return match[1];
+}
+
+test('googleTestAdUnitForFormat maps banner smoke ids to TestIds', () => {
+  const testIdsSource = readFileSync(
+    fileURLToPath(new URL('../../../packages/core/src/TestIds.ts', import.meta.url)),
+    'utf8',
+  );
+  const expected = {
+    banner: {
+      android: platformTestIdFromSource(testIdsSource, 'android', 'BANNER'),
+      ios: platformTestIdFromSource(testIdsSource, 'ios', 'BANNER'),
+    },
+    adaptive: {
+      android: platformTestIdFromSource(testIdsSource, 'android', 'ADAPTIVE_BANNER'),
+      ios: platformTestIdFromSource(testIdsSource, 'ios', 'ADAPTIVE_BANNER'),
+    },
+    gamBanner: sharedTestIdFromSource(testIdsSource, 'GAM_BANNER'),
+  };
+
+  assert.equal(SMOKE_BANNER_VARIANT, AppiumTestIds.bannerVariant('Banner'));
+  assert.equal(
+    googleTestAdUnitForFormat(SMOKE_BANNER_VARIANT, 'android'),
+    expected.banner.android,
+  );
+  assert.equal(googleTestAdUnitForFormat(SMOKE_BANNER_VARIANT, 'ios'), expected.banner.ios);
+  assert.equal(
+    googleTestAdUnitForFormat(AppiumTestIds.format.collapsibleBanner, 'android'),
+    expected.adaptive.android,
+  );
+  assert.equal(
+    googleTestAdUnitForFormat(AppiumTestIds.format.collapsibleBanner, 'ios'),
+    expected.adaptive.ios,
+  );
+  assert.equal(
+    googleTestAdUnitForFormat(SMOKE_GAM_BANNER_VARIANT, 'android'),
+    expected.gamBanner,
+  );
+  assert.equal(googleTestAdUnitForFormat(SMOKE_GAM_BANNER_VARIANT, 'ios'), expected.gamBanner);
+});
+
+test('exhausted no-fill attempts name ad unit, error code, and backend', async () => {
+  const lines: string[] = [];
+  await assert.rejects(
+    runRepresentativeRequestOutcomeContract({
+      format: AppiumTestIds.format.rewarded,
+      platform: 'android',
+      path: 'fullscreen',
+      configuration: 'android-classic',
+      runtime: runtimeRecorder(
+        [],
+        Array.from({ length: REPRESENTATIVE_REQUEST_MAX_ATTEMPTS }, (_, index) =>
+          observedRequest(index + 1, 'no-fill'),
+        ),
+      ),
+      sleep: async () => {},
+      emit: line => lines.push(line),
+    }),
+    error => {
+      const message = String(error);
+      return (
+        message.includes('android-classic') &&
+        message.includes('"adUnitId":"ca-app-pub-3940256099942544/5224354917"') &&
+        message.includes('"errorCode":"no-fill"')
+      );
+    },
+  );
+  assert.ok(lines.every(line => line.includes('"adUnitId":"ca-app-pub-3940256099942544/5224354917"')));
+  assert.ok(lines.every(line => line.includes('"errorCode":"no-fill"')));
+  assert.ok(lines.every(line => line.includes('"configuration":"android-classic"')));
 });
 
 test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnostics', async () => {
@@ -463,6 +554,7 @@ test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnost
         message.includes('"classification":"no-fill"') &&
         message.includes('"classification":"other-error"') &&
         message.includes('"status":"not-applicable"') &&
+        message.includes('"adUnitId":"ca-app-pub-3940256099942544/2934735716"') &&
         message.includes('"backoffMs":0') &&
         message.includes('"backoffMs":2000') &&
         message.includes('"elapsedMs":')
@@ -473,6 +565,12 @@ test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnost
   assert.equal(lines.length, REPRESENTATIVE_REQUEST_MAX_ATTEMPTS);
   assert.ok(lines.every(line => line.startsWith('[request-outcome-attempt] {')));
   assert.ok(lines.every(line => line.includes('"configuration":"ios"')));
+  assert.ok(
+    lines.every(line =>
+      line.includes('"adUnitId":"ca-app-pub-3940256099942544/2934735716"'),
+    ),
+  );
+  assert.ok(lines.every(line => !line.includes('"adUnitId":null')));
   assert.ok(lines[0]!.includes('"backoffMs":0'));
   assert.ok(lines[1]!.includes('"backoffMs":250'));
   assert.deepEqual(delays, [250, 500, 1000, 2000, 2000, 2000, 2000, 2000, 2000]);

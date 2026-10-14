@@ -42,8 +42,10 @@ import {
 } from '../../src/requestOutcomes.ts';
 import {
   assertEarnedRewardLifecycleText,
+  lifecycleReportsEarnedReward,
   manualImpressionCanaryFromText,
   paidEventCanaryFromLifecycle,
+  parseRewardedLifecycleFields,
 } from '../../src/rewardedOutcomes.ts';
 import {
   JS_LOAD_FAILURE_UI_SNIPPETS,
@@ -1504,7 +1506,7 @@ async function tapAndroidShellPoint(x: number, y: number): Promise<void> {
 }
 
 let cachedAndroidWindowFocusDump = { at: 0, value: '' };
-/** When true, skip top-right blind taps unless Close/end-card is visible (Rewarded). */
+/** When true, skip top-right blind taps until earned/end-card (Rewarded). */
 let androidSkipBlindCloseFallback = false;
 /** When true, never KEYCODE_BACK to finish AdActivity (Multi-Format Hook autoload). */
 let androidSkipKeyBackDismiss = false;
@@ -1980,16 +1982,17 @@ async function isAndroidInterstitialCloseChromeVisible(): Promise<boolean> {
   return false;
 }
 
-/** Rewarded end-card / grant copy — safe signal that Close chrome may be actionable. */
+/**
+ * Rewarded end-card / grant copy — safe signal that Close chrome may be actionable.
+ * Do NOT include mid-roll chrome like "Advertisement" (fires before earn and causes
+ * close-before-earn → paid without earned).
+ */
 async function isAndroidRewardedEndCardVisible(): Promise<boolean> {
   for (const needle of [
     'Reward granted',
-    'test rewarded',
-    'rewarded test ad',
-    'Nice job',
     'You earned',
     'Video has finished',
-    'Advertisement',
+    'Nice job',
   ]) {
     const el = await $(`android=new UiSelector().textContains("${needle}")`);
     if (await el.isDisplayed().catch(() => false)) {
@@ -2009,10 +2012,13 @@ function isAndroidRewardedFormat(formatId: string): boolean {
 }
 
 /**
- * Wait until rewarded Close is present or an end-card marker appears.
+ * Wait until the rewarded ad has granted a reward (or a true end-card appears).
  * Blind top-right taps during the creative open Play Store on nextgen Play AVDs.
- * After the mandatory watch (reward / long AdActivity), allow guarded dismiss even when
- * WebView creatives hide Close from UiAutomator (run-06: AdActivity stuck, no chrome).
+ *
+ * CI tip d08310c nextgen: `adActivityElapsed` at ~25s dismissed before earn →
+ * Hook lifecycle `impression=true; paid=1; earned=false`. PAID/ILRD is independent
+ * of EARNED_REWARD, so dismiss must wait for `earned=true` (or end-card grant copy).
+ * Close chrome alone is never enough — early X skips the reward.
  */
 async function waitForAndroidRewardedDismissReady(formatId: string): Promise<void> {
   const started = Date.now();
@@ -2020,23 +2026,36 @@ async function waitForAndroidRewardedDismissReady(formatId: string): Promise<voi
     async () => {
       await dismissAndroidImmersiveModeEducationIfPresent();
       await recoverAndroidForeignAppIfPresent('rewardedDismissReady');
-      if (await isAndroidRewardedEndCardVisible()) {
-        return true;
-      }
-      if (await isAndroidInterstitialCloseChromeVisible()) {
-        // Even when Close exists early, give a short mandatory-watch window.
-        return Date.now() - started >= 8000;
-      }
       const phase = await safeShowLifecycleText(formatId);
-      // Reward earned / lifecycle reward text ⇒ Close is usually actionable.
-      if (/reward/i.test(phase) && Date.now() - started >= 10000) {
-        logAndroidHostTrace('rewardedDismissReady.lifecycle', { phase });
+      const parsed = parseRewardedLifecycleFields(phase);
+      if (lifecycleReportsEarnedReward(phase)) {
+        logAndroidHostTrace('rewardedDismissReady.earned', {
+          formatId,
+          ms: Date.now() - started,
+          phase,
+          parsed,
+        });
         return true;
       }
-      // Long AdActivity with no discoverable chrome — still better than Play Store taps mid-roll.
-      if (Date.now() - started >= 25000 && (await isAndroidAdActivityForeground())) {
-        logAndroidHostTrace('rewardedDismissReady.adActivityElapsed', {
+      if (await isAndroidRewardedEndCardVisible()) {
+        logAndroidHostTrace('rewardedDismissReady.endCard', {
+          formatId,
           ms: Date.now() - started,
+          phase,
+          parsed,
+        });
+        return true;
+      }
+      // Last-resort: do not hang forever when the SDK never grants. Proof will fail
+      // with conclusive earned/paid/closed order logs from the gallery + App.tsx.
+      if (Date.now() - started >= 90000) {
+        logAndroidHostTrace('rewardedDismissReady.timeoutWithoutEarn', {
+          formatId,
+          ms: Date.now() - started,
+          phase,
+          parsed,
+          closeVisible: await isAndroidInterstitialCloseChromeVisible(),
+          adActivity: await isAndroidAdActivityForeground(),
         });
         return true;
       }
@@ -2045,7 +2064,7 @@ async function waitForAndroidRewardedDismissReady(formatId: string): Promise<voi
     {
       timeout: 120000,
       interval: 750,
-      timeoutMsg: 'Android rewarded dismiss never became actionable (Close / end card)',
+      timeoutMsg: 'Android rewarded dismiss never became actionable (earned=true / end card)',
     },
   );
 }
@@ -2055,9 +2074,10 @@ async function withAndroidRewardedDismissGuard<T>(
   fn: () => Promise<T>,
 ): Promise<T> {
   // Suppress blind top-right taps only during the mandatory-watch wait. Once
-  // dismiss is actionable (Close / end-card / elapsed AdActivity), blind
-  // fallback must be allowed again — WebView creatives often hide Close from
-  // UiAutomator (classic slot-2: ready via adActivityElapsed, then 90s no-op).
+  // dismiss is actionable (earned=true / end-card grant copy, or the 90s
+  // last-resort timeout), blind fallback must be allowed again — WebView
+  // creatives often hide Close from UiAutomator. Close chrome or AdActivity
+  // elapsed alone is never enough (early X skips the reward).
   androidSkipBlindCloseFallback = true;
   try {
     await waitForAndroidRewardedDismissReady(formatId);
@@ -2109,8 +2129,8 @@ async function tapAndroidInterstitialCloseAttempt(): Promise<void> {
     return;
   }
   // Blind top-right fallback — required for interstitial / app-open when Close
-  // chrome is late. Rewarded sets androidSkipBlindCloseFallback until Close /
-  // end-card is visible so we do not open Play Store mid-creative.
+  // chrome is late. Rewarded sets androidSkipBlindCloseFallback until
+  // earned=true / end-card so we do not open Play Store mid-creative.
   if (
     androidSkipBlindCloseFallback &&
     !(await isAndroidInterstitialCloseChromeVisible()) &&
@@ -2899,27 +2919,53 @@ function isIosRewardedFormat(formatId: string): boolean {
   );
 }
 
-/** Wait until rewarded Close is enabled or an end-card marker appears. */
-async function waitForIosRewardedDismissReady(): Promise<void> {
+/** Wait until rewarded earn/end-card — Close alone can skip the grant. */
+async function waitForIosRewardedDismissReady(formatId: string): Promise<void> {
   const started = Date.now();
   await driver.waitUntil(
     async () => {
-      if (await findDisplayedIosElementByNames(IOS_REWARDED_END_CARD_MARKERS)) {
+      const phase = await safeShowLifecycleText(formatId);
+      if (lifecycleReportsEarnedReward(phase)) {
+        console.log(
+          `[ios-rewarded-dismiss] ${JSON.stringify({
+            reason: 'earned',
+            format: formatId,
+            ms: Date.now() - started,
+            phase,
+          })}`,
+        );
         return true;
       }
-      const el = await findDisplayedIosElementByNames(IOS_FULLSCREEN_CLOSE_NAMES);
-      if (!el) {
-        return false;
+      if (await findDisplayedIosElementByNames(IOS_REWARDED_END_CARD_MARKERS)) {
+        console.log(
+          `[ios-rewarded-dismiss] ${JSON.stringify({
+            reason: 'endCard',
+            format: formatId,
+            ms: Date.now() - started,
+            phase,
+          })}`,
+        );
+        return true;
       }
-      const enabled = await el.isEnabled().catch(() => true);
-      // Even when Close reports enabled during countdown, give the creative a
-      // short mandatory-watch window before the first dismiss attempt.
-      return enabled && Date.now() - started >= 10000;
+      if (Date.now() - started >= 90000) {
+        console.log(
+          `[ios-rewarded-dismiss] ${JSON.stringify({
+            reason: 'timeoutWithoutEarn',
+            format: formatId,
+            ms: Date.now() - started,
+            phase,
+            parsed: parseRewardedLifecycleFields(phase),
+          })}`,
+        );
+        return true;
+      }
+      // Enabled Close before earn still skips the grant — keep waiting.
+      return false;
     },
     {
       timeout: 120000,
       interval: 750,
-      timeoutMsg: 'iOS rewarded dismiss never became actionable (enabled Close / end card)',
+      timeoutMsg: 'iOS rewarded dismiss never became actionable (earned=true / end card)',
     },
   );
 }
@@ -3158,7 +3204,7 @@ async function runIosFullscreenShowCloseLifecycle(formatId: string): Promise<voi
     );
   }
   if (isIosRewardedFormat(formatId)) {
-    await waitForIosRewardedDismissReady();
+    await waitForIosRewardedDismissReady(formatId);
   }
   await dismissFullscreenAdWithoutCreativeTap();
   await driver.waitUntil(
@@ -3227,7 +3273,7 @@ async function runIosHookShowCloseLifecycle(formatId: string): Promise<void> {
     },
   );
   if (isRewardedHook) {
-    await waitForIosRewardedDismissReady();
+    await waitForIosRewardedDismissReady(formatId);
   }
   if (isAppOpenHook) {
     // Prefer feed / header dismiss — do not get stuck on ghost Close Advertisement
@@ -3793,6 +3839,15 @@ async function assertHookShowCloseLifecycle(formatId: string): Promise<void> {
 async function assertEarnedRewardAndPaidCanary(formatId: string): Promise<void> {
   const platform = isAndroid() ? 'android' : 'ios';
   const lifecycleText = await safeShowLifecycleText(formatId);
+  const parsed = parseRewardedLifecycleFields(lifecycleText);
+  console.log(
+    `[earned-reward-order] ${JSON.stringify({
+      format: formatId,
+      platform,
+      parsed,
+      lifecycle: lifecycleText,
+    })}`,
+  );
   assertEarnedRewardLifecycleText(formatId, lifecycleText);
   console.log(
     `[earned-reward-proof] ${JSON.stringify({

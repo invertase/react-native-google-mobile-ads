@@ -1,3 +1,5 @@
+import { AppiumTestIds } from './testIds.ts';
+
 export const REQUEST_OUTCOME_LOADED = 'Request outcome: loaded';
 export const REQUEST_OUTCOME_NO_FILL = 'Request outcome: no-fill';
 export const REQUEST_OUTCOME_ERROR = 'Request error:';
@@ -36,11 +38,128 @@ export type RequestOutcomeAttempt = {
   backoffMs: number;
   /** Wall time from collection start to this attempt's emit (includes backoff + observe). */
   elapsedMs: number;
+  /** Official Google demo ad unit for the format when known (null when unmapped). */
+  adUnitId: string | null;
+  /**
+   * Structured load/show failure token when known (`no-fill`, `internal-error`, …).
+   * Null for accepted `loaded` attempts.
+   */
+  errorCode: string | null;
 };
+
+/**
+ * Official Google demo units wired by RNGoogleMobileAdsExample for representative
+ * formats. Kept here so exhausted attempt logs name the unit without parsing UI.
+ */
+const GOOGLE_TEST_AD_UNITS: Readonly<
+  Record<string, Readonly<{ android: string; ios: string }>>
+> = {
+  // Representative Banner smoke size (`Banner`) → TestIds.BANNER.
+  [AppiumTestIds.bannerVariant('Banner')]: {
+    android: 'ca-app-pub-3940256099942544/6300978111',
+    ios: 'ca-app-pub-3940256099942544/2934735716',
+  },
+  // Collapsible gallery screen → TestIds.ADAPTIVE_BANNER.
+  [AppiumTestIds.format.collapsibleBanner]: {
+    android: 'ca-app-pub-3940256099942544/9214589741',
+    ios: 'ca-app-pub-3940256099942544/2435281174',
+  },
+  // Representative GAM banner smoke size → TestIds.GAM_BANNER.
+  [AppiumTestIds.gamBannerVariant('AnchoredAdaptiveBanner')]: {
+    android: '/21775744923/example/fixed-size-banner',
+    ios: '/21775744923/example/fixed-size-banner',
+  },
+  [AppiumTestIds.format.rewarded]: {
+    android: 'ca-app-pub-3940256099942544/5224354917',
+    ios: 'ca-app-pub-3940256099942544/1712485313',
+  },
+  [AppiumTestIds.format.rewardedHook]: {
+    android: 'ca-app-pub-3940256099942544/5224354917',
+    ios: 'ca-app-pub-3940256099942544/1712485313',
+  },
+  [AppiumTestIds.format.rewardedInterstitial]: {
+    android: 'ca-app-pub-3940256099942544/5354046379',
+    ios: 'ca-app-pub-3940256099942544/6978759866',
+  },
+  [AppiumTestIds.format.rewardedInterstitialHook]: {
+    android: 'ca-app-pub-3940256099942544/5354046379',
+    ios: 'ca-app-pub-3940256099942544/6978759866',
+  },
+  [AppiumTestIds.format.interstitial]: {
+    android: 'ca-app-pub-3940256099942544/1033173712',
+    ios: 'ca-app-pub-3940256099942544/4411468910',
+  },
+  [AppiumTestIds.format.interstitialHook]: {
+    android: 'ca-app-pub-3940256099942544/1033173712',
+    ios: 'ca-app-pub-3940256099942544/4411468910',
+  },
+  [AppiumTestIds.format.appOpen]: {
+    android: 'ca-app-pub-3940256099942544/9257395921',
+    ios: 'ca-app-pub-3940256099942544/5575463023',
+  },
+  [AppiumTestIds.format.appOpenHook]: {
+    android: 'ca-app-pub-3940256099942544/9257395921',
+    ios: 'ca-app-pub-3940256099942544/5575463023',
+  },
+  [AppiumTestIds.format.native]: {
+    android: 'ca-app-pub-3940256099942544/2247696110',
+    ios: 'ca-app-pub-3940256099942544/3986624511',
+  },
+  [AppiumTestIds.format.gamInterstitial]: {
+    android: '/21775744923/example/interstitial',
+    ios: '/21775744923/example/interstitial',
+  },
+};
+
+/** Resolve the example gallery Google demo ad unit for a format id, when known. */
+export function googleTestAdUnitForFormat(
+  formatId: string,
+  platform: 'android' | 'ios',
+): string | null {
+  const entry = GOOGLE_TEST_AD_UNITS[formatId];
+  if (!entry) {
+    return null;
+  }
+  return entry[platform];
+}
+
+/**
+ * Derive a stable error token for attempt logs. Prefer structured classification;
+ * fall back to `Request error: <reason>:` prose from the gallery marker.
+ */
+export function errorCodeFromRequestAttempt(
+  classification: RequestOutcomeClassification,
+  detail: string,
+): string | null {
+  if (classification === 'loaded') {
+    return null;
+  }
+  if (classification === 'no-fill') {
+    return 'no-fill';
+  }
+  if (classification === 'internal-error') {
+    return 'internal-error';
+  }
+  if (classification === 'pending-timeout') {
+    return 'pending-timeout';
+  }
+  const match = /Request error:\s*([^:]+):/i.exec(detail);
+  if (match?.[1]) {
+    return match[1].trim();
+  }
+  return classification;
+}
 
 type ObservedRequestOutcome = Omit<
   RequestOutcomeAttempt,
-  'format' | 'platform' | 'configuration' | 'attempt' | 'backoffMs' | 'elapsedMs'
+  | 'format'
+  | 'platform'
+  | 'configuration'
+  | 'attempt'
+  | 'backoffMs'
+  | 'elapsedMs'
+  | 'adUnitId'
+  | 'errorCode'
 >;
 
 export type RepresentativeRequestPath =
@@ -481,6 +600,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
     }
     requestIds.add(observed.requestId);
     previousRequestId = observed.requestId;
+    const adUnitId = googleTestAdUnitForFormat(format, platform);
     const result: RequestOutcomeAttempt = {
       format,
       platform,
@@ -489,6 +609,8 @@ export async function collectRepresentativeRequestOutcomes(options: {
       ...observed,
       backoffMs: delayMs,
       elapsedMs: Math.max(0, now() - startedAt),
+      adUnitId,
+      errorCode: errorCodeFromRequestAttempt(observed.classification, observed.detail),
     };
     attempts.push(result);
     emit(formatRequestOutcomeAttempt(result));
@@ -498,13 +620,24 @@ export async function collectRepresentativeRequestOutcomes(options: {
   }
 
   const diagnostic = attempts.map(
-    ({ attempt, requestId, classification, fingerprint, backoffMs, elapsedMs }) => ({
+    ({
       attempt,
       requestId,
       classification,
       fingerprint,
       backoffMs,
       elapsedMs,
+      adUnitId,
+      errorCode,
+    }) => ({
+      attempt,
+      requestId,
+      classification,
+      fingerprint,
+      backoffMs,
+      elapsedMs,
+      adUnitId,
+      errorCode,
     }),
   );
   throw new Error(

@@ -14,6 +14,26 @@ export function lifecycleReportsEarnedReward(lifecycleText: string): boolean {
   return lifecycleText.includes(EARNED_TRUE_MARKER);
 }
 
+/** Parsed earned / paid / status fields from a gallery lifecycle marker (diagnostics). */
+export function parseRewardedLifecycleFields(lifecycleText: string): {
+  earned: boolean | null;
+  paid: number | 'absent';
+  status: string | null;
+  closed: boolean;
+} {
+  const earnedMatch = /\bearned=(true|false)\b/.exec(lifecycleText);
+  const statusMatch = /\bstatus=([a-z-]+)\b/i.exec(lifecycleText);
+  const paid = paidEventCountFromLifecycle(lifecycleText);
+  return {
+    earned: earnedMatch ? earnedMatch[1] === 'true' : null,
+    paid: paid === undefined ? 'absent' : paid,
+    status: statusMatch?.[1] ?? null,
+    closed:
+      /\bShow lifecycle:\s*closed\b/i.test(lifecycleText) ||
+      /\bstatus=closed\b/i.test(lifecycleText),
+  };
+}
+
 /** Parsed paid-event counter from a lifecycle marker, or undefined when absent. */
 export function paidEventCountFromLifecycle(lifecycleText: string): number | undefined {
   const match = PAID_MARKER_RE.exec(lifecycleText);
@@ -29,8 +49,9 @@ export function paidEventCountFromLifecycle(lifecycleText: string): number | und
  */
 export function assertEarnedRewardLifecycleText(formatId: string, lifecycleText: string): void {
   if (!lifecycleReportsEarnedReward(lifecycleText)) {
+    const parsed = parseRewardedLifecycleFields(lifecycleText);
     throw new Error(
-      `[earned-reward-proof] ${formatId}: missing ${EARNED_TRUE_MARKER} (lifecycle=${JSON.stringify(lifecycleText)})`,
+      `[earned-reward-proof] ${formatId}: missing ${EARNED_TRUE_MARKER} (parsed=${JSON.stringify(parsed)}; lifecycle=${JSON.stringify(lifecycleText)})`,
     );
   }
 }
