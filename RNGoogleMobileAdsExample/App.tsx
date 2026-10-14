@@ -138,6 +138,25 @@ function logGalleryRequest(
   );
 }
 
+/**
+ * Ordered rewarded lifecycle markers for CI — proves PAID/ILRD vs EARNED_REWARD
+ * vs CLOSED ordering when earned-reward-proof fails.
+ */
+function logGalleryRewardedEvent(
+  formatId: string,
+  event: string,
+  extra: Record<string, unknown> = {},
+): void {
+  console.log(
+    `[gallery-rewarded-event] ${JSON.stringify({
+      formatId,
+      event,
+      ts: Date.now(),
+      ...extra,
+    })}`,
+  );
+}
+
 type ShowLifecyclePhase = 'idle' | 'opened' | 'closed';
 type UtilityLifecyclePhase = 'idle' | 'opened' | 'closed';
 
@@ -490,6 +509,11 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
   useEffect(() => {
     const adListener = props.mobileAd.addAdEventsListener(({ type, payload }) => {
       console.log(`${Platform.OS} ${props.type} ad event: ${type}`);
+      if (tracksReward) {
+        logGalleryRewardedEvent(props.formatId, String(type), {
+          path: 'imperative',
+        });
+      }
       if (type === AdEventType.PAID) {
         setPaidCount(current => current + 1);
         console.log(payload);
@@ -499,8 +523,24 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
         console.log(`${Platform.OS} ${props.type} earned reward: ${JSON.stringify(payload)}`);
       }
       if (type === AdEventType.ERROR) {
+        const err = payload as RequestError;
         setRequestState(current => ({ ...current, outcome: requestErrorOutcome(payload) }));
         console.log(`${Platform.OS} ${props.type} error: ${(payload as Error)?.message}`);
+        logGalleryRequest(
+          props.formatId,
+          'onAdFailedToLoad',
+          {
+            requestId: 0,
+            attempt: 0,
+            outcome: requestErrorOutcome(payload),
+          },
+          {
+            adUnitId: props.mobileAd.adUnitId,
+            reason: err?.reason ?? err?.code ?? 'unknown',
+            code: err?.code,
+            path: 'imperative',
+          },
+        );
       }
       if (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) {
         setRequestState(current => ({ ...current, outcome: REQUEST_OUTCOME_LOADED }));
@@ -513,7 +553,7 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
       }
     });
     return () => adListener();
-  }, [props.mobileAd, props.type]);
+  }, [props.formatId, props.mobileAd, props.type, tracksReward]);
 
   return (
     <View style={styles.testSpacing} testID={props.formatId}>
@@ -858,6 +898,17 @@ function RewardedHookFormat() {
   useEffect(() => {
     if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} rewarded hook error: ${error.message}`);
+      logGalleryRequest(
+        AppiumTestIds.format.rewardedHook,
+        'onAdFailedToLoad',
+        { requestId: 0, attempt: 0, outcome: status },
+        {
+          adUnitId: TestIds.REWARDED,
+          reason: error?.reason ?? error?.code ?? status,
+          code: error?.code,
+          path: 'hook',
+        },
+      );
     }
   }, [error, status]);
   useEffect(() => {
@@ -869,7 +920,15 @@ function RewardedHookFormat() {
     console.log(
       `${Platform.OS} rewarded hook state - status/earned/clicked/impression: ${status}/${earnedReward}/${clicked}/${impression}`,
     );
-  }, [clicked, earnedReward, impression, status]);
+    logGalleryRewardedEvent(AppiumTestIds.format.rewardedHook, 'hook-state', {
+      path: 'hook',
+      status,
+      earnedReward,
+      clicked,
+      impression,
+      paid: revenue ? 1 : 0,
+    });
+  }, [clicked, earnedReward, impression, revenue, status]);
 
   return (
     <View style={styles.testSpacing} testID={AppiumTestIds.format.rewardedHook}>
@@ -913,6 +972,17 @@ function RewardedInterstitialHookFormat() {
   useEffect(() => {
     if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} rewarded interstitial hook error: ${error.message}`);
+      logGalleryRequest(
+        AppiumTestIds.format.rewardedInterstitialHook,
+        'onAdFailedToLoad',
+        { requestId: 0, attempt: 0, outcome: status },
+        {
+          adUnitId: TestIds.REWARDED_INTERSTITIAL,
+          reason: error?.reason ?? error?.code ?? status,
+          code: error?.code,
+          path: 'hook',
+        },
+      );
     }
   }, [error, status]);
   useEffect(() => {
@@ -924,7 +994,15 @@ function RewardedInterstitialHookFormat() {
     console.log(
       `${Platform.OS} rewarded interstitial hook state - status/earned/clicked/impression: ${status}/${earnedReward}/${clicked}/${impression}`,
     );
-  }, [clicked, earnedReward, impression, status]);
+    logGalleryRewardedEvent(AppiumTestIds.format.rewardedInterstitialHook, 'hook-state', {
+      path: 'hook',
+      status,
+      earnedReward,
+      clicked,
+      impression,
+      paid: revenue ? 1 : 0,
+    });
+  }, [clicked, earnedReward, impression, revenue, status]);
 
   return (
     <View style={styles.testSpacing} testID={AppiumTestIds.format.rewardedInterstitialHook}>

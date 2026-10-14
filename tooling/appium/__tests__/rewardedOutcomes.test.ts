@@ -10,6 +10,7 @@ import {
   manualImpressionCanaryFromText,
   paidEventCanaryFromLifecycle,
   paidEventCountFromLifecycle,
+  parseRewardedLifecycleFields,
 } from '../src/rewardedOutcomes.ts';
 import { AppiumTestIds } from '../src/testIds.ts';
 
@@ -61,7 +62,18 @@ test('earned=true is blocking while paid absence stays non-blocking', () => {
         AppiumTestIds.format.rewarded,
         'Show lifecycle: closed; paid=1',
       ),
-    /earned-reward-proof/,
+    /earned-reward-proof.*parsed=.*"paid":1/,
+  );
+  assert.deepEqual(
+    parseRewardedLifecycleFields(
+      'Hook lifecycle: status=closed; impression=true; clicked=false; earned=false; paid=1',
+    ),
+    {
+      earned: false,
+      paid: 1,
+      status: 'closed',
+      closed: true,
+    },
   );
 
   assert.deepEqual(
@@ -129,14 +141,24 @@ test('gallery and example wire blocking earned and non-blocking canaries', () =>
 
   assert.match(gallerySource, /assertEarnedRewardLifecycleText/);
   assert.match(gallerySource, /\[earned-reward-proof\]/);
+  assert.match(gallerySource, /\[earned-reward-order\]/);
+  assert.match(gallerySource, /rewardedDismissReady\.earned/);
   assert.match(gallerySource, /\[paid-event-canary\]/);
   assert.match(gallerySource, /\[manual-impression-canary\]/);
   assert.match(gallerySource, /requireEarnedReward/);
   assert.match(gallerySource, /manualImpressionCanary/);
   assert.match(formatsSource, /requireEarnedReward:\s*true/);
   assert.match(formatsSource, /manualImpressionCanary:\s*true/);
+  // Close-before-earn guard: Android end-card needles must not include mid-roll "Advertisement".
+  const androidEndCardFn = gallerySource.slice(
+    gallerySource.indexOf('async function isAndroidRewardedEndCardVisible'),
+    gallerySource.indexOf('function isAndroidRewardedFormat'),
+  );
+  assert.match(androidEndCardFn, /Reward granted/);
+  assert.doesNotMatch(androidEndCardFn, /Advertisement/);
 
   assert.match(exampleSource, /RewardedAdEventType\.EARNED_REWARD/);
+  assert.match(exampleSource, /\[gallery-rewarded-event\]/);
   assert.match(exampleSource, /earned=\$\{/);
   assert.match(exampleSource, /paid=\$\{/);
   assert.match(exampleSource, /Manual impression: recorded=/);
