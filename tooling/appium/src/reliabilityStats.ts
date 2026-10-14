@@ -12,8 +12,11 @@ import type { ReceiptCellKind } from './reliabilityReceipts.ts';
 
 /** Initial acceptance confidence (one-sided). */
 export const QUALIFICATION_CONFIDENCE = 0.95 as const;
-/** α = 1 − confidence for one-sided Clopper–Pearson upper bounds. */
-export const QUALIFICATION_ALPHA = 1 - QUALIFICATION_CONFIDENCE;
+/**
+ * α = 1 − confidence for one-sided Clopper–Pearson upper bounds.
+ * Stored as literal `0.05` (not `1 - 0.95`) so JSON digests stay canonical.
+ */
+export const QUALIFICATION_ALPHA = 0.05 as const;
 /** Maximum non-actionable failure rate under the active policy. */
 export const QUALIFICATION_MAX_FLAKE_RATE = 0.001 as const;
 

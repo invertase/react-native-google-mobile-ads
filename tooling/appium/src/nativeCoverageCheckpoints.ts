@@ -281,9 +281,9 @@ export const DEVICE_NATIVE_COVERAGE_GAPS = [
   {
     id: 'android-baseline-final',
     summary:
-      'E9 closure requires before/after Android reports/jacoco/<backend>/jacocoTestReport/jacocoTestReport.xml from a full multi-shard Appium run with teardown flush.',
+      'Final Android Jacoco baseline still needs before/after reports/jacoco/<backend>/jacocoTestReport/jacocoTestReport.xml from a full multi-shard Appium run with teardown flush.',
     deviceProof:
-      'yarn workspace RNGoogleMobileAdsExample exec rn-coverage android pull && android report; diff against pre-E9 baseline artifact.',
+      'yarn workspace RNGoogleMobileAdsExample exec rn-coverage android pull && android report; diff against the pre-qualification baseline artifact.',
   },
 ] as const;
 

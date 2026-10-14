@@ -41,6 +41,7 @@ describe('statistical qualification policy', () => {
   test('locks zero-failure target and pre-registered CP checkpoints', () => {
     assert.equal(ZERO_FAILURE_OBSERVATION_TARGET, 2995);
     assert.equal(QUALIFICATION_POLICY.confidence, 0.95);
+    assert.equal(QUALIFICATION_POLICY.alpha, 0.05);
     assert.equal(QUALIFICATION_POLICY.maxFlakeRate, 0.001);
     assert.equal(
       Math.ceil(Math.log(0.05) / Math.log(0.999)),

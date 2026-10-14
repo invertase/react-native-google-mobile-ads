@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "freezeId": "final-smoke-qualification-candidate",
+  "layout": {
+    "kind": "final",
+    "id": "final-smoke",
+    "digest": "3917c1a03a889686ba6f0303c7c8efbc1c1ea7e6ac5448d3080b153e9e38d46a",
+    "shardCount": 3,
+    "caseCount": 24,
+    "testTotal": 27,
+    "shards": [
+      {
+        "shardId": "a-primary",
+        "caseIds": [
+          "gma.format.gam-banner.Fluid",
+          "gma.format.consent",
+          "gma.format.banner.Banner",
+          "gma.format.collapsible-banner",
+          "gma.format.gam-banner.AnchoredAdaptiveBanner",
+          "gma.format.native",
+          "gma.format.app-open",
+          "gma.format.interstitial"
+        ],
+        "testCount": 9
+      },
+      {
+        "shardId": "b-secondary",
+        "caseIds": [
+          "gma.format.rewarded",
+          "gma.format.rewarded-interstitial",
+          "gma.format.gam-interstitial",
+          "gma.format.app-open-hook",
+          "gma.format.interstitial-hook",
+          "gma.format.rewarded-hook",
+          "gma.format.rewarded-interstitial-hook",
+          "gma.format.pool-interstitial-provider"
+        ],
+        "testCount": 9
+      },
+      {
+        "shardId": "c-tertiary",
+        "caseIds": [
+          "gma.format.pool-interstitial-imperative",
+          "gma.format.pool-capability-gates",
+          "gma.format.pool-rwi-preload-gate",
+          "gma.format.multi-format-request",
+          "gma.format.multi-format-hook",
+          "gma.format.ad-inspector",
+          "gma.format.debug-menu",
+          "gma.format.native-rngma-testing"
+        ],
+        "testCount": 9
+      }
+    ]
+  },
+  "policy": {
+    "digest": "b266847a608a9946af040e0fd54b261ba8e43af8958a4047e12d9da7b74fbd17",
+    "body": {
+      "confidence": 0.95,
+      "alpha": 0.05,
+      "maxFlakeRate": 0.001,
+      "zeroFailureObservationTarget": 2995
+    },
+    "qualifyingConfigurations": ["android-nextgen", "ios"],
+    "canaryConfigurations": ["android-classic"]
+  },
+  "executable": {
+    "digest": "c31fe848b60c1b8200cf178b02a52c4d18adfbf2facd76f7c2e33a54f3775086",
+    "caseIds": [
+      "gma.format.gam-banner.Fluid",
+      "gma.format.consent",
+      "gma.format.banner.Banner",
+      "gma.format.collapsible-banner",
+      "gma.format.gam-banner.AnchoredAdaptiveBanner",
+      "gma.format.native",
+      "gma.format.app-open",
+      "gma.format.interstitial",
+      "gma.format.rewarded",
+      "gma.format.rewarded-interstitial",
+      "gma.format.gam-interstitial",
+      "gma.format.app-open-hook",
+      "gma.format.interstitial-hook",
+      "gma.format.rewarded-hook",
+      "gma.format.rewarded-interstitial-hook",
+      "gma.format.pool-interstitial-provider",
+      "gma.format.pool-interstitial-imperative",
+      "gma.format.pool-capability-gates",
+      "gma.format.pool-rwi-preload-gate",
+      "gma.format.multi-format-request",
+      "gma.format.multi-format-hook",
+      "gma.format.ad-inspector",
+      "gma.format.debug-menu",
+      "gma.format.native-rngma-testing"
+    ]
+  },
+  "acceptedExceptions": [
+    "GMA-AD-6:UMP-consent-outcome",
+    "GMA-AD-6:GAM-app-event-inventory",
+    "GMA-AD-6:vendor-SDK-internal",
+    "GMA-AD-6:mediation-network-fill"
+  ],
+  "rejectedExceptionProposals": [
+    "broad-PAID-EVENT",
+    "broad-CREATIVE-CLICK",
+    "broad-IMPRESSION-ACK",
+    "broad-REWARD-EARNED",
+    "IOS-LCOV-EXPORT",
+    "broad-NEXTGEN-JACOCO-VALIDITY"
+  ],
+  "sourceAnchorCommit": "53d6d3eb8224cb858766b32e11e805ef7a28d0ac",
+  "notes": [
+    "Accepted exceptions are only the four GMA-AD-6 external outcomes.",
+    "Reward-earned (earned=true) remains Appium-owned and blocking.",
+    "IOS-LCOV-EXPORT rejected: react-native-coverage@0.2.2 proves universal export.",
+    "NEXTGEN-JACOCO: only app-wide :app dependency instrumentation is known unsafe; owned-library Jacoco remains.",
+    "Type-proof deferred rows and adapter plugin-fixture-pending remain open work, not accepted exceptions.",
+    "Workers sync by checking out the freeze commit and verifying digests; do not push from product-edit checkouts."
+  ]
+}
