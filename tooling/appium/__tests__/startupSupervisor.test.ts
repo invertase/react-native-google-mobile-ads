@@ -181,6 +181,45 @@ test('ordinary ad outcomes, latency, warnings, and Gradle status are not hard ma
   }
 });
 
+test('real development-server redbox lines still match hard markers', () => {
+  for (const line of [
+    'Could not connect to development server',
+    'Cannot connect to the development server',
+    'ReactNativeJS: Could not connect to development server.',
+    'ERROR  Could not connect to development server.',
+  ]) {
+    assert.equal(hardFailureForLine(line)?.name, 'development-server', line);
+  }
+});
+
+test('WebDriver COMMAND findElement probe lines embedding redbox text are not hard markers', () => {
+  for (const line of [
+    'COMMAND findElement("android uiautomator", "new UiSelector().textContains(\\"Could not connect to development server\\")")',
+    'INFO webdriver: COMMAND findElement("xpath", "//*[contains(@text,\\"Could not connect to development server\\")]")',
+    '2026-10-14T12:00:00.000Z INFO webdriver: COMMAND findElement("accessibility id", "Cannot connect to the development server")',
+  ]) {
+    assert.equal(hardFailureForLine(line), undefined, line);
+  }
+});
+
+test('WebDriver COMMAND findElement development-server probes do not abort startup', async () => {
+  const supervisor = new StartupSupervisor(['serial-android'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-android', 'Execution of 1 worker started');
+  supervisor.recordLine('serial-android', 'Appium session created successfully');
+  await workers;
+  const apps = supervisor.waitForApps();
+  supervisor.recordLine(
+    'serial-android',
+    'COMMAND findElement("android uiautomator", "new UiSelector().textContains(\\"Could not connect to development server\\")")',
+  );
+  assert.equal(supervisor.abortCount, 0);
+  supervisor.recordLine('serial-android', STARTUP_READY_MARKER);
+  await apps;
+  assert.equal(supervisor.phase, 'complete');
+});
+
 test('Metro requires both TCP and authoritative marker and times out at 120 seconds', async () => {
   const clock = new FakeClock();
   const supervisor = new StartupSupervisor([], clock);
