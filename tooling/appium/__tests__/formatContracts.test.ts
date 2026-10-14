@@ -20,6 +20,7 @@ import {
   representativeRequestBackoffMs,
   representativeRequestOperation,
   requestIdFromText,
+  requestOutcomeConfiguration,
   runRepresentativeRequestOutcomeContract,
   REPRESENTATIVE_REQUEST_MAX_ATTEMPTS,
   REQUEST_OUTCOME_LOADED,
@@ -259,11 +260,33 @@ test('uses bounded exponential backoff for attempts two through ten', () => {
   );
 });
 
+test('maps platform and RNGMA_ANDROID_BACKEND to request-outcome cell configuration', () => {
+  assert.equal(requestOutcomeConfiguration('ios'), 'ios');
+  assert.equal(requestOutcomeConfiguration('android', {}), 'android-classic');
+  assert.equal(
+    requestOutcomeConfiguration('android', { RNGMA_ANDROID_BACKEND: 'classic' }),
+    'android-classic',
+  );
+  assert.equal(
+    requestOutcomeConfiguration('android', { RNGMA_ANDROID_BACKEND: 'legacy' }),
+    'android-classic',
+  );
+  assert.equal(
+    requestOutcomeConfiguration('android', { RNGMA_ANDROID_BACKEND: 'nextgen' }),
+    'android-nextgen',
+  );
+  assert.throws(
+    () => requestOutcomeConfiguration('android', { RNGMA_ANDROID_BACKEND: 'unsupported' }),
+    /must be classic, legacy, or nextgen/,
+  );
+});
+
 test('formats stable machine-readable attempt output', () => {
   assert.equal(
     formatRequestOutcomeAttempt({
       format: 'gma.format.native',
       platform: 'android',
+      configuration: 'android-classic',
       attempt: 2,
       requestId: 17,
       classification: 'internal-error',
@@ -272,8 +295,10 @@ test('formats stable machine-readable attempt output', () => {
         status: 'matched',
         evidence: 'request-scoped native evidence',
       },
+      backoffMs: 250,
+      elapsedMs: 1400,
     }),
-    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"}}',
+    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","configuration":"android-classic","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"},"backoffMs":250,"elapsedMs":1400}',
   );
 });
 
@@ -281,11 +306,13 @@ test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnost
   const lines: string[] = [];
   const delays: number[] = [];
   const calls: string[] = [];
+  let clock = 1_000;
   await assert.rejects(
     runRepresentativeRequestOutcomeContract({
       format: 'gma.format.banner.Banner',
       platform: 'ios',
       path: 'banner',
+      configuration: 'ios',
       runtime: runtimeRecorder(
         calls,
         Array.from({ length: REPRESENTATIVE_REQUEST_MAX_ATTEMPTS }, (_, index) =>
@@ -294,27 +321,74 @@ test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnost
       ),
       sleep: async delayMs => {
         delays.push(delayMs);
+        clock += delayMs;
       },
+      now: () => clock,
       emit: line => lines.push(line),
     }),
     error => {
       const message = String(error);
       return (
-        message.includes('exhausted 10 attempts without acceptance') &&
+        message.includes(
+          '[request-outcome] gma.format.banner.Banner/ios/ios: exhausted 10 attempts without acceptance',
+        ) &&
         message.includes('"requestId":101') &&
         message.includes('"requestId":110') &&
         message.includes('"classification":"no-fill"') &&
         message.includes('"classification":"other-error"') &&
-        message.includes('"status":"not-applicable"')
+        message.includes('"status":"not-applicable"') &&
+        message.includes('"backoffMs":0') &&
+        message.includes('"backoffMs":2000') &&
+        message.includes('"elapsedMs":')
       );
     },
   );
 
   assert.equal(lines.length, REPRESENTATIVE_REQUEST_MAX_ATTEMPTS);
   assert.ok(lines.every(line => line.startsWith('[request-outcome-attempt] {')));
+  assert.ok(lines.every(line => line.includes('"configuration":"ios"')));
+  assert.ok(lines[0]!.includes('"backoffMs":0'));
+  assert.ok(lines[1]!.includes('"backoffMs":250'));
   assert.deepEqual(delays, [250, 500, 1000, 2000, 2000, 2000, 2000, 2000, 2000]);
   assert.equal(calls.filter(call => call === 'reload').length, 9);
   assert.notEqual(calls.at(-1), 'back');
+});
+
+test('exhaust diagnostic names android-classic vs android-nextgen cell', async () => {
+  await assert.rejects(
+    runRepresentativeRequestOutcomeContract({
+      format: 'gma.format.rewarded-hook',
+      platform: 'android',
+      path: 'hook',
+      configuration: 'android-classic',
+      runtime: runtimeRecorder(
+        [],
+        Array.from({ length: REPRESENTATIVE_REQUEST_MAX_ATTEMPTS }, (_, index) =>
+          observedRequest(index + 1, 'no-fill'),
+        ),
+      ),
+      sleep: async () => {},
+      emit: () => {},
+    }),
+    /gma\.format\.rewarded-hook\/android\/android-classic: exhausted 10 attempts/,
+  );
+  await assert.rejects(
+    runRepresentativeRequestOutcomeContract({
+      format: 'gma.format.rewarded-hook',
+      platform: 'android',
+      path: 'hook',
+      configuration: 'android-nextgen',
+      runtime: runtimeRecorder(
+        [],
+        Array.from({ length: REPRESENTATIVE_REQUEST_MAX_ATTEMPTS }, (_, index) =>
+          observedRequest(index + 1, 'no-fill'),
+        ),
+      ),
+      sleep: async () => {},
+      emit: () => {},
+    }),
+    /gma\.format\.rewarded-hook\/android\/android-nextgen: exhausted 10 attempts/,
+  );
 });
 
 test('all rejected classifications and fingerprints hard-fail at attempt ten', async () => {
