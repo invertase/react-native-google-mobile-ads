@@ -234,6 +234,25 @@ describe('hostPreflight', () => {
     );
   });
 
+  function readyListJson(udid: string, state = 'Booted'): string {
+    return JSON.stringify({
+      devices: {
+        'com.apple.CoreSimulator.SimRuntime.iOS-26-2': [
+          { name: 'iPhone 17', udid, state, isAvailable: true },
+        ],
+      },
+    });
+  }
+
+  function confirmReadyCapture(udid: string, state = 'Booted') {
+    return (_bin: string, args: string[]) => {
+      if (args.includes('list')) {
+        return { stdout: readyListJson(udid, state), stderr: '', status: 0 };
+      }
+      return { stdout: 'Monitoring boot status...\nBooted\n', stderr: '', status: 0 };
+    };
+  }
+
   test('boots a shutdown simulator then waits on bootstatus before persisting UDID', () => {
     const calls: string[][] = [];
     const writes: Array<{ path: string; data: string }> = [];
@@ -246,7 +265,11 @@ describe('hostPreflight', () => {
       (path, data) => {
         writes.push({ path, data });
       },
-      { afterBoot: () => undefined },
+      {
+        afterBoot: () => undefined,
+        settleMs: 0,
+        execCapture: confirmReadyCapture('shutdown-udid'),
+      },
     );
     assert.deepEqual(calls, [
       ['xcrun', 'simctl', 'boot', 'shutdown-udid'],
@@ -270,7 +293,11 @@ describe('hostPreflight', () => {
         calls.push(args);
       },
       () => {},
-      { afterBoot: () => undefined },
+      {
+        afterBoot: () => undefined,
+        settleMs: 0,
+        execCapture: confirmReadyCapture('booted-udid'),
+      },
     );
     assert.deepEqual(calls, [['simctl', 'bootstatus', 'booted-udid', '-b']]);
   });
@@ -291,7 +318,11 @@ describe('hostPreflight', () => {
         }
       },
       () => {},
-      { afterBoot: () => undefined },
+      {
+        afterBoot: () => undefined,
+        settleMs: 0,
+        execCapture: confirmReadyCapture('race-udid'),
+      },
     );
     assert.deepEqual(calls, [
       ['xcrun', 'simctl', 'boot', 'race-udid'],
@@ -318,11 +349,96 @@ describe('hostPreflight', () => {
           () => {
             assert.fail('must not persist without --github-env');
           },
-          { afterBoot: () => undefined },
+          {
+            afterBoot: () => undefined,
+            settleMs: 0,
+            execCapture: confirmReadyCapture('udid'),
+          },
         ),
       { message: SELECT_AND_BOOT_GITHUB_ENV_ERROR },
     );
     assert.deepEqual(calls, [['xcrun', 'simctl', 'bootstatus', 'udid', '-b']]);
+  });
+
+  test('aborts without persisting when bootstatus -b hits ETIMEDOUT', () => {
+    const writes: Array<{ path: string; data: string }> = [];
+    assert.throws(
+      () =>
+        bootAndPersistSelectedSimulator(
+          { udid: 'slow-udid', state: 'Shutdown', runtimeVersion: '26.2' },
+          ['--github-env', '/tmp/github.env'],
+          (_bin, args) => {
+            if (args.includes('bootstatus')) {
+              throw Object.assign(new Error('spawnSync ETIMEDOUT'), { code: 'ETIMEDOUT' });
+            }
+          },
+          (path, data) => {
+            writes.push({ path, data });
+          },
+          {
+            afterBoot: () => undefined,
+            settleMs: 0,
+            execCapture: confirmReadyCapture('slow-udid'),
+          },
+        ),
+      /retryable abort.*ETIMEDOUT|ETIMEDOUT.*retryable abort/,
+    );
+    assert.deepEqual(writes, []);
+  });
+
+  test('settles then refuses to persist when list confirm times out', () => {
+    const writes: Array<{ path: string; data: string }> = [];
+    const sleeps: number[] = [];
+    assert.throws(
+      () =>
+        bootAndPersistSelectedSimulator(
+          { udid: 'migrate-udid', state: 'Booted', runtimeVersion: '26.2' },
+          ['--github-env', '/tmp/github.env'],
+          () => {},
+          (path, data) => {
+            writes.push({ path, data });
+          },
+          {
+            afterBoot: () => undefined,
+            settleMs: 50,
+            sleep: ms => {
+              sleeps.push(ms);
+            },
+            execCapture: () => ({
+              stdout: '',
+              stderr: '',
+              status: null,
+              timedOut: true,
+              error: 'spawnSync ETIMEDOUT',
+            }),
+          },
+        ),
+      /refusing to persist UDID as ready.*retryable abort/,
+    );
+    assert.deepEqual(sleeps, [50]);
+    assert.deepEqual(writes, []);
+  });
+
+  test('refuses to persist when post-boot state is not Booted', () => {
+    const writes: Array<{ path: string; data: string }> = [];
+    assert.throws(
+      () =>
+        bootAndPersistSelectedSimulator(
+          { udid: 'creating-udid', state: 'Booted', runtimeVersion: '26.2' },
+          ['--github-env', '/tmp/github.env'],
+          () => {},
+          (path, data) => {
+            writes.push({ path, data });
+          },
+          {
+            afterBoot: () => undefined,
+            settleMs: 0,
+            execCapture: confirmReadyCapture('creating-udid', 'Creating'),
+          },
+        ),
+      /state=Creating.*refusing to persist/,
+    );
+    assert.deepEqual(writes, []);
   });
 
   test('defaults to exact iPhone 17 and prefers an already booted match', () => {
