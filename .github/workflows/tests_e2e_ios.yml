@@ -127,7 +127,12 @@ jobs:
           echo "...javascript bundle ready"
 
       - name: Select and boot simulator
-        run: yarn tests:appium:ios:select-and-boot --github-env "$GITHUB_ENV"
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          retry_wait_seconds: 30
+          max_attempts: 3
+          command: yarn tests:appium:ios:select-and-boot --github-env "$GITHUB_ENV"
 
       - name: Create Simulator Log
         continue-on-error: true
