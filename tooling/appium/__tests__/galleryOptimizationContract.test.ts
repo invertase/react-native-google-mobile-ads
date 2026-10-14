@@ -32,3 +32,19 @@ test('already-selected gallery sections skip top scrolling and re-selection', ()
   assert.ok(selectedReturn >= 0, 'selection must detect the active section');
   assert.ok(scrollToTop > selectedReturn, 'active-section return must precede top scrolling');
 });
+
+test('format open requires container and diagnoses tap-miss vs navigation-stuck', () => {
+  assert.match(gallerySource, /classifyFormatOpenObservation/);
+  assert.match(gallerySource, /formatOpenDiagnosisMessage/);
+  assert.match(gallerySource, /gallery\.open\.miss/);
+  assert.match(gallerySource, /SMOKE_GAM_FLUID_VARIANT/);
+  // Back-alone must not count as open (classic Fluid: back visible, container missing).
+  const looksOpenStart = gallerySource.indexOf('async function formatLooksOpen');
+  const looksOpenEnd = gallerySource.indexOf('\nasync function observeFormatOpen', looksOpenStart);
+  const looksOpenSource = gallerySource.slice(looksOpenStart, looksOpenEnd);
+  assert.doesNotMatch(
+    looksOpenSource,
+    /back\.isDisplayed[\s\S]*\|\|[\s\S]*container\.isDisplayed/,
+  );
+  assert.match(looksOpenSource, /container\.isDisplayed/);
+});
