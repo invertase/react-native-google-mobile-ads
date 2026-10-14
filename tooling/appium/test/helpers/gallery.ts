@@ -20,10 +20,17 @@ import {
   classifyPoolFilledOutcome,
   classifyPoolStructuredUnsupportedGate,
   classifyRequestOutcome,
+  formatRepresentativeRequestTimeoutMsg,
+  formatRequestOutcomeTimeout,
   hasNonzeroRectangle,
+  isRepresentativeRequestWaitTimeout,
   nativeFingerprintFromAndroidLog,
+  pendingTimeoutClassification,
+  REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED,
   requestIdFromText,
   runRepresentativeRequestOutcomeContract,
+  truncateLogSnippet,
+  type RepresentativeRequestRetry,
   type RequestOutcomeClassification,
   type RequestFingerprint,
 } from '../../src/requestOutcomes.ts';
@@ -1183,17 +1190,42 @@ async function observeHookLoadOutcome(
   }
 }
 
+async function readAndroidAdsReactNativeLogSnippet(): Promise<string | undefined> {
+  if (!isAndroid()) {
+    return undefined;
+  }
+  try {
+    const log = await driver.execute('mobile: shell', {
+      command: 'logcat',
+      args: ['-d', '-s', 'Ads:I', 'Ads:W', 'Ads:E', 'ReactNativeJS:I'],
+    });
+    const text = typeof log === 'string' ? log : JSON.stringify(log);
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return '';
+    }
+    return truncateLogSnippet(trimmed);
+  } catch {
+    return undefined;
+  }
+}
+
 async function observeRepresentativeRequestOutcome(
   formatId: string,
   path: RepresentativeRequestOutcomeContract['path'],
   attempt: number,
-  timeoutMs = 10000,
+  options: {
+    timeoutMs?: number;
+    retry?: RepresentativeRequestRetry;
+  } = {},
 ): Promise<{
   requestId: number;
   classification: RequestOutcomeClassification;
   detail: string;
   fingerprint: RequestFingerprint;
 }> {
+  const timeoutMs = options.timeoutMs ?? 10000;
+  const retry = options.retry ?? 'default';
   // Multi-Format Hook auto-show covers the loaded marker; dismiss AdActivity
   // first. Prefer close chrome; allow KEYCODE_BACK as last resort. If BACK
   // overshoots to gallery, throw so remount retry can re-open (run-23).
@@ -1212,6 +1244,7 @@ async function observeRepresentativeRequestOutcome(
   }
   const testId = AppiumTestIds.action.loaded(formatId);
   let lastSeen = '';
+  const startedAt = Date.now();
   const marker = await findByTestId(testId);
   if (!(await marker.isExisting())) {
     throw new Error(`[request-outcome] ${formatId}: required marker ${testId} is missing`);
@@ -1223,7 +1256,9 @@ async function observeRepresentativeRequestOutcome(
         if (!(await el.isExisting())) {
           throw new Error(`[request-outcome] ${formatId}: marker ${testId} disappeared`);
         }
-        lastSeen = await el.getText();
+        // elementText covers Android content-desc/label fallbacks; do not put
+        // lastSeen into timeoutMsg here — WDIO interpolates that string eagerly.
+        lastSeen = await elementText(el);
         if (!lastSeen.includes(`Request attempt: ${attempt};`)) {
           return false;
         }
@@ -1231,7 +1266,11 @@ async function observeRepresentativeRequestOutcome(
       },
       {
         timeout: timeoutMs,
-        timeoutMsg: `testID ${testId} did not report terminal request attempt ${attempt} (lastSeen=${JSON.stringify(lastSeen)})`,
+        timeoutMsg: formatRepresentativeRequestTimeoutMsg({
+          testId,
+          attempt,
+          lastSeen: REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED,
+        }),
       },
     );
     const classification = classifyRequestOutcome(lastSeen);
@@ -1251,6 +1290,44 @@ async function observeRepresentativeRequestOutcome(
       fingerprint: await collectRequestFingerprint(path, classification),
     };
   } catch (error) {
+    try {
+      const el = await findByTestId(testId);
+      if (await el.isExisting().catch(() => false)) {
+        lastSeen = await elementText(el);
+      }
+    } catch {
+      // Keep lastSeen from the wait loop when a final read is unavailable.
+    }
+    const waitTimedOut = isRepresentativeRequestWaitTimeout(error);
+    // Only true waitUntil timeouts may remount as pending-timeout / emit
+    // [request-outcome-timeout]. Marker disappearance, post-wait hard-fails, etc.
+    // must abort immediately even when lastSeen still looks pending.
+    if (waitTimedOut) {
+      const elapsedMs = Math.max(0, Date.now() - startedAt);
+      const requestId = requestIdFromText(lastSeen) ?? null;
+      const adsLogSnippet = await readAndroidAdsReactNativeLogSnippet();
+      console.log(
+        formatRequestOutcomeTimeout({
+          format: formatId,
+          requestId,
+          lastSeen,
+          elapsedMs,
+          ...(adsLogSnippet !== undefined ? { adsLogSnippet } : {}),
+        }),
+      );
+      const remountable = pendingTimeoutClassification({ lastSeen, retry });
+      if (remountable !== undefined && requestId != null) {
+        return {
+          requestId,
+          classification: remountable,
+          detail: lastSeen,
+          fingerprint: {
+            status: 'not-applicable',
+            evidence: 'pending-timeout',
+          },
+        };
+      }
+    }
     let snippet = 'page source unavailable';
     try {
       const dump = await driver.getPageSource();
@@ -1261,6 +1338,14 @@ async function observeRepresentativeRequestOutcome(
           : 'testID absent from page source';
     } catch {
       // Preserve the original WebDriver failure; page source is diagnostics only.
+    }
+    if (waitTimedOut) {
+      const timeoutMsg = formatRepresentativeRequestTimeoutMsg({
+        testId,
+        attempt,
+        lastSeen,
+      });
+      throw new Error(`${timeoutMsg} | pageSource=${snippet}`, { cause: error });
     }
     throw new Error(`${String(error)} | pageSource=${snippet}`, { cause: error });
   }
@@ -3855,7 +3940,9 @@ export async function proveRepresentativeRequestOutcome(
         if (format.path === 'hook') {
           return observeHookLoadOutcome(format.id, uiAttempt);
         }
-        return observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt);
+        return observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt, {
+          retry: format.retry ?? 'default',
+        });
       },
     },
     onAccepted: async attempt => {

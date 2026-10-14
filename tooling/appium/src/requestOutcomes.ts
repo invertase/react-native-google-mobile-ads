@@ -7,7 +7,9 @@ export type RequestOutcomeClassification =
   | 'loaded'
   | 'no-fill'
   | 'internal-error'
-  | 'other-error';
+  | 'other-error'
+  /** Observe wait timed out while the marker was still pending; remountable. */
+  | 'pending-timeout';
 
 export type RequestFingerprint = {
   status: 'matched' | 'not-matched' | 'unavailable' | 'not-applicable';
@@ -62,6 +64,16 @@ export const REPRESENTATIVE_REQUEST_MAX_ATTEMPTS = 10;
 export const REPRESENTATIVE_REQUEST_BASE_BACKOFF_MS = 250;
 export const REPRESENTATIVE_REQUEST_MAX_BACKOFF_MS = 2000;
 export const REQUEST_OUTCOME_LOG_PREFIX = '[request-outcome-attempt]';
+export const REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX = '[request-outcome-timeout]';
+
+export type RequestOutcomeTimeoutLog = {
+  format: string;
+  requestId: number | null;
+  lastSeen: string;
+  elapsedMs: number;
+  /** Android Ads/ReactNativeJS logcat tail when available. */
+  adsLogSnippet?: string;
+};
 
 /**
  * Map platform + `RNGMA_ANDROID_BACKEND` to the same classic/nextgen/ios cell
@@ -110,6 +122,73 @@ export function classifyRequestOutcome(
     return text.includes('Request error: internal-error') ? 'internal-error' : 'other-error';
   }
   return undefined;
+}
+
+/**
+ * Build waitUntil failure text with the live `lastSeen` (must not be eagerly
+ * interpolated into a timeoutMsg string before waitUntil runs).
+ */
+export function formatRepresentativeRequestTimeoutMsg(options: {
+  testId: string;
+  attempt: number;
+  lastSeen: string;
+}): string {
+  return `testID ${options.testId} did not report terminal request attempt ${options.attempt} (lastSeen=${JSON.stringify(options.lastSeen)})`;
+}
+
+/** Placeholder lastSeen baked into waitUntil timeoutMsg (eager interpolation). */
+export const REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED = '<deferred>';
+
+/**
+ * True only for the WDIO waitUntil timeout path (deferred lastSeen timeoutMsg).
+ * Condition throws (marker disappearance) and post-wait hard-fails must not match.
+ */
+export function isRepresentativeRequestWaitTimeout(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes('did not report terminal request attempt') &&
+    message.includes(
+      `lastSeen=${JSON.stringify(REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED)}`,
+    )
+  );
+}
+
+export function formatRequestOutcomeTimeout(payload: RequestOutcomeTimeoutLog): string {
+  return `${REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX} ${JSON.stringify(payload)}`;
+}
+
+/** Cap filtered logcat so CI lines stay readable. */
+export function truncateLogSnippet(log: string, maxChars = 2000): string {
+  if (log.length <= maxChars) {
+    return log;
+  }
+  return log.slice(-maxChars);
+}
+
+/**
+ * When a true observe waitUntil timeout leaves a still-pending marker and the
+ * contract uses remount retries, return `pending-timeout` so collection can
+ * remount instead of aborting. Callers must gate with
+ * `isRepresentativeRequestWaitTimeout` first — marker disappearance, fingerprint
+ * failures, and other non-timeout throws must hard-fail.
+ */
+export function pendingTimeoutClassification(options: {
+  lastSeen: string;
+  retry: RepresentativeRequestRetry;
+}): RequestOutcomeClassification | undefined {
+  if (options.retry !== 'remount') {
+    return undefined;
+  }
+  if (requestOutcomeFromText(options.lastSeen) !== 'pending') {
+    return undefined;
+  }
+  if (!options.lastSeen.includes('Request outcome: pending')) {
+    return undefined;
+  }
+  if (requestIdFromText(options.lastSeen) === undefined) {
+    return undefined;
+  }
+  return 'pending-timeout';
 }
 
 /** Terminal hook load markers use `Status: …` on the hook status testID. */
@@ -505,6 +584,8 @@ export async function runRepresentativeRequestOutcomeContract(options: {
       } else if (operation === 'remount') {
         await runtime.backToGallery();
         await runtime.navigate();
+        // Remount recreates the screen with Request attempt: 1 (fresh mount).
+        return runtime.observe(1);
       } else {
         await executeRepresentativeRequestOperation(
           path,

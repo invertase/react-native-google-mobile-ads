@@ -14,17 +14,24 @@ import {
   classifyPoolStructuredUnsupportedGate,
   classifyRequestOutcome,
   evaluateRepresentativeRequestAttempt,
+  formatRepresentativeRequestTimeoutMsg,
   formatRequestOutcomeAttempt,
+  formatRequestOutcomeTimeout,
   hasNonzeroRectangle,
+  isRepresentativeRequestWaitTimeout,
   nativeFingerprintFromAndroidLog,
+  pendingTimeoutClassification,
   representativeRequestBackoffMs,
   representativeRequestOperation,
   requestIdFromText,
   requestOutcomeConfiguration,
   runRepresentativeRequestOutcomeContract,
+  truncateLogSnippet,
   REPRESENTATIVE_REQUEST_MAX_ATTEMPTS,
+  REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED,
   REQUEST_OUTCOME_LOADED,
   REQUEST_OUTCOME_NO_FILL,
+  REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX,
   type RequestOutcomeClassification,
   type RepresentativeRequestPath,
 } from '../src/requestOutcomes.ts';
@@ -161,6 +168,7 @@ test('locks the acceptance matrix for every format path and platform', () => {
     'no-fill',
     'internal-error',
     'other-error',
+    'pending-timeout',
   ];
   for (const path of paths) {
     for (const platform of platforms) {
@@ -241,6 +249,124 @@ test('classifies terminal outcomes and leaves non-terminal markers unclassified'
   );
   assert.equal(classifyRequestOutcome('Request outcome: pending'), undefined);
   assert.equal(classifyRequestOutcome(''), undefined);
+});
+
+test('defers lastSeen into the representative request timeout message', () => {
+  const pending =
+    'Request id: 4; Request attempt: 1; Request outcome: pending';
+  assert.equal(
+    formatRepresentativeRequestTimeoutMsg({
+      testId: 'gma.format.gam-banner.AnchoredAdaptiveBanner.loaded',
+      attempt: 1,
+      lastSeen: pending,
+    }),
+    'testID gma.format.gam-banner.AnchoredAdaptiveBanner.loaded did not report terminal request attempt 1 (lastSeen="Request id: 4; Request attempt: 1; Request outcome: pending")',
+  );
+  assert.ok(
+    !formatRepresentativeRequestTimeoutMsg({
+      testId: 'x',
+      attempt: 1,
+      lastSeen: pending,
+    }).includes('lastSeen=""'),
+  );
+});
+
+test('formats request-outcome-timeout JSON for CI correlation', () => {
+  const line = formatRequestOutcomeTimeout({
+    format: 'gma.format.gam-banner.AnchoredAdaptiveBanner',
+    requestId: 4,
+    lastSeen: 'Request id: 4; Request attempt: 1; Request outcome: pending',
+    elapsedMs: 10012,
+    adsLogSnippet: 'Ads: This request is sent from a test device',
+  });
+  assert.ok(line.startsWith(`${REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX} {`));
+  assert.deepEqual(JSON.parse(line.slice(REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX.length + 1)), {
+    format: 'gma.format.gam-banner.AnchoredAdaptiveBanner',
+    requestId: 4,
+    lastSeen: 'Request id: 4; Request attempt: 1; Request outcome: pending',
+    elapsedMs: 10012,
+    adsLogSnippet: 'Ads: This request is sent from a test device',
+  });
+  assert.equal(truncateLogSnippet('abcdefghij', 4), 'ghij');
+});
+
+test('pending-timeout classification is remountable only for remount contracts', () => {
+  const pending =
+    'Request id: 4; Request attempt: 1; Request outcome: pending';
+  assert.equal(
+    pendingTimeoutClassification({ lastSeen: pending, retry: 'remount' }),
+    'pending-timeout',
+  );
+  assert.equal(
+    pendingTimeoutClassification({ lastSeen: pending, retry: 'default' }),
+    undefined,
+  );
+  assert.equal(
+    pendingTimeoutClassification({
+      lastSeen: REQUEST_OUTCOME_LOADED,
+      retry: 'remount',
+    }),
+    undefined,
+  );
+  assert.equal(
+    pendingTimeoutClassification({
+      lastSeen: 'Request attempt: 1; Request outcome: pending',
+      retry: 'remount',
+    }),
+    undefined,
+  );
+  assert.deepEqual(
+    evaluateRepresentativeRequestAttempt({
+      path: 'gam',
+      platform: 'android',
+      attempt: {
+        classification: 'pending-timeout',
+        fingerprint: { status: 'not-applicable', evidence: 'pending-timeout' },
+      },
+    }),
+    { status: 'retry', reason: 'outcome-not-accepted' },
+  );
+});
+
+test('only deferred waitUntil timeouts qualify as remountable pending-timeout waits', () => {
+  assert.equal(
+    isRepresentativeRequestWaitTimeout(
+      new Error(
+        formatRepresentativeRequestTimeoutMsg({
+          testId: 'gma.format.gam-banner.AnchoredAdaptiveBanner.loaded',
+          attempt: 1,
+          lastSeen: REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED,
+        }),
+      ),
+    ),
+    true,
+  );
+  assert.equal(
+    isRepresentativeRequestWaitTimeout(
+      new Error(
+        'waitUntil condition failed with the following reason: [request-outcome] x: marker x disappeared',
+      ),
+    ),
+    false,
+  );
+  assert.equal(
+    isRepresentativeRequestWaitTimeout(
+      new Error('[request-outcome] x: wait completed without a terminal outcome'),
+    ),
+    false,
+  );
+  assert.equal(
+    isRepresentativeRequestWaitTimeout(
+      new Error(
+        formatRepresentativeRequestTimeoutMsg({
+          testId: 'gma.format.gam-banner.AnchoredAdaptiveBanner.loaded',
+          attempt: 1,
+          lastSeen: 'Request id: 4; Request attempt: 1; Request outcome: pending',
+        }),
+      ),
+    ),
+    false,
+  );
 });
 
 test('extracts the monotonic request identity from the runtime marker', () => {
@@ -696,7 +822,7 @@ test('hook auto-load runtime remounts between rejected hook load attempts', asyn
     'observe:1',
     'back',
     'navigate',
-    'observe:2',
+    'observe:1',
     'back',
   ]);
   assert.ok(!calls.includes('load'));
@@ -722,11 +848,39 @@ test('remount retry revisits the format screen instead of tapping Load', async (
     'observe:1',
     'back',
     'navigate',
-    'observe:2',
+    'observe:1',
     'back',
   ]);
   assert.ok(!calls.includes('load'));
   assert.ok(!calls.includes('reload'));
+});
+
+test('pending-timeout observations remount instead of aborting the session', async () => {
+  const calls: string[] = [];
+  const lines: string[] = [];
+  await runRepresentativeRequestOutcomeContract({
+    format: SMOKE_GAM_BANNER_VARIANT,
+    platform: 'android',
+    path: 'gam',
+    retry: 'remount',
+    maxAttempts: 2,
+    runtime: runtimeRecorder(calls, [
+      observedRequest(4, 'pending-timeout'),
+      observedRequest(5, 'loaded'),
+    ]),
+    sleep: async () => {},
+    emit: line => lines.push(line),
+  });
+  assert.deepEqual(calls, [
+    'navigate',
+    'observe:1',
+    'back',
+    'navigate',
+    'observe:1',
+    'back',
+  ]);
+  assert.ok(lines.some(line => line.includes('"classification":"pending-timeout"')));
+  assert.ok(lines.some(line => line.includes('"classification":"loaded"')));
 });
 
 test('GAM banner remount retry auto-loads instead of tapping Load', () => {
