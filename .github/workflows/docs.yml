@@ -41,12 +41,26 @@ jobs:
       - name: Spell check
         run: |
           yarn lint:spellcheck
+      # Cold Invertase/docs.page/rnfirebase origins often need >10s (CLI hardcodes
+      # EXTERNAL_LINK_TIMEOUT_MS=10s with no flag). Warm them, then retry the
+      # full check with a larger attempt budget — do not severityOverride those hosts.
+      - name: Warm cold docs origins
+        run: |
+          set +e
+          for url in \
+            https://use.docs.page \
+            https://docs.page/invertase/react-native-google-mobile-ads \
+            https://rnfirebase.io; do
+            echo "warming ${url}"
+            curl -sS -o /dev/null -w "%{http_code} %{time_total}s %{url_effective}\n" \
+              -L --connect-timeout 20 --max-time 45 "${url}" || true
+          done
       - name: Docs.page links
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 10
-          retry_wait_seconds: 60
-          max_attempts: 3
+          timeout_minutes: 20
+          retry_wait_seconds: 90
+          max_attempts: 5
           command: yarn lint:docs-links
 
   api-reference:
