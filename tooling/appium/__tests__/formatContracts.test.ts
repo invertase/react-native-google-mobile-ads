@@ -1474,6 +1474,12 @@ test('retires blanket per-attempt acceptance and locks real render probes', () =
   assert.match(gallerySource, /emitStatusLabel: 'probe-seam'/);
   assert.match(gallerySource, /\[utility-open-close-proof\]/);
   assert.match(gallerySource, /proveSdkUtilitySurface/);
+  // Post-keyBack interstitial/hook dismiss can leave NexusLauncher focused —
+  // bring the example app forward before lifecycle status=closed polls.
+  assert.match(gallerySource, /interstitial\.dismiss\.afterSuccess/);
+  assert.match(gallerySource, /hookClose\.beforeWaitClosed/);
+  assert.match(gallerySource, /hookClose\.lifecycleMissing/);
+  assert.match(gallerySource, /bringExampleAppForwardOnceIfNeeded/);
 });
 
 test('deterministic NativeRNGMATesting seam requires exact state markers', () => {

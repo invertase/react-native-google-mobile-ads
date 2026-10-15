@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { join } from 'node:path';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join as pathJoin } from 'node:path';
 import {
@@ -10,6 +10,8 @@ import {
   collectIosSessionCreateDiagnosticSnapshot,
   emitIosSessionCreateDiagnostics,
   formatIosSessionDiagnosticLine,
+  hangRecoverArtifactSnapshotDir,
+  hostPidsIndicateLiveBuild,
   installXcodebuildExitLogTap,
   IOS_SESSION_HOST_PGREP_TIMEOUT_MS,
   listWdaDerivedDataLogPaths,
@@ -17,6 +19,8 @@ import {
   parseXcodebuildExitCodeFromLine,
   readXcodebuildExitState,
   resolveLastXcodebuildExit,
+  shouldDeferHangRecoverForLiveHostBuild,
+  snapshotWdaDerivedDataForHangRecover,
   xcodebuildExitStatePath,
   type SessionExecCapture,
 } from '../src/iosSessionDiagnostics.ts';
@@ -269,5 +273,56 @@ describe('iosSessionDiagnostics', () => {
       }),
       65,
     );
+  });
+
+  test('shouldDeferHangRecoverForLiveHostBuild gates kill while PIDs live and exit unknown', () => {
+    assert.equal(hostPidsIndicateLiveBuild('(none)'), false);
+    assert.equal(hostPidsIndicateLiveBuild('42'), true);
+    assert.equal(hostPidsIndicateLiveBuild('timedOut'), true);
+    const deferred = shouldDeferHangRecoverForLiveHostBuild({
+      hostXcodebuildPids: '99',
+      hostWdaPids: '(none)',
+      lastXcodebuildExit: '(none)',
+    });
+    assert.equal(deferred.defer, true);
+    assert.match(deferred.reason ?? '', /host build still live/);
+    assert.equal(
+      shouldDeferHangRecoverForLiveHostBuild({
+        hostXcodebuildPids: '99',
+        hostWdaPids: '(none)',
+        lastXcodebuildExit: '65',
+      }).defer,
+      false,
+    );
+    assert.equal(
+      shouldDeferHangRecoverForLiveHostBuild({
+        hostXcodebuildPids: '(none)',
+        hostWdaPids: '(none)',
+        lastXcodebuildExit: '(none)',
+      }).defer,
+      false,
+    );
+  });
+
+  test('snapshotWdaDerivedDataForHangRecover copies xcresult and log files', () => {
+    const root = mkdtempSync(pathJoin(tmpdir(), 'rngma-wda-snap-'));
+    try {
+      const logsDir = pathJoin(root, 'Logs', 'Test');
+      mkdirSync(logsDir, { recursive: true });
+      const xcresult = pathJoin(logsDir, 'Run.xcresult');
+      mkdirSync(xcresult, { recursive: true });
+      writeFileSync(pathJoin(xcresult, 'Info.plist'), 'plist');
+      const logFile = pathJoin(logsDir, 'run.log');
+      writeFileSync(logFile, 'hello');
+      const dest = hangRecoverArtifactSnapshotDir(root);
+      const result = snapshotWdaDerivedDataForHangRecover(root, dest);
+      assert.ok(result.copiedPaths.length >= 2);
+      assert.ok(result.copiedPaths.some(p => p.endsWith('Run.xcresult')));
+      assert.ok(result.copiedPaths.some(p => p.endsWith('run.log')));
+      assert.equal(result.errors.length, 0);
+      assert.equal(readFileSync(pathJoin(dest, 'run.log'), 'utf8'), 'hello');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

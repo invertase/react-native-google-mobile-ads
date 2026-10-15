@@ -11,6 +11,8 @@
 
 import { spawnSync } from 'node:child_process';
 import {
+  copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -19,7 +21,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Default APPIUM_HOME (same tree as wdio.shared.conf `appiumHome`). */
@@ -361,6 +363,8 @@ export type CollectIosSessionCreateDiagnosticsOptions = {
   derivedDataPath: string;
   /** Prebuilt runner `.app` path (required — typically `IOS_WDA_RUNNER_APP_PATH`). */
   wdaRunnerAppPath: string;
+  /** Optional recover-skip / triage reason (grep in CI). */
+  reason?: string;
   execCapture?: SessionExecCapture;
   existsSyncFn?: typeof existsSync;
   listLogPaths?: (derivedDataPath: string) => WdaDerivedDataLogPath[];
@@ -424,6 +428,106 @@ export function collectIosSessionCreateDiagnosticSnapshot(
 }
 
 /**
+ * True when a hang-path PID field is not the empty sentinel. `timedOut` counts
+ * as live/uncertain — do not kill WDA while pgrep itself failed.
+ */
+export function hostPidsIndicateLiveBuild(pidsField: string): boolean {
+  return pidsField !== '(none)';
+}
+
+/**
+ * Gate hang-recover: do not `simctl terminate` WDA while host xcodebuild and/or
+ * WDA PIDs are still alive (or pgrep timed out) and lastXcodebuildExit is
+ * none/unknown. Wait for the build to finish or exit before kill.
+ */
+export function shouldDeferHangRecoverForLiveHostBuild(input: {
+  hostXcodebuildPids: string;
+  hostWdaPids: string;
+  lastXcodebuildExit: string;
+}): { defer: boolean; reason?: string } {
+  const live =
+    hostPidsIndicateLiveBuild(input.hostXcodebuildPids) ||
+    hostPidsIndicateLiveBuild(input.hostWdaPids);
+  const exitUnknown =
+    input.lastXcodebuildExit === '(none)' ||
+    input.lastXcodebuildExit === '(unknown)';
+  if (!live || !exitUnknown) {
+    return { defer: false };
+  }
+  return {
+    defer: true,
+    reason:
+      `recoverSkipped: host build still live ` +
+      `(hostXcodebuildPids=${input.hostXcodebuildPids}, hostWdaPids=${input.hostWdaPids}) ` +
+      `and lastXcodebuildExit=${input.lastXcodebuildExit} — defer WDA terminate until ` +
+      `xcodebuild exits or host PIDs clear`,
+  };
+}
+
+/** Default staging dir under DerivedData for pre-kill log copies. */
+export function hangRecoverArtifactSnapshotDir(derivedDataPath: string): string {
+  return join(derivedDataPath, 'hang-recover-snapshots', 'last');
+}
+
+/**
+ * Copy `.xcresult` bundles + DerivedData log files into `destDir` before a
+ * hang-recover kill so upload-artifact still has evidence if terminate races
+ * the writer. Best-effort; never throws.
+ */
+export function snapshotWdaDerivedDataForHangRecover(
+  derivedDataPath: string,
+  destDir: string,
+  options?: {
+    listLogPaths?: (derivedDataPath: string) => WdaDerivedDataLogPath[];
+    existsSyncFn?: typeof existsSync;
+    mkdirSyncFn?: typeof mkdirSync;
+    copyFileSyncFn?: typeof copyFileSync;
+    cpSyncFn?: typeof cpSync;
+    statSyncFn?: typeof statSync;
+  },
+): { copiedPaths: string[]; errors: string[] } {
+  const exists = options?.existsSyncFn ?? existsSync;
+  const mkdir = options?.mkdirSyncFn ?? mkdirSync;
+  const copyFile = options?.copyFileSyncFn ?? copyFileSync;
+  const cp = options?.cpSyncFn ?? cpSync;
+  const stat = options?.statSyncFn ?? statSync;
+  const copiedPaths: string[] = [];
+  const errors: string[] = [];
+  if (!exists(derivedDataPath)) {
+    return { copiedPaths, errors: [`derivedData missing: ${derivedDataPath}`] };
+  }
+  try {
+    mkdir(destDir, { recursive: true });
+  } catch (error) {
+    return {
+      copiedPaths,
+      errors: [
+        `mkdir ${destDir}: ${error instanceof Error ? error.message : String(error)}`,
+      ],
+    };
+  }
+  const paths = (options?.listLogPaths ?? listWdaDerivedDataLogPaths)(derivedDataPath);
+  for (const entry of paths) {
+    const name = basename(entry.path);
+    const dest = join(destDir, name);
+    try {
+      const info = stat(entry.path);
+      if (info.isDirectory()) {
+        cp(entry.path, dest, { recursive: true });
+      } else {
+        copyFile(entry.path, dest);
+      }
+      copiedPaths.push(dest);
+    } catch (error) {
+      errors.push(
+        `${entry.path}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+  return { copiedPaths, errors };
+}
+
+/**
  * Emit one `[e2e-ios-session]` line for hang-probe / recover / abort phases.
  */
 export function emitIosSessionCreateDiagnostics(
@@ -451,6 +555,7 @@ export function emitIosSessionCreateDiagnostics(
         lastXcodebuildExit: snapshot.lastXcodebuildExit,
         wdaLogPathCount: snapshot.wdaLogPathCount,
         wdaLogPaths: snapshot.wdaLogPaths,
+        reason: options.reason,
       },
       now,
     ),

@@ -3,11 +3,19 @@
  * background tasks, so package checks must only read the focus lines.
  */
 
-/** Off-app surfaces (Chrome, Play Store) that divert focus away from the example app. */
+/**
+ * Off-app surfaces that divert focus away from the example app.
+ * Includes home launchers: KEYCODE_BACK after interstitial dismiss can leave
+ * NexusLauncher focused while AdActivity is already gone (dismiss.success
+ * without a readable lifecycle marker).
+ */
 export const ANDROID_FOREIGN_FOCUS_MARKERS = [
   'com.android.chrome',
   'com.android.vending',
   'com.google.android.finsky',
+  'com.google.android.apps.nexuslauncher',
+  'com.android.launcher3',
+  'com.android.launcher',
 ] as const;
 
 export type AndroidSystemDialog = 'anr' | 'app-error';

@@ -322,6 +322,7 @@ describe('iosBootDiagnostics', () => {
     assert.equal(skipShutdown.action, 'skip-recover');
     if (skipShutdown.action === 'skip-recover') {
       assert.match(skipShutdown.reason, /recoverSkipped/);
+      assert.equal(skipShutdown.consumeRecoveryOpportunity, true);
     }
     const skipBooting = decideSessionCreateHangAction({
       hangTick: 2,
@@ -340,6 +341,43 @@ describe('iosBootDiagnostics', () => {
     if (abortTransition.action === 'abort') {
       assert.match(abortTransition.reason, /interrupting Appium boot monitor/);
     }
+  });
+
+  test('decideSessionCreateHangAction defers recover while host build PIDs live', () => {
+    const deferred = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 1,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '4242',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '(none)',
+    });
+    assert.equal(deferred.action, 'skip-recover');
+    if (deferred.action === 'skip-recover') {
+      assert.match(deferred.reason, /host build still live/);
+      assert.equal(deferred.consumeRecoveryOpportunity, false);
+    }
+    const afterExit = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 1,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '4242',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '65',
+    });
+    assert.equal(afterExit.action, 'recover');
+    const afterPidsClear = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 1,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '(none)',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '(none)',
+    });
+    assert.equal(afterPidsClear.action, 'recover');
   });
 
   test('sessionCreateHangEvidenceFromProbeLine detects ETIMEDOUT while Booted', () => {
@@ -427,6 +465,67 @@ describe('iosBootDiagnostics', () => {
     assert.ok(
       lines.some(line => /\[e2e-ios-session\].*phase=serial:session-create:hang-abort/.test(line)),
     );
+  });
+
+  test('hang watchdog defers recover while host xcodebuild PIDs live and exit unknown', () => {
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const recovers: string[] = [];
+    const aborts: Error[] = [];
+    startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'serial:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      recoverAfterTicks: 2,
+      abortAfterTicks: 4,
+      lastXcodebuildExitRef: { value: null },
+      write: line => lines.push(line),
+      execCapture: (bin, args) => {
+        if (bin === 'pgrep' && (args[1] === 'xcodebuild' || args.includes('xcodebuild'))) {
+          return { stdout: '4242 /usr/bin/xcodebuild test\n', stderr: '', status: 0 };
+        }
+        if (bin === 'pgrep') {
+          return { stdout: '', stderr: '', status: 1 };
+        }
+        return {
+          stdout: '',
+          stderr: '',
+          status: null,
+          timedOut: true,
+          error: 'spawnSync ETIMEDOUT',
+        };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      now: () => new Date('2026-10-15T14:00:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onRecover: (udid, reason) => {
+        recovers.push(`${udid}:${reason}`);
+      },
+      onAbort: error => {
+        aborts.push(error);
+      },
+    });
+    callbacks[0]!(); // tick 1
+    callbacks[0]!(); // tick 2 — defer (live PIDs, exit none)
+    assert.equal(recovers.length, 0);
+    assert.ok(lines.some(line => /hang-recoverSkipped/.test(line)));
+    assert.ok(
+      lines.some(
+        line =>
+          /\[e2e-ios-session\].*hang-recoverSkipped/.test(line) &&
+          /host build still live/.test(line),
+      ),
+    );
+    callbacks[0]!(); // tick 3 — still deferred
+    assert.equal(recovers.length, 0);
+    assert.equal(aborts.length, 0);
   });
 
   test('hang watchdog markSessionCreated disarms recover before mid-suite ETIMEDOUT', () => {
