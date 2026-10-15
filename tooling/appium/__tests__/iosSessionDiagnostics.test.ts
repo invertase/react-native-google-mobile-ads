@@ -19,6 +19,7 @@ import {
   formatHostPidFieldsFromSnapshots,
   formatIosSessionDiagnosticLine,
   hangRecoverArtifactSnapshotDir,
+  hangRecoverDurableRoot,
   hostPidsIndicateLiveBuild,
   installXcodebuildExitLogTap,
   IOS_SESSION_HOST_PGREP_TIMEOUT_MS,
@@ -383,10 +384,21 @@ describe('iosSessionDiagnostics', () => {
     );
   });
 
+  test('hang-recover snapshot dir is a durable sibling of DerivedData', () => {
+    const derived = '/tmp/fixture/.wda-derived';
+    assert.equal(hangRecoverDurableRoot(derived), '/tmp/fixture/.hang-recover-snapshots');
+    assert.equal(
+      hangRecoverArtifactSnapshotDir(derived),
+      '/tmp/fixture/.hang-recover-snapshots/last',
+    );
+    assert.ok(!hangRecoverArtifactSnapshotDir(derived).startsWith(derived + '/'));
+  });
+
   test('snapshotWdaDerivedDataForHangRecover copies xcresult and log files', () => {
     const root = mkdtempSync(pathJoin(tmpdir(), 'rngma-wda-snap-'));
     try {
-      const logsDir = pathJoin(root, 'Logs', 'Test');
+      const derived = pathJoin(root, '.wda-derived');
+      const logsDir = pathJoin(derived, 'Logs', 'Test');
       mkdirSync(logsDir, { recursive: true });
       const xcresult = pathJoin(logsDir, 'Run.xcresult');
       mkdirSync(xcresult, { recursive: true });
@@ -398,8 +410,9 @@ describe('iosSessionDiagnostics', () => {
       writeFileSync(pathJoin(appiumHome, 'logs', 'port-4725', 'appium.log'), 'appium');
       const childLog = pathJoin(root, 'ios-serial.log');
       writeFileSync(childLog, 'wdio child stdio');
-      const dest = hangRecoverArtifactSnapshotDir(root);
-      const result = snapshotWdaDerivedDataForHangRecover(root, dest, {
+      const dest = hangRecoverArtifactSnapshotDir(derived);
+      assert.equal(dest, pathJoin(root, '.hang-recover-snapshots', 'last'));
+      const result = snapshotWdaDerivedDataForHangRecover(derived, dest, {
         appiumHome,
         extraLogPaths: [childLog],
         stagingPhase: 'test:snap',
@@ -444,6 +457,7 @@ describe('iosSessionDiagnostics', () => {
         now: () => new Date('2026-10-15T16:00:00.000Z'),
       });
       assert.ok(result.copiedPaths.length >= 2);
+      assert.equal(result.destDir, pathJoin(root, '.hang-recover-snapshots', 'last'));
       assert.ok(existsSync(pathJoin(result.destDir, 'staging-receipt.txt')));
       assert.ok(
         existsSync(pathJoin(result.destDir, 'supervisor-child-logs', 'ios-serial.log')),

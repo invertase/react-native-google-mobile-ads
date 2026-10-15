@@ -175,7 +175,7 @@ jobs:
           name: wda_xcodebuild_logs
           path: |
             tooling/appium/.wda-derived/Logs
-            tooling/appium/.wda-derived/hang-recover-snapshots
+            tooling/appium/.hang-recover-snapshots
             tooling/appium/.wda-derived/**/*.log
             tooling/appium/.wda-derived/**/*.xcactivitylog
             tooling/appium/.wda-derived/**/*.xcresult

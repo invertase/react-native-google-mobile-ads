@@ -30,6 +30,7 @@ import {
   formatRepresentativeRequestTimeoutMsg,
   formatRequestOutcomeTimeout,
   hasNonzeroRectangle,
+  IOS_ADS_LOG_SNIPPET_TIMEOUT_MS,
   isRepresentativeRequestWaitTimeout,
   nativeFingerprintFromAndroidLog,
   pendingTimeoutClassification,
@@ -38,6 +39,7 @@ import {
   runRepresentativeRequestOutcomeContract,
   terminalOutcomeFromMarkerText,
   truncateLogSnippet,
+  type RepresentativeRequestObserveContext,
   type RepresentativeRequestRetry,
   type RequestOutcomeClassification,
   type RequestFingerprint,
@@ -1227,6 +1229,7 @@ async function observeHookLoadOutcome(
   options: {
     timeoutMs?: number;
     retry?: RepresentativeRequestRetry;
+    observeContext?: RepresentativeRequestObserveContext;
   } = {},
 ): Promise<{
   requestId: number;
@@ -1234,7 +1237,7 @@ async function observeHookLoadOutcome(
   detail: string;
   fingerprint: RequestFingerprint;
 }> {
-  const timeoutMs = options.timeoutMs ?? 10000;
+  const timeoutMs = options.observeContext?.observeTimeoutMs ?? options.timeoutMs ?? 10000;
   const retry = options.retry ?? 'default';
   const testId = AppiumTestIds.action.loaded(formatId);
   let lastSeen = '';
@@ -1296,6 +1299,7 @@ async function observeHookLoadOutcome(
       }
       const elapsedMs = Math.max(0, Date.now() - startedAt);
       const adsLogSnippet = await readAdsReactNativeLogSnippet();
+      const ctx = options.observeContext;
       console.log(
         formatRequestOutcomeTimeout({
           format: formatId,
@@ -1303,6 +1307,15 @@ async function observeHookLoadOutcome(
           lastSeen,
           elapsedMs,
           ...(adsLogSnippet !== undefined ? { adsLogSnippet } : {}),
+          ...(ctx !== undefined
+            ? {
+                attempt: ctx.collectionAttempt,
+                remountCount: ctx.remountCount,
+                loadTapped: ctx.loadTapped,
+                adUnitId: ctx.adUnitId,
+                observeTimeoutMs: ctx.observeTimeoutMs,
+              }
+            : {}),
         }),
       );
       if (retry === 'remount' && classifyHookLoadOutcome(lastSeen) === undefined) {
@@ -1395,7 +1408,7 @@ async function readIosAdsReactNativeLogSnippet(): Promise<string | undefined> {
       ],
       {
         encoding: 'utf8',
-        timeout: 20_000,
+        timeout: IOS_ADS_LOG_SNIPPET_TIMEOUT_MS,
         maxBuffer: 4 * 1024 * 1024,
         stdio: ['ignore', 'pipe', 'pipe'],
       },
@@ -1425,6 +1438,7 @@ async function observeRepresentativeRequestOutcome(
   options: {
     timeoutMs?: number;
     retry?: RepresentativeRequestRetry;
+    observeContext?: RepresentativeRequestObserveContext;
   } = {},
 ): Promise<{
   requestId: number;
@@ -1432,7 +1446,7 @@ async function observeRepresentativeRequestOutcome(
   detail: string;
   fingerprint: RequestFingerprint;
 }> {
-  const timeoutMs = options.timeoutMs ?? 10000;
+  const timeoutMs = options.observeContext?.observeTimeoutMs ?? options.timeoutMs ?? 10000;
   const retry = options.retry ?? 'default';
   // Multi-Format Hook auto-show covers the loaded marker; dismiss AdActivity
   // first. Prefer close chrome; allow KEYCODE_BACK as last resort. If BACK
@@ -1522,6 +1536,7 @@ async function observeRepresentativeRequestOutcome(
       const elapsedMs = Math.max(0, Date.now() - startedAt);
       const requestId = requestIdFromText(lastSeen) ?? null;
       const adsLogSnippet = await readAdsReactNativeLogSnippet();
+      const ctx = options.observeContext;
       console.log(
         formatRequestOutcomeTimeout({
           format: formatId,
@@ -1529,6 +1544,15 @@ async function observeRepresentativeRequestOutcome(
           lastSeen,
           elapsedMs,
           ...(adsLogSnippet !== undefined ? { adsLogSnippet } : {}),
+          ...(ctx !== undefined
+            ? {
+                attempt: ctx.collectionAttempt,
+                remountCount: ctx.remountCount,
+                loadTapped: ctx.loadTapped,
+                adUnitId: ctx.adUnitId,
+                observeTimeoutMs: ctx.observeTimeoutMs,
+              }
+            : {}),
         }),
       );
       const remountable = pendingTimeoutClassification({ lastSeen, retry });
@@ -4178,6 +4202,7 @@ export async function proveRepresentativeRequestOutcome(
     platform: isAndroid() ? 'android' : 'ios',
     path: format.path,
     retry: format.retry ?? 'default',
+    baseObserveTimeoutMs: format.observeTimeoutMs ?? 10_000,
     hookAutoLoad:
       (format.path === 'hook' && !format.actionId) ||
       (format.path === 'multi-format' && format.multiFormatHookAutoLoad === true),
@@ -4213,7 +4238,7 @@ export async function proveRepresentativeRequestOutcome(
           await tapFormatAction(AppiumTestIds.action.reload(format.id));
         }
       },
-      observe: uiAttempt => {
+      observe: (uiAttempt, observeContext) => {
         if (format.structuredUnsupportedGate) {
           return observePoolStructuredUnsupportedGate(
             format.id,
@@ -4228,11 +4253,13 @@ export async function proveRepresentativeRequestOutcome(
           return observeHookLoadOutcome(format.id, uiAttempt, {
             timeoutMs: format.observeTimeoutMs,
             retry: format.retry ?? 'default',
+            observeContext,
           });
         }
         return observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt, {
           retry: format.retry ?? 'default',
           timeoutMs: format.observeTimeoutMs,
+          observeContext,
         });
       },
     },

@@ -475,28 +475,21 @@ function AppContent() {
   );
 }
 
-const appOpen = AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
-  requestNonPersonalizedAdsOnly: true,
-});
-
-const interstitial = InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL);
-const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED, {
-  requestNonPersonalizedAdsOnly: true,
-  keywords: ['fashion', 'clothing'],
-});
-const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
-  TestIds.REWARDED_INTERSTITIAL,
-  {
-    requestNonPersonalizedAdsOnly: true,
-    keywords: ['fashion', 'clothing'],
-  },
-);
-const gamInterstitial = GAMInterstitialAd.createForAdRequest(TestIds.GAM_INTERSTITIAL);
-
-function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId: string }) {
+/**
+ * Imperative fullscreen Load controls. Fresh `MobileAd` per Load so remount
+ * retries are not silent no-ops while `_isLoadCalled` (hung pending). Effect
+ * cleanup destroys the current instance on remount/unmount so in-flight native
+ * loads are abandoned — not only the unused useState initializer.
+ */
+function LoadableAdControls(props: {
+  createAd: () => MobileAd;
+  type: string;
+  formatId: string;
+}) {
   const tracksReward =
     props.formatId === AppiumTestIds.format.rewarded ||
     props.formatId === AppiumTestIds.format.rewardedInterstitial;
+  const [ad, setAd] = useState(() => props.createAd());
   const [requestState, setRequestState] = useState<RequestState>({
     requestId: 0,
     attempt: 0,
@@ -505,9 +498,10 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
   const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
   const [earnedReward, setEarnedReward] = useState(false);
   const [paidCount, setPaidCount] = useState(0);
+  const pendingLoadRef = useRef(false);
 
   useEffect(() => {
-    const adListener = props.mobileAd.addAdEventsListener(({ type, payload }) => {
+    const adListener = ad.addAdEventsListener(({ type, payload }) => {
       console.log(`${Platform.OS} ${props.type} ad event: ${type}`);
       if (tracksReward) {
         logGalleryRewardedEvent(props.formatId, String(type), {
@@ -535,7 +529,7 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
             outcome: requestErrorOutcome(payload),
           },
           {
-            adUnitId: props.mobileAd.adUnitId,
+            adUnitId: ad.adUnitId,
             reason: err?.reason ?? err?.code ?? 'unknown',
             code: err?.code,
             path: 'imperative',
@@ -552,8 +546,24 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
         setShowPhase('closed');
       }
     });
-    return () => adListener();
-  }, [props.formatId, props.mobileAd, props.type, tracksReward]);
+    if (pendingLoadRef.current) {
+      pendingLoadRef.current = false;
+      try {
+        ad.load();
+      } catch (e) {
+        setRequestState(current => ({ ...current, outcome: requestErrorOutcome(e) }));
+        console.log(`${Platform.OS} ${props.type} load error: ${e}`);
+      }
+    }
+    return () => {
+      adListener();
+      try {
+        ad.destroy();
+      } catch {
+        // best-effort: abandon hung/pending native load on remount or unmount
+      }
+    };
+  }, [ad, props.formatId, props.type, tracksReward]);
 
   return (
     <View style={styles.testSpacing} testID={props.formatId}>
@@ -566,8 +576,11 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
             setEarnedReward(false);
             setPaidCount(0);
             setRequestState(current => freshRequestState(current.attempt + 1));
-            props.mobileAd.load();
+            pendingLoadRef.current = true;
+            // Previous instance is destroyed by the effect cleanup for `ad`.
+            setAd(props.createAd());
           } catch (e) {
+            pendingLoadRef.current = false;
             setRequestState(current => ({ ...current, outcome: requestErrorOutcome(e) }));
             console.log(`${Platform.OS} ${props.type} load error: ${e}`);
           }
@@ -586,7 +599,7 @@ function LoadableAdControls(props: { mobileAd: MobileAd; type: string; formatId:
         testID={AppiumTestIds.action.show(props.formatId)}
         onPress={() => {
           try {
-            props.mobileAd.show();
+            ad.show();
           } catch (e) {
             console.log(`${Platform.OS} ${props.type} show error: ${e}`);
           }
@@ -1569,16 +1582,20 @@ function GAMBannerFormat(props: {
 }
 
 function GAMInterstitialFormat() {
-  const formatId = AppiumTestIds.format.gamInterstitial;
+  // Fresh instance per Load + destroy on remount/unmount (same as LoadableAdControls).
+  const [ad, setAd] = useState(() =>
+    GAMInterstitialAd.createForAdRequest(TestIds.GAM_INTERSTITIAL),
+  );
   const [requestState, setRequestState] = useState<RequestState>({
     requestId: 0,
     attempt: 0,
     outcome: REQUEST_OUTCOME_PENDING,
   });
   const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
+  const pendingLoadRef = useRef(false);
 
   useEffect(() => {
-    const adListener = gamInterstitial.addAdEventsListener(({ type, payload }) => {
+    const adListener = ad.addAdEventsListener(({ type, payload }) => {
       console.log(`${Platform.OS} GAM interstitial ad event: ${type}`);
       if (type === AdEventType.ERROR) {
         setRequestState(current => ({ ...current, outcome: requestErrorOutcome(payload) }));
@@ -1597,8 +1614,24 @@ function GAMInterstitialFormat() {
         console.log(`${Platform.OS} GAM interstitial app event: ${JSON.stringify(payload)}`);
       }
     });
-    return () => adListener();
-  }, []);
+    if (pendingLoadRef.current) {
+      pendingLoadRef.current = false;
+      try {
+        ad.load();
+      } catch (e) {
+        setRequestState(current => ({ ...current, outcome: requestErrorOutcome(e) }));
+        console.log(`${Platform.OS} GAM Interstitial load error: ${e}`);
+      }
+    }
+    return () => {
+      adListener();
+      try {
+        ad.destroy();
+      } catch {
+        // best-effort: abandon hung/pending native load on remount or unmount
+      }
+    };
+  }, [ad]);
 
   return (
     <View style={styles.testSpacing} testID={AppiumTestIds.format.gamInterstitial}>
@@ -1609,8 +1642,11 @@ function GAMInterstitialFormat() {
           try {
             setShowPhase('idle');
             setRequestState(current => freshRequestState(current.attempt + 1));
-            gamInterstitial.load();
+            pendingLoadRef.current = true;
+            // Previous instance is destroyed by the effect cleanup for `ad`.
+            setAd(GAMInterstitialAd.createForAdRequest(TestIds.GAM_INTERSTITIAL));
           } catch (e) {
+            pendingLoadRef.current = false;
             setRequestState(current => ({ ...current, outcome: requestErrorOutcome(e) }));
             console.log(`${Platform.OS} GAM Interstitial load error: ${e}`);
           }
@@ -1626,7 +1662,7 @@ function GAMInterstitialFormat() {
         title="Show GAM Interstitial"
         testID={AppiumTestIds.action.show(AppiumTestIds.format.gamInterstitial)}
         onPress={() => {
-          gamInterstitial.show();
+          ad.show();
         }}
       />
     </View>
@@ -1829,7 +1865,15 @@ function buildGalleryEntries(): GalleryEntry[] {
     title: 'App Open',
     section: 'formats',
     render: () => (
-      <LoadableAdControls mobileAd={appOpen} type="App Open" formatId={AppiumTestIds.format.appOpen} />
+      <LoadableAdControls
+        createAd={() =>
+          AppOpenAd.createForAdRequest(TestIds.APP_OPEN, {
+            requestNonPersonalizedAdsOnly: true,
+          })
+        }
+        type="App Open"
+        formatId={AppiumTestIds.format.appOpen}
+      />
     ),
   });
   entries.push({
@@ -1838,7 +1882,7 @@ function buildGalleryEntries(): GalleryEntry[] {
     section: 'formats',
     render: () => (
       <LoadableAdControls
-        mobileAd={interstitial}
+        createAd={() => InterstitialAd.createForAdRequest(TestIds.INTERSTITIAL)}
         type="Interstitial"
         formatId={AppiumTestIds.format.interstitial}
       />
@@ -1850,7 +1894,12 @@ function buildGalleryEntries(): GalleryEntry[] {
     section: 'formats',
     render: () => (
       <LoadableAdControls
-        mobileAd={rewarded}
+        createAd={() =>
+          RewardedAd.createForAdRequest(TestIds.REWARDED, {
+            requestNonPersonalizedAdsOnly: true,
+            keywords: ['fashion', 'clothing'],
+          })
+        }
         type="Rewarded"
         formatId={AppiumTestIds.format.rewarded}
       />
@@ -1862,7 +1911,12 @@ function buildGalleryEntries(): GalleryEntry[] {
     section: 'formats',
     render: () => (
       <LoadableAdControls
-        mobileAd={rewardedInterstitial}
+        createAd={() =>
+          RewardedInterstitialAd.createForAdRequest(TestIds.REWARDED_INTERSTITIAL, {
+            requestNonPersonalizedAdsOnly: true,
+            keywords: ['fashion', 'clothing'],
+          })
+        }
         type="Rewarded Interstitial"
         formatId={AppiumTestIds.format.rewardedInterstitial}
       />
