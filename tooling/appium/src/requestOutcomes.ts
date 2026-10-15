@@ -211,6 +211,7 @@ export const REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS = 8_000;
 export const REQUEST_OUTCOME_LOG_PREFIX = '[request-outcome-attempt]';
 export const REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX = '[request-outcome-shared-cooldown]';
 export const REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX = '[request-outcome-timeout]';
+export const REQUEST_OUTCOME_GALLERY_REQUEST_DIAG_PREFIX = '[request-outcome-gallery-request]';
 
 /** Session memory: adUnitId → wall clock of last accepted loaded outcome. */
 const acceptedAdUnitAtMs = new Map<string, number>();
@@ -386,6 +387,46 @@ export function truncateLogSnippet(log: string, maxChars = 2000): string {
     return log;
   }
   return log.slice(-maxChars);
+}
+
+/**
+ * True when Ads / ReactNativeJS logs contain a terminal `[gallery-request]` for
+ * `requestId` (`onAdLoaded` or `onAdFailedToLoad`). Mount-only lines do not count.
+ */
+export function hasTerminalGalleryRequestForId(log: string, requestId: number): boolean {
+  for (const line of log.split(/\r?\n/)) {
+    if (!line.includes('[gallery-request]')) {
+      continue;
+    }
+    if (!line.includes(`"requestId":${requestId}`)) {
+      continue;
+    }
+    if (
+      line.includes('"event":"onAdLoaded"') ||
+      line.includes('"event":"onAdFailedToLoad"')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * One-line diagnostic when a hard-fail pending timeout cannot correlate a
+ * terminal gallery-request for the observed requestId. Returns undefined when
+ * correlation succeeds or `requestId` is unknown.
+ */
+export function formatMissingGalleryRequestTerminalDiagnostic(options: {
+  requestId: number | null;
+  adsLogSnippet: string | undefined;
+}): string | undefined {
+  if (options.requestId == null) {
+    return undefined;
+  }
+  if (hasTerminalGalleryRequestForId(options.adsLogSnippet ?? '', options.requestId)) {
+    return undefined;
+  }
+  return `${REQUEST_OUTCOME_GALLERY_REQUEST_DIAG_PREFIX} requestId=${options.requestId} no terminal gallery-request`;
 }
 
 /**

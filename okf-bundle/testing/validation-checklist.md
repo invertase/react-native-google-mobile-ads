@@ -60,9 +60,11 @@ OKF-only / `CONTRIBUTING.md`-only diffs. Link-check behavior:
 Do not skip these because the diff omitted `docs/**` or touched only `okf-bundle/` /
 `CONTRIBUTING.md`. CI has no path filter. Closing `documentation` / `independent-review` /
 `commit_gate` without both exit codes is a process failure. On the runner,
-[`docs.yml`](../../.github/workflows/docs.yml) may retry `yarn lint:docs-links` via
-`nick-fields/retry@v3` when cold origins time out; Invertase-controlled hosts
-(`use.docs.page`, `rnfirebase.io`, `docs.page`) remain hard errors — do not map them to
+[`docs.yml`](../../.github/workflows/docs.yml) warms cold Invertase / docs.page /
+rnfirebase origins with a bounded `curl`, then retries `yarn lint:docs-links` via
+`nick-fields/retry@v3` (5 attempts, 90s backoff) when cold origins still time out.
+`@docs.page/cli` hardcodes a 10s external fetch timeout with no CLI / `docs.json` knob —
+do not map Invertase-controlled hosts (`use.docs.page`, `rnfirebase.io`, `docs.page`) to
 `severityOverride` warn. Local agents still run the command once (no local retry wrapper).
 
 <a id="docs-page-link-check"></a>
