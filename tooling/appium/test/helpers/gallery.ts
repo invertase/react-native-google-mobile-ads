@@ -1223,15 +1223,21 @@ async function observePoolStructuredUnsupportedGate(
 async function observeHookLoadOutcome(
   formatId: string,
   attempt: number,
-  timeoutMs = 10000,
+  options: {
+    timeoutMs?: number;
+    retry?: RepresentativeRequestRetry;
+  } = {},
 ): Promise<{
   requestId: number;
   classification: RequestOutcomeClassification;
   detail: string;
   fingerprint: RequestFingerprint;
 }> {
+  const timeoutMs = options.timeoutMs ?? 10000;
+  const retry = options.retry ?? 'default';
   const testId = AppiumTestIds.action.loaded(formatId);
   let lastSeen = '';
+  const startedAt = Date.now();
   const marker = await findByTestId(testId);
   if (!(await marker.isExisting())) {
     throw new Error(`[hook-lifecycle] ${formatId}: required marker ${testId} is missing`);
@@ -1248,7 +1254,13 @@ async function observeHookLoadOutcome(
       },
       {
         timeout: timeoutMs,
-        timeoutMsg: `testID ${testId} did not report terminal hook load attempt ${attempt} (lastSeen=${JSON.stringify(lastSeen)})`,
+        // Reuse the representative deferred timeoutMsg so remountable pending-timeout
+        // detection (`isRepresentativeRequestWaitTimeout`) works for hook observes.
+        timeoutMsg: formatRepresentativeRequestTimeoutMsg({
+          testId,
+          attempt,
+          lastSeen: REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED,
+        }),
       },
     );
     const classification = classifyHookLoadOutcome(lastSeen);
@@ -1262,6 +1274,48 @@ async function observeHookLoadOutcome(
       fingerprint: { status: 'not-applicable', evidence: 'hook-status-marker' },
     };
   } catch (error) {
+    try {
+      const el = await findByTestId(testId);
+      if (await el.isExisting().catch(() => false)) {
+        lastSeen = await elementText(el);
+      }
+    } catch {
+      // Keep lastSeen from the wait loop when a final read is unavailable.
+    }
+    const waitTimedOut = isRepresentativeRequestWaitTimeout(error);
+    if (waitTimedOut) {
+      const lateClassification = classifyHookLoadOutcome(lastSeen);
+      if (lateClassification !== undefined) {
+        return {
+          requestId: attempt,
+          classification: lateClassification,
+          detail: lastSeen,
+          fingerprint: { status: 'not-applicable', evidence: 'hook-status-marker' },
+        };
+      }
+      const elapsedMs = Math.max(0, Date.now() - startedAt);
+      const adsLogSnippet = await readAdsReactNativeLogSnippet();
+      console.log(
+        formatRequestOutcomeTimeout({
+          format: formatId,
+          requestId: attempt,
+          lastSeen,
+          elapsedMs,
+          ...(adsLogSnippet !== undefined ? { adsLogSnippet } : {}),
+        }),
+      );
+      if (retry === 'remount' && classifyHookLoadOutcome(lastSeen) === undefined) {
+        return {
+          requestId: attempt,
+          classification: 'pending-timeout',
+          detail: lastSeen,
+          fingerprint: {
+            status: 'not-applicable',
+            evidence: 'pending-timeout',
+          },
+        };
+      }
+    }
     let snippet = 'page source unavailable';
     try {
       const dump = await driver.getPageSource();
@@ -1273,14 +1327,19 @@ async function observeHookLoadOutcome(
     } catch {
       // Preserve the original WebDriver failure; page source is diagnostics only.
     }
+    if (waitTimedOut) {
+      const timeoutMsg = formatRepresentativeRequestTimeoutMsg({
+        testId,
+        attempt,
+        lastSeen,
+      });
+      throw new Error(`${timeoutMsg} | pageSource=${snippet}`, { cause: error });
+    }
     throw new Error(`${String(error)} | pageSource=${snippet}`, { cause: error });
   }
 }
 
 async function readAndroidAdsReactNativeLogSnippet(): Promise<string | undefined> {
-  if (!isAndroid()) {
-    return undefined;
-  }
   try {
     const log = await driver.execute('mobile: shell', {
       command: 'logcat',
@@ -1295,6 +1354,53 @@ async function readAndroidAdsReactNativeLogSnippet(): Promise<string | undefined
   } catch {
     return undefined;
   }
+}
+
+/** iOS simulator Ads / GoogleMobileAds / React log tail for pending-timeout diagnosis. */
+async function readIosAdsReactNativeLogSnippet(): Promise<string | undefined> {
+  const udid = process.env.RNGMA_IOS_UDID ?? '';
+  if (!udid) {
+    return undefined;
+  }
+  try {
+    const { execFileSync } = await import('node:child_process');
+    const text = execFileSync(
+      'xcrun',
+      [
+        'simctl',
+        'spawn',
+        udid,
+        'log',
+        'show',
+        '--last',
+        '2m',
+        '--style',
+        'compact',
+        '--predicate',
+        'subsystem CONTAINS[c] "GoogleMobileAds" OR eventMessage CONTAINS[c] "Ads" OR process CONTAINS[c] "React" OR eventMessage CONTAINS[c] "GoogleMobileAds"',
+      ],
+      {
+        encoding: 'utf8',
+        timeout: 15_000,
+        maxBuffer: 2 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return '';
+    }
+    return truncateLogSnippet(trimmed);
+  } catch {
+    return undefined;
+  }
+}
+
+async function readAdsReactNativeLogSnippet(): Promise<string | undefined> {
+  if (isAndroid()) {
+    return readAndroidAdsReactNativeLogSnippet();
+  }
+  return readIosAdsReactNativeLogSnippet();
 }
 
 async function observeRepresentativeRequestOutcome(
@@ -1400,7 +1506,7 @@ async function observeRepresentativeRequestOutcome(
       }
       const elapsedMs = Math.max(0, Date.now() - startedAt);
       const requestId = requestIdFromText(lastSeen) ?? null;
-      const adsLogSnippet = await readAndroidAdsReactNativeLogSnippet();
+      const adsLogSnippet = await readAdsReactNativeLogSnippet();
       console.log(
         formatRequestOutcomeTimeout({
           format: formatId,
@@ -4086,10 +4192,14 @@ export async function proveRepresentativeRequestOutcome(
           return observePoolFilledOutcome(format.id, uiAttempt);
         }
         if (format.path === 'hook') {
-          return observeHookLoadOutcome(format.id, uiAttempt);
+          return observeHookLoadOutcome(format.id, uiAttempt, {
+            timeoutMs: format.observeTimeoutMs,
+            retry: format.retry ?? 'default',
+          });
         }
         return observeRepresentativeRequestOutcome(format.id, format.path, uiAttempt, {
           retry: format.retry ?? 'default',
+          timeoutMs: format.observeTimeoutMs,
         });
       },
     },
