@@ -190,4 +190,9 @@ test('ios prebuilt capability consumes the shared prebuild output path', async (
   assert.equal(cap['appium:platformVersion'], process.env.RNGMA_IOS_VERSION);
   assert.equal(cap['appium:usePrebuiltWDA'], true);
   assert.equal(cap['appium:derivedDataPath'], IOS_WDA_DERIVED_DATA_PATH);
+  assert.equal(
+    cap['appium:showXcodeLog'],
+    true,
+    'showXcodeLog must stay on so xcodebuild exit-65 stderr reaches CI job logs',
+  );
 });

@@ -11,6 +11,7 @@ import {
   formatSessionCreateHangAbortError,
   IOS_SESSION_CREATE_HANG_HINT,
   isXcrunTimedOutError,
+  noteXcodebuildExitFromLine,
   recoverIosSessionCreateHang,
   resolveIosIsHeadless,
   resolveIosIsHeadlessResolution,
@@ -112,6 +113,7 @@ describe('iosBootDiagnostics', () => {
     assert.match(line!, /name=iPhone 17/);
     assert.match(line!, /bootstatus=timedOut=true lines=0 tail="\(empty\)"/);
     assert.match(line!, /bootstatusTimedOut=true/);
+    assert.match(line!, /bootstatusProbeTimeoutMs=5000/);
     assert.match(line!, /listState=Booted/);
     assert.match(line!, /bootstatusTail=/);
     assert.match(line!, /simulatorUiPids=\(none\)/);
@@ -368,12 +370,14 @@ describe('iosBootDiagnostics', () => {
     const callbacks: Array<() => void> = [];
     const recovers: string[] = [];
     const aborts: Error[] = [];
+    const lastXcodebuildExitRef = { value: null as number | null };
     startIosSessionCreateHangWatchdog('target-udid', {
       phase: 'serial:session-create',
       simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
       intervalMs: 1000,
       recoverAfterTicks: 2,
       abortAfterTicks: 3,
+      lastXcodebuildExitRef,
       write: line => lines.push(line),
       execCapture: () => ({
         stdout: '',
@@ -402,13 +406,27 @@ describe('iosBootDiagnostics', () => {
     callbacks[0]!(); // tick 1 — continue
     assert.equal(recovers.length, 0);
     assert.equal(aborts.length, 0);
+    assert.ok(lines.some(line => /\[e2e-ios-session\].*hang-probe/.test(line)));
+    lastXcodebuildExitRef.value = 65;
     callbacks[0]!(); // tick 2 — recover
     assert.equal(recovers.length, 1);
     assert.ok(lines.some(line => /phase=serial:session-create:hang-recover\b/.test(line)));
+    // Session snapshot must land before recover callback (capture-before-kill).
+    const recoverBootIdx = lines.findIndex(line =>
+      /\[e2e-ios-boot\].*phase=serial:session-create:hang-recover\b/.test(line),
+    );
+    const recoverSessionIdx = lines.findIndex(line =>
+      /\[e2e-ios-session\].*phase=serial:session-create:hang-recover\b/.test(line),
+    );
+    assert.ok(recoverBootIdx >= 0 && recoverSessionIdx > recoverBootIdx);
+    assert.match(lines[recoverSessionIdx]!, /lastXcodebuildExit=65/);
     callbacks[0]!(); // tick 3 — abort
     assert.equal(aborts.length, 1);
     assert.match(aborts[0]!.message, /\[e2e-ios-boot\] session-create abort/);
     assert.ok(lines.some(line => /phase=serial:session-create:hang-abort\b/.test(line)));
+    assert.ok(
+      lines.some(line => /\[e2e-ios-session\].*phase=serial:session-create:hang-abort/.test(line)),
+    );
   });
 
   test('hang watchdog markSessionCreated disarms recover before mid-suite ETIMEDOUT', () => {
@@ -527,5 +545,16 @@ describe('iosBootDiagnostics', () => {
       formatSessionCreateHangAbortError('WDA not ready').message,
       /^\[e2e-ios-boot\] session-create abort: WDA not ready$/,
     );
+  });
+
+  test('noteXcodebuildExitFromLine updates the hang-watchdog exit ref', () => {
+    const ref = { value: null as number | null };
+    assert.equal(
+      noteXcodebuildExitFromLine("[Xcode] xcodebuild exited with code '65'", ref),
+      65,
+    );
+    assert.equal(ref.value, 65);
+    assert.equal(noteXcodebuildExitFromLine('nope', ref), null);
+    assert.equal(ref.value, 65);
   });
 });
