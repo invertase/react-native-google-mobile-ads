@@ -30,9 +30,15 @@ import {
 import {
   formatIosBootDiagnosticLine,
   logIosBootDiagnostics,
+  noteXcodebuildExitFromLine,
   recoverIosSessionCreateHang,
   startIosSessionCreateHangWatchdog,
 } from '../src/iosBootDiagnostics.ts';
+import {
+  clearXcodebuildExitState,
+  writeXcodebuildExitState,
+  xcodebuildExitStatePath,
+} from '../src/iosSessionDiagnostics.ts';
 import { reconcileIosDeviceHub } from '../src/iosDeviceHub.ts';
 import { runtimeResources, type RuntimeResources } from '../src/slots.ts';
 import { androidSlotBootCommand } from '../src/commands.ts';
@@ -192,18 +198,24 @@ export async function runWdioOwned(
       // WDIO onPrepare repeats the same uninstall (idempotent) inside the child log.
       prepareAndroidSessionInstall(exactTarget);
     }
+    const lastXcodebuildExitRef: { value: number | null } = { value: null };
+    const xcodebuildExitStateFile = xcodebuildExitStatePath(runtime.appiumPort);
     if (target === 'ios') {
       // Parent stdout (CI job log) + same shape as WDIO child `[e2e-ios-boot]` lines.
       logIosBootDiagnostics(exactTarget, {
         phase: 'serial:pre-wdio',
         simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
       });
+      // Mirror WDIO launcher sidecar path so parent + worker share one exit file.
+      clearXcodebuildExitState(xcodebuildExitStateFile);
       // If POST /session hangs with prolonged xcrun ETIMEDOUT, recover once
       // (terminate WDA) then abort early with a clear [e2e-ios-boot] error
       // instead of burning the full 180s supervisor ceiling.
       sessionHangWatchdog = startIosSessionCreateHangWatchdog(exactTarget, {
         phase: 'serial:session-create',
         simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+        lastXcodebuildExitRef,
+        lastXcodebuildExitStatePath: xcodebuildExitStateFile,
         onRecover: (udid, reason) => {
           console.log(
             formatIosBootDiagnosticLine({
@@ -234,6 +246,14 @@ export async function runWdioOwned(
       if (target === 'android') {
         // Structured lines land on parent stdout; child log already has raw Appium.
         annotateAndroidSessionLogLine(line, { state: androidSessionAnnotateState });
+      }
+      if (target === 'ios') {
+        // Surface Appium `[Xcode] xcodebuild exited with code 'N'` into hang snapshots
+        // and the same per-port sidecar the WDIO launcher/worker use.
+        const code = noteXcodebuildExitFromLine(line, lastXcodebuildExitRef);
+        if (code != null) {
+          writeXcodebuildExitState(xcodebuildExitStateFile, code);
+        }
       }
       if (
         sessionHangWatchdog &&

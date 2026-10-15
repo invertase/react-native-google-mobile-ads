@@ -7,11 +7,36 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   deviceHubAppPath,
   listDeviceHubRelatedPids,
   parseDeviceHubMode,
 } from './iosDeviceHub.ts';
+import {
+  emitIosSessionCreateDiagnostics,
+  parseXcodebuildExitCodeFromLine,
+  resolveLastXcodebuildExit,
+  type SessionExecCapture,
+} from './iosSessionDiagnostics.ts';
+
+/**
+ * Same shared DerivedData root as `IOS_WDA_DERIVED_DATA_PATH` in hostPreflight.
+ * Inlined here to avoid an import cycle (hostPreflight → iosBootDiagnostics).
+ */
+const SESSION_WDA_DERIVED_DATA_PATH = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '.wda-derived',
+);
+const SESSION_WDA_RUNNER_APP_PATH = join(
+  SESSION_WDA_DERIVED_DATA_PATH,
+  'Build',
+  'Products',
+  'Debug-iphonesimulator',
+  'WebDriverAgentRunner-Runner.app',
+);
 
 /** Where `appium:isHeadless` came from (for one-shot cap-resolve logging). */
 export type IosIsHeadlessSource = 'RNGMA_IOS_HEADLESS' | 'CI' | 'default';
@@ -319,6 +344,9 @@ export function collectIosBootDiagnosticLines(
         bootstatus: bootstatusTail,
         bootstatusTail,
         bootstatusTimedOut,
+        // Instrument the probe bound so a future ETIMEDOUT proves whether the
+        // hang-probe spawnSync ceiling (not CoreSimulator) fired.
+        bootstatusProbeTimeoutMs: bootstatusTimeoutMs,
         'appium:simulatorStartupTimeout': timeoutLabel,
         deviceHubMode: hubMode,
         deviceHubPids: hubPids.join(',') || '(none)',
@@ -642,6 +670,18 @@ export function startIosSessionCreateHangWatchdog(
     simulatorUiPids?: readonly number[];
     recoverAfterTicks?: number;
     abortAfterTicks?: number;
+    bootstatusTimeoutMs?: number;
+    /**
+     * Optional mutable ref updated when Appium emits
+     * `xcodebuild exited with code 'N'` (see noteXcodebuildExitFromLine).
+     */
+    lastXcodebuildExitRef?: { value: number | null };
+    /**
+     * Launcher→worker sidecar path (`xcodebuildExitStatePath`). Worker hang
+     * snapshots read this because Appium `[Xcode]` lines are printed in the
+     * launcher process, not the Mocha worker.
+     */
+    lastXcodebuildExitStatePath?: string;
     /** Invoked once when decision is `recover` (defaults to terminate WDA + settle). */
     onRecover?: (udid: string, reason: string) => void;
     /** Invoked when decision is `abort` (parent should recordFailure / drain). */
@@ -652,6 +692,8 @@ export function startIosSessionCreateHangWatchdog(
   const clock = options.clock ?? realHangClock;
   const intervalMs = options.intervalMs ?? IOS_SESSION_CREATE_HANG_POLL_MS;
   const now = options.now ?? (() => new Date());
+  const bootstatusTimeoutMs =
+    options.bootstatusTimeoutMs ?? IOS_BOOTSTATUS_PROBE_TIMEOUT_MS;
   let ticks = 0;
   let stopped = false;
   /** False once a WebDriver session id exists — gates recover/abort. */
@@ -659,6 +701,28 @@ export function startIosSessionCreateHangWatchdog(
   let consecutiveXcrunEtimedout = 0;
   let recoveredOnce = false;
   let lastSimState: string | undefined;
+  let lastBootstatusTimedOut: boolean | undefined;
+
+  const emitSessionSnapshot = (sessionPhase: string): void => {
+    emitIosSessionCreateDiagnostics(
+      udid,
+      {
+        phase: sessionPhase,
+        listState: lastSimState,
+        bootstatusTimedOut: lastBootstatusTimedOut,
+        bootstatusProbeTimeoutMs: bootstatusTimeoutMs,
+        lastXcodebuildExit: resolveLastXcodebuildExit({
+          lastXcodebuildExitRef: options.lastXcodebuildExitRef,
+          lastXcodebuildExitStatePath: options.lastXcodebuildExitStatePath,
+        }),
+        derivedDataPath: SESSION_WDA_DERIVED_DATA_PATH,
+        wdaRunnerAppPath: SESSION_WDA_RUNNER_APP_PATH,
+        execCapture: options.execCapture as SessionExecCapture | undefined,
+        now,
+      },
+      write,
+    );
+  };
 
   write(
     formatIosBootDiagnosticLine(
@@ -707,11 +771,13 @@ export function startIosSessionCreateHangWatchdog(
       phase: `${options.phase}:hang-probe`,
       simulatorStartupTimeoutMs: options.simulatorStartupTimeoutMs,
       execCapture: options.execCapture,
+      bootstatusTimeoutMs,
       deviceHubMode: options.deviceHubMode,
       deviceHubPids: options.deviceHubPids,
       simulatorUiPids: options.simulatorUiPids,
       now,
     });
+    let probeSawEtimedout = false;
     for (const line of probeLines) {
       write(line);
       const evidence = sessionCreateHangEvidenceFromProbeLine(line);
@@ -719,10 +785,18 @@ export function startIosSessionCreateHangWatchdog(
         lastSimState = evidence.state;
       }
       if (evidence.xcrunEtimedout) {
+        probeSawEtimedout = true;
         consecutiveXcrunEtimedout += 1;
+        lastBootstatusTimedOut = true;
       } else {
         consecutiveXcrunEtimedout = 0;
+        lastBootstatusTimedOut = false;
       }
+    }
+    // When hang-probe sees xcrun ETIMEDOUT, emit WDA/xcodebuild snapshot so the
+    // next identical failure proves process state + log artifact paths.
+    if (probeSawEtimedout) {
+      emitSessionSnapshot(`${options.phase}:hang-probe`);
     }
 
     // Session may have completed while probes ran — never recover/abort after.
@@ -755,6 +829,7 @@ export function startIosSessionCreateHangWatchdog(
           now,
         ),
       );
+      emitSessionSnapshot(`${options.phase}:hang-recoverSkipped`);
       return;
     }
 
@@ -774,6 +849,9 @@ export function startIosSessionCreateHangWatchdog(
           now,
         ),
       );
+      // Capture WDA/xcodebuild state *before* terminate so exit-65 cause paths
+      // survive the recover kill (cannot hurt; clarifies next failure).
+      emitSessionSnapshot(`${options.phase}:hang-recover`);
       const recover =
         options.onRecover ??
         ((target: string) =>
@@ -818,6 +896,7 @@ export function startIosSessionCreateHangWatchdog(
           now,
         ),
       );
+      emitSessionSnapshot(`${options.phase}:hang-abort`);
       disarm();
       options.onAbort?.(error);
     }
@@ -845,4 +924,19 @@ export function startIosSessionCreateHangWatchdog(
       disarm();
     },
   };
+}
+
+/**
+ * Update a hang-watchdog exit ref when Appium/Xcode emits an xcodebuild exit line.
+ * Returns the parsed code (or null when the line is unrelated).
+ */
+export function noteXcodebuildExitFromLine(
+  line: string,
+  lastXcodebuildExitRef: { value: number | null },
+): number | null {
+  const code = parseXcodebuildExitCodeFromLine(line);
+  if (code != null) {
+    lastXcodebuildExitRef.value = code;
+  }
+  return code;
 }

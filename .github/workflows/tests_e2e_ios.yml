@@ -165,6 +165,20 @@ jobs:
           name: simulator_log
           path: simulator.log
 
+      # WDA DerivedData + xcodebuild logs for session-create exit-65 triage.
+      # showXcodeLog streams build stderr into the job log; these files capture
+      # anything Xcode wrote under the shared prebuild derivedDataPath.
+      - name: Upload WDA xcodebuild logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wda_xcodebuild_logs
+          path: |
+            tooling/appium/.wda-derived/Logs
+            tooling/appium/.wda-derived/**/*.log
+            tooling/appium/.wda-derived/**/*.xcactivitylog
+          if-no-files-found: warn
+
       - uses: codecov/codecov-action@v5
         with:
           verbose: true
