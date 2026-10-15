@@ -59,6 +59,11 @@ export type RequestOutcomeAttempt = {
   sharedUnitHot: boolean;
   /** Age of the last accepted stamp for this unit, or null when never accepted. */
   acceptedAtAgeMs: number | null;
+  /**
+   * Wall time of the observe/request call only (excludes pre-attempt sleep).
+   * Fast `no-fill` ≈ inventory drought; near-observe-timeout `pending-timeout` ≈ hang.
+   */
+  requestMs: number;
 };
 
 /**
@@ -179,6 +184,7 @@ type ObservedRequestOutcome = Omit<
   | 'consecutivePendingTimeoutBefore'
   | 'sharedUnitHot'
   | 'acceptedAtAgeMs'
+  | 'requestMs'
 >;
 
 /**
@@ -242,10 +248,20 @@ export const REPRESENTATIVE_REQUEST_MAX_BACKOFF_MS = 2000;
 export const SHARED_AD_UNIT_RECENT_MS = 10 * 60_000;
 /** Cap on the pre-attempt-1 sleep when the format's ad unit is still hot. */
 export const SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS = 15_000;
+/**
+ * After a rewarded / rewarded-interstitial show-close, later rewarded-family
+ * formats (different Google demo units included) wait up to this long before
+ * attempt 1 so sibling inventory can recover without sharing an adUnitId.
+ */
+export const REWARDED_FAMILY_CROSS_FORMAT_COOLDOWN_MS = 15_000;
 /** Retry backoff base while the shared unit is still hot (replaces 250 ms). */
 export const REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS = 2_000;
-/** Retry backoff cap while the shared unit is still hot (replaces 2000 ms). */
-export const REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS = 8_000;
+/**
+ * Retry backoff cap for shared-unit hot / consecutive no-fill / consecutive
+ * pending-timeout drought (replaces 2000 ms). Sized so ten attempts can span
+ * ~2+ minutes of sleep alone without raising the attempt ceiling.
+ */
+export const REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS = 20_000;
 /**
  * Remount observe ceiling (attempt 2+) so ten pending-timeouts + remount/backoff
  * finish with request-outcome exhaust before the mocha/spec timeout.
@@ -269,12 +285,27 @@ export const REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX = '[request-outcome-shar
 export const REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX = '[request-outcome-timeout]';
 export const REQUEST_OUTCOME_GALLERY_REQUEST_DIAG_PREFIX = '[request-outcome-gallery-request]';
 
+const REWARDED_FAMILY_FORMAT_IDS: ReadonlySet<string> = new Set([
+  AppiumTestIds.format.rewarded,
+  AppiumTestIds.format.rewardedHook,
+  AppiumTestIds.format.rewardedInterstitial,
+  AppiumTestIds.format.rewardedInterstitialHook,
+]);
+
 /** Session memory: adUnitId → wall clock of last accepted loaded outcome. */
 const acceptedAdUnitAtMs = new Map<string, number>();
+/** Wall clock of the last rewarded-family accept (after show-close when owned). */
+let lastRewardedFamilyShowAtMs: number | null = null;
 
-/** Test helper: clear shared-unit acceptance memory between cases. */
+/** True for imperative/hook rewarded and rewarded-interstitial gallery formats. */
+export function isRewardedFamilyFormat(formatId: string): boolean {
+  return REWARDED_FAMILY_FORMAT_IDS.has(formatId);
+}
+
+/** Test helper: clear shared-unit / rewarded-family acceptance memory between cases. */
 export function resetAcceptedAdUnitMemory(): void {
   acceptedAdUnitAtMs.clear();
+  lastRewardedFamilyShowAtMs = null;
 }
 
 /** Record that a Google demo unit just accepted (loaded) in this session. */
@@ -283,6 +314,35 @@ export function noteAcceptedAdUnit(adUnitId: string | null, nowMs: number = Date
     return;
   }
   acceptedAdUnitAtMs.set(adUnitId, nowMs);
+}
+
+/** Record a rewarded-family format finished its accepted path (show-close owned). */
+export function noteRewardedFamilyShow(formatId: string, nowMs: number = Date.now()): void {
+  if (!isRewardedFamilyFormat(formatId)) {
+    return;
+  }
+  lastRewardedFamilyShowAtMs = nowMs;
+}
+
+/**
+ * Remaining cool-down before the next rewarded-family format should request.
+ * Zero when no prior rewarded-family show exists or the recent window elapsed.
+ */
+export function rewardedFamilyCooldownRemainingMs(
+  formatId: string,
+  nowMs: number = Date.now(),
+): number {
+  if (!isRewardedFamilyFormat(formatId) || lastRewardedFamilyShowAtMs === null) {
+    return 0;
+  }
+  const elapsed = nowMs - lastRewardedFamilyShowAtMs;
+  if (elapsed < 0 || elapsed >= SHARED_AD_UNIT_RECENT_MS) {
+    return 0;
+  }
+  return Math.min(
+    SHARED_AD_UNIT_RECENT_MS - elapsed,
+    REWARDED_FAMILY_CROSS_FORMAT_COOLDOWN_MS,
+  );
 }
 
 /**
@@ -849,7 +909,9 @@ export async function collectRepresentativeRequestOutcomes(options: {
       recentSameUnit: longerBackoff,
     });
     if (attempt === 1) {
-      const cooldownMs = sharedAdUnitCooldownRemainingMs(adUnitId, nowMs);
+      const sharedCooldownMs = sharedAdUnitCooldownRemainingMs(adUnitId, nowMs);
+      const rewardedFamilyCooldownMs = rewardedFamilyCooldownRemainingMs(format, nowMs);
+      const cooldownMs = Math.max(sharedCooldownMs, rewardedFamilyCooldownMs);
       if (cooldownMs > 0) {
         delayMs = Math.max(delayMs, cooldownMs);
         emit(
@@ -859,6 +921,12 @@ export async function collectRepresentativeRequestOutcomes(options: {
             configuration,
             adUnitId,
             cooldownMs,
+            kind:
+              rewardedFamilyCooldownMs >= sharedCooldownMs && rewardedFamilyCooldownMs > 0
+                ? 'rewarded-family'
+                : 'shared-unit',
+            sharedCooldownMs,
+            rewardedFamilyCooldownMs,
           })}`,
         );
       }
@@ -866,10 +934,12 @@ export async function collectRepresentativeRequestOutcomes(options: {
     if (delayMs > 0) {
       await sleep(delayMs);
     }
+    const requestStartedAt = now();
     const observed = await request(attempt, {
       consecutivePendingTimeoutBefore,
       adUnitId,
     });
+    const requestMs = Math.max(0, now() - requestStartedAt);
     if (!Number.isSafeInteger(observed.requestId) || observed.requestId <= 0) {
       throw new Error(
         `[request-outcome] ${format}: attempt ${attempt} did not report a valid request id`,
@@ -902,6 +972,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
       consecutivePendingTimeoutBefore,
       sharedUnitHot,
       acceptedAtAgeMs: acceptedAdUnitAgeMs(adUnitId, nowMs),
+      requestMs,
     };
     attempts.push(result);
     emit(formatRequestOutcomeAttempt(result));
@@ -935,6 +1006,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
       consecutivePendingTimeoutBefore,
       sharedUnitHot,
       acceptedAtAgeMs,
+      requestMs,
     }) => ({
       attempt,
       requestId,
@@ -949,6 +1021,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
       consecutivePendingTimeoutBefore,
       sharedUnitHot,
       acceptedAtAgeMs,
+      requestMs,
     }),
   );
   throw new Error(
@@ -1094,7 +1167,9 @@ export async function runRepresentativeRequestOutcomeContract(options: {
     await onAccepted(attempts.at(-1)!);
   }
   // Stamp after show-close (when owned) so the hot window covers later shared-unit formats.
-  noteAcceptedAdUnit(attempts.at(-1)!.adUnitId, (now ?? Date.now)());
+  const acceptedAt = (now ?? Date.now)();
+  noteAcceptedAdUnit(attempts.at(-1)!.adUnitId, acceptedAt);
+  noteRewardedFamilyShow(format, acceptedAt);
   await runtime.backToGallery();
   return attempts;
 }
