@@ -9,6 +9,9 @@ import mobileAds, {
   AdsConsentPrivacyOptionsRequirementStatus,
   MaxAdContentRating,
   TestIds,
+  NativeAd,
+  NativeAdEventType,
+  CustomNativeAd,
   AdEventType,
   BannerAdSize,
   GAMBannerAdSize,
@@ -43,6 +46,9 @@ import mobileAds, {
 } from './src';
 
 import type {
+  CustomNativeAdRequestOptions,
+  CustomNativeAsset,
+  CustomNativeClickEventPayload,
   AdapterResponseInfo,
   AdBackend,
   AdCapabilities,
@@ -842,6 +848,60 @@ console.log(
 );
 console.log(multiFormatHandle.isStaleByPolicy());
 multiFormatHandle.onStaleByPolicy(() => undefined)();
+// Backward compatibility: the documented "banner, else native" narrowing must keep typing
+// `handle.ad` as NativeAd for requests that do not opt into custom native formats.
+if (multiFormatHandle.format !== AdFormat.BANNER) {
+  const legacyNative: NativeAd = multiFormatHandle.ad;
+  console.log(legacyNative.headline);
+}
+// Custom native competes only through the opt-in config; its handles widen the union.
+const customMultiFormat = MultiFormatAdRequest.create({
+  adUnitId: TestIds.GAM_NATIVE,
+  requestOptions: {
+    formats: [AdFormat.BANNER],
+    bannerSizes: [BannerAdSize.MEDIUM_RECTANGLE],
+    adServer: 'ad-manager',
+    customNativeFormatIds: ['12345678'],
+  },
+});
+void customMultiFormat.load().then(({ ads }) => {
+  for (const handle of ads) {
+    if (handle.format === 'customNative') {
+      const custom: CustomNativeAd = handle.ad;
+      const cta: string | null = custom.getText('Calltoaction');
+      console.log(cta, custom.getImage('Secondaryimage')?.url);
+      custom.recordImpression();
+    }
+  }
+});
+void multiFormat.load().then(({ ads }) => {
+  for (const handle of ads) {
+    // @ts-expect-error legacy requests never produce custom native handles
+    if (handle.format === 'customNative') {
+      console.log(handle);
+    }
+  }
+});
+const plainMultiFormatConfig: MultiFormatAdConfig = {
+  adUnitId: TestIds.GAM_NATIVE,
+  // @ts-expect-error customNativeFormatIds requires MultiFormatCustomNativeAdConfig
+  requestOptions: { formats: [AdFormat.NATIVE], customNativeFormatIds: ['1'] },
+};
+void plainMultiFormatConfig;
+const customNativeOptions: CustomNativeAdRequestOptions = {
+  customFormatIds: ['12345678'],
+  clickHandling: 'app',
+};
+void CustomNativeAd.createForAdRequest(TestIds.GAM_NATIVE, customNativeOptions).then(ad => {
+  const asset: CustomNativeAsset | null = ad.getAsset('Calltoaction');
+  ad.addAdEventListener(NativeAdEventType.CUSTOM_CLICK, (payload: CustomNativeClickEventPayload) => {
+    const assetName: string = payload.assetName;
+    console.log(asset, assetName);
+  });
+  void ad.performClick('Calltoaction');
+  // @ts-expect-error the library only reports clicks; navigation is the app's decision
+  void ad.performClick('Calltoaction', { url: 'https://example.com' });
+});
 const handleExpiry: AdExpiry = multiFormatHandle;
 const handleIdentity: AdIdentity = multiFormatHandle;
 const pooledExpiry: AdExpiry = pooledAd;

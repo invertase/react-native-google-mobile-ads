@@ -20,11 +20,14 @@ import { isArray, isNumber, isObject, isString, isUndefined } from './common';
 import { AdFormat } from './types/AdFormat';
 import type {
   MultiFormatAdConfig,
+  MultiFormatCustomNativeAdConfig,
+  MultiFormatCustomNativeAdRequestOptions,
   MultiFormatAdFormat,
   MultiFormatAdRequestOptions,
 } from './types/MultiFormatAd';
 import type { MultiFormatBannerSize } from './types/MultiFormatBannerSize';
 import { validateAdRequestOptions } from './validateAdRequestOptions';
+import { validateCustomFormatIds } from './validateCustomNativeAdRequestOptions';
 
 const ALLOWED_FORMATS: ReadonlySet<string> = new Set([AdFormat.NATIVE, AdFormat.BANNER]);
 
@@ -89,22 +92,39 @@ function normalizeBannerSize(size: MultiFormatBannerSize): string {
 }
 
 /**
- * Validates and normalizes a multi-format request config.
- *
- * Hard-errors match the approved freeze: empty formats, banner without sizes,
- * illegal sizes, requestCount other than 1, banner without ad-manager, AdMob
- * unit ids when banner is requested.
- *
- * `bannerSizes` are normalized to wire strings (`BANNER`, `320x50`, …) for the
- * native bridge.
+ * Bridge-ready request options: `bannerSizes` as wire strings, custom native fields only when the
+ * caller opted in with `MultiFormatCustomNativeAdConfig`.
  */
-export function validateMultiFormatAdConfig(config: MultiFormatAdConfig): {
-  adUnitId: string;
-  requestOptions: Omit<MultiFormatAdRequestOptions, 'bannerSizes' | 'formats' | 'requestCount'> & {
+type NormalizedMultiFormatAdRequestOptions = Omit<
+  MultiFormatAdRequestOptions,
+  'bannerSizes' | 'formats' | 'requestCount'
+> &
+  Partial<
+    Pick<
+      MultiFormatCustomNativeAdRequestOptions,
+      'customNativeFormatIds' | 'customNativeClickHandling'
+    >
+  > & {
     formats: MultiFormatAdFormat[];
     bannerSizes?: string[];
     requestCount: 1;
   };
+
+/**
+ * Validates and normalizes a multi-format request config.
+ *
+ * Hard-errors match the approved freeze: empty formats, banner without sizes,
+ * illegal sizes, requestCount other than 1, banner without ad-manager, AdMob
+ * unit ids when banner or custom native is requested.
+ *
+ * `bannerSizes` are normalized to wire strings (`BANNER`, `320x50`, …) for the
+ * native bridge.
+ */
+export function validateMultiFormatAdConfig(
+  config: MultiFormatAdConfig | MultiFormatCustomNativeAdConfig,
+): {
+  adUnitId: string;
+  requestOptions: NormalizedMultiFormatAdRequestOptions;
 } {
   if (!isObject(config) || isArray(config)) {
     throw new Error("'config' expected an object");
@@ -113,7 +133,9 @@ export function validateMultiFormatAdConfig(config: MultiFormatAdConfig): {
     throw new Error("'adUnitId' expected a non-empty string");
   }
 
-  const options = config.requestOptions;
+  // Custom native fields are optional here: plain MultiFormatAdConfig callers never set them.
+  const options = config.requestOptions as Partial<MultiFormatCustomNativeAdRequestOptions> &
+    MultiFormatAdRequestOptions;
   if (!isObject(options) || isArray(options)) {
     throw new Error("'requestOptions' expected an object");
   }
@@ -170,15 +192,39 @@ export function validateMultiFormatAdConfig(config: MultiFormatAdConfig): {
     throw new Error("'requestOptions.adServer' expected 'ad-manager' when provided");
   }
 
+  const wantsCustomNative = !isUndefined(options.customNativeFormatIds);
+  let customNativeFormatIds: string[] | undefined;
+  if (wantsCustomNative) {
+    customNativeFormatIds = validateCustomFormatIds(
+      options.customNativeFormatIds,
+      'requestOptions.customNativeFormatIds',
+    );
+    if (adServer !== 'ad-manager') {
+      throw new Error(
+        "'requestOptions.adServer' must be 'ad-manager' when customNativeFormatIds is set",
+      );
+    }
+    if (config.adUnitId.startsWith('ca-app-pub-')) {
+      throw new Error(
+        "'adUnitId' AdMob units cannot request custom native formats — use a Google Ad Manager unit.",
+      );
+    }
+  } else if (!isUndefined(options.customNativeClickHandling)) {
+    throw new Error(
+      "'requestOptions.customNativeClickHandling' requires 'requestOptions.customNativeFormatIds'",
+    );
+  }
+  const customNativeClickHandling = options.customNativeClickHandling as string | undefined;
+  if (
+    !isUndefined(customNativeClickHandling) &&
+    customNativeClickHandling !== 'app' &&
+    customNativeClickHandling !== 'sdk'
+  ) {
+    throw new Error("'requestOptions.customNativeClickHandling' expected 'app' or 'sdk'");
+  }
+
   const base = validateAdRequestOptions(options);
-  const normalized: Omit<
-    MultiFormatAdRequestOptions,
-    'bannerSizes' | 'formats' | 'requestCount'
-  > & {
-    formats: MultiFormatAdFormat[];
-    bannerSizes?: string[];
-    requestCount: 1;
-  } = {
+  const normalized: NormalizedMultiFormatAdRequestOptions = {
     ...base,
     formats,
     requestCount: 1,
@@ -191,6 +237,12 @@ export function validateMultiFormatAdConfig(config: MultiFormatAdConfig): {
     normalized.bannerSizes = bannerSizes.map((size, index) =>
       normalizeBannerSize(assertBannerSize(size, index)),
     );
+  }
+
+  if (customNativeFormatIds) {
+    normalized.adServer = 'ad-manager';
+    normalized.customNativeFormatIds = customNativeFormatIds;
+    normalized.customNativeClickHandling = options.customNativeClickHandling ?? 'app';
   }
 
   if (!isUndefined(options.stalenessWindowMillis)) {

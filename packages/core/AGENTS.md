@@ -63,7 +63,7 @@ For pools: `AdPools.create` initializes the SDK on Android and starts preloading
 Base: `https://docs.page/invertase/react-native-google-mobile-ads`
 
 - **Getting Started:** `/`, `/prerequisites`, `/installation/expo`, `/installation/react-native`, `/configuration`, `/firebase`, `/consent-basics`, `/initialization`, `/first-ad`
-- **Ad formats:** `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,hooks,ad-manager}`
+- **Ad formats:** `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,hooks,ad-manager,custom-native}`
 - **Advanced:** `/preload-pools-and-multiformat-recipes`, `/next-gen-sdk`, `/mediation`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control`
 - **Testing:** `/testing`, `/common-reasons-for-ads-not-showing`, `/ad-inspector`
 - **Reference:** External [Reference API](https://invertase.github.io/react-native-google-mobile-ads/), `/config-plugin`, `/ai-agents`

@@ -19,6 +19,7 @@ import { createAdExpiry } from '../internal/adExpiry';
 import { adErrorFromNativeEvent, reasonFromNativeCode } from '../internal/adErrorFromNativeEvent';
 import { NativeError } from '../internal/NativeError';
 import NativeGoogleMobileAdsNativeModule, {
+  CustomNativeAdProps,
   MultiFormatNativeLoadResult,
   NativeAdProps,
 } from '../specs/modules/NativeGoogleMobileAdsNativeModule';
@@ -28,9 +29,13 @@ import type {
   MultiFormatAdConfig,
   MultiFormatAdHandle,
   MultiFormatAdRequestOptions,
+  MultiFormatCustomNativeAdConfig,
+  MultiFormatCustomNativeAdHandle,
+  MultiFormatCustomNativeAdRequestOptions,
 } from '../types/MultiFormatAd';
 import type { ResponseInfo } from '../types/ResponseInfo';
 import { validateMultiFormatAdConfig } from '../validateMultiFormatAdConfig';
+import { CustomNativeAd } from './native-ad/CustomNativeAd';
 import { NativeAd } from './native-ad/NativeAd';
 
 function asAdError(error: unknown, fallbackMessage: string): AdError {
@@ -75,7 +80,8 @@ function isCleanNoFill(error: AdError | null | undefined): boolean {
 }
 
 /**
- * One AdLoader / GADAdLoader request that may return native and/or GAM banner.
+ * One AdLoader / GADAdLoader request that may return native and/or GAM banner,
+ * and optionally a Google Ad Manager custom native ad (`customNativeFormatIds`).
  *
  * Multi-format means several formats compete for one ad. It is not multi-count:
  * `requestCount` stays 1 in v1.
@@ -96,19 +102,27 @@ function isCleanNoFill(error: AdError | null | undefined): boolean {
  * console.log(errors.map(error => error.reason), responseInfo?.responseId);
  * ```
  */
-export class MultiFormatAdRequest {
+export class MultiFormatAdRequest<
+  THandle extends MultiFormatAdHandle | MultiFormatCustomNativeAdHandle = MultiFormatAdHandle,
+> {
   readonly adUnitId: string;
-  readonly options: MultiFormatAdRequestOptions;
+  readonly options: MultiFormatAdRequestOptions &
+    Partial<
+      Pick<
+        MultiFormatCustomNativeAdRequestOptions,
+        'customNativeFormatIds' | 'customNativeClickHandling'
+      >
+    >;
 
   private destroyed = false;
   private ownedHandleIds = new Set<string>();
   private ownedHandleExpiryClearers = new Map<string, () => void>();
   private readonly bridgeOptions: Record<string, unknown>;
 
-  private constructor(config: MultiFormatAdConfig) {
+  private constructor(config: MultiFormatAdConfig | MultiFormatCustomNativeAdConfig) {
     const validated = validateMultiFormatAdConfig(config);
     this.adUnitId = validated.adUnitId;
-    this.options = validated.requestOptions as MultiFormatAdRequestOptions;
+    this.options = validated.requestOptions as MultiFormatAdRequest['options'];
     this.bridgeOptions = validated.requestOptions as unknown as Record<string, unknown>;
   }
 
@@ -120,8 +134,18 @@ export class MultiFormatAdRequest {
    * Throws synchronously when the config cannot be honored without dropping a
    * format or inventing an API (empty formats, banner without sizes, illegal
    * sizes, AdMob unit + banner, requestCount ≠ 1).
+   *
+   * A config with `customNativeFormatIds` (`MultiFormatCustomNativeAdConfig`) returns a request
+   * whose handles may also be `format: 'customNative'`; every other config keeps the
+   * native / banner `MultiFormatAdHandle` type.
    */
-  static create(config: MultiFormatAdConfig): MultiFormatAdRequest {
+  static create(
+    config: MultiFormatCustomNativeAdConfig,
+  ): MultiFormatAdRequest<MultiFormatAdHandle | MultiFormatCustomNativeAdHandle>;
+  static create(config: MultiFormatAdConfig): MultiFormatAdRequest;
+  static create(
+    config: MultiFormatAdConfig | MultiFormatCustomNativeAdConfig,
+  ): MultiFormatAdRequest<MultiFormatAdHandle | MultiFormatCustomNativeAdHandle> {
     return new MultiFormatAdRequest(config);
   }
 
@@ -139,7 +163,7 @@ export class MultiFormatAdRequest {
    * response record is not a failure and so does not belong in `errors`.
    */
   async load(): Promise<{
-    ads: MultiFormatAdHandle[];
+    ads: THandle[];
     errors: AdError[];
     responseInfo: ResponseInfo | null;
   }> {
@@ -286,7 +310,51 @@ export class MultiFormatAdRequest {
         },
       };
       return {
-        ads: [handle],
+        ads: [handle as THandle],
+        errors: nativeError && !isCleanNoFill(nativeError) ? [nativeError] : [],
+        responseInfo: handle.responseInfo,
+      };
+    }
+
+    if (nativeResult.format === 'customNative') {
+      const props: CustomNativeAdProps = {
+        adId: handleId,
+        responseId: nativeResult.responseId ?? null,
+        customFormatId: nativeResult.customFormatId ?? '',
+        availableAssetNames: nativeResult.availableAssetNames ?? [],
+        assets: nativeResult.assets ?? {},
+        mediaContent: nativeResult.mediaContent ?? null,
+        responseInfo: nativeResult.responseInfo ?? null,
+      };
+      const ad = CustomNativeAd.fromLoadedProps(
+        this.adUnitId,
+        props,
+        this.options.customNativeClickHandling ?? 'app',
+      );
+      const handle: MultiFormatCustomNativeAdHandle = {
+        format: 'customNative',
+        adId: handleId,
+        observedAt,
+        provenance: 'pool/emulated-no-sdk-preloader',
+        responseInfo: (props.responseInfo as ResponseInfo | null) ?? topResponseInfo,
+        stalenessWindowMillis: expiry.stalenessWindowMillis,
+        stalenessWindowSource: expiry.stalenessWindowSource,
+        isStaleByPolicy: () => expiry.isStaleByPolicy(),
+        onStaleByPolicy: listener => expiry.onStaleByPolicy(listener),
+        ad,
+        destroy: () => {
+          if (!this.ownedHandleIds.has(handleId)) {
+            return;
+          }
+          this.ownedHandleIds.delete(handleId);
+          this.ownedHandleExpiryClearers.delete(handleId);
+          expiry.clear();
+          // Native keys the custom ad by handleId, so ad.destroy() releases it.
+          ad.destroy();
+        },
+      };
+      return {
+        ads: [handle as THandle],
         errors: nativeError && !isCleanNoFill(nativeError) ? [nativeError] : [],
         responseInfo: handle.responseInfo,
       };
@@ -309,7 +377,7 @@ export class MultiFormatAdRequest {
       destroy: destroyBanner,
     };
     return {
-      ads: [handle],
+      ads: [handle as THandle],
       errors: nativeError && !isCleanNoFill(nativeError) ? [nativeError] : [],
       responseInfo: topResponseInfo,
     };

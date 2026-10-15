@@ -18,6 +18,8 @@
 #if !TARGET_OS_MACCATALYST
 
 #import "RNGoogleMobileAdsNativeModule.h"
+#import <GoogleMobileAds/GADCustomNativeAd.h>
+#import <GoogleMobileAds/GADCustomNativeAdDelegate.h>
 #import <GoogleMobileAds/GAMBannerView.h>
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsNativeAdRegistry.h"
@@ -30,7 +32,11 @@ typedef void (^RNGMANativeAdLoadCompletionHandler)(GADNativeAd *_Nullable native
 
 typedef void (^RNGMAMultiFormatLoadCompletionHandler)(GADNativeAd *_Nullable nativeAd,
                                                       GAMBannerView *_Nullable bannerView,
+                                                      GADCustomNativeAd *_Nullable customNativeAd,
                                                       NSError *_Nullable error);
+
+typedef void (^RNGMACustomNativeAdLoadCompletionHandler)(
+    GADCustomNativeAd *_Nullable customNativeAd, NSError *_Nullable error);
 
 @interface RNGMANativeAdHolder
     : NSObject <GADNativeAdLoaderDelegate, GADNativeAdDelegate, GADVideoControllerDelegate>
@@ -49,12 +55,14 @@ typedef void (^RNGMAMultiFormatLoadCompletionHandler)(GADNativeAd *_Nullable nat
 
 @interface RNGMAMultiFormatAdHolder : NSObject <GADNativeAdLoaderDelegate,
                                                 GAMBannerAdLoaderDelegate,
+                                                GADCustomNativeAdLoaderDelegate,
                                                 GADAdLoaderDelegate,
                                                 GADNativeAdDelegate,
                                                 GADVideoControllerDelegate>
 
 @property(strong, nullable) GADNativeAd *nativeAd;
 @property(strong, nullable) GAMBannerView *bannerView;
+@property(strong, nullable) GADCustomNativeAd *customNativeAd;
 
 - (instancetype)initWithNativeModule:(RNGoogleMobileAdsNativeModule *)nativeModule
                             adUnitId:(NSString *)adUnitId
@@ -68,6 +76,101 @@ typedef void (^RNGMAMultiFormatLoadCompletionHandler)(GADNativeAd *_Nullable nat
 - (void)relinquishBannerView;
 
 @end
+
+/**
+ * One Google Ad Manager custom native ad (GADCustomNativeAd), keyed by the library adId.
+ * The SDK reports clicks via performClickOnAssetWithKey:; with app click handling the SDK then
+ * runs customClickHandler instead of navigating, and the holder emits `custom_click` so the app
+ * decides where the user goes.
+ */
+@interface RNGMACustomNativeAdHolder
+    : NSObject <GADCustomNativeAdLoaderDelegate, GADCustomNativeAdDelegate>
+
+@property(nonatomic, readonly, copy) NSString *adId;
+@property(strong, nullable) GADCustomNativeAd *customNativeAd;
+
+- (instancetype)initWithNativeModule:(RNGoogleMobileAdsNativeModule *)nativeModule
+                                adId:(NSString *)adId
+                    appClickHandling:(BOOL)appClickHandling;
+
+- (void)loadWithAdUnitId:(NSString *)adUnitId
+               formatIds:(NSArray<NSString *> *)formatIds
+          requestOptions:(NSDictionary *)requestOptions
+       completionHandler:(RNGMACustomNativeAdLoadCompletionHandler)completionHandler;
+
+/** Takes ownership of an already-loaded ad (multi-format path). */
+- (void)adoptCustomNativeAd:(GADCustomNativeAd *)customNativeAd;
+
+- (void)performClickOnAssetKey:(NSString *)assetKey;
+
+- (void)recordImpression;
+
+- (void)dispose;
+
+@end
+
+/** Format IDs from a JS array, verbatim; non-string and empty entries are dropped. */
+static NSArray<NSString *> *RNGMACustomFormatIds(id value) {
+  NSMutableOrderedSet<NSString *> *ids = [NSMutableOrderedSet orderedSet];
+  if ([value isKindOfClass:[NSArray class]]) {
+    for (id formatId in (NSArray *)value) {
+      if ([formatId isKindOfClass:[NSString class]] && [(NSString *)formatId length] > 0) {
+        [ids addObject:formatId];
+      }
+    }
+  }
+  return ids.array;
+}
+
+static BOOL RNGMAUsesAppClickHandling(NSDictionary *requestOptions, NSString *key) {
+  return ![requestOptions[key] isEqual:@"sdk"];
+}
+
+static NSMutableDictionary *RNGMACustomNativeAdPayload(GADCustomNativeAd *customNativeAd,
+                                                       NSString *adId) {
+  NSMutableDictionary *payload = [NSMutableDictionary dictionary];
+  payload[@"adId"] = adId;
+  payload[@"responseId"] = customNativeAd.responseInfo.responseIdentifier ?: [NSNull null];
+  payload[@"customFormatId"] = customNativeAd.formatID ?: @"";
+  NSArray<NSString *> *keys = customNativeAd.availableAssetKeys ?: @[];
+  payload[@"availableAssetNames"] = keys;
+  payload[@"assets"] = [RNGoogleMobileAdsOwnedMappers customNativeAssetsForKeys:keys
+      stringForKey:^NSString *_Nullable(NSString *key) {
+        return [customNativeAd stringForKey:key];
+      }
+      imageForKey:^NSDictionary *_Nullable(NSString *key) {
+        GADNativeAdImage *image = [customNativeAd imageForKey:key];
+        if (image.imageURL == nil) {
+          return nil;
+        }
+        return @{@"url" : image.imageURL.absoluteString, @"scale" : @(image.scale)};
+      }];
+  GADMediaContent *media = customNativeAd.mediaContent;
+  if (media != nil) {
+    NSMutableDictionary *mediaContent = [NSMutableDictionary dictionary];
+    mediaContent[@"aspectRatio"] = @(media.aspectRatio);
+    mediaContent[@"hasVideoContent"] = @(media.hasVideoContent);
+    mediaContent[@"duration"] = @(media.duration);
+    payload[@"mediaContent"] = mediaContent;
+  } else {
+    payload[@"mediaContent"] = [NSNull null];
+  }
+  NSDictionary *responseInfo =
+      [RNGoogleMobileAdsResponseInfo dictionaryFromResponseInfo:customNativeAd.responseInfo
+                                                        compact:NO];
+  payload[@"responseInfo"] = responseInfo ?: [NSNull null];
+  return payload;
+}
+
+static void RNGMARejectCustomNative(RCTPromiseRejectBlock reject, NSString *code, NSString *message,
+                                    NSString *phase) {
+  NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+  userInfo[@"code"] = code;
+  userInfo[@"message"] = message;
+  userInfo[@"reason"] = code;
+  userInfo[@"phase"] = phase;
+  [RNSharedUtils rejectPromiseWithUserInfo:reject userInfo:userInfo];
+}
 
 @implementation RNGoogleMobileAdsNativeModule {
   NSMutableDictionary<NSString *, id> *_adHolders;
@@ -314,7 +417,7 @@ RCT_EXPORT_METHOD(
                                                   requestOptions:requestOptions];
 
       [adHolder loadWithCompletionHandler:^(GADNativeAd *nativeAd, GAMBannerView *bannerView,
-                                            NSError *error) {
+                                            GADCustomNativeAd *customNativeAd, NSError *error) {
         // NSMutableDictionary avoids @{…} commas inside RCT_EXPORT_METHOD.
         NSMutableDictionary *payload = [NSMutableDictionary dictionary];
         payload[@"handleId"] = handleId;
@@ -350,6 +453,16 @@ RCT_EXPORT_METHOD(
           [payload addEntriesFromDictionary:nativePayload];
           payload[@"format"] = @"native";
           payload[@"handleId"] = handleId;
+          resolve(payload);
+          return;
+        }
+
+        if (customNativeAd != nil) {
+          [self rngmaRegisterMultiFormatCustomNativeAd:customNativeAd
+                                              handleId:handleId
+                                        requestOptions:requestOptions
+                                               payload:payload];
+          [adHolder dispose];
           resolve(payload);
           return;
         }
@@ -399,6 +512,143 @@ RCT_EXPORT_METHOD(destroyHandle
                       [RNGoogleMobileAdsNativeAdRegistry removeNativeAdForResponseId:responseId];
                     }
                   });
+
+RCT_EXPORT_METHOD(loadCustomNative
+                  : (NSString *)adUnitId requestOptions
+                  : (NSDictionary *)requestOptions resolve
+                  : (RCTPromiseResolveBlock)resolve reject
+                  : (RCTPromiseRejectBlock)reject {
+                    [self rngmaLoadCustomNative:adUnitId
+                                 requestOptions:requestOptions
+                                        resolve:resolve
+                                         reject:reject];
+                  })
+
+RCT_EXPORT_METHOD(performCustomNativeClick
+                  : (NSString *)adId assetName
+                  : (NSString *)assetName resolve
+                  : (RCTPromiseResolveBlock)resolve reject
+                  : (RCTPromiseRejectBlock)reject {
+                    [self rngmaPerformCustomNativeClick:adId
+                                              assetName:assetName
+                                                resolve:resolve
+                                                 reject:reject];
+                  })
+
+RCT_EXPORT_METHOD(recordCustomNativeImpression
+                  : (NSString *)adId {
+                    id holder = _adHolders[adId];
+                    if ([holder isKindOfClass:[RNGMACustomNativeAdHolder class]]) {
+                      [(RNGMACustomNativeAdHolder *)holder recordImpression];
+                    }
+                  })
+
+- (void)rngmaLoadCustomNative:(NSString *)adUnitId
+               requestOptions:(NSDictionary *)requestOptions
+                      resolve:(RCTPromiseResolveBlock)resolve
+                       reject:(RCTPromiseRejectBlock)reject {
+  NSArray<NSString *> *formatIds = RNGMACustomFormatIds(requestOptions[@"customFormatIds"]);
+  if (formatIds.count == 0) {
+    RNGMARejectCustomNative(reject, @"invalid-request",
+                            @"Custom native load requires a non-empty customFormatIds array.",
+                            @"load");
+    return;
+  }
+
+  NSString *adId = [[NSUUID UUID] UUIDString];
+  RNGMACustomNativeAdHolder *holder = [[RNGMACustomNativeAdHolder alloc]
+      initWithNativeModule:self
+                      adId:adId
+          appClickHandling:RNGMAUsesAppClickHandling(requestOptions, @"clickHandling")];
+  // Retain the holder (and its GADAdLoader) until the request settles.
+  _adHolders[adId] = holder;
+
+  __weak RNGoogleMobileAdsNativeModule *weakSelf = self;
+  [holder loadWithAdUnitId:adUnitId
+                 formatIds:formatIds
+            requestOptions:requestOptions
+         completionHandler:^(GADCustomNativeAd *customNativeAd, NSError *error) {
+           if (error != nil || customNativeAd == nil) {
+             // Tear down on the next main-queue turn: we are inside the GADAdLoader callback.
+             dispatch_async(dispatch_get_main_queue(), ^{
+               [holder dispose];
+               [weakSelf rngmaRemoveAdHolderForAdId:adId];
+             });
+             NSMutableDictionary *userInfo =
+                 error != nil
+                     ? [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"load"]
+                     : [NSMutableDictionary dictionary];
+             if (error == nil) {
+               userInfo[@"code"] = @"internal-error";
+               userInfo[@"reason"] = @"internal-error";
+               userInfo[@"message"] = @"Custom native load completed without an ad.";
+               userInfo[@"phase"] = @"load";
+             }
+             if (error != nil) {
+               NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
+                   dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo
+                                                  responseInfoFromLoadError:error]
+                                      compact:NO];
+               if (responseInfo != nil) {
+                 userInfo[@"responseInfo"] = responseInfo;
+               }
+             }
+             [RNSharedUtils rejectPromiseWithUserInfo:reject userInfo:userInfo];
+             return;
+           }
+           resolve(RNGMACustomNativeAdPayload(customNativeAd, adId));
+         }];
+}
+
+- (void)rngmaRemoveAdHolderForAdId:(NSString *)adId {
+  [_adHolders removeObjectForKey:adId];
+}
+
+- (void)rngmaPerformCustomNativeClick:(NSString *)adId
+                            assetName:(NSString *)assetName
+                              resolve:(RCTPromiseResolveBlock)resolve
+                               reject:(RCTPromiseRejectBlock)reject {
+  id holder = _adHolders[adId];
+  if (![holder isKindOfClass:[RNGMACustomNativeAdHolder class]] ||
+      ((RNGMACustomNativeAdHolder *)holder).customNativeAd == nil) {
+    RNGMARejectCustomNative(
+        reject, @"invalid-argument",
+        [NSString
+            stringWithFormat:@"Custom native ad '%@' was not found or has been destroyed.", adId],
+        @"show");
+    return;
+  }
+  if (assetName.length == 0) {
+    RNGMARejectCustomNative(reject, @"invalid-argument",
+                            @"performCustomNativeClick requires a non-empty assetName.", @"show");
+    return;
+  }
+  @try {
+    [(RNGMACustomNativeAdHolder *)holder performClickOnAssetKey:assetName];
+    resolve(nil);
+  } @catch (NSException *exception) {
+    RNGMARejectCustomNative(reject, @"internal-error",
+                            exception.reason ?: @"performClickOnAssetWithKey: failed.", @"show");
+  }
+}
+
+- (void)rngmaRegisterMultiFormatCustomNativeAd:(GADCustomNativeAd *)customNativeAd
+                                      handleId:(NSString *)handleId
+                                requestOptions:(NSDictionary *)requestOptions
+                                       payload:(NSMutableDictionary *)payload {
+  // handleId doubles as the custom ad's adId so JS can release it with destroy(adId).
+  RNGMACustomNativeAdHolder *holder = [[RNGMACustomNativeAdHolder alloc]
+      initWithNativeModule:self
+                      adId:handleId
+          appClickHandling:RNGMAUsesAppClickHandling(requestOptions, @"customNativeClickHandling")];
+  [holder adoptCustomNativeAd:customNativeAd];
+  _adHolders[handleId] = holder;
+  _handleIdToResponseId[handleId] = handleId;
+
+  [payload addEntriesFromDictionary:RNGMACustomNativeAdPayload(customNativeAd, handleId)];
+  payload[@"format"] = @"customNative";
+  payload[@"handleId"] = handleId;
+}
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId {
   return [RNGoogleMobileAdsNativeAdRegistry nativeAdForResponseId:responseId];
@@ -610,6 +860,7 @@ RCT_EXPORT_METHOD(destroyHandle
   GADAdLoader *_adLoader;
   GAMRequest *_adRequest;
   NSArray<NSValue *> *_bannerSizes;
+  NSArray<NSString *> *_customFormatIds;
   RNGMAMultiFormatLoadCompletionHandler _completionHandler;
   BOOL _settled;
 }
@@ -719,6 +970,12 @@ RCT_EXPORT_METHOD(destroyHandle
       _bannerSizes = @[];
     }
 
+    // Custom native formats compete in the same request (GAM only; JS validates the unit).
+    _customFormatIds = RNGMACustomFormatIds(requestOptions[@"customNativeFormatIds"]);
+    if (_customFormatIds.count > 0) {
+      [adTypes addObject:GADAdLoaderAdTypeCustomNative];
+    }
+
     _adLoader =
         [[GADAdLoader alloc] initWithAdUnitID:adUnitId
                            rootViewController:[RNGoogleMobileAdsCommon currentViewController]
@@ -745,10 +1002,13 @@ RCT_EXPORT_METHOD(destroyHandle
     [_bannerView removeFromSuperview];
     _bannerView = nil;
   }
+  // A custom native winner is owned by its RNGMACustomNativeAdHolder by now.
+  _customNativeAd = nil;
   _nativeModule = nil;
   _adLoader = nil;
   _adRequest = nil;
   _bannerSizes = nil;
+  _customFormatIds = nil;
   _completionHandler = nil;
 }
 
@@ -762,7 +1022,7 @@ RCT_EXPORT_METHOD(destroyHandle
   RNGMAMultiFormatLoadCompletionHandler handler = _completionHandler;
   _completionHandler = nil;
   if (handler != nil) {
-    handler(nativeAd, bannerView, error);
+    handler(nativeAd, bannerView, error == nil ? _customNativeAd : nil, error);
   }
 }
 
@@ -794,6 +1054,20 @@ RCT_EXPORT_METHOD(destroyHandle
 - (void)adLoader:(nonnull GADAdLoader *)adLoader
     didReceiveGAMBannerView:(nonnull GAMBannerView *)bannerView {
   _bannerView = bannerView;
+  // Count-1: settle here if adLoaderDidFinishLoading: is not delivered.
+  [self settleOnceWithNativeAd:_nativeAd bannerView:_bannerView error:nil];
+}
+
+#pragma mark - GADCustomNativeAdLoaderDelegate
+
+- (nonnull NSArray<NSString *> *)customNativeAdFormatIDsForAdLoader:
+    (nonnull GADAdLoader *)adLoader {
+  return _customFormatIds ?: @[];
+}
+
+- (void)adLoader:(nonnull GADAdLoader *)adLoader
+    didReceiveCustomNativeAd:(nonnull GADCustomNativeAd *)customNativeAd {
+  _customNativeAd = customNativeAd;
   // Count-1: settle here if adLoaderDidFinishLoading: is not delivered.
   [self settleOnceWithNativeAd:_nativeAd bannerView:_bannerView error:nil];
 }
@@ -876,6 +1150,171 @@ RCT_EXPORT_METHOD(destroyHandle
 
 - (void)emitAdEvent:(NSString *)type {
   [self emitAdEvent:type withData:nil];
+}
+
+@end
+
+#pragma mark - RNGMACustomNativeAdHolder
+
+@implementation RNGMACustomNativeAdHolder {
+  __weak RNGoogleMobileAdsNativeModule *_nativeModule;
+  BOOL _appClickHandling;
+  GADAdLoader *_adLoader;
+  NSArray<NSString *> *_formatIds;
+  RNGMACustomNativeAdLoadCompletionHandler _completionHandler;
+}
+
+- (instancetype)initWithNativeModule:(RNGoogleMobileAdsNativeModule *)nativeModule
+                                adId:(NSString *)adId
+                    appClickHandling:(BOOL)appClickHandling {
+  if (self = [super init]) {
+    _nativeModule = nativeModule;
+    _adId = [adId copy];
+    _appClickHandling = appClickHandling;
+  }
+  return self;
+}
+
+- (void)loadWithAdUnitId:(NSString *)adUnitId
+               formatIds:(NSArray<NSString *> *)formatIds
+          requestOptions:(NSDictionary *)requestOptions
+       completionHandler:(RNGMACustomNativeAdLoadCompletionHandler)completionHandler {
+  _formatIds = [formatIds copy];
+  _completionHandler = completionHandler;
+  _adLoader = [[GADAdLoader alloc] initWithAdUnitID:adUnitId
+                                 rootViewController:[RNGoogleMobileAdsCommon currentViewController]
+                                            adTypes:@[ GADAdLoaderAdTypeCustomNative ]
+                                            options:@[]];
+  _adLoader.delegate = self;
+  [_adLoader loadRequest:[RNGoogleMobileAdsCommon buildAdRequest:requestOptions]];
+}
+
+- (void)adoptCustomNativeAd:(GADCustomNativeAd *)customNativeAd {
+  _customNativeAd = customNativeAd;
+  customNativeAd.delegate = self;
+  customNativeAd.rootViewController = [RNGoogleMobileAdsCommon currentViewController];
+  if (_appClickHandling) {
+    // Weak capture: the ad retains this block and the holder retains the ad.
+    __weak RNGMACustomNativeAdHolder *weakSelf = self;
+    customNativeAd.customClickHandler = ^(NSString *_Nonnull assetID) {
+      NSString *assetKey = [assetID copy];
+      if ([NSThread isMainThread]) {
+        [weakSelf handleCustomClickOnAssetKey:assetKey];
+      } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          [weakSelf handleCustomClickOnAssetKey:assetKey];
+        });
+      }
+    };
+  } else {
+    // nil: the SDK falls back to the creative's deep link / click-through URL.
+    customNativeAd.customClickHandler = nil;
+  }
+}
+
+- (void)performClickOnAssetKey:(NSString *)assetKey {
+  GADCustomNativeAd *customNativeAd = _customNativeAd;
+  if (customNativeAd == nil) {
+    return;
+  }
+  customNativeAd.rootViewController = [RNGoogleMobileAdsCommon currentViewController];
+  // Reports the click to Ad Manager; then runs customClickHandler (or SDK navigation).
+  [customNativeAd performClickOnAssetWithKey:assetKey];
+}
+
+- (void)recordImpression {
+  [_customNativeAd recordImpression];
+}
+
+/** The SDK recorded the click and did not navigate; the app decides what happens next. */
+- (void)handleCustomClickOnAssetKey:(NSString *)assetKey {
+  if (_customNativeAd == nil) {
+    return;
+  }
+  NSMutableDictionary *data = [NSMutableDictionary dictionary];
+  data[@"assetName"] = assetKey;
+  [self emitAdEvent:@"custom_click" withData:data];
+}
+
+- (void)dispose {
+  GADCustomNativeAd *customNativeAd = _customNativeAd;
+  if (customNativeAd != nil) {
+    customNativeAd.customClickHandler = nil;
+    customNativeAd.delegate = nil;
+  }
+  _customNativeAd = nil;
+  _adLoader.delegate = nil;
+  _adLoader = nil;
+  _formatIds = nil;
+  _completionHandler = nil;
+  _nativeModule = nil;
+}
+
+#pragma mark - GADCustomNativeAdLoaderDelegate
+
+- (nonnull NSArray<NSString *> *)customNativeAdFormatIDsForAdLoader:
+    (nonnull GADAdLoader *)adLoader {
+  return _formatIds ?: @[];
+}
+
+- (void)adLoader:(nonnull GADAdLoader *)adLoader
+    didReceiveCustomNativeAd:(nonnull GADCustomNativeAd *)customNativeAd {
+  RNGMACustomNativeAdLoadCompletionHandler handler = _completionHandler;
+  _completionHandler = nil;
+  if (handler == nil) {
+    return;
+  }
+  [self adoptCustomNativeAd:customNativeAd];
+  // Keep _adLoader until dispose: releasing it inside its own delegate callback can free the
+  // loader while the SDK is still on the stack (same lifetime as RNGMANativeAdHolder).
+  handler(customNativeAd, nil);
+}
+
+- (void)adLoader:(nonnull GADAdLoader *)adLoader
+    didFailToReceiveAdWithError:(nonnull NSError *)error {
+  RNGMACustomNativeAdLoadCompletionHandler handler = _completionHandler;
+  _completionHandler = nil;
+  if (handler != nil) {
+    handler(nil, error);
+  }
+}
+
+#pragma mark - GADCustomNativeAdDelegate
+
+- (void)customNativeAdDidRecordImpression:(nonnull GADCustomNativeAd *)nativeAd {
+  [self emitAdEvent:@"impression" withData:nil];
+}
+
+- (void)customNativeAdDidRecordClick:(nonnull GADCustomNativeAd *)nativeAd {
+  [self emitAdEvent:@"clicked" withData:nil];
+}
+
+- (void)customNativeAdWillPresentScreen:(nonnull GADCustomNativeAd *)nativeAd {
+  [self emitAdEvent:@"opened" withData:nil];
+}
+
+- (void)customNativeAdDidDismissScreen:(nonnull GADCustomNativeAd *)nativeAd {
+  [self emitAdEvent:@"closed" withData:nil];
+}
+
+- (void)emitAdEvent:(nonnull NSString *)type withData:(nullable NSDictionary *)data {
+  if (_nativeModule == nil || _customNativeAd == nil) {
+    return;
+  }
+
+  NSMutableDictionary *payload = [NSMutableDictionary dictionary];
+  if (data != nil) {
+    [payload addEntriesFromDictionary:data];
+  }
+  // JS matches custom native events on adId.
+  payload[@"responseId"] = _adId;
+  payload[@"type"] = type;
+
+#ifdef RCT_NEW_ARCH_ENABLED
+  [_nativeModule emitOnAdEvent:payload];
+#else
+  [_nativeModule sendEventWithName:@"RNGMANativeAdEvent" body:payload];
+#endif
 }
 
 @end

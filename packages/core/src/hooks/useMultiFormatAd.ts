@@ -373,6 +373,15 @@ export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiForm
 
       let request: MultiFormatAdRequest;
       try {
+        // The hook's handle types are native / banner only; custom native needs MultiFormatAdRequest.
+        if (
+          'customNativeFormatIds' in requestOptions &&
+          requestOptions.customNativeFormatIds !== undefined
+        ) {
+          throw new Error(
+            "'requestOptions.customNativeFormatIds' is not supported by useMultiFormatAd; use MultiFormatAdRequest.create",
+          );
+        }
         request = MultiFormatAdRequest.create({ adUnitId, requestOptions });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Invalid multi-format config';

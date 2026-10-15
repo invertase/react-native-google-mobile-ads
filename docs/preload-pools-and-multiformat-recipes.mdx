@@ -216,7 +216,11 @@ export function MultiFormatFeedSlot({ consentReady }: { consentReady: boolean })
 
 - **Multi-format is not multi-count.** `requestCount` other than `1` is rejected.
   Multi-count is out of v1 and unsupported on mediated units.
-- Adaptive / `FLUID` banner sizes are illegal here (no view width at request time).
+- Adaptive banner sizes are illegal here (no view width at request time). `FLUID` is also
+  rejected: `<MultiFormatBannerAdView>` is sized from `handle.size` and cannot follow a fluid
+  creative's rendered height.
+- Ad Manager custom native formats can compete too via `customNativeFormatIds` — see
+  [Custom native (Ad Manager)](/ad-formats/custom-native).
 - `<MultiFormatBannerAdView>` is **attach-only** — it does not issue a second load.
 - Native winners use existing `<NativeAdView>` via `handle.ad`.
 

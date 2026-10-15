@@ -52,6 +52,23 @@ export type NativeMediaContent = {
   duration: Float;
 };
 
+/**
+ * Loaded Google Ad Manager custom native ad.
+ *
+ * `adId` is the library registry key (also the `responseId` on emitted events). `responseId` is
+ * the SDK response id when the backend exposes one (null on classic Android).
+ * `assets` maps exact asset names to `{ type: 'text', text }` or `{ type: 'image', image }`.
+ */
+export type CustomNativeAdProps = {
+  adId: string;
+  responseId: string | null;
+  customFormatId: string;
+  availableAssetNames: Array<string>;
+  assets: UnsafeObject;
+  mediaContent: NativeMediaContent | null;
+  responseInfo?: UnsafeObject | null;
+};
+
 export type NativeAdEventPayload = {
   responseId: string;
   type: string;
@@ -74,7 +91,7 @@ export type NativeAdPaidEventPayload = {
  * clean no-fill. Other error reasons become `errors[]` entries.
  */
 export type MultiFormatNativeLoadResult = {
-  format: 'native' | 'banner' | 'none';
+  format: 'native' | 'banner' | 'customNative' | 'none';
   /** Library/native registry id; used for banner attach and destroyHandle. */
   handleId?: string;
   responseId?: string;
@@ -89,6 +106,10 @@ export type MultiFormatNativeLoadResult = {
   images?: Array<NativeAdImage> | null;
   mediaContent?: NativeMediaContent | null;
   extras?: UnsafeObject | null;
+  /** Custom native winner only (`format: 'customNative'`); `handleId` is its `adId`. */
+  customFormatId?: string;
+  availableAssetNames?: Array<string> | null;
+  assets?: UnsafeObject | null;
   width?: Double;
   height?: Double;
   responseInfo?: UnsafeObject | null;
@@ -114,6 +135,18 @@ export interface Spec extends TurboModule {
   ): Promise<MultiFormatNativeLoadResult>;
   /** Destroys multi-format banner (or native) inventory keyed by handleId. */
   destroyHandle(handleId: string): void;
+  /**
+   * Loads one Google Ad Manager custom native ad for `requestOptions.customFormatIds`.
+   * Release with `destroy(adId)`.
+   */
+  loadCustomNative(adUnitId: string, requestOptions: UnsafeObject): Promise<CustomNativeAdProps>;
+  /**
+   * Reports a click on `assetName` to the SDK. With `clickHandling: 'app'` the SDK then invokes
+   * the custom click handler instead of navigating, which emits `custom_click`.
+   */
+  performCustomNativeClick(adId: string, assetName: string): Promise<void>;
+  /** Records an impression; the SDK ignores repeats for the same ad. */
+  recordCustomNativeImpression(adId: string): void;
   readonly onAdEvent: EventEmitter<NativeAdEventPayload>;
 }
 

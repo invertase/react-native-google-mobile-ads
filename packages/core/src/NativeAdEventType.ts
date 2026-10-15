@@ -48,4 +48,11 @@ export enum NativeAdEventType {
    * Called when the video controller has unmuted video.
    */
   VIDEO_UNMUTED = 'video_unmuted',
+
+  /**
+   * `CustomNativeAd` only (`clickHandling: 'app'`): the SDK recorded a click and invoked the
+   * custom click handler instead of navigating; the app decides where the user goes. Payload:
+   * `CustomNativeClickEventPayload`.
+   */
+  CUSTOM_CLICK = 'custom_click',
 }

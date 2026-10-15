@@ -384,6 +384,18 @@ namespace facebook::react {
       return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "destroyHandle", @selector(destroyHandle:), args, count);
     }
 
+    static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_loadCustomNative(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "loadCustomNative", @selector(loadCustomNative:requestOptions:resolve:reject:), args, count);
+    }
+
+    static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_performCustomNativeClick(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "performCustomNativeClick", @selector(performCustomNativeClick:assetName:resolve:reject:), args, count);
+    }
+
+    static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_recordCustomNativeImpression(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "recordCustomNativeImpression", @selector(recordCustomNativeImpression:), args, count);
+    }
+
   NativeGoogleMobileAdsNativeModuleSpecJSI::NativeGoogleMobileAdsNativeModuleSpecJSI(const ObjCTurboModule::InitParams &params)
     : ObjCTurboModule(params) {
       
@@ -397,6 +409,15 @@ namespace facebook::react {
         
         
         methodMap_["destroyHandle"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_destroyHandle};
+        
+        
+        methodMap_["loadCustomNative"] = MethodMetadata {2, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_loadCustomNative};
+        
+        
+        methodMap_["performCustomNativeClick"] = MethodMetadata {2, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_performCustomNativeClick};
+        
+        
+        methodMap_["recordCustomNativeImpression"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_recordCustomNativeImpression};
         
         eventEmitterMap_["onAdEvent"] = std::make_shared<AsyncEventEmitter<id>>();
         setEventEmitterCallback([&](const std::string &name, id value) {

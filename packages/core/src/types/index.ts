@@ -29,6 +29,7 @@ export * from './AdShowOptions';
 export * from './AdStates';
 export * from './BannerAdProps';
 export * from './CapabilitySupport';
+export * from './CustomNativeAd';
 export * from './FullscreenAdFormat';
 export * from './MultiFormatAd';
 export * from './MultiFormatBannerSize';

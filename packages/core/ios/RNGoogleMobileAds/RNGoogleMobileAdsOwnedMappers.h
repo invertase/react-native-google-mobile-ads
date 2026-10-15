@@ -83,6 +83,19 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable NSArray<NSDictionary *> *)nativeAdImageRowsFromImages:(nullable NSArray *)images;
 
+#pragma mark - Custom native (Google Ad Manager custom native formats)
+
+/**
+ * Builds the JS `assets` map for a custom native ad. Keys are copied verbatim (case-sensitive).
+ * For each key, a non-nil string wins (`{ type: 'text', text }`); otherwise a non-nil image
+ * dictionary (`{ url, scale }` with a non-empty url) yields `{ type: 'image', image }`. Keys with
+ * neither (for example the video asset) are omitted.
+ */
++ (NSDictionary<NSString *, NSDictionary *> *)
+    customNativeAssetsForKeys:(NSArray<NSString *> *)assetKeys
+                 stringForKey:(NSString *_Nullable (^)(NSString *key))stringForKey
+                  imageForKey:(NSDictionary *_Nullable (^)(NSString *key))imageForKey;
+
 @end
 
 NS_ASSUME_NONNULL_END

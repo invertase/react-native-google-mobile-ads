@@ -269,6 +269,15 @@ requestOptions:(NSDictionary *)requestOptions
                 resolve:(RCTPromiseResolveBlock)resolve
                  reject:(RCTPromiseRejectBlock)reject;
 - (void)destroyHandle:(NSString *)handleId;
+- (void)loadCustomNative:(NSString *)adUnitId
+          requestOptions:(NSDictionary *)requestOptions
+                 resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject;
+- (void)performCustomNativeClick:(NSString *)adId
+                       assetName:(NSString *)assetName
+                         resolve:(RCTPromiseResolveBlock)resolve
+                          reject:(RCTPromiseRejectBlock)reject;
+- (void)recordCustomNativeImpression:(NSString *)adId;
 
 @end
 

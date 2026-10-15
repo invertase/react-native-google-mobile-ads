@@ -15,10 +15,12 @@
  *
  */
 
+import type { CustomNativeAd } from '../ads/native-ad/CustomNativeAd';
 import type { NativeAd } from '../ads/native-ad/NativeAd';
 import type { AdError } from './AdError';
 import type { AdExpiry, AdIdentity, AdInventoryProvenance } from './AdExpiry';
 import type { AdFormat } from './AdFormat';
+import type { CustomNativeClickHandling } from './CustomNativeAd';
 import type { MultiFormatBannerSize } from './MultiFormatBannerSize';
 import type { RequestOptions } from './RequestOptions';
 import type { ResponseInfo } from './ResponseInfo';
@@ -26,13 +28,23 @@ import type { ResponseInfo } from './ResponseInfo';
 export type MultiFormatAdFormat = AdFormat.NATIVE | AdFormat.BANNER;
 
 /**
+ * `format` of a multi-format handle that won with a Google Ad Manager custom native ad. Not an
+ * `AdFormat` member: custom native is requested with `customNativeFormatIds`, not `formats`.
+ */
+export type MultiFormatCustomNativeFormat = 'customNative';
+
+/**
  * One AdLoader-style request where native and/or GAM banner formats compete
  * for a single winner.
  *
  * This is multi-format, not multi-count: `requestCount` is fixed at 1. Banner
- * requires `bannerSizes`; adaptive and `FLUID` sizes are excluded because no
- * view width exists at request time. The banner arm is Google Ad Manager only,
- * so `adServer` accepts only `'ad-manager'`.
+ * requires `bannerSizes`; adaptive sizes are excluded because no view width
+ * exists at request time. `FLUID` is excluded because the attach-only
+ * `MultiFormatBannerAdView` is sized from `handle.size` and has no channel for
+ * the height a fluid creative settles on after render (the SDKs themselves
+ * accept `FLUID` in an AdLoader banner request). The banner arm is Google Ad
+ * Manager only, so `adServer` accepts only `'ad-manager'`. Custom native formats
+ * compete only through `MultiFormatCustomNativeAdRequestOptions`.
  *
  * TypeScript excludes known-illegal size/count values. Runtime creation still
  * validates facts types cannot express, including an empty format list,
@@ -49,6 +61,24 @@ export type MultiFormatAdRequestOptions = RequestOptions & {
    * source on each handle. Not the SDK's cache timeout.
    */
   stalenessWindowMillis?: number;
+};
+
+/**
+ * Multi-format request options that also let Google Ad Manager custom native formats compete
+ * (for example banner + custom native in one request).
+ *
+ * A separate type so that opting in is visible to TypeScript: only a request created from these
+ * options can return a `format: 'customNative'` handle. Requires a Google Ad Manager unit and
+ * `adServer: 'ad-manager'`.
+ */
+export type MultiFormatCustomNativeAdRequestOptions = MultiFormatAdRequestOptions & {
+  /** Ad Manager custom native format IDs, sent verbatim. */
+  customNativeFormatIds: string[];
+  /**
+   * Click handling for a custom native winner. Defaults to `'app'`; see
+   * `CustomNativeAdRequestOptions.clickHandling`.
+   */
+  customNativeClickHandling?: CustomNativeClickHandling;
 };
 
 /**
@@ -97,6 +127,17 @@ export type MultiFormatAdHandle =
     });
 
 /**
+ * Custom native winner of a request created with `MultiFormatCustomNativeAdConfig`. Never
+ * produced by requests without `customNativeFormatIds`, so it is not part of
+ * `MultiFormatAdHandle`.
+ */
+export type MultiFormatCustomNativeAdHandle = MultiFormatAdHandleBase & {
+  format: MultiFormatCustomNativeFormat;
+  /** Owned by this handle. Destroyed by `destroy()`, never on its own. */
+  ad: CustomNativeAd;
+};
+
+/**
  * The ad unit plus the request that describes one multi-format load.
  *
  * `MultiFormatAdRequest.create` and `useMultiFormatAd` accept this same
@@ -111,6 +152,15 @@ export type MultiFormatAdHandle =
 export type MultiFormatAdConfig = {
   adUnitId: string;
   requestOptions: MultiFormatAdRequestOptions;
+};
+
+/**
+ * `MultiFormatAdConfig` that opts into custom native formats. Accepted by
+ * `MultiFormatAdRequest.create` only (not by `useMultiFormatAd` or pools).
+ */
+export type MultiFormatCustomNativeAdConfig = {
+  adUnitId: string;
+  requestOptions: MultiFormatCustomNativeAdRequestOptions;
 };
 
 /**
