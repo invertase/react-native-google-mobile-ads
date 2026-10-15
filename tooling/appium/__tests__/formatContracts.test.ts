@@ -27,11 +27,13 @@ import {
   nativeFingerprintFromAndroidLog,
   pendingTimeoutClassification,
   noteAcceptedAdUnit,
+  noteRewardedFamilyShow,
   representativeRequestBackoffMs,
   representativeRequestOperation,
   requestIdFromText,
   requestOutcomeConfiguration,
   resetAcceptedAdUnitMemory,
+  rewardedFamilyCooldownRemainingMs,
   runRepresentativeRequestOutcomeContract,
   sharedAdUnitCooldownRemainingMs,
   terminalOutcomeFromMarkerText,
@@ -48,6 +50,7 @@ import {
   REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX,
   REQUEST_OUTCOME_NO_FILL,
   REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX,
+  REWARDED_FAMILY_CROSS_FORMAT_COOLDOWN_MS,
   SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS,
   representativeRequestObserveTimeoutMs,
   type RequestOutcomeClassification,
@@ -540,7 +543,7 @@ test('uses a longer backoff schedule while a shared ad unit is recently accepted
       REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
       4_000,
       8_000,
-      REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+      16_000,
       REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
       REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
       REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
@@ -548,6 +551,7 @@ test('uses a longer backoff schedule while a shared ad unit is recently accepted
       REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
     ],
   );
+  assert.equal(REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS, 20_000);
 });
 
 test('consecutive no-fill on a cold unit uses the longer RECENT_NOFILL backoff schedule', async () => {
@@ -593,6 +597,8 @@ test('consecutive no-fill on a cold unit uses the longer RECENT_NOFILL backoff s
   assert.equal(attempts[3]!.longerBackoff, true);
   assert.equal(attempts[3]!.consecutiveNoFillBefore, 3);
   assert.equal(attempts[3]!.backoffMs, 8_000);
+  assert.ok(typeof attempts[0]!.requestMs === 'number');
+  assert.ok(typeof attempts[3]!.requestMs === 'number');
   assert.deepEqual(sleeps, [
     REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
     4_000,
@@ -697,6 +703,10 @@ test('stamps shared-unit memory after onAccepted show-close, not at load accept'
     onAccepted: async () => {
       order.push('onAccepted');
       assert.equal(sharedAdUnitCooldownRemainingMs(adUnitId, nowMs), 0);
+      assert.equal(
+        rewardedFamilyCooldownRemainingMs(AppiumTestIds.format.rewardedInterstitial, nowMs),
+        0,
+      );
       nowMs += 1_000;
     },
     runtime: runtimeRecorder([], [observedRequest(1, 'loaded')]),
@@ -704,6 +714,55 @@ test('stamps shared-unit memory after onAccepted show-close, not at load accept'
   order.push('after');
   assert.deepEqual(order, ['onAccepted', 'after']);
   assert.equal(sharedAdUnitCooldownRemainingMs(adUnitId, nowMs), SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS);
+  assert.equal(
+    rewardedFamilyCooldownRemainingMs(AppiumTestIds.format.rewardedInterstitial, nowMs),
+    REWARDED_FAMILY_CROSS_FORMAT_COOLDOWN_MS,
+  );
+});
+
+test('cools down rewarded-interstitial after a sibling rewarded show (different units)', async () => {
+  const rewardedUnit = googleTestAdUnitForFormat(AppiumTestIds.format.rewarded, 'android');
+  const riUnit = googleTestAdUnitForFormat(AppiumTestIds.format.rewardedInterstitial, 'android');
+  assert.ok(rewardedUnit);
+  assert.ok(riUnit);
+  assert.notEqual(rewardedUnit, riUnit);
+
+  const t0 = 4_000_000;
+  noteAcceptedAdUnit(rewardedUnit, t0);
+  noteRewardedFamilyShow(AppiumTestIds.format.rewarded, t0);
+  assert.equal(sharedAdUnitCooldownRemainingMs(riUnit, t0 + 1_000), 0);
+  assert.equal(
+    rewardedFamilyCooldownRemainingMs(AppiumTestIds.format.rewardedInterstitial, t0 + 1_000),
+    REWARDED_FAMILY_CROSS_FORMAT_COOLDOWN_MS,
+  );
+
+  const sleeps: number[] = [];
+  const lines: string[] = [];
+  const attempts = await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.rewardedInterstitial,
+    platform: 'android',
+    path: 'fullscreen',
+    configuration: 'android-classic',
+    now: () => t0 + 1_000,
+    sleep: async delayMs => {
+      sleeps.push(delayMs);
+    },
+    emit: line => {
+      lines.push(line);
+    },
+    runtime: runtimeRecorder([], [observedRequest(1, 'loaded')]),
+  });
+  assert.equal(attempts.length, 1);
+  assert.equal(attempts[0]!.backoffMs, REWARDED_FAMILY_CROSS_FORMAT_COOLDOWN_MS);
+  assert.equal(attempts[0]!.sharedUnitHot, false);
+  assert.equal(attempts[0]!.acceptedAtAgeMs, null);
+  assert.deepEqual(sleeps, [REWARDED_FAMILY_CROSS_FORMAT_COOLDOWN_MS]);
+  const cooldownLine = lines.find(line =>
+    line.startsWith(REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX),
+  );
+  assert.ok(cooldownLine);
+  assert.ok(cooldownLine!.includes('"kind":"rewarded-family"'));
+  assert.ok(cooldownLine!.includes(`"cooldownMs":${REWARDED_FAMILY_CROSS_FORMAT_COOLDOWN_MS}`));
 });
 
 test('maps platform and RNGMA_ANDROID_BACKEND to request-outcome cell configuration', () => {
@@ -750,8 +809,9 @@ test('formats stable machine-readable attempt output', () => {
       consecutivePendingTimeoutBefore: 0,
       sharedUnitHot: false,
       acceptedAtAgeMs: null,
+      requestMs: 900,
     }),
-    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","configuration":"android-classic","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"},"backoffMs":250,"elapsedMs":1400,"adUnitId":"ca-app-pub-3940256099942544/2247696110","errorCode":"internal-error","longerBackoff":false,"consecutiveNoFillBefore":0,"consecutivePendingTimeoutBefore":0,"sharedUnitHot":false,"acceptedAtAgeMs":null}',
+    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","configuration":"android-classic","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"},"backoffMs":250,"elapsedMs":1400,"adUnitId":"ca-app-pub-3940256099942544/2247696110","errorCode":"internal-error","longerBackoff":false,"consecutiveNoFillBefore":0,"consecutivePendingTimeoutBefore":0,"sharedUnitHot":false,"acceptedAtAgeMs":null,"requestMs":900}',
   );
 });
 
@@ -837,13 +897,15 @@ test('exhausted no-fill attempts name ad unit, error code, and backend', async (
         message.includes('"longerBackoff":true') &&
         message.includes('"consecutiveNoFillBefore":9') &&
         message.includes('"sharedUnitHot":false') &&
-        message.includes('"acceptedAtAgeMs":null')
+        message.includes('"acceptedAtAgeMs":null') &&
+        message.includes('"requestMs":')
       );
     },
   );
   assert.ok(lines.every(line => line.includes('"adUnitId":"ca-app-pub-3940256099942544/5224354917"')));
   assert.ok(lines.every(line => line.includes('"errorCode":"no-fill"')));
   assert.ok(lines.every(line => line.includes('"configuration":"android-classic"')));
+  assert.ok(lines.every(line => line.includes('"requestMs":')));
   assert.ok(lines[0]!.includes('"longerBackoff":false'));
   assert.ok(lines[0]!.includes('"consecutiveNoFillBefore":0'));
   assert.ok(lines[1]!.includes('"longerBackoff":true'));
@@ -907,6 +969,7 @@ test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnost
   assert.ok(lines.every(line => line.includes('"consecutiveNoFillBefore":')));
   assert.ok(lines.every(line => line.includes('"sharedUnitHot":false')));
   assert.ok(lines.every(line => line.includes('"acceptedAtAgeMs":null')));
+  assert.ok(lines.every(line => line.includes('"requestMs":')));
   assert.ok(lines[0]!.includes('"backoffMs":0'));
   // Alternating no-fill / other-error: after each no-fill the next attempt uses longer backoff.
   assert.ok(lines[1]!.includes('"backoffMs":2000'));
@@ -914,7 +977,17 @@ test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnost
   assert.ok(lines[1]!.includes('"consecutiveNoFillBefore":1'));
   assert.ok(lines[2]!.includes('"backoffMs":500'));
   assert.ok(lines[2]!.includes('"longerBackoff":false'));
-  assert.deepEqual(delays, [2000, 500, 8000, 2000, 8000, 2000, 8000, 2000, 8000]);
+  assert.deepEqual(delays, [
+    2000,
+    500,
+    8000,
+    2000,
+    REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+    2000,
+    REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+    2000,
+    REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+  ]);
   assert.equal(calls.filter(call => call === 'reload').length, 9);
   assert.notEqual(calls.at(-1), 'back');
 });
