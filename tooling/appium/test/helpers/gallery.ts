@@ -26,6 +26,7 @@ import {
   classifyPoolFilledOutcome,
   classifyPoolStructuredUnsupportedGate,
   classifyRequestOutcome,
+  formatMissingGalleryRequestTerminalDiagnostic,
   formatRepresentativeRequestTimeoutMsg,
   formatRequestOutcomeTimeout,
   hasNonzeroRectangle,
@@ -1315,6 +1316,13 @@ async function observeHookLoadOutcome(
           },
         };
       }
+      const galleryDiag = formatMissingGalleryRequestTerminalDiagnostic({
+        requestId: attempt,
+        adsLogSnippet,
+      });
+      if (galleryDiag !== undefined) {
+        console.log(galleryDiag);
+      }
     }
     let snippet = 'page source unavailable';
     try {
@@ -1348,19 +1356,25 @@ async function readAndroidAdsReactNativeLogSnippet(): Promise<string | undefined
     const text = typeof log === 'string' ? log : JSON.stringify(log);
     const trimmed = text.trim();
     if (!trimmed) {
-      return '';
+      return 'android-logcat-empty: Ads/ReactNativeJS';
     }
     return truncateLogSnippet(trimmed);
-  } catch {
-    return undefined;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return truncateLogSnippet(`android-logcat-unavailable: ${detail}`);
   }
 }
 
-/** iOS simulator Ads / GoogleMobileAds / React log tail for pending-timeout diagnosis. */
+/**
+ * iOS simulator ReactTestApp / GoogleMobileAds log tail for pending-timeout
+ * diagnosis. Prefer the same process filter as startup supervision
+ * (`process == "ReactTestApp"`); a broad `eventMessage CONTAINS "Ads"` predicate
+ * can hang or empty-out on CI and omit `adsLogSnippet` from timeout JSON.
+ */
 async function readIosAdsReactNativeLogSnippet(): Promise<string | undefined> {
   const udid = process.env.RNGMA_IOS_UDID ?? '';
   if (!udid) {
-    return undefined;
+    return 'ios-simctl-log-unavailable: missing RNGMA_IOS_UDID';
   }
   try {
     const { execFileSync } = await import('node:child_process');
@@ -1373,26 +1387,27 @@ async function readIosAdsReactNativeLogSnippet(): Promise<string | undefined> {
         'log',
         'show',
         '--last',
-        '2m',
+        '90s',
         '--style',
         'compact',
         '--predicate',
-        'subsystem CONTAINS[c] "GoogleMobileAds" OR eventMessage CONTAINS[c] "Ads" OR process CONTAINS[c] "React" OR eventMessage CONTAINS[c] "GoogleMobileAds"',
+        'process == "ReactTestApp" OR subsystem CONTAINS[c] "GoogleMobileAds"',
       ],
       {
         encoding: 'utf8',
-        timeout: 15_000,
-        maxBuffer: 2 * 1024 * 1024,
+        timeout: 20_000,
+        maxBuffer: 4 * 1024 * 1024,
         stdio: ['ignore', 'pipe', 'pipe'],
       },
     );
     const trimmed = text.trim();
     if (!trimmed) {
-      return '';
+      return 'ios-simctl-log-empty: ReactTestApp/GoogleMobileAds --last 90s';
     }
     return truncateLogSnippet(trimmed);
-  } catch {
-    return undefined;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return truncateLogSnippet(`ios-simctl-log-unavailable: ${detail}`);
   }
 }
 
@@ -1527,6 +1542,13 @@ async function observeRepresentativeRequestOutcome(
             evidence: 'pending-timeout',
           },
         };
+      }
+      const galleryDiag = formatMissingGalleryRequestTerminalDiagnostic({
+        requestId,
+        adsLogSnippet,
+      });
+      if (galleryDiag !== undefined) {
+        console.log(galleryDiag);
       }
     }
     let snippet = 'page source unavailable';

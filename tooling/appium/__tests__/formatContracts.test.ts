@@ -18,9 +18,11 @@ import {
   formatRepresentativeRequestTimeoutMsg,
   acceptedAdUnitAgeMs,
   formatRequestOutcomeAttempt,
+  formatMissingGalleryRequestTerminalDiagnostic,
   formatRequestOutcomeTimeout,
   googleTestAdUnitForFormat,
   hasNonzeroRectangle,
+  hasTerminalGalleryRequestForId,
   isRepresentativeRequestWaitTimeout,
   nativeFingerprintFromAndroidLog,
   pendingTimeoutClassification,
@@ -38,6 +40,7 @@ import {
   REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
   REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
   REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED,
+  REQUEST_OUTCOME_GALLERY_REQUEST_DIAG_PREFIX,
   REQUEST_OUTCOME_LOADED,
   REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX,
   REQUEST_OUTCOME_NO_FILL,
@@ -167,9 +170,29 @@ test('locks representative request-outcome contracts for classic ad success path
     REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.filter(
       contract => contract.retry === 'remount' && contract.observeTimeoutMs === 20_000,
     ).map(contract => contract.id),
-    [AppiumTestIds.format.appOpen, AppiumTestIds.format.appOpenHook],
+    [
+      AppiumTestIds.format.appOpen,
+      AppiumTestIds.format.interstitial,
+      AppiumTestIds.format.rewarded,
+      AppiumTestIds.format.rewardedInterstitial,
+      AppiumTestIds.format.gamInterstitial,
+      AppiumTestIds.format.appOpenHook,
+      AppiumTestIds.format.interstitialHook,
+      AppiumTestIds.format.rewardedHook,
+      AppiumTestIds.format.rewardedInterstitialHook,
+    ],
   );
-  for (const id of [AppiumTestIds.format.appOpen, AppiumTestIds.format.appOpenHook]) {
+  for (const id of [
+    AppiumTestIds.format.appOpen,
+    AppiumTestIds.format.interstitial,
+    AppiumTestIds.format.rewarded,
+    AppiumTestIds.format.rewardedInterstitial,
+    AppiumTestIds.format.gamInterstitial,
+    AppiumTestIds.format.appOpenHook,
+    AppiumTestIds.format.interstitialHook,
+    AppiumTestIds.format.rewardedHook,
+    AppiumTestIds.format.rewardedInterstitialHook,
+  ]) {
     const contract = REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.find(c => c.id === id);
     assert.ok(contract);
     assert.equal(contract.retry, 'remount');
@@ -315,6 +338,43 @@ test('formats request-outcome-timeout JSON for CI correlation', () => {
     adsLogSnippet: 'Ads: This request is sent from a test device',
   });
   assert.equal(truncateLogSnippet('abcdefghij', 4), 'ghij');
+});
+
+test('gallery-request terminal correlation diagnostic names missing terminals', () => {
+  const withTerminal =
+    'I ReactNativeJS: [gallery-request] {"formatId":"gma.format.interstitial","event":"onAdLoaded","requestId":7,"attempt":1}';
+  assert.equal(hasTerminalGalleryRequestForId(withTerminal, 7), true);
+  assert.equal(
+    formatMissingGalleryRequestTerminalDiagnostic({
+      requestId: 7,
+      adsLogSnippet: withTerminal,
+    }),
+    undefined,
+  );
+  const mountOnly =
+    'I ReactNativeJS: [gallery-request] {"formatId":"gma.format.interstitial","event":"mount","requestId":7,"attempt":1}';
+  assert.equal(hasTerminalGalleryRequestForId(mountOnly, 7), false);
+  assert.equal(
+    formatMissingGalleryRequestTerminalDiagnostic({
+      requestId: 7,
+      adsLogSnippet: mountOnly,
+    }),
+    `${REQUEST_OUTCOME_GALLERY_REQUEST_DIAG_PREFIX} requestId=7 no terminal gallery-request`,
+  );
+  assert.equal(
+    formatMissingGalleryRequestTerminalDiagnostic({
+      requestId: 7,
+      adsLogSnippet: undefined,
+    }),
+    `${REQUEST_OUTCOME_GALLERY_REQUEST_DIAG_PREFIX} requestId=7 no terminal gallery-request`,
+  );
+  assert.equal(
+    formatMissingGalleryRequestTerminalDiagnostic({
+      requestId: null,
+      adsLogSnippet: '',
+    }),
+    undefined,
+  );
 });
 
 test('pending-timeout classification is remountable only for remount contracts', () => {
@@ -1404,6 +1464,8 @@ test('retires blanket per-attempt acceptance and locks real render probes', () =
   assert.match(gallerySource, /classifyHookLoadOutcome/);
   assert.match(gallerySource, /classifyPoolFilledOutcome/);
   assert.match(gallerySource, /observePoolFilledOutcome/);
+  assert.match(gallerySource, /formatMissingGalleryRequestTerminalDiagnostic/);
+  assert.match(gallerySource, /process == "ReactTestApp"/);
   assert.match(gallerySource, /format\.renderProof === 'banner'/);
   assert.match(gallerySource, /root\.\$\$\('\.\/\/\*'\)/);
   assert.match(gallerySource, /hasNonzeroRectangle\(size\)/);
