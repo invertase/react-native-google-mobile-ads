@@ -1,13 +1,16 @@
 import type { Options } from '@wdio/types';
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { flushCoverageFromApp } from './src/flushCoverage.ts';
+import { appiumServerLogPath } from './src/iosSessionDiagnostics.ts';
 import { platformForSharedConfig, runtimeResources } from './src/slots.ts';
 import { selectedWdioSpecs } from './src/wdioSpecs.ts';
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 const appiumHome = path.join(packageRoot, '.appium-home');
 const APPIUM_PORT = runtimeResources(platformForSharedConfig()).appiumPort;
+const appiumLogFile = appiumServerLogPath(appiumHome, APPIUM_PORT);
 
 /**
  * Shared WebdriverIO config for Appium 3 focused smoke against RNGoogleMobileAdsExample.
@@ -50,6 +53,7 @@ export const config: Options.Testrunner = {
   async onPrepare() {
     // @wdio/appium-service spawns Appium with process.env only (ignores service `env`).
     process.env.APPIUM_HOME = appiumHome;
+    mkdirSync(path.dirname(appiumLogFile), { recursive: true });
   },
   /**
    * After each top-level smoke suite, while the Appium session is still alive:
@@ -72,6 +76,9 @@ export const config: Options.Testrunner = {
         args: {
           port: APPIUM_PORT,
           relaxedSecurity: true,
+          // Persist Appium/xcodebuild stdio under APPIUM_HOME so hang-recover /
+          // supervisor-abort staging + CI `wda_xcodebuild_logs` can upload it.
+          log: appiumLogFile,
         },
         env: {
           APPIUM_HOME: appiumHome,

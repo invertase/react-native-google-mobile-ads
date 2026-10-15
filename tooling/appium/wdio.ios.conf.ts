@@ -159,6 +159,7 @@ export const config: Options.Testrunner = {
       phase: 'wdio:session-create',
       simulatorStartupTimeoutMs: timeoutMs,
       lastXcodebuildExitStatePath: xcodebuildExitStateFile,
+      appiumHome,
       onAbort: abortWdioSessionCreateHang,
     });
   },

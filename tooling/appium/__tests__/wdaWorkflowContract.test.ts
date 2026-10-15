@@ -119,6 +119,7 @@ test('CI prebuilds WDA before the WDIO command enables the prebuilt capability',
   assert.match(workflow, /tooling\/appium\/\.wda-derived\/Logs/);
   assert.match(workflow, /tooling\/appium\/\.wda-derived\/\*\*\/\*\.xcresult/);
   assert.match(workflow, /hang-recover-snapshots/);
+  assert.match(workflow, /tooling\/appium\/\.appium-home\/logs/);
 });
 
 test('wdio.ios.conf hang watchdog onAbort prints session-create abort hard marker', () => {
@@ -176,6 +177,13 @@ test('named prebuild producer and XCUITest consumer use the shared DerivedData p
   );
   assert.match(wdioSource, /\.\.\.iosPrebuiltWdaCapabilities\(\)/);
   assert.match(wdioSource, /['"]appium:showXcodeLog['"]\s*:\s*true/);
+  const sharedSource = readFileSync(
+    resolve(repositoryRoot, 'tooling/appium/wdio.shared.conf.ts'),
+    'utf8',
+  );
+  // Appium --log under .appium-home so supervisor-abort staging / CI globs capture stdio.
+  assert.match(sharedSource, /appiumServerLogPath/);
+  assert.match(sharedSource, /\blog:\s*appiumLogFile\b/);
 });
 
 test('iOS WDA and WDIO session timeouts retain their reviewed CI budgets', () => {

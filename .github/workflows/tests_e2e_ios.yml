@@ -179,6 +179,7 @@ jobs:
             tooling/appium/.wda-derived/**/*.log
             tooling/appium/.wda-derived/**/*.xcactivitylog
             tooling/appium/.wda-derived/**/*.xcresult
+            tooling/appium/.appium-home/logs
           if-no-files-found: warn
 
       - uses: codecov/codecov-action@v5

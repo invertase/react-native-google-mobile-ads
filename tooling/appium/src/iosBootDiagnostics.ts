@@ -15,13 +15,13 @@ import {
   parseDeviceHubMode,
 } from './iosDeviceHub.ts';
 import {
+  DEFAULT_APPIUM_HOME,
   emitIosSessionCreateDiagnostics,
   formatIosSessionDiagnosticLine,
-  hangRecoverArtifactSnapshotDir,
   parseXcodebuildExitCodeFromLine,
   resolveLastXcodebuildExit,
   shouldDeferHangRecoverForLiveHostBuild,
-  snapshotWdaDerivedDataForHangRecover,
+  stageIosSessionHangArtifacts,
   type IosSessionCreateDiagnosticSnapshot,
   type SessionExecCapture,
 } from './iosSessionDiagnostics.ts';
@@ -98,15 +98,16 @@ export const IOS_LIST_CONFIRM_TIMEOUT_MS = 15_000;
 export const IOS_SESSION_CREATE_HANG_POLL_MS = 30_000;
 
 /**
- * After this many hang ticks with xcrun ETIMEDOUT evidence, attempt one WDA
- * settle recovery (default: tick 2 ≈ 60s). Keep below the supervisor ceiling.
+ * After this many hang ticks with xcrun ETIMEDOUT **or** consecutive Booted
+ * hang-probes (session still not created), attempt one WDA settle recovery
+ * (default: tick 2 ≈ 60s). Keep below the supervisor ceiling.
  */
 export const IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS = 2;
 
 /**
- * After this many hang ticks with prolonged ETIMEDOUT / WDA-not-ready evidence,
- * abort with a clear `[e2e-ios-boot]` error instead of burning the full 180s
- * worker ceiling (default: tick 3 ≈ 90s).
+ * After this many hang ticks with prolonged ETIMEDOUT **or** Booted hang-probe
+ * streak evidence, abort with a clear `[e2e-ios-boot]` error instead of burning
+ * the full 180s worker ceiling (default: tick 3 ≈ 90s).
  */
 export const IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS = 3;
 
@@ -554,10 +555,23 @@ export function isSimulatorTransitionState(simState: string | undefined): boolea
  * one WDA settle recovery, or abort early with a clear `[e2e-ios-boot]` error.
  * Pure: injectable clocks/exec live in the watchdog wrapper.
  * Never recover/abort once `postSessionInFlight` is false (session id exists).
+ *
+ * Fail-fast evidence is either prolonged `xcrun` ETIMEDOUT **or** consecutive
+ * hang-probes while `listState=Booted` with POST still open — do not wait the
+ * supervisor 180s when simctl looks healthy but session create never completes.
+ *
+ * Live host xcodebuild/WDA PIDs are checked **before** abort (and before
+ * Booted-without-ETIMEDOUT recover): never terminate or abort-early over a live
+ * build; supervisor ceiling remains the backstop while PIDs stay up.
  */
 export function decideSessionCreateHangAction(input: {
   hangTick: number;
   consecutiveXcrunEtimedout: number;
+  /**
+   * Consecutive hang-probes that saw `listState=Booted` while POST /session is
+   * still open. Drives Booted-hang fail-fast when bootstatus is *not* ETIMEDOUT.
+   */
+  consecutiveBootedHangProbes?: number;
   /** Latest probe state when known (`Booted` still counts as WDA-not-ready under ETIMEDOUT). */
   simState?: string;
   recoveredOnce: boolean;
@@ -569,8 +583,9 @@ export function decideSessionCreateHangAction(input: {
    */
   postSessionInFlight?: boolean;
   /**
-   * Hang-path snapshot PID / exit fields. When host xcodebuild or WDA PIDs are
-   * live and lastXcodebuildExit is none/unknown, defer recover (do not kill).
+   * Hang-path snapshot PID / exit fields. Live host PIDs defer abort always,
+   * and defer Booted-without-ETIMEDOUT recover regardless of exit label.
+   * ETIMEDOUT recover still requires exit none/unknown to defer.
    */
   hostXcodebuildPids?: string;
   hostWdaPids?: string;
@@ -583,34 +598,77 @@ export function decideSessionCreateHangAction(input: {
     input.recoverAfterTicks ?? IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS;
   const abortAfter = input.abortAfterTicks ?? IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS;
   const etimedoutStreak = input.consecutiveXcrunEtimedout;
-  if (etimedoutStreak <= 0) {
-    return { action: 'continue' };
-  }
+  const bootedHangStreak = input.consecutiveBootedHangProbes ?? 0;
   const transitioning = isSimulatorTransitionState(input.simState);
   const bootedOrUnknown =
     input.simState == null ||
     input.simState === 'Booted' ||
     input.simState === '(missing)';
+  const etimedoutPath = etimedoutStreak > 0;
+  const bootedHangPath =
+    bootedHangStreak > 0 && input.simState === 'Booted' && !transitioning;
+  /** Booted streak without xcrun ETIMEDOUT — stricter live-PID gate. */
+  const bootedWithoutEtimedout = bootedHangPath && !etimedoutPath;
+  if (!etimedoutPath && !bootedHangPath) {
+    return { action: 'continue' };
+  }
   if (!bootedOrUnknown && !transitioning) {
     return { action: 'continue' };
   }
-  if (input.hangTick >= abortAfter && etimedoutStreak >= 2) {
+  const abortReady =
+    input.hangTick >= abortAfter &&
+    (etimedoutStreak >= 2 || bootedHangStreak >= abortAfter);
+  const recoverReady =
+    input.hangTick >= recoverAfter &&
+    (etimedoutStreak >= 1 || bootedHangStreak >= recoverAfter) &&
+    !input.recoveredOnce;
+
+  // Live-PID gate BEFORE abort (ordering): never abort/recover-kill over a live build.
+  if (
+    (abortReady || recoverReady) &&
+    input.hostXcodebuildPids != null &&
+    input.hostWdaPids != null &&
+    input.lastXcodebuildExitLabel != null
+  ) {
+    const deferRegardlessOfExit = abortReady || bootedWithoutEtimedout;
+    const defer = shouldDeferHangRecoverForLiveHostBuild({
+      hostXcodebuildPids: input.hostXcodebuildPids,
+      hostWdaPids: input.hostWdaPids,
+      lastXcodebuildExit: input.lastXcodebuildExitLabel,
+      deferRegardlessOfExit,
+    });
+    if (defer.defer && defer.reason) {
+      // Abort-ready + live PIDs: surface abortDeferred in the reason for CI grep
+      // (live-PID gate runs before abort — ordering must not let abort win).
+      const reason = abortReady
+        ? defer.reason.replace(/^recoverSkipped:/, 'abortDeferred:')
+        : defer.reason;
+      return {
+        action: 'skip-recover',
+        reason,
+        consumeRecoveryOpportunity: false,
+      };
+    }
+  }
+
+  if (abortReady) {
     const bootMonitorNote = transitioning
       ? '; interrupting Appium boot monitor while simulator is Shutdown/Booting (often isHeadless=false relaunch)'
       : '';
+    const evidence = etimedoutPath
+      ? `prolonged xcrun ETIMEDOUT (hangTick=${input.hangTick}, ` +
+        `consecutiveEtimedout=${etimedoutStreak}, state=${input.simState ?? 'unknown'})`
+      : `Booted hang-probe streak without session (hangTick=${input.hangTick}, ` +
+        `consecutiveBootedHangProbes=${bootedHangStreak}, ` +
+        `bootstatusTimedOut=false, state=${input.simState ?? 'unknown'})`;
     return {
       action: 'abort',
       reason:
-        `POST /session hung with prolonged xcrun ETIMEDOUT (hangTick=${input.hangTick}, ` +
-        `consecutiveEtimedout=${etimedoutStreak}, state=${input.simState ?? 'unknown'}); ` +
+        `POST /session hung with ${evidence}; ` +
         `WDA not ready — aborting before supervisor ceiling${bootMonitorNote}`,
     };
   }
-  if (
-    input.hangTick >= recoverAfter &&
-    etimedoutStreak >= 1 &&
-    !input.recoveredOnce
-  ) {
+  if (recoverReady) {
     if (transitioning) {
       return {
         action: 'skip-recover',
@@ -620,29 +678,14 @@ export function decideSessionCreateHangAction(input: {
         consumeRecoveryOpportunity: true,
       };
     }
-    if (
-      input.hostXcodebuildPids != null &&
-      input.hostWdaPids != null &&
-      input.lastXcodebuildExitLabel != null
-    ) {
-      const defer = shouldDeferHangRecoverForLiveHostBuild({
-        hostXcodebuildPids: input.hostXcodebuildPids,
-        hostWdaPids: input.hostWdaPids,
-        lastXcodebuildExit: input.lastXcodebuildExitLabel,
-      });
-      if (defer.defer && defer.reason) {
-        return {
-          action: 'skip-recover',
-          reason: defer.reason,
-          consumeRecoveryOpportunity: false,
-        };
-      }
-    }
+    const recoverEvidence = etimedoutPath
+      ? `xcrun ETIMEDOUT (hangTick=${input.hangTick}, state=${input.simState ?? 'unknown'})`
+      : `Booted hang-probe streak (hangTick=${input.hangTick}, ` +
+        `consecutiveBootedHangProbes=${bootedHangStreak}, state=${input.simState ?? 'unknown'})`;
     return {
       action: 'recover',
       reason:
-        `POST /session hang with xcrun ETIMEDOUT (hangTick=${input.hangTick}, ` +
-        `state=${input.simState ?? 'unknown'}); attempting WDA terminate + settle`,
+        `POST /session hang with ${recoverEvidence}; attempting WDA terminate + settle`,
     };
   }
   return { action: 'continue' };
@@ -690,10 +733,11 @@ export function formatSessionCreateHangAbortError(reason: string): Error {
 
 /**
  * While WDIO's POST /session is in flight, periodically re-emit `[e2e-ios-boot]`
- * lines plus an Appium/WDA hang hint. After prolonged xcrun ETIMEDOUT evidence,
- * optionally recover once (terminate WDA) then abort early via `onAbort` instead
- * of burning the full supervisor ceiling. Call `markSessionCreated` (or `stop`)
- * as soon as a session id exists — never WDA-terminate mid-suite.
+ * lines plus an Appium/WDA hang hint. After prolonged xcrun ETIMEDOUT **or**
+ * consecutive Booted hang-probes (session still not created), optionally
+ * recover once (terminate WDA) then abort early via `onAbort` instead of burning
+ * the full supervisor ceiling. Call `markSessionCreated` (or `stop`) as soon as
+ * a session id exists — never WDA-terminate mid-suite.
  */
 export function startIosSessionCreateHangWatchdog(
   udid: string,
@@ -722,6 +766,8 @@ export function startIosSessionCreateHangWatchdog(
      * launcher process, not the Mocha worker.
      */
     lastXcodebuildExitStatePath?: string;
+    /** Appium home whose `logs/` are copied into hang-recover-snapshots. */
+    appiumHome?: string;
     /** Invoked once when decision is `recover` (defaults to terminate WDA + settle). */
     onRecover?: (udid: string, reason: string) => void;
     /** Invoked when decision is `abort` (parent should recordFailure / drain). */
@@ -734,11 +780,13 @@ export function startIosSessionCreateHangWatchdog(
   const now = options.now ?? (() => new Date());
   const bootstatusTimeoutMs =
     options.bootstatusTimeoutMs ?? IOS_BOOTSTATUS_PROBE_TIMEOUT_MS;
+  const appiumHome = options.appiumHome ?? DEFAULT_APPIUM_HOME;
   let ticks = 0;
   let stopped = false;
   /** False once a WebDriver session id exists — gates recover/abort. */
   let postSessionInFlight = true;
   let consecutiveXcrunEtimedout = 0;
+  let consecutiveBootedHangProbes = 0;
   let recoveredOnce = false;
   let lastSimState: string | undefined;
   let lastBootstatusTimedOut: boolean | undefined;
@@ -768,6 +816,17 @@ export function startIosSessionCreateHangWatchdog(
       write,
     );
     return lastSessionSnapshot;
+  };
+
+  const emitHangPathArtifactSnapshot = (artifactPhase: string): void => {
+    stageIosSessionHangArtifacts({
+      derivedDataPath: SESSION_WDA_DERIVED_DATA_PATH,
+      appiumHome,
+      phase: artifactPhase,
+      udid,
+      write,
+      now,
+    });
   };
 
   write(
@@ -839,9 +898,14 @@ export function startIosSessionCreateHangWatchdog(
         lastBootstatusTimedOut = false;
       }
     }
-    // When hang-probe sees xcrun ETIMEDOUT, emit WDA/xcodebuild snapshot so the
-    // next identical failure proves process state + log artifact paths.
-    if (probeSawEtimedout) {
+    if (lastSimState === 'Booted') {
+      consecutiveBootedHangProbes += 1;
+    } else {
+      consecutiveBootedHangProbes = 0;
+    }
+    // Emit WDA/xcodebuild snapshot on ETIMEDOUT or Booted hang-probe so the next
+    // identical failure proves process state + log artifact paths.
+    if (probeSawEtimedout || lastSimState === 'Booted') {
       emitSessionSnapshot(`${options.phase}:hang-probe`);
     }
 
@@ -850,14 +914,13 @@ export function startIosSessionCreateHangWatchdog(
       return;
     }
 
-    // Fresh host PID / exit snapshot for the live-build recover gate.
-    if (lastSessionSnapshot == null) {
-      emitSessionSnapshot(`${options.phase}:hang-decide`);
-    }
+    // Fresh host PID / exit snapshot every tick for the live-build recover gate.
+    emitSessionSnapshot(`${options.phase}:hang-decide`);
 
     const decision = decideSessionCreateHangAction({
       hangTick: ticks,
       consecutiveXcrunEtimedout,
+      consecutiveBootedHangProbes,
       simState: lastSimState,
       recoveredOnce,
       recoverAfterTicks: options.recoverAfterTicks,
@@ -887,6 +950,8 @@ export function startIosSessionCreateHangWatchdog(
         ),
       );
       emitSessionSnapshot(`${options.phase}:hang-recoverSkipped`, decision.reason);
+      // Still stage logs while deferring so supervisor abort has artifacts.
+      emitHangPathArtifactSnapshot(`${options.phase}:hang-recoverSkipped-artifacts`);
       return;
     }
 
@@ -909,26 +974,7 @@ export function startIosSessionCreateHangWatchdog(
       // Capture WDA/xcodebuild state *before* terminate so exit-65 cause paths
       // survive the recover kill (cannot hurt; clarifies next failure).
       emitSessionSnapshot(`${options.phase}:hang-recover`);
-      const artifactDest = hangRecoverArtifactSnapshotDir(SESSION_WDA_DERIVED_DATA_PATH);
-      const artifactSnap = snapshotWdaDerivedDataForHangRecover(
-        SESSION_WDA_DERIVED_DATA_PATH,
-        artifactDest,
-      );
-      write(
-        formatIosSessionDiagnosticLine(
-          {
-            phase: `${options.phase}:hang-recover-artifacts`,
-            udid,
-            dest: artifactDest,
-            copied: artifactSnap.copiedPaths.length,
-            errors: artifactSnap.errors.length,
-            paths:
-              artifactSnap.copiedPaths.join(',') ||
-              (artifactSnap.errors[0] ?? '(none)'),
-          },
-          now,
-        ),
-      );
+      emitHangPathArtifactSnapshot(`${options.phase}:hang-recover-artifacts`);
       const recover =
         options.onRecover ??
         ((target: string) =>
@@ -974,6 +1020,9 @@ export function startIosSessionCreateHangWatchdog(
         ),
       );
       emitSessionSnapshot(`${options.phase}:hang-abort`);
+      // Always stage DerivedData/Logs/xcresult + Appium logs even when recover
+      // never ran (empty wda_xcodebuild_logs was the prior CI gap).
+      emitHangPathArtifactSnapshot(`${options.phase}:hang-abort-artifacts`);
       disarm();
       options.onAbort?.(error);
     }

@@ -206,9 +206,49 @@ export type HostProcessPidSnapshot = {
 };
 
 /**
+ * True when a `pgrep -fl` line is an xcodebuild process (argv0 or path).
+ * WDA markers (`WebDriverAgent*`) also match `xcodebuild … -scheme WebDriverAgentRunner`
+ * and must not be double-counted as host WDA PIDs.
+ */
+export function pgrepFlLineIsXcodebuild(line: string): boolean {
+  const trimmed = line.trim();
+  if (trimmed === '') {
+    return false;
+  }
+  // Drop leading PID, then match argv0 / path ending in xcodebuild.
+  const cmd = trimmed.replace(/^\d+\s+/, '');
+  return /(^|\/)xcodebuild(\s|$)/.test(cmd);
+}
+
+/** Parse `pgrep -fl` stdout into PIDs; optionally skip xcodebuild command lines. */
+export function parsePgrepFlPids(
+  stdout: string,
+  options?: { excludeXcodebuildCmd?: boolean },
+): number[] {
+  const pids: number[] = [];
+  for (const line of stdout.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed === '') {
+      continue;
+    }
+    if (options?.excludeXcodebuildCmd === true && pgrepFlLineIsXcodebuild(trimmed)) {
+      continue;
+    }
+    const pid = Number(trimmed.split(/\s+/)[0]);
+    if (Number.isInteger(pid) && pid > 0) {
+      pids.push(pid);
+    }
+  }
+  return pids;
+}
+
+/**
  * List host PIDs whose command line matches WDA / xcodebuild markers (pgrep -fl).
  * Injectable exec keeps unit tests off the live process table. Hard-capped so
  * hang-path diagnostics cannot stack multi-second simctl waits.
+ *
+ * For non-`xcodebuild` markers, lines whose command is xcodebuild are omitted
+ * so `hostXcodebuildPids` and `hostWdaPids` do not share the same PID string.
  */
 export function listWdaRelatedHostProcesses(
   execCapture: SessionExecCapture = defaultSessionExecCapture,
@@ -217,24 +257,49 @@ export function listWdaRelatedHostProcesses(
 ): HostProcessPidSnapshot[] {
   return markers.map(marker => {
     const result = execCapture('pgrep', ['-fl', marker], { timeoutMs });
-    const pids: number[] = [];
     if (result.timedOut) {
-      return { marker, pids, timedOut: true };
+      return { marker, pids: [], timedOut: true };
     }
-    if (result.status === 0 || result.stdout.trim() !== '') {
-      for (const line of result.stdout.split(/\r?\n/)) {
-        const trimmed = line.trim();
-        if (trimmed === '') {
-          continue;
-        }
-        const pid = Number(trimmed.split(/\s+/)[0]);
-        if (Number.isInteger(pid) && pid > 0) {
-          pids.push(pid);
-        }
-      }
-    }
+    const excludeXcodebuildCmd = marker !== 'xcodebuild';
+    const pids =
+      result.status === 0 || result.stdout.trim() !== ''
+        ? parsePgrepFlPids(result.stdout, { excludeXcodebuildCmd })
+        : [];
     return { marker, pids };
   });
+}
+
+/**
+ * Collapse marker snapshots into diagnostic PID fields. WDA PIDs never include
+ * PIDs already listed under xcodebuild (belt-and-suspenders vs pgrep overlap).
+ */
+export function formatHostPidFieldsFromSnapshots(
+  hostProcs: HostProcessPidSnapshot[],
+): {
+  hostXcodebuildPids: string;
+  hostWdaPids: string;
+  hostPgrepTimedOut: boolean;
+} {
+  const xcodebuild = hostProcs.find(item => item.marker === 'xcodebuild');
+  const wdaHost = hostProcs.filter(item => item.marker !== 'xcodebuild');
+  const hostPgrepTimedOut = hostProcs.some(item => item.timedOut === true);
+  const xcodebuildPids = new Set(xcodebuild?.pids ?? []);
+  const hostXcodebuildPids =
+    xcodebuild?.timedOut === true
+      ? 'timedOut'
+      : xcodebuild?.pids.join(',') || '(none)';
+  let hostWdaPids: string;
+  if (wdaHost.some(item => item.timedOut === true)) {
+    hostWdaPids = 'timedOut';
+  } else {
+    hostWdaPids =
+      wdaHost
+        .flatMap(item => item.pids)
+        .filter(pid => !xcodebuildPids.has(pid))
+        .filter((pid, index, all) => all.indexOf(pid) === index)
+        .join(',') || '(none)';
+  }
+  return { hostXcodebuildPids, hostWdaPids, hostPgrepTimedOut };
 }
 
 export type WdaDerivedDataLogPath = {
@@ -384,9 +449,8 @@ export function collectIosSessionCreateDiagnosticSnapshot(
   const derivedDataPath = options.derivedDataPath;
   const wdaRunnerAppPath = options.wdaRunnerAppPath;
   const hostProcs = listWdaRelatedHostProcesses(exec);
-  const xcodebuild = hostProcs.find(item => item.marker === 'xcodebuild');
-  const wdaHost = hostProcs.filter(item => item.marker !== 'xcodebuild');
-  const hostPgrepTimedOut = hostProcs.some(item => item.timedOut === true);
+  const { hostXcodebuildPids, hostWdaPids, hostPgrepTimedOut } =
+    formatHostPidFieldsFromSnapshots(hostProcs);
   const logPaths = (options.listLogPaths ?? listWdaDerivedDataLogPaths)(derivedDataPath);
   const lastExit =
     options.lastXcodebuildExit === undefined
@@ -404,21 +468,8 @@ export function collectIosSessionCreateDiagnosticSnapshot(
     wdaRunnerAppPath,
     derivedDataPath,
     derivedDataExists: exists(derivedDataPath),
-    hostXcodebuildPids:
-      xcodebuild?.timedOut === true
-        ? 'timedOut'
-        : xcodebuild?.pids.join(',') || '(none)',
-    hostWdaPids: (() => {
-      if (wdaHost.some(item => item.timedOut === true)) {
-        return 'timedOut';
-      }
-      return (
-        wdaHost
-          .flatMap(item => item.pids)
-          .filter((pid, index, all) => all.indexOf(pid) === index)
-          .join(',') || '(none)'
-      );
-    })(),
+    hostXcodebuildPids,
+    hostWdaPids,
     hostPgrepTimedOut,
     lastXcodebuildExit: lastExit,
     wdaLogPaths:
@@ -436,43 +487,74 @@ export function hostPidsIndicateLiveBuild(pidsField: string): boolean {
 }
 
 /**
- * Gate hang-recover: do not `simctl terminate` WDA while host xcodebuild and/or
- * WDA PIDs are still alive (or pgrep timed out) and lastXcodebuildExit is
- * none/unknown. Wait for the build to finish or exit before kill.
+ * Gate hang-recover / hang-abort while host xcodebuild and/or WDA PIDs are
+ * still alive (or pgrep timed out).
+ *
+ * - Default (ETIMEDOUT recover): defer only when `lastXcodebuildExit` is
+ *   none/unknown — a concrete exit means the build finished and terminate is OK.
+ * - `deferRegardlessOfExit` (Booted-without-ETIMEDOUT recover, and abort):
+ *   defer whenever PIDs are live, even if exit is `0`/`65` (stale sidecar or
+ *   a follow-on build). Never kill / abort-early over a live host build.
  */
 export function shouldDeferHangRecoverForLiveHostBuild(input: {
   hostXcodebuildPids: string;
   hostWdaPids: string;
   lastXcodebuildExit: string;
+  /** When true, live PIDs alone defer — ignore exit label. */
+  deferRegardlessOfExit?: boolean;
 }): { defer: boolean; reason?: string } {
   const live =
     hostPidsIndicateLiveBuild(input.hostXcodebuildPids) ||
     hostPidsIndicateLiveBuild(input.hostWdaPids);
-  const exitUnknown =
-    input.lastXcodebuildExit === '(none)' ||
-    input.lastXcodebuildExit === '(unknown)';
-  if (!live || !exitUnknown) {
+  if (!live) {
     return { defer: false };
+  }
+  if (input.deferRegardlessOfExit !== true) {
+    const exitUnknown =
+      input.lastXcodebuildExit === '(none)' ||
+      input.lastXcodebuildExit === '(unknown)';
+    if (!exitUnknown) {
+      return { defer: false };
+    }
   }
   return {
     defer: true,
     reason:
       `recoverSkipped: host build still live ` +
       `(hostXcodebuildPids=${input.hostXcodebuildPids}, hostWdaPids=${input.hostWdaPids}) ` +
-      `and lastXcodebuildExit=${input.lastXcodebuildExit} — defer WDA terminate until ` +
-      `xcodebuild exits or host PIDs clear`,
+      `and lastXcodebuildExit=${input.lastXcodebuildExit} — defer WDA terminate / abort until ` +
+      `host PIDs clear` +
+      (input.deferRegardlessOfExit === true
+        ? ' (live PIDs gate ignores exit label)'
+        : ' or xcodebuild exit becomes known'),
   };
 }
 
-/** Default staging dir under DerivedData for pre-kill log copies. */
+/** Default staging dir under DerivedData for pre-kill / hang-abort log copies. */
 export function hangRecoverArtifactSnapshotDir(derivedDataPath: string): string {
   return join(derivedDataPath, 'hang-recover-snapshots', 'last');
 }
 
+/** Appium server log path under APPIUM_HOME (matches wdio `--log` arg). */
+export function appiumServerLogPath(
+  appiumHome: string = DEFAULT_APPIUM_HOME,
+  appiumPort: number,
+): string {
+  return join(appiumHome, 'logs', `port-${appiumPort}`, 'appium.log');
+}
+
+export type HangPathArtifactSnapshotResult = {
+  destDir: string;
+  copiedPaths: string[];
+  errors: string[];
+};
+
 /**
  * Copy `.xcresult` bundles + DerivedData log files into `destDir` before a
- * hang-recover kill so upload-artifact still has evidence if terminate races
- * the writer. Best-effort; never throws.
+ * hang-recover kill (or on hang-abort / supervisor-path abort) so
+ * upload-artifact still has evidence if terminate races the writer.
+ * Best-effort; never throws. Continues with Appium / extra logs even when
+ * DerivedData is missing so the 180s supervisor backstop still stages evidence.
  */
 export function snapshotWdaDerivedDataForHangRecover(
   derivedDataPath: string,
@@ -484,47 +566,172 @@ export function snapshotWdaDerivedDataForHangRecover(
     copyFileSyncFn?: typeof copyFileSync;
     cpSyncFn?: typeof cpSync;
     statSyncFn?: typeof statSync;
+    writeFileSyncFn?: typeof writeFileSync;
+    /**
+     * Optional Appium home (`tooling/appium/.appium-home`). When set, copies
+     * `logs/` into `destDir/appium-logs` so CI globs under hang-recover-snapshots
+     * pick them up even when recover never ran.
+     */
+    appiumHome?: string;
+    /**
+     * Extra files/dirs (e.g. `/tmp/rngma-e2e/<id>/ios-serial.log`) copied under
+     * `destDir/supervisor-child-logs/` before SIGKILL drains owned children.
+     */
+    extraLogPaths?: readonly string[];
+    /** Written into `staging-receipt.txt` so the snapshot dir is never empty. */
+    stagingPhase?: string;
   },
-): { copiedPaths: string[]; errors: string[] } {
+): HangPathArtifactSnapshotResult {
   const exists = options?.existsSyncFn ?? existsSync;
   const mkdir = options?.mkdirSyncFn ?? mkdirSync;
   const copyFile = options?.copyFileSyncFn ?? copyFileSync;
   const cp = options?.cpSyncFn ?? cpSync;
   const stat = options?.statSyncFn ?? statSync;
+  const writeFile = options?.writeFileSyncFn ?? writeFileSync;
   const copiedPaths: string[] = [];
   const errors: string[] = [];
-  if (!exists(derivedDataPath)) {
-    return { copiedPaths, errors: [`derivedData missing: ${derivedDataPath}`] };
-  }
   try {
     mkdir(destDir, { recursive: true });
   } catch (error) {
     return {
+      destDir,
       copiedPaths,
       errors: [
         `mkdir ${destDir}: ${error instanceof Error ? error.message : String(error)}`,
       ],
     };
   }
-  const paths = (options?.listLogPaths ?? listWdaDerivedDataLogPaths)(derivedDataPath);
-  for (const entry of paths) {
-    const name = basename(entry.path);
-    const dest = join(destDir, name);
-    try {
-      const info = stat(entry.path);
-      if (info.isDirectory()) {
-        cp(entry.path, dest, { recursive: true });
-      } else {
-        copyFile(entry.path, dest);
+  if (!exists(derivedDataPath)) {
+    errors.push(`derivedData missing: ${derivedDataPath}`);
+  } else {
+    const paths = (options?.listLogPaths ?? listWdaDerivedDataLogPaths)(derivedDataPath);
+    for (const entry of paths) {
+      const name = basename(entry.path);
+      const dest = join(destDir, name);
+      try {
+        const info = stat(entry.path);
+        if (info.isDirectory()) {
+          cp(entry.path, dest, { recursive: true });
+        } else {
+          copyFile(entry.path, dest);
+        }
+        copiedPaths.push(dest);
+      } catch (error) {
+        errors.push(
+          `${entry.path}: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
-      copiedPaths.push(dest);
-    } catch (error) {
-      errors.push(
-        `${entry.path}: ${error instanceof Error ? error.message : String(error)}`,
-      );
     }
   }
-  return { copiedPaths, errors };
+  const appiumHome = options?.appiumHome;
+  if (appiumHome) {
+    const appiumLogs = join(appiumHome, 'logs');
+    if (exists(appiumLogs)) {
+      const appiumDest = join(destDir, 'appium-logs');
+      try {
+        cp(appiumLogs, appiumDest, { recursive: true });
+        copiedPaths.push(appiumDest);
+      } catch (error) {
+        errors.push(
+          `${appiumLogs}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  }
+  const extraLogPaths = options?.extraLogPaths ?? [];
+  if (extraLogPaths.length > 0) {
+    const childDestRoot = join(destDir, 'supervisor-child-logs');
+    try {
+      mkdir(childDestRoot, { recursive: true });
+    } catch (error) {
+      errors.push(
+        `mkdir ${childDestRoot}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    for (const src of extraLogPaths) {
+      if (!src || !exists(src)) {
+        continue;
+      }
+      const dest = join(childDestRoot, basename(src));
+      try {
+        const info = stat(src);
+        if (info.isDirectory()) {
+          cp(src, dest, { recursive: true });
+        } else {
+          copyFile(src, dest);
+        }
+        copiedPaths.push(dest);
+      } catch (error) {
+        errors.push(`${src}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  }
+  // Always leave a receipt so CI upload-artifact sees a non-empty tree even when
+  // DerivedData/Appium logs were absent at abort time.
+  const receiptPath = join(destDir, 'staging-receipt.txt');
+  try {
+    writeFile(
+      receiptPath,
+      [
+        `phase=${options?.stagingPhase ?? 'hang-path-artifacts'}`,
+        `ts=${new Date().toISOString()}`,
+        `copied=${copiedPaths.length}`,
+        `errors=${errors.length}`,
+        ...errors.map(item => `error=${item}`),
+      ].join('\n') + '\n',
+      'utf8',
+    );
+    copiedPaths.push(receiptPath);
+  } catch (error) {
+    errors.push(
+      `staging-receipt: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  return { destDir, copiedPaths, errors };
+}
+
+/**
+ * Stage hang-path / supervisor-abort diagnostics into
+ * `.wda-derived/hang-recover-snapshots/last` (CI `wda_xcodebuild_logs` glob).
+ * Call **before** drain/SIGKILL so `/tmp/rngma-e2e` child logs still exist.
+ */
+export function stageIosSessionHangArtifacts(options: {
+  derivedDataPath: string;
+  appiumHome?: string;
+  extraLogPaths?: readonly string[];
+  phase: string;
+  write?: (line: string) => void;
+  udid?: string;
+  now?: () => Date;
+  snapshotFn?: typeof snapshotWdaDerivedDataForHangRecover;
+}): HangPathArtifactSnapshotResult {
+  const write = options.write ?? ((line: string) => console.log(line));
+  const now = options.now ?? (() => new Date());
+  const destDir = hangRecoverArtifactSnapshotDir(options.derivedDataPath);
+  const snapshot = (options.snapshotFn ?? snapshotWdaDerivedDataForHangRecover)(
+    options.derivedDataPath,
+    destDir,
+    {
+      appiumHome: options.appiumHome ?? DEFAULT_APPIUM_HOME,
+      extraLogPaths: options.extraLogPaths,
+      stagingPhase: options.phase,
+    },
+  );
+  write(
+    formatIosSessionDiagnosticLine(
+      {
+        phase: options.phase,
+        udid: options.udid ?? '(n/a)',
+        dest: snapshot.destDir,
+        copied: snapshot.copiedPaths.length,
+        errors: snapshot.errors.length,
+        paths:
+          snapshot.copiedPaths.join(',') || snapshot.errors[0] || '(none)',
+      },
+      now,
+    ),
+  );
+  return snapshot;
 }
 
 /**

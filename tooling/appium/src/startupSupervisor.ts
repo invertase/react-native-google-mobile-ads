@@ -187,6 +187,12 @@ export class StartupSupervisor {
   private readonly sessions = new Set<string>();
   private readonly apps = new Set<string>();
   private readonly listeners = new Set<(error: Error) => void>();
+  /**
+   * Sync hooks that run at the start of {@link abort}, **before** `onFailure`
+   * listeners (drain/SIGKILL). Used to stage iOS hang-path artifacts while
+   * `/tmp/rngma-e2e` child logs and Appium processes are still alive.
+   */
+  private readonly abortArtifactHooks = new Set<(error: Error) => void>();
   private waiter?: Waiter;
   private failed?: Error;
   private metroTcpReady = false;
@@ -237,6 +243,15 @@ export class StartupSupervisor {
   onFailure(listener: (error: Error) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  /**
+   * Register a best-effort artifact staging hook that runs **before** drain
+   * (`onFailure`) when startup aborts (including the 180s worker backstop).
+   */
+  onAbortArtifacts(listener: (error: Error) => void): () => void {
+    this.abortArtifactHooks.add(listener);
+    return () => this.abortArtifactHooks.delete(listener);
   }
 
   recordMetroTcpReady(): void {
@@ -407,6 +422,14 @@ export class StartupSupervisor {
       this.clearWaiterTimers();
       this.waiter.reject(error);
       this.waiter = undefined;
+    }
+    // Stage diagnostics before drain listeners SIGKILL owned children.
+    for (const hook of this.abortArtifactHooks) {
+      try {
+        hook(error);
+      } catch {
+        // best-effort — never block abort/drain on staging failures
+      }
     }
     this.rejectFailure(error);
     for (const listener of this.listeners) listener(error);
