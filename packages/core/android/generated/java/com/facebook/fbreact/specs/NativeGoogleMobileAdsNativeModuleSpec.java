@@ -52,4 +52,16 @@ public abstract class NativeGoogleMobileAdsNativeModuleSpec extends ReactContext
   @ReactMethod
   @DoNotStrip
   public abstract void destroyHandle(String handleId);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void loadCustomNative(String adUnitId, ReadableMap requestOptions, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void performCustomNativeClick(String adId, String assetName, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void recordCustomNativeImpression(String adId);
 }

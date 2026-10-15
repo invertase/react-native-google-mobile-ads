@@ -272,12 +272,30 @@ static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsNativeModuleSpec
   return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "destroyHandle", "(Ljava/lang/String;)V", args, count, cachedMethodId);
 }
 
+static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_loadCustomNative(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, PromiseKind, "loadCustomNative", "(Ljava/lang/String;Lcom/facebook/react/bridge/ReadableMap;Lcom/facebook/react/bridge/Promise;)V", args, count, cachedMethodId);
+}
+
+static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_performCustomNativeClick(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, PromiseKind, "performCustomNativeClick", "(Ljava/lang/String;Ljava/lang/String;Lcom/facebook/react/bridge/Promise;)V", args, count, cachedMethodId);
+}
+
+static facebook::jsi::Value __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_recordCustomNativeImpression(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "recordCustomNativeImpression", "(Ljava/lang/String;)V", args, count, cachedMethodId);
+}
+
 NativeGoogleMobileAdsNativeModuleSpecJSI::NativeGoogleMobileAdsNativeModuleSpecJSI(const JavaTurboModule::InitParams &params)
   : JavaTurboModule(params) {
   methodMap_["load"] = MethodMetadata {2, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_load};
   methodMap_["destroy"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_destroy};
   methodMap_["loadMultiFormat"] = MethodMetadata {2, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_loadMultiFormat};
   methodMap_["destroyHandle"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_destroyHandle};
+  methodMap_["loadCustomNative"] = MethodMetadata {2, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_loadCustomNative};
+  methodMap_["performCustomNativeClick"] = MethodMetadata {2, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_performCustomNativeClick};
+  methodMap_["recordCustomNativeImpression"] = MethodMetadata {1, __hostFunction_NativeGoogleMobileAdsNativeModuleSpecJSI_recordCustomNativeImpression};
   eventEmitterMap_["onAdEvent"] = std::make_shared<AsyncEventEmitter<folly::dynamic>>();
   configureEventEmitterCallback();
 }

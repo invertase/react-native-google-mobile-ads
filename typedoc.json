@@ -42,6 +42,8 @@
       "AdLoadFunction",
       "AdShowFunction",
       "AdType",
+      "CustomNativeAdListenerPayload",
+      "CustomNativeAdProps",
       "DisplayPresetConfig",
       "DisplayPresetConfigCustomId",
       "EventType",

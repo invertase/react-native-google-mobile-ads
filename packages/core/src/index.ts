@@ -110,6 +110,7 @@ export { RewardedInterstitialAd } from './ads/RewardedInterstitialAd';
 export { BannerAd } from './ads/BannerAd';
 export type { MobileAd } from './ads/MobileAd';
 export { NativeAd } from './ads/native-ad/NativeAd';
+export { CustomNativeAd } from './ads/native-ad/CustomNativeAd';
 export { NativeAdView } from './ads/native-ad/NativeAdView';
 export { NativeMediaView } from './ads/native-ad/NativeMediaView';
 export { NativeAsset, NativeAssetType } from './ads/native-ad/NativeAsset';

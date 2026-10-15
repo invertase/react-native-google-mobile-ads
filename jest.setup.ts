@@ -104,6 +104,19 @@ jest.doMock('./packages/core/src/specs/modules/NativeGoogleMobileAdsNativeModule
         }),
       ),
       destroyHandle: jest.fn(),
+      loadCustomNative: jest.fn(() =>
+        Promise.resolve({
+          adId: 'custom-native-ad',
+          responseId: null,
+          customFormatId: '12345678',
+          availableAssetNames: [],
+          assets: {},
+          mediaContent: null,
+          responseInfo: null,
+        }),
+      ),
+      performCustomNativeClick: jest.fn(() => Promise.resolve()),
+      recordCustomNativeImpression: jest.fn(),
       onAdEvent: jest.fn(() => ({ remove: jest.fn() })),
     },
   };

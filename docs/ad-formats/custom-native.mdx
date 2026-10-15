@@ -1,0 +1,182 @@
+---
+title: Custom native (Ad Manager)
+description: Load Google Ad Manager custom native ad formats, read custom assets by name, and handle clicks with Ad Manager click reporting.
+---
+
+Google Ad Manager **custom native ad formats** let you define your own set of assets (for example
+a `Calltoaction` text and a `Secondaryimage` image) in the Ad Manager UI. Unlike
+[system-defined native ads](/ad-formats/native), a custom native ad has no `headline` / `body` /
+`icon` fields and is not rendered with `NativeAdView`. You read each asset by its Ad Manager name
+and build the UI yourself.
+
+<Warning>
+  Custom native formats are an Ad Manager feature. Use an Ad Manager ad unit path (for example
+  `/network-code/ad-unit`); AdMob `ca-app-pub-…` units are rejected.
+</Warning>
+
+## Load an ad
+
+Pass the custom native format ID(s) from Ad Manager (**Delivery → Native → format → ID**) in
+`customFormatIds`. Every other `RequestOptions` field (`customTargeting`, `keywords`, …) works as
+usual.
+
+```tsx
+import { CustomNativeAd } from 'react-native-google-mobile-ads';
+
+const ad = await CustomNativeAd.createForAdRequest('/1234/main-carousel', {
+  customFormatIds: ['12345678'],
+});
+```
+
+`createForAdRequest` rejects with the same `AdError` shape as `NativeAd` (`reason`, `phase: 'load'`,
+optional `responseInfo`) when the request fails or returns no fill. It throws before any request
+for invalid options: missing or empty `customFormatIds`, duplicate IDs, or an AdMob unit.
+
+## Read assets
+
+Asset names are **case-sensitive** and are passed through exactly as configured in Ad Manager.
+`Calltoaction`, `CallToAction`, and `calltoaction` are three different assets.
+
+```tsx
+const cta = ad.getText('Calltoaction'); // string | null
+const image = ad.getImage('Secondaryimage'); // { url, scale } | null
+```
+
+| Member                | Value                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `getText(name)`       | The text asset, or `null` when missing or not text.                                         |
+| `getImage(name)`      | `{ url, scale }` (same shape as `NativeAd` images), or `null` when missing or not an image. |
+| `getAsset(name)`      | `{ type: 'text', text }` or `{ type: 'image', image }`, or `null`.                          |
+| `assets`              | Read-only map of every text and image asset, keyed by exact name.                           |
+| `availableAssetNames` | Every asset name the creative carries, including ones without a text or image value.        |
+| `customFormatId`      | The format ID that served this ad.                                                          |
+| `mediaContent`        | `{ aspectRatio, hasVideoContent, duration }` for the video asset, or `null`.                |
+
+A missing asset returns `null`; it never throws. Values are a snapshot taken at load time.
+
+## Render, record the impression, handle the tap
+
+The SDK does not track views for custom native ads. Call `recordImpression()` once the ad is on
+screen (repeat calls for the same ad are ignored by the SDK), and `performClick(assetName)` when
+the user taps an asset. The library reports the click to Ad Manager and never navigates: where the
+user goes next is your app's decision.
+
+```tsx
+import React, { useEffect } from 'react';
+import { Image, Linking, Pressable, Text } from 'react-native';
+import { CustomNativeAd } from 'react-native-google-mobile-ads';
+
+// Your app's own navigation policy: deep link, router, in-app browser, …
+async function openDestination(target: string | null) {
+  // Destinations come from the creative: only open schemes you trust.
+  if (target && /^(https:|myapp:)/i.test(target)) {
+    await Linking.openURL(target);
+  }
+}
+
+function CarouselItem({ ad }: { ad: CustomNativeAd }) {
+  useEffect(() => {
+    ad.recordImpression();
+  }, [ad]);
+
+  const cta = ad.getText('Calltoaction');
+  const image = ad.getImage('Secondaryimage');
+
+  async function onPress() {
+    await ad.performClick('Calltoaction'); // reports the click to Ad Manager
+    // The SDK does not expose the click-through URL; read your own custom asset.
+    await openDestination(ad.getText('Deeplink') ?? ad.getText('Clickurl'));
+  }
+
+  return (
+    <Pressable onPress={() => onPress().catch(console.warn)}>
+      {image ? <Image source={{ uri: image.url }} style={{ width: 320, height: 180 }} /> : null}
+      {cta ? <Text>{cta}</Text> : null}
+    </Pressable>
+  );
+}
+```
+
+Call `ad.destroy()` when the ad is no longer used.
+
+## How clicks work
+
+With the default `clickHandling: 'app'`:
+
+1. `performClick(assetName)` passes the exact asset name to the SDK (`performClickOnAssetWithKey:`
+   on iOS, `performClick(assetName)` on Android). **The SDK records the click in Ad Manager.**
+2. Because the library installed a custom click handler, the SDK does not navigate. It calls the
+   handler with the clicked asset name, and the library emits `NativeAdEventType.CUSTOM_CLICK`
+   with `{ assetName }`.
+3. Your app navigates however it wants. For example, it can open a deep link with `Linking`, push a
+   route, or present an in-app browser (`SFSafariViewController` / Chrome Custom Tabs through a
+   library of your choice).
+
+Navigate in one place: either after `await ad.performClick(...)` for taps your UI handles, or in a
+`CUSTOM_CLICK` listener. Not both.
+
+`performClick` resolves once the SDK has been told about the click. It throws before reaching the
+SDK for an empty asset name or a destroyed ad, and rejects with `phase: 'show'` when the native ad
+is no longer available.
+
+Destinations usually come from the creative's custom assets, so do not open them blindly: allow
+only the schemes your app expects (for example `https:` and your own deep-link scheme).
+
+To let the SDK open the deep link or click-through URL configured on the creative instead, load
+with `clickHandling: 'sdk'`. In that mode `CUSTOM_CLICK` is not emitted.
+
+## Banner + custom native in one request
+
+Custom native formats can compete with GAM banner (and system-defined native) ads in a single
+[multi-format request](/preload-pools-and-multiformat-recipes). Add `customNativeFormatIds` to the
+request options; a custom native winner is a `format: 'customNative'` handle whose `ad` is a
+`CustomNativeAd`.
+
+Opting in is visible to TypeScript: only a config with `customNativeFormatIds`
+(`MultiFormatCustomNativeAdConfig`) returns a request whose handles include
+`MultiFormatCustomNativeAdHandle`. Existing requests keep the native / banner `MultiFormatAdHandle`
+type unchanged. `useMultiFormatAd` and display pools do not accept `customNativeFormatIds`; the
+hook resolves an `invalid-request` error if it is passed.
+
+```tsx
+import { AdFormat, BannerAdSize, MultiFormatAdRequest } from 'react-native-google-mobile-ads';
+
+const request = MultiFormatAdRequest.create({
+  adUnitId: '/1234/main-carousel',
+  requestOptions: {
+    formats: [AdFormat.BANNER],
+    bannerSizes: [BannerAdSize.MEDIUM_RECTANGLE],
+    adServer: 'ad-manager',
+    customNativeFormatIds: ['12345678'],
+  },
+});
+const { ads } = await request.load();
+const handle = ads[0];
+if (handle?.format === 'customNative') {
+  handle.ad.recordImpression();
+}
+```
+
+`customNativeClickHandling` (`'app'` by default) sets `clickHandling` for the winner. The handle
+owns the ad: call `handle.destroy()`, not `handle.ad.destroy()`.
+
+### Fluid
+
+The Google Mobile Ads SDKs accept the `FLUID` size in an `AdLoader` banner request, but this library
+does not offer it in multi-format requests: `<MultiFormatBannerAdView>` is sized from
+`handle.size` and has no channel for the height a fluid creative settles on after rendering.
+`bannerSizes: ['FLUID']` is rejected. Use fixed sizes there, or `<GAMBannerAd sizes={[GAMBannerAdSize.FLUID]} />`
+for a fluid banner on its own request.
+
+## Platform notes
+
+- **Events:** `CUSTOM_CLICK` is emitted by the library on every platform. `IMPRESSION`,
+  `CLICKED`, `OPENED`, and `CLOSED` are forwarded from the SDK's own callbacks
+  (`GADCustomNativeAdDelegate` on iOS, the `AdLoader` `AdListener` on classic Android,
+  `NativeAdEventCallback` on Next-Gen) when the SDK delivers them. `PAID` is only emitted on the
+  Android Next-Gen backend; the iOS and classic Android custom native APIs expose no paid callback.
+- **`responseId` / `responseInfo`:** `null` on classic Android, whose custom native API exposes no
+  response info. `adId` is always set and is what events are keyed on.
+- **Video:** `mediaContent` describes the video asset. `NativeMediaView` only renders
+  system-defined native ads, so custom native video is not rendered by this library.
+- Not available in display pools (`AdPools` / `usePooledAd`) or `useMultiFormatAd`.

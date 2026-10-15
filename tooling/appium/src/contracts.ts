@@ -323,6 +323,13 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertion:
       'When the competitive multi-format request selects the banner winner, MultiFormatBannerAdView is displayed with nonzero width and height on the imperative gallery surface without issuing a second ad request.',
   }),
+  {
+    api: 'CustomNativeAd',
+    kind: 'class',
+    disposition: 'absent-from-example',
+    reason:
+      'Google Ad Manager custom native formats need an ad unit with a trafficked custom native format and its format ID; no Google-published test format ID was verified for the pinned SDKs, so RNGoogleMobileAdsExample has no screen with a deterministic loaded outcome. Jest (customNativeAd tests), Robolectric (ReactNativeGoogleMobileAdsCustomNativeTest) and XCTest (RNGoogleMobileAdsOwnedMappersTests) cover request validation, exact asset mapping and click reporting.',
+  },
   outcome('NativeAd', 'class', {
     contractId: AppiumTestIds.format.native,
     exampleComponent: 'NativeComponent',

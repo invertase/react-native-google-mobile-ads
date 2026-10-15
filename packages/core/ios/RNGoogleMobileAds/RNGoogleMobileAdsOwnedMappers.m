@@ -221,4 +221,39 @@ static const NSInteger kRNGMAErrorReceivedInvalidAdString = 21;
   return rows.count > 0 ? rows : nil;
 }
 
+#pragma mark - Custom native
+
++ (NSDictionary<NSString *, NSDictionary *> *)
+    customNativeAssetsForKeys:(NSArray<NSString *> *)assetKeys
+                 stringForKey:(NSString *_Nullable (^)(NSString *key))stringForKey
+                  imageForKey:(NSDictionary *_Nullable (^)(NSString *key))imageForKey {
+  NSMutableDictionary<NSString *, NSDictionary *> *assets = [NSMutableDictionary dictionary];
+  for (NSString *key in assetKeys) {
+    if (![key isKindOfClass:[NSString class]]) {
+      continue;
+    }
+    NSString *text = stringForKey(key);
+    if (text != nil) {
+      NSMutableDictionary *row = [NSMutableDictionary dictionary];
+      row[@"type"] = @"text";
+      row[@"text"] = text;
+      assets[key] = row;
+      continue;
+    }
+    NSDictionary *image = imageForKey(key);
+    NSString *url = image[@"url"];
+    if ([url isKindOfClass:[NSString class]] && url.length > 0) {
+      NSMutableDictionary *imagePayload = [NSMutableDictionary dictionary];
+      imagePayload[@"url"] = url;
+      id scale = image[@"scale"];
+      imagePayload[@"scale"] = [scale isKindOfClass:[NSNumber class]] ? scale : @1;
+      NSMutableDictionary *row = [NSMutableDictionary dictionary];
+      row[@"type"] = @"image";
+      row[@"image"] = imagePayload;
+      assets[key] = row;
+    }
+  }
+  return assets;
+}
+
 @end

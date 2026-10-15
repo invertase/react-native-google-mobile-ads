@@ -668,9 +668,88 @@ private:
 };
 
 
+#pragma mark - NativeGoogleMobileAdsNativeModuleCustomNativeAdProps
+
+template <typename P0, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6>
+struct NativeGoogleMobileAdsNativeModuleCustomNativeAdProps {
+  P0 adId{};
+  P1 responseId{};
+  P2 customFormatId{};
+  P3 availableAssetNames{};
+  P4 assets{};
+  P5 mediaContent{};
+  P6 responseInfo;
+  bool operator==(const NativeGoogleMobileAdsNativeModuleCustomNativeAdProps &other) const {
+    return adId == other.adId && responseId == other.responseId && customFormatId == other.customFormatId && availableAssetNames == other.availableAssetNames && assets == other.assets && mediaContent == other.mediaContent && responseInfo == other.responseInfo;
+  }
+};
+
+template <typename T>
+struct NativeGoogleMobileAdsNativeModuleCustomNativeAdPropsBridging {
+  static T types;
+
+  static T fromJs(
+      jsi::Runtime &rt,
+      const jsi::Object &value,
+      const std::shared_ptr<CallInvoker> &jsInvoker) {
+    T result{
+      bridging::fromJs<decltype(types.adId)>(rt, value.getProperty(rt, "adId"), jsInvoker),
+      bridging::fromJs<decltype(types.responseId)>(rt, value.getProperty(rt, "responseId"), jsInvoker),
+      bridging::fromJs<decltype(types.customFormatId)>(rt, value.getProperty(rt, "customFormatId"), jsInvoker),
+      bridging::fromJs<decltype(types.availableAssetNames)>(rt, value.getProperty(rt, "availableAssetNames"), jsInvoker),
+      bridging::fromJs<decltype(types.assets)>(rt, value.getProperty(rt, "assets"), jsInvoker),
+      bridging::fromJs<decltype(types.mediaContent)>(rt, value.getProperty(rt, "mediaContent"), jsInvoker),
+      bridging::fromJs<decltype(types.responseInfo)>(rt, value.getProperty(rt, "responseInfo"), jsInvoker)};
+    return result;
+  }
+
+#ifdef DEBUG
+  static jsi::String adIdToJs(jsi::Runtime &rt, decltype(types.adId) value) {
+    return bridging::toJs(rt, value);
+  }
+  static std::optional<jsi::String> responseIdToJs(jsi::Runtime &rt, decltype(types.responseId) value) {
+    return bridging::toJs(rt, value);
+  }
+  static jsi::String customFormatIdToJs(jsi::Runtime &rt, decltype(types.customFormatId) value) {
+    return bridging::toJs(rt, value);
+  }
+  static jsi::Array availableAssetNamesToJs(jsi::Runtime &rt, decltype(types.availableAssetNames) value) {
+    return bridging::toJs(rt, value);
+  }
+  static jsi::Object assetsToJs(jsi::Runtime &rt, decltype(types.assets) value) {
+    return bridging::toJs(rt, value);
+  }
+  static std::optional<jsi::Object> mediaContentToJs(jsi::Runtime &rt, decltype(types.mediaContent) value) {
+    return bridging::toJs(rt, value);
+  }
+  static std::optional<jsi::Object> responseInfoToJs(jsi::Runtime &rt, decltype(types.responseInfo) value) {
+    return bridging::toJs(rt, value);
+  }
+#endif
+
+  static jsi::Object toJs(
+      jsi::Runtime &rt,
+      const T &value,
+      const std::shared_ptr<CallInvoker> &jsInvoker) {
+    auto result = facebook::jsi::Object(rt);
+    result.setProperty(rt, "adId", bridging::toJs(rt, value.adId, jsInvoker));
+    result.setProperty(rt, "responseId", bridging::toJs(rt, value.responseId, jsInvoker));
+    result.setProperty(rt, "customFormatId", bridging::toJs(rt, value.customFormatId, jsInvoker));
+    result.setProperty(rt, "availableAssetNames", bridging::toJs(rt, value.availableAssetNames, jsInvoker));
+    result.setProperty(rt, "assets", bridging::toJs(rt, value.assets, jsInvoker));
+    result.setProperty(rt, "mediaContent", bridging::toJs(rt, value.mediaContent, jsInvoker));
+    if (value.responseInfo) {
+      result.setProperty(rt, "responseInfo", bridging::toJs(rt, value.responseInfo.value(), jsInvoker));
+    }
+    return result;
+  }
+};
+
+
+
 #pragma mark - NativeGoogleMobileAdsNativeModuleMultiFormatNativeLoadResult
 
-template <typename P0, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename P9, typename P10, typename P11, typename P12, typename P13, typename P14, typename P15, typename P16, typename P17>
+template <typename P0, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename P9, typename P10, typename P11, typename P12, typename P13, typename P14, typename P15, typename P16, typename P17, typename P18, typename P19, typename P20>
 struct NativeGoogleMobileAdsNativeModuleMultiFormatNativeLoadResult {
   P0 format{};
   P1 handleId{};
@@ -686,12 +765,15 @@ struct NativeGoogleMobileAdsNativeModuleMultiFormatNativeLoadResult {
   P11 images{};
   P12 mediaContent{};
   P13 extras{};
-  P14 width{};
-  P15 height{};
-  P16 responseInfo{};
-  P17 error;
+  P14 customFormatId{};
+  P15 availableAssetNames{};
+  P16 assets{};
+  P17 width{};
+  P18 height{};
+  P19 responseInfo{};
+  P20 error;
   bool operator==(const NativeGoogleMobileAdsNativeModuleMultiFormatNativeLoadResult &other) const {
-    return format == other.format && handleId == other.handleId && responseId == other.responseId && advertiser == other.advertiser && body == other.body && callToAction == other.callToAction && headline == other.headline && price == other.price && store == other.store && starRating == other.starRating && icon == other.icon && images == other.images && mediaContent == other.mediaContent && extras == other.extras && width == other.width && height == other.height && responseInfo == other.responseInfo && error == other.error;
+    return format == other.format && handleId == other.handleId && responseId == other.responseId && advertiser == other.advertiser && body == other.body && callToAction == other.callToAction && headline == other.headline && price == other.price && store == other.store && starRating == other.starRating && icon == other.icon && images == other.images && mediaContent == other.mediaContent && extras == other.extras && customFormatId == other.customFormatId && availableAssetNames == other.availableAssetNames && assets == other.assets && width == other.width && height == other.height && responseInfo == other.responseInfo && error == other.error;
   }
 };
 
@@ -718,6 +800,9 @@ struct NativeGoogleMobileAdsNativeModuleMultiFormatNativeLoadResultBridging {
       bridging::fromJs<decltype(types.images)>(rt, value.getProperty(rt, "images"), jsInvoker),
       bridging::fromJs<decltype(types.mediaContent)>(rt, value.getProperty(rt, "mediaContent"), jsInvoker),
       bridging::fromJs<decltype(types.extras)>(rt, value.getProperty(rt, "extras"), jsInvoker),
+      bridging::fromJs<decltype(types.customFormatId)>(rt, value.getProperty(rt, "customFormatId"), jsInvoker),
+      bridging::fromJs<decltype(types.availableAssetNames)>(rt, value.getProperty(rt, "availableAssetNames"), jsInvoker),
+      bridging::fromJs<decltype(types.assets)>(rt, value.getProperty(rt, "assets"), jsInvoker),
       bridging::fromJs<decltype(types.width)>(rt, value.getProperty(rt, "width"), jsInvoker),
       bridging::fromJs<decltype(types.height)>(rt, value.getProperty(rt, "height"), jsInvoker),
       bridging::fromJs<decltype(types.responseInfo)>(rt, value.getProperty(rt, "responseInfo"), jsInvoker),
@@ -766,6 +851,15 @@ struct NativeGoogleMobileAdsNativeModuleMultiFormatNativeLoadResultBridging {
     return bridging::toJs(rt, value);
   }
   static std::optional<jsi::Object> extrasToJs(jsi::Runtime &rt, decltype(types.extras) value) {
+    return bridging::toJs(rt, value);
+  }
+  static jsi::String customFormatIdToJs(jsi::Runtime &rt, decltype(types.customFormatId) value) {
+    return bridging::toJs(rt, value);
+  }
+  static std::optional<jsi::Array> availableAssetNamesToJs(jsi::Runtime &rt, decltype(types.availableAssetNames) value) {
+    return bridging::toJs(rt, value);
+  }
+  static std::optional<jsi::Object> assetsToJs(jsi::Runtime &rt, decltype(types.assets) value) {
     return bridging::toJs(rt, value);
   }
   static double widthToJs(jsi::Runtime &rt, decltype(types.width) value) {
@@ -826,6 +920,15 @@ struct NativeGoogleMobileAdsNativeModuleMultiFormatNativeLoadResultBridging {
     }
     if (value.extras) {
       result.setProperty(rt, "extras", bridging::toJs(rt, value.extras.value(), jsInvoker));
+    }
+    if (value.customFormatId) {
+      result.setProperty(rt, "customFormatId", bridging::toJs(rt, value.customFormatId.value(), jsInvoker));
+    }
+    if (value.availableAssetNames) {
+      result.setProperty(rt, "availableAssetNames", bridging::toJs(rt, value.availableAssetNames.value(), jsInvoker));
+    }
+    if (value.assets) {
+      result.setProperty(rt, "assets", bridging::toJs(rt, value.assets.value(), jsInvoker));
     }
     if (value.width) {
       result.setProperty(rt, "width", bridging::toJs(rt, value.width.value(), jsInvoker));
@@ -1117,6 +1220,9 @@ protected:
     methodMap_["destroy"] = MethodMetadata {.argCount = 1, .invoker = __destroy};
     methodMap_["loadMultiFormat"] = MethodMetadata {.argCount = 2, .invoker = __loadMultiFormat};
     methodMap_["destroyHandle"] = MethodMetadata {.argCount = 1, .invoker = __destroyHandle};
+    methodMap_["loadCustomNative"] = MethodMetadata {.argCount = 2, .invoker = __loadCustomNative};
+    methodMap_["performCustomNativeClick"] = MethodMetadata {.argCount = 2, .invoker = __performCustomNativeClick};
+    methodMap_["recordCustomNativeImpression"] = MethodMetadata {.argCount = 1, .invoker = __recordCustomNativeImpression};
     eventEmitterMap_["onAdEvent"] = std::make_shared<AsyncEventEmitter<jsi::Value>>();
   }
   
@@ -1158,6 +1264,32 @@ private:
       bridging::getParameterCount(&T::destroyHandle) == 2,
       "Expected destroyHandle(...) to have 2 parameters");
     bridging::callFromJs<void>(rt, &T::destroyHandle,  static_cast<NativeGoogleMobileAdsNativeModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt));return jsi::Value::undefined();
+  }
+
+  static jsi::Value __loadCustomNative(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::loadCustomNative) == 3,
+      "Expected loadCustomNative(...) to have 3 parameters");
+    return bridging::callFromJs<jsi::Value>(rt, &T::loadCustomNative,  static_cast<NativeGoogleMobileAdsNativeModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
+      count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asObject(rt));
+  }
+
+  static jsi::Value __performCustomNativeClick(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::performCustomNativeClick) == 3,
+      "Expected performCustomNativeClick(...) to have 3 parameters");
+    return bridging::callFromJs<jsi::Value>(rt, &T::performCustomNativeClick,  static_cast<NativeGoogleMobileAdsNativeModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt),
+      count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asString(rt));
+  }
+
+  static jsi::Value __recordCustomNativeImpression(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::recordCustomNativeImpression) == 2,
+      "Expected recordCustomNativeImpression(...) to have 2 parameters");
+    bridging::callFromJs<void>(rt, &T::recordCustomNativeImpression,  static_cast<NativeGoogleMobileAdsNativeModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
       count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asString(rt));return jsi::Value::undefined();
   }
 };

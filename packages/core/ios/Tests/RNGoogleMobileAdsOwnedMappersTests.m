@@ -220,4 +220,35 @@
   XCTAssertEqualObjects(rows[2][@"scale"], @(1));
 }
 
+#pragma mark - Custom native
+
+- (void)testCustomNativeAssetsKeepExactCaseSensitiveKeys {
+  NSDictionary *texts = @{@"Calltoaction" : @"Shop now", @"calltoaction" : @"twin"};
+  NSDictionary *images = @{
+    @"Secondaryimage" : @{@"url" : @"https://cdn.example.com/s.png", @"scale" : @2},
+    @"EmptyImage" : @{@"url" : @""},
+  };
+  NSDictionary *assets = [RNGoogleMobileAdsOwnedMappers customNativeAssetsForKeys:@[
+    @"Calltoaction", @"Secondaryimage", @"calltoaction", @"_videoMediaView", @"EmptyImage"
+  ]
+      stringForKey:^NSString *_Nullable(NSString *key) {
+        return texts[key];
+      }
+      imageForKey:^NSDictionary *_Nullable(NSString *key) {
+        return images[key];
+      }];
+
+  XCTAssertEqual(assets.count, (NSUInteger)3);
+  XCTAssertEqualObjects(assets[@"Calltoaction"][@"type"], @"text");
+  XCTAssertEqualObjects(assets[@"Calltoaction"][@"text"], @"Shop now");
+  XCTAssertEqualObjects(assets[@"calltoaction"][@"text"], @"twin");
+  XCTAssertEqualObjects(assets[@"Secondaryimage"][@"type"], @"image");
+  XCTAssertEqualObjects(assets[@"Secondaryimage"][@"image"][@"url"],
+                        @"https://cdn.example.com/s.png");
+  XCTAssertEqualObjects(assets[@"Secondaryimage"][@"image"][@"scale"], @2);
+  XCTAssertNil(assets[@"CallToAction"]);
+  XCTAssertNil(assets[@"_videoMediaView"]);
+  XCTAssertNil(assets[@"EmptyImage"]);
+}
+
 @end

@@ -37,7 +37,9 @@ import com.google.android.gms.ads.VideoOptions
 import com.google.android.gms.ads.admanager.AdManagerAdView
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdOptions
+import com.google.android.gms.ads.nativead.NativeCustomFormatAd
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 @ReactModule(ReactNativeGoogleMobileAdsNativeModule.NAME)
@@ -49,6 +51,14 @@ class ReactNativeGoogleMobileAdsNativeModule(
 
   /** In-flight single-format loads — keeps holders reachable until promise settle (#870). */
   private val pendingLoadHolders = HashSet<NativeAdHolder>()
+
+  /** Google Ad Manager custom native ads keyed by library adId (UUID; no SDK responseInfo). */
+  private val customAdHolders = ConcurrentHashMap<String, CustomNativeAdHolder>()
+  private val pendingCustomLoadHolders = HashSet<CustomNativeAdHolder>()
+  private val uiHandler = Handler(Looper.getMainLooper())
+
+  /** Set by [invalidate]; a custom ad delivered afterwards is destroyed, not registered. */
+  @Volatile private var invalidated = false
 
   override fun getName() = NAME
 
@@ -98,6 +108,12 @@ class ReactNativeGoogleMobileAdsNativeModule(
 
   @ReactMethod
   override fun destroy(responseId: String) {
+    customAdHolders.remove(responseId)?.let { holder ->
+      uiHandler.post { holder.destroy() }
+      if (multiFormatHolders[responseId] is MultiFormatHolder.Custom) {
+        multiFormatHolders.remove(responseId)
+      }
+    }
     adHolders.remove(responseId)?.destroy()
     val orphanedHandles =
       multiFormatHolders.entries
@@ -117,6 +133,8 @@ class ReactNativeGoogleMobileAdsNativeModule(
     val wantsNative = MultiFormatRequestParser.wantsNative(formats)
     val wantsBanner = MultiFormatRequestParser.wantsBanner(formats)
     val bannerSizes = MultiFormatRequestParser.parseBannerSizes(requestOptions)
+    val customFormatIds =
+      ReactNativeGoogleMobileAdsCustomNative.parseFormatIds(requestOptions, "customNativeFormatIds")
 
     if (!wantsNative && !wantsBanner) {
       promise.resolve(
@@ -174,6 +192,7 @@ class ReactNativeGoogleMobileAdsNativeModule(
       }
 
       var activeNativeHolder: NativeAdHolder? = null
+      var activeCustomHolder: CustomNativeAdHolder? = null
       val builder =
         AdLoader
           .Builder(context, adUnitId)
@@ -185,18 +204,22 @@ class ReactNativeGoogleMobileAdsNativeModule(
 
               override fun onAdImpression() {
                 activeNativeHolder?.emitLifecycleEvent("impression")
+                activeCustomHolder?.emitEvent("impression")
               }
 
               override fun onAdClicked() {
                 activeNativeHolder?.emitLifecycleEvent("clicked")
+                activeCustomHolder?.emitEvent("clicked")
               }
 
               override fun onAdOpened() {
                 activeNativeHolder?.emitLifecycleEvent("opened")
+                activeCustomHolder?.emitEvent("opened")
               }
 
               override fun onAdClosed() {
                 activeNativeHolder?.emitLifecycleEvent("closed")
+                activeCustomHolder?.emitEvent("closed")
               }
             },
           )
@@ -239,6 +262,36 @@ class ReactNativeGoogleMobileAdsNativeModule(
         )
       }
 
+      if (customFormatIds.isNotEmpty()) {
+        // handleId doubles as the custom ad's adId so JS can release it with destroy(adId).
+        val holder =
+          CustomNativeAdHolder(
+            handleId,
+            ReactNativeGoogleMobileAdsCustomNative.usesAppClickHandling(
+              requestOptions,
+              "customNativeClickHandling",
+            ),
+          )
+        val onLoaded =
+          NativeCustomFormatAd.OnCustomFormatAdLoadedListener { customAd ->
+            if (invalidated) {
+              customAd.destroy()
+              return@OnCustomFormatAdLoadedListener
+            }
+            holder.bind(customAd)
+            activeCustomHolder = holder
+            customAdHolders[handleId] = holder
+            multiFormatHolders[handleId] = MultiFormatHolder.Custom(handleId)
+            val data = customNativeAdToWritableMap(customAd, handleId)
+            data.putString("format", "customNative")
+            data.putString("handleId", handleId)
+            settle(data)
+          }
+        for (formatId in customFormatIds) {
+          builder.forCustomFormatAd(formatId, onLoaded, holder.customClickListener())
+        }
+      }
+
       adLoader = builder.build()
       adLoader.loadAd(ReactNativeGoogleMobileAdsCommon.buildAdRequest(requestOptions))
     }
@@ -251,6 +304,9 @@ class ReactNativeGoogleMobileAdsNativeModule(
       is MultiFormatHolder.Native -> {
         adHolders.remove(holder.responseId)?.destroy()
       }
+      is MultiFormatHolder.Custom -> {
+        customAdHolders.remove(holder.adId)?.let { uiHandler.post { it.destroy() } }
+      }
       is MultiFormatHolder.Banner -> {
         val parent = holder.adView.parent
         if (parent is ViewGroup) {
@@ -261,8 +317,143 @@ class ReactNativeGoogleMobileAdsNativeModule(
     }
   }
 
+  @ReactMethod
+  override fun loadCustomNative(
+    adUnitId: String,
+    requestOptions: ReadableMap,
+    promise: Promise,
+  ) {
+    val formatIds = ReactNativeGoogleMobileAdsCustomNative.parseFormatIds(requestOptions, "customFormatIds")
+    if (formatIds.isEmpty()) {
+      val error =
+        ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(
+          "invalid-request",
+          "Custom native load requires a non-empty customFormatIds array.",
+          "load",
+        )
+      promise.reject(error.getString("code"), error.getString("message"), error)
+      return
+    }
+    val holder =
+      CustomNativeAdHolder(
+        UUID.randomUUID().toString(),
+        ReactNativeGoogleMobileAdsCustomNative.usesAppClickHandling(requestOptions, "clickHandling"),
+      )
+    pendingCustomLoadHolders.add(holder)
+    holder.loadAd(
+      adUnitId,
+      requestOptions,
+      formatIds,
+      onLoaded = { customAd ->
+        pendingCustomLoadHolders.remove(holder)
+        if (invalidated) {
+          holder.destroy()
+          rejectCustomNative(
+            promise,
+            "internal-error",
+            "The native module was invalidated before the custom native ad was delivered.",
+            "load",
+          )
+        } else {
+          customAdHolders[holder.adId] = holder
+          promise.resolve(customNativeAdToWritableMap(customAd, holder.adId))
+        }
+      },
+      onFailedToLoad = { loadAdError ->
+        pendingCustomLoadHolders.remove(holder)
+        val error = ReactNativeGoogleMobileAdsCommon.adErrorToMap(loadAdError, "load")
+        ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(loadAdError.responseInfo)?.let {
+          error.putMap("responseInfo", it)
+        }
+        promise.reject(error.getString("code"), error.getString("message"), error)
+      },
+    )
+  }
+
+  @ReactMethod
+  override fun performCustomNativeClick(
+    adId: String,
+    assetName: String,
+    promise: Promise,
+  ) {
+    uiHandler.post {
+      val holder = customAdHolders[adId]
+      if (holder?.ad == null) {
+        rejectCustomNative(promise, "invalid-argument", "Custom native ad '$adId' was not found or has been destroyed.")
+        return@post
+      }
+      try {
+        holder.performClick(assetName)
+        promise.resolve(null)
+      } catch (e: Exception) {
+        rejectCustomNative(promise, "internal-error", e.message ?: "performClick failed.")
+      }
+    }
+  }
+
+  @ReactMethod
+  override fun recordCustomNativeImpression(adId: String) {
+    uiHandler.post { customAdHolders[adId]?.ad?.recordImpression() }
+  }
+
+  private fun rejectCustomNative(
+    promise: Promise,
+    code: String,
+    message: String,
+    phase: String = "show",
+  ) {
+    val error = ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(code, message, phase)
+    promise.reject(code, message, error)
+  }
+
+  private fun customNativeAdToWritableMap(
+    ad: NativeCustomFormatAd,
+    adId: String,
+  ): WritableMap {
+    val names = ad.availableAssetNames ?: emptyList()
+    val assets =
+      ReactNativeGoogleMobileAdsCustomNative.collectAssets(
+        names,
+        text = { ad.getText(it) },
+        image = { name ->
+          ad.getImage(name)?.let { image ->
+            image.uri?.toString()?.let {
+              ReactNativeGoogleMobileAdsCustomNative.Asset.Image(it, image.scale)
+            }
+          }
+        },
+      )
+    val data = Arguments.createMap()
+    data.putString("adId", adId)
+    // Classic NativeCustomFormatAd exposes no ResponseInfo.
+    data.putNull("responseId")
+    data.putString("customFormatId", ad.customFormatId)
+    val nameArray = Arguments.createArray()
+    names.forEach { nameArray.pushString(it) }
+    data.putArray("availableAssetNames", nameArray)
+    data.putMap("assets", ReactNativeGoogleMobileAdsCustomNative.assetsToWritableMap(assets))
+    val media = ad.mediaContent
+    if (media != null) {
+      val mediaContent = Arguments.createMap()
+      mediaContent.putDouble("aspectRatio", media.aspectRatio.toDouble())
+      mediaContent.putBoolean("hasVideoContent", media.hasVideoContent())
+      mediaContent.putDouble("duration", media.duration.toDouble())
+      data.putMap("mediaContent", mediaContent)
+    } else {
+      data.putNull("mediaContent")
+    }
+    data.putNull("responseInfo")
+    return data
+  }
+
   override fun invalidate() {
+    invalidated = true
     super.invalidate()
+    pendingCustomLoadHolders.forEach { it.destroy() }
+    pendingCustomLoadHolders.clear()
+    val customHolders = customAdHolders.values.toList()
+    customAdHolders.clear()
+    uiHandler.post { customHolders.forEach { it.destroy() } }
     pendingLoadHolders.forEach { it.destroy() }
     pendingLoadHolders.clear()
     adHolders.values.forEach { it.destroy() }
@@ -413,6 +604,15 @@ class ReactNativeGoogleMobileAdsNativeModule(
       }
     }
 
+    /** Custom native winner; the ad itself lives in customAdHolders under the same id. */
+    class Custom(
+      val adId: String,
+    ) : MultiFormatHolder() {
+      override fun destroy() {
+        // Released through customAdHolders by the owning module.
+      }
+    }
+
     class Banner(
       val adView: AdManagerAdView,
     ) : MultiFormatHolder() {
@@ -553,6 +753,127 @@ class ReactNativeGoogleMobileAdsNativeModule(
         payload.merge(eventData)
       }
       payload.putString("responseId", nativeAd.responseInfo?.responseId)
+      payload.putString("type", type)
+      this@ReactNativeGoogleMobileAdsNativeModule.emitOnAdEvent(payload)
+    }
+  }
+
+  /**
+   * One Google Ad Manager custom native ad. Classic delivers the custom click listener at
+   * builder time, so the holder exists (with its adId) before the request is sent.
+   */
+  private inner class CustomNativeAdHolder(
+    val adId: String,
+    private val appClickHandling: Boolean,
+  ) {
+    var ad: NativeCustomFormatAd? = null
+      private set
+
+    private val loaderRetention = ReactNativeGoogleMobileAdsNativeAdLoad.LoaderRetention()
+    private val loadSettled = AtomicBoolean(false)
+    private var failedToLoadListener: ((LoadAdError) -> Unit)? = null
+
+    private val adListener: AdListener =
+      object : AdListener() {
+        override fun onAdImpression() = emitEvent("impression")
+
+        override fun onAdClicked() = emitEvent("clicked")
+
+        override fun onAdOpened() = emitEvent("opened")
+
+        override fun onAdClosed() = emitEvent("closed")
+
+        override fun onAdFailedToLoad(error: LoadAdError) {
+          if (!loadSettled.compareAndSet(false, true)) {
+            return
+          }
+          loaderRetention.clear()
+          failedToLoadListener?.invoke(error)
+          failedToLoadListener = null
+        }
+      }
+
+    /** Null for `clickHandling: 'sdk'`: the SDK then opens the creative's own click-through. */
+    fun customClickListener(): NativeCustomFormatAd.OnCustomClickListener? =
+      if (appClickHandling) {
+        NativeCustomFormatAd.OnCustomClickListener { _, assetName -> handleCustomClick(assetName) }
+      } else {
+        null
+      }
+
+    fun loadAd(
+      adUnitId: String,
+      requestOptions: ReadableMap,
+      formatIds: List<String>,
+      onLoaded: (NativeCustomFormatAd) -> Unit,
+      onFailedToLoad: (LoadAdError) -> Unit,
+    ) {
+      failedToLoadListener = onFailedToLoad
+      val builder =
+        AdLoader
+          .Builder(reactApplicationContext, adUnitId)
+          .withAdListener(adListener)
+      val loadedListener =
+        NativeCustomFormatAd.OnCustomFormatAdLoadedListener { loaded ->
+          if (!loadSettled.compareAndSet(false, true)) {
+            loaded.destroy()
+            return@OnCustomFormatAdLoadedListener
+          }
+          loaderRetention.clear()
+          failedToLoadListener = null
+          bind(loaded)
+          onLoaded(loaded)
+        }
+      val clickListener = customClickListener()
+      for (formatId in formatIds) {
+        builder.forCustomFormatAd(formatId, loadedListener, clickListener)
+      }
+      val adLoader = builder.build()
+      // Strongly retain until settle (same #870 rule as NativeAdHolder).
+      loaderRetention.retain(adLoader)
+      adLoader.loadAd(ReactNativeGoogleMobileAdsCommon.buildAdRequest(requestOptions))
+    }
+
+    fun bind(loaded: NativeCustomFormatAd) {
+      ad = loaded
+    }
+
+    /**
+     * Main thread. Reports the click to the SDK. With app click handling the SDK then calls
+     * [handleCustomClick] instead of navigating.
+     */
+    fun performClick(assetName: String) {
+      ad?.performClick(assetName)
+    }
+
+    /** The SDK recorded the click and did not navigate; the app decides what happens next. */
+    private fun handleCustomClick(assetName: String) {
+      emitEvent(
+        ReactNativeGoogleMobileAdsCustomNative.EVENT_CUSTOM_CLICK,
+        ReactNativeGoogleMobileAdsCustomNative.clickEventData(assetName),
+      )
+    }
+
+    fun destroy() {
+      loaderRetention.clear()
+      failedToLoadListener = null
+      ad?.destroy()
+      ad = null
+    }
+
+    fun emitEvent(
+      type: String,
+      eventData: ReadableMap? = null,
+    ) {
+      if (ad == null) {
+        return
+      }
+      val payload = Arguments.createMap()
+      if (eventData != null) {
+        payload.merge(eventData)
+      }
+      // JS matches custom native events on adId.
+      payload.putString("responseId", adId)
       payload.putString("type", type)
       this@ReactNativeGoogleMobileAdsNativeModule.emitOnAdEvent(payload)
     }
