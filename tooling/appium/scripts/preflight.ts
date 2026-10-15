@@ -36,6 +36,8 @@ import {
 } from '../src/iosBootDiagnostics.ts';
 import {
   clearXcodebuildExitState,
+  DEFAULT_APPIUM_HOME,
+  stageIosSessionHangArtifacts,
   writeXcodebuildExitState,
   xcodebuildExitStatePath,
 } from '../src/iosSessionDiagnostics.ts';
@@ -159,6 +161,25 @@ export async function runWdioOwned(
     return draining;
   };
   const controller = new AbortController();
+  /** Stage iOS hang-path artifacts before drain/SIGKILL (180s backstop path). */
+  const stageIosSupervisorAbortArtifacts = (): void => {
+    if (target !== 'ios') {
+      return;
+    }
+    stageIosSessionHangArtifacts({
+      derivedDataPath: IOS_WDA_DERIVED_DATA_PATH,
+      appiumHome: DEFAULT_APPIUM_HOME,
+      extraLogPaths: [
+        paths.child(target, 'serial'),
+        paths.device(target, 'serial'),
+      ],
+      phase: 'serial:supervisor-abort-artifacts',
+      udid: exactTarget,
+      write: line => console.log(line),
+    });
+  };
+  // Artifact hooks run before onFailure drain listeners.
+  startup.onAbortArtifacts(() => stageIosSupervisorAbortArtifacts());
   startup.onFailure(() => void drainOwned());
   const disarm = armAbortSignals(
     controller,
@@ -208,9 +229,9 @@ export async function runWdioOwned(
       });
       // Mirror WDIO launcher sidecar path so parent + worker share one exit file.
       clearXcodebuildExitState(xcodebuildExitStateFile);
-      // If POST /session hangs with prolonged xcrun ETIMEDOUT, recover once
-      // (terminate WDA) then abort early with a clear [e2e-ios-boot] error
-      // instead of burning the full 180s supervisor ceiling.
+      // If POST /session hangs with prolonged xcrun ETIMEDOUT or Booted
+      // hang-probe streak, recover once (terminate WDA) then abort early with a
+      // clear [e2e-ios-boot] error instead of burning the full 180s ceiling.
       sessionHangWatchdog = startIosSessionCreateHangWatchdog(exactTarget, {
         phase: 'serial:session-create',
         simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
@@ -320,6 +341,11 @@ export async function runWdioOwned(
   } finally {
     monitoring = false;
     disarm();
+    // Belt-and-suspenders: if abort raced past onAbortArtifacts, stage once more
+    // before drain while child log files still exist on disk.
+    if (target === 'ios' && startup.abortCount > 0) {
+      stageIosSupervisorAbortArtifacts();
+    }
     await drainOwned();
   }
 }

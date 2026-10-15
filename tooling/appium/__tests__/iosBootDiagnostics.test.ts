@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, test } from 'node:test';
 import {
   assertSimulatorReadyForPersist,
@@ -22,6 +25,11 @@ import {
   type ExecCapture,
 } from '../src/iosBootDiagnostics.ts';
 import { SIMULATOR_STARTUP_TIMEOUT_MS } from '../src/hostPreflight.ts';
+import {
+  hangRecoverArtifactSnapshotDir,
+  stageIosSessionHangArtifacts,
+} from '../src/iosSessionDiagnostics.ts';
+import { StartupSupervisor } from '../src/startupSupervisor.ts';
 
 const SAMPLE_LIST_JSON = JSON.stringify({
   devices: {
@@ -289,6 +297,114 @@ describe('iosBootDiagnostics', () => {
     }
   });
 
+  test('decideSessionCreateHangAction recovers then aborts on Booted hang without ETIMEDOUT', () => {
+    assert.deepEqual(
+      decideSessionCreateHangAction({
+        hangTick: 1,
+        consecutiveXcrunEtimedout: 0,
+        consecutiveBootedHangProbes: 1,
+        simState: 'Booted',
+        recoveredOnce: false,
+      }),
+      { action: 'continue' },
+    );
+    const recover = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 2,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '(none)',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '(none)',
+    });
+    assert.equal(recover.action, 'recover');
+    if (recover.action === 'recover') {
+      assert.match(recover.reason, /Booted hang-probe streak/);
+    }
+    const deferred = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 2,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '66564',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '(none)',
+    });
+    assert.equal(deferred.action, 'skip-recover');
+    if (deferred.action === 'skip-recover') {
+      assert.equal(deferred.consumeRecoveryOpportunity, false);
+    }
+    // Booted-without-ETIMEDOUT: live WDA PIDs defer recover even when exit is 0.
+    const deferredDespiteExit0 = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 2,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '(none)',
+      hostWdaPids: '77888',
+      lastXcodebuildExitLabel: '0',
+    });
+    assert.equal(deferredDespiteExit0.action, 'skip-recover');
+    if (deferredDespiteExit0.action === 'skip-recover') {
+      assert.match(deferredDespiteExit0.reason, /host build still live/);
+      assert.match(deferredDespiteExit0.reason, /ignores exit label/);
+      assert.equal(deferredDespiteExit0.consumeRecoveryOpportunity, false);
+    }
+    // Abort only when host PIDs are clear (live-PID gate runs before abort).
+    const abort = decideSessionCreateHangAction({
+      hangTick: 3,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 3,
+      simState: 'Booted',
+      recoveredOnce: true,
+      hostXcodebuildPids: '(none)',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '(none)',
+    });
+    assert.equal(abort.action, 'abort');
+    if (abort.action === 'abort') {
+      assert.match(abort.reason, /Booted hang-probe streak/);
+      assert.match(abort.reason, /bootstatusTimedOut=false/);
+    }
+  });
+
+  test('production-default abort tick defers while host PIDs are live', () => {
+    // Defaults: recoverAfter=2, abortAfter=3. Live PIDs must win over abortReady.
+    const atAbortTick = decideSessionCreateHangAction({
+      hangTick: 3,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 3,
+      simState: 'Booted',
+      recoveredOnce: true,
+      hostXcodebuildPids: '4242',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '65',
+    });
+    assert.equal(atAbortTick.action, 'skip-recover');
+    if (atAbortTick.action === 'skip-recover') {
+      assert.match(atAbortTick.reason, /abortDeferred:/);
+      assert.match(atAbortTick.reason, /host build still live/);
+      assert.equal(atAbortTick.consumeRecoveryOpportunity, false);
+    }
+    const etimedoutAbortTick = decideSessionCreateHangAction({
+      hangTick: 3,
+      consecutiveXcrunEtimedout: 2,
+      consecutiveBootedHangProbes: 3,
+      simState: 'Booted',
+      recoveredOnce: true,
+      hostXcodebuildPids: '(none)',
+      hostWdaPids: '99',
+      lastXcodebuildExitLabel: '0',
+    });
+    assert.equal(etimedoutAbortTick.action, 'skip-recover');
+    if (etimedoutAbortTick.action === 'skip-recover') {
+      assert.match(etimedoutAbortTick.reason, /abortDeferred:/);
+    }
+  });
+
   test('decideSessionCreateHangAction never recovers after session id exists', () => {
     assert.deepEqual(
       decideSessionCreateHangAction({
@@ -417,13 +533,20 @@ describe('iosBootDiagnostics', () => {
       abortAfterTicks: 3,
       lastXcodebuildExitRef,
       write: line => lines.push(line),
-      execCapture: () => ({
-        stdout: '',
-        stderr: '',
-        status: null,
-        timedOut: true,
-        error: 'spawnSync ETIMEDOUT',
-      }),
+      // Host pgrep must report clear PIDs — timedOut pgrep counts as live and
+      // correctly defers abort; simctl probes still ETIMEDOUT for the hang path.
+      execCapture: (bin, _args) => {
+        if (bin === 'pgrep') {
+          return { stdout: '', stderr: '', status: 1 };
+        }
+        return {
+          stdout: '',
+          stderr: '',
+          status: null,
+          timedOut: true,
+          error: 'spawnSync ETIMEDOUT',
+        };
+      },
       deviceHubMode: 'off',
       deviceHubPids: [],
       now: () => new Date('2026-10-14T16:00:00.000Z'),
@@ -523,6 +646,8 @@ describe('iosBootDiagnostics', () => {
           /host build still live/.test(line),
       ),
     );
+    // skip-recover under live PIDs must still stage hang-recover snapshots.
+    assert.ok(lines.some(line => /hang-recoverSkipped-artifacts/.test(line)));
     callbacks[0]!(); // tick 3 — still deferred
     assert.equal(recovers.length, 0);
     assert.equal(aborts.length, 0);
@@ -600,7 +725,10 @@ describe('iosBootDiagnostics', () => {
       recoverAfterTicks: 2,
       abortAfterTicks: 3,
       write: line => lines.push(line),
-      execCapture: (_bin, args) => {
+      execCapture: (bin, args) => {
+        if (bin === 'pgrep') {
+          return { stdout: '', stderr: '', status: 1 };
+        }
         if (args.includes('list')) {
           return { stdout: shutdownList, stderr: '', status: 0 };
         }
@@ -637,6 +765,159 @@ describe('iosBootDiagnostics', () => {
     callbacks[0]!(); // tick 3 — abort
     assert.equal(aborts.length, 1);
     assert.match(aborts[0]!.message, /interrupting Appium boot monitor/);
+  });
+
+  test('live PIDs abortDeferred then supervisor abort still stages non-empty snapshot', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rngma-booted-supervisor-'));
+    try {
+      const derived = join(root, '.wda-derived');
+      mkdirSync(join(derived, 'Logs'), { recursive: true });
+      writeFileSync(join(derived, 'Logs', 'build.log'), 'xcodebuild tail');
+      const appiumHome = join(root, '.appium-home');
+      mkdirSync(join(appiumHome, 'logs', 'port-4725'), { recursive: true });
+      writeFileSync(join(appiumHome, 'logs', 'port-4725', 'appium.log'), 'appium stdio');
+      const childLog = join(root, 'ios-serial.log');
+      writeFileSync(childLog, 'POST /session still open');
+
+      const lines: string[] = [];
+      const callbacks: Array<() => void> = [];
+      const recovers: string[] = [];
+      const aborts: Error[] = [];
+      startIosSessionCreateHangWatchdog('target-udid', {
+        phase: 'serial:session-create',
+        simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+        intervalMs: 1000,
+        recoverAfterTicks: 2,
+        abortAfterTicks: 3,
+        appiumHome,
+        lastXcodebuildExitRef: { value: 0 },
+        write: line => lines.push(line),
+        execCapture: (bin, args) => {
+          if (bin === 'pgrep' && (args[1] === 'xcodebuild' || args.includes('xcodebuild'))) {
+            return { stdout: '66564 /usr/bin/xcodebuild test\n', stderr: '', status: 0 };
+          }
+          if (bin === 'pgrep') {
+            return { stdout: '', stderr: '', status: 1 };
+          }
+          if (args.includes('list')) {
+            return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+          }
+          return { stdout: 'Monitoring boot\nBooted\n', stderr: '', status: 0 };
+        },
+        deviceHubMode: 'off',
+        deviceHubPids: [],
+        simulatorUiPids: [],
+        now: () => new Date('2026-10-15T17:00:00.000Z'),
+        clock: {
+          setInterval(callback) {
+            callbacks.push(callback);
+            return 1;
+          },
+          clearInterval() {},
+        },
+        onRecover: (udid, reason) => recovers.push(`${udid}:${reason}`),
+        onAbort: error => aborts.push(error),
+      });
+
+      callbacks[0]!(); // tick 1
+      callbacks[0]!(); // tick 2 — Booted recover deferred (live PIDs, exit 0)
+      callbacks[0]!(); // tick 3 — abortDeferred (not hang-abort)
+      assert.equal(recovers.length, 0);
+      assert.equal(aborts.length, 0);
+      assert.ok(lines.some(line => /abortDeferred:|host build still live/.test(line)));
+      assert.ok(lines.some(line => /hang-recoverSkipped-artifacts/.test(line)));
+
+      // 180s supervisor backstop: stage before drain (child log still present).
+      const order: string[] = [];
+      const supervisor = new StartupSupervisor(['serial-ios']);
+      supervisor.onAbortArtifacts(() => {
+        order.push('artifacts');
+        stageIosSessionHangArtifacts({
+          derivedDataPath: derived,
+          appiumHome,
+          extraLogPaths: [childLog],
+          phase: 'serial:supervisor-abort-artifacts',
+          write: line => lines.push(line),
+        });
+      });
+      supervisor.onFailure(() => {
+        order.push('drain');
+        writeFileSync(childLog, '');
+      });
+      supervisor.phase = 'worker';
+      const workers = supervisor.waitForWorkers();
+      supervisor.recordFailure(
+        'serial-ios',
+        new Error('Timed out after 180000ms waiting for worker startup readiness'),
+      );
+      await assert.rejects(workers, /Timed out after 180000ms/);
+      assert.deepEqual(order, ['artifacts', 'drain']);
+      const snap = hangRecoverArtifactSnapshotDir(derived);
+      assert.ok(existsSync(join(snap, 'staging-receipt.txt')));
+      assert.equal(
+        readFileSync(join(snap, 'supervisor-child-logs', 'ios-serial.log'), 'utf8'),
+        'POST /session still open',
+      );
+      assert.ok(existsSync(join(snap, 'appium-logs', 'port-4725', 'appium.log')));
+      assert.ok(lines.some(line => /serial:supervisor-abort-artifacts/.test(line)));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test('hang watchdog recovers/aborts on Booted hang without ETIMEDOUT and stages artifacts', () => {
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const recovers: string[] = [];
+    const aborts: Error[] = [];
+    startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'serial:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      recoverAfterTicks: 2,
+      abortAfterTicks: 3,
+      lastXcodebuildExitRef: { value: null },
+      write: line => lines.push(line),
+      execCapture: (bin, args) => {
+        if (bin === 'pgrep') {
+          return { stdout: '', stderr: '', status: 1 };
+        }
+        if (args.includes('list')) {
+          return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+        }
+        // bootstatus succeeds — the proven CI gap (Booted, no ETIMEDOUT).
+        return { stdout: 'Monitoring boot\nBooted\n', stderr: '', status: 0 };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      simulatorUiPids: [],
+      now: () => new Date('2026-10-15T15:00:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onRecover: (udid, reason) => {
+        recovers.push(`${udid}:${reason}`);
+      },
+      onAbort: error => {
+        aborts.push(error);
+      },
+    });
+    callbacks[0]!(); // tick 1 — continue
+    assert.equal(recovers.length, 0);
+    assert.equal(aborts.length, 0);
+    assert.ok(lines.some(line => /\[e2e-ios-session\].*hang-probe/.test(line)));
+    callbacks[0]!(); // tick 2 — Booted-hang recover
+    assert.equal(recovers.length, 1);
+    assert.match(recovers[0]!, /Booted hang-probe streak/);
+    assert.ok(lines.some(line => /hang-recover-artifacts/.test(line)));
+    callbacks[0]!(); // tick 3 — abort + artifact staging
+    assert.equal(aborts.length, 1);
+    assert.match(aborts[0]!.message, /Booted hang-probe streak/);
+    assert.ok(lines.some(line => /hang-abort-artifacts/.test(line)));
   });
 
   test('formatSessionCreateHangAbortError keeps stable prefix', () => {

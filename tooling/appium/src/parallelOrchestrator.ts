@@ -5,7 +5,11 @@ import {
   type ParallelPlatform,
 } from './parallelPlan.ts';
 import { PARALLEL_PARENT_CONTRACT } from './parentContract.ts';
-import { IOS_WDA_RUNNER_APP_PATH } from './hostPreflight.ts';
+import { IOS_WDA_DERIVED_DATA_PATH, IOS_WDA_RUNNER_APP_PATH } from './hostPreflight.ts';
+import {
+  DEFAULT_APPIUM_HOME,
+  stageIosSessionHangArtifacts,
+} from './iosSessionDiagnostics.ts';
 import { serialAndroidApkPath } from './slots.ts';
 import {
   ANDROID_DEVICE_HARD_FAILURES,
@@ -22,6 +26,23 @@ import {
   type InvocationPaths,
   type MetroPackagerProbe,
 } from './startupSupervisor.ts';
+
+/** Stage iOS hang-path artifacts before parallel drain/SIGKILL. */
+function armIosSupervisorAbortArtifactStaging(
+  startup: StartupSupervisor,
+  logPaths: readonly string[],
+  phase: string,
+): void {
+  startup.onAbortArtifacts(() => {
+    stageIosSessionHangArtifacts({
+      derivedDataPath: IOS_WDA_DERIVED_DATA_PATH,
+      appiumHome: DEFAULT_APPIUM_HOME,
+      extraLogPaths: logPaths,
+      phase,
+      write: line => console.log(line),
+    });
+  });
+}
 
 export type ChildCommand = {
   script: string;
@@ -368,6 +389,13 @@ async function runConcurrentPhase(
     undefined,
     platform === 'ios' ? IOS_WORKER_STARTUP_TIMEOUT_MS : undefined,
   );
+  if (platform === 'ios') {
+    armIosSupervisorAbortArtifactStaging(
+      startup,
+      plan.map(entry => entry.logPath).filter((p): p is string => Boolean(p)),
+      'parallel:supervisor-abort-artifacts',
+    );
+  }
   startup.onFailure(() => void context.stopActive());
 
   try {
@@ -998,6 +1026,11 @@ export async function runCombinedParallelE2e(
         defaultMs: WORKER_STARTUP_TIMEOUT_MS,
         byPrefix: { 'ios:': IOS_WORKER_STARTUP_TIMEOUT_MS },
       },
+    );
+    armIosSupervisorAbortArtifactStaging(
+      startup,
+      iosPlan.map(entry => entry.logPath).filter((p): p is string => Boolean(p)),
+      'combined:supervisor-abort-artifacts',
     );
     startup.onFailure(() => void context.stopActive());
     // Each platform Metro needs its own readiness envelope; a shared Metro-phase

@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { join } from 'node:path';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join as pathJoin } from 'node:path';
 import {
@@ -9,6 +16,7 @@ import {
   clearXcodebuildExitState,
   collectIosSessionCreateDiagnosticSnapshot,
   emitIosSessionCreateDiagnostics,
+  formatHostPidFieldsFromSnapshots,
   formatIosSessionDiagnosticLine,
   hangRecoverArtifactSnapshotDir,
   hostPidsIndicateLiveBuild,
@@ -16,15 +24,19 @@ import {
   IOS_SESSION_HOST_PGREP_TIMEOUT_MS,
   listWdaDerivedDataLogPaths,
   listWdaRelatedHostProcesses,
+  parsePgrepFlPids,
   parseXcodebuildExitCodeFromLine,
+  pgrepFlLineIsXcodebuild,
   readXcodebuildExitState,
   resolveLastXcodebuildExit,
   shouldDeferHangRecoverForLiveHostBuild,
   snapshotWdaDerivedDataForHangRecover,
+  stageIosSessionHangArtifacts,
   xcodebuildExitStatePath,
   type SessionExecCapture,
 } from '../src/iosSessionDiagnostics.ts';
 import { IOS_BOOTSTATUS_PROBE_TIMEOUT_MS } from '../src/iosBootDiagnostics.ts';
+import { StartupSupervisor } from '../src/startupSupervisor.ts';
 
 describe('iosSessionDiagnostics', () => {
   test('formatIosSessionDiagnosticLine uses stable prefix', () => {
@@ -100,6 +112,54 @@ describe('iosSessionDiagnostics', () => {
     assert.deepEqual(snaps.find(s => s.marker === 'WebDriverAgent')?.pids, []);
     assert.ok(timeouts.every(ms => ms === IOS_SESSION_HOST_PGREP_TIMEOUT_MS));
     assert.ok(IOS_SESSION_HOST_PGREP_TIMEOUT_MS < 5_000);
+  });
+
+  test('PID classification excludes xcodebuild lines from WDA markers', () => {
+    assert.equal(
+      pgrepFlLineIsXcodebuild(
+        '66564 /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -scheme WebDriverAgentRunner',
+      ),
+      true,
+    );
+    assert.equal(
+      pgrepFlLineIsXcodebuild('77888 /usr/bin/xctest -XCTest WebDriverAgentRunner'),
+      false,
+    );
+    assert.deepEqual(
+      parsePgrepFlPids(
+        '66564 /usr/bin/xcodebuild test -scheme WebDriverAgentRunner\n77888 xctest WebDriverAgent\n',
+        { excludeXcodebuildCmd: true },
+      ),
+      [77888],
+    );
+    const execCapture: SessionExecCapture = (_bin, args) => {
+      const marker = args[1]!;
+      if (marker === 'xcodebuild') {
+        return {
+          stdout:
+            '66564 /usr/bin/xcodebuild test -scheme WebDriverAgentRunner\n',
+          stderr: '',
+          status: 0,
+        };
+      }
+      // Same PID also matches WebDriverAgent marker via scheme argv — must drop.
+      return {
+        stdout:
+          '66564 /usr/bin/xcodebuild test -scheme WebDriverAgentRunner\n' +
+          '77888 /usr/bin/xctest WebDriverAgentRunner\n',
+        stderr: '',
+        status: 0,
+      };
+    };
+    const snaps = listWdaRelatedHostProcesses(execCapture, [
+      'xcodebuild',
+      'WebDriverAgent',
+      'WebDriverAgentRunner',
+    ]);
+    const fields = formatHostPidFieldsFromSnapshots(snaps);
+    assert.equal(fields.hostXcodebuildPids, '66564');
+    assert.equal(fields.hostWdaPids, '77888');
+    assert.notEqual(fields.hostXcodebuildPids, fields.hostWdaPids);
   });
 
   test('listWdaRelatedHostProcesses surfaces pgrep timedOut', () => {
@@ -302,6 +362,25 @@ describe('iosSessionDiagnostics', () => {
       }).defer,
       false,
     );
+    // Booted-without-ETIMEDOUT / abort: live PIDs defer even when exit is known.
+    assert.equal(
+      shouldDeferHangRecoverForLiveHostBuild({
+        hostXcodebuildPids: '(none)',
+        hostWdaPids: '77888',
+        lastXcodebuildExit: '0',
+        deferRegardlessOfExit: true,
+      }).defer,
+      true,
+    );
+    assert.equal(
+      shouldDeferHangRecoverForLiveHostBuild({
+        hostXcodebuildPids: '99',
+        hostWdaPids: '(none)',
+        lastXcodebuildExit: '65',
+        deferRegardlessOfExit: true,
+      }).defer,
+      true,
+    );
   });
 
   test('snapshotWdaDerivedDataForHangRecover copies xcresult and log files', () => {
@@ -314,13 +393,102 @@ describe('iosSessionDiagnostics', () => {
       writeFileSync(pathJoin(xcresult, 'Info.plist'), 'plist');
       const logFile = pathJoin(logsDir, 'run.log');
       writeFileSync(logFile, 'hello');
+      const appiumHome = pathJoin(root, 'appium-home');
+      mkdirSync(pathJoin(appiumHome, 'logs', 'port-4725'), { recursive: true });
+      writeFileSync(pathJoin(appiumHome, 'logs', 'port-4725', 'appium.log'), 'appium');
+      const childLog = pathJoin(root, 'ios-serial.log');
+      writeFileSync(childLog, 'wdio child stdio');
       const dest = hangRecoverArtifactSnapshotDir(root);
-      const result = snapshotWdaDerivedDataForHangRecover(root, dest);
-      assert.ok(result.copiedPaths.length >= 2);
+      const result = snapshotWdaDerivedDataForHangRecover(root, dest, {
+        appiumHome,
+        extraLogPaths: [childLog],
+        stagingPhase: 'test:snap',
+      });
+      assert.ok(result.copiedPaths.length >= 4);
       assert.ok(result.copiedPaths.some(p => p.endsWith('Run.xcresult')));
       assert.ok(result.copiedPaths.some(p => p.endsWith('run.log')));
-      assert.equal(result.errors.length, 0);
+      assert.ok(result.copiedPaths.some(p => p.endsWith('appium-logs')));
+      assert.ok(result.copiedPaths.some(p => p.endsWith('ios-serial.log')));
+      assert.ok(result.copiedPaths.some(p => p.endsWith('staging-receipt.txt')));
       assert.equal(readFileSync(pathJoin(dest, 'run.log'), 'utf8'), 'hello');
+      assert.equal(
+        readFileSync(pathJoin(dest, 'appium-logs', 'port-4725', 'appium.log'), 'utf8'),
+        'appium',
+      );
+      assert.equal(
+        readFileSync(pathJoin(dest, 'supervisor-child-logs', 'ios-serial.log'), 'utf8'),
+        'wdio child stdio',
+      );
+      assert.match(readFileSync(pathJoin(dest, 'staging-receipt.txt'), 'utf8'), /phase=test:snap/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test('stageIosSessionHangArtifacts stages non-empty snapshot when DerivedData missing', () => {
+    const root = mkdtempSync(pathJoin(tmpdir(), 'rngma-supervisor-stage-'));
+    try {
+      const derived = pathJoin(root, 'missing-derived');
+      const appiumHome = pathJoin(root, 'appium-home');
+      mkdirSync(pathJoin(appiumHome, 'logs', 'port-4725'), { recursive: true });
+      writeFileSync(pathJoin(appiumHome, 'logs', 'port-4725', 'appium.log'), 'xcode stdio');
+      const childLog = pathJoin(root, 'ios-serial.log');
+      writeFileSync(childLog, 'POST /session hung');
+      const lines: string[] = [];
+      const result = stageIosSessionHangArtifacts({
+        derivedDataPath: derived,
+        appiumHome,
+        extraLogPaths: [childLog],
+        phase: 'serial:supervisor-abort-artifacts',
+        write: line => lines.push(line),
+        now: () => new Date('2026-10-15T16:00:00.000Z'),
+      });
+      assert.ok(result.copiedPaths.length >= 2);
+      assert.ok(existsSync(pathJoin(result.destDir, 'staging-receipt.txt')));
+      assert.ok(
+        existsSync(pathJoin(result.destDir, 'supervisor-child-logs', 'ios-serial.log')),
+      );
+      assert.ok(existsSync(pathJoin(result.destDir, 'appium-logs', 'port-4725', 'appium.log')));
+      assert.ok(lines.some(line => /supervisor-abort-artifacts/.test(line)));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test('StartupSupervisor abort stages artifacts before onFailure drain', async () => {
+    const root = mkdtempSync(pathJoin(tmpdir(), 'rngma-abort-order-'));
+    try {
+      const derived = pathJoin(root, '.wda-derived');
+      mkdirSync(derived, { recursive: true });
+      const childLog = pathJoin(root, 'ios-serial.log');
+      writeFileSync(childLog, 'child still alive');
+      const order: string[] = [];
+      const supervisor = new StartupSupervisor(['serial-ios']);
+      supervisor.onAbortArtifacts(() => {
+        order.push('artifacts');
+        stageIosSessionHangArtifacts({
+          derivedDataPath: derived,
+          extraLogPaths: [childLog],
+          phase: 'test:supervisor-abort',
+          write: () => undefined,
+        });
+      });
+      supervisor.onFailure(() => {
+        order.push('drain');
+        // Simulate SIGKILL wiping the live child log after staging.
+        writeFileSync(childLog, '');
+      });
+      supervisor.phase = 'worker';
+      const workers = supervisor.waitForWorkers();
+      supervisor.recordFailure('serial-ios', new Error('Timed out after 180000ms'));
+      await assert.rejects(workers, /Timed out after 180000ms/);
+      assert.deepEqual(order, ['artifacts', 'drain']);
+      const snapDir = hangRecoverArtifactSnapshotDir(derived);
+      assert.equal(
+        readFileSync(pathJoin(snapDir, 'supervisor-child-logs', 'ios-serial.log'), 'utf8'),
+        'child still alive',
+      );
+      assert.ok(existsSync(pathJoin(snapDir, 'staging-receipt.txt')));
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
