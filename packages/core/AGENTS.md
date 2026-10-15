@@ -24,6 +24,8 @@ Use `mobileAds()` (not a capital-`MobileAds()` constructor). Prefer the v17 **op
 - **Keep fullscreen inventory warm; poll at show time:** Preload pools: `AdPoolPresets.fullscreen` + `AdPoolProvider` / `usePooledAd`, or `AdPools.create`
 - **Keep display (banner/native) inventory warm:** `AdPoolPresets.display` + provider / `usePooledAd` (emulated, depth 1; see `resolved.degradeReasons`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob `ca-app-pub-…` units hard-error
 - **One request, native _or_ banner winner:** `useMultiFormatAd` or `MultiFormatAdRequest` (+ `MultiFormatAdPresets.nativeOrBanner`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob units hard-error
+- **One request with custom native competing:** `MultiFormatAdRequest.create` only — set `requestOptions.customNativeFormatIds` (optional `customNativeClickHandling`). `useMultiFormatAd` rejects that opt-in
+- **One custom native ad (Ad Manager custom format):** `CustomNativeAd.createForAdRequest` — see `/ad-formats/custom-native`
 - **Register test devices:** Emulators / simulators are automatic on every backend. Physical devices: copy the hashed id the SDK logs (logcat / Xcode console) into `testDeviceIdentifiers`. `TestDeviceIds.EMULATOR` is a classic-Android-only alias
 - **Ask what this binary supports:** `getAdCapabilities()` (prefer presets over hand-rolled matrices)
 
