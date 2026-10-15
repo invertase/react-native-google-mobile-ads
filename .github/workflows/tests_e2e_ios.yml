@@ -28,7 +28,9 @@ jobs:
     name: iOS
     runs-on: macos-15
     # TODO matrix across APIs, at least 10 and 13 (lowest to highest)
-    timeout-minutes: 60
+    # 90m: setup (~25–35m) + three serial Appium shards with remount budgets;
+    # 60m cancelled mid tertiary after a-primary/b-secondary (run 38780622785).
+    timeout-minutes: 90
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
@@ -153,7 +155,8 @@ jobs:
       # serial preflight) is the retry surface — do not wrap this step in
       # nick-fields/retry, which would also re-run product failures.
       - name: Run Appium e2e
-        timeout-minutes: 30
+        # Must fit three serial shards + remount under the 90m job wall after setup.
+        timeout-minutes: 50
         run: |
           export RNGMA_WDA_PREBUILT=1
           yarn tests:appium:ios
@@ -168,11 +171,14 @@ jobs:
       # WDA DerivedData + xcodebuild logs for session-create exit-65 triage.
       # showXcodeLog streams build stderr into the job log; these files capture
       # anything Xcode wrote under the shared prebuild derivedDataPath.
+      # include-hidden-files: upload-artifact skips dotdirs by default; without
+      # it, sibling `.hang-recover-snapshots` / `.wda-derived` never upload.
       - name: Upload WDA xcodebuild logs
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: wda_xcodebuild_logs
+          include-hidden-files: true
           path: |
             tooling/appium/.wda-derived/Logs
             tooling/appium/.hang-recover-snapshots
