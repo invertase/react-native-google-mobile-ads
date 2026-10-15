@@ -49,6 +49,12 @@ export type RequestOutcomeAttempt = {
   longerBackoff: boolean;
   /** Consecutive no-fill count immediately before this attempt (0 on attempt 1). */
   consecutiveNoFillBefore: number;
+  /**
+   * Consecutive remountable pending-timeout count immediately before this attempt
+   * (0 on attempt 1). Drives the same longer RECENT_NOFILL backoff as consecutive
+   * no-fill so hung inventory does not thrash remounts.
+   */
+  consecutivePendingTimeoutBefore: number;
   /** True when the format's Google demo unit is inside the post-accept hot window. */
   sharedUnitHot: boolean;
   /** Age of the last accepted stamp for this unit, or null when never accepted. */
@@ -170,9 +176,41 @@ type ObservedRequestOutcome = Omit<
   | 'errorCode'
   | 'longerBackoff'
   | 'consecutiveNoFillBefore'
+  | 'consecutivePendingTimeoutBefore'
   | 'sharedUnitHot'
   | 'acceptedAtAgeMs'
 >;
+
+/**
+ * Per-attempt observe context so pending-timeout instrumentation can name remount
+ * count, whether Load was tapped, ad unit, and the observe ceiling actually used.
+ */
+export type RepresentativeRequestObserveContext = {
+  collectionAttempt: number;
+  remountCount: number;
+  loadTapped: boolean;
+  observeTimeoutMs: number;
+  adUnitId: string | null;
+};
+
+/**
+ * Resolve the observe wait ceiling for a request attempt. Attempt 1 keeps the
+ * contract base; remounts shorten; consecutive pending-timeouts shorten further.
+ */
+export function representativeRequestObserveTimeoutMs(options: {
+  baseTimeoutMs: number;
+  attempt: number;
+  consecutivePendingTimeoutBefore: number;
+}): number {
+  const base = options.baseTimeoutMs;
+  if (options.attempt <= 1) {
+    return base;
+  }
+  if (options.consecutivePendingTimeoutBefore >= 1) {
+    return Math.min(base, REPRESENTATIVE_REQUEST_PENDING_OBSERVE_TIMEOUT_MS);
+  }
+  return Math.min(base, REPRESENTATIVE_REQUEST_REMOUNT_OBSERVE_TIMEOUT_MS);
+}
 
 export type RepresentativeRequestPath =
   | 'banner'
@@ -208,6 +246,24 @@ export const SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS = 15_000;
 export const REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS = 2_000;
 /** Retry backoff cap while the shared unit is still hot (replaces 2000 ms). */
 export const REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS = 8_000;
+/**
+ * Remount observe ceiling (attempt 2+) so ten pending-timeouts + remount/backoff
+ * finish with request-outcome exhaust before the mocha/spec timeout.
+ */
+export const REPRESENTATIVE_REQUEST_REMOUNT_OBSERVE_TIMEOUT_MS = 10_000;
+/**
+ * After one or more consecutive pending-timeouts, shrink remount observe further
+ * so hung SDK / silent inventory fails faster within the ten-attempt budget.
+ */
+export const REPRESENTATIVE_REQUEST_PENDING_OBSERVE_TIMEOUT_MS = 8_000;
+/**
+ * Mocha/spec timeout for request-outcome cases. Sized above worst-case
+ * 10 × observe + remount navigation + longer pending/no-fill backoff + ads-log
+ * snippets so exhaust diagnostics are not masked by `Error: Timeout`.
+ */
+export const REPRESENTATIVE_REQUEST_MOCHA_TIMEOUT_MS = 600_000;
+/** Cap iOS simctl ads-log reads so pending-timeout diagnostics cannot burn 20s each. */
+export const IOS_ADS_LOG_SNIPPET_TIMEOUT_MS = 5_000;
 export const REQUEST_OUTCOME_LOG_PREFIX = '[request-outcome-attempt]';
 export const REQUEST_OUTCOME_LOG_SHARED_COOLDOWN_PREFIX = '[request-outcome-shared-cooldown]';
 export const REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX = '[request-outcome-timeout]';
@@ -297,6 +353,16 @@ export type RequestOutcomeTimeoutLog = {
   elapsedMs: number;
   /** Ads/React native log tail when available (Android logcat or iOS simctl). */
   adsLogSnippet?: string;
+  /** Collection attempt number (1-based) when known. */
+  attempt?: number;
+  /** Remounts already performed before this observe (`collectionAttempt - 1`). */
+  remountCount?: number;
+  /** True when this attempt tapped Load (fullscreen / hook Load path). */
+  loadTapped?: boolean;
+  /** Official Google demo ad unit when mapped. */
+  adUnitId?: string | null;
+  /** Observe waitUntil ceiling used for this attempt. */
+  observeTimeoutMs?: number;
 };
 
 /**
@@ -731,11 +797,19 @@ export function formatRequestOutcomeAttempt(attempt: RequestOutcomeAttempt): str
   return `${REQUEST_OUTCOME_LOG_PREFIX} ${JSON.stringify(attempt)}`;
 }
 
+export type RepresentativeRequestCollectorContext = {
+  consecutivePendingTimeoutBefore: number;
+  adUnitId: string | null;
+};
+
 export async function collectRepresentativeRequestOutcomes(options: {
   format: string;
   platform: 'android' | 'ios';
   configuration?: RequestOutcomeConfiguration;
-  request: (attempt: number) => Promise<ObservedRequestOutcome>;
+  request: (
+    attempt: number,
+    context: RepresentativeRequestCollectorContext,
+  ) => Promise<ObservedRequestOutcome>;
   sleep?: (delayMs: number) => Promise<void>;
   emit?: (line: string) => void;
   now?: () => number;
@@ -757,6 +831,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
   const requestIds = new Set<number>();
   let previousRequestId = 0;
   let consecutiveNoFill = 0;
+  let consecutivePendingTimeout = 0;
   const startedAt = now();
   const adUnitId = googleTestAdUnitForFormat(format, platform);
 
@@ -764,8 +839,12 @@ export async function collectRepresentativeRequestOutcomes(options: {
     const nowMs = now();
     const sharedUnitHot = isRecentlyAcceptedAdUnit(adUnitId, nowMs);
     const consecutiveNoFillBefore = consecutiveNoFill;
+    const consecutivePendingTimeoutBefore = consecutivePendingTimeout;
     const longerBackoff =
-      attempt > 1 && (sharedUnitHot || consecutiveNoFillBefore >= 1);
+      attempt > 1 &&
+      (sharedUnitHot ||
+        consecutiveNoFillBefore >= 1 ||
+        consecutivePendingTimeoutBefore >= 1);
     let delayMs = representativeRequestBackoffMs(attempt, {
       recentSameUnit: longerBackoff,
     });
@@ -787,7 +866,10 @@ export async function collectRepresentativeRequestOutcomes(options: {
     if (delayMs > 0) {
       await sleep(delayMs);
     }
-    const observed = await request(attempt);
+    const observed = await request(attempt, {
+      consecutivePendingTimeoutBefore,
+      adUnitId,
+    });
     if (!Number.isSafeInteger(observed.requestId) || observed.requestId <= 0) {
       throw new Error(
         `[request-outcome] ${format}: attempt ${attempt} did not report a valid request id`,
@@ -817,6 +899,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
       errorCode: errorCodeFromRequestAttempt(observed.classification, observed.detail),
       longerBackoff,
       consecutiveNoFillBefore,
+      consecutivePendingTimeoutBefore,
       sharedUnitHot,
       acceptedAtAgeMs: acceptedAdUnitAgeMs(adUnitId, nowMs),
     };
@@ -824,8 +907,13 @@ export async function collectRepresentativeRequestOutcomes(options: {
     emit(formatRequestOutcomeAttempt(result));
     if (observed.classification === 'no-fill') {
       consecutiveNoFill += 1;
+      consecutivePendingTimeout = 0;
+    } else if (observed.classification === 'pending-timeout') {
+      consecutivePendingTimeout += 1;
+      consecutiveNoFill = 0;
     } else {
       consecutiveNoFill = 0;
+      consecutivePendingTimeout = 0;
     }
     if (evaluateAcceptance(result).status === 'accepted') {
       return attempts;
@@ -844,6 +932,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
       errorCode,
       longerBackoff,
       consecutiveNoFillBefore,
+      consecutivePendingTimeoutBefore,
       sharedUnitHot,
       acceptedAtAgeMs,
     }) => ({
@@ -857,6 +946,7 @@ export async function collectRepresentativeRequestOutcomes(options: {
       errorCode,
       longerBackoff,
       consecutiveNoFillBefore,
+      consecutivePendingTimeoutBefore,
       sharedUnitHot,
       acceptedAtAgeMs,
     }),
@@ -872,7 +962,10 @@ export type RepresentativeRequestRuntime = {
   clearNativeLogs: () => Promise<void>;
   reload: () => Promise<void>;
   load: () => Promise<void>;
-  observe: (uiAttempt: number) => Promise<ObservedRequestOutcome>;
+  observe: (
+    uiAttempt: number,
+    context?: RepresentativeRequestObserveContext,
+  ) => Promise<ObservedRequestOutcome>;
 };
 
 /**
@@ -888,6 +981,11 @@ export async function runRepresentativeRequestOutcomeContract(options: {
   hookAutoLoad?: boolean;
   /** Override cell configuration (defaults from platform + `RNGMA_ANDROID_BACKEND`). */
   configuration?: RequestOutcomeConfiguration;
+  /**
+   * Contract observe ceiling (e.g. 20_000). Remount / consecutive-pending attempts
+   * shorten via `representativeRequestObserveTimeoutMs`.
+   */
+  baseObserveTimeoutMs?: number;
   runtime: RepresentativeRequestRuntime;
   sleep?: (delayMs: number) => Promise<void>;
   emit?: (line: string) => void;
@@ -902,6 +1000,7 @@ export async function runRepresentativeRequestOutcomeContract(options: {
     retry = 'default',
     hookAutoLoad = false,
     configuration = requestOutcomeConfiguration(platform),
+    baseObserveTimeoutMs = 10_000,
     runtime,
     sleep,
     emit,
@@ -919,54 +1018,76 @@ export async function runRepresentativeRequestOutcomeContract(options: {
     maxAttempts,
     evaluateAcceptance: attempt =>
       evaluateRepresentativeRequestAttempt({ path, platform, attempt }),
-    request: async attempt => {
+    request: async (attempt, collectorContext) => {
+      const observeTimeoutMs = representativeRequestObserveTimeoutMs({
+        baseTimeoutMs: baseObserveTimeoutMs,
+        attempt,
+        consecutivePendingTimeoutBefore: collectorContext.consecutivePendingTimeoutBefore,
+      });
+      const observeContext = (
+        uiAttempt: number,
+        loadTapped: boolean,
+      ): RepresentativeRequestObserveContext => ({
+        collectionAttempt: attempt,
+        remountCount: Math.max(0, attempt - 1),
+        loadTapped,
+        observeTimeoutMs,
+        adUnitId: collectorContext.adUnitId,
+      });
+
       if (path === 'native') {
         if (attempt > 1) {
           await runtime.backToGallery();
         }
         await runtime.clearNativeLogs();
         await runtime.navigate();
-        return runtime.observe(1);
+        return runtime.observe(1, observeContext(1, false));
       }
 
       const operation = representativeRequestOperation(path, attempt, retry, hookAutoLoad);
+      const attempt1Operation = representativeRequestOperation(path, 1, retry, hookAutoLoad);
       if (attempt === 1) {
         await runtime.navigate();
         if (operation === 'load') {
           await runtime.load();
         }
-      } else if (operation === 'remount') {
+        return runtime.observe(attempt, observeContext(attempt, operation === 'load'));
+      }
+      if (operation === 'remount') {
         await runtime.backToGallery();
         await runtime.navigate();
         // Remount recreates auto-load surfaces (banner / GAM remount / hookAutoLoad)
         // with a fresh in-flight request. Explicit-Load surfaces (fullscreen App
         // Open singleton, hook screens with a Load control) must tap Load after
         // remount or the marker stays on attempt 0 while a stale singleton fires.
-        if (representativeRequestOperation(path, 1, retry, hookAutoLoad) === 'load') {
+        const loadAfterRemount = attempt1Operation === 'load';
+        if (loadAfterRemount) {
           await runtime.load();
         }
         // Remount recreates representative markers with Request attempt: 1.
         // Hook Status markers have no monotonic Request id — synthesize from the
         // collection attempt so remount retries do not reuse requestId 1.
         if (path === 'hook') {
-          return runtime.observe(attempt);
+          return runtime.observe(attempt, observeContext(attempt, loadAfterRemount));
         }
-        return runtime.observe(1);
-      } else {
-        await executeRepresentativeRequestOperation(
-          path,
-          attempt,
-          {
-            reload: runtime.reload,
-            remount: async () => {
-              throw new Error('Remounts are handled by the request runtime');
-            },
-            load: runtime.load,
-          },
-          retry,
-        );
+        return runtime.observe(1, observeContext(1, loadAfterRemount));
       }
-      return runtime.observe(attempt);
+      await executeRepresentativeRequestOperation(
+        path,
+        attempt,
+        {
+          reload: runtime.reload,
+          remount: async () => {
+            throw new Error('Remounts are handled by the request runtime');
+          },
+          load: runtime.load,
+        },
+        retry,
+      );
+      return runtime.observe(
+        attempt,
+        observeContext(attempt, operation === 'load' || operation === 'reload'),
+      );
     },
   });
   if (onAccepted) {

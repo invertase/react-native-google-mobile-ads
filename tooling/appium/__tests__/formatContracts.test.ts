@@ -37,8 +37,11 @@ import {
   terminalOutcomeFromMarkerText,
   truncateLogSnippet,
   REPRESENTATIVE_REQUEST_MAX_ATTEMPTS,
+  REPRESENTATIVE_REQUEST_MOCHA_TIMEOUT_MS,
+  REPRESENTATIVE_REQUEST_PENDING_OBSERVE_TIMEOUT_MS,
   REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
   REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+  REPRESENTATIVE_REQUEST_REMOUNT_OBSERVE_TIMEOUT_MS,
   REPRESENTATIVE_REQUEST_TIMEOUT_LAST_SEEN_DEFERRED,
   REQUEST_OUTCOME_GALLERY_REQUEST_DIAG_PREFIX,
   REQUEST_OUTCOME_LOADED,
@@ -46,6 +49,7 @@ import {
   REQUEST_OUTCOME_NO_FILL,
   REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX,
   SHARED_AD_UNIT_PRE_FORMAT_COOLDOWN_MS,
+  representativeRequestObserveTimeoutMs,
   type RequestOutcomeClassification,
   type RepresentativeRequestPath,
 } from '../src/requestOutcomes.ts';
@@ -328,6 +332,11 @@ test('formats request-outcome-timeout JSON for CI correlation', () => {
     lastSeen: 'Request id: 4; Request attempt: 1; Request outcome: pending',
     elapsedMs: 10012,
     adsLogSnippet: 'Ads: This request is sent from a test device',
+    attempt: 3,
+    remountCount: 2,
+    loadTapped: true,
+    adUnitId: '/21775744923/example/fixed-size-banner',
+    observeTimeoutMs: 8_000,
   });
   assert.ok(line.startsWith(`${REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX} {`));
   assert.deepEqual(JSON.parse(line.slice(REQUEST_OUTCOME_TIMEOUT_LOG_PREFIX.length + 1)), {
@@ -336,8 +345,41 @@ test('formats request-outcome-timeout JSON for CI correlation', () => {
     lastSeen: 'Request id: 4; Request attempt: 1; Request outcome: pending',
     elapsedMs: 10012,
     adsLogSnippet: 'Ads: This request is sent from a test device',
+    attempt: 3,
+    remountCount: 2,
+    loadTapped: true,
+    adUnitId: '/21775744923/example/fixed-size-banner',
+    observeTimeoutMs: 8_000,
   });
   assert.equal(truncateLogSnippet('abcdefghij', 4), 'ghij');
+});
+
+test('shortens remount / consecutive-pending observe ceilings under mocha budget', () => {
+  assert.equal(
+    representativeRequestObserveTimeoutMs({
+      baseTimeoutMs: 20_000,
+      attempt: 1,
+      consecutivePendingTimeoutBefore: 0,
+    }),
+    20_000,
+  );
+  assert.equal(
+    representativeRequestObserveTimeoutMs({
+      baseTimeoutMs: 20_000,
+      attempt: 2,
+      consecutivePendingTimeoutBefore: 0,
+    }),
+    REPRESENTATIVE_REQUEST_REMOUNT_OBSERVE_TIMEOUT_MS,
+  );
+  assert.equal(
+    representativeRequestObserveTimeoutMs({
+      baseTimeoutMs: 20_000,
+      attempt: 3,
+      consecutivePendingTimeoutBefore: 1,
+    }),
+    REPRESENTATIVE_REQUEST_PENDING_OBSERVE_TIMEOUT_MS,
+  );
+  assert.ok(REPRESENTATIVE_REQUEST_MOCHA_TIMEOUT_MS >= 600_000);
 });
 
 test('gallery-request terminal correlation diagnostic names missing terminals', () => {
@@ -705,10 +747,11 @@ test('formats stable machine-readable attempt output', () => {
       errorCode: 'internal-error',
       longerBackoff: false,
       consecutiveNoFillBefore: 0,
+      consecutivePendingTimeoutBefore: 0,
       sharedUnitHot: false,
       acceptedAtAgeMs: null,
     }),
-    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","configuration":"android-classic","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"},"backoffMs":250,"elapsedMs":1400,"adUnitId":"ca-app-pub-3940256099942544/2247696110","errorCode":"internal-error","longerBackoff":false,"consecutiveNoFillBefore":0,"sharedUnitHot":false,"acceptedAtAgeMs":null}',
+    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","configuration":"android-classic","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"},"backoffMs":250,"elapsedMs":1400,"adUnitId":"ca-app-pub-3940256099942544/2247696110","errorCode":"internal-error","longerBackoff":false,"consecutiveNoFillBefore":0,"consecutivePendingTimeoutBefore":0,"sharedUnitHot":false,"acceptedAtAgeMs":null}',
   );
 });
 
@@ -1336,6 +1379,44 @@ test('pending-timeout observations remount instead of aborting the session', asy
   ]);
   assert.ok(lines.some(line => line.includes('"classification":"pending-timeout"')));
   assert.ok(lines.some(line => line.includes('"classification":"loaded"')));
+});
+
+test('consecutive pending-timeouts apply longer RECENT_NOFILL backoff like no-fill', async () => {
+  const delays: number[] = [];
+  const lines: string[] = [];
+  await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.gamInterstitial,
+    platform: 'ios',
+    path: 'fullscreen',
+    retry: 'remount',
+    maxAttempts: 3,
+    runtime: runtimeRecorder(
+      [],
+      [
+        observedRequest(3, 'pending-timeout'),
+        observedRequest(4, 'pending-timeout'),
+        observedRequest(5, 'loaded'),
+      ],
+    ),
+    sleep: async delayMs => {
+      delays.push(delayMs);
+    },
+    emit: line => lines.push(line),
+  });
+  // Attempt 1 has delay 0 and does not call sleep; longer backoff starts on attempt 2.
+  assert.deepEqual(delays, [
+    REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
+    Math.min(
+      REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS * 2,
+      REPRESENTATIVE_REQUEST_RECENT_NOFILL_MAX_BACKOFF_MS,
+    ),
+  ]);
+  assert.ok(lines[0]!.includes('"consecutivePendingTimeoutBefore":0'));
+  assert.ok(lines[0]!.includes('"longerBackoff":false'));
+  assert.ok(lines[1]!.includes('"consecutivePendingTimeoutBefore":1'));
+  assert.ok(lines[1]!.includes('"longerBackoff":true'));
+  assert.ok(lines[2]!.includes('"consecutivePendingTimeoutBefore":2'));
+  assert.ok(lines[2]!.includes('"longerBackoff":true'));
 });
 
 test('GAM banner remount retry auto-loads instead of tapping Load', () => {

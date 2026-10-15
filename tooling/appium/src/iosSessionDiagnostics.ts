@@ -530,9 +530,18 @@ export function shouldDeferHangRecoverForLiveHostBuild(input: {
   };
 }
 
-/** Default staging dir under DerivedData for pre-kill / hang-abort log copies. */
+/**
+ * Durable hang-recover snapshot root beside DerivedData (not under it).
+ * Appium/xcodebuild reclaim `.wda-derived` between WDIO sessions and wipe
+ * anything staged under DerivedData before CI `wda_xcodebuild_logs` upload.
+ */
+export function hangRecoverDurableRoot(derivedDataPath: string): string {
+  return join(dirname(derivedDataPath), '.hang-recover-snapshots');
+}
+
+/** Default staging dir for pre-kill / hang-abort log copies (survives DerivedData wipe). */
 export function hangRecoverArtifactSnapshotDir(derivedDataPath: string): string {
-  return join(derivedDataPath, 'hang-recover-snapshots', 'last');
+  return join(hangRecoverDurableRoot(derivedDataPath), 'last');
 }
 
 /** Appium server log path under APPIUM_HOME (matches wdio `--log` arg). */
@@ -692,8 +701,10 @@ export function snapshotWdaDerivedDataForHangRecover(
 
 /**
  * Stage hang-path / supervisor-abort diagnostics into
- * `.wda-derived/hang-recover-snapshots/last` (CI `wda_xcodebuild_logs` glob).
- * Call **before** drain/SIGKILL so `/tmp/rngma-e2e` child logs still exist.
+ * `tooling/appium/.hang-recover-snapshots/last` (sibling of DerivedData; CI
+ * `wda_xcodebuild_logs` glob). Call **before** drain/SIGKILL so `/tmp/rngma-e2e`
+ * child logs still exist. Must not live under `.wda-derived` — session rebuilds
+ * reclaim DerivedData and previously wiped in-job staged trees before upload.
  */
 export function stageIosSessionHangArtifacts(options: {
   derivedDataPath: string;

@@ -118,7 +118,9 @@ test('CI prebuilds WDA before the WDIO command enables the prebuilt capability',
   assert.match(workflow, /name: wda_xcodebuild_logs/);
   assert.match(workflow, /tooling\/appium\/\.wda-derived\/Logs/);
   assert.match(workflow, /tooling\/appium\/\.wda-derived\/\*\*\/\*\.xcresult/);
-  assert.match(workflow, /hang-recover-snapshots/);
+  // Durable sibling of DerivedData — not under `.wda-derived` (reclaimed between sessions).
+  assert.match(workflow, /tooling\/appium\/\.hang-recover-snapshots/);
+  assert.doesNotMatch(workflow, /tooling\/appium\/\.wda-derived\/hang-recover-snapshots/);
   assert.match(workflow, /tooling\/appium\/\.appium-home\/logs/);
 });
 

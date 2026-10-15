@@ -598,5 +598,6 @@ RNGoogleMobileAdsExample/ios/.xcode.env.local
 # Appium driver install tree (pins live in tooling/appium/drivers.manifest.json)
 tooling/appium/.appium-home/
 tooling/appium/.wda-derived/
+tooling/appium/.hang-recover-snapshots/
 # Ephemeral Appium-package agent scratch (never stage; mirrors root .agents/ policy)
 tooling/appium/.agents/
