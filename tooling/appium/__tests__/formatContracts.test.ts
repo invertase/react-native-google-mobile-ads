@@ -16,6 +16,7 @@ import {
   classifyRequestOutcome,
   evaluateRepresentativeRequestAttempt,
   formatRepresentativeRequestTimeoutMsg,
+  acceptedAdUnitAgeMs,
   formatRequestOutcomeAttempt,
   formatRequestOutcomeTimeout,
   googleTestAdUnitForFormat,
@@ -162,6 +163,18 @@ test('locks representative request-outcome contracts for classic ad success path
       AppiumTestIds.format.poolInterstitialImperative,
     ],
   );
+  assert.deepEqual(
+    REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.filter(
+      contract => contract.retry === 'remount' && contract.observeTimeoutMs === 20_000,
+    ).map(contract => contract.id),
+    [AppiumTestIds.format.appOpen, AppiumTestIds.format.appOpenHook],
+  );
+  for (const id of [AppiumTestIds.format.appOpen, AppiumTestIds.format.appOpenHook]) {
+    const contract = REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS.find(c => c.id === id);
+    assert.ok(contract);
+    assert.equal(contract.retry, 'remount');
+    assert.equal(contract.observeTimeoutMs, 20_000);
+  }
 });
 
 test('representative load actions never alias Show controls', () => {
@@ -435,6 +448,56 @@ test('uses a longer backoff schedule while a shared ad unit is recently accepted
   );
 });
 
+test('consecutive no-fill on a cold unit uses the longer RECENT_NOFILL backoff schedule', async () => {
+  const adUnitId = googleTestAdUnitForFormat(
+    AppiumTestIds.format.rewardedInterstitial,
+    'android',
+  );
+  assert.ok(adUnitId);
+  assert.equal(acceptedAdUnitAgeMs(adUnitId), null);
+
+  const sleeps: number[] = [];
+  const attempts = await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.rewardedInterstitial,
+    platform: 'android',
+    path: 'fullscreen',
+    configuration: 'android-nextgen',
+    now: () => 5_000_000,
+    sleep: async delayMs => {
+      sleeps.push(delayMs);
+    },
+    runtime: runtimeRecorder(
+      [],
+      [
+        observedRequest(1, 'no-fill'),
+        observedRequest(2, 'no-fill'),
+        observedRequest(3, 'no-fill'),
+        observedRequest(4, 'loaded'),
+      ],
+    ),
+  });
+  assert.equal(attempts.length, 4);
+  assert.equal(attempts[0]!.longerBackoff, false);
+  assert.equal(attempts[0]!.consecutiveNoFillBefore, 0);
+  assert.equal(attempts[0]!.sharedUnitHot, false);
+  assert.equal(attempts[0]!.acceptedAtAgeMs, null);
+  assert.equal(attempts[0]!.backoffMs, 0);
+  assert.equal(attempts[1]!.longerBackoff, true);
+  assert.equal(attempts[1]!.consecutiveNoFillBefore, 1);
+  assert.equal(attempts[1]!.backoffMs, REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS);
+  assert.equal(attempts[2]!.longerBackoff, true);
+  assert.equal(attempts[2]!.consecutiveNoFillBefore, 2);
+  assert.equal(attempts[2]!.backoffMs, 4_000);
+  assert.equal(attempts[3]!.longerBackoff, true);
+  assert.equal(attempts[3]!.consecutiveNoFillBefore, 3);
+  assert.equal(attempts[3]!.backoffMs, 8_000);
+  assert.deepEqual(sleeps, [
+    REPRESENTATIVE_REQUEST_RECENT_NOFILL_BASE_BACKOFF_MS,
+    4_000,
+    8_000,
+  ]);
+});
+
 test('rewarded and rewarded-hook share the same Google demo units', () => {
   assert.equal(
     googleTestAdUnitForFormat(AppiumTestIds.format.rewarded, 'android'),
@@ -580,8 +643,12 @@ test('formats stable machine-readable attempt output', () => {
       elapsedMs: 1400,
       adUnitId: 'ca-app-pub-3940256099942544/2247696110',
       errorCode: 'internal-error',
+      longerBackoff: false,
+      consecutiveNoFillBefore: 0,
+      sharedUnitHot: false,
+      acceptedAtAgeMs: null,
     }),
-    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","configuration":"android-classic","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"},"backoffMs":250,"elapsedMs":1400,"adUnitId":"ca-app-pub-3940256099942544/2247696110","errorCode":"internal-error"}',
+    '[request-outcome-attempt] {"format":"gma.format.native","platform":"android","configuration":"android-classic","attempt":2,"requestId":17,"classification":"internal-error","detail":"Request error: internal-error: fingerprint","fingerprint":{"status":"matched","evidence":"request-scoped native evidence"},"backoffMs":250,"elapsedMs":1400,"adUnitId":"ca-app-pub-3940256099942544/2247696110","errorCode":"internal-error","longerBackoff":false,"consecutiveNoFillBefore":0,"sharedUnitHot":false,"acceptedAtAgeMs":null}',
   );
 });
 
@@ -663,13 +730,22 @@ test('exhausted no-fill attempts name ad unit, error code, and backend', async (
       return (
         message.includes('android-classic') &&
         message.includes('"adUnitId":"ca-app-pub-3940256099942544/5224354917"') &&
-        message.includes('"errorCode":"no-fill"')
+        message.includes('"errorCode":"no-fill"') &&
+        message.includes('"longerBackoff":true') &&
+        message.includes('"consecutiveNoFillBefore":9') &&
+        message.includes('"sharedUnitHot":false') &&
+        message.includes('"acceptedAtAgeMs":null')
       );
     },
   );
   assert.ok(lines.every(line => line.includes('"adUnitId":"ca-app-pub-3940256099942544/5224354917"')));
   assert.ok(lines.every(line => line.includes('"errorCode":"no-fill"')));
   assert.ok(lines.every(line => line.includes('"configuration":"android-classic"')));
+  assert.ok(lines[0]!.includes('"longerBackoff":false'));
+  assert.ok(lines[0]!.includes('"consecutiveNoFillBefore":0'));
+  assert.ok(lines[1]!.includes('"longerBackoff":true'));
+  assert.ok(lines[1]!.includes('"consecutiveNoFillBefore":1'));
+  assert.ok(lines[9]!.includes('"consecutiveNoFillBefore":9'));
 });
 
 test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnostics', async () => {
@@ -724,9 +800,18 @@ test('runtime exhausts rejected outcomes with stable JSON, backoff, and diagnost
     ),
   );
   assert.ok(lines.every(line => !line.includes('"adUnitId":null')));
+  assert.ok(lines.every(line => line.includes('"longerBackoff":')));
+  assert.ok(lines.every(line => line.includes('"consecutiveNoFillBefore":')));
+  assert.ok(lines.every(line => line.includes('"sharedUnitHot":false')));
+  assert.ok(lines.every(line => line.includes('"acceptedAtAgeMs":null')));
   assert.ok(lines[0]!.includes('"backoffMs":0'));
-  assert.ok(lines[1]!.includes('"backoffMs":250'));
-  assert.deepEqual(delays, [250, 500, 1000, 2000, 2000, 2000, 2000, 2000, 2000]);
+  // Alternating no-fill / other-error: after each no-fill the next attempt uses longer backoff.
+  assert.ok(lines[1]!.includes('"backoffMs":2000'));
+  assert.ok(lines[1]!.includes('"longerBackoff":true'));
+  assert.ok(lines[1]!.includes('"consecutiveNoFillBefore":1'));
+  assert.ok(lines[2]!.includes('"backoffMs":500'));
+  assert.ok(lines[2]!.includes('"longerBackoff":false'));
+  assert.deepEqual(delays, [2000, 500, 8000, 2000, 8000, 2000, 8000, 2000, 8000]);
   assert.equal(calls.filter(call => call === 'reload').length, 9);
   assert.notEqual(calls.at(-1), 'back');
 });
@@ -1075,10 +1160,67 @@ test('hook auto-load runtime remounts between rejected hook load attempts', asyn
     'observe:1',
     'back',
     'navigate',
-    'observe:1',
+    // Collection attempt (not UI attempt 1) so synthetic hook requestIds stay unique.
+    'observe:2',
     'back',
   ]);
   assert.ok(!calls.includes('load'));
+});
+
+test('App Open fullscreen remount retries Load after remount before observing', async () => {
+  const calls: string[] = [];
+  await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.appOpen,
+    platform: 'ios',
+    path: 'fullscreen',
+    retry: 'remount',
+    maxAttempts: 2,
+    runtime: runtimeRecorder(calls, [
+      observedRequest(1, 'pending-timeout'),
+      observedRequest(2, 'loaded'),
+    ]),
+    sleep: async () => {},
+    emit: () => {},
+  });
+  assert.deepEqual(calls, [
+    'navigate',
+    'load',
+    'observe:1',
+    'back',
+    'navigate',
+    'load',
+    // Fresh mount after Load resets the UI marker to attempt 1.
+    'observe:1',
+    'back',
+  ]);
+});
+
+test('App Open hook remount retries Load after remount with unique synthetic request ids', async () => {
+  const calls: string[] = [];
+  await runRepresentativeRequestOutcomeContract({
+    format: AppiumTestIds.format.appOpenHook,
+    platform: 'ios',
+    path: 'hook',
+    retry: 'remount',
+    maxAttempts: 2,
+    runtime: runtimeRecorder(calls, [
+      observedRequest(1, 'pending-timeout'),
+      observedRequest(2, 'loaded'),
+    ]),
+    sleep: async () => {},
+    emit: () => {},
+  });
+  assert.deepEqual(calls, [
+    'navigate',
+    'load',
+    'observe:1',
+    'back',
+    'navigate',
+    'load',
+    // Collection attempt (not UI attempt 1) so synthetic hook requestIds stay unique.
+    'observe:2',
+    'back',
+  ]);
 });
 
 test('remount retry revisits the format screen instead of tapping Load', async () => {

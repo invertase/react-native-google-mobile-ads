@@ -71,6 +71,11 @@ export type RepresentativeRequestOutcomeContract = {
   renderProof: RepresentativeRenderProof;
   /** Remount the format screen between retry attempts instead of tapping Load/Reload. */
   retry?: RepresentativeRequestRetry;
+  /**
+   * Observe waitUntil ceiling for this format's request-outcome marker.
+   * Defaults to 10s in gallery helpers when unset.
+   */
+  observeTimeoutMs?: number;
   /** After an accepted loaded outcome, tap Show and dismiss without clicking ad creatives. */
   showClose?: boolean;
   /** After an accepted loaded outcome, assert Hook lifecycle markers (showing/closed). */
@@ -192,6 +197,8 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     contract: 'request-outcome',
     path: 'fullscreen',
     renderProof: 'none',
+    retry: 'remount',
+    observeTimeoutMs: 20_000,
     showClose: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.appOpen),
   },
@@ -249,6 +256,8 @@ export const REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS: readonly RepresentativeRe
     contract: 'request-outcome',
     path: 'hook',
     renderProof: 'none',
+    retry: 'remount',
+    observeTimeoutMs: 20_000,
     hookLifecycle: true,
     actionId: AppiumTestIds.action.load(AppiumTestIds.format.appOpenHook),
   },

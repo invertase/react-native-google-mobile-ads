@@ -45,6 +45,14 @@ export type RequestOutcomeAttempt = {
    * Null for accepted `loaded` attempts.
    */
   errorCode: string | null;
+  /** True when attempt 2+ used the longer RECENT_NOFILL backoff schedule. */
+  longerBackoff: boolean;
+  /** Consecutive no-fill count immediately before this attempt (0 on attempt 1). */
+  consecutiveNoFillBefore: number;
+  /** True when the format's Google demo unit is inside the post-accept hot window. */
+  sharedUnitHot: boolean;
+  /** Age of the last accepted stamp for this unit, or null when never accepted. */
+  acceptedAtAgeMs: number | null;
 };
 
 /**
@@ -160,6 +168,10 @@ type ObservedRequestOutcome = Omit<
   | 'elapsedMs'
   | 'adUnitId'
   | 'errorCode'
+  | 'longerBackoff'
+  | 'consecutiveNoFillBefore'
+  | 'sharedUnitHot'
+  | 'acceptedAtAgeMs'
 >;
 
 export type RepresentativeRequestPath =
@@ -254,12 +266,35 @@ export function isRecentlyAcceptedAdUnit(
   return elapsed >= 0 && elapsed < SHARED_AD_UNIT_RECENT_MS;
 }
 
+/**
+ * Milliseconds since this unit was last accepted in-session, or null when never
+ * stamped / unknown. Does not apply the hot-window cutoff (age can exceed
+ * `SHARED_AD_UNIT_RECENT_MS`).
+ */
+export function acceptedAdUnitAgeMs(
+  adUnitId: string | null,
+  nowMs: number = Date.now(),
+): number | null {
+  if (!adUnitId) {
+    return null;
+  }
+  const acceptedAt = acceptedAdUnitAtMs.get(adUnitId);
+  if (acceptedAt === undefined) {
+    return null;
+  }
+  const elapsed = nowMs - acceptedAt;
+  if (elapsed < 0) {
+    return null;
+  }
+  return elapsed;
+}
+
 export type RequestOutcomeTimeoutLog = {
   format: string;
   requestId: number | null;
   lastSeen: string;
   elapsedMs: number;
-  /** Android Ads/ReactNativeJS logcat tail when available. */
+  /** Ads/React native log tail when available (Android logcat or iOS simctl). */
   adsLogSnippet?: string;
 };
 
@@ -680,14 +715,21 @@ export async function collectRepresentativeRequestOutcomes(options: {
   const attempts: RequestOutcomeAttempt[] = [];
   const requestIds = new Set<number>();
   let previousRequestId = 0;
+  let consecutiveNoFill = 0;
   const startedAt = now();
   const adUnitId = googleTestAdUnitForFormat(format, platform);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const recentSameUnit = isRecentlyAcceptedAdUnit(adUnitId, now());
-    let delayMs = representativeRequestBackoffMs(attempt, { recentSameUnit });
+    const nowMs = now();
+    const sharedUnitHot = isRecentlyAcceptedAdUnit(adUnitId, nowMs);
+    const consecutiveNoFillBefore = consecutiveNoFill;
+    const longerBackoff =
+      attempt > 1 && (sharedUnitHot || consecutiveNoFillBefore >= 1);
+    let delayMs = representativeRequestBackoffMs(attempt, {
+      recentSameUnit: longerBackoff,
+    });
     if (attempt === 1) {
-      const cooldownMs = sharedAdUnitCooldownRemainingMs(adUnitId, now());
+      const cooldownMs = sharedAdUnitCooldownRemainingMs(adUnitId, nowMs);
       if (cooldownMs > 0) {
         delayMs = Math.max(delayMs, cooldownMs);
         emit(
@@ -732,9 +774,18 @@ export async function collectRepresentativeRequestOutcomes(options: {
       elapsedMs: Math.max(0, now() - startedAt),
       adUnitId,
       errorCode: errorCodeFromRequestAttempt(observed.classification, observed.detail),
+      longerBackoff,
+      consecutiveNoFillBefore,
+      sharedUnitHot,
+      acceptedAtAgeMs: acceptedAdUnitAgeMs(adUnitId, nowMs),
     };
     attempts.push(result);
     emit(formatRequestOutcomeAttempt(result));
+    if (observed.classification === 'no-fill') {
+      consecutiveNoFill += 1;
+    } else {
+      consecutiveNoFill = 0;
+    }
     if (evaluateAcceptance(result).status === 'accepted') {
       return attempts;
     }
@@ -750,6 +801,10 @@ export async function collectRepresentativeRequestOutcomes(options: {
       elapsedMs,
       adUnitId,
       errorCode,
+      longerBackoff,
+      consecutiveNoFillBefore,
+      sharedUnitHot,
+      acceptedAtAgeMs,
     }) => ({
       attempt,
       requestId,
@@ -759,6 +814,10 @@ export async function collectRepresentativeRequestOutcomes(options: {
       elapsedMs,
       adUnitId,
       errorCode,
+      longerBackoff,
+      consecutiveNoFillBefore,
+      sharedUnitHot,
+      acceptedAtAgeMs,
     }),
   );
   throw new Error(
@@ -838,7 +897,19 @@ export async function runRepresentativeRequestOutcomeContract(options: {
       } else if (operation === 'remount') {
         await runtime.backToGallery();
         await runtime.navigate();
-        // Remount recreates the screen with Request attempt: 1 (fresh mount).
+        // Remount recreates auto-load surfaces (banner / GAM remount / hookAutoLoad)
+        // with a fresh in-flight request. Explicit-Load surfaces (fullscreen App
+        // Open singleton, hook screens with a Load control) must tap Load after
+        // remount or the marker stays on attempt 0 while a stale singleton fires.
+        if (representativeRequestOperation(path, 1, retry, hookAutoLoad) === 'load') {
+          await runtime.load();
+        }
+        // Remount recreates representative markers with Request attempt: 1.
+        // Hook Status markers have no monotonic Request id — synthesize from the
+        // collection attempt so remount retries do not reuse requestId 1.
+        if (path === 'hook') {
+          return runtime.observe(attempt);
+        }
         return runtime.observe(1);
       } else {
         await executeRepresentativeRequestOperation(
