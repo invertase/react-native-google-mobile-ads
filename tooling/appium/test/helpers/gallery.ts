@@ -2438,6 +2438,9 @@ async function tapAndroidFullscreenCloseWithRetries(): Promise<void> {
       timeoutMsg: 'Fullscreen AdActivity did not dismiss within 90s',
     },
   );
+  // keyBack / close can land on the launcher with AdActivity gone — bring the
+  // example app forward before any lifecycle status=closed poll.
+  await bringExampleAppForwardOnceIfNeeded('interstitial.dismiss.afterSuccess');
 }
 
 async function dismissAndroidUtilitySurface(formatId: string): Promise<void> {
@@ -3904,6 +3907,10 @@ async function runAndroidHookShowCloseLifecycle(formatId: string): Promise<void>
     await dismissAndroidAppOpenFeedIfPresent();
   }
   const finishHookClosedWait = async (): Promise<void> => {
+    // After dismiss, launcher focus hides the lifecycle marker even when RNJS
+    // already logged closed — activate before the long closed poll.
+    await bringExampleAppForwardOnceIfNeeded('hookClose.beforeWaitClosed');
+    let broughtForwardForMissingLifecycle = false;
     await driver.waitUntil(
       async () => {
         await dismissAndroidImmersiveModeEducationIfPresent();
@@ -3925,6 +3932,10 @@ async function runAndroidHookShowCloseLifecycle(formatId: string): Promise<void>
         }
         const el = await findByTestId(AppiumTestIds.action.lifecycle(formatId));
         if (!(await el.isExisting().catch(() => false))) {
+          if (!broughtForwardForMissingLifecycle) {
+            broughtForwardForMissingLifecycle = true;
+            await bringExampleAppForwardOnceIfNeeded('hookClose.lifecycleMissing');
+          }
           return false;
         }
         return (await elementText(el)).includes(HOOK_LIFECYCLE_CLOSED);

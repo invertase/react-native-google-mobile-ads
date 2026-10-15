@@ -16,8 +16,13 @@ import {
 } from './iosDeviceHub.ts';
 import {
   emitIosSessionCreateDiagnostics,
+  formatIosSessionDiagnosticLine,
+  hangRecoverArtifactSnapshotDir,
   parseXcodebuildExitCodeFromLine,
   resolveLastXcodebuildExit,
+  shouldDeferHangRecoverForLiveHostBuild,
+  snapshotWdaDerivedDataForHangRecover,
+  type IosSessionCreateDiagnosticSnapshot,
   type SessionExecCapture,
 } from './iosSessionDiagnostics.ts';
 
@@ -527,7 +532,16 @@ export type SessionCreateHangProbeEvidence = {
 export type SessionCreateHangDecision =
   | { action: 'continue' }
   | { action: 'recover'; reason: string }
-  | { action: 'skip-recover'; reason: string }
+  | {
+      action: 'skip-recover';
+      reason: string;
+      /**
+       * When true (default), consume the single recover opportunity.
+       * Live host-build deferrals set false so recover can run after PIDs clear
+       * or lastXcodebuildExit becomes known.
+       */
+      consumeRecoveryOpportunity?: boolean;
+    }
   | { action: 'abort'; reason: string };
 
 /** States where WDA terminate cannot help — Appium's boot monitor owns the guest. */
@@ -554,6 +568,13 @@ export function decideSessionCreateHangAction(input: {
    * that have not yet threaded the flag; false disarms recover/abort.
    */
   postSessionInFlight?: boolean;
+  /**
+   * Hang-path snapshot PID / exit fields. When host xcodebuild or WDA PIDs are
+   * live and lastXcodebuildExit is none/unknown, defer recover (do not kill).
+   */
+  hostXcodebuildPids?: string;
+  hostWdaPids?: string;
+  lastXcodebuildExitLabel?: string;
 }): SessionCreateHangDecision {
   if (input.postSessionInFlight === false) {
     return { action: 'continue' };
@@ -596,7 +617,26 @@ export function decideSessionCreateHangAction(input: {
         reason:
           `recoverSkipped: simulator state=${input.simState} — skip WDA terminate; ` +
           `Appium boot monitor owns Shutdown/Booting (check appium:isHeadless)`,
+        consumeRecoveryOpportunity: true,
       };
+    }
+    if (
+      input.hostXcodebuildPids != null &&
+      input.hostWdaPids != null &&
+      input.lastXcodebuildExitLabel != null
+    ) {
+      const defer = shouldDeferHangRecoverForLiveHostBuild({
+        hostXcodebuildPids: input.hostXcodebuildPids,
+        hostWdaPids: input.hostWdaPids,
+        lastXcodebuildExit: input.lastXcodebuildExitLabel,
+      });
+      if (defer.defer && defer.reason) {
+        return {
+          action: 'skip-recover',
+          reason: defer.reason,
+          consumeRecoveryOpportunity: false,
+        };
+      }
     }
     return {
       action: 'recover',
@@ -702,9 +742,13 @@ export function startIosSessionCreateHangWatchdog(
   let recoveredOnce = false;
   let lastSimState: string | undefined;
   let lastBootstatusTimedOut: boolean | undefined;
+  let lastSessionSnapshot: IosSessionCreateDiagnosticSnapshot | undefined;
 
-  const emitSessionSnapshot = (sessionPhase: string): void => {
-    emitIosSessionCreateDiagnostics(
+  const emitSessionSnapshot = (
+    sessionPhase: string,
+    reason?: string,
+  ): IosSessionCreateDiagnosticSnapshot => {
+    lastSessionSnapshot = emitIosSessionCreateDiagnostics(
       udid,
       {
         phase: sessionPhase,
@@ -717,11 +761,13 @@ export function startIosSessionCreateHangWatchdog(
         }),
         derivedDataPath: SESSION_WDA_DERIVED_DATA_PATH,
         wdaRunnerAppPath: SESSION_WDA_RUNNER_APP_PATH,
+        reason,
         execCapture: options.execCapture as SessionExecCapture | undefined,
         now,
       },
       write,
     );
+    return lastSessionSnapshot;
   };
 
   write(
@@ -804,6 +850,11 @@ export function startIosSessionCreateHangWatchdog(
       return;
     }
 
+    // Fresh host PID / exit snapshot for the live-build recover gate.
+    if (lastSessionSnapshot == null) {
+      emitSessionSnapshot(`${options.phase}:hang-decide`);
+    }
+
     const decision = decideSessionCreateHangAction({
       hangTick: ticks,
       consecutiveXcrunEtimedout,
@@ -812,11 +863,17 @@ export function startIosSessionCreateHangWatchdog(
       recoverAfterTicks: options.recoverAfterTicks,
       abortAfterTicks: options.abortAfterTicks,
       postSessionInFlight,
+      hostXcodebuildPids: lastSessionSnapshot?.hostXcodebuildPids,
+      hostWdaPids: lastSessionSnapshot?.hostWdaPids,
+      lastXcodebuildExitLabel: lastSessionSnapshot?.lastXcodebuildExit,
     });
 
     if (decision.action === 'skip-recover') {
-      // Count as the one recovery opportunity so we do not re-log every tick.
-      recoveredOnce = true;
+      // Shutdown/Booting consumes the recover slot; live-build defer does not
+      // so recover can run after xcodebuild exits or host PIDs clear.
+      if (decision.consumeRecoveryOpportunity !== false) {
+        recoveredOnce = true;
+      }
       write(
         formatIosBootDiagnosticLine(
           {
@@ -829,7 +886,7 @@ export function startIosSessionCreateHangWatchdog(
           now,
         ),
       );
-      emitSessionSnapshot(`${options.phase}:hang-recoverSkipped`);
+      emitSessionSnapshot(`${options.phase}:hang-recoverSkipped`, decision.reason);
       return;
     }
 
@@ -852,6 +909,26 @@ export function startIosSessionCreateHangWatchdog(
       // Capture WDA/xcodebuild state *before* terminate so exit-65 cause paths
       // survive the recover kill (cannot hurt; clarifies next failure).
       emitSessionSnapshot(`${options.phase}:hang-recover`);
+      const artifactDest = hangRecoverArtifactSnapshotDir(SESSION_WDA_DERIVED_DATA_PATH);
+      const artifactSnap = snapshotWdaDerivedDataForHangRecover(
+        SESSION_WDA_DERIVED_DATA_PATH,
+        artifactDest,
+      );
+      write(
+        formatIosSessionDiagnosticLine(
+          {
+            phase: `${options.phase}:hang-recover-artifacts`,
+            udid,
+            dest: artifactDest,
+            copied: artifactSnap.copiedPaths.length,
+            errors: artifactSnap.errors.length,
+            paths:
+              artifactSnap.copiedPaths.join(',') ||
+              (artifactSnap.errors[0] ?? '(none)'),
+          },
+          now,
+        ),
+      );
       const recover =
         options.onRecover ??
         ((target: string) =>

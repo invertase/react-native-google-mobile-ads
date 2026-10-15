@@ -34,6 +34,17 @@ const PLAY_STORE_FOCUSED = `WINDOW MANAGER DISPLAY CONTENTS (dumpsys window disp
   mFocusedApp=ActivityRecord{7a6b5c u0 com.android.vending/com.google.android.finsky.activities.MainActivity t37}
 `;
 
+/** KEYCODE_BACK after interstitial dismiss often lands here with AdActivity gone. */
+const NEXUS_LAUNCHER_FOCUSED = `WINDOW MANAGER DISPLAY CONTENTS (dumpsys window displays)
+  Display: mDisplayId=0 rootTasks=2
+        Application tokens in top down Z order:
+          * Task{8a660b6 #2 type=home I=com.google.android.apps.nexuslauncher/.NexusLauncherActivity U=0 visible=true}
+            * ActivityRecord{18103727 u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t2}
+          * Task{a1b2c3 #42 type=standard A=10123:com.microsoft.reacttestapp U=0 visible=false}
+  mCurrentFocus=Window{f0a05 u0 com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity}
+  mFocusedApp=ActivityRecord{18103727 u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t2}
+`;
+
 const CHROME_BACKGROUND_APP_FOCUSED = `  * Task{778899 #40 type=standard A=10099:com.android.chrome U=0 visible=false}
   mCurrentFocus=Window{112233 u0 com.microsoft.reacttestapp/com.microsoft.reacttestapp.MainActivity}
   mFocusedApp=ActivityRecord{d4e5f6 u0 com.microsoft.reacttestapp/.MainActivity t42}
@@ -78,6 +89,13 @@ describe('android foreign-app focus', () => {
     assert.deepEqual(androidFocusedForeignApps(PLAY_STORE_FOCUSED), [
       'com.android.vending',
       'com.google.android.finsky',
+    ]);
+  });
+
+  test('focused NexusLauncher is foreign (post-keyBack interstitial dismiss)', () => {
+    assert.equal(focusIncludesAndroidForeignApp(NEXUS_LAUNCHER_FOCUSED), true);
+    assert.deepEqual(androidFocusedForeignApps(NEXUS_LAUNCHER_FOCUSED), [
+      'com.google.android.apps.nexuslauncher',
     ]);
   });
 });
