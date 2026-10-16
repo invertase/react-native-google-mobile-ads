@@ -70,12 +70,12 @@ It does **not** replace a future SPM package for apps that consume React Native 
 
 This module does **not** require static frameworks for a normal bare install. Use them only when
 another dependency intentionally needs `use_frameworks! :linkage => :static` in your `Podfile`
-(for example some older `react-native-firebase` CocoaPods setups).
+(for a need unrelated to React Native Firebase).
 
 <Warning>
   Coexistence with React Native Firebase is covered on [Using with React Native
-  Firebase](/firebase). Prefer RNFB's modern **dynamic + SPM** path there — not static frameworks
-  alone.
+  Firebase](/firebase). Prefer RNFB's modern **dynamic Podfile + static ads pod** hybrid there — not
+  fully static frameworks for the whole Podfile alone.
 </Warning>
 
 On **bare**, when you do enable static frameworks, set `$RNGoogleMobileAdsAsStaticFramework = true`

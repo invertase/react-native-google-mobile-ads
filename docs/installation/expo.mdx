@@ -207,15 +207,18 @@ another dependency intentionally needs `use_frameworks! :linkage => :static`.
 
 <Warning>
   Coexistence with React Native Firebase is covered on [Using with React Native
-  Firebase](/firebase). Prefer RNFB's modern **dynamic + SPM** path there. Do **not** treat the
-  snippet below as the React Native Firebase recipe (static alone with RNFB's default SPM mode fails
-  at `pod install`).
+  Firebase](/firebase). Prefer RNFB's modern **dynamic Podfile + static ads pod** hybrid there — not
+  the full-static snippet below. Do **not** treat the snippet below as the React Native Firebase
+  recipe (static alone with RNFB's default SPM mode fails at `pod install`).
 </Warning>
 
-On Expo, enable static frameworks with `expo-build-properties` only — you do **not** set the bare
-Podfile global `$RNGoogleMobileAdsAsStaticFramework` (that flag is for [React Native
-CLI](/installation/react-native#optionally-configure-ios-static-frameworks); the podspec defaults
-to non-static unless overridden). [Follow the official `expo-build-properties`
+On Expo, enable **fully static** frameworks for the whole Podfile with `expo-build-properties`
+only when another dependency (unrelated to React Native Firebase) needs that mode. For RNFB SPM
+coexistence you still inject `$RNGoogleMobileAdsAsStaticFramework = true` into the generated
+Podfile (see [Using with React Native Firebase](/firebase)). If resource-bundle pods fail on
+`IPHONEOS_DEPLOYMENT_TARGET`, see
+[iOS CocoaPods deployment targets](/prerequisites#ios-cocoapods-deployment-targets).
+[Follow the official `expo-build-properties`
 instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge:
 
 ```json
