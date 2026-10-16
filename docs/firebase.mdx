@@ -14,22 +14,23 @@ This page is the coexistence guide for **Expo** and **bare React Native**. Follo
 for Ads. The sections below cover the native build choices that matter when both are present.
 
 <Info>
-  Verified with Expo SDK 57 / React Native 0.86 and `@react-native-firebase/app` 26.x: this module
-  autolinks cleanly, New Architecture is required, Expo plugin App IDs alone are enough for Ads, and
-  the Android `androidSdk: "nextgen"` option wires the Next Gen ads backend as documented. Prefer
-  **dynamic frameworks + RNFB SPM** on iOS. Do not treat “enable static frameworks” as the default
-  React Native Firebase recipe.
+  Compatible with bare React Native **0.88**, Expo SDK **58**, `@react-native-firebase/app`
+  **26.4.x** (SPM default), and `react-native-google-mobile-ads` **17.2.x** when the Podfile stays
+  **dynamic** for RNFB SPM while this module is forced **static**
+  (`$RNGoogleMobileAdsAsStaticFramework = true`), plus the CocoaPods static-transitive check bypass
+  for Google's Mobile Ads / UMP (and optional mediation adapter) static frameworks. Do **not** treat
+  “dynamic frameworks alone, no ads static flag” as the working recipe.
 </Info>
 
 ## What you need from each product
 
-| Concern                         | React Native Google Mobile Ads                                    | React Native Firebase                                                          |
-| ------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Product config                  | AdMob **App ID** (`GADApplicationIdentifier` / Android meta-data) | `GoogleService-Info.plist` / `google-services.json`                            |
-| Expo install                    | Config plugin + development build                                 | `@react-native-firebase/*` plugins + Google Services files                     |
-| Bare install                    | `app.json` App IDs + autolinking                                  | Autolinking + Firebase native setup per [rnfirebase.io](https://rnfirebase.io) |
-| iOS frameworks (modern default) | No special flag when RNFB uses **dynamic** + SPM                  | `useFrameworks: "dynamic"` (SPM default)                                       |
-| iOS frameworks (static path)    | `$RNGoogleMobileAdsAsStaticFramework = true` (bare)               | `disableSPM` + static (+ `forceStaticLinking` as needed)                       |
+| Concern                         | React Native Google Mobile Ads                                           | React Native Firebase                                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Product config                  | AdMob **App ID** (`GADApplicationIdentifier` / Android meta-data)        | `GoogleService-Info.plist` / `google-services.json`                                                                    |
+| Expo install                    | Config plugin + development build                                        | `@react-native-firebase/*` plugins + Google Services files                                                             |
+| Bare install                    | `app.json` App IDs + autolinking                                         | Autolinking + Firebase native setup per [rnfirebase.io](https://rnfirebase.io)                                         |
+| iOS frameworks (recommended)    | `$RNGoogleMobileAdsAsStaticFramework = true` under a **dynamic** Podfile | `use_frameworks! :linkage => :dynamic` + SPM (default)                                                                 |
+| iOS frameworks (legacy opt-out) | Same static-ads flag under a fully **static** Podfile                    | `disableSPM` + static (+ `forceStaticLinking` as needed) — see [deprecated](#deprecated-pre-spm-react-native-firebase) |
 
 **Both** AdMob App IDs and Firebase Google Services files are required. One does not replace the
 other. See [App IDs vs Firebase configuration](#app-ids-vs-firebase-configuration).
@@ -43,11 +44,78 @@ other. See [App IDs vs Firebase configuration](#app-ids-vs-firebase-configuratio
   is present and not `true`, even though React Native 0.82+ may ignore that flag. See
   [New Architecture (required)](/prerequisites#new-architecture-required).
 - Install and configure each library normally — there is no special combined npm package.
+- React Native Firebase **26.1+** on React Native ≥ 0.75 defaults to resolving the Firebase Apple
+  SDK via **Swift Package Manager**. That is the path this page optimizes for. If you have not
+  upgraded to SPM yet, see
+  [Deprecated: React Native Firebase before SPM](#deprecated-pre-spm-react-native-firebase).
 
-## Recommended path: dynamic frameworks + SPM (Expo and bare)
+## Why hybrid linkage is required
 
-Modern React Native Firebase resolves the Firebase Apple SDK with **Swift Package Manager** by
-default and documents **dynamic** frameworks. That path works with this module.
+React Native Firebase's SPM path needs a **dynamic** `use_frameworks!` Podfile
+(`useFrameworks: "dynamic"` on Expo). Google's Mobile Ads / UMP SDKs (and optional mediation
+adapter packages) still ship as **static** frameworks through CocoaPods.
+
+If `RNGoogleMobileAds` stays a _dynamic_ framework under that Podfile, the iOS link step fails with
+many undefined `GAD*` / `UMP*` (and sometimes adapter) Objective-C classes. The fix is **not** to
+disable RNFB SPM. Keep the Podfile dynamic for Firebase, and force **this** module to build as a
+static framework so it can absorb Google's static binaries.
+
+CocoaPods then refuses those static frameworks as transitive dependencies of a dynamic
+`use_frameworks!` graph unless you disable the static-transitive dependency check (a common React
+Native workaround). Both pieces — `$RNGoogleMobileAdsAsStaticFramework = true` and the
+`pre_install` `TargetValidator` override — appear together in the
+[canonical Podfile snippet below](#recommended-path-rnfb-spm--dynamic-podfile--static-ads-pod).
+
+Put those lines **before** the app `target` block (bare), or inject the ads-only extras into the
+generated Expo `ios/Podfile` after `prebuild` (see [Expo](#expo)). Re-run `pod install` / rebuild
+after changing them.
+
+<Warning>
+  Do **not** set `ios.useFrameworks: "static"` (or bare `use_frameworks! :linkage => :static`) while
+  React Native Firebase is still in its default SPM mode. `pod install` fails with:
+
+`[react-native-firebase] SPM + static linkage is not supported`
+
+That combination is unsupported. Use the hybrid recipe in this section, or the
+[deprecated before SPM / `disableSPM` path](#deprecated-pre-spm-react-native-firebase) only if you
+intentionally opt out of SPM.
+
+</Warning>
+
+## Recommended path: RNFB SPM + dynamic Podfile + static ads pod
+
+### Bare React Native
+
+1. Install React Native Firebase and follow its iOS SPM / dynamic frameworks guidance
+   ([iOS SPM Support](https://rnfirebase.io/ios-spm)).
+2. Install this module and set App IDs in `app.json` — see
+   [Install with React Native CLI](/installation/react-native).
+3. In the `Podfile`, **before** any `target` block, enable dynamic frameworks for RNFB **and** the
+   hybrid ads flags:
+
+```ruby
+# RNFB SPM expects dynamic frameworks (RN ≥ 0.75 + RNFB ≥ 26.1 defaults).
+use_frameworks! :linkage => :dynamic
+
+# Ads pod must be static so Google's static Mobile Ads / UMP frameworks link.
+$RNGoogleMobileAdsAsStaticFramework = true
+
+pre_install do |_installer|
+  Pod::Installer::Xcode::TargetValidator.send(
+    :define_method,
+    :verify_no_static_framework_transitive_dependencies,
+  ) {}
+end
+```
+
+4. Run `npx pod-install` and rebuild. Autolinking is sufficient for basic coexistence.
+5. On newer Xcode versions, if resource-bundle pods fail with an `IPHONEOS_DEPLOYMENT_TARGET`
+   below 15.1, clamp targets in `post_install` — see
+   [iOS CocoaPods deployment targets](/prerequisites#ios-cocoapods-deployment-targets).
+
+React Native **0.88**, RNFB **26.4** (SPM), and this module **17.2** coexist on that hybrid
+Podfile for Debug iOS simulator builds, including optional Google mediation adapter packages when
+their CocoaPods pins admit the core Mobile Ads SDK version (see [Mediation](/mediation)).
 
 ### Expo
 
@@ -55,7 +123,7 @@ default and documents **dynamic** frameworks. That path works with this module.
    [rnfirebase.io](https://rnfirebase.io) (plugins, `googleServicesFile`, rebuild).
 2. Install this module and set AdMob App IDs on the config plugin — see
    [Install with Expo](/installation/expo).
-3. Set `expo-build-properties` to **dynamic** frameworks (RNFB's documented default):
+3. Set `expo-build-properties` to **dynamic** frameworks (RNFB's documented SPM default):
 
 ```json
 // <project-root>/app.json
@@ -83,45 +151,149 @@ default and documents **dynamic** frameworks. That path works with this module.
 }
 ```
 
-4. Rebuild native projects (`npx expo prebuild` then `run:ios` / `run:android`, or a new EAS
-   development build). Autolinking wires both libraries; you do **not** need to hand-edit
-   `AppDelegate` or `MainApplication` for basic Ads + Firebase linking.
+4. After `npx expo prebuild --platform ios`, inject the **ads static flag and static-transitive
+   check bypass** into the generated `ios/Podfile` **before** the app `target` (commit them via a
+   small config plugin / `withDangerousMod`, or re-apply after every clean prebuild). Do **not**
+   repeat `use_frameworks!` here — `expo-build-properties` already set dynamic frameworks. The
+   owner snippet (including comments) is under
+   [Bare React Native](#bare-react-native); Expo needs only these extras:
+
+```ruby
+$RNGoogleMobileAdsAsStaticFramework = true
+
+pre_install do |_installer|
+  Pod::Installer::Xcode::TargetValidator.send(
+    :define_method,
+    :verify_no_static_framework_transitive_dependencies,
+  ) {}
+end
+```
+
+5. Run `pod install` in `ios/` (or let `expo run:ios` install pods) and rebuild a development
+   build. Autolinking wires both libraries; you do **not** need to hand-edit `AppDelegate` or
+   `MainApplication` for basic Ads + Firebase linking.
+6. If resource-bundle pods fail on `IPHONEOS_DEPLOYMENT_TARGET`, apply the same clamp as bare —
+   [iOS CocoaPods deployment targets](/prerequisites#ios-cocoapods-deployment-targets).
+
+`expo-build-properties` alone does **not** set `$RNGoogleMobileAdsAsStaticFramework`. Dynamic
+`useFrameworks` without the static-ads override is the combination that fails to link `GAD*` /
+`UMP*` symbols.
+
+## App IDs vs Firebase configuration
+
+Google Mobile Ads and Firebase use **different** configuration artifacts:
+
+| Platform | Ads (this module)                                                                  | Firebase (RNFB)            |
+| -------- | ---------------------------------------------------------------------------------- | -------------------------- |
+| iOS      | `GADApplicationIdentifier` in `Info.plist` (Expo plugin or bare `ios_app_id`)      | `GoogleService-Info.plist` |
+| Android  | `com.google.android.gms.ads.APPLICATION_ID` meta-data (plugin or `android_app_id`) | `google-services.json`     |
+
+- **Both are required.** Firebase Google Services files do not supply AdMob App IDs, and AdMob App
+  IDs do not replace Firebase configuration.
+- On Expo, App IDs on the config plugin alone are sufficient for Ads — you do not also need a
+  root-level `react-native-google-mobile-ads` JSON block. A legacy iOS config-script warning about a
+  missing root `ios_app_id` can appear during builds; it is safe to ignore when the Expo plugin
+  already injected the App ID.
+- See [Configuration](/configuration) for where to find AdMob App IDs.
+
+## Android notes (Firebase BOM and ads SDKs)
+
+On Android, React Native Firebase and this module both depend on Google Play services / Firebase
+Android artifacts, but they own different concerns:
+
+- **Firebase** versions are typically aligned through the Firebase Android BOM / Google Services
+  Gradle plugin as documented by [React Native Firebase](https://rnfirebase.io).
+- **Ads** are selected by this library: classic `play-services-ads` by default, or the Next Gen
+  `ads-mobile-sdk` when you set `androidSdk: "nextgen"` (Expo) / `android_sdk` /
+  `RNGMA_ANDROID_BACKEND` (bare). See [Config plugin reference](/config-plugin#android-sdk-backend).
+
+Coexistence Android builds succeed with the default classic backend and with `androidSdk:
+"nextgen"`. Practical guidance:
+
+- Let each library manage its own ads / Firebase dependencies. Do not hand-force conflicting
+  `play-services-ads` or Firebase BOM versions in the app `build.gradle` unless you are debugging a
+  specific resolution failure.
+- Keep `google-services.json` for Firebase **and** the Ads `APPLICATION_ID` meta-data from this
+  module's config.
+- After changing `androidSdk` / backend properties, do a clean Android rebuild so Gradle picks up
+  the new dependency graph.
+
+## Mediation pin notes
+
+Optional Google mediation adapter packages (scoped `@react-native-google-mobile-ads/<network>`
+npm packages or the corresponding CocoaPods / Maven artifacts) follow the same hybrid iOS linkage
+as core Mobile Ads / UMP. Adapter CocoaPods pins can still conflict with the core
+`Google-Mobile-Ads-SDK` version independently of SPM or frameworks mode — see
+[Mediation](/mediation) (including the Yandex iOS pin note) rather than treating pin fights as an
+SPM issue.
+
+## What not to hand-edit
+
+Prefer config plugins (Expo) and documented Podfile / `app.json` knobs (bare). Avoid:
+
+- Hand-writing `GADApplicationIdentifier` or Android `APPLICATION_ID` when the Expo config plugin
+  (or bare `app.json` App ID keys) already sets them — edit the source of truth, then rebuild.
+- Mixing RNFB **SPM** with **static** `use_frameworks!` / `useFrameworks: "static"`.
+- Omitting `$RNGoogleMobileAdsAsStaticFramework = true` on the RNFB SPM + dynamic Podfile path
+  (dynamic ads pod under dynamic frameworks fails to link Google's static Mobile Ads / UMP
+  binaries).
+- Treating the install-page “fully static `useFrameworks`” snippet as the React Native Firebase
+  default (see [Install with Expo](/installation/expo#optionally-configure-ios-static-frameworks)
+  and
+  [Install with React Native CLI](/installation/react-native#optionally-configure-ios-static-frameworks);
+  those sections defer here for RNFB).
+- Manually patching `AppDelegate` / `MainApplication` solely to “enable” Ads or Firebase linking
+  when autolinking and the config plugins already apply.
+- Deleting Firebase Google Services files because AdMob App IDs are present (or the reverse).
+- Jumping to manual `GoogleUtilities` Podfile pins before fixing SPM vs frameworks mode (see
+  deprecated section below).
+
+## Quick checklist
+
+1. Install RNFB and this module; configure **both** Google Services files and AdMob App IDs.
+2. Enable New Architecture; rebuild native projects after plugin / Podfile changes.
+3. Prefer **RNFB SPM + dynamic Podfile + `$RNGoogleMobileAdsAsStaticFramework = true`** + the
+   static-transitive check bypass.
+4. Never combine RNFB SPM with a fully static `use_frameworks!` / `useFrameworks: "static"`.
+5. On Android, leave Firebase BOM / Google Services and this module's ads backend to their
+   documented knobs; clean-rebuild after backend changes.
+6. Initialize Ads in JS as usual ([Initialization](/initialization)); configure Firebase per RNFB
+   docs. The two JS surfaces are independent.
+
+---
+
+<a id="deprecated-pre-spm-react-native-firebase"></a>
+
+## Deprecated: React Native Firebase before SPM
 
 <Warning>
-  Do **not** set `ios.useFrameworks: "static"` alone while React Native Firebase is still in its
-  default SPM mode. `pod install` fails with:
-
-`[react-native-firebase] SPM + static linkage is not supported`
-
-That combination is unsupported. Use dynamic + SPM (this section) or the
-[static + disable SPM](#alternate-path-static-frameworks--disable-spm) path below.
-
+  The guidance below is for apps still on React Native Firebase **before** the SPM-default line (or
+  that intentionally set `$RNFirebaseDisableSPM` / `disableSPM: true`). If you are on RNFB **26.1+**
+  with SPM enabled, **do not follow this section** — use [Recommended path: RNFB SPM + dynamic
+  Podfile + static ads pod](#recommended-path-rnfb-spm--dynamic-podfile--static-ads-pod) instead.
 </Warning>
 
-### Bare React Native
+Older coexistence docs assumed Firebase Apple SDKs were resolved entirely through **CocoaPods**,
+often with **static** `use_frameworks!`, and focused on aligning shared Google pods (especially
+`GoogleUtilities`) by hand to avoid duplicate-symbol linker errors when Ads and Firebase both
+pulled the same utilities.
 
-1. Install React Native Firebase and follow its iOS SPM / dynamic frameworks guidance
-   ([iOS SPM Support](https://rnfirebase.io/ios-spm)).
-2. Install this module and set App IDs in `app.json` — see
-   [Install with React Native CLI](/installation/react-native).
-3. Keep RNFB on SPM + dynamic frameworks. You do **not** need
-   `$RNGoogleMobileAdsAsStaticFramework` on this path.
-4. Run `npx pod-install` and rebuild. Autolinking is sufficient for basic coexistence.
+That world is obsolete for current RNFB. Keep the material below only if you have **not** upgraded
+to SPM yet and cannot move yet.
 
-## Alternate path: static frameworks + disable SPM
+### Legacy path: static frameworks + disable SPM
 
-Use this only when you intentionally need static frameworks (for example to share one
-`FirebaseCore` with another CocoaPods-only dependency). React Native Firebase must **opt out of
-SPM** first.
+Use this only when you intentionally need static frameworks for the whole Podfile (for example to
+share one `FirebaseCore` with another CocoaPods-only dependency) **and** you have disabled RNFB
+SPM.
 
-### Expo
+#### Expo (legacy)
 
 Pass `disableSPM` on `@react-native-firebase/app`, set `useFrameworks: "static"`, and list every
 RNFB native module you use in `forceStaticLinking`. Expo documents `forceStaticLinking` as the list of
 pods to link statically when `use_frameworks!` is on, because some pods (especially alongside React
 Native prebuilt binaries) fail as dynamic frameworks; see
-[`expo-build-properties`](https://docs.expo.dev/versions/latest/sdk/build-properties/). In this
-project's Expo verification, the static path needed the RNFB pods listed there:
+[`expo-build-properties`](https://docs.expo.dev/versions/latest/sdk/build-properties/).
 
 ```json
 // <project-root>/app.json
@@ -160,7 +332,7 @@ project's Expo verification, the static path needed the RNFB pods listed there:
 Extend `forceStaticLinking` with every other RNFB module you install (for example `RNFBAuth`,
 `RNFBCrashlytics`). Rebuild after changing plugins.
 
-### Bare React Native
+#### Bare React Native (legacy)
 
 1. In the `Podfile`, **before** any target block, disable RNFB SPM and enable static frameworks for
    this module:
@@ -175,93 +347,20 @@ $RNGoogleMobileAdsAsStaticFramework = true
    [Install with React Native CLI](/installation/react-native#optionally-configure-ios-static-frameworks)).
 3. Run `npx pod-install` and rebuild.
 
-The install pages' “optionally configure iOS static frameworks” snippets are for apps that
-**intentionally** need static linkage. For React Native Firebase coexistence, prefer
-[dynamic + SPM](#recommended-path-dynamic-frameworks--spm-expo-and-bare) unless you have a
-specific reason to use this alternate path.
+### Legacy: GoogleUtilities and duplicate symbols
 
-## GoogleUtilities and duplicate symbols
+Older coexistence guides (before RNFB's SPM default) focused on aligning `GoogleUtilities` (and
+related Firebase pods) by hand to avoid duplicate-symbol linker errors when Ads and Firebase both
+pulled Google's shared utilities through CocoaPods.
 
-Older coexistence guides focused on aligning `GoogleUtilities` (and related Firebase pods) by
-hand to avoid duplicate-symbol linker errors when Ads and Firebase both pulled Google's shared
-utilities.
+On the **current** recommended hybrid path (RNFB SPM + dynamic Podfile + static ads pod), iOS
+builds succeed without manual `GoogleUtilities` pin surgery. RNFB's SPM + static guard exists
+specifically to block the unsupported “SPM + fully static Podfile” combination.
 
-On the verified modern paths — **dynamic + SPM**, or **static + `disableSPM`** — iOS builds
-succeed without manual `GoogleUtilities` pin surgery. RNFB's SPM + static guard exists specifically
-to block the unsupported combination that used to lead to those failures.
+If you are still on RNFB without SPM and see duplicate-symbol linker errors:
 
-If you still see duplicate-symbol linker errors:
-
-1. Confirm you are not mixing SPM with static frameworks.
-2. Prefer the [recommended dynamic + SPM](#recommended-path-dynamic-frameworks--spm-expo-and-bare)
-   path, or a clean static + `disableSPM` setup — not a hybrid.
-3. Avoid hand-editing Podfile lock pins for `GoogleUtilities` as a first step; fix the frameworks /
-   SPM mode first, then clean pods (`rm -rf ios/Pods ios/Podfile.lock` and reinstall) before
-   chasing version pins.
-
-## App IDs vs Firebase configuration
-
-Google Mobile Ads and Firebase use **different** configuration artifacts:
-
-| Platform | Ads (this module)                                                                  | Firebase (RNFB)            |
-| -------- | ---------------------------------------------------------------------------------- | -------------------------- |
-| iOS      | `GADApplicationIdentifier` in `Info.plist` (Expo plugin or bare `ios_app_id`)      | `GoogleService-Info.plist` |
-| Android  | `com.google.android.gms.ads.APPLICATION_ID` meta-data (plugin or `android_app_id`) | `google-services.json`     |
-
-- **Both are required.** Firebase Google Services files do not supply AdMob App IDs, and AdMob App
-  IDs do not replace Firebase configuration.
-- On Expo, App IDs on the config plugin alone are sufficient for Ads — you do not also need a
-  root-level `react-native-google-mobile-ads` JSON block. A legacy iOS config-script warning about a
-  missing root `ios_app_id` can appear during builds; it is safe to ignore when the Expo plugin
-  already injected the App ID.
-- See [Configuration](/configuration) for where to find AdMob App IDs.
-
-## Android notes (Firebase BOM and ads SDKs)
-
-On Android, React Native Firebase and this module both depend on Google Play services / Firebase
-Android artifacts, but they own different concerns:
-
-- **Firebase** versions are typically aligned through the Firebase Android BOM / Google Services
-  Gradle plugin as documented by [React Native Firebase](https://rnfirebase.io).
-- **Ads** are selected by this library: classic `play-services-ads` by default, or the Next Gen
-  `ads-mobile-sdk` when you set `androidSdk: "nextgen"` (Expo) / `android_sdk` / `RNGMA_ANDROID_BACKEND`
-  (bare). See [Config plugin reference](/config-plugin#android-sdk-backend).
-
-Coexistence Android builds succeed with the default classic backend and with `androidSdk:
-"nextgen"`. Practical guidance:
-
-- Let each library manage its own ads / Firebase dependencies. Do not hand-force conflicting
-  `play-services-ads` or Firebase BOM versions in the app `build.gradle` unless you are debugging a
-  specific resolution failure.
-- Keep `google-services.json` for Firebase **and** the Ads `APPLICATION_ID` meta-data from this
-  module's config.
-- After changing `androidSdk` / backend properties, do a clean Android rebuild so Gradle picks up
-  the new dependency graph.
-
-## What not to hand-edit
-
-Prefer config plugins (Expo) and documented Podfile / `app.json` knobs (bare). Avoid:
-
-- Hand-writing `GADApplicationIdentifier` or Android `APPLICATION_ID` when the Expo config plugin
-  (or bare `app.json` App ID keys) already sets them — edit the source of truth, then rebuild.
-- Mixing RNFB **SPM** with **static** `use_frameworks!` / `useFrameworks: "static"`.
-- Treating the install-page static-frameworks snippet as the React Native Firebase default (see
-  [Install with Expo](/installation/expo#optionally-configure-ios-static-frameworks) and
-  [Install with React Native CLI](/installation/react-native#optionally-configure-ios-static-frameworks);
-  those sections defer here for RNFB).
-- Manually patching `AppDelegate` / `MainApplication` solely to “enable” Ads or Firebase linking
-  when autolinking and the config plugins already apply.
-- Deleting Firebase Google Services files because AdMob App IDs are present (or the reverse).
-- Jumping to manual `GoogleUtilities` Podfile pins before fixing SPM vs static mode.
-
-## Quick checklist
-
-1. Install RNFB and this module; configure **both** Google Services files and AdMob App IDs.
-2. Enable New Architecture; rebuild native projects after plugin / Podfile changes.
-3. Prefer **dynamic frameworks + RNFB SPM** on iOS.
-4. Only if you need static: **`disableSPM` + static** (and `$RNGoogleMobileAdsAsStaticFramework` on
-   bare), never static alone with SPM enabled.
-5. On Android, leave Firebase BOM / Google Services and this module's ads backend to their
-   documented knobs; clean-rebuild after backend changes.
-6. Initialize Ads in JS as usual ([Initialization](/initialization)); configure Firebase per RNFB
-   docs. The two JS surfaces are independent.
+1. Confirm you are not accidentally mixing SPM with static frameworks.
+2. Prefer upgrading to RNFB's SPM default and the [recommended hybrid path](#recommended-path-rnfb-spm--dynamic-podfile--static-ads-pod),
+   or a clean static + `disableSPM` setup — not a half-migrated hybrid of the two eras.
+3. Only then consider cleaning pods (`rm -rf ios/Pods ios/Podfile.lock` and reinstall) before
+   chasing `GoogleUtilities` version pins by hand.
