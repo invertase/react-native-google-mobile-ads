@@ -166,16 +166,28 @@ class ReactNativeGoogleMobileAdsNativeAdView(
   }
 
   private fun reloadAd() {
-    val sdkNativeAdView = nativeAdView ?: return
+    nativeAdView ?: return
     reloadJob?.cancel()
     reloadJob =
       CoroutineScope(Dispatchers.Main).launch {
         delay(100)
-        nativeAd?.let { sdkNativeAdView.registerNativeAd(it, mediaView) }
-        reapplySdkOwnedClicks(sdkNativeAdView)
+        // Re-read after delay: destroy / detach may have raced (#906).
+        if (destroyed || parent == null) {
+          return@launch
+        }
+        val liveView = nativeAdView ?: return@launch
+        val ad = nativeAd ?: return@launch
+        val bound =
+          ReactNativeGoogleMobileAdsNativeAdBind.runBindCatching {
+            liveView.registerNativeAd(ad, mediaView)
+          }
+        if (!bound) {
+          return@launch
+        }
+        reapplySdkOwnedClicks(liveView)
         // registerNativeAd can land after the MediaView's first 0×0 layout; refresh so video paints (#775).
         (mediaView?.parent as? ReactNativeGoogleMobileAdsMediaView)?.refreshPresentation()
-        sdkNativeAdView.rootView.requestLayout()
+        liveView.rootView.requestLayout()
       }
   }
 
