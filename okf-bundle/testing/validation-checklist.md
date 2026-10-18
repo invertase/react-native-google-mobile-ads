@@ -18,7 +18,8 @@ Coverage: [coverage design](coverage-design.md). Tiers: [change authoring](chang
 | `baseline-capture` | Only the [platform coverage](running-e2e.md#platform-coverage-gate-blocking) rows for this diff; no `.only` |
 | `implementation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) and [lint-by-tree](#lint-and-formatting) for this diff; `.only` local OK |
 | `documentation` | Promote durable OKF / user docs / `AGENTS.md` / `CONTRIBUTING.md` after `implementation` when those would go stale, before `independent-review` ([change authoring § loop](change-authoring-workflow.md#loop)). [Lint](#lint-and-formatting) if the [markdown lint scope](#markdown-lint-scope) is touched. Always run the [CI docs gate](#ci-docs-gate) before closing this pass when the change set will be committed or PR'd. **Do not** run the independent OKF scan here. |
-| `independent-review` | Rows that apply to **this** diff ([platform coverage](running-e2e.md#platform-coverage-gate-blocking), check-only [lint-by-tree](#lint-and-formatting)), frozen, no `.only`. Always include the [CI docs gate](#ci-docs-gate). [OKF scan](#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md`. |
+| `independent-review` | Rows that apply to **this** diff ([platform coverage](running-e2e.md#platform-coverage-gate-blocking), check-only [lint-by-tree](#lint-and-formatting)), frozen, no `.only`. Always include the [CI docs gate](#ci-docs-gate) and [commit-subject durability](#commit-subject-durability). [OKF scan](#okf-bundle-review) when the frozen tree includes `okf-bundle/`, `AGENTS.md` (root or `packages/core/`), or `CONTRIBUTING.md`. |
+| `commit` | Always include [commit-subject durability](#commit-subject-durability) and the [CI docs gate](#ci-docs-gate) before `commit_gate` close ([change authoring § commit](change-authoring-workflow.md#commit)). |
 | `pre-merge-validation` | [Platform coverage](running-e2e.md#platform-coverage-gate-blocking) for this diff; [lint-by-tree](#lint-and-formatting) / evidence rows that already apply; [CI docs gate](#ci-docs-gate); [truthful e2e checks](../ci-workflows/index.md#e2e-continue-on-error) |
 
 <a id="lint-and-formatting"></a>
@@ -66,6 +67,12 @@ rnfirebase origins with a bounded `curl`, then retries `yarn lint:docs-links` vi
 `@docs.page/cli` hardcodes a 10s external fetch timeout with no CLI / `docs.json` knob —
 do not map Invertase-controlled hosts (`use.docs.page`, `rnfirebase.io`, `docs.page`) to
 `severityOverride` warn. Local agents still run the command once (no local retry wrapper).
+
+<a id="commit-subject-durability"></a>
+
+### Commit-subject durability (always-on)
+
+**Blocking for any commit- or PR-bound change set.** Independent of `documentation?` and of whether `okf-bundle/` is in the frozen tree. Inspect the intended git subject and PR title against [documentation-policy § subject durability](../documentation-policy.md#subject-durability) (and [§ commits as documentation](../documentation-policy.md#commits-as-documentation)). No yarn command — policy check only. Fail closed before staging / character-match and before closing `commit_gate`. Option ids in a proposed or staged subject are a **serious** review finding.
 
 <a id="docs-page-link-check"></a>
 
@@ -120,7 +127,7 @@ This scan **is** `independent-review` of the frozen tree when `okf-bundle/`, `AG
 
 1. Confirm durable learnings landed in the owning `okf-bundle/` doc. If the frozen tree is `AGENTS.md`-only or `CONTRIBUTING.md`-only, still confirm those files against the [OKF update contract](../documentation-policy.md#okf-update-contract) rows that apply to them, and still complete step 3.
 2. Check `okf-bundle/testing/` for conflicts with verified behavior; report drift (do not edit on this frozen pass).
-3. Independent scan of the **entire** `okf-bundle/` tree **and** `AGENTS.md` / `CONTRIBUTING.md` (an `AGENTS.md`-only or `CONTRIBUTING.md`-only frozen tree still scans all three). Include a short summary of what changed and which files were touched. Confirm every contract row: Canonical location, DRY, [Efficiency](../documentation-policy.md#efficiency), link hygiene, Durability. This frozen scan **reports only** ([§ frozen tree](change-authoring-workflow.md#frozen-tree)). Apply `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings in a new `documentation` pass, then another frozen scan — product/lint findings are [§ frozen tree](change-authoring-workflow.md#frozen-tree) (`implementation`), not this dump. Close `commit` only with a clean scan: [OKF update contract](../documentation-policy.md#okf-update-contract) and [§ commit](change-authoring-workflow.md#commit). Gate close is not a later escape hatch.
+3. Independent scan of the **entire** `okf-bundle/` tree **and** `AGENTS.md` / `CONTRIBUTING.md` (an `AGENTS.md`-only or `CONTRIBUTING.md`-only frozen tree still scans all three). Include a short summary of what changed and which files were touched. Confirm every contract row: Canonical location, DRY, [Efficiency](../documentation-policy.md#efficiency), link hygiene, Durability. When confirming Durability, also hop to [§ subject durability](../documentation-policy.md#subject-durability) for any known staged subject / intended PR title for the change set — this does **not** replace the always-on [commit-subject durability](#commit-subject-durability) check. This frozen scan **reports only** ([§ frozen tree](change-authoring-workflow.md#frozen-tree)). Apply `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings in a new `documentation` pass, then another frozen scan — product/lint findings are [§ frozen tree](change-authoring-workflow.md#frozen-tree) (`implementation`), not this dump. Close `commit` only with a clean scan: [OKF update contract](../documentation-policy.md#okf-update-contract) and [§ commit](change-authoring-workflow.md#commit). Gate close is not a later escape hatch.
 
 Goal: each iteration improves OKF and removes conflicting guidance. The contract owns check meanings; this scan hops there — do not skip the hop by treating this list as a thinner substitute.
 
@@ -142,6 +149,7 @@ Goal: each iteration improves OKF and removes conflicting guidance. The contract
 | whitespace | [§ lint](#lint-and-formatting) scoped `git diff --check` | 0 | all handwritten files; generated trees excluded |
 | docs markdown | `yarn lint:markdown:check` | 0 | if the [markdown lint scope](#markdown-lint-scope) is touched (local-only) |
 | CI docs gate | `yarn lint:spellcheck` then `yarn lint:docs-links` | 0, 0 | **always** for PR-bound change sets — [§ CI docs gate](#ci-docs-gate); record docs-links error and warning counts |
+| subject durability | [§ commit-subject durability](#commit-subject-durability) → [policy](../documentation-policy.md#subject-durability) | pass | **always** for commit-/PR-bound change sets (no yarn command) |
 | API reference | `yarn reference:api`, `yarn reference:api:gh-pages` | 0, warning-clean | when [§ API reference](#api-reference) applies |
 | plugin | `yarn tests:jest packages/core/plugin/__tests__/` | 0 | if `packages/core/plugin/` or `packages/core/app.plugin.js` — [§ Expo plugin](#expo-plugin) |
 | coverage | [evidence package](coverage-design.md#coverage-evidence-package) | — | required when `packages/core/src/` **or** `packages/core/android/` **or** `packages/core/ios/` **or** `packages/core/plugin/` TS; `packages/core/app.plugin.js`-only is `n/a` unless plugin TS changed |
