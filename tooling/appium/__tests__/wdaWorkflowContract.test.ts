@@ -12,9 +12,24 @@ import {
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const require = createRequire(import.meta.url);
-const { appPath, parseUdid } = require('../../../scripts/run-ios-app.js') as {
+const {
+  appPath,
+  parseUdid,
+  INSTALL_TIMEOUT_MS,
+  LAUNCH_TIMEOUT_MS,
+  DIAGNOSTICS_TIMEOUT_MS,
+  runTimed,
+} = require('../../../scripts/run-ios-app.js') as {
   appPath: string;
   parseUdid: (args: string[]) => string;
+  INSTALL_TIMEOUT_MS: number;
+  LAUNCH_TIMEOUT_MS: number;
+  DIAGNOSTICS_TIMEOUT_MS: number;
+  runTimed: (
+    bin: string,
+    args: string[],
+    options?: { timeoutMs?: number; stdio?: 'inherit' | 'pipe' | ['ignore', 'pipe', 'pipe'] },
+  ) => { status: number | null };
 };
 
 test('iOS CI and publish use an explicit frozen root Ruby bundle before Yarn', () => {
@@ -71,6 +86,50 @@ test('canonical iOS installer requires the selected simulator and exact app', ()
     () => parseUdid(['--udid', 'selected-simulator', '--unexpected']),
     /tests:ios:run --udid/,
   );
+});
+
+test('iOS run-ios-app time-boxes install/launch and emits durable phase markers', () => {
+  assert.equal(INSTALL_TIMEOUT_MS, 90_000);
+  assert.equal(LAUNCH_TIMEOUT_MS, 90_000);
+  assert.equal(DIAGNOSTICS_TIMEOUT_MS, 15_000);
+
+  const source = readFileSync(resolve(repositoryRoot, 'scripts/run-ios-app.js'), 'utf8');
+  assert.match(source, /\[ios-run\] phase=\$\{phase\}/);
+  assert.match(source, /phase=bootstatus|withPhase\('bootstatus'/);
+  assert.match(source, /withPhase\('install'/);
+  assert.match(source, /withPhase\('launch'/);
+  assert.match(source, /get_app_container/);
+  assert.match(source, /listapps/);
+  assert.match(source, /killSignal:\s*'SIGKILL'/);
+  assert.doesNotMatch(source, /\bgtimeout\b|\btimeout\s+90\b/);
+
+  // Node spawnSync timeout path — hang fails with ETIMEDOUT instead of GHA wall.
+  assert.throws(
+    () =>
+      runTimed(process.execPath, ['-e', 'setTimeout(() => {}, 60_000)'], {
+        timeoutMs: 200,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }),
+    (error: unknown) =>
+      error instanceof Error &&
+      (error as Error & { timedOut?: boolean; code?: string }).timedOut === true &&
+      /Timed out after 200ms/.test(error.message),
+  );
+
+  const workflow = readFileSync(
+    resolve(repositoryRoot, '.github/workflows/tests_e2e_ios.yml'),
+    'utf8',
+  );
+  const installHeading = workflow.indexOf('- name: Install example on simulator');
+  assert.ok(installHeading >= 0, 'workflow must keep Install example on simulator');
+  const nextHeading = workflow.indexOf('\n      - name:', installHeading + 1);
+  const installStep = workflow.slice(
+    installHeading,
+    nextHeading >= 0 ? nextHeading : undefined,
+  );
+  assert.match(installStep, /timeout-minutes:\s*25/);
+  assert.match(installStep, /\[ios-run\] workflow step start/);
+  assert.match(installStep, /\[ios-run\] workflow step end/);
 });
 
 test('CI prebuilds WDA before the WDIO command enables the prebuilt capability', () => {
