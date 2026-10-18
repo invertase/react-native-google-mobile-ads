@@ -158,6 +158,13 @@ export function iosBuildCommand(
   env: NodeJS.ProcessEnv = process.env,
 ): NamedCommand {
   const runtime = runtimeResources('ios', env);
+  // Pass CC/CPLUSPLUS as xcodebuild settings argv so PATH ccache wrappers apply
+  // (Xcode 27 ignores job env alone). Never set LD/LDPLUSPLUS.
+  const extraParams = [
+    'CC=clang',
+    'CPLUSPLUS=clang++',
+    ...(runtime.slot == null ? [] : [`RCT_METRO_PORT=${runtime.metroPort}`]),
+  ].join(' ');
   return {
     bin: 'yarn',
     args: [
@@ -167,9 +174,8 @@ export function iosBuildCommand(
       'build-ios',
       '--buildFolder',
       'build',
-      ...(runtime.slot == null
-        ? []
-        : ['--extra-params', `RCT_METRO_PORT=${runtime.metroPort}`]),
+      '--extra-params',
+      extraParams,
     ],
     env:
       runtime.slot == null
