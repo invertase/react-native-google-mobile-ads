@@ -33,6 +33,8 @@ jobs:
     timeout-minutes: 90
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      # Prefer PATH ccache wrappers from ccache-action (create-symlink). Do not set LD/LDPLUSPLUS (Xcode 27 trap).
+      CCACHE_SLOPPINESS: clang_index_store,file_stat_matches,include_file_ctime,include_file_mtime,ivfsoverlay,pch_defines,modules,system_headers,time_macros
     steps:
       # Set up tool versions
       - uses: actions/setup-node@v6
@@ -66,9 +68,12 @@ jobs:
       - uses: hendrikmuhs/ccache-action@v1
         name: Xcode Compile Cache
         with:
-          key: ${{ runner.os }}-v2 # makes a unique key w/related restore key internally
+          # Sticky content-hash key. Single e2e app-id; append-timestamp: false.
+          key: ${{ runner.os }}-e2e-ios-v1-${{ hashFiles('yarn.lock', 'packages/core/ios/**', 'packages/core/*.podspec', 'RNGoogleMobileAdsExample/ios/Podfile.lock') }}
+          append-timestamp: false
           create-symlink: true
           max-size: 750M
+          save: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -140,9 +145,16 @@ jobs:
         continue-on-error: true
         run: nohup xcrun simctl spawn "$RNGMA_IOS_UDID" log stream --level debug --style compact > simulator.log 2>&1 &
 
+      - name: ccache stats (before)
+        run: ccache -s || true
+
       - name: Install example on simulator
         timeout-minutes: 20
         run: yarn tests:ios:run --udid "$RNGMA_IOS_UDID"
+
+      - name: ccache stats (after)
+        if: always()
+        run: ccache -s || true
 
       - name: Install Appium drivers and prebuild WDA
         timeout-minutes: 15

@@ -137,6 +137,10 @@ describe('cross-platform e2e slots', () => {
       'serial-udid',
     );
     assert.equal(iosBuildCommand({}).env?.RCT_METRO_PORT, undefined);
+    assert.deepEqual(iosBuildCommand({}).args.slice(-2), [
+      '--extra-params',
+      'CC=clang CPLUSPLUS=clang++',
+    ]);
   });
 
   test('propagates slot 1 ports into packager, Gradle, and a distinct APK', () => {
@@ -342,7 +346,7 @@ describe('cross-platform e2e slots', () => {
     assert.equal(iosBuild.env?.RCT_METRO_PORT, '13107');
     assert.deepEqual(iosBuild.args.slice(-2), [
       '--extra-params',
-      'RCT_METRO_PORT=13107',
+      'CC=clang CPLUSPLUS=clang++ RCT_METRO_PORT=13107',
     ]);
   });
 
@@ -458,7 +462,7 @@ describe('cross-platform e2e slots', () => {
     assert.equal(iosBuild.env?.RCT_METRO_PORT, '13107');
     assert.deepEqual(iosBuild.args.slice(-2), [
       '--extra-params',
-      'RCT_METRO_PORT=13107',
+      'CC=clang CPLUSPLUS=clang++ RCT_METRO_PORT=13107',
     ]);
     assert.deepEqual(
       iosMetroProcessArguments(runtimeResources('ios', iosEnv)),
