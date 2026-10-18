@@ -88,10 +88,10 @@ jobs:
 
       - uses: actions/cache/save@v4
         name: Yarn Cache Save
-        if: "${{ github.ref == 'refs/heads/main' }}"
+        if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
           path: .yarn/cache
-          key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'yarn.lock', 'packages/core/package.json', 'RNGoogleMobileAdsExample/package.json') }}
+          key: ${{ steps.yarn-cache.outputs.cache-primary-key }}
 
       # create a comment on the PR and any related issues with a direct link to the archive,
       # a call for testers, and perhaps a paste-able set of commands to install them
