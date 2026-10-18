@@ -114,14 +114,19 @@ jobs:
           max_attempts: 3
           command: yarn tests:ios:pod:install
 
-      - name: Metro Bundler Cache
-        uses: actions/cache@v4
+      # Sticky content-hash Metro restore/save. Save only on main when miss.
+      - uses: actions/cache/restore@v4
+        name: Metro Bundler Cache Restore
+        id: metro-bundler-cache
         with:
           path: ${{ steps.workflow-variables.outputs.metro-cache }}
-          key: ${{ runner.os }}-metro-v1-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-metro-v1
+          key: ${{ runner.os }}-ios-metro-v2-${{ hashFiles('yarn.lock', 'RNGoogleMobileAdsExample/package.json', 'RNGoogleMobileAdsExample/metro.config.js', 'RNGoogleMobileAdsExample/index.js', 'RNGoogleMobileAdsExample/app.json', 'packages/core/package.json', 'packages/core/lib/**') }}
+          restore-keys: ${{ runner.os }}-ios-metro-v2-
 
       - name: Pre-fetch Javascript bundle
+        # Align FileStore root with sticky Metro restore/save path (workflow-variables metro-cache).
+        env:
+          RNGMA_METRO_CACHE_ROOT: ${{ steps.workflow-variables.outputs.metro-cache }}
         run: |
           nohup yarn tests:packager &
           printf 'Waiting for packager to come online'
@@ -172,6 +177,15 @@ jobs:
         run: |
           export RNGMA_WDA_PREBUILT=1
           yarn tests:appium:ios
+
+      - uses: actions/cache/save@v4
+        name: Metro Bundler Cache Save
+        if: >
+          github.ref == 'refs/heads/main'
+          && steps.metro-bundler-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ steps.workflow-variables.outputs.metro-cache }}
+          key: ${{ steps.metro-bundler-cache.outputs.cache-primary-key }}
 
       - name: Upload Simulator Log
         uses: actions/upload-artifact@v4
