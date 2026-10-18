@@ -41,10 +41,6 @@ class ReactNativeGoogleMobileAdsModule(
   private var initializationResult: List<AdapterInitializationResult>? = null
   private var initializationFailure: Pair<String, String>? = null
 
-  init {
-    startInitializationIfNeeded()
-  }
-
   override fun getConstants(): Map<String, Any> =
     mapOf(
       // getVersion() throws before Next-Gen initialization; the selected dependency version is
