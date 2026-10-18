@@ -5,6 +5,7 @@ import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +28,16 @@ class ReactNativeGoogleMobileAdsPreInitializationTest {
   @After
   fun tearDown() {
     NextGenMobileAdsGate.resetForTests()
+  }
+
+  @Test
+  fun constructionDoesNotStartSdkInitialization() {
+    assertFalse(readInitializationStarted(module))
+    assertEquals(0, NextGenMobileAdsGate.pendingActionCount())
+
+    module.setAppVolume(0.4f)
+    assertEquals(1, NextGenMobileAdsGate.pendingActionCount())
+    assertFalse(readInitializationStarted(module))
   }
 
   @Test
@@ -106,4 +117,11 @@ class ReactNativeGoogleMobileAdsPreInitializationTest {
       Promise::class.java.classLoader,
       arrayOf(Promise::class.java),
     ) { _, _, _ -> null } as Promise
+
+  private fun readInitializationStarted(module: ReactNativeGoogleMobileAdsModule): Boolean {
+    val field =
+      ReactNativeGoogleMobileAdsModule::class.java.getDeclaredField("initializationStarted")
+    field.isAccessible = true
+    return field.getBoolean(module)
+  }
 }
