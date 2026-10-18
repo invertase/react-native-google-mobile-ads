@@ -120,15 +120,21 @@ jobs:
           max_attempts: 3
           command: yarn tests:android:build
 
-      - name: Metro Bundler Cache
-        uses: actions/cache@v4
+      # Sticky content-hash Metro restore. Both backends restore the same key;
+      # only classic + iteration 0 on main saves.
+      - uses: actions/cache/restore@v4
+        name: Metro Bundler Cache Restore
+        id: metro-bundler-cache
         with:
           path: ${{ steps.workflow-variables.outputs.metro-cache }}
-          key: ${{ runner.os }}-metro-v1-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-metro-v1
+          key: ${{ runner.os }}-android-metro-v2-${{ hashFiles('yarn.lock', 'RNGoogleMobileAdsExample/package.json', 'RNGoogleMobileAdsExample/metro.config.js', 'RNGoogleMobileAdsExample/index.js', 'RNGoogleMobileAdsExample/app.json', 'packages/core/package.json', 'packages/core/lib/**') }}
+          restore-keys: ${{ runner.os }}-android-metro-v2-
 
       - name: Pre-fetch Javascript bundle
         # Prebuild the bundle so that's fast when the app starts.
+        # Align FileStore root with sticky Metro restore/save path (workflow-variables metro-cache).
+        env:
+          RNGMA_METRO_CACHE_ROOT: ${{ steps.workflow-variables.outputs.metro-cache }}
         run: |
           nohup yarn tests:packager &
           printf 'Waiting for packager to come online'
@@ -157,6 +163,17 @@ jobs:
             yarn tests:appium:drivers:install
             yarn tests:appium:drivers:verify
             yarn tests:appium:android
+
+      - uses: actions/cache/save@v4
+        name: Metro Bundler Cache Save
+        if: >
+          github.ref == 'refs/heads/main'
+          && matrix.iteration == 0
+          && matrix.android-backend == 'classic'
+          && steps.metro-bundler-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ steps.workflow-variables.outputs.metro-cache }}
+          key: ${{ steps.metro-bundler-cache.outputs.cache-primary-key }}
 
       - uses: codecov/codecov-action@v5
         with:
