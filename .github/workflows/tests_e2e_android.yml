@@ -42,7 +42,6 @@ jobs:
         api-level: [36]
         arch: [x86_64]
         target: [google_apis_playstore]
-        first-boot-delay: [600]
         # This is useful for benchmarking, do 0, 1, 2, etc (up to 256 max job-per-matrix limit) for averages
         iteration: [0]
         # Dual Android SDK backends — classic default + Next-Gen opt-in (ads-mobile-sdk).
@@ -120,60 +119,6 @@ jobs:
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn tests:android:build
-
-        # This appears to be 'Cache Size: ~1230 MB (1290026823 B)' based on watching action logs
-        # Repo limit is 10GB; branch caches are independent; branches may read default branch cache.
-        # We don't want branches to evict main branch snapshot, so save on main, read-only all else
-      - name: AVD cache
-        uses: actions/cache@v4
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ matrix.api-level }}-${{ matrix.arch }}-${{matrix.target}}-v1-${{ hashFiles('~/.android/avd/**/snapshots/**') }}
-          restore-keys: |
-            avd-${{ matrix.api-level }}-${{ matrix.arch }}-${{matrix.target}}-v1
-
-      - name: AVD Boot and Snapshot Creation
-        # Only generate a snapshot for saving if we are on main branch with a cache miss
-        # Comment the if out to generate snapshots on branch for performance testing
-        if: steps.avd-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ matrix.api-level }}
-          avd-name: TestingAVD
-          force-avd-creation: false
-          target: ${{ matrix.target }}
-          arch: ${{ matrix.arch }}
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          sdcard-path-or-size: 100M
-          disable-animations: true
-          # Give the emulator a little time to run and do first boot stuff before taking snapshot
-          script: echo "Generated AVD snapshot for caching."
-
-        # This step is separate so pure install time may be calculated as a step
-      - name: Emulator Snapshot After Firstboot Warmup
-        # Only generate a snapshot for saving if we are on main branch with a cache miss
-        # Switch the if statements via comment if generating snapshots for performance testing
-        # if: matrix.first-boot-delay != '0'
-        if: steps.avd-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
-        env:
-          FIRST_BOOT_DELAY: ${{ matrix.first-boot-delay }}
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ matrix.api-level }}
-          avd-name: TestingAVD
-          force-avd-creation: false
-          target: ${{ matrix.target }}
-          arch: ${{ matrix.arch }}
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          sdcard-path-or-size: 100M
-          disable-animations: true
-          # Give the emulator a little time to run and do first boot stuff before taking snapshot
-          script: |
-            sleep $FIRST_BOOT_DELAY
-            echo "First boot warmup completed."
 
       - name: Metro Bundler Cache
         uses: actions/cache@v4
