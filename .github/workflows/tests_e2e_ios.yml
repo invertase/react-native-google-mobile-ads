@@ -56,13 +56,14 @@ jobs:
           echo "metro-cache=$HOME/.metro" >> $GITHUB_OUTPUT
           echo "xcode-version=$(xcodebuild -version|tail -1|cut -f3 -d' ')" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         name: Yarn Cache
         id: yarn-cache
         with:
           path: .yarn/cache
           key: ${{ runner.os }}-yarn-${{ hashFiles('package.json', 'yarn.lock', 'packages/core/package.json', 'RNGoogleMobileAdsExample/package.json') }}
-          restore-keys: ${{ runner.os }}-yarn-v1
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
       # Native iOS deps compile during yarn/pod install; set up Xcode compile cache first
       - uses: hendrikmuhs/ccache-action@v1
@@ -105,6 +106,13 @@ jobs:
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn
+
+      - uses: actions/cache/save@v4
+        name: Yarn Cache Save
+        if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
+        with:
+          path: .yarn/cache
+          key: ${{ steps.yarn-cache.outputs.cache-primary-key }}
 
       - name: Pod Install
         uses: nick-fields/retry@v3

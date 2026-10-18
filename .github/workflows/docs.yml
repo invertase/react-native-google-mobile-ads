@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -38,6 +38,12 @@ jobs:
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn
+      - uses: actions/cache/save@v4
+        name: Yarn Cache Save
+        if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
+        with:
+          path: .yarn/cache
+          key: ${{ steps.yarn-cache.outputs.cache-primary-key }}
       - name: Spell check
         run: |
           yarn lint:spellcheck
@@ -73,7 +79,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -88,5 +94,11 @@ jobs:
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn
+      - uses: actions/cache/save@v4
+        name: Yarn Cache Save
+        if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
+        with:
+          path: .yarn/cache
+          key: ${{ steps.yarn-cache.outputs.cache-primary-key }}
       - name: Build API reference
         run: yarn reference:api
