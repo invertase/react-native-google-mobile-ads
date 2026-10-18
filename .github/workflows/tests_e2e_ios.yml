@@ -91,13 +91,13 @@ jobs:
           max_attempts: 3
           command: BUNDLE_FROZEN=true bundle install
 
-      - uses: actions/cache@v4
-        name: Cache Pods
+      - uses: actions/cache/restore@v4
+        name: Pods Cache Restore
         id: pods-cache
         with:
           path: RNGoogleMobileAdsExample/ios/Pods
           key: ${{ runner.os }}-pods-v2-${{ hashFiles('RNGoogleMobileAdsExample/ios/Podfile.lock') }}
-          restore-keys: ${{ runner.os }}-pods-v2
+          restore-keys: ${{ runner.os }}-pods-v2-
 
       - name: Yarn Install
         uses: nick-fields/retry@v3
@@ -121,6 +121,13 @@ jobs:
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn tests:ios:pod:install
+
+      - uses: actions/cache/save@v4
+        name: Pods Cache Save
+        if: github.ref == 'refs/heads/main' && steps.pods-cache.outputs.cache-hit != 'true'
+        with:
+          path: RNGoogleMobileAdsExample/ios/Pods
+          key: ${{ steps.pods-cache.outputs.cache-primary-key }}
 
       # Sticky content-hash Metro restore/save. Save only on main when miss.
       - uses: actions/cache/restore@v4
