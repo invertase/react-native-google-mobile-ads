@@ -20,7 +20,7 @@ Single source of truth for OKF knowledge and commit wording. Other OKF docs link
 | **Ephemeral** | **Gitignored** working content under `.agents/` | Session scratch only: run counts, snapshot labels, dated banners, interim report copies, coverage evidence paths (`.agents/reports/<change-id>/`), probe notes, skills, friction logs — never staged |
 | **Private** | Internal tracker and internal docs (not named here) | Tracker identifiers, discussion, non-public commercial terms. Not GitHub-public; not the same as ephemeral |
 
-GitHub-public **reference** docs, `AGENTS.md`, commits, and PR titles must **not** contain ephemeral **state/values** (for example probe IDs, dated banners, run counts) or private **items** (for example tracker identifiers, internal docs). Gate **names** and close rules: [change authoring § gates](testing/change-authoring-workflow.md#gates).
+GitHub-public **reference** docs, `AGENTS.md`, commits, PR titles, and other GitHub-public PR narrative that would seed squash/history ([§ pull requests](#pull-requests)) must **not** contain ephemeral **state/values** (for example probe IDs, dated banners, run counts, or plan / grill / decision **option ids** used only to address interim choices — `M1`, `A1`, `B1`, `C1`, parenthetical `(M1/A1/B1)`, and similar session shorthand) or private **items** (for example tracker identifiers, internal docs). Those option-id tokens belong in ephemeral plans, Notes, and gate discussion under `.agents/` or the internal tracker — **not** on durable GitHub-public surfaces. The ban does **not** apply inside gitignored `.agents/` content. Gate **names** and close rules: [change authoring § gates](testing/change-authoring-workflow.md#gates). Subject/title wording: [§ subject durability](#subject-durability).
 
 Ephemeral working, report, skill, and friction content under `.agents/` is **gitignored and never staged**. The sole durable exception is tracked `.agents/.gitignore`, which is repository infrastructure and may be staged only when intentionally changing that infrastructure. Do not add ephemeral files under `okf-bundle/`.
 
@@ -50,15 +50,31 @@ The owning doc is the one that defines the contract. Other docs link to that tab
 
 We treat **git commits** as durable documentation: they are the canonical record of what changed, when, and why — for humans and agents reviewing history later, not only for the current PR thread.
 
-Commit messages use [Conventional Commits](https://www.conventionalcommits.org/) and describe durable product/process deliverables: what changed and why, not probe IDs, gates, e2e counts, or “phase X complete”.
+Commit messages use [Conventional Commits](https://www.conventionalcommits.org/) and describe durable product/process deliverables: what changed and why, not probe IDs, gates, e2e counts, “phase X complete”, or plan / grill / decision option ids ([§ durable vs ephemeral](#durable-vs-ephemeral)). Always-on subject/title rules: [§ subject durability](#subject-durability).
+
+<a id="subject-durability"></a>
+
+### Subject durability (always-on)
+
+**Blocking** for every commit- and PR-bound change set — including when `documentation?` is skipped and `okf-bundle/` is not in the frozen tree. Checklist hop: [validation checklist § commit-subject durability](testing/validation-checklist.md#commit-subject-durability).
+
+**Rules**
+
+1. The staged git subject and intended PR title must not contain plan / grill / decision option ids or other session/plan shorthand that only addresses interim options ([§ durable vs ephemeral](#durable-vs-ephemeral)).
+2. Character-for-character match to gate `commit_subject` does **not** override durability: rewrite the subject to deliverable-only wording first, then stage and match.
+3. “Looks like Conventional Commits” is not sufficient if ephemeral ids remain.
+
+**Examples:** bad — `ci: optimize yarn cache (M1/A1/B1)`; good — `ci: optimize yarn cache restore on miss`.
 
 <a id="pull-requests"></a>
 
 ## Pull requests
 
-Commit subjects and PR titles use [Conventional Commits](https://www.conventionalcommits.org/). When a PR contains **exactly one commit**, the **PR title must match that commit's subject line exactly** (character-for-character). Multi-commit PRs use a summary title that describes the overall change set.
+Commit subjects and PR titles use [Conventional Commits](https://www.conventionalcommits.org/) and the same [subject durability](#subject-durability) ban (no plan / grill / decision option ids). When a PR contains **exactly one commit**, the **PR title must match that commit's subject line exactly** (character-for-character). Multi-commit PRs use a summary title that describes the overall change set.
 
-PRs are squash-merged. Maintainers or agents may amend or squash to **fix** a non-conforming subject so the published commit is Conventional Commits. That is an exception flow to repair a violation, not permission to skip the format on commits.
+PRs are squash-merged. A bad subject becomes the published history line; PR bodies and GitHub workflow / Actions / maintainer comments that quote subjects or plan ids amplify that hazard. Prefer durable deliverable wording in those surfaces; do not introduce ephemeral option ids as if they were durable labels, and if quoting a subject under repair do not re-seed bad ids into the published narrative.
+
+Maintainers or agents may amend or squash to **fix** a non-conforming subject so the published commit is Conventional Commits. That is an exception flow to repair a violation, not permission to skip the format on commits.
 
 <a id="okf-update-contract"></a>
 
@@ -77,7 +93,7 @@ Confirm:
 | **DRY** | No duplicated procedures, policy paragraphs, or ephemeral snapshots in GitHub-public docs |
 | **Efficiency** | Shortest text that stays **complete and true** ([§ Efficiency](#efficiency)). Completeness wins over brevity |
 | **Link hygiene** | Cross-links resolve; indexes list canonical entry points |
-| **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, or PR titles, except a [cumulative verification-evidence table](#verification-evidence-tables). Private items stay off GitHub. `.agents/` staging follows the [canonical rule](#durable-vs-ephemeral). Do not add ephemeral files under `okf-bundle/` |
+| **Durability** | No ephemeral **state/values** and no private **items** in GitHub-public **reference** docs, `AGENTS.md`, commits, PR titles, or other GitHub-public PR narrative that would seed squash/history ([§ pull requests](#pull-requests); [§ subject durability](#subject-durability)), except a [cumulative verification-evidence table](#verification-evidence-tables). Private items stay off GitHub. `.agents/` staging follows the [canonical rule](#durable-vs-ephemeral). Do not add ephemeral files under `okf-bundle/` |
 
 **Blocking on `commit`.** Fix violations before `git commit` ([change authoring § commit](testing/change-authoring-workflow.md#commit)). Gate close is not a later escape hatch. Frozen `independent-review` **reports only**; `okf-bundle/` / `AGENTS.md` / `CONTRIBUTING.md` findings apply in `documentation` then another frozen scan — product/lint findings are not this dump ([§ frozen tree](testing/change-authoring-workflow.md#frozen-tree)). Commands: [validation-checklist § OKF bundle review](testing/validation-checklist.md#okf-bundle-review). Loop: [change authoring](testing/change-authoring-workflow.md#loop).
 
