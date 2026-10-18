@@ -34,6 +34,8 @@ jobs:
       EMULATOR_EXECUTABLE: qemu-system-x86_64-headless
       # classic | nextgen — drives example Gradle + Appium scripts (Q13.A / NG-5).
       RNGMA_ANDROID_BACKEND: ${{ matrix.android-backend }}
+      # Pin RN ABI so Gradle dependency cache stays architecture-scoped.
+      ORG_GRADLE_PROJECT_reactNativeArchitectures: ${{ matrix.arch }}
     strategy:
       fail-fast: false
       matrix:
