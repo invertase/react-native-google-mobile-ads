@@ -1,3 +1,9 @@
+## [17.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v17.3.0...v17.3.1) (2026-10-19)
+
+### Bug Fixes
+
+* **android:** defer nextgen MobileAds init until JS initialize() ([61c2bc9](https://github.com/invertase/react-native-google-mobile-ads/commit/61c2bc902528f2268f1e2730952d5fe6ee6395fc))
+
 ## [17.3.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v17.2.0...v17.3.0) (2026-10-16)
 
 ### Features
