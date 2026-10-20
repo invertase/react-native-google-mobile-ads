@@ -255,6 +255,18 @@ public class ReactNativeGoogleMobileAdsConsentModule extends ReactNativeModule {
   }
 
   @ReactMethod
+  public void getGppString(Promise promise) {
+    try {
+      SharedPreferences prefs = defaultSharedPreferences(getReactApplicationContext());
+      // https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Core/CMP%20API%20Specification.md#in-app-details
+      String gppString = prefs.getString("IABGPP_HDR_GppString", null);
+      promise.resolve(gppString);
+    } catch (Exception e) {
+      rejectPromiseWithCodeAndMessage(promise, "consent-string-error", e.toString());
+    }
+  }
+
+  @ReactMethod
   public void getGdprApplies(Promise promise) {
     try {
       SharedPreferences prefs = defaultSharedPreferences(getReactApplicationContext());

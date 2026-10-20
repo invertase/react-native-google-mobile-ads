@@ -99,6 +99,10 @@ export const AdsConsent: AdsConsentInterface = {
     return native.getTCString();
   },
 
+  getGppString() {
+    return native.getGppString();
+  },
+
   async getTCModel() {
     const tcString = await native.getTCString();
     return TCString.decode(tcString);

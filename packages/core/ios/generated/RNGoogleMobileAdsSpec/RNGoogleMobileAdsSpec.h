@@ -158,6 +158,8 @@ namespace JS {
                 reject:(RCTPromiseRejectBlock)reject;
 - (void)getTCString:(RCTPromiseResolveBlock)resolve
              reject:(RCTPromiseRejectBlock)reject;
+- (void)getGppString:(RCTPromiseResolveBlock)resolve
+              reject:(RCTPromiseRejectBlock)reject;
 - (void)getGdprApplies:(RCTPromiseResolveBlock)resolve
                 reject:(RCTPromiseRejectBlock)reject;
 - (void)getPurposeConsents:(RCTPromiseResolveBlock)resolve

@@ -222,6 +222,10 @@ namespace facebook::react {
       return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "getTCString", @selector(getTCString:reject:), args, count);
     }
 
+    static facebook::jsi::Value __hostFunction_NativeConsentModuleSpecJSI_getGppString(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "getGppString", @selector(getGppString:reject:), args, count);
+    }
+
     static facebook::jsi::Value __hostFunction_NativeConsentModuleSpecJSI_getGdprApplies(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
       return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "getGdprApplies", @selector(getGdprApplies:reject:), args, count);
     }
@@ -257,6 +261,9 @@ namespace facebook::react {
         
         
         methodMap_["getTCString"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_getTCString};
+        
+        
+        methodMap_["getGppString"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_getGppString};
         
         
         methodMap_["getGdprApplies"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_getGdprApplies};

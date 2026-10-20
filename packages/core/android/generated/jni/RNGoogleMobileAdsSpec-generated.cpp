@@ -162,6 +162,11 @@ static facebook::jsi::Value __hostFunction_NativeConsentModuleSpecJSI_getTCStrin
   return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, PromiseKind, "getTCString", "(Lcom/facebook/react/bridge/Promise;)V", args, count, cachedMethodId);
 }
 
+static facebook::jsi::Value __hostFunction_NativeConsentModuleSpecJSI_getGppString(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, PromiseKind, "getGppString", "(Lcom/facebook/react/bridge/Promise;)V", args, count, cachedMethodId);
+}
+
 static facebook::jsi::Value __hostFunction_NativeConsentModuleSpecJSI_getGdprApplies(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
   static jmethodID cachedMethodId = nullptr;
   return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, PromiseKind, "getGdprApplies", "(Lcom/facebook/react/bridge/Promise;)V", args, count, cachedMethodId);
@@ -190,6 +195,7 @@ NativeConsentModuleSpecJSI::NativeConsentModuleSpecJSI(const JavaTurboModule::In
   methodMap_["loadAndShowConsentFormIfRequired"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_loadAndShowConsentFormIfRequired};
   methodMap_["getConsentInfo"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_getConsentInfo};
   methodMap_["getTCString"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_getTCString};
+  methodMap_["getGppString"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_getGppString};
   methodMap_["getGdprApplies"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_getGdprApplies};
   methodMap_["getPurposeConsents"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_getPurposeConsents};
   methodMap_["getPurposeLegitimateInterests"] = MethodMetadata {0, __hostFunction_NativeConsentModuleSpecJSI_getPurposeLegitimateInterests};

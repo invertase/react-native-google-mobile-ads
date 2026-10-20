@@ -1,4 +1,15 @@
 import { AdsConsent } from '../src';
+import NativeConsentModule from '../src/specs/modules/NativeConsentModule';
+
+jest.mock('../src/specs/modules/NativeConsentModule', () => ({
+  ...jest.requireActual('../src/specs/modules/NativeConsentModule'),
+  __esModule: true,
+  default: {
+    getGppString: jest.fn(),
+  },
+}));
+
+const GPP_STRING = 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA';
 
 describe('Google Mobile Ads AdsConsent', function () {
   describe('requestInfoUpdate', function () {
@@ -58,6 +69,20 @@ describe('Google Mobile Ads AdsConsent', function () {
       ).toThrow(
         "AdsConsent.requestInfoUpdate(*) 'options.testDeviceIdentifiers' expected an array of string values.",
       );
+    });
+  });
+
+  describe('getGppString', function () {
+    it('resolves the GPP string read by the native module', async function () {
+      (NativeConsentModule.getGppString as jest.Mock).mockResolvedValueOnce(GPP_STRING);
+
+      await expect(AdsConsent.getGppString()).resolves.toBe(GPP_STRING);
+    });
+
+    it('resolves null when no GPP string is stored', async function () {
+      (NativeConsentModule.getGppString as jest.Mock).mockResolvedValueOnce(null);
+
+      await expect(AdsConsent.getGppString()).resolves.toBeNull();
     });
   });
 });
