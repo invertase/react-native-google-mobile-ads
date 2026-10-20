@@ -452,6 +452,7 @@ protected:
     methodMap_["loadAndShowConsentFormIfRequired"] = MethodMetadata {.argCount = 0, .invoker = __loadAndShowConsentFormIfRequired};
     methodMap_["getConsentInfo"] = MethodMetadata {.argCount = 0, .invoker = __getConsentInfo};
     methodMap_["getTCString"] = MethodMetadata {.argCount = 0, .invoker = __getTCString};
+    methodMap_["getGppString"] = MethodMetadata {.argCount = 0, .invoker = __getGppString};
     methodMap_["getGdprApplies"] = MethodMetadata {.argCount = 0, .invoker = __getGdprApplies};
     methodMap_["getPurposeConsents"] = MethodMetadata {.argCount = 0, .invoker = __getPurposeConsents};
     methodMap_["getPurposeLegitimateInterests"] = MethodMetadata {.argCount = 0, .invoker = __getPurposeLegitimateInterests};
@@ -500,6 +501,13 @@ private:
       bridging::getParameterCount(&T::getTCString) == 1,
       "Expected getTCString(...) to have 1 parameters");
     return bridging::callFromJs<jsi::Value>(rt, &T::getTCString,  static_cast<NativeConsentModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule));
+  }
+
+  static jsi::Value __getGppString(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* /*args*/, size_t /*count*/) {
+    static_assert(
+      bridging::getParameterCount(&T::getGppString) == 1,
+      "Expected getGppString(...) to have 1 parameters");
+    return bridging::callFromJs<jsi::Value>(rt, &T::getGppString,  static_cast<NativeConsentModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule));
   }
 
   static jsi::Value __getGdprApplies(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* /*args*/, size_t /*count*/) {

@@ -233,6 +233,7 @@ console.log(RewardedAdEventType.EARNED_REWARD);
 // AdsConsent
 AdsConsent.getConsentInfo().then(info => info.canRequestAds);
 AdsConsent.getGdprApplies().then(applies => applies);
+AdsConsent.getGppString().then(gppString => gppString);
 AdsConsent.getPurposeConsents().then(consents => consents);
 AdsConsent.getPurposeLegitimateInterests().then(legitimateInterests => legitimateInterests);
 AdsConsent.getTCModel().then(model => model.cmpId);
@@ -703,12 +704,17 @@ type AdsConsentInterfaceMethodKeys = Equal<
   | 'getConsentInfo'
   | 'gatherConsent'
   | 'getTCString'
+  | 'getGppString'
   | 'getTCModel'
   | 'getGdprApplies'
   | 'getPurposeConsents'
   | 'getPurposeLegitimateInterests'
   | 'getUserChoices'
   | 'reset'
+>;
+type AdsConsentGppStringResult = Equal<
+  ReturnType<AdsConsentInterface['getGppString']>,
+  Promise<string | null>
 >;
 type AppEventKeys = Equal<keyof AppEvent, 'name' | 'data'>;
 type PaidEventListenerShape = Equal<PaidEventListener, (event: PaidEvent) => void>;
@@ -718,9 +724,10 @@ const consentAndEventTypeLocks: [
   AdsConsentUserChoicesKeys,
   AdsConsentRuntimeIsInterface,
   AdsConsentInterfaceMethodKeys,
+  AdsConsentGppStringResult,
   AppEventKeys,
   PaidEventListenerShape,
-] = [true, true, true, true, true, true, true];
+] = [true, true, true, true, true, true, true, true];
 const paidEventListenerProof: PaidEventListener = (event: PaidEvent) => {
   console.log(event.currency, event.value);
 };

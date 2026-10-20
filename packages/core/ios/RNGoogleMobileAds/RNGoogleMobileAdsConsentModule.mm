@@ -26,6 +26,7 @@
 #import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
 #endif
 #import "RNGoogleMobileAdsConsentModule.h"
+#import "RNGoogleMobileAdsConsentStorage.h"
 #import "common/RNSharedUtils.h"
 
 @implementation RNGoogleMobileAdsConsentModule
@@ -149,6 +150,10 @@ RCT_EXPORT_METHOD(getConsentInfo
 
 RCT_EXPORT_METHOD(getTCString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
   [self getTCString:resolve reject:reject];
+}
+
+RCT_EXPORT_METHOD(getGppString : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+  [self getGppString:resolve reject:reject];
 }
 
 RCT_EXPORT_METHOD(getGdprApplies
@@ -299,6 +304,19 @@ RCT_EXPORT_METHOD(getPurposeLegitimateInterests
     // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#in-app-details
     NSString *tcString = [[NSUserDefaults standardUserDefaults] objectForKey:@"IABTCF_TCString"];
     resolve(tcString);
+  } @catch (NSError *error) {
+    [RNSharedUtils rejectPromiseWithUserInfo:reject
+                                    userInfo:[@{
+                                      @"code" : @"consent-string-error",
+                                      @"message" : error.localizedDescription,
+                                    } mutableCopy]];
+  }
+}
+
+- (void)getGppString:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
+  @try {
+    resolve([RNGoogleMobileAdsConsentStorage
+        gppStringFromUserDefaults:[NSUserDefaults standardUserDefaults]]);
   } @catch (NSError *error) {
     [RNSharedUtils rejectPromiseWithUserInfo:reject
                                     userInfo:[@{

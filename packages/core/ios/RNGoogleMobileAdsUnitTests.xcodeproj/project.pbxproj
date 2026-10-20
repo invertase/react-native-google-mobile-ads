@@ -25,6 +25,8 @@
 		A1000000000000000000002F /* RNGoogleMobileAdsBannerPaidHandlerLifetime.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000031 /* RNGoogleMobileAdsBannerPaidHandlerLifetime.m */; };
 		A10000000000000000000033 /* RNGoogleMobileAdsWebViewRegistrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000034 /* RNGoogleMobileAdsWebViewRegistrationTests.m */; };
 		A10000000000000000000035 /* RNGoogleMobileAdsWebViewRegistration.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000036 /* RNGoogleMobileAdsWebViewRegistration.m */; };
+		A10000000000000000000090 /* RNGoogleMobileAdsConsentStorageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000091 /* RNGoogleMobileAdsConsentStorageTests.m */; };
+		A10000000000000000000092 /* RNGoogleMobileAdsConsentStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000093 /* RNGoogleMobileAdsConsentStorage.m */; };
 		A10000000000000000000038 /* RNGoogleMobileAdsNativeAdViewLayoutTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000039 /* RNGoogleMobileAdsNativeAdViewLayoutTests.m */; };
 		A1000000000000000000003A /* RNGoogleMobileAdsNativeAdViewLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003B /* RNGoogleMobileAdsNativeAdViewLayout.m */; };
 		A1000000000000000000003D /* RNGoogleMobileAdsOwnedCallbacksTests.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003E /* RNGoogleMobileAdsOwnedCallbacksTests.m */; };
@@ -59,6 +61,9 @@
 		A10000000000000000000034 /* RNGoogleMobileAdsWebViewRegistrationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsWebViewRegistrationTests.m; sourceTree = "<group>"; };
 		A10000000000000000000036 /* RNGoogleMobileAdsWebViewRegistration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsWebViewRegistration.m; sourceTree = "<group>"; };
 		A10000000000000000000037 /* RNGoogleMobileAdsWebViewRegistration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNGoogleMobileAdsWebViewRegistration.h; sourceTree = "<group>"; };
+		A10000000000000000000091 /* RNGoogleMobileAdsConsentStorageTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsConsentStorageTests.m; sourceTree = "<group>"; };
+		A10000000000000000000093 /* RNGoogleMobileAdsConsentStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsConsentStorage.m; sourceTree = "<group>"; };
+		A10000000000000000000094 /* RNGoogleMobileAdsConsentStorage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNGoogleMobileAdsConsentStorage.h; sourceTree = "<group>"; };
 		A10000000000000000000039 /* RNGoogleMobileAdsNativeAdViewLayoutTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsNativeAdViewLayoutTests.m; sourceTree = "<group>"; };
 		A1000000000000000000003B /* RNGoogleMobileAdsNativeAdViewLayout.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNGoogleMobileAdsNativeAdViewLayout.m; sourceTree = "<group>"; };
 		A1000000000000000000003C /* RNGoogleMobileAdsNativeAdViewLayout.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNGoogleMobileAdsNativeAdViewLayout.h; sourceTree = "<group>"; };
@@ -101,6 +106,7 @@
 				A1000000000000000000002E /* RNGoogleMobileAdsBannerPaidHandlerLifecycleTests.m */,
 				A1000000000000000000003E /* RNGoogleMobileAdsOwnedCallbacksTests.m */,
 				A10000000000000000000034 /* RNGoogleMobileAdsWebViewRegistrationTests.m */,
+				A10000000000000000000091 /* RNGoogleMobileAdsConsentStorageTests.m */,
 				A10000000000000000000039 /* RNGoogleMobileAdsNativeAdViewLayoutTests.m */,
 			);
 			name = Tests;
@@ -136,6 +142,8 @@
 				A10000000000000000000042 /* RNGoogleMobileAdsOwnedCallbacks.m */,
 				A10000000000000000000037 /* RNGoogleMobileAdsWebViewRegistration.h */,
 				A10000000000000000000036 /* RNGoogleMobileAdsWebViewRegistration.m */,
+				A10000000000000000000094 /* RNGoogleMobileAdsConsentStorage.h */,
+				A10000000000000000000093 /* RNGoogleMobileAdsConsentStorage.m */,
 				A1000000000000000000003C /* RNGoogleMobileAdsNativeAdViewLayout.h */,
 				A1000000000000000000003B /* RNGoogleMobileAdsNativeAdViewLayout.m */,
 			);
@@ -218,6 +226,8 @@
 				A1000000000000000000003F /* RNGoogleMobileAdsOwnedCallbacks.m in Sources */,
 				A10000000000000000000033 /* RNGoogleMobileAdsWebViewRegistrationTests.m in Sources */,
 				A10000000000000000000035 /* RNGoogleMobileAdsWebViewRegistration.m in Sources */,
+				A10000000000000000000090 /* RNGoogleMobileAdsConsentStorageTests.m in Sources */,
+				A10000000000000000000092 /* RNGoogleMobileAdsConsentStorage.m in Sources */,
 				A10000000000000000000038 /* RNGoogleMobileAdsNativeAdViewLayoutTests.m in Sources */,
 				A1000000000000000000003A /* RNGoogleMobileAdsNativeAdViewLayout.m in Sources */,
 			);

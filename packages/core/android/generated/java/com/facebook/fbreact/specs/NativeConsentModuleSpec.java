@@ -60,6 +60,10 @@ public abstract class NativeConsentModuleSpec extends ReactContextBaseJavaModule
 
   @ReactMethod
   @DoNotStrip
+  public abstract void getGppString(Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
   public abstract void getGdprApplies(Promise promise);
 
   @ReactMethod

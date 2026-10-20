@@ -418,6 +418,24 @@ export interface AdsConsentInterface {
   getTCString(): Promise<string>;
 
   /**
+   * Returns the value stored under the `IABGPP_HDR_GppString` key
+   * in NSUserDefaults (iOS) / SharedPreferences (Android) as
+   * defined by the IAB Global Privacy Platform, or `null` when no GPP string is stored.
+   *
+   * More information available here:
+   * https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Core/CMP%20API%20Specification.md#in-app-details
+   *
+   * #### Example
+   *
+   * ```js
+   * import { AdsConsent } from 'react-native-google-mobile-ads';
+   *
+   * const gppString = await AdsConsent.getGppString();
+   * ```
+   */
+  getGppString(): Promise<string | null>;
+
+  /**
    * Returns the TC Model of the saved IAB TCF 2.0 String.
    *
    * #### Example
@@ -523,6 +541,7 @@ export interface Spec extends TurboModule {
   loadAndShowConsentFormIfRequired(): Promise<AdsConsentInfo>;
   getConsentInfo(): Promise<AdsConsentInfo>;
   getTCString(): Promise<string>;
+  getGppString(): Promise<string | null>;
   getGdprApplies(): Promise<boolean>;
   getPurposeConsents(): Promise<string>;
   getPurposeLegitimateInterests(): Promise<string>;

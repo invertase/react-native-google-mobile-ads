@@ -478,6 +478,7 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
   parkedConsent('AdsConsent.gatherConsent', 'function'),
   parkedConsent('AdsConsent.getConsentInfo', 'function'),
   parkedConsent('AdsConsent.getGdprApplies', 'function'),
+  parkedConsent('AdsConsent.getGppString', 'function'),
   parkedConsent('AdsConsent.getPurposeConsents', 'function'),
   parkedConsent('AdsConsent.getPurposeLegitimateInterests', 'function'),
   parkedConsent('AdsConsent.getTCModel', 'function'),
