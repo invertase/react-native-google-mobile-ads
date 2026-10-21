@@ -1,3 +1,9 @@
+## [17.4.0](https://github.com/invertase/react-native-google-mobile-ads/compare/v17.3.1...v17.4.0) (2026-10-21)
+
+### Features
+
+* **consent:** add AdsConsent.getGppString to read the IAB GPP string ([985482f](https://github.com/invertase/react-native-google-mobile-ads/commit/985482f1ea21469114680e0508b4f4f4c1d87214))
+
 ## [17.3.1](https://github.com/invertase/react-native-google-mobile-ads/compare/v17.3.0...v17.3.1) (2026-10-19)
 
 ### Bug Fixes
