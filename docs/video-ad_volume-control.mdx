@@ -1,5 +1,5 @@
 ---
-title: Video ad volume control
+title: Video volume
 description: Tell Google Mobile Ads how your app controls video ad volume and mute state.
 ---
 
@@ -28,7 +28,7 @@ function App() {
 
 <Error>
   Lowering your app's audio volume reduces video ad eligibility and might reduce your app's ad
-  revenue. You should only utilize this API if your app provides custom volume controls to the user,
+  revenue. You should only use this API if your app provides custom volume controls to the user,
   and the user's volume is properly reflected in the API.
 </Error>
 
@@ -51,7 +51,7 @@ By default, `appVolume` is set to 1 (the current device volume) and `appMuted` i
 
 <Error>
   Muting your app reduces video ad eligibility and might reduce your app's ad revenue. You should
-  only utilize this API if your app provides a custom mute control to the user, and the user's mute
+  only use this API if your app provides a custom mute control to the user, and the user's mute
   decision is properly reflected in the API.
 </Error>
 
@@ -62,9 +62,9 @@ which may interrupt or pause in-page video. If your app owns the audio session, 
 before loading video ads:
 
 ```js
-import MobileAds from 'react-native-google-mobile-ads';
+import mobileAds from 'react-native-google-mobile-ads';
 
-MobileAds().setAudioSessionIsApplicationManaged(true);
+mobileAds().setAudioSessionIsApplicationManaged(true);
 ```
 
 This sets `GADMobileAds.sharedInstance.audioVideoManager.audioSessionIsApplicationManaged`

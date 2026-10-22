@@ -23,14 +23,14 @@ adapter must be integrated in the Android and iOS layer of your application.
 
 Some third-party networks also ship as scoped npm packages under
 `@react-native-google-mobile-ads/<network>` (optional; install only what you mediate).
-See [Migrating to v17](/migrating-to-v17#optional-scoped-mediation-adapter-packages).
+See [Migrating to v17](/migration/v17#optional-scoped-mediation-adapter-packages).
 
 To choose the adapters you want to install, see Integrate open source and versioned adapters
 ([Android](https://developers.google.com/admob/android/choose-networks#integrate_open-source_and_versioned_adapters) | [iOS](https://developers.google.com/admob/ios/choose-networks#integrate_open-source_and_versioned_adapters)).
 
 Some adapters constrain the compatible Google Mobile Ads SDK version. The adapter
 packages do not change that SDK pin. If you must override the package's supported default,
-follow [Native SDK version overrides](/migrating-to-v17#native-sdk-version-overrides)
+follow [Native SDK version overrides](/migration/v17#native-sdk-version-overrides)
 and test the app-owned combination.
 
 Tip pins for each scoped adapter live in that package's
@@ -163,7 +163,7 @@ If AppLovin / Unity mediation start fine and only Meta fails at launch:
 
 1. Confirm the **AdMob / GAM** iOS App ID is in Info.plist (`GADApplicationIdentifier` via the core Expo
    plugin). A missing AdMob App ID also crashes at start; that is unrelated to Meta and is already
-   covered in [Getting Started](/index#getting-started).
+   covered in [Configuration](/configuration).
 2. Set `NSUserTrackingUsageDescription` (core plugin `userTrackingUsageDescription`) when you use ATT.
 3. Prefer the scoped package tip pin in `packages/facebook/package.json` `sdkVersions`
    over an older Expo `expo-build-properties` pod pin.
@@ -181,7 +181,7 @@ Prefer the scoped mediation package (`@react-native-google-mobile-ads/pangle`) s
 
 ### Lifecycle: `destroy()` already exists
 
-Fullscreen (`InterstitialAd`, `RewardedAd`, `RewardedInterstitialAd`, `AppOpenAd`), native ads, multi-format handles, and preload pools expose idempotent `destroy()` (and hooks that own inventory call it for you). See [Migrating to v17 — lifecycle](/migrating-to-v17#additive-lifecycle--destroy-ownership-impression). Call `destroy()` when you finish with an ad (or let hook / pool ownership rules do it). There is no separate destroy API for Pangle in this library: mediation adapters are not owned as separate JS ad objects.
+Fullscreen (`InterstitialAd`, `RewardedAd`, `RewardedInterstitialAd`, `AppOpenAd`), native ads, multi-format handles, and preload pools expose idempotent `destroy()` (and hooks that own inventory call it for you). See [Migrating to v17 — lifecycle](/migration/v17#additive-lifecycle--destroy-ownership-impression). Call `destroy()` when you finish with an ad (or let hook / pool ownership rules do it). There is no separate destroy API for Pangle in this library: mediation adapters are not owned as separate JS ad objects.
 
 ### iOS Auto Layout conflicts when hosting Google and Pangle video together
 
