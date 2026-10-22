@@ -1,50 +1,34 @@
 ---
 title: Install with agents
-description: How AI coding agents should use these docs and the project to integrate and troubleshoot React Native Google Mobile Ads.
+description: How coding agents should use these docs and the npm package to integrate and troubleshoot React Native Google Mobile Ads.
 ---
 
-If you are an AI coding agent helping a developer integrate or debug `react-native-google-mobile-ads`, start here.
-
-Paste this before the agent edits the app.
+Give your coding agent this prompt before it edits the app.
 
 ```text
 Read https://docs.page/invertase/react-native-google-mobile-ads/installation/expo.md (use …/installation/react-native.md for bare RN CLI), then https://docs.page/invertase/react-native-google-mobile-ads/ai-agents.md and node_modules/react-native-google-mobile-ads/AGENTS.md. Consent before initialize. New Architecture required.
 ```
 
+If you are the coding agent, read that prompt, then follow the rest of this page.
+
 <Info>
-  These docs are published on [docs.page](https://use.docs.page), which exposes agent-friendly
-  features — including plain Markdown for every page (append `.md` to a page URL) and a built-in AI
-  chat. Prefer these docs as your primary, cross-platform source of truth.
+  These docs are published on [docs.page](https://use.docs.page). Every page is also available as plain Markdown. Append `.md` to a page URL. Prefer these docs as the cross-platform source of truth.
 </Info>
 
 ## Integrators: start here
 
-If you are **adding this library to an app**, the human documentation in the sidebar is the canonical, cross-platform
-source of truth. Start at the [overview](/), follow Getting Started, Install, and Set Up Ads in the sidebar, then
-[ad formats](/ad-formats) and [Migrating to v17](/migration/v17).
+If you are adding this library to an app, follow the sidebar. Start at the [overview](/), then Getting Started, Install, and Set up ads, then [ad formats](/ad-formats) and [Migrating to v17](/migration/v17).
 
-The library also ships an integrator-focused `AGENTS.md` inside the npm package
-(`node_modules/react-native-google-mobile-ads/AGENTS.md`) with condensed v17 API steering and an issue-reporting
-checklist. When present, read it alongside these docs.
+The npm package also ships `AGENTS.md` at `node_modules/react-native-google-mobile-ads/AGENTS.md`. It has the v17 interface notes and an issue-reporting checklist. Read it with these docs.
 
-## A note on upstream (native SDK) agentic guidance
+## Native Google skills
 
-Google publishes agent skills for the native Google Mobile Ads SDKs. This library is a **cross-platform React Native
-layer** over those SDKs, so upstream guidance does not always apply to the React Native API surface. The integrator
-`AGENTS.md` in the npm package lists those skills, how to install them, and which ones not to apply to a React Native
-app. When in doubt, prefer these docs and the package types.
+Google publishes agent skills for the native Google Mobile Ads software development kits (SDKs). This library is a React Native layer over those SDKs, so a native skill does not always match this interface. The npm `AGENTS.md` lists those skills, how to install them, and which ones not to apply. If a native skill and this library disagree, follow these docs and the package types.
 
 ## Reporting issues
 
-When filing an issue on the [GitHub repository](https://github.com/invertase/react-native-google-mobile-ads), include a
-minimal reproduction and the details listed in
-[Diagnostics dump for issue reports](/migration/v17#diagnostics-dump-for-issue-reports), and use the
-[Ad Inspector](/ad-inspector) and [Common reasons ads do not show](/common-reasons-for-ads-not-showing) to rule out
-configuration causes first.
+When you file an issue on the [GitHub repository](https://github.com/invertase/react-native-google-mobile-ads), include a minimal reproduction and the details in [Diagnostics dump for issue reports](/migration/v17#diagnostics-dump-for-issue-reports). Use [Ad Inspector](/ad-inspector) and [Configuration failures](/common-reasons-for-ads-not-showing) to rule out configuration causes first.
 
-## For the curious: what is the OKF bundle?
+## Maintainer knowledge bundle
 
-The repository keeps a maintainer knowledge bundle, the OKF bundle, under `okf-bundle/` on
-[GitHub](https://github.com/invertase/react-native-google-mobile-ads/tree/main/okf-bundle). It is durable, public
-reference material for people (and agents) **working on the library itself** — architecture decisions, testing, and CI
-workflows. Integrators generally do not need it, but contributors and curious readers can explore it there.
+The repository keeps a maintainer knowledge bundle under `okf-bundle/` on [GitHub](https://github.com/invertase/react-native-google-mobile-ads/tree/main/okf-bundle). It covers architecture decisions, testing, and continuous integration (CI) workflows for people working on the library. Integrators do not need it.

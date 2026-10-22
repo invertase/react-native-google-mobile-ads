@@ -3,14 +3,11 @@ title: Install with React Native CLI
 description: Install and configure React Native Google Mobile Ads in a bare React Native project via autolinking and app.json.
 ---
 
-This page is for **bare** React Native CLI projects (no Expo managed workflow).
+Use this page for a bare React Native CLI project, not an Expo managed workflow.
 
-**Prefer Expo?** Start with [Install with Expo](/installation/expo) (Expo + a development build) —
-that is the recommended default path.
+Expo is the recommended install. Start with [Install with Expo](/installation/expo) when the app uses Expo and a development build.
 
-On bare React Native, the library **autolinks**. You configure AdMob App IDs in root `app.json`
-(snake_case). You do **not** manually paste IDs into `Info.plist` / `AndroidManifest.xml`, edit
-`AppDelegate` / `MainApplication`, or insert other native glue for a standard install.
+On bare React Native, the library autolinks. You configure AdMob app IDs in the root `app.json`, using snake_case. Do not paste IDs into `Info.plist` or `AndroidManifest.xml`, edit `AppDelegate` or `MainApplication`, or add other native glue for a standard install.
 
 ## Install the package
 
@@ -18,15 +15,11 @@ On bare React Native, the library **autolinks**. You configure AdMob App IDs in 
 npm install react-native-google-mobile-ads
 ```
 
-## Configure your App IDs (`app.json`)
+## Configure your app IDs (`app.json`)
 
-Before you can display ads you must have a [Google AdMob account](https://apps.admob.com) and an
-App ID for each platform — see [Configuration](/configuration) for where to find the App ID.
+Before you display ads, create a [Google AdMob account](https://apps.admob.com) and an app ID for each platform. [Configuration](/configuration) shows where the app ID appears in AdMob.
 
-**Single source for bare App IDs:** add them under the top-level `react-native-google-mobile-ads`
-key in the project-root `app.json` (snake_case). Autolinking plus the Android Gradle / iOS config
-scripts apply these during the native build — edit this JSON, then rebuild; do not hand-maintain a
-second copy in native project files.
+Add the IDs under the top-level `react-native-google-mobile-ads` key in the project-root `app.json`, using snake_case. Autolinking and the Android Gradle and iOS config scripts apply these values during the native build. Edit this JSON, then rebuild. Do not keep a second copy in the native project files.
 
 ```json
 // <project-root>/app.json
@@ -39,9 +32,9 @@ second copy in native project files.
 ```
 
 <Warning>
-  If `android_app_id` / `ios_app_id` are missing from that block, native build scripts warn and the
-  Google Mobile Ads SDK can crash on startup. (Expo apps that set IDs only on the config plugin can
-  ignore the same warning — see [Install with Expo](/installation/expo).)
+  If `android_app_id` or `ios_app_id` is missing from that block, native build scripts warn and the
+  Google Mobile Ads software development kit (SDK) can crash on startup. An Expo app that sets IDs only on the config plugin can
+  ignore that warning. [Install with Expo](/installation/expo) covers that path.
 </Warning>
 
 For the changes to take effect, rebuild your project:
@@ -55,33 +48,23 @@ npx react-native run-ios
 npx react-native run-android
 ```
 
-Full key reference (including Expo camelCase parity): [Config plugin](/config-plugin).
+The [Config plugin](/config-plugin) page lists every key, including the Expo camelCase names.
 
 ### iOS packaging and frameworks (CocoaPods)
 
-This module ships as a **CocoaPods** pod only. There is no Swift Package Manager (`Package.swift`) distribution yet.
-Until SPM packaging lands, integrate it through CocoaPods (including Expo prebuild / Continuous Native Generation, which still resolve native modules via CocoaPods).
+This module is a CocoaPods pod only. There is no Swift Package Manager (SPM) `Package.swift` distribution yet. Until an SPM package exists, integrate the module through CocoaPods. Expo prebuild and Continuous Native Generation still resolve native modules through CocoaPods.
 
-By default the podspec sets `static_framework` to `false`, so under CocoaPods `use_frameworks!` the module follows **dynamic** linkage unless you opt into static frameworks below.
-That default aligns with dynamic `use_frameworks! :linkage => :dynamic`.
-It does **not** replace a future SPM package for apps that consume React Native Firebase (or other dependencies) via SPM only.
+By default the podspec sets `static_framework` to `false`. Under CocoaPods `use_frameworks!`, the module uses dynamic linkage unless you opt into static frameworks in the next section. That default matches `use_frameworks! :linkage => :dynamic`. It does not replace a future SPM package for apps that consume React Native Firebase, or other dependencies, through SPM only.
 
 #### Optionally configure iOS static frameworks
 
-This module does **not** require static frameworks for a normal bare install. Use them only when
-another dependency intentionally needs `use_frameworks! :linkage => :static` in your `Podfile`
-(for a need unrelated to React Native Firebase).
+This module does not require static frameworks for a normal bare install. Use them only when another dependency needs `use_frameworks! :linkage => :static` in your `Podfile`, for a need unrelated to React Native Firebase.
 
 <Warning>
-  Coexistence with React Native Firebase is covered on [Using with React Native
-  Firebase](/firebase). Prefer RNFB's modern **dynamic Podfile + static ads pod** hybrid there — not
-  fully static frameworks for the whole Podfile alone.
+  React Native Firebase coexistence is on the [React Native Firebase](/firebase) page. Use that page's dynamic Podfile and static ads pod. Do not switch the whole Podfile to static frameworks as a substitute.
 </Warning>
 
-On **bare**, when you do enable static frameworks, set `$RNGoogleMobileAdsAsStaticFramework = true`
-in the `Podfile` **before** any target block / `use_native_modules!` / `use_react_native!`, then run
-`pod install` again. Expo uses `expo-build-properties` instead — see
-[Install with Expo](/installation/expo#optionally-configure-ios-static-frameworks):
+On a bare app, when you enable static frameworks, set `$RNGoogleMobileAdsAsStaticFramework = true` in the `Podfile` before any target block, `use_native_modules!`, or `use_react_native!`. Then run `pod install` again. Expo sets the same flag with `expo-build-properties` on [Install with Expo](/installation/expo#optionally-configure-ios-static-frameworks).
 
 ```ruby
 $RNGoogleMobileAdsAsStaticFramework = true
@@ -89,12 +72,7 @@ $RNGoogleMobileAdsAsStaticFramework = true
 
 ## Enable SKAdNetwork to track conversions (iOS)
 
-The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google
-and participating third-party buyers attribute an app install even when the IDFA is not available.
-Add the advised
-[SKAdNetwork identifiers](https://developers.google.com/admob/ios/3p-skadnetworks)
-to your project as described below. Note that these identifiers are subject to change and should be
-updated regularly.
+The Google Mobile Ads SDK supports conversion tracking with Apple's SKAdNetwork. Google and participating third-party buyers can attribute an app install when the Identifier for Advertisers (IDFA) is unavailable. Add the advised [SKAdNetwork identifiers](https://developers.google.com/admob/ios/3p-skadnetworks) to your project. These identifiers change, so update them on a regular schedule.
 
 ```json
 // <project-root>/app.json
@@ -160,9 +138,7 @@ updated regularly.
 
 ## App Tracking Transparency (iOS)
 
-Apple requires apps to display the App Tracking Transparency authorization request for accessing the
-IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads). Within
-your project's configuration file, you have to provide a user tracking usage description:
+Apple requires the app to show the App Tracking Transparency authorization request before it reads the Identifier for Advertisers. The person using the app chooses personalized or non-personalized ads. In the project configuration file, set a user tracking usage description:
 
 ```json
 // <project-root>/app.json
@@ -175,16 +151,10 @@ your project's configuration file, you have to provide a user tracking usage des
 }
 ```
 
-See [Consent & privacy basics](/consent-basics) for how to request App Tracking Transparency
-authorization at runtime.
+Request authorization at runtime on the [Consent and privacy](/consent-basics) page.
 
-## iOS App ID Build Phase (`ios_config.sh`)
+## iOS app ID build phase (`ios_config.sh`)
 
-CocoaPods installs an Xcode Build Phase (`[RNGoogleMobileAds] Configuration`) that writes `GADApplicationIdentifier` into the built app `Info.plist` from `app.json`.
+CocoaPods installs an Xcode build phase named `[RNGoogleMobileAds] Configuration`. That phase writes `GADApplicationIdentifier` into the built app `Info.plist` from `app.json`.
 
-If a release build fails with `unable to locate Info.plist`, upgrade this package and
-re-run `pod install` so the embedded `ios_config.sh` polls briefly for
-`$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)` before failing (Xcode can start the phase
-before Process Info.plist finishes writing that file). Phase timing metadata alone is
-not enough. Do not move that script earlier in Build Phases. Expo apps that use the
-config plugin below set the App ID at prebuild time and do not rely on this Build Phase.
+If a release build fails with `unable to locate Info.plist`, upgrade this package and run `pod install` again so the embedded `ios_config.sh` polls briefly for `$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)` before it fails. Xcode can start the phase before Process Info.plist finishes writing that file. Phase timing metadata alone is not enough. Do not move that script earlier in Build Phases. An Expo app that uses the config plugin sets the app ID at prebuild and does not use this build phase.

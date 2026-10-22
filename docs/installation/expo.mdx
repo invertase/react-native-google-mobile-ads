@@ -3,14 +3,14 @@ title: Install with Expo
 description: Install and configure React Native Google Mobile Ads in an Expo project using the config plugin and a development build.
 ---
 
-**Start here: Expo + a development build.** This is the recommended install path for most apps.
+Use this page for an Expo app. This is the recommended install for most apps.
 
-This module contains custom native code and is **not** supported by Expo Go. You must use a
-[development build](https://docs.expo.dev/develop/development-builds/introduction/) — typically with
-[`expo-dev-client`](https://docs.expo.dev/develop/development-builds/introduction/) and/or
-[EAS Build](https://docs.expo.dev/build/introduction/).
+This module contains custom native code. Expo Go cannot run it. You use a
+[development build](https://docs.expo.dev/develop/development-builds/introduction/), usually with
+`expo-dev-client` or
+[Expo Application Services (EAS) Build](https://docs.expo.dev/build/introduction/).
 
-Bare React Native CLI projects: see [Install with React Native CLI](/installation/react-native).
+A bare React Native CLI project uses [Install with React Native CLI](/installation/react-native).
 
 ## 1. Install the package
 
@@ -18,14 +18,11 @@ Bare React Native CLI projects: see [Install with React Native CLI](/installatio
 npx expo install react-native-google-mobile-ads
 ```
 
-## 2. Configure your App IDs (config plugin)
+## 2. Configure your app IDs (config plugin)
 
-Add the Expo config plugin to your `app.json`, `app.config.js`, or `app.config.ts`. For these
-changes to take effect, rebuild native code and install the new build on your device (see
-[Generate native projects](#4-generate-native-projects-prebuild-once) below).
+Add the Expo config plugin to `app.json`, `app.config.js`, or `app.config.ts`. After you change it, rebuild native code and install the new build on your device. The steps are in [Generate native projects](#4-generate-native-projects-prebuild).
 
-Before you can display ads you must have a [Google AdMob account](https://apps.admob.com) and an
-App ID for each platform — see [Configuration](/configuration) for where to find the App ID.
+Before you display ads, create a [Google AdMob account](https://apps.admob.com) and an app ID for each platform. [Configuration](/configuration) shows where the app ID appears in AdMob.
 
 ```json
 // <project-root>/app.json
@@ -47,14 +44,14 @@ App ID for each platform — see [Configuration](/configuration) for where to fi
 Every plugin key is on the [Config plugin](/config-plugin) page.
 
 <Info>
-  **Single source for Expo App IDs:** put them on the config plugin only. You do **not** also need a
-  root-level `react-native-google-mobile-ads` JSON block with `ios_app_id` / `android_app_id`. The
-  plugin writes `GADApplicationIdentifier` / Android `APPLICATION_ID` during prebuild. A legacy
-  build-script warning about a missing root `ios_app_id` or `android_app_id` can still appear; it is
-  safe to ignore when the plugin already injected the IDs.
+  Put Expo app IDs on the config plugin only. You do not also add a root-level
+  `react-native-google-mobile-ads` block with `ios_app_id` or `android_app_id`. The plugin writes
+  `GADApplicationIdentifier` and the Android `APPLICATION_ID` during prebuild. A legacy build-script
+  warning about a missing root `ios_app_id` or `android_app_id` can still appear. Ignore that warning
+  when the plugin already wrote the IDs.
 </Info>
 
-## 3. Add a development client (`expo-dev-client` / EAS)
+## 3. Add a development client
 
 If you do not already have a development build workflow, install the Expo development client:
 
@@ -62,13 +59,11 @@ If you do not already have a development build workflow, install the Expo develo
 npx expo install expo-dev-client
 ```
 
-Then create a development build — via EAS or a local prebuild + `run:*` — as described in the next
-section.
+Then create a development build. Use EAS, or a local prebuild and a `run:*` command, in the next section.
 
-## 4. Generate native projects (prebuild once)
+## 4. Generate native projects (prebuild)
 
-After installing the module or changing plugin config, generate native projects **once**, then build
-each platform:
+After you install the module or change the plugin config, generate the native projects, then build each platform:
 
 ```bash
 npx expo prebuild
@@ -80,8 +75,7 @@ npx expo run:ios
 npx expo run:android
 ```
 
-If you use EAS instead of local `run:*`, create a new development build (EAS runs prebuild as part of
-the build):
+If you use EAS instead of a local `run:*` command, create a new development build. EAS runs prebuild as part of the build:
 
 ```bash
 npm install --global eas-cli
@@ -93,16 +87,11 @@ eas build --profile development
 eas build --profile development --local
 ```
 
-Re-run prebuild (or create a new EAS build) whenever you change App IDs or other plugin options.
+Run prebuild again, or create a new EAS build, when you change app IDs or other plugin options.
 
 ## Enable SKAdNetwork to track conversions (iOS)
 
-The Google Mobile Ads SDK supports conversion tracking using Apple's SKAdNetwork, which lets Google
-and participating third-party buyers attribute an app install even when the IDFA is not available.
-Add the advised
-[SKAdNetwork identifiers](https://developers.google.com/admob/ios/3p-skadnetworks)
-to your project as described below. Note that these identifiers are subject to change and should be
-updated regularly.
+The Google Mobile Ads software development kit (SDK) supports conversion tracking with Apple's SKAdNetwork. Google and participating third-party buyers can attribute an app install when the Identifier for Advertisers (IDFA) is unavailable. Add the advised [SKAdNetwork identifiers](https://developers.google.com/admob/ios/3p-skadnetworks) to your project. These identifiers change, so update them on a regular schedule.
 
 ```json
 // <project-root>/app.json
@@ -175,9 +164,7 @@ updated regularly.
 
 ## App Tracking Transparency (iOS)
 
-Apple requires apps to display the App Tracking Transparency authorization request for accessing the
-IDFA (leaving the choice to the user, whether to use personalized or non-personalized ads). Within
-your project's configuration file, you have to provide a user tracking usage description:
+Apple requires the app to show the App Tracking Transparency authorization request before it reads the Identifier for Advertisers. The person using the app chooses personalized or non-personalized ads. In the project configuration file, set a user tracking usage description:
 
 ```json
 // <project-root>/app.json
@@ -197,29 +184,17 @@ your project's configuration file, you have to provide a user tracking usage des
 }
 ```
 
-See [Consent & privacy basics](/consent-basics) for how to request App Tracking Transparency
-authorization at runtime.
+Request authorization at runtime on the [Consent and privacy](/consent-basics) page.
 
 ## Optionally configure iOS static frameworks
 
-This module does **not** require static frameworks for a normal Expo install. Use them only when
-another dependency intentionally needs `use_frameworks! :linkage => :static`.
+This module does not require static frameworks for a normal Expo install. Use them only when another dependency needs `use_frameworks! :linkage => :static`.
 
 <Warning>
-  Coexistence with React Native Firebase is covered on [Using with React Native
-  Firebase](/firebase). Prefer RNFB's modern **dynamic Podfile + static ads pod** hybrid there — not
-  the full-static snippet below. Do **not** treat the snippet below as the React Native Firebase
-  recipe (static alone with RNFB's default SPM mode fails at `pod install`).
+  React Native Firebase coexistence is on the [React Native Firebase](/firebase) page. Use that page's dynamic Podfile and static ads pod. Do not use the static snippet on this page as the React Native Firebase recipe. Static frameworks alone fail at `pod install` when React Native Firebase uses its default Swift Package Manager (SPM) mode.
 </Warning>
 
-On Expo, enable **fully static** frameworks for the whole Podfile with `expo-build-properties`
-only when another dependency (unrelated to React Native Firebase) needs that mode. For RNFB SPM
-coexistence you still inject `$RNGoogleMobileAdsAsStaticFramework = true` into the generated
-Podfile (see [Using with React Native Firebase](/firebase)). If resource-bundle pods fail on
-`IPHONEOS_DEPLOYMENT_TARGET`, see
-[iOS CocoaPods deployment targets](/prerequisites#ios-cocoapods-deployment-targets).
-[Follow the official `expo-build-properties`
-instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/) and merge:
+On Expo, enable fully static frameworks for the whole Podfile with `expo-build-properties` only when another dependency, unrelated to React Native Firebase, needs that mode. For React Native Firebase with SPM, you still set `$RNGoogleMobileAdsAsStaticFramework = true` in the generated Podfile, as the React Native Firebase page describes. If a resource-bundle pod fails on `IPHONEOS_DEPLOYMENT_TARGET`, follow [iOS CocoaPods deployment targets](/prerequisites#ios-cocoapods-deployment-targets). Merge the plugin entry from the [`expo-build-properties` instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/):
 
 ```json
 // <project-root>/app.json

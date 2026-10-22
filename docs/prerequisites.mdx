@@ -1,49 +1,41 @@
 ---
 title: Prerequisites
-description: Platform requirements and compatibility notes before installing React Native Google Mobile Ads.
+description: Platform requirements before you install React Native Google Mobile Ads.
 ---
 
-Before installing, confirm your project meets the platform baseline. The New Architecture is
-**required** — native installation fails when it is explicitly disabled. See
-[Migrating to v17](/migration/v17) for the full v17 upgrade checklist.
+Confirm this baseline before you install. The New Architecture is required. Native installation fails when you disable it. The [Migrating to v17](/migration/v17) page lists the full upgrade checklist.
 
 ## Supported baseline
 
-| Requirement             | Floor                                                             |
+| Requirement             | Minimum                                                           |
 | ----------------------- | ----------------------------------------------------------------- |
-| React Native            | **0.86.0** or newer (`peerDependencies`: `react-native >=0.86.0`) |
-| New Architecture        | **Required** — Legacy Architecture is not supported               |
-| iOS deployment target   | **15.1** (`RNGoogleMobileAds.podspec`)                            |
-| Android `minSdkVersion` | **24** (`sdkVersions.android.minSdk` in package metadata)         |
+| React Native            | 0.86.0 or newer (`peerDependencies`: `react-native >=0.86.0`)    |
+| New Architecture        | Required. The Legacy Architecture is not supported.              |
+| iOS deployment target   | 15.1 (`RNGoogleMobileAds.podspec`)                                |
+| Android `minSdkVersion` | 24 (`sdkVersions.android.minSdk` in package metadata)             |
 
 ### New Architecture (required)
 
-v17 ships Turbo Modules and Fabric components only. If New Architecture is turned off,
-native install fails:
+v17 includes Turbo Modules and Fabric components only. If the New Architecture is off, the native install fails.
 
 - **iOS:** CocoaPods raises when `RCT_NEW_ARCH_ENABLED=0`.
-- **Android:** Gradle throws when `newArchEnabled` is set and is not `true` in
-  `android/gradle.properties`.
+- **Android:** Gradle throws when `newArchEnabled` is set and is not `true` in `android/gradle.properties`.
 
-Enable New Architecture in your app (or remove an explicit old-architecture opt-out) before
-installing pods / building Android.
+Enable the New Architecture in your app, or remove an explicit old-architecture opt-out, before you install pods or build Android.
 
 <Info>
-  React Native 0.82 and newer may ignore `newArchEnabled=false` for its own build, but this module's
-  Gradle build still fails whenever `newArchEnabled` is present and not `true`. Treat New
-  Architecture as mandatory on both platforms — do not rely on the Legacy Architecture path.
+  React Native 0.82 and newer may ignore `newArchEnabled=false` for its own build. This module's
+  Gradle build still fails when `newArchEnabled` is present and is not `true`. Treat the New
+  Architecture as mandatory on both platforms. Do not rely on the Legacy Architecture path.
 </Info>
 
 ### iOS CocoaPods deployment targets
 
-Xcode 27 rejects `IPHONEOS_DEPLOYMENT_TARGET` values below **15.0**. This package's podspec
-floor is **15.1**, but Google Mobile Ads / UMP resource-bundle targets can still inherit
-`platforms.ios` **12.0** from those pods. Clamp every pod target in your app `Podfile`
-`post_install` so nothing stays below 15.1:
+Xcode 27 rejects `IPHONEOS_DEPLOYMENT_TARGET` values below 15.0. This package's podspec minimum is 15.1, but Google Mobile Ads and User Messaging Platform (UMP) resource-bundle targets can still inherit `platforms.ios` 12.0 from those pods. Set every pod target in your app `Podfile` `post_install` so the deployment target is at least 15.1:
 
 ```ruby
 post_install do |installer|
-  # ...existing post_install hooks...
+  # existing post_install hooks
 
   min_ios = '15.1'
   installer.pods_project.targets.each do |target|
@@ -57,31 +49,21 @@ post_install do |installer|
 end
 ```
 
-React Native's `updateOSDeploymentTarget` only rewrites pod _native_ target configs; the
-resource-bundle targets still need this clamp. The example app's `Podfile` applies the same
-pattern.
+React Native's `updateOSDeploymentTarget` only rewrites pod native target configs. The resource-bundle targets still need this clamp. The example app's `Podfile` uses the same pattern.
 
 ### Android host notes
 
-The supported and tested Android host baseline uses compile / target API level **36** and Build
-Tools **36.0.0**. Standalone package builds use Android Gradle Plugin 8.6.0; the library does
-not enforce the host application's Android Gradle Plugin version.
+The supported and tested Android host baseline uses compile and target API level 36 and Build Tools 36.0.0. Standalone package builds use Android Gradle Plugin 8.6.0. The library does not enforce the host application's Android Gradle Plugin version.
 
 <Info>
-  On Android, before releasing your app, you must select "Yes, my app contains ads" in the Google
-  Play Console under "Policy and programmes" > "App content" > "Manage".
+  On Android, before you release your app, select **Yes, my app contains ads** in the Google Play Console under **Policy and programmes** > **App content** > **Manage**.
 </Info>
 
 ### Android Kotlin compatibility
 
-Google Mobile Ads Android SDK 25.4 ships Kotlin 2.3 metadata. This library supports
-Kotlin 1.9.25 and newer:
+Google Mobile Ads Android software development kit (SDK) 25.4 includes Kotlin 2.3 metadata. This library supports Kotlin 1.9.25 and newer:
 
-- With Kotlin 1.9.25 through versions earlier than 2.3, the library adds
-  `-Xskip-metadata-version-check` only to its own Kotlin compile tasks.
+- With Kotlin 1.9.25 through versions earlier than 2.3, the library adds `-Xskip-metadata-version-check` only to its own Kotlin compile tasks.
 - With Kotlin 2.3 or newer, no metadata skip is added.
 
-The scoped compiler flag is safe here because this module consumes the Google Mobile
-Ads public Java API. It is a compiler compatibility setting, not a dependency exclusion.
-If Kotlin code in your app or another module directly consumes an affected dependency,
-upgrade that module to Kotlin 2.3+ or configure its compile tasks separately.
+The scoped compiler flag is safe here because this module consumes the Google Mobile Ads public Java application programming interface (API). It is a compiler compatibility setting, not a dependency exclusion. If Kotlin code in your app or another module directly consumes an affected dependency, upgrade that module to Kotlin 2.3 or newer, or configure its compile tasks separately.

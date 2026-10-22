@@ -1,6 +1,6 @@
 ---
 title: React Native Google Mobile Ads
-description: Install the SDK, request consent, and show a test ad.
+description: Install the Google Mobile Ads software development kit (SDK), request consent, and show a test ad.
 ---
 
 Ads are served through Google AdMob or Google Ad Manager, so an
@@ -8,17 +8,17 @@ Ads are served through Google AdMob or Google Ad Manager, so an
 
 ## Install
 
-An agent uses the same install as a person. [Install with agents](/ai-agents) is the prompt. It points at Install with Expo or Install with React Native CLI, whichever app this is, and at the rules in the npm package. Consent comes before initialize.
+A coding agent follows the same install as you. [Install with agents](/ai-agents) is the prompt. It sends the agent to Install with Expo or Install with React Native CLI, for the app you already have, and to the rules in the npm package. Request consent before you call `mobileAds().initialize()`.
 
-There are two installs because the native setup differs. Both install this package. [Prerequisites](/prerequisites) applies to both: React Native 0.86 or newer, New Architecture, iOS 15.1, Android minSdk 24.
+There are two installs because the native setup differs. Both install this package. [Prerequisites](/prerequisites) apply to both: React Native 0.86 or newer, the New Architecture, iOS 15.1, and Android `minSdk` 24.
 
-[Install with Expo](/installation/expo) is for an Expo app. App IDs go on the config plugin. The package has native code, so you use a development build and prebuild. Expo Go cannot run it. The key list is the [Config plugin](/config-plugin) page.
+[Install with Expo](/installation/expo) is for an Expo app. App IDs go on the config plugin. The package has native code, so you use a development build and prebuild. Expo Go cannot run it. Every plugin key is on the [Config plugin](/config-plugin) page.
 
-[Install with React Native CLI](/installation/react-native) is for a bare app. App IDs go in root `app.json`. CocoaPods and the iOS build phase apply them on the next build.
+[Install with React Native CLI](/installation/react-native) is for a bare app. App IDs go in the root `app.json`. CocoaPods and the iOS build phase apply them on the next build.
 
 <CardGroup cols={2}>
   <Card title="Prerequisites" icon="list-check" href="/prerequisites">
-    React Native 0.86+, New Architecture, iOS 15.1, Android minSdk 24.
+    React Native 0.86 or newer, New Architecture, iOS 15.1, Android minSdk 24.
   </Card>
   <Card title="Agents" icon="robot" href="/ai-agents">
     The prompt, the docs to follow, and what to include in an issue.
@@ -31,7 +31,7 @@ There are two installs because the native setup differs. Both install this packa
   </Card>
 </CardGroup>
 
-## Set Up Ads
+## Set up ads
 
 <CardGroup cols={2}>
   <Card title="Consent and privacy" icon="book" href="/consent-basics">
