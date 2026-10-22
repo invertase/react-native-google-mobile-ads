@@ -29,7 +29,7 @@ Use `mobileAds()` (not a capital-`MobileAds()` constructor). Prefer the v17 **op
 - **Register test devices:** Emulators / simulators are automatic on every backend. Physical devices: copy the hashed id the SDK logs (logcat / Xcode console) into `testDeviceIdentifiers`. `TestDeviceIds.EMULATOR` is a classic-Android-only alias
 - **Ask what this binary supports:** `getAdCapabilities()` (prefer presets over hand-rolled matrices)
 
-Classic, hooks, and pools are **additive** — existing create/load/show keeps working. Details: [generated API reference](https://invertase.github.io/react-native-google-mobile-ads/), [Migrating to v17](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17), [Preload pools](https://docs.page/invertase/react-native-google-mobile-ads/preload-pools-and-multiformat-recipes).
+Classic, hooks, and pools are **additive** — existing create/load/show keeps working. Details: [generated API reference](https://invertase.github.io/react-native-google-mobile-ads/), [Migrating to v17](https://docs.page/invertase/react-native-google-mobile-ads/migration/v17), [Preload pools](https://docs.page/invertase/react-native-google-mobile-ads/preload-pools-and-multiformat-recipes).
 
 ---
 
@@ -64,14 +64,17 @@ For pools: `AdPools.create` initializes the SDK on Android and starts preloading
 
 Base: `https://docs.page/invertase/react-native-google-mobile-ads`
 
-- **Getting Started:** `/`, `/prerequisites`, `/installation/expo`, `/installation/react-native`, `/configuration`, `/firebase`, `/consent-basics`, `/initialization`, `/first-ad`
-- **Ad formats:** `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,hooks,ad-manager,custom-native}`
-- **Advanced:** `/preload-pools-and-multiformat-recipes`, `/next-gen-sdk`, `/mediation`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control`
-- **Testing:** `/testing`, `/common-reasons-for-ads-not-showing`, `/ad-inspector`
-- **Reference:** External [Reference API](https://invertase.github.io/react-native-google-mobile-ads/), `/config-plugin`, `/ai-agents`
-- **Migration:** `/migrating-to-v17` (and older `/migrating-to-v{15,6,5}`)
+- **Getting Started:** `/` (sidebar title Overview). **Install** is a subgroup: `/prerequisites`, `/ai-agents`, `/installation/expo`, `/installation/react-native`
+- **Set Up Ads:** `/consent-basics`, `/initialization`, `/first-ad`
+- **Ad Formats:** `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,hooks,ad-manager,custom-native}`
+- **Integrations:** `/firebase`, `/mediation`, `/webview-api-for-ads`, `/next-gen-sdk`
+- **Advanced:** `/preload-pools-and-multiformat-recipes`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control`, `/config-plugin`
+- **Troubleshooting:** `/testing`, `/common-reasons-for-ads-not-showing`, `/ad-inspector`
+- **Reference** (top tab): `/configuration`
+- **Migration** (top tab): `/migration`, `/migration/v17` (and older `/migration/v{15,6,5}`)
+- External [Reference API](https://invertase.github.io/react-native-google-mobile-ads/) is the Typedoc tab.
 
-Use the paths above. `/displaying-ads`, `/displaying-ads-hook`, `/native-ads`, and `/rngma-v17-api-reference` are retired routes; their content lives under `/ad-formats/*` and the external Reference API.
+Use the paths above. `/displaying-ads`, `/displaying-ads-hook`, `/native-ads`, `/rngma-v17-api-reference`, and `/migrating-to-v17`, `/migrating-to-v15`, `/migrating-to-v6`, and `/migrating-to-v5` are retired routes. Migration content lives under `/migration/*`. The ad-format stubs point at `/ad-formats/*`. The old API reference points at the external Reference API.
 
 ---
 
@@ -81,7 +84,7 @@ File on [GitHub Issues](https://github.com/invertase/react-native-google-mobile-
 
 **Always attach:** RN / Expo SDK versions, `react-native-google-mobile-ads` version, iOS/Android, New Architecture on (required), ad unit type, whether test IDs / test devices were used, and a **minimal reproduction** (smallest app or Snack/repo that shows the bug).
 
-**Diagnostics dump:** attach the per-bug-kind details (Ad Inspector outcome, summarized `ResponseInfo`, `getAdCapabilities()` output, structured error fields) listed in [Migrating to v17 § Diagnostics dump for issue reports](https://docs.page/invertase/react-native-google-mobile-ads/migrating-to-v17#diagnostics-dump-for-issue-reports).
+**Diagnostics dump:** attach the per-bug-kind details (Ad Inspector outcome, summarized `ResponseInfo`, `getAdCapabilities()` output, structured error fields) listed in [Migrating to v17 § Diagnostics dump for issue reports](https://docs.page/invertase/react-native-google-mobile-ads/migration/v17#diagnostics-dump-for-issue-reports).
 
 Rule out config first: [Common reasons ads do not show](https://docs.page/invertase/react-native-google-mobile-ads/common-reasons-for-ads-not-showing), [Testing](https://docs.page/invertase/react-native-google-mobile-ads/testing).
 

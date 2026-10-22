@@ -1,0 +1,14 @@
+---
+title: Migrating to v15
+description: Understand the Android Kotlin guidance that accompanied the v15 release.
+---
+
+## Important Notice (Android Only)
+
+The original v15 guidance recommended Kotlin 2.0.0 to match its contemporary Android
+build tools. That is not a general minimum for later releases.
+
+For v17, use Kotlin 1.9.25 or newer. Google Mobile Ads Android SDK 25.4 ships Kotlin 2.3
+metadata, so v17 applies a module-scoped metadata compatibility compiler flag when built
+with Kotlin versions earlier than 2.3. Kotlin 2.3 and newer need no skip. See
+[Android Kotlin compatibility](/prerequisites#android-kotlin-compatibility) for details.

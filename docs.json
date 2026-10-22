@@ -42,6 +42,16 @@
     },
     {
       "id": "reference",
+      "title": "Reference",
+      "href": "/configuration"
+    },
+    {
+      "id": "migration",
+      "title": "Migration",
+      "href": "/migration"
+    },
+    {
+      "id": "api",
       "title": "Reference API",
       "href": "https://invertase.github.io/react-native-google-mobile-ads/"
     }
@@ -50,81 +60,95 @@
     "/displaying-ads": "/ad-formats",
     "/displaying-ads-hook": "/ad-formats/hooks",
     "/native-ads": "/ad-formats/native",
-    "/rngma-v17-api-reference": "https://invertase.github.io/react-native-google-mobile-ads/"
+    "/rngma-v17-api-reference": "https://invertase.github.io/react-native-google-mobile-ads/",
+    "/migrating-to-v17": "/migration/v17",
+    "/migrating-to-v15": "/migration/v15",
+    "/migrating-to-v6": "/migration/v6",
+    "/migrating-to-v5": "/migration/v5"
   },
   "sidebar": [
     {
       "group": "Getting Started",
-      "icon": "rocket",
+      "icon": "house",
+      "tab": "root",
       "pages": [
         {
-          "title": "Getting Started",
+          "title": "Overview",
           "href": "/"
         },
         {
-          "title": "Prerequisites",
-          "href": "/prerequisites"
-        },
+          "group": "Install",
+          "pages": [
+            {
+              "title": "Prerequisites",
+              "href": "/prerequisites"
+            },
+            {
+              "title": "Agents",
+              "href": "/ai-agents"
+            },
+            {
+              "title": "Expo",
+              "href": "/installation/expo"
+            },
+            {
+              "title": "React Native CLI",
+              "href": "/installation/react-native"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "Set Up Ads",
+      "icon": "mobile-screen",
+      "tab": "root",
+      "pages": [
         {
-          "title": "Install with Expo",
-          "href": "/installation/expo"
-        },
-        {
-          "title": "Install with React Native CLI",
-          "href": "/installation/react-native"
-        },
-        {
-          "title": "Configuration",
-          "href": "/configuration"
-        },
-        {
-          "title": "Using with React Native Firebase",
-          "href": "/firebase"
-        },
-        {
-          "title": "Consent & privacy basics",
+          "title": "Consent and privacy",
           "href": "/consent-basics"
         },
         {
-          "title": "Initializing the SDK",
+          "title": "Initialize the SDK",
           "href": "/initialization"
         },
         {
-          "title": "Show your first ad",
+          "title": "Test ads",
           "href": "/first-ad"
         }
       ]
     },
     {
-      "group": "Ad formats",
+      "group": "Ad Formats",
       "icon": "rectangle-ad",
+      "tab": "root",
       "pages": [
         {
-          "title": "Overview",
+          "title": "Ad formats",
           "href": "/ad-formats"
         },
         {
-          "title": "App open",
+          "title": "App open ads",
           "href": "/ad-formats/app-open"
         },
         {
-          "title": "Banner",
+          "title": "Banner ads",
           "href": "/ad-formats/banner"
         },
         {
-          "title": "Interstitial",
+          "title": "Interstitial ads",
           "href": "/ad-formats/interstitial"
         },
         {
-          "title": "Rewarded",
+          "title": "Rewarded ads",
           "href": "/ad-formats/rewarded"
         },
         {
-          "title": "Rewarded interstitial",
+          "title": "Rewarded interstitial ads",
           "href": "/ad-formats/rewarded-interstitial"
         },
         {
-          "title": "Native",
+          "title": "Native ads",
           "href": "/ad-formats/native"
         },
         {
@@ -142,53 +166,70 @@
       ]
     },
     {
-      "group": "Advanced",
-      "icon": "sliders",
+      "group": "Integrations",
+      "icon": "plug",
+      "tab": "root",
       "pages": [
         {
-          "title": "Preload pools & multi-format recipes",
-          "href": "/preload-pools-and-multiformat-recipes"
-        },
-        {
-          "title": "GMA Next-Gen SDK (Android)",
-          "href": "/next-gen-sdk"
+          "title": "React Native Firebase",
+          "href": "/firebase"
         },
         {
           "title": "Mediation",
           "href": "/mediation"
         },
         {
-          "title": "WebView API for Ads",
+          "title": "WebView ads",
           "href": "/webview-api-for-ads"
+        },
+        {
+          "title": "Next-Gen SDK (Android)",
+          "href": "/next-gen-sdk"
+        }
+      ]
+    },
+    {
+      "group": "Advanced",
+      "icon": "sliders",
+      "tab": "root",
+      "pages": [
+        {
+          "title": "Preload pools and multi-format",
+          "href": "/preload-pools-and-multiformat-recipes"
         },
         {
           "title": "European user consent",
           "href": "/european-user-consent"
         },
         {
-          "title": "Impression-level ad revenue",
+          "title": "Impression revenue",
           "href": "/impression-level-ad-revenue"
         },
         {
-          "title": "Revenue telemetry & auction diagnostics",
+          "title": "Revenue and auction diagnostics",
           "href": "/revenue-telemetry-and-auction-diagnostics"
         },
         {
-          "title": "Video ad volume control",
+          "title": "Video volume",
           "href": "/video-ad_volume-control"
+        },
+        {
+          "title": "Config plugin",
+          "href": "/config-plugin"
         }
       ]
     },
     {
-      "group": "Testing & debugging",
+      "group": "Troubleshooting",
       "icon": "bug",
+      "tab": "root",
       "pages": [
         {
-          "title": "Testing",
+          "title": "Testing ads",
           "href": "/testing"
         },
         {
-          "title": "Common reasons ads do not show",
+          "title": "Configuration failures",
           "href": "/common-reasons-for-ads-not-showing"
         },
         {
@@ -200,36 +241,38 @@
     {
       "group": "Reference",
       "icon": "book",
+      "tab": "reference",
       "pages": [
         {
-          "title": "Config plugin reference",
-          "href": "/config-plugin"
-        },
-        {
-          "title": "For AI agents",
-          "href": "/ai-agents"
+          "title": "Configuration",
+          "href": "/configuration"
         }
       ]
     },
     {
-      "group": "Migration guides",
+      "group": "Migration Guides",
       "icon": "code-branch",
+      "tab": "migration",
       "pages": [
         {
+          "title": "Choose a version",
+          "href": "/migration"
+        },
+        {
           "title": "Migrating to v17",
-          "href": "/migrating-to-v17"
+          "href": "/migration/v17"
         },
         {
           "title": "Migrating to v15",
-          "href": "/migrating-to-v15"
+          "href": "/migration/v15"
         },
         {
           "title": "Migrating to v6",
-          "href": "/migrating-to-v6"
+          "href": "/migration/v6"
         },
         {
           "title": "Migrating to v5",
-          "href": "/migrating-to-v5"
+          "href": "/migration/v5"
         }
       ]
     }

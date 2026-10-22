@@ -1,9 +1,15 @@
 ---
-title: For AI agents
+title: Install with agents
 description: How AI coding agents should use these docs and the project to integrate and troubleshoot React Native Google Mobile Ads.
 ---
 
 If you are an AI coding agent helping a developer integrate or debug `react-native-google-mobile-ads`, start here.
+
+Paste this before the agent edits the app.
+
+```text
+Read https://docs.page/invertase/react-native-google-mobile-ads/installation/expo.md (use …/installation/react-native.md for bare RN CLI), then https://docs.page/invertase/react-native-google-mobile-ads/ai-agents.md and node_modules/react-native-google-mobile-ads/AGENTS.md. Consent before initialize. New Architecture required.
+```
 
 <Info>
   These docs are published on [docs.page](https://use.docs.page), which exposes agent-friendly
@@ -14,8 +20,8 @@ If you are an AI coding agent helping a developer integrate or debug `react-nati
 ## Integrators: start here
 
 If you are **adding this library to an app**, the human documentation in the sidebar is the canonical, cross-platform
-source of truth. Follow the integration path on the [Getting Started](/) page in order, then the
-[ad formats](/ad-formats) and [Migrating to v17](/migrating-to-v17).
+source of truth. Start at the [overview](/), follow Getting Started, Install, and Set Up Ads in the sidebar, then
+[ad formats](/ad-formats) and [Migrating to v17](/migration/v17).
 
 The library also ships an integrator-focused `AGENTS.md` inside the npm package
 (`node_modules/react-native-google-mobile-ads/AGENTS.md`) with condensed v17 API steering and an issue-reporting
@@ -32,7 +38,7 @@ app. When in doubt, prefer these docs and the package types.
 
 When filing an issue on the [GitHub repository](https://github.com/invertase/react-native-google-mobile-ads), include a
 minimal reproduction and the details listed in
-[Diagnostics dump for issue reports](/migrating-to-v17#diagnostics-dump-for-issue-reports), and use the
+[Diagnostics dump for issue reports](/migration/v17#diagnostics-dump-for-issue-reports), and use the
 [Ad Inspector](/ad-inspector) and [Common reasons ads do not show](/common-reasons-for-ads-not-showing) to rule out
 configuration causes first.
 

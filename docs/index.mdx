@@ -1,38 +1,73 @@
 ---
-title: Getting Started
-description: Introduction to React Native Google Mobile Ads and the ad formats it supports.
+title: React Native Google Mobile Ads
+description: Install the SDK, request consent, and show a test ad.
 ---
 
-The AdMob module allows you to display adverts to your users. Adverts are served through Google AdMob or
-Google Ad Manager, so a [Google AdMob](https://apps.admob.com) or
-[Google Ad Manager](https://admanager.google.com) account is required.
+Ads are served through Google AdMob or Google Ad Manager, so an
+[AdMob](https://apps.admob.com) or [Ad Manager](https://admanager.google.com) account is required.
 
-Built and maintained by [Invertase](https://invertase.io/?utm_source=docs&utm_medium=getting-started&utm_campaign=react-native-google-mobile-ads).
+## Install
 
-<Info>
-  Using an AI coding agent? Point it at [For AI agents](/ai-agents) first: it explains how agents
-  should use these docs and the bundled `AGENTS.md` guide to integrate and troubleshoot this
-  library.
-</Info>
+An agent uses the same install as a person. [Install with agents](/ai-agents) is the prompt. It points at Install with Expo or Install with React Native CLI, whichever app this is, and at the rules in the npm package. Consent comes before initialize.
 
-The module supports six ad formats:
+There are two installs because the native setup differs. Both install this package. [Prerequisites](/prerequisites) applies to both: React Native 0.86 or newer, New Architecture, iOS 15.1, Android minSdk 24.
 
-1. Full screen [App open ads](/ad-formats/app-open).
-2. Component based [Banner ads](/ad-formats/banner).
-3. Full screen [Interstitial ads](/ad-formats/interstitial).
-4. Full screen [Rewarded ads](/ad-formats/rewarded).
-5. Full screen [Rewarded interstitial ads](/ad-formats/rewarded-interstitial).
-6. Component based [Native ads](/ad-formats/native).
+[Install with Expo](/installation/expo) is for an Expo app. App IDs go on the config plugin. The package has native code, so you use a development build and prebuild. Expo Go cannot run it. The key list is the [Config plugin](/config-plugin) page.
 
-## New here? Follow the integration path
+[Install with React Native CLI](/installation/react-native) is for a bare app. App IDs go in root `app.json`. CocoaPods and the iOS build phase apply them on the next build.
 
-1. [Prerequisites & platform requirements](/prerequisites)
-2. **Install (default):** [Install with Expo](/installation/expo) (Expo + a development build) — then, only if you are on
-   bare React Native CLI, [Install with React Native CLI](/installation/react-native)
-3. [Configure your AdMob App IDs](/configuration)
-4. [Using with React Native Firebase](/firebase) (optional)
-5. [Consent & privacy basics](/consent-basics)
-6. [Initialize the SDK](/initialization)
-7. [Show your first ad](/first-ad)
+<CardGroup cols={2}>
+  <Card title="Prerequisites" icon="list-check" href="/prerequisites">
+    React Native 0.86+, New Architecture, iOS 15.1, Android minSdk 24.
+  </Card>
+  <Card title="Agents" icon="robot" href="/ai-agents">
+    The prompt, the docs to follow, and what to include in an issue.
+  </Card>
+  <Card title="Expo" icon="rocket" href="/installation/expo">
+    Config plugin, development build, and prebuild.
+  </Card>
+  <Card title="React Native CLI" icon="terminal" href="/installation/react-native">
+    App IDs in app.json, CocoaPods, and the iOS build phase.
+  </Card>
+</CardGroup>
 
-Then explore the [ad formats](/ad-formats) in depth.
+## Set Up Ads
+
+<CardGroup cols={2}>
+  <Card title="Consent and privacy" icon="book" href="/consent-basics">
+    Gather consent before you initialize.
+  </Card>
+  <Card title="Initialize the SDK" icon="rocket" href="/initialization">
+    Call mobileAds().initialize() after consent.
+  </Card>
+  <Card title="Test ads" icon="rectangle-ad" href="/first-ad">
+    Use a test unit ID for the format you picked.
+  </Card>
+</CardGroup>
+
+## Ad formats
+
+<CardGroup cols={2}>
+  <Card title="Ad formats" icon="rectangle-ad" href="/ad-formats">
+    Banner, interstitial, rewarded, app open, and native.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<CardGroup cols={2}>
+  <Card title="Configuration failures" icon="bug" href="/common-reasons-for-ads-not-showing">
+    App ID, consent, test device, format, and network.
+  </Card>
+</CardGroup>
+
+## Help
+
+<CardGroup cols={2}>
+  <Card title="Discord" icon="comment" href="https://invertase.link/discord">
+    Ask a question.
+  </Card>
+  <Card title="GitHub Issues" icon="bug" href="https://github.com/invertase/react-native-google-mobile-ads/issues">
+    Report a bug.
+  </Card>
+</CardGroup>
