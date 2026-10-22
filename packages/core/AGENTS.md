@@ -71,7 +71,7 @@ Base: `https://docs.page/invertase/react-native-google-mobile-ads`
 - **Advanced:** `/preload-pools-and-multiformat-recipes`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control`, `/config-plugin`
 - **Testing & Debugging:** `/testing`, `/common-reasons-for-ads-not-showing`, `/ad-inspector`
 - **Migration** (top tab): `/migration/v17` (and older `/migration/v{15,6,5}`). `/migration` redirects to `/migration/v17`.
-- External [Reference API](https://invertase.github.io/react-native-google-mobile-ads/) is the Typedoc tab.
+- External [Reference API](https://invertase.github.io/react-native-google-mobile-ads/) is the TypeDoc tab.
 
 Use the paths above. `/displaying-ads`, `/displaying-ads-hook`, `/native-ads`, `/rngma-v17-api-reference`, and `/migrating-to-v17`, `/migrating-to-v15`, `/migrating-to-v6`, and `/migrating-to-v5` are retired routes. Migration content lives under `/migration/*`. The ad-format stubs point at `/ad-formats/*`. The old API reference points at the external Reference API.
 

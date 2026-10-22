@@ -46,6 +46,7 @@ If your app does not use Expo, follow [Install with React Native CLI](/installat
       warning about a missing root `ios_app_id` or `android_app_id` can still appear. Ignore that warning
       when the plugin already wrote the IDs.
     </Info>
+
   </Step>
   <Step title="Add a development client">
     If you do not already have a development build workflow, install the Expo development client:
@@ -55,6 +56,7 @@ If your app does not use Expo, follow [Install with React Native CLI](/installat
     ```
 
     Then create a development build. Use EAS, or a local prebuild and a `run:*` command, in the next step.
+
   </Step>
   <Step title="Generate native projects">
     <span id="4-generate-native-projects-prebuild" />
@@ -84,6 +86,7 @@ If your app does not use Expo, follow [Install with React Native CLI](/installat
     ```
 
     Run prebuild again, or create a new EAS build, when you change app IDs or other plugin options.
+
   </Step>
 </Steps>
 
@@ -189,7 +192,10 @@ Request authorization at runtime on the [Consent and privacy](/consent-basics) p
 This module does not require static frameworks for a normal Expo install. Use them only when another dependency needs `use_frameworks! :linkage => :static`.
 
 <Warning>
-  React Native Firebase coexistence is on the [React Native Firebase](/firebase) page. Use that page's dynamic Podfile and static ads pod. Do not use the static snippet on this page as the React Native Firebase recipe. Static frameworks alone fail at `pod install` when React Native Firebase uses its default Swift Package Manager (SPM) mode.
+  React Native Firebase coexistence is on the [React Native Firebase](/firebase) page. Use that
+  page's dynamic Podfile and static ads pod. Do not use the static snippet on this page as the React
+  Native Firebase recipe. Static frameworks alone fail at `pod install` when React Native Firebase
+  uses its default Swift Package Manager (SPM) mode.
 </Warning>
 
 On Expo, enable fully static frameworks for the whole Podfile with `expo-build-properties` only when another dependency, unrelated to React Native Firebase, needs that mode. For React Native Firebase with SPM, you still set `$RNGoogleMobileAdsAsStaticFramework = true` in the generated Podfile, as the React Native Firebase page describes. If a resource-bundle pod fails on `IPHONEOS_DEPLOYMENT_TARGET`, follow [iOS CocoaPods deployment targets](/prerequisites#ios-cocoapods-deployment-targets). Merge the plugin entry from the [`expo-build-properties` instructions](https://docs.expo.dev/versions/latest/sdk/build-properties/):

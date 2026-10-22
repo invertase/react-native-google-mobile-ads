@@ -12,6 +12,7 @@ Create the AdMob app, copy each platform's App ID into this project, and set ad 
     <Warning>
       A build without a valid App ID for this package crashes on start or fails to build.
     </Warning>
+
   </Step>
   <Step title="Copy the App ID">
     Under **App settings**, copy the App ID.
@@ -22,12 +23,14 @@ Create the AdMob app, copy each platform's App ID into this project, and set ad 
       caption="App ID on the AdMob App settings page."
       width={640}
     />
+
   </Step>
   <Step title="Add the App ID to the project">
     Put each App ID in one place. Do not also paste it into `Info.plist` or `AndroidManifest.xml`.
 
     - **Expo:** config plugin (`androidAppId` / `iosAppId`). See [Install with Expo](/installation/expo).
     - **React Native CLI:** root `app.json` snake_case (`android_app_id` / `ios_app_id`). See [Install with React Native CLI](/installation/react-native). Missing keys warn at build time and can crash the SDK on startup.
+
   </Step>
   <Step title="Configure outbound requests">
     <span id="configure-outbound-requests" />
@@ -59,5 +62,6 @@ Create the AdMob app, copy each platform's App ID into this project, and set ad 
     ```
 
     The fields are in the [`RequestConfiguration`](https://github.com/invertase/react-native-google-mobile-ads/blob/main/packages/core/src/types/RequestConfiguration.ts) source.
+
   </Step>
 </Steps>
