@@ -3,11 +3,7 @@ title: Mediation
 description: Configure AdMob mediation adapters for React Native Google Mobile Ads.
 ---
 
-AdMob Mediation is a feature lets you serve ads to your apps from multiple sources, including the AdMob Network and third-party ad sources, in one place.
-AdMob Mediation helps maximize your fill rate and increase your monetization by sending ad requests to multiple networks to verify you find the best
-available network to serve ads.
-
-This guide walks you through configuring mediation using the `react-native-google-mobile-ads` library.
+Mediation asks more than one ad network for an ad, including AdMob, and serves the one that wins. Use it when you want a higher chance of a filled request. This page is how you add the adapters for this library.
 
 ## Configure mediation in the AdMob UI
 
@@ -163,7 +159,7 @@ If AppLovin / Unity mediation start fine and only Meta fails at launch:
 
 1. Confirm the **AdMob / GAM** iOS App ID is in Info.plist (`GADApplicationIdentifier` via the core Expo
    plugin). A missing AdMob App ID also crashes at start; that is unrelated to Meta and is already
-   covered in [Configuration](/configuration).
+   covered in [Google AdMob](/configuration).
 2. Set `NSUserTrackingUsageDescription` (core plugin `userTrackingUsageDescription`) when you use ATT.
 3. Prefer the scoped package tip pin in `packages/facebook/package.json` `sdkVersions`
    over an older Expo `expo-build-properties` pod pin.

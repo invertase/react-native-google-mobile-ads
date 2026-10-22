@@ -1,93 +1,91 @@
 ---
 title: Install with Expo
-description: Install and configure React Native Google Mobile Ads in an Expo project using the config plugin and a development build.
+description: The config plugin and a development build for an app that already uses Expo.
 ---
 
-Use this page for an Expo app. This is the recommended install for most apps.
+Pick this install when your app uses [Expo](https://expo.dev/). For this library, that is the recommended install. Expo reads the app config, and the config plugin writes the native iOS and Android projects at prebuild, including the AdMob app IDs.
 
-This module contains custom native code. Expo Go cannot run it. You use a
-[development build](https://docs.expo.dev/develop/development-builds/introduction/), usually with
-`expo-dev-client` or
-[Expo Application Services (EAS) Build](https://docs.expo.dev/build/introduction/).
+This package contains native code, so Expo Go cannot run it. Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/), usually with `expo-dev-client` or [Expo Application Services (EAS) Build](https://docs.expo.dev/build/introduction/).
 
-A bare React Native CLI project uses [Install with React Native CLI](/installation/react-native).
+If your app does not use Expo, follow [Install with React Native CLI](/installation/react-native).
 
-## 1. Install the package
+<Steps>
+  <Step title="Install the package">
+    ```bash
+    npx expo install react-native-google-mobile-ads
+    ```
+  </Step>
+  <Step title="Configure your app IDs">
+    Add the Expo config plugin to `app.json`, `app.config.js`, or `app.config.ts`. After you change it, rebuild native code and install the new build on your device. The steps are in [Generate native projects](#4-generate-native-projects-prebuild).
 
-```bash
-npx expo install react-native-google-mobile-ads
-```
+    Before you display ads, create a [Google AdMob account](https://apps.admob.com) and an app ID for each platform. [Google AdMob](/configuration) shows where the app ID appears in AdMob.
 
-## 2. Configure your app IDs (config plugin)
+    ```json
+    // <project-root>/app.json
+    {
+      "expo": {
+        "plugins": [
+          [
+            "react-native-google-mobile-ads",
+            {
+              "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+              "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+            }
+          ]
+        ]
+      }
+    }
+    ```
 
-Add the Expo config plugin to `app.json`, `app.config.js`, or `app.config.ts`. After you change it, rebuild native code and install the new build on your device. The steps are in [Generate native projects](#4-generate-native-projects-prebuild).
+    Every plugin key is on the [Config plugin](/config-plugin) page.
 
-Before you display ads, create a [Google AdMob account](https://apps.admob.com) and an app ID for each platform. [Configuration](/configuration) shows where the app ID appears in AdMob.
+    <Info>
+      Put Expo app IDs on the config plugin only. You do not also add a root-level
+      `react-native-google-mobile-ads` block with `ios_app_id` or `android_app_id`. The plugin writes
+      `GADApplicationIdentifier` and the Android `APPLICATION_ID` during prebuild. A legacy build-script
+      warning about a missing root `ios_app_id` or `android_app_id` can still appear. Ignore that warning
+      when the plugin already wrote the IDs.
+    </Info>
+  </Step>
+  <Step title="Add a development client">
+    If you do not already have a development build workflow, install the Expo development client:
 
-```json
-// <project-root>/app.json
-{
-  "expo": {
-    "plugins": [
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx"
-        }
-      ]
-    ]
-  }
-}
-```
+    ```bash
+    npx expo install expo-dev-client
+    ```
 
-Every plugin key is on the [Config plugin](/config-plugin) page.
+    Then create a development build. Use EAS, or a local prebuild and a `run:*` command, in the next step.
+  </Step>
+  <Step title="Generate native projects">
+    <span id="4-generate-native-projects-prebuild" />
 
-<Info>
-  Put Expo app IDs on the config plugin only. You do not also add a root-level
-  `react-native-google-mobile-ads` block with `ios_app_id` or `android_app_id`. The plugin writes
-  `GADApplicationIdentifier` and the Android `APPLICATION_ID` during prebuild. A legacy build-script
-  warning about a missing root `ios_app_id` or `android_app_id` can still appear. Ignore that warning
-  when the plugin already wrote the IDs.
-</Info>
+    After you install the module or change the plugin config, generate the native projects, then build each platform:
 
-## 3. Add a development client
+    ```bash
+    npx expo prebuild
 
-If you do not already have a development build workflow, install the Expo development client:
+    # iOS
+    npx expo run:ios
 
-```bash
-npx expo install expo-dev-client
-```
+    # Android
+    npx expo run:android
+    ```
 
-Then create a development build. Use EAS, or a local prebuild and a `run:*` command, in the next section.
+    If you use EAS instead of a local `run:*` command, create a new development build. EAS runs prebuild as part of the build:
 
-## 4. Generate native projects (prebuild)
+    ```bash
+    npm install --global eas-cli
 
-After you install the module or change the plugin config, generate the native projects, then build each platform:
+    # Online
+    eas build --profile development
 
-```bash
-npx expo prebuild
+    # Local
+    eas build --profile development --local
+    ```
 
-# iOS
-npx expo run:ios
-
-# Android
-npx expo run:android
-```
-
-If you use EAS instead of a local `run:*` command, create a new development build. EAS runs prebuild as part of the build:
-
-```bash
-npm install --global eas-cli
-
-# Online
-eas build --profile development
-
-# Local
-eas build --profile development --local
-```
-
-Run prebuild again, or create a new EAS build, when you change app IDs or other plugin options.
+    Run prebuild again, or create a new EAS build, when you change app IDs or other plugin options.
+  </Step>
+</Steps>
 
 ## Enable SKAdNetwork to track conversions (iOS)
 

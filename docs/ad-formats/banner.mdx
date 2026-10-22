@@ -7,10 +7,11 @@ Banner ads are partial adverts which can be integrated within your existing appl
 a Banner only takes up a limited area of the application and displays an advert within the area. This allows you to integrate
 adverts without a disruptive action.
 
-<img
-  width="200"
+<Image
   src="https://developers.google.com/static/admob/images/Android_adaptive.png"
   alt="Anchored adaptive banner at the bottom of a mobile screen"
+  caption="Anchored adaptive banner at the bottom of a screen."
+  width={200}
 />
 
 <Warning>
@@ -91,10 +92,11 @@ Use `onPaid` to forward impression-level revenue to your telemetry pipeline. See
 creative and can be as tall as the device screen by default, so constrain the slot with
 `maxHeight` when your layout cannot accept that much vertical space:
 
-<img
-  width="600"
+<Image
   src="https://developers.google.com/static/admob/images/inline-adaptive.png"
   alt="Inline adaptive banner examples at different widths and heights"
+  caption="Inline adaptive banners at different widths and heights."
+  width={600}
 />
 
 ```tsx
@@ -145,10 +147,11 @@ Collapsible banner ads are banner ads that are initially presented as a larger o
 Collapsible banner ads are intended to improve performance of anchored ads that are otherwise a smaller size.
 To turn one on, set the `collapsible` network extra on an existing banner placement, as in the sample below.
 
-<img
-  width="400"
+<Image
   src="https://developers.google.com/static/admob/images/collapsible-banner.png"
   alt="Expanded and collapsed states of a collapsible banner"
+  caption="Expanded and collapsed states of a collapsible banner."
+  width={400}
 />
 
 ```js

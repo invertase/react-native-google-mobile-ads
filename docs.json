@@ -33,14 +33,9 @@
       "href": "/"
     },
     {
-      "id": "reference",
-      "title": "Reference",
-      "href": "/configuration"
-    },
-    {
       "id": "migration",
       "title": "Migration",
-      "href": "/migration"
+      "href": "/migration/v17"
     },
     {
       "id": "api",
@@ -96,6 +91,10 @@
       "icon": "mobile-screen",
       "tab": "root",
       "pages": [
+        {
+          "title": "Google AdMob",
+          "href": "/configuration"
+        },
         {
           "title": "Consent and privacy",
           "href": "/consent-basics"
@@ -212,7 +211,7 @@
       ]
     },
     {
-      "group": "Troubleshooting",
+      "group": "Testing & Debugging",
       "icon": "bug",
       "tab": "root",
       "pages": [
@@ -231,25 +230,10 @@
       ]
     },
     {
-      "group": "Reference",
-      "icon": "book",
-      "tab": "reference",
-      "pages": [
-        {
-          "title": "Configuration",
-          "href": "/configuration"
-        }
-      ]
-    },
-    {
       "group": "Migration Guides",
       "icon": "code-branch",
       "tab": "migration",
       "pages": [
-        {
-          "title": "Choose a version",
-          "href": "/migration"
-        },
         {
           "title": "Migrating to v17",
           "href": "/migration/v17"
