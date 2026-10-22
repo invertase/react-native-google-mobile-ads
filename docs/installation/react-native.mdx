@@ -37,6 +37,7 @@ If your app uses Expo, follow [Install with Expo](/installation/expo).
     </Warning>
 
     The [Config plugin](/config-plugin) page lists every key, including the Expo camelCase names.
+
   </Step>
   <Step title="Rebuild the app">
     ```bash
@@ -47,6 +48,7 @@ If your app uses Expo, follow [Install with Expo](/installation/expo).
     # For Android
     npx react-native run-android
     ```
+
   </Step>
 </Steps>
 
@@ -61,7 +63,9 @@ By default the podspec sets `static_framework` to `false`. Under CocoaPods `use_
 This module does not require static frameworks for a normal bare install. Use them only when another dependency needs `use_frameworks! :linkage => :static` in your `Podfile`, for a need unrelated to React Native Firebase.
 
 <Warning>
-  React Native Firebase coexistence is on the [React Native Firebase](/firebase) page. Use that page's dynamic Podfile and static ads pod. Do not switch the whole Podfile to static frameworks as a substitute.
+  React Native Firebase coexistence is on the [React Native Firebase](/firebase) page. Use that
+  page's dynamic Podfile and static ads pod. Do not switch the whole Podfile to static frameworks as
+  a substitute.
 </Warning>
 
 On a bare app, when you enable static frameworks, set `$RNGoogleMobileAdsAsStaticFramework = true` in the `Podfile` before any target block, `use_native_modules!`, or `use_react_native!`. Then run `pod install` again. Expo sets the same flag with `expo-build-properties` on [Install with Expo](/installation/expo#optionally-configure-ios-static-frameworks).
