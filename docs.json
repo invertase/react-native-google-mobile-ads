@@ -12,14 +12,6 @@
     "primaryLight": "#A86525",
     "primaryDark": "#E69135"
   },
-  "header": {
-    "links": [
-      {
-        "title": "Built by Invertase",
-        "href": "https://invertase.io/?utm_source=docs&utm_medium=header&utm_campaign=react-native-google-mobile-ads"
-      }
-    ]
-  },
   "social": {
     "website": "https://invertase.io/?utm_source=docs&utm_medium=footer&utm_campaign=react-native-google-mobile-ads",
     "x": "invertaseio",
