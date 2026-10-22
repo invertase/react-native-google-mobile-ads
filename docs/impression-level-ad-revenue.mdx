@@ -3,26 +3,20 @@ title: Impression revenue
 description: Capture paid events and impression-level revenue from Google Mobile Ads.
 ---
 
-[Impression-level ad revenue] helps to calculate more precise data on
-the lifetime value (LTV) of app users. When enabled, AdMob sends back
-the ad revenue for each ad impression shown on the user's device. This
-data can be used to understand users' activities.
+Read the paid event when you need the amount AdMob paid for one impression. Turn on [impression-level ad revenue] in the AdMob console first. AdMob then sends that amount for each impression shown on the device.
 
-To use this feature:
+<Steps>
+  <Step title="Turn on impression-level ad revenue">
+    Enable the feature in the AdMob console, as explained in the [Impression-level ad revenue] documentation.
+  </Step>
+  <Step title="Read the paid event">
+    For a banner, set the `onPaid` prop. The signature is `(event: PaidEvent) => void`.
 
-1.  Enable the feature in the AdMob console, as explained in
-    the [Impression-level ad revenue] documentation.
+    For a full-screen ad (app open, interstitial, rewarded, or rewarded interstitial), call `addAdEventListener` and listen for the event type `paid`. The payload is a `PaidEvent`.
 
-2.  For banner ad components use their `onPaid` prop to setup ad revenue event
-    listeners. It should have the signature `(event: PaidEvent) => void`.
-
-    For &laquo;full-screen&raquo; ads (app open, interstitial, _etc._) use
-    their `addAdEventListener` methods to setup a listener, and look for
-    the event with type `paid`, which payload will be a `PaidEvent` object.
-
-    For &laquo;full-screen&raquo; displayed using hooks, the hooks return
-    optional `revenue` value. If present, it keeps the last received `PaidEvent`
-    for the ad.
+    For a full-screen ad shown with a hook, read the optional `revenue` value. When it is set, it is the last `PaidEvent` for that ad.
+  </Step>
+</Steps>
 
 The `PaidEvent` type is:
 

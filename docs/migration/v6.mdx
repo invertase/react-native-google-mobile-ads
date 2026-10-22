@@ -3,6 +3,8 @@ title: Migrating to v6
 description: Update legacy ad events, requests, and consent code for the v6 API.
 ---
 
+v6 replaces `onAdEvent` with `addAdEventListener` and `addAdEventsListener`. One ad can keep more than one listener, and each listener gets a typed payload.
+
 ## `onAdEvent` Removed
 
 `onAdEvent` had two problems:

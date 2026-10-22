@@ -1,62 +1,62 @@
 ---
 title: Install with React Native CLI
-description: Install and configure React Native Google Mobile Ads in a bare React Native project via autolinking and app.json.
+description: Autolinking and app.json app IDs for a bare React Native app.
 ---
 
-Use this page for a bare React Native CLI project, not an Expo managed workflow.
+Use this if your app does not use [Expo](https://expo.dev/). Your React Native CLI project is already a native iOS and Android app, so there is no config plugin and no prebuild step.
 
-Expo is the recommended install. Start with [Install with Expo](/installation/expo) when the app uses Expo and a development build.
+The library autolinks. Put the AdMob app IDs in the root `app.json`, using snake_case. Do not paste IDs into `Info.plist` or `AndroidManifest.xml`, and do not edit `AppDelegate` or `MainApplication` for a standard install.
 
-On bare React Native, the library autolinks. You configure AdMob app IDs in the root `app.json`, using snake_case. Do not paste IDs into `Info.plist` or `AndroidManifest.xml`, edit `AppDelegate` or `MainApplication`, or add other native glue for a standard install.
+If your app uses Expo, follow [Install with Expo](/installation/expo).
 
-## Install the package
+<Steps>
+  <Step title="Install the package">
+    ```bash
+    npm install react-native-google-mobile-ads
+    ```
+  </Step>
+  <Step title="Configure your app IDs">
+    Before you display ads, create a [Google AdMob account](https://apps.admob.com) and an app ID for each platform. [Google AdMob](/configuration) shows where the app ID appears in AdMob.
 
-```bash
-npm install react-native-google-mobile-ads
-```
+    Add the IDs under the top-level `react-native-google-mobile-ads` key in the project-root `app.json`, using snake_case. Autolinking and the Android Gradle and iOS config scripts apply these values during the native build. Edit this JSON, then rebuild. Do not keep a second copy in the native project files.
 
-## Configure your app IDs (`app.json`)
+    ```json
+    // <project-root>/app.json
+    {
+      "react-native-google-mobile-ads": {
+        "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
+        "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+      }
+    }
+    ```
 
-Before you display ads, create a [Google AdMob account](https://apps.admob.com) and an app ID for each platform. [Configuration](/configuration) shows where the app ID appears in AdMob.
+    <Warning>
+      If `android_app_id` or `ios_app_id` is missing from that block, native build scripts warn and the
+      Google Mobile Ads software development kit (SDK) can crash on startup. An Expo app that sets IDs only on the config plugin can
+      ignore that warning. [Install with Expo](/installation/expo) covers that path.
+    </Warning>
 
-Add the IDs under the top-level `react-native-google-mobile-ads` key in the project-root `app.json`, using snake_case. Autolinking and the Android Gradle and iOS config scripts apply these values during the native build. Edit this JSON, then rebuild. Do not keep a second copy in the native project files.
+    The [Config plugin](/config-plugin) page lists every key, including the Expo camelCase names.
+  </Step>
+  <Step title="Rebuild the app">
+    ```bash
+    # For iOS
+    npx pod-install
+    npx react-native run-ios
 
-```json
-// <project-root>/app.json
-{
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-    "ios_app_id": "ca-app-pub-xxxxxxxx~xxxxxxxx"
-  }
-}
-```
+    # For Android
+    npx react-native run-android
+    ```
+  </Step>
+</Steps>
 
-<Warning>
-  If `android_app_id` or `ios_app_id` is missing from that block, native build scripts warn and the
-  Google Mobile Ads software development kit (SDK) can crash on startup. An Expo app that sets IDs only on the config plugin can
-  ignore that warning. [Install with Expo](/installation/expo) covers that path.
-</Warning>
-
-For the changes to take effect, rebuild your project:
-
-```bash
-# For iOS
-npx pod-install
-npx react-native run-ios
-
-# For Android
-npx react-native run-android
-```
-
-The [Config plugin](/config-plugin) page lists every key, including the Expo camelCase names.
-
-### iOS packaging and frameworks (CocoaPods)
+## iOS packaging and frameworks (CocoaPods)
 
 This module is a CocoaPods pod only. There is no Swift Package Manager (SPM) `Package.swift` distribution yet. Until an SPM package exists, integrate the module through CocoaPods. Expo prebuild and Continuous Native Generation still resolve native modules through CocoaPods.
 
 By default the podspec sets `static_framework` to `false`. Under CocoaPods `use_frameworks!`, the module uses dynamic linkage unless you opt into static frameworks in the next section. That default matches `use_frameworks! :linkage => :dynamic`. It does not replace a future SPM package for apps that consume React Native Firebase, or other dependencies, through SPM only.
 
-#### Optionally configure iOS static frameworks
+### Optionally configure iOS static frameworks
 
 This module does not require static frameworks for a normal bare install. Use them only when another dependency needs `use_frameworks! :linkage => :static` in your `Podfile`, for a need unrelated to React Native Firebase.
 
