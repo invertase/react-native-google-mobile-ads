@@ -49,7 +49,9 @@ jobs:
           yarn lint:spellcheck
       # Cold Invertase/docs.page/rnfirebase origins often need >10s (CLI hardcodes
       # EXTERNAL_LINK_TIMEOUT_MS=10s with no flag). Warm them, then retry the
-      # full check with a larger attempt budget — do not severityOverride those hosts.
+      # full check with a larger attempt budget. Do not severityOverride those hosts.
+      # yarn lint:docs-links also sends Accept: text/html. Those hosts return 500
+      # when that header is missing, and retries do not change the header.
       - name: Warm cold docs origins
         run: |
           set +e

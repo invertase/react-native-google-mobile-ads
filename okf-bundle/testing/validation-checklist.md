@@ -64,9 +64,11 @@ Do not skip these because the diff omitted `docs/**` or touched only `okf-bundle
 [`docs.yml`](../../.github/workflows/docs.yml) warms cold Invertase / docs.page /
 rnfirebase origins with a bounded `curl`, then retries `yarn lint:docs-links` via
 `nick-fields/retry@v3` (5 attempts, 90s backoff) when cold origins still time out.
-`@docs.page/cli` hardcodes a 10s external fetch timeout with no CLI / `docs.json` knob —
-do not map Invertase-controlled hosts (`use.docs.page`, `rnfirebase.io`, `docs.page`) to
-`severityOverride` warn. Local agents still run the command once (no local retry wrapper).
+`@docs.page/cli` hardcodes a 10s external fetch timeout with no CLI / `docs.json` knob.
+Do not map Invertase-controlled hosts (`use.docs.page`, `rnfirebase.io`, `docs.page`) to
+`severityOverride` warn. Those hosts return 500 when the request has no `Accept` header.
+`yarn lint:docs-links` sets `Accept: text/html` on the checker's `docs.page-cli` fetches.
+Retries do not add that header. Local agents still run the command once (no local retry wrapper).
 
 <a id="commit-subject-durability"></a>
 
@@ -79,7 +81,8 @@ do not map Invertase-controlled hosts (`use.docs.page`, `rnfirebase.io`, `docs.p
 ### Docs.page link check
 
 `yarn lint:docs-links` runs `docs check . --debug` with the exact root-pinned
-`@docs.page/cli` version. Exit 0 is blocking for the [CI docs gate](#ci-docs-gate). Fix internal
+`@docs.page/cli` version, after `scripts/docs-link-accept.mjs` sets `Accept: text/html` on
+fetches whose user agent is `docs.page-cli`. Exit 0 is blocking for the [CI docs gate](#ci-docs-gate). Fix internal
 failures and external 404, 5xx, DNS, abort, and timeout errors. Retry abort / timeout / 5xx at
 least twice; only a later exit 0 closes the gate — a retried abort that still fails is still a
 hard fail. When the checker reports abort/timeout, probe the URL (for example `curl -sI -L`)

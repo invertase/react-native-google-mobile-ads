@@ -25,9 +25,10 @@ When adding or renaming user docs pages:
   page body. Start body sections at `##`.
 - Optional `check.*` knobs (for example `check.severityOverrideHosts`) tune link-check severity per
   host; see [§ docs.page link check](testing/validation-checklist.md#docs-page-link-check).
-  Keep Invertase-controlled hosts (`docs.page`, `use.docs.page`, `rnfirebase.io`) as hard errors —
-  `@docs.page/cli` has no fetch-timeout flag (fixed 10s); CI warms those origins and raises the
-  `docs.yml` retry budget instead of severityOverride.
+  Keep Invertase-controlled hosts (`docs.page`, `use.docs.page`, `rnfirebase.io`) as hard errors.
+  `@docs.page/cli` has no fetch-timeout flag (fixed 10s). CI warms those origins and raises the
+  `docs.yml` retry budget instead of severityOverride. Those hosts return 500 when the request
+  has no `Accept` header. `yarn lint:docs-links` sets `Accept: text/html` on the checker fetches.
 - Run the canonical prose and link checks owned by
   [validation checklist § lint](testing/validation-checklist.md#lint-and-formatting) and
   [§ docs.page link check](testing/validation-checklist.md#docs-page-link-check).
