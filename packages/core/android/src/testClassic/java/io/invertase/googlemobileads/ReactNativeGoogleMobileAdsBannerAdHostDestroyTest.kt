@@ -44,7 +44,8 @@ import org.robolectric.annotation.Config
 class ReactNativeGoogleMobileAdsBannerAdHostDestroyTest {
   @Test
   fun hostDestroy_withoutDropViewInstance_destroysAdView() {
-    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val controller = Robolectric.buildActivity(Activity::class.java).setup()
+    val activity = controller.get()
     val reactContext = BridgeReactContext(activity)
     reactContext.onHostResume(activity)
     val themed = ThemedReactContext(reactContext, activity)
@@ -56,6 +57,8 @@ class ReactNativeGoogleMobileAdsBannerAdHostDestroyTest {
     assertEquals("precondition: AdView attached", 1, view.childCount)
 
     // Config-change Activity destroy: AppState stays active → JS never drops the view.
+    // onHostDestroy is dispatched from the Activity's own onDestroy, so destroy it first.
+    controller.pause().stop().destroy()
     reactContext.onHostDestroy()
 
     assertEquals(
@@ -64,6 +67,38 @@ class ReactNativeGoogleMobileAdsBannerAdHostDestroyTest {
       tracking.destroyCount,
     )
     assertEquals("Destroyed AdView must be removed from the React wrapper", 0, view.childCount)
+  }
+
+  @Test
+  fun hostDestroy_ofAnotherActivity_keepsAdView() {
+    val hostController = Robolectric.buildActivity(Activity::class.java).setup()
+    val hostActivity = hostController.get()
+    val reactContext = BridgeReactContext(hostActivity)
+    reactContext.onHostResume(hostActivity)
+    val themed = ThemedReactContext(reactContext, hostActivity)
+    val manager = ReactNativeGoogleMobileAdsBannerAdViewManager()
+    val view = manager.createViewInstance(themed)
+
+    val tracking = TrackingAdView(hostActivity)
+    view.addView(tracking)
+
+    // A second Activity sharing the ReactContext (e.g. an app widget configuration screen)
+    // comes to the front and is then closed while the banner's Activity stays alive.
+    val otherController = Robolectric.buildActivity(Activity::class.java).setup()
+    reactContext.onHostResume(otherController.get())
+    otherController.pause().stop().destroy()
+    reactContext.onHostDestroy()
+
+    assertEquals("Another Activity's destroy must not destroy the AdView", 0, tracking.destroyCount)
+    assertEquals("AdView must stay attached", 1, view.childCount)
+
+    // The banner's own Activity is destroyed later: teardown must still happen.
+    reactContext.onHostResume(hostActivity)
+    hostController.pause().stop().destroy()
+    reactContext.onHostDestroy()
+
+    assertEquals(1, tracking.destroyCount)
+    assertEquals(0, view.childCount)
   }
 
   @Test
