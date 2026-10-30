@@ -21,6 +21,7 @@ import com.google.android.libraries.ads.mobile.sdk.banner.AdSize;
 import com.google.android.libraries.ads.mobile.sdk.banner.AdView;
 import com.google.android.libraries.ads.mobile.sdk.banner.BannerAd;
 import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdEventCallback;
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRefreshCallback;
 import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRequest;
 import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback;
 import com.google.android.libraries.ads.mobile.sdk.common.AdValue;
@@ -283,6 +284,7 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
                   ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
                   ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(view);
                   ad.setAdEventCallback(buildEventCallback(view, ad));
+                  ad.setBannerAdRefreshCallback(buildRefreshCallback(view, adView, ad));
                   AdSize size = ad.getAdSize();
                   boolean collapsible = ad.isCollapsible();
                   view.setIsCollapsible(collapsible);
@@ -313,13 +315,8 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
                           sendEvent(view, EVENT_SIZE_CHANGE, changed);
                         });
                   }
-                  WritableMap payload = Arguments.createMap();
-                  payload.putDouble("width", PixelUtil.toDIPFromPixel(width));
-                  payload.putDouble("height", PixelUtil.toDIPFromPixel(height));
-                  WritableMap response =
-                      ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(ad.getResponseInfo());
-                  if (response != null) payload.putMap("responseInfo", response);
-                  sendEvent(view, EVENT_AD_LOADED, payload);
+                  sendEvent(
+                      view, EVENT_AD_LOADED, adLoadedPayload(width, height, ad.getResponseInfo()));
                   // Best-effort Next-Gen surface kick once presentable (#711; no pause/resume API).
                   view.refreshBannerPresentation();
                 });
@@ -327,13 +324,58 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
 
           @Override
           public void onAdFailedToLoad(LoadAdError error) {
-            view.post(
-                () -> {
-                  WritableMap payload = ReactNativeGoogleMobileAdsCommon.loadAdErrorToMap(error);
-                  sendEvent(view, EVENT_AD_FAILED_TO_LOAD, payload);
-                });
+            view.post(() -> sendEvent(view, EVENT_AD_FAILED_TO_LOAD, loadAdErrorPayload(error)));
           }
         });
+  }
+
+  /**
+   * Package-visible for owned JVM refresh callback tests. The classic AdListener fires onAdLoaded /
+   * onAdFailedToLoad on every automatic refresh; Next-Gen reports refreshes here instead.
+   */
+  BannerAdRefreshCallback buildRefreshCallback(ReactNativeAdView view, AdView adView, BannerAd ad) {
+    return new BannerAdRefreshCallback() {
+      @Override
+      public void onAdRefreshed() {
+        view.post(
+            () -> {
+              if (isStaleRefresh(view, adView)) return;
+              // Undocumented whether a refresh swaps the BannerAd: read the AdView's current one.
+              BannerAd current = adView.getBannerAd() != null ? adView.getBannerAd() : ad;
+              // Each refreshed creative can re-enable focus, as after the first load (#813).
+              ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
+              ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(view);
+              int width;
+              int height;
+              if (view.getIsFluid()) {
+                width = view.getWidth();
+                height = view.getHeight();
+              } else {
+                AdSize size = current.getAdSize();
+                width = size.getWidthInPixels(view.getContext());
+                height = size.getHeightInPixels(view.getContext());
+              }
+              sendEvent(
+                  view, EVENT_AD_LOADED, adLoadedPayload(width, height, current.getResponseInfo()));
+              // A same-size refresh triggers no size or visibility change to kick it (#711).
+              view.refreshBannerPresentation();
+            });
+      }
+
+      @Override
+      public void onAdFailedToRefresh(@NonNull LoadAdError error) {
+        view.post(
+            () -> {
+              if (isStaleRefresh(view, adView)) return;
+              sendEvent(view, EVENT_AD_FAILED_TO_LOAD, loadAdErrorPayload(error));
+            });
+      }
+    };
+  }
+
+  /** Refreshes arrive off the main thread, so one can land after a reload or an unmount. */
+  private boolean isStaleRefresh(ReactNativeAdView view, AdView adView) {
+    return view.isAdTornDown() || getAdView(view) != adView;
   }
 
   /** Package-visible for owned JVM paid/click callback tests. */
@@ -384,6 +426,22 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
     }
     View child = parent.getChildAt(0);
     return child instanceof AdView ? (AdView) child : null;
+  }
+
+  /** Spy-friendly seam for owned JVM tests (avoids RN Arguments in Robolectric). */
+  protected WritableMap adLoadedPayload(
+      int widthPx, int heightPx, @Nullable ResponseInfo responseInfo) {
+    WritableMap payload = Arguments.createMap();
+    payload.putDouble("width", PixelUtil.toDIPFromPixel(widthPx));
+    payload.putDouble("height", PixelUtil.toDIPFromPixel(heightPx));
+    WritableMap response = ReactNativeGoogleMobileAdsResponseInfo.toWritableMap(responseInfo);
+    if (response != null) payload.putMap("responseInfo", response);
+    return payload;
+  }
+
+  /** Spy-friendly seam for owned JVM tests (avoids RN Arguments in Robolectric). */
+  protected WritableMap loadAdErrorPayload(LoadAdError error) {
+    return ReactNativeGoogleMobileAdsCommon.loadAdErrorToMap(error);
   }
 
   /** Spy-friendly seam for owned JVM tests (avoids RN Arguments in Robolectric). */
