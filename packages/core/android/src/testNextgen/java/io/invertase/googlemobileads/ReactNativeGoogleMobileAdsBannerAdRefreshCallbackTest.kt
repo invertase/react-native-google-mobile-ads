@@ -28,6 +28,7 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.google.android.libraries.ads.mobile.sdk.banner.AdSize
 import com.google.android.libraries.ads.mobile.sdk.banner.AdView
 import com.google.android.libraries.ads.mobile.sdk.banner.BannerAd
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdEventCallback
 import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
 import com.google.android.libraries.ads.mobile.sdk.common.ResponseInfo
 import io.invertase.googlemobileads.common.ReactNativeAdView
@@ -95,6 +96,49 @@ class ReactNativeGoogleMobileAdsBannerAdRefreshCallbackTest {
     val event = manager.events.single()
     assertEquals("onAdLoaded", event.type)
     assertEquals(300, event.payload?.getInt("widthPx"))
+  }
+
+  @Test
+  fun refreshResizesTheAdViewToTheRefreshedSize() {
+    val first = AdSize.BANNER
+    adView.measure(first.getWidthInPixels(activity), first.getHeightInPixels(activity))
+    adView.layout(0, 0, first.getWidthInPixels(activity), first.getHeightInPixels(activity))
+    val taller = FakeBannerAd(AdSize.LARGE_BANNER)
+
+    manager.buildRefreshCallback(view, adView, taller.proxy).onAdRefreshed()
+    idle()
+
+    assertEquals(AdSize.LARGE_BANNER.getWidthInPixels(activity), adView.width)
+    assertEquals(AdSize.LARGE_BANNER.getHeightInPixels(activity), adView.height)
+    assertEquals(
+      adView.height,
+      manager.events
+        .single()
+        .payload
+        ?.getInt("heightPx"),
+    )
+  }
+
+  @Test
+  fun refreshMovesClickAndPaidEventsToASwappedBannerAd() {
+    val swapped = FakeBannerAd()
+    manager.currentAd = swapped.proxy
+
+    manager.buildRefreshCallback(view, adView, banner.proxy).onAdRefreshed()
+    idle()
+    manager.events.clear()
+    swapped.eventCallback!!.onAdClicked()
+    idle()
+
+    assertEquals("onAdClicked", manager.events.single().type)
+  }
+
+  @Test
+  fun refreshKeepsTheEventCallbackOfAnUnchangedBannerAd() {
+    manager.buildRefreshCallback(view, adView, banner.proxy).onAdRefreshed()
+    idle()
+
+    assertEquals(null, banner.eventCallback)
   }
 
   @Test
@@ -167,6 +211,12 @@ class ReactNativeGoogleMobileAdsBannerAdRefreshCallbackTest {
 
   private class CapturingBannerManager : ReactNativeGoogleMobileAdsBannerAdViewManager() {
     val events = mutableListOf<CapturedBannerEvent>()
+    var currentAd: BannerAd? = null
+
+    override fun currentBannerAd(
+      adView: AdView,
+      loaded: BannerAd,
+    ): BannerAd = currentAd ?: loaded
 
     override fun sendEvent(
       view: ReactNativeAdView,
@@ -193,7 +243,10 @@ class ReactNativeGoogleMobileAdsBannerAdRefreshCallbackTest {
     override fun loadAdErrorPayload(error: LoadAdError): WritableMap = JavaOnlyMap.of("message", error.message)
   }
 
-  private class FakeBannerAd {
+  private class FakeBannerAd(
+    private val adSize: AdSize = AdSize.BANNER,
+  ) {
+    var eventCallback: BannerAdEventCallback? = null
     private val responseInfo =
       ResponseInfo(
         "adapter.class",
@@ -209,8 +262,13 @@ class ReactNativeGoogleMobileAdsBannerAdRefreshCallbackTest {
         arrayOf(BannerAd::class.java),
       ) { proxy, method, args ->
         when (method.name) {
-          "getAdSize" -> AdSize.BANNER
+          "getAdSize" -> adSize
           "getResponseInfo" -> responseInfo
+          "getAdEventCallback" -> eventCallback
+          "setAdEventCallback" -> {
+            eventCallback = args?.get(0) as BannerAdEventCallback?
+            null
+          }
           "isCollapsible" -> false
           "toString" -> "FakeBannerAd"
           "hashCode" -> System.identityHashCode(proxy)

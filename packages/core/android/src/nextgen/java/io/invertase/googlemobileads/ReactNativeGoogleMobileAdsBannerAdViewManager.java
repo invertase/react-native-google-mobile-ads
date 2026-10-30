@@ -340,8 +340,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
         view.post(
             () -> {
               if (isStaleRefresh(view, adView)) return;
-              // Undocumented whether a refresh swaps the BannerAd: read the AdView's current one.
-              BannerAd current = adView.getBannerAd() != null ? adView.getBannerAd() : ad;
+              // Undocumented whether a refresh swaps the BannerAd: read the AdView's current one,
+              // and keep click / paid events on it if it is not the one loaded first.
+              BannerAd current = currentBannerAd(adView, ad);
+              if (current != ad) {
+                current.setAdEventCallback(buildEventCallback(view, current));
+              }
               // Each refreshed creative can re-enable focus, as after the first load (#813).
               ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(adView);
               ReactNativeGoogleMobileAdsBannerAdFocus.blockHardwareBackFocus(view);
@@ -354,6 +358,10 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
                 AdSize size = current.getAdSize();
                 width = size.getWidthInPixels(view.getContext());
                 height = size.getHeightInPixels(view.getContext());
+                // Multi-size requests can refresh into another size; the RN parent never lays out
+                // the AdView, so size it here as after the first load.
+                adView.measure(width, height);
+                adView.layout(0, 0, width, height);
               }
               sendEvent(
                   view, EVENT_AD_LOADED, adLoadedPayload(width, height, current.getResponseInfo()));
@@ -371,6 +379,12 @@ public class ReactNativeGoogleMobileAdsBannerAdViewManager
             });
       }
     };
+  }
+
+  /** Spy-friendly seam for owned JVM refresh tests (a real AdView cannot host a fake BannerAd). */
+  protected BannerAd currentBannerAd(AdView adView, BannerAd loaded) {
+    BannerAd current = adView.getBannerAd();
+    return current != null ? current : loaded;
   }
 
   /** Refreshes arrive off the main thread, so one can land after a reload or an unmount. */
