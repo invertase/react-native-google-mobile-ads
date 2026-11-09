@@ -45,9 +45,21 @@ object ReactNativeGoogleMobileAdsNativeAdClickOverlay {
     if (reactContent.parent !== nativeAdView) {
       return
     }
-    // NativeAdView overrides bringChildToFront to keep its overlay on top of [reactContent].
-    nativeAdView.bringChildToFront(reactContent)
-    val overlay = findSdkOverlay(nativeAdView, reactContent) ?: return
+    val overlay = findSdkOverlay(nativeAdView, reactContent)
+    // This runs after every layout and bringChildToFront always requests one, so reorder only when needed
+    // or the ad redraws every frame.
+    val last = nativeAdView.childCount - 1
+    val isInPlace =
+      if (overlay == null) {
+        nativeAdView.getChildAt(last) === reactContent
+      } else {
+        nativeAdView.getChildAt(last) === overlay && nativeAdView.getChildAt(last - 1) === reactContent
+      }
+    if (!isInPlace) {
+      // NativeAdView overrides bringChildToFront to keep its overlay on top of [reactContent].
+      nativeAdView.bringChildToFront(reactContent)
+    }
+    if (overlay == null) return
     val needed = max(reactContent.elevation, reactContent.translationZ) + 1f
     // Always assign: RN layout can raise content elevation after a prior ensure pass.
     overlay.elevation = needed
