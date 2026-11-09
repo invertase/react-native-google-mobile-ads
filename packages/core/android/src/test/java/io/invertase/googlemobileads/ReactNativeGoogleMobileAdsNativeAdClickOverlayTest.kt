@@ -20,6 +20,7 @@ package io.invertase.googlemobileads
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -64,6 +65,42 @@ class ReactNativeGoogleMobileAdsNativeAdClickOverlayTest {
 
     assertSame(nativeAdView.overlay(), nativeAdView.getChildAt(nativeAdView.childCount - 1))
     assertTrue(nativeAdView.overlay().elevation > reactContent.elevation)
+  }
+
+  @Test
+  fun ensureSdkOverlayOnTop_whenAlreadyInPlace_requestsNoLayout() {
+    val context = RuntimeEnvironment.getApplication()
+    val overlay = FrameLayout(context)
+    var layoutRequests = 0
+    val nativeAdView =
+      object : FrameLayout(context) {
+        init {
+          addView(overlay)
+        }
+
+        override fun bringChildToFront(child: View?) {
+          super.bringChildToFront(child)
+          if (child !== overlay) {
+            super.bringChildToFront(overlay)
+          }
+        }
+
+        override fun requestLayout() {
+          layoutRequests++
+          super.requestLayout()
+        }
+      }
+    val reactContent = FrameLayout(context)
+    nativeAdView.addView(reactContent)
+    reactContent.elevation = 24f
+    ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(nativeAdView, reactContent)
+    layoutRequests = 0
+
+    // The native ad view runs this after every layout; a layout request here would start the next pass.
+    ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(nativeAdView, reactContent)
+
+    assertEquals(0, layoutRequests)
+    assertSame(overlay, nativeAdView.getChildAt(nativeAdView.childCount - 1))
   }
 
   @Test
