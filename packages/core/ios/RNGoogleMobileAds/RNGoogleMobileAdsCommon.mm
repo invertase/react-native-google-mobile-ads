@@ -19,6 +19,7 @@
 #if !TARGET_OS_MACCATALYST
 
 #import "RNGoogleMobileAdsCommon.h"
+#import <React/RCTUtils.h>
 #import "RNGoogleMobileAdsOwnedMappers.h"
 #import "common/RNRCTEventEmitter.h"
 
@@ -180,8 +181,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
              [token isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
     CGRect frame = [[UIScreen mainScreen] bounds];
     if (@available(iOS 11.0, *)) {
-      frame =
-          UIEdgeInsetsInsetRect(frame, [UIApplication sharedApplication].keyWindow.safeAreaInsets);
+      frame = UIEdgeInsetsInsetRect(frame, RCTKeyWindow().safeAreaInsets);
     }
     CGFloat viewWidth = adWidth > 0 ? MIN(frame.size.width, adWidth) : frame.size.width;
     if ([token isEqualToString:@"INLINE_ADAPTIVE_BANNER"]) {
@@ -204,14 +204,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earn
 }
 
 + (UIViewController *)currentViewController {
-  UIViewController *controller = [[[UIApplication sharedApplication] keyWindow] rootViewController];
-  UIViewController *presentedController = controller.presentedViewController;
-
-  while (presentedController && ![presentedController isBeingDismissed]) {
-    controller = presentedController;
-    presentedController = controller.presentedViewController;
-  }
-  return controller;
+  return RCTPresentedViewController();
 }
 
 @end
