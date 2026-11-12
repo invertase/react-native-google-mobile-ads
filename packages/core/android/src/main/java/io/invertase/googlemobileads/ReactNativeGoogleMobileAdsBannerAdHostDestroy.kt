@@ -19,11 +19,17 @@ package io.invertase.googlemobileads
 
 import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.ReactContext
+import java.lang.ref.WeakReference
 
 /**
  * Registers a one-shot [LifecycleEventListener] so banner AdViews are destroyed when the host
  * Activity is destroyed even if JS never calls [com.facebook.react.uimanager.ViewManager.onDropViewInstance]
  * (configuration changes keep AppState active — [#892](https://github.com/invertase/react-native-google-mobile-ads/issues/892)).
+ *
+ * The [ReactContext] is shared by every Activity that hosts a React surface (for example an app
+ * widget configuration Activity started by the launcher), and [LifecycleEventListener.onHostDestroy]
+ * fires for whichever of them is destroyed. Only the Activity the banner was created in counts:
+ * another Activity's destroy must not blank a banner that is still on screen.
  */
 object ReactNativeGoogleMobileAdsBannerAdHostDestroy {
   @JvmStatic
@@ -31,6 +37,7 @@ object ReactNativeGoogleMobileAdsBannerAdHostDestroy {
     context: ReactContext,
     onHostDestroy: Runnable,
   ): LifecycleEventListener {
+    val hostActivity = WeakReference(context.currentActivity)
     val listener =
       object : LifecycleEventListener {
         override fun onHostResume() {}
@@ -38,6 +45,11 @@ object ReactNativeGoogleMobileAdsBannerAdHostDestroy {
         override fun onHostPause() {}
 
         override fun onHostDestroy() {
+          // Activity.isDestroyed is already true while its onDestroy (and so this callback) runs.
+          val activity = hostActivity.get()
+          if (activity != null && !activity.isDestroyed) {
+            return
+          }
           context.removeLifecycleEventListener(this)
           onHostDestroy.run()
         }

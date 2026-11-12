@@ -34,13 +34,17 @@ import org.robolectric.annotation.Config
  * [ReactNativeGoogleMobileAdsBannerAdViewManager.onDropViewInstance] never runs. Host destroy
  * must still tear down the banner child. Next-Gen SDK [AdView] is final and needs MobileAds
  * init, so this suite asserts child removal (classic twin counts [BaseAdView.destroy]).
+ *
+ * Also [#925](https://github.com/invertase/react-native-google-mobile-ads/issues/925): a second
+ * Activity sharing the same [ReactContext] must not tear down a banner still on screen.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ReactNativeGoogleMobileAdsBannerAdHostDestroyTest {
   @Test
   fun hostDestroy_withoutDropViewInstance_removesBannerChild() {
-    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val controller = Robolectric.buildActivity(Activity::class.java).setup()
+    val activity = controller.get()
     val reactContext = BridgeReactContext(activity)
     reactContext.onHostResume(activity)
     val themed = ThemedReactContext(reactContext, activity)
@@ -50,6 +54,8 @@ class ReactNativeGoogleMobileAdsBannerAdHostDestroyTest {
     view.addView(View(activity))
     assertEquals("precondition: child attached", 1, view.childCount)
 
+    // onHostDestroy is dispatched from the Activity's own onDestroy, so destroy it first.
+    controller.pause().stop().destroy()
     reactContext.onHostDestroy()
 
     assertEquals(
@@ -57,6 +63,35 @@ class ReactNativeGoogleMobileAdsBannerAdHostDestroyTest {
       0,
       view.childCount,
     )
+  }
+
+  @Test
+  fun hostDestroy_ofAnotherActivity_keepsBannerChild() {
+    val hostController = Robolectric.buildActivity(Activity::class.java).setup()
+    val hostActivity = hostController.get()
+    val reactContext = BridgeReactContext(hostActivity)
+    reactContext.onHostResume(hostActivity)
+    val themed = ThemedReactContext(reactContext, hostActivity)
+    val manager = ReactNativeGoogleMobileAdsBannerAdViewManager()
+    val view = manager.createViewInstance(themed)
+
+    view.addView(View(hostActivity))
+
+    // A second Activity sharing the ReactContext (e.g. an app widget configuration screen)
+    // comes to the front and is then closed while the banner's Activity stays alive.
+    val otherController = Robolectric.buildActivity(Activity::class.java).setup()
+    reactContext.onHostResume(otherController.get())
+    otherController.pause().stop().destroy()
+    reactContext.onHostDestroy()
+
+    assertEquals("Another Activity's destroy must keep the banner child", 1, view.childCount)
+
+    // The banner's own Activity is destroyed later: teardown must still happen.
+    reactContext.onHostResume(hostActivity)
+    hostController.pause().stop().destroy()
+    reactContext.onHostDestroy()
+
+    assertEquals(0, view.childCount)
   }
 
   @Test
