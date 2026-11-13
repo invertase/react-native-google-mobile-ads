@@ -748,6 +748,8 @@ RCT_EXPORT_METHOD(recordCustomNativeImpression
 }
 
 - (void)dispose {
+  // The ad copies paidEventHandler; clear it so no handler can keep the ad or this holder alive.
+  _nativeAd.paidEventHandler = nil;
   _nativeAd = nil;
   _nativeModule = nil;
   _adLoader = nil;
@@ -761,11 +763,20 @@ RCT_EXPORT_METHOD(recordCustomNativeImpression
     didReceiveNativeAd:(nonnull GADNativeAd *)nativeAd {
   _nativeAd = nativeAd;
   _nativeAd.delegate = self;
+  // Weak captures: the ad keeps this block, so a strong `nativeAd` or `self` here is a retain
+  // cycle and the ad (with its WebView) is never freed, even after destroy().
+  __weak GADNativeAd *weakNativeAd = nativeAd;
+  __weak __typeof(self) weakSelf = self;
   _nativeAd.paidEventHandler = ^(GADAdValue *_Nonnull adValue) {
+    GADNativeAd *strongNativeAd = weakNativeAd;
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongNativeAd == nil || strongSelf == nil) {
+      return;
+    }
     NSDictionary *revenueData =
         [RNGoogleMobileAdsResponseInfo paidEventPayloadFromAdValue:adValue
-                                                      responseInfo:nativeAd.responseInfo];
-    [self emitAdEvent:@"paid" withData:revenueData];
+                                                      responseInfo:strongNativeAd.responseInfo];
+    [strongSelf emitAdEvent:@"paid" withData:revenueData];
   };
   if (nativeAd.mediaContent.hasVideoContent) {
     nativeAd.mediaContent.videoController.delegate = self;
@@ -997,6 +1008,8 @@ RCT_EXPORT_METHOD(recordCustomNativeImpression
 }
 
 - (void)dispose {
+  // The ad copies paidEventHandler; clear it so no handler can keep the ad or this holder alive.
+  _nativeAd.paidEventHandler = nil;
   _nativeAd = nil;
   if (_bannerView != nil) {
     [_bannerView removeFromSuperview];
@@ -1032,11 +1045,20 @@ RCT_EXPORT_METHOD(recordCustomNativeImpression
     didReceiveNativeAd:(nonnull GADNativeAd *)nativeAd {
   _nativeAd = nativeAd;
   _nativeAd.delegate = self;
+  // Weak captures: the ad keeps this block, so a strong `nativeAd` or `self` here is a retain
+  // cycle and the ad (with its WebView) is never freed, even after destroy().
+  __weak GADNativeAd *weakNativeAd = nativeAd;
+  __weak __typeof(self) weakSelf = self;
   _nativeAd.paidEventHandler = ^(GADAdValue *_Nonnull adValue) {
+    GADNativeAd *strongNativeAd = weakNativeAd;
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongNativeAd == nil || strongSelf == nil) {
+      return;
+    }
     NSDictionary *revenueData =
         [RNGoogleMobileAdsResponseInfo paidEventPayloadFromAdValue:adValue
-                                                      responseInfo:nativeAd.responseInfo];
-    [self emitAdEvent:@"paid" withData:revenueData];
+                                                      responseInfo:strongNativeAd.responseInfo];
+    [strongSelf emitAdEvent:@"paid" withData:revenueData];
   };
   if (nativeAd.mediaContent.hasVideoContent) {
     nativeAd.mediaContent.videoController.delegate = self;
