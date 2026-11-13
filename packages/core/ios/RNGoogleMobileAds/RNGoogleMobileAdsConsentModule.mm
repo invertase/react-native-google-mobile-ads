@@ -272,24 +272,20 @@ RCT_EXPORT_METHOD(getPurposeLegitimateInterests
 #endif
 }
 
+// UMP's loadAndPresentIfRequiredFromViewController: takes the presenter before
+// the form has loaded. The load is a network request, and a modal or sheet the
+// app presents meanwhile leaves UMP presenting from a controller that is by
+// then presenting something else, which it rejects. Same contract (a form only
+// when consent is required), but through showForm, which resolves the
+// presenter once the form is ready.
 - (void)loadAndShowConsentFormIfRequired:(RCTPromiseResolveBlock)resolve
                                   reject:(RCTPromiseRejectBlock)reject {
 #if !TARGET_OS_MACCATALYST
-  [UMPConsentForm
-      loadAndPresentIfRequiredFromViewController:RCTPresentedViewController()
-                               completionHandler:^(NSError *_Nullable formError) {
-                                 if (formError) {
-                                   [RNSharedUtils
-                                       rejectPromiseWithUserInfo:reject
-                                                        userInfo:[@{
-                                                          @"code" : @"consent-form-error",
-                                                          @"message" :
-                                                              formError.localizedDescription,
-                                                        } mutableCopy]];
-                                 } else {
-                                   resolve([self getConsentInformation]);
-                                 }
-                               }];
+  if (UMPConsentInformation.sharedInstance.consentStatus != UMPConsentStatusRequired) {
+    resolve([self getConsentInformation]);
+    return;
+  }
+  [self showForm:resolve reject:reject];
 #endif
 }
 
