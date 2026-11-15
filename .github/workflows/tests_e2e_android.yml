@@ -26,7 +26,9 @@ concurrency:
 jobs:
   android:
     name: Android (${{ matrix.android-backend }})
-    runs-on: ubuntu-latest
+    # Pin: ubuntu-latest (26.04) + Node 24.22.x hits WDIO local-runner process.send EINVAL at worker startup.
+    # On ubuntu-24.04 use Node 24.22.3 for security fixes after EINVAL on 24.22.2; CI is the final gate.
+    runs-on: ubuntu-24.04
     timeout-minutes: 70
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -73,7 +75,7 @@ jobs:
       # Set up tool versions
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: '24.22.3'
 
       - name: Configure JDK
         uses: actions/setup-java@v5

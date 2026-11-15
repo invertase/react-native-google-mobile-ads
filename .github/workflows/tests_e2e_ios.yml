@@ -39,7 +39,8 @@ jobs:
       # Set up tool versions
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          # Match Android e2e pin (security + avoid floating latest 24.x).
+          node-version: '24.22.3'
 
       - uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -168,14 +169,18 @@ jobs:
       - name: ccache stats (before)
         run: ccache -s || true
 
-      # 25m: cold xcodebuild can take ~14m; script time-boxes simctl install/launch
-      # (~90s each) so a launch hang fails fast instead of burning the step wall.
+      # Cold xcodebuild ~14m; script time-boxes simctl install/launch (~90s each).
+      # One retry absorbs simctl launch ETIMEDOUT / CoreSimulator stalls on GHA.
       - name: Install example on simulator
-        timeout-minutes: 25
-        run: |
-          echo "[ios-run] workflow step start"
-          yarn tests:ios:run --udid "$RNGMA_IOS_UDID"
-          echo "[ios-run] workflow step end"
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 22
+          retry_wait_seconds: 20
+          max_attempts: 2
+          command: |
+            echo "[ios-run] workflow step start"
+            yarn tests:ios:run --udid "$RNGMA_IOS_UDID"
+            echo "[ios-run] workflow step end"
 
       - name: ccache stats (after)
         if: always()
