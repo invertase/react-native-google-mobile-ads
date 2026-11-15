@@ -34,6 +34,11 @@ export const config: Options.Testrunner = {
   path: '/',
   framework: 'mocha',
   reporters: ['spec'],
+  // CI-only: one whole-spec retry absorbs intermittent Ad Inspector dismiss /
+  // interstitial show-close flakes on shard c without masking local failures.
+  ...(process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+    ? { specFileRetries: 1, specFileRetriesDelay: 2 }
+    : {}),
   mochaOpts: {
     ui: 'bdd',
     // Request-outcome remount budgets (10 × observe + backoff + ads-log) and

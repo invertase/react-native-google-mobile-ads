@@ -2047,16 +2047,47 @@ async function dismissAndroidAdInspectorIfPresent(): Promise<void> {
       }
       attempts += 1;
       await dismissAndroidImmersiveModeEducationIfPresent();
+      // Prefer the real Close / Navigate-up chrome before generic "Close" (matches
+      // iOS: descriptionContains("Close") alone can miss API-36 inspector X).
       for (const fragment of [
         'descriptionContains("Close Ad Inspector")',
         'descriptionContains("Close ad inspector")',
+        'textContains("Close Ad Inspector")',
         'descriptionContains("Navigate up")',
         'descriptionContains("Close")',
+        'text("Close")',
       ]) {
         await tapAndroidSelectorIfDisplayed(`android=new UiSelector().${fragment}`);
+        if (!(await isAndroidAdActivityForeground())) {
+          logAndroidHostTrace('adInspector.dismiss.success', { attempts, via: fragment });
+          return true;
+        }
       }
       await tapAndroidInterstitialCloseAttempt();
-      if (attempts >= 4 && attempts % 2 === 0) {
+      // Top-right / top-left X bands from live Ad Inspector layouts (API 36 GHA).
+      const { width, height } = await driver.getWindowRect();
+      for (const [fx, fy] of [
+        [0.93, 0.075],
+        [0.9, 0.1],
+        [0.07, 0.075],
+        [0.1, 0.1],
+      ] as const) {
+        await driver.execute('mobile: clickGesture', {
+          x: Math.floor(width * fx),
+          y: Math.floor(height * fy),
+        });
+        await sleep(300);
+        if (!(await isAndroidAdActivityForeground())) {
+          logAndroidHostTrace('adInspector.dismiss.success', {
+            attempts,
+            via: `coord:${fx},${fy}`,
+          });
+          return true;
+        }
+      }
+      // KEYCODE_BACK every attempt after the first chrome pass — waiting until
+      // attempt 4 left CI stuck in AdActivity for the full 45s budget (FLAKE-002).
+      if (attempts >= 2) {
         try {
           await driver.back();
         } catch {

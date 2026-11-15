@@ -127,7 +127,9 @@ test('iOS run-ios-app time-boxes install/launch and emits durable phase markers'
     installHeading,
     nextHeading >= 0 ? nextHeading : undefined,
   );
-  assert.match(installStep, /timeout-minutes:\s*25/);
+  assert.match(installStep, /nick-fields\/retry@v3/);
+  assert.match(installStep, /timeout_minutes:\s*22/);
+  assert.match(installStep, /max_attempts:\s*2/);
   assert.match(installStep, /\[ios-run\] workflow step start/);
   assert.match(installStep, /\[ios-run\] workflow step end/);
 });

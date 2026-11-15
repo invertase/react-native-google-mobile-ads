@@ -49,14 +49,32 @@ test('Android e2e CI pins ubuntu-24.04 and Node for WDIO stability', () => {
   assert.doesNotMatch(source, /node-version: '24\.21\.0'/);
 });
 
+test('iOS e2e CI pins Node 24.22.3 and retries simctl install/launch', () => {
+  const source = readFileSync(join(workflowDir, 'tests_e2e_ios.yml'), 'utf8');
+  assert.match(source, /node-version: '24\.22\.3'/);
+  assert.doesNotMatch(source, /^\s+node-version:\s*24\s*$/m);
+  const install = source.slice(source.indexOf('name: Install example on simulator'));
+  assert.match(install, /nick-fields\/retry@v3/);
+  assert.match(install, /yarn tests:ios:run/);
+});
+
+test('WDIO shared conf enables CI-only specFileRetries', () => {
+  const source = readFileSync(
+    join(repoRoot, 'tooling/appium/wdio.shared.conf.ts'),
+    'utf8',
+  );
+  assert.match(source, /specFileRetries:\s*1/);
+  assert.match(source, /GITHUB_ACTIONS/);
+});
+
 test('the Pods cache stores the same ios directory its key hashes', () => {
   const source = readFileSync(join(workflowDir, 'tests_e2e_ios.yml'), 'utf8');
-  const step = source.slice(source.indexOf('name: Cache Pods'));
+  const step = source.slice(source.indexOf('name: Pods Cache Restore'));
   const cachedPath = /^\s+path: (\S+)$/m.exec(step)?.[1];
   const hashedLock = /hashFiles\('([^']+Podfile\.lock)'\)/.exec(step)?.[1];
 
-  assert.ok(cachedPath, 'Cache Pods step must declare a path');
-  assert.ok(hashedLock, 'Cache Pods key must hash a Podfile.lock');
+  assert.ok(cachedPath, 'Pods Cache Restore step must declare a path');
+  assert.ok(hashedLock, 'Pods Cache Restore key must hash a Podfile.lock');
   assert.equal(
     cachedPath,
     `${dirname(hashedLock)}/Pods`,
