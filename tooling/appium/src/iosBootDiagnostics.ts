@@ -19,6 +19,7 @@ import {
   emitIosSessionCreateDiagnostics,
   formatIosSessionDiagnosticLine,
   parseXcodebuildExitCodeFromLine,
+  hostPidsIndicateLiveBuild,
   resolveLastXcodebuildExit,
   shouldDeferHangRecoverForLiveHostBuild,
   stageIosSessionHangArtifacts,
@@ -110,6 +111,14 @@ export const IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS = 2;
  * the full 180s worker ceiling (default: tick 3 ≈ 90s).
  */
 export const IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS = 3;
+
+/**
+ * After this many consecutive live-PID `hang-recoverSkipped` / `abortDeferred`
+ * ticks, escalate recover/abort even when pgrep still reports host xcodebuild/WDA
+ * PIDs — breaks the FLAKE-005 livelock that otherwise burns the 180s supervisor
+ * ceiling with `sessions=0/1`.
+ */
+export const IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS = 3;
 
 /** Stable hint text for hung XCUITest session create (POST /session). */
 export const IOS_SESSION_CREATE_HANG_HINT =
@@ -590,6 +599,15 @@ export function decideSessionCreateHangAction(input: {
   hostXcodebuildPids?: string;
   hostWdaPids?: string;
   lastXcodebuildExitLabel?: string;
+  /**
+   * True when the shared prebuilt `WebDriverAgentRunner-Runner.app` exists on
+   * disk (`RNGMA_WDA_PREBUILT=1` / `usePrebuiltWDA` CI path). Live host
+   * `xcodebuild` during POST /session is stale or Appium ignored prebuilt WDA.
+   */
+  prebuiltWdaArtifactPresent?: boolean;
+  /** Incremented by the hang watchdog on each live-PID deferral tick. */
+  consecutiveLiveBuildDeferrals?: number;
+  livePidDeferMaxTicks?: number;
 }): SessionCreateHangDecision {
   if (input.postSessionInFlight === false) {
     return { action: 'continue' };
@@ -622,6 +640,14 @@ export function decideSessionCreateHangAction(input: {
     input.hangTick >= recoverAfter &&
     (etimedoutStreak >= 1 || bootedHangStreak >= recoverAfter) &&
     !input.recoveredOnce;
+  const unexpectedPrebuiltXcodebuild =
+    input.prebuiltWdaArtifactPresent === true &&
+    input.hostXcodebuildPids != null &&
+    hostPidsIndicateLiveBuild(input.hostXcodebuildPids);
+  const livePidDeferMax =
+    input.livePidDeferMaxTicks ?? IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS;
+  const deferralStreak = input.consecutiveLiveBuildDeferrals ?? 0;
+  const livePidDeferralCapReached = deferralStreak >= livePidDeferMax;
 
   // Live-PID gate BEFORE abort (ordering): never abort/recover-kill over a live build.
   if (
@@ -637,7 +663,12 @@ export function decideSessionCreateHangAction(input: {
       lastXcodebuildExit: input.lastXcodebuildExitLabel,
       deferRegardlessOfExit,
     });
-    if (defer.defer && defer.reason) {
+    if (
+      defer.defer &&
+      defer.reason &&
+      !unexpectedPrebuiltXcodebuild &&
+      !livePidDeferralCapReached
+    ) {
       // Abort-ready + live PIDs: surface abortDeferred in the reason for CI grep
       // (live-PID gate runs before abort — ordering must not let abort win).
       const reason = abortReady
@@ -655,6 +686,11 @@ export function decideSessionCreateHangAction(input: {
     const bootMonitorNote = transitioning
       ? '; interrupting Appium boot monitor while simulator is Shutdown/Booting (often isHeadless=false relaunch)'
       : '';
+    const prebuiltStuckNote = unexpectedPrebuiltXcodebuild
+      ? '; prebuilt WDA artifact present with live host xcodebuild (fail-fast)'
+      : livePidDeferralCapReached
+        ? `; live-PID deferral cap reached (consecutiveDeferrals=${deferralStreak})`
+        : '';
     const evidence = etimedoutPath
       ? `prolonged xcrun ETIMEDOUT (hangTick=${input.hangTick}, ` +
         `consecutiveEtimedout=${etimedoutStreak}, state=${input.simState ?? 'unknown'})`
@@ -665,7 +701,7 @@ export function decideSessionCreateHangAction(input: {
       action: 'abort',
       reason:
         `POST /session hung with ${evidence}; ` +
-        `WDA not ready — aborting before supervisor ceiling${bootMonitorNote}`,
+        `WDA not ready — aborting before supervisor ceiling${bootMonitorNote}${prebuiltStuckNote}`,
     };
   }
   if (recoverReady) {
@@ -772,6 +808,10 @@ export function startIosSessionCreateHangWatchdog(
     onRecover?: (udid: string, reason: string) => void;
     /** Invoked when decision is `abort` (parent should recordFailure / drain). */
     onAbort?: (error: Error) => void;
+    /** Override {@link IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS} (unit tests). */
+    livePidDeferMaxTicks?: number;
+    /** Pin prebuilt-WDA artifact presence when the shared path is not on disk. */
+    prebuiltWdaArtifactPresent?: boolean;
   },
 ): IosSessionCreateHangWatchdog {
   const write = options.write ?? ((line: string) => console.log(line));
@@ -788,6 +828,7 @@ export function startIosSessionCreateHangWatchdog(
   let consecutiveXcrunEtimedout = 0;
   let consecutiveBootedHangProbes = 0;
   let recoveredOnce = false;
+  let consecutiveLiveBuildDeferrals = 0;
   let lastSimState: string | undefined;
   let lastBootstatusTimedOut: boolean | undefined;
   let lastSessionSnapshot: IosSessionCreateDiagnosticSnapshot | undefined;
@@ -929,6 +970,10 @@ export function startIosSessionCreateHangWatchdog(
       hostXcodebuildPids: lastSessionSnapshot?.hostXcodebuildPids,
       hostWdaPids: lastSessionSnapshot?.hostWdaPids,
       lastXcodebuildExitLabel: lastSessionSnapshot?.lastXcodebuildExit,
+      prebuiltWdaArtifactPresent:
+        options.prebuiltWdaArtifactPresent ?? lastSessionSnapshot?.wdaRunnerAppPresent,
+      consecutiveLiveBuildDeferrals,
+      livePidDeferMaxTicks: options.livePidDeferMaxTicks,
     });
 
     if (decision.action === 'skip-recover') {
@@ -936,6 +981,8 @@ export function startIosSessionCreateHangWatchdog(
       // so recover can run after xcodebuild exits or host PIDs clear.
       if (decision.consumeRecoveryOpportunity !== false) {
         recoveredOnce = true;
+      } else if (/host build still live|abortDeferred:/.test(decision.reason)) {
+        consecutiveLiveBuildDeferrals += 1;
       }
       write(
         formatIosBootDiagnosticLine(
@@ -953,6 +1000,10 @@ export function startIosSessionCreateHangWatchdog(
       // Still stage logs while deferring so supervisor abort has artifacts.
       emitHangPathArtifactSnapshot(`${options.phase}:hang-recoverSkipped-artifacts`);
       return;
+    }
+
+    if (decision.action === 'recover' || decision.action === 'abort') {
+      consecutiveLiveBuildDeferrals = 0;
     }
 
     if (decision.action === 'recover') {

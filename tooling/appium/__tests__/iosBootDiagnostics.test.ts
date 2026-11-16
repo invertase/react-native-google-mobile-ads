@@ -13,6 +13,7 @@ import {
   formatIosIsHeadlessCapResolveLine,
   formatSessionCreateHangAbortError,
   IOS_SESSION_CREATE_HANG_HINT,
+  IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS,
   isXcrunTimedOutError,
   noteXcodebuildExitFromLine,
   recoverIosSessionCreateHang,
@@ -767,6 +768,100 @@ describe('iosBootDiagnostics', () => {
     assert.match(aborts[0]!.message, /interrupting Appium boot monitor/);
   });
 
+  test('FLAKE-005: watchdog aborts after live-PID defer cap (synthetic stuck xcodebuild)', () => {
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const aborts: Error[] = [];
+    startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'serial:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      recoverAfterTicks: 2,
+      abortAfterTicks: 3,
+      livePidDeferMaxTicks: 2,
+      prebuiltWdaArtifactPresent: false,
+      lastXcodebuildExitRef: { value: 0 },
+      write: line => lines.push(line),
+      execCapture: (bin, args) => {
+        if (bin === 'pgrep' && (args[1] === 'xcodebuild' || args.includes('xcodebuild'))) {
+          return { stdout: '66564 /usr/bin/xcodebuild test\n', stderr: '', status: 0 };
+        }
+        if (bin === 'pgrep') {
+          return { stdout: '', stderr: '', status: 1 };
+        }
+        if (args.includes('list')) {
+          return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+        }
+        return { stdout: 'Monitoring boot\nBooted\n', stderr: '', status: 0 };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      now: () => new Date('2026-10-15T17:30:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onAbort: error => aborts.push(error),
+    });
+    callbacks[0]!(); // tick 1
+    callbacks[0]!(); // tick 2 — recover deferred
+    assert.equal(aborts.length, 0);
+    assert.ok(lines.some(line => /hang-recoverSkipped/.test(line)));
+    callbacks[0]!(); // tick 3 — abortDeferred (deferrals=1)
+    assert.equal(aborts.length, 0);
+    callbacks[0]!(); // tick 4 — abort after cap (deferrals=2)
+    assert.equal(aborts.length, 1);
+    assert.match(aborts[0]!.message, /\[e2e-ios-boot\] session-create abort/);
+    assert.ok(lines.some(line => /hang-abort\b/.test(line)));
+  });
+
+  test('FLAKE-005: watchdog fail-fast abort when prebuilt WDA + live xcodebuild', () => {
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const aborts: Error[] = [];
+    startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'serial:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      recoverAfterTicks: 2,
+      abortAfterTicks: 3,
+      prebuiltWdaArtifactPresent: true,
+      lastXcodebuildExitRef: { value: 0 },
+      write: line => lines.push(line),
+      execCapture: (bin, args) => {
+        if (bin === 'pgrep' && (args[1] === 'xcodebuild' || args.includes('xcodebuild'))) {
+          return { stdout: '66564 /usr/bin/xcodebuild test\n', stderr: '', status: 0 };
+        }
+        if (bin === 'pgrep') {
+          return { stdout: '', stderr: '', status: 1 };
+        }
+        if (args.includes('list')) {
+          return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+        }
+        return { stdout: 'Monitoring boot\nBooted\n', stderr: '', status: 0 };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      now: () => new Date('2026-10-15T17:45:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onAbort: error => aborts.push(error),
+    });
+    callbacks[0]!();
+    callbacks[0]!();
+    callbacks[0]!(); // tick 3 — must not loop abortDeferred until supervisor
+    assert.equal(aborts.length, 1);
+    assert.doesNotMatch(lines.join('\n'), /abortDeferred:.*host build still live/);
+  });
+
   test('live PIDs abortDeferred then supervisor abort still stages non-empty snapshot', async () => {
     const root = mkdtempSync(join(tmpdir(), 'rngma-booted-supervisor-'));
     try {
@@ -918,6 +1013,78 @@ describe('iosBootDiagnostics', () => {
     assert.equal(aborts.length, 1);
     assert.match(aborts[0]!.message, /Booted hang-probe streak/);
     assert.ok(lines.some(line => /hang-abort-artifacts/.test(line)));
+  });
+
+  test('FLAKE-005: prebuilt WDA + live xcodebuild must not abortDeferred at fail-fast tick', () => {
+    const base = {
+      hangTick: 3,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 3,
+      simState: 'Booted',
+      recoveredOnce: true,
+      hostXcodebuildPids: '66564',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '0',
+    };
+    const deferredWithoutPrebuilt = decideSessionCreateHangAction({
+      ...base,
+      prebuiltWdaArtifactPresent: false,
+      consecutiveLiveBuildDeferrals: 0,
+    });
+    assert.equal(deferredWithoutPrebuilt.action, 'skip-recover');
+    if (deferredWithoutPrebuilt.action === 'skip-recover') {
+      assert.match(deferredWithoutPrebuilt.reason, /abortDeferred:/);
+    }
+    const abortWithPrebuilt = decideSessionCreateHangAction({
+      ...base,
+      prebuiltWdaArtifactPresent: true,
+      consecutiveLiveBuildDeferrals: 0,
+    });
+    assert.equal(abortWithPrebuilt.action, 'abort');
+    if (abortWithPrebuilt.action === 'abort') {
+      assert.match(abortWithPrebuilt.reason, /prebuilt WDA artifact present/);
+    }
+    const recoverWithPrebuilt = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 2,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '66564',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '(none)',
+      prebuiltWdaArtifactPresent: true,
+    });
+    assert.equal(recoverWithPrebuilt.action, 'recover');
+  });
+
+  test('FLAKE-005: live-PID abortDeferred livelock caps then escalates abort', () => {
+    const base = {
+      hangTick: 3,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 3,
+      simState: 'Booted',
+      recoveredOnce: true,
+      hostXcodebuildPids: '4242',
+      hostWdaPids: '(none)',
+      lastXcodebuildExitLabel: '65',
+      prebuiltWdaArtifactPresent: false,
+    };
+  assert.equal(
+    decideSessionCreateHangAction({
+      ...base,
+      consecutiveLiveBuildDeferrals: IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS - 1,
+    }).action,
+    'skip-recover',
+  );
+    const escalated = decideSessionCreateHangAction({
+      ...base,
+      consecutiveLiveBuildDeferrals: IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS,
+    });
+    assert.equal(escalated.action, 'abort');
+    if (escalated.action === 'abort') {
+      assert.match(escalated.reason, /live-PID deferral cap reached/);
+    }
   });
 
   test('formatSessionCreateHangAbortError keeps stable prefix', () => {
