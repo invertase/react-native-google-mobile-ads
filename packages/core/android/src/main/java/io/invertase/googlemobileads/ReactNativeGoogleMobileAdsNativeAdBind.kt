@@ -20,15 +20,17 @@ package io.invertase.googlemobileads
 import android.util.Log
 
 /**
- * Narrow helper for delayed NativeAdView bind (#906): swallow only known GMA overlay re-parent
- * [IllegalStateException]s ("already has a parent" / reparent wording).
+ * Narrow helper for delayed NativeAdView bind (#906, #928): swallow only known GMA overlay
+ * re-parent [IllegalStateException]s and Meta/Audience Network empty clickable-view
+ * [IllegalArgumentException]s.
  */
 internal object ReactNativeGoogleMobileAdsNativeAdBind {
   private const val TAG = "RNGoogleMobileAds"
 
   /**
-   * Run [bind], swallowing only re-parent [IllegalStateException]s. Other ISEs are rethrown.
-   * Returns true when bind completed without a swallowed exception.
+   * Run [bind], swallowing only re-parent [IllegalStateException]s and empty clickable-view
+   * [IllegalArgumentException]s. Other failures are rethrown. Returns true when bind completed
+   * without a swallowed exception.
    */
   fun runBindCatching(bind: () -> Unit): Boolean =
     try {
@@ -40,7 +42,17 @@ internal object ReactNativeGoogleMobileAdsNativeAdBind {
       }
       Log.w(TAG, "Native ad bind skipped after IllegalStateException: ${error.message}")
       false
+    } catch (error: IllegalArgumentException) {
+      if (!isClickableViewsIllegalArgument(error)) {
+        throw error
+      }
+      Log.w(TAG, "Native ad bind skipped after IllegalArgumentException: ${error.message}")
+      false
     }
+
+  /** Whether [error] is Meta/Audience Network rejecting empty clickable views (#928). */
+  fun isClickableViewsIllegalArgument(error: IllegalArgumentException): Boolean =
+    error.message?.lowercase()?.contains("clickable views") == true
 
   /** Whether [error] matches GMA overlay re-parent failures we treat as non-fatal (#906). */
   fun isReparentIllegalState(error: IllegalStateException): Boolean {

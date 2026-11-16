@@ -177,6 +177,10 @@ class ReactNativeGoogleMobileAdsNativeAdView(
         }
         val liveView = nativeAdView ?: return@launch
         val ad = nativeAd ?: return@launch
+        // Parity with classic (#928): defer bind until at least one non-media asset is registered.
+        if (sdkOwnedAssetViews.isEmpty()) {
+          return@launch
+        }
         val bound =
           ReactNativeGoogleMobileAdsNativeAdBind.runBindCatching {
             liveView.registerNativeAd(ad, mediaView)
