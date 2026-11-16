@@ -203,6 +203,14 @@ export type HostProcessPidSnapshot = {
   pids: number[];
   /** True when the host pgrep itself timed out (PIDs may be incomplete). */
   timedOut?: boolean;
+  /**
+   * True when at least one matched `xcodebuild` line carries a genuine build
+   * action (`build` / `build-for-testing`) rather than the launch-only
+   * `test` / `test-without-building` actions `usePrebuiltWDA` always uses
+   * (see {@link pgrepFlLineIsXcodebuildBuildAction}). Unset for non-xcodebuild
+   * markers.
+   */
+  isBuildAction?: boolean;
 };
 
 /**
@@ -218,6 +226,26 @@ export function pgrepFlLineIsXcodebuild(line: string): boolean {
   // Drop leading PID, then match argv0 / path ending in xcodebuild.
   const cmd = trimmed.replace(/^\d+\s+/, '');
   return /(^|\/)xcodebuild(\s|$)/.test(cmd);
+}
+
+/**
+ * `xcodebuild` action tokens that genuinely compile sources. `usePrebuiltWDA`
+ * (appium-webdriveragent `xcodebuild.js` `getCommand`) only ever runs the
+ * launch-only `test` / `test-without-building` actions against the already-
+ * built product — never these — so a live xcodebuild process is expected
+ * (and must not defeat the live-PID defer gate) unless one of these appears.
+ */
+const XCODEBUILD_BUILD_ACTIONS = new Set(['build', 'build-for-testing']);
+
+/**
+ * True when a `pgrep -fl xcodebuild` line's action token is a genuine build
+ * (`build` / `build-for-testing`) rather than a launch-only `test` /
+ * `test-without-building` invocation. Token-exact (not substring) so
+ * `test-without-building` never matches `build`.
+ */
+export function pgrepFlLineIsXcodebuildBuildAction(line: string): boolean {
+  const tokens = line.trim().split(/\s+/);
+  return tokens.some(token => XCODEBUILD_BUILD_ACTIONS.has(token));
 }
 
 /** Parse `pgrep -fl` stdout into PIDs; optionally skip xcodebuild command lines. */
@@ -265,7 +293,13 @@ export function listWdaRelatedHostProcesses(
       result.status === 0 || result.stdout.trim() !== ''
         ? parsePgrepFlPids(result.stdout, { excludeXcodebuildCmd })
         : [];
-    return { marker, pids };
+    if (marker !== 'xcodebuild') {
+      return { marker, pids };
+    }
+    const isBuildAction = result.stdout
+      .split(/\r?\n/)
+      .some(line => line.trim() !== '' && pgrepFlLineIsXcodebuildBuildAction(line));
+    return { marker, pids, isBuildAction };
   });
 }
 
@@ -279,6 +313,12 @@ export function formatHostPidFieldsFromSnapshots(
   hostXcodebuildPids: string;
   hostWdaPids: string;
   hostPgrepTimedOut: boolean;
+  /**
+   * True only when a live `xcodebuild` process is running a genuine build
+   * action — never true for the launch-only `test` / `test-without-building`
+   * actions `usePrebuiltWDA` always uses to start the already-built WDA.
+   */
+  hostXcodebuildBuilding: boolean;
 } {
   const xcodebuild = hostProcs.find(item => item.marker === 'xcodebuild');
   const wdaHost = hostProcs.filter(item => item.marker !== 'xcodebuild');
@@ -288,6 +328,7 @@ export function formatHostPidFieldsFromSnapshots(
     xcodebuild?.timedOut === true
       ? 'timedOut'
       : xcodebuild?.pids.join(',') || '(none)';
+  const hostXcodebuildBuilding = xcodebuild?.isBuildAction === true;
   let hostWdaPids: string;
   if (wdaHost.some(item => item.timedOut === true)) {
     hostWdaPids = 'timedOut';
@@ -299,7 +340,7 @@ export function formatHostPidFieldsFromSnapshots(
         .filter((pid, index, all) => all.indexOf(pid) === index)
         .join(',') || '(none)';
   }
-  return { hostXcodebuildPids, hostWdaPids, hostPgrepTimedOut };
+  return { hostXcodebuildPids, hostWdaPids, hostPgrepTimedOut, hostXcodebuildBuilding };
 }
 
 export type WdaDerivedDataLogPath = {
@@ -408,6 +449,8 @@ export type IosSessionCreateDiagnosticSnapshot = {
   hostXcodebuildPids: string;
   hostWdaPids: string;
   hostPgrepTimedOut: boolean;
+  /** See {@link formatHostPidFieldsFromSnapshots}. */
+  hostXcodebuildBuilding: boolean;
   lastXcodebuildExit: string;
   wdaLogPaths: string;
   wdaLogPathCount: number;
@@ -449,7 +492,7 @@ export function collectIosSessionCreateDiagnosticSnapshot(
   const derivedDataPath = options.derivedDataPath;
   const wdaRunnerAppPath = options.wdaRunnerAppPath;
   const hostProcs = listWdaRelatedHostProcesses(exec);
-  const { hostXcodebuildPids, hostWdaPids, hostPgrepTimedOut } =
+  const { hostXcodebuildPids, hostWdaPids, hostPgrepTimedOut, hostXcodebuildBuilding } =
     formatHostPidFieldsFromSnapshots(hostProcs);
   const logPaths = (options.listLogPaths ?? listWdaDerivedDataLogPaths)(derivedDataPath);
   const lastExit =
@@ -471,6 +514,7 @@ export function collectIosSessionCreateDiagnosticSnapshot(
     hostXcodebuildPids,
     hostWdaPids,
     hostPgrepTimedOut,
+    hostXcodebuildBuilding,
     lastXcodebuildExit: lastExit,
     wdaLogPaths:
       logPaths.map(item => `${item.path}(${item.bytes}b)`).join(',') || '(none)',
@@ -770,6 +814,7 @@ export function emitIosSessionCreateDiagnostics(
         hostXcodebuildPids: snapshot.hostXcodebuildPids,
         hostWdaPids: snapshot.hostWdaPids,
         hostPgrepTimedOut: snapshot.hostPgrepTimedOut,
+        hostXcodebuildBuilding: snapshot.hostXcodebuildBuilding,
         lastXcodebuildExit: snapshot.lastXcodebuildExit,
         wdaLogPathCount: snapshot.wdaLogPathCount,
         wdaLogPaths: snapshot.wdaLogPaths,
