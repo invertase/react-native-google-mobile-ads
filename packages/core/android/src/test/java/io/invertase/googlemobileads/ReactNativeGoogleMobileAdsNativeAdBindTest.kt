@@ -25,7 +25,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Policy for #906: swallow only known GMA re-parent IllegalStateException messages.
+ * Policy for #906 / #928: swallow only known GMA re-parent IllegalStateException messages and
+ * Meta Audience Network empty clickable-view IllegalArgumentException messages.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -91,6 +92,45 @@ class ReactNativeGoogleMobileAdsNativeAdBindTest {
   fun runBindCatching_rethrowsOtherIllegalStateException() {
     ReactNativeGoogleMobileAdsNativeAdBind.runBindCatching {
       throw IllegalStateException("Native ad view is destroyed")
+    }
+  }
+
+  @Test
+  fun isClickableViewsIllegalArgument_matchesAudienceNetworkMessage() {
+    assertTrue(
+      ReactNativeGoogleMobileAdsNativeAdBind.isClickableViewsIllegalArgument(
+        IllegalArgumentException("Invalid set of clickable views"),
+      ),
+    )
+  }
+
+  @Test
+  fun isClickableViewsIllegalArgument_rejectsUnrelatedMessage() {
+    assertFalse(
+      ReactNativeGoogleMobileAdsNativeAdBind.isClickableViewsIllegalArgument(
+        IllegalArgumentException("Native ad is null"),
+      ),
+    )
+    assertFalse(
+      ReactNativeGoogleMobileAdsNativeAdBind.isClickableViewsIllegalArgument(
+        IllegalArgumentException(null as String?),
+      ),
+    )
+  }
+
+  @Test
+  fun runBindCatching_swallowsClickableViewsIllegalArgumentException() {
+    assertFalse(
+      ReactNativeGoogleMobileAdsNativeAdBind.runBindCatching {
+        throw IllegalArgumentException("Invalid set of clickable views")
+      },
+    )
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun runBindCatching_rethrowsOtherIllegalArgumentException() {
+    ReactNativeGoogleMobileAdsNativeAdBind.runBindCatching {
+      throw IllegalArgumentException("Native ad is null")
     }
   }
 }

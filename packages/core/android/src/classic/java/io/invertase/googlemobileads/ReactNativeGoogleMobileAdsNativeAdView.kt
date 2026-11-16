@@ -161,6 +161,12 @@ class ReactNativeGoogleMobileAdsNativeAdView(
         }
         val liveView = nativeAdView ?: return@launch
         val ad = nativeAd ?: return@launch
+        // Assets register from JS after this delay; binding with no asset views makes mediation
+        // adapters such as Meta Audience Network throw "Invalid set of clickable views". Each
+        // registerAsset calls reloadAd again (#928).
+        if (sdkOwnedAssetViews.isEmpty()) {
+          return@launch
+        }
         val bound =
           ReactNativeGoogleMobileAdsNativeAdBind.runBindCatching {
             liveView.setNativeAd(ad)
