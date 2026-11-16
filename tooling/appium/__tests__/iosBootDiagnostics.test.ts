@@ -862,6 +862,99 @@ describe('iosBootDiagnostics', () => {
     assert.doesNotMatch(lines.join('\n'), /abortDeferred:.*host build still live/);
   });
 
+  test('FLAKE-005b: a single transient simctl-list ETIMEDOUT must not reset the Booted-hang streak', () => {
+    // Reproduces PR #939 post-#940 CI run (43897188379): prebuilt WDA present,
+    // Booted throughout, recover fires once at tick 2 (consumes the recover
+    // slot) — same as #940's own livelock test. Unlike that test, tick 3 hits
+    // a single transient `xcrun simctl list` ETIMEDOUT (host contention from
+    // the just-recovered WDA relaunch) while `simctl bootstatus` still reports
+    // Booted and a fresh host xcodebuild PID has already reappeared (the
+    // recover-triggered relaunch). The simulator never left Booted — only the
+    // probe round-tripped a timeout — so this single glitch must not erase the
+    // already-accumulated Booted-hang evidence and push fail-fast abort past
+    // the 180s supervisor ceiling the way #940's abortDeferred fix did not
+    // anticipate.
+    let listCalls = 0;
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const recovers: string[] = [];
+    const aborts: Error[] = [];
+    const execCapture: ExecCapture = (bin, args) => {
+      if (bin === 'xcrun' && args.includes('list')) {
+        listCalls += 1;
+        // Tick 3's simctl list alone ETIMEDOUTs; every other tick succeeds.
+        if (listCalls === 3) {
+          return {
+            stdout: '',
+            stderr: '',
+            status: null,
+            timedOut: true,
+            error: 'spawnSync ETIMEDOUT',
+          };
+        }
+        return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+      }
+      if (bin === 'xcrun' && args.includes('bootstatus')) {
+        // bootstatus keeps succeeding even on tick 3 (matches the real CI log:
+        // listError=...ETIMEDOUT alongside bootstatus=exit=0 Booted).
+        return { stdout: 'Monitoring boot\nBooted\n', stderr: '', status: 0 };
+      }
+      if (bin === 'pgrep' && (args[1] === 'xcodebuild' || args.includes('xcodebuild'))) {
+        // Host xcodebuild reappears from tick 3 onward — the recover-triggered
+        // WDA relaunch Appium performs after our tick-2 `simctl terminate`.
+        return listCalls >= 3
+          ? { stdout: '57975 /usr/bin/xcodebuild test\n', stderr: '', status: 0 }
+          : { stdout: '', stderr: '', status: 1 };
+      }
+      if (bin === 'pgrep') {
+        return { stdout: '', stderr: '', status: 1 };
+      }
+      return { stdout: '', stderr: '', status: 0 };
+    };
+    startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'serial:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 30_000,
+      // Production defaults — do not loosen the thresholds for this repro.
+      prebuiltWdaArtifactPresent: true,
+      lastXcodebuildExitRef: { value: null },
+      write: line => lines.push(line),
+      execCapture,
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      simulatorUiPids: [],
+      now: () => new Date('2026-11-16T17:10:41.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onRecover: (udid, reason) => recovers.push(`${udid}:${reason}`),
+      onAbort: error => aborts.push(error),
+    });
+    callbacks[0]!(); // tick 1 (30s) — Booted, continue
+    assert.equal(recovers.length, 0);
+    assert.equal(aborts.length, 0);
+    callbacks[0]!(); // tick 2 (60s) — Booted streak reaches 2, recover fires
+    assert.equal(recovers.length, 1);
+    assert.equal(aborts.length, 0);
+    callbacks[0]!(); // tick 3 (90s) — transient simctl-list ETIMEDOUT only
+    // Must fail fast here (hangTick=3 === abortAfterTicks default) instead of
+    // silently continuing until the 180s/tick-6 supervisor ceiling: the
+    // simulator was Booted on both sides of this single probe glitch, and
+    // #940's own prebuilt-WDA-plus-live-xcodebuild fail-fast gate already
+    // exists to bypass the live-PID defer once abort is ready.
+    assert.equal(
+      aborts.length,
+      1,
+      'a lone simctl-list ETIMEDOUT must not reset the Booted-hang streak and delay fail-fast abort past tick 3',
+    );
+    assert.match(aborts[0]!.message, /\[e2e-ios-boot\] session-create abort/);
+    assert.ok(lines.some(line => /phase=serial:session-create:hang-abort\b/.test(line)));
+  });
+
   test('live PIDs abortDeferred then supervisor abort still stages non-empty snapshot', async () => {
     const root = mkdtempSync(join(tmpdir(), 'rngma-booted-supervisor-'));
     try {
