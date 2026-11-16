@@ -728,6 +728,30 @@ export function decideSessionCreateHangAction(input: {
         consumeRecoveryOpportunity: true,
       };
     }
+    if (input.prebuiltWdaArtifactPresent === true && input.hostXcodebuildBuilding !== true) {
+      // FLAKE-005c residual: a harness-side `xcrun simctl terminate` here races
+      // a slow-but-healthy prebuilt WDA launch. `hostXcodebuildPids`/
+      // `hostWdaPids` reading `(none)` at the recover tick does not mean
+      // nothing is happening — Appium's launch-only `xcodebuild
+      // test-without-building` has its own startup overhead before it (or the
+      // WDA runner it execs) becomes visible to `pgrep`, especially under CI
+      // host contention. The live-PID gate above only defers when a PID is
+      // already visible, so it cannot catch this gap. In prebuilt mode
+      // Appium already owns the WDA process lifecycle end-to-end; disable the
+      // harness WDA-terminate recovery entirely here rather than risk killing
+      // a launch that was about to succeed. The abort path below (and its own
+      // live-PID gate) remains the sole backstop for a genuinely stuck
+      // prebuilt launch.
+      return {
+        action: 'skip-recover',
+        reason:
+          `recoverSkipped: prebuilt WDA artifact present (hostXcodebuildPids=${input.hostXcodebuildPids ?? '(unknown)'}, ` +
+          `hostWdaPids=${input.hostWdaPids ?? '(unknown)'}) — harness WDA-terminate recovery is disabled ` +
+          `while usePrebuiltWDA; Appium owns the prebuilt WDA launch lifecycle, and PIDs reading (none) here ` +
+          `can just mean the launch has not become visible to pgrep yet, not that it is stuck`,
+        consumeRecoveryOpportunity: false,
+      };
+    }
     const recoverEvidence = etimedoutPath
       ? `xcrun ETIMEDOUT (hangTick=${input.hangTick}, state=${input.simState ?? 'unknown'})`
       : `Booted hang-probe streak (hangTick=${input.hangTick}, ` +
