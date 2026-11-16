@@ -138,6 +138,35 @@ jobs:
             SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:?ANDROID_HOME/ANDROID_SDK_ROOT unset}}"
             echo "ANDROID_SDK=$SDK"
 
+            # ubuntu runners ship cmdline-tools but do not put sdkmanager on PATH.
+            SDKMANAGER=""
+            for candidate in \
+              "$SDK/cmdline-tools/latest/bin/sdkmanager" \
+              "$SDK/cmdline-tools/bin/sdkmanager" \
+              "$SDK/tools/bin/sdkmanager"
+            do
+              if [[ -x "$candidate" ]]; then
+                SDKMANAGER="$candidate"
+                break
+              fi
+            done
+            if [[ -z "$SDKMANAGER" ]]; then
+              # Fallback: any versioned cmdline-tools/*/bin/sdkmanager
+              while IFS= read -r candidate; do
+                if [[ -x "$candidate" ]]; then
+                  SDKMANAGER="$candidate"
+                  break
+                fi
+              done < <(find "$SDK/cmdline-tools" -type f -path '*/bin/sdkmanager' 2>/dev/null | sort)
+            fi
+            if [[ -z "$SDKMANAGER" ]]; then
+              echo "sdkmanager not found under $SDK/cmdline-tools (or tools/bin)"
+              ls -la "$SDK" || true
+              ls -la "$SDK/cmdline-tools" || true
+              exit 127
+            fi
+            echo "SDKMANAGER=$SDKMANAGER"
+
             cleanup_incomplete_sdk_packages() {
               # Partial NDK/CMake installs do not self-heal; remove before retrying.
               if [[ -d "$SDK/ndk" ]]; then
@@ -163,7 +192,7 @@ jobs:
             }
 
             cleanup_incomplete_sdk_packages
-            yes | sdkmanager --licenses >/dev/null || true
+            yes | "$SDKMANAGER" --licenses >/dev/null || true
 
             # Expand this list when Warm Gradle / emulator logs show new dynamic installs.
             PACKAGES=(
@@ -172,7 +201,7 @@ jobs:
             )
             for pkg in "${PACKAGES[@]}"; do
               echo "sdkmanager --install $pkg"
-              sdkmanager --install "$pkg"
+              "$SDKMANAGER" --install "$pkg"
             done
 
             test -f "$SDK/ndk/27.1.12297006/source.properties"
