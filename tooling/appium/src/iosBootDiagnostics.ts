@@ -939,7 +939,15 @@ export function startIosSessionCreateHangWatchdog(
         lastBootstatusTimedOut = false;
       }
     }
-    if (lastSimState === 'Booted') {
+    // FLAKE-005 residual (PR #939 post-#940 run 43897188379): a transient
+    // `xcrun simctl list` ETIMEDOUT yields `state=(missing)` even though the
+    // simulator never actually left Booted — only the probe round-tripped a
+    // timeout (often from host contention the recover-triggered WDA relaunch
+    // itself causes). Resetting the Booted-hang streak on that inconclusive
+    // read discards real accumulated hang evidence and can push fail-fast
+    // abort past the external 180s supervisor ceiling. Only a *confirmed*
+    // non-Booted read (e.g. `Shutdown`/`Booting`) should break the streak.
+    if (lastSimState === 'Booted' || lastSimState === '(missing)') {
       consecutiveBootedHangProbes += 1;
     } else {
       consecutiveBootedHangProbes = 0;
