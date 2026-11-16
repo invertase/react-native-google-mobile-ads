@@ -30,21 +30,18 @@ Autolinking pulls in the iOS mediation pod. Rebuild the app after install. Andro
 
 Yandex is added to AdMob / GAM mediation as a **custom event** (not a single `GADMediationAdapter*` class). Paste the class name for the ad format:
 
-| Platform | Format | Class name |
-| -------- | ------ | ---------- |
-| iOS | Banner | `YMAAdMobCustomEventBanner` |
-| iOS | Interstitial | `YMAAdMobCustomEventInterstitial` |
-| iOS | Rewarded | `YMAAdMobCustomEventRewarded` |
-| iOS | Native | `YMAAdMobCustomEventNative` |
-| Android | — | **not shipped** |
+| Platform | Format       | Class name                        |
+| -------- | ------------ | --------------------------------- |
+| iOS      | Banner       | `YMAAdMobCustomEventBanner`       |
+| iOS      | Interstitial | `YMAAdMobCustomEventInterstitial` |
+| iOS      | Rewarded     | `YMAAdMobCustomEventRewarded`     |
+| iOS      | Native       | `YMAAdMobCustomEventNative`       |
+| Android  | —            | **not shipped**                   |
 
 Also exported from JS:
 
 ```ts
-import {
-  nativeAdapterClassName,
-  networkSlug,
-} from '@react-native-google-mobile-ads/yandex';
+import { nativeAdapterClassName, networkSlug } from '@react-native-google-mobile-ads/yandex';
 
 // nativeAdapterClassName.android === null
 // nativeAdapterClassName.ios.banner === 'YMAAdMobCustomEventBanner'
@@ -54,10 +51,10 @@ Custom-event parameter JSON (Yandex Ad Unit ID) must still be configured in the 
 
 ## Mediation dependencies (pinned in this package)
 
-| Platform | Coordinate | Version pin |
-| -------- | ---------- | ----------- |
-| iOS | CocoaPods `YandexMobileAdsAdMobAdapters` | `8.6.0.0` |
-| Android | — | **not linked** |
+| Platform | Coordinate                               | Version pin    |
+| -------- | ---------------------------------------- | -------------- |
+| iOS      | CocoaPods `YandexMobileAdsAdMobAdapters` | `8.6.0.0`      |
+| Android  | —                                        | **not linked** |
 
 Citations (verify at upgrade time):
 
@@ -69,7 +66,7 @@ Citations (verify at upgrade time):
 
 Core continues to own `play-services-ads` / `Google-Mobile-Ads-SDK`. This package does not re-pin the GMA SDK.
 
-`YandexMobileAdsAdMobAdapters@8.6.0.0` requires `Google-Mobile-Ads-SDK ~> 13.8.0` (`>= 13.8.0, < 13.9.0`). Core’s iOS GMA pin (`13.10.0`) does **not** satisfy that pessimistic operator. Apps that enable Yandex mediation on iOS must resolve the CocoaPods conflict (override the adapter’s GMA dependency, wait for an adapter release whose range includes the core pin, or pin core’s iOS GMA lower).
+`YandexMobileAdsAdMobAdapters@8.6.0.0` requires `Google-Mobile-Ads-SDK ~> 13.8.0` (`>= 13.8.0, < 13.9.0`). Core’s iOS GMA pin (`13.12.0`) does **not** satisfy that pessimistic operator. Apps that enable Yandex mediation on iOS must resolve the CocoaPods conflict (override the adapter’s GMA dependency, wait for an adapter release whose range includes the core pin, or pin core’s iOS GMA lower).
 
 Platform floors align with core: iOS **15.1** and Android minSdk **24**. The mediation integration remains iOS-only.
 
@@ -83,9 +80,11 @@ Platform floors align with core: iOS **15.1** and Android minSdk **24**. The med
   '@react-native-google-mobile-ads/yandex',
   {
     // Pass Yandex SKAdNetwork IDs from Yandex’s current docs
-    skAdNetworkItems: [/* ... */],
+    skAdNetworkItems: [
+      /* ... */
+    ],
   },
-]
+];
 ```
 
 App IDs stay in the core Expo plugin.
