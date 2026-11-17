@@ -2,7 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { createConnection } from 'node:net';
 import path from 'node:path';
 import { formatAndroidWorkerTimeoutHint } from './androidSessionDiagnostics.ts';
-import { IOS_SESSION_CREATE_RETRY_EXIT_CODE } from './wdioSessionCreateRetry.ts';
+import {
+  IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE,
+  IOS_SESSION_CREATE_RETRY_EXIT_CODE,
+} from './wdioSessionCreateRetry.ts';
 
 export const STARTUP_READY_MARKER = '[e2e-startup-ready]';
 const METRO_READY_MARKER = 'Dev server ready';
@@ -199,6 +202,9 @@ export class StartupSupervisor {
   private metroTcpReady = false;
   private metroMarkerReady = false;
   private aborts = 0;
+  /** Set before supervised serial `wdio.stop()` so exit 130 is not a startup abort. */
+  private readonly sessionCreateRestartStopPending = new Set<string>();
+  private readonly sessionCreateRestartStopAcknowledged = new Set<string>();
   phase: StartupPhase = 'metro';
 
   private readonly defaultWorkerTimeoutMs: number;
@@ -294,6 +300,36 @@ export class StartupSupervisor {
     this.maybeResolve();
   }
 
+  /**
+   * Serial preflight calls this immediately before `wdio.stop()` after hang-recover
+   * so {@link recordProcessExit} and preflight retry logic treat exit 130 as expected.
+   */
+  expectSessionCreateRestartStop(source: string): void {
+    if (this.expected.has(source)) {
+      this.sessionCreateRestartStopPending.add(source);
+    }
+  }
+
+  /**
+   * Consumed by serial preflight when deciding to spawn `serial-session-retry`
+   * after a supervised hang-recover `wdio.stop()` (exit 130).
+   */
+  consumeSessionCreateRestartStop(source: string, exitCode: number): boolean {
+    if (exitCode !== IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE) {
+      return false;
+    }
+    if (this.sessionCreateRestartStopAcknowledged.has(source)) {
+      this.sessionCreateRestartStopAcknowledged.delete(source);
+      return true;
+    }
+    if (this.sessionCreateRestartStopPending.has(source)) {
+      this.sessionCreateRestartStopPending.delete(source);
+      this.sessionCreateRestartStopAcknowledged.add(source);
+      return true;
+    }
+    return false;
+  }
+
   recordProcessExit(source: string, code: number): void {
     if (source.startsWith('device:')) {
       return;
@@ -303,6 +339,15 @@ export class StartupSupervisor {
     }
     // Supervised iOS session-create retry: WDIO exits so preflight can respawn once.
     if (code === IOS_SESSION_CREATE_RETRY_EXIT_CODE) {
+      return;
+    }
+    if (
+      code === IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE &&
+      (this.sessionCreateRestartStopPending.has(source) ||
+        this.sessionCreateRestartStopAcknowledged.has(source))
+    ) {
+      this.sessionCreateRestartStopPending.delete(source);
+      this.sessionCreateRestartStopAcknowledged.add(source);
       return;
     }
     if (this.phase !== 'complete') {

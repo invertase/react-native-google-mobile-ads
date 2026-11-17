@@ -24,7 +24,6 @@ import {
 } from './src/iosSessionDiagnostics.ts';
 import { iosMetroProcessArguments, runtimeResources } from './src/slots.ts';
 import { markIosSessionCreateInfraAbort } from './src/wdioInfraAbort.ts';
-import { requestIosSessionCreateProcessRestart } from './src/wdioSessionCreateRetry.ts';
 import { appiumHome, config as shared } from './wdio.shared.conf.ts';
 
 const iosApp = iosAppPath();
@@ -160,29 +159,26 @@ export const config: Options.Testrunner = {
     // in the launcher. Read the per-port sidecar the launcher writes.
     const wdaLocalPortRaw = caps?.['appium:wdaLocalPort'];
     const sessionCreateAttempt = Number(process.env.RNGMA_IOS_SESSION_CREATE_ATTEMPT ?? '1');
-    sessionCreateHangWatchdog = startIosSessionCreateHangWatchdog(udid, {
-      phase:
-        sessionCreateAttempt > 1
-          ? 'wdio:session-create-retry'
-          : 'wdio:session-create',
-      simulatorStartupTimeoutMs: timeoutMs,
-      lastXcodebuildExitStatePath: xcodebuildExitStateFile,
-      appiumHome,
-      wdaLocalPort:
-        typeof wdaLocalPortRaw === 'number'
-          ? wdaLocalPortRaw
-          : (runtime.slotResources?.automationPort ?? 8_100),
-      wdaPortProbeEnabled: true,
-      recoverSlotConsumed: sessionCreateAttempt > 1,
-      onSessionCreateRestart:
-        sessionCreateAttempt === 1 &&
-        process.env.RNGMA_IOS_SESSION_CREATE_SUPERVISOR === '1'
-          ? () => {
-              requestIosSessionCreateProcessRestart('wdio:session-create');
-            }
-          : undefined,
-      onAbort: abortWdioSessionCreateHang,
-    });
+    const sessionCreateSupervised = process.env.RNGMA_IOS_SESSION_CREATE_SUPERVISOR === '1';
+    // Serial preflight owns hang-recover + wdio.stop(); a worker watchdog would race it.
+    if (!sessionCreateSupervised) {
+      sessionCreateHangWatchdog = startIosSessionCreateHangWatchdog(udid, {
+        phase:
+          sessionCreateAttempt > 1
+            ? 'wdio:session-create-retry'
+            : 'wdio:session-create',
+        simulatorStartupTimeoutMs: timeoutMs,
+        lastXcodebuildExitStatePath: xcodebuildExitStateFile,
+        appiumHome,
+        wdaLocalPort:
+          typeof wdaLocalPortRaw === 'number'
+            ? wdaLocalPortRaw
+            : (runtime.slotResources?.automationPort ?? 8_100),
+        wdaPortProbeEnabled: true,
+        recoverSlotConsumed: sessionCreateAttempt > 1,
+        onAbort: abortWdioSessionCreateHang,
+      });
+    }
   },
   async before(_capabilities, _specs, browser) {
     // Session id exists — disarm before mid-suite xcrun ETIMEDOUT can WDA-terminate.

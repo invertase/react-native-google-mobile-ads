@@ -50,7 +50,7 @@ import {
   spawnOwned,
   stopAndDrain,
 } from '../src/ownedProcess.ts';
-import { IOS_SESSION_CREATE_RETRY_EXIT_CODE } from '../src/wdioSessionCreateRetry.ts';
+import { isIosSessionCreateRetryProcessExitCode } from '../src/wdioSessionCreateRetry.ts';
 import {
   ANDROID_DEVICE_HARD_FAILURES,
   androidDeviceLogCommand,
@@ -281,6 +281,7 @@ export async function runWdioOwned(
               ? () => {
                   sessionHangWatchdog?.stop();
                   sessionHangWatchdog = undefined;
+                  startup.expectSessionCreateRestartStop(source);
                   void wdio?.stop();
                 }
               : undefined,
@@ -338,13 +339,16 @@ export async function runWdioOwned(
       sessionHangWatchdog?.stop();
       sessionHangWatchdog = undefined;
       const exitCode = await activeWdio.completion.catch(() => 1);
+      const supervisedRestartStop = startup.consumeSessionCreateRestartStop(source, exitCode);
       const retrySessionCreate =
         target === 'ios' &&
         sessionCreateAttempt < sessionCreateAttempts &&
-        (exitCode === IOS_SESSION_CREATE_RETRY_EXIT_CODE ||
+        (isIosSessionCreateRetryProcessExitCode(exitCode) ||
+          supervisedRestartStop ||
           (typeof workerOutcome === 'object' &&
             workerOutcome.kind === 'exit' &&
-            workerOutcome.code === IOS_SESSION_CREATE_RETRY_EXIT_CODE));
+            (isIosSessionCreateRetryProcessExitCode(workerOutcome.code) ||
+              startup.consumeSessionCreateRestartStop(source, workerOutcome.code))));
       if (retrySessionCreate) {
         startup.rewindWorkerSessionBarrier(source);
         const index = owned.indexOf(activeWdio);

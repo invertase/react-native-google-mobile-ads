@@ -7,6 +7,21 @@ import { formatIosBootDiagnosticLine } from './iosBootDiagnostics.ts';
 export const IOS_SESSION_CREATE_RETRY_EXIT_CODE = 86;
 
 /**
+ * Serial supervisor `wdio.stop()` after hang-recover (SIGTERM/SIGINT mapping).
+ * Matches {@link parallelOrchestrator.CANCELLED_EXIT_CODE} without importing it
+ * (startup supervisor ↔ orchestrator import cycle).
+ */
+export const IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE = 130;
+
+export function isIosSessionCreateRetryProcessExitCode(code: number): boolean {
+  return code === IOS_SESSION_CREATE_RETRY_EXIT_CODE;
+}
+
+export function isIosSessionCreateSupervisedRestartStopExitCode(code: number): boolean {
+  return code === IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE;
+}
+
+/**
  * Exit the WDIO tree so the supervisor can spawn a clean session-create attempt.
  * Call from the hang watchdog immediately after successful hang-recover.
  */
