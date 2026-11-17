@@ -83,7 +83,7 @@ Every surface below works on the New Architecture. Surfaces marked To-Do still r
 | Android | Banners (Fabric Native Component) | 🟡 Partial: multi-format banner ported, standard banner To-Do |
 | Android | Full Screen Ads (Turbo Native Module) | ⏳ To-Do |
 | Android | Native Ads (Turbo Native Module, Fabric Native Component) | ✅ Complete |
-| Android | User Messaging Platform (Turbo Native Module) | ⏳ To-Do |
+| Android | User Messaging Platform (Turbo Native Module) | ✅ Complete |
 | Android | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do |
 
 ## More information

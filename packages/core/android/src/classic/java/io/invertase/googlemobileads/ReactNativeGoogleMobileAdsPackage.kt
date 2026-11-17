@@ -77,11 +77,11 @@ class ReactNativeGoogleMobileAdsPackage : BaseReactPackage() {
       moduleInfos[ReactNativeGoogleMobileAdsConsentModule.NAME] =
         ReactModuleInfo(
           ReactNativeGoogleMobileAdsConsentModule.NAME,
-          ReactNativeGoogleMobileAdsConsentModule.NAME,
+          ReactNativeGoogleMobileAdsConsentModule::class.java.name,
           false,
           false,
           false,
-          false,
+          isTurboModule,
         )
       moduleInfos[ReactNativeGoogleMobileAdsAppOpenModule.NAME] =
         ReactModuleInfo(
