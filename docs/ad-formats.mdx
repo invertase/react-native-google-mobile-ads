@@ -12,6 +12,7 @@ The Google Mobile Ads package supports the following ad formats. Pick the format
 - [Rewarded interstitial](/ad-formats/rewarded-interstitial) — full screen reward format that does not require opt-in.
 - [Native](/ad-formats/native) — component based, rendered with your own layout.
 - [Picture-in-picture (Preview)](/ad-formats/picture-in-picture) — floating window over content (Google open beta).
+- [Icon ads (Alpha)](/ad-formats/icon) — dedicated icon format on Android Next-Gen.
 
 Additional guides cover cross-cutting integration patterns:
 
@@ -30,7 +31,7 @@ do not invent app-side capability matrices.
 | Format | Google status | This library | Platform notes |
 | --- | --- | --- | --- |
 | Picture-in-Picture (`PictureInPictureAd`) | **Open beta** (Next-Gen Android ≥ 1.4.0; iOS ≥ 13.10) | **Preview** — [`PictureInPictureAd`](/ad-formats/picture-in-picture); `getAdCapabilities().pictureInPicture` | Classic Android: `unavailable`. |
-| Icon ads (`IconAd`) | Generally available on Next-Gen Android (not a native-ad icon asset) | **Not wrapped yet** — no JS API | Classic Android and iOS: unavailable unless Google ships peers. |
+| Icon ads (`IconAd`) | Generally available on Next-Gen Android (not a native-ad icon asset) | **Alpha** — [`IconAd`](/ad-formats/icon); `getAdCapabilities().iconAd` | Classic Android and iOS: `unavailable`. Multi-load not wrapped. |
 | Swipeable interstitial (`SwipeableInterstitialAd`) | **Private beta** — request access through your Google account manager | **Not wrapped; record-only** | Signal/render APIs exist on Next-Gen for allowlisted accounts only. Do not call private APIs from app code. |
 
 When Google opens a format and this library adds a JS surface, the new APIs will be documented on

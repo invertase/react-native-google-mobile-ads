@@ -1542,6 +1542,38 @@ private:
 
 
 template <typename T>
+class JSI_EXPORT NativeIconAdModuleCxxSpec : public TurboModule {
+public:
+  static constexpr std::string_view kModuleName = "RNGoogleMobileAdsIconAdModule";
+
+protected:
+  NativeIconAdModuleCxxSpec(std::shared_ptr<CallInvoker> jsInvoker) : TurboModule(std::string{NativeIconAdModuleCxxSpec::kModuleName}, jsInvoker) {
+    methodMap_["iconAdLoad"] = MethodMetadata {.argCount = 3, .invoker = __iconAdLoad};
+    methodMap_["iconAdDestroy"] = MethodMetadata {.argCount = 1, .invoker = __iconAdDestroy};
+  }
+  
+private:
+  static jsi::Value __iconAdLoad(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::iconAdLoad) == 4,
+      "Expected iconAdLoad(...) to have 4 parameters");
+    bridging::callFromJs<void>(rt, &T::iconAdLoad,  static_cast<NativeIconAdModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber(),
+      count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asString(rt),
+      count <= 2 ? throw jsi::JSError(rt, "Expected argument in position 2 to be passed") : args[2].asObject(rt));return jsi::Value::undefined();
+  }
+
+  static jsi::Value __iconAdDestroy(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::iconAdDestroy) == 2,
+      "Expected iconAdDestroy(...) to have 2 parameters");
+    bridging::callFromJs<void>(rt, &T::iconAdDestroy,  static_cast<NativeIconAdModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber());return jsi::Value::undefined();
+  }
+};
+
+
+template <typename T>
 class JSI_EXPORT NativeInterstitialModuleCxxSpec : public TurboModule {
 public:
   static constexpr std::string_view kModuleName = "RNGoogleMobileAdsInterstitialModule";

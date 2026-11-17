@@ -166,6 +166,16 @@ jest.doMock('./packages/core/src/specs/modules/NativePictureInPictureModule', ()
     },
   };
 });
+jest.doMock('./packages/core/src/specs/modules/NativeIconAdModule', () => {
+  return {
+    __esModule: true,
+    Commands: {},
+    default: {
+      iconAdLoad: jest.fn(),
+      iconAdDestroy: jest.fn(),
+    },
+  };
+});
 jest.doMock('./packages/core/src/specs/modules/NativeRewardedInterstitialModule', () => {
   return {
     __esModule: true,

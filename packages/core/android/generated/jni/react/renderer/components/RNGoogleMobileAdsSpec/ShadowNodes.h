@@ -29,6 +29,17 @@ using RNGoogleMobileAdsBannerViewShadowNode = ConcreteViewShadowNode<
     RNGoogleMobileAdsBannerViewEventEmitter,
     RNGoogleMobileAdsBannerViewState>;
 
+JSI_EXPORT extern const char RNGoogleMobileAdsIconAdViewComponentName[];
+
+/*
+ * `ShadowNode` for <RNGoogleMobileAdsIconAdView> component.
+ */
+using RNGoogleMobileAdsIconAdViewShadowNode = ConcreteViewShadowNode<
+    RNGoogleMobileAdsIconAdViewComponentName,
+    RNGoogleMobileAdsIconAdViewProps,
+    RNGoogleMobileAdsIconAdViewEventEmitter,
+    RNGoogleMobileAdsIconAdViewState>;
+
 JSI_EXPORT extern const char RNGoogleMobileAdsMediaViewComponentName[];
 
 /*

@@ -100,5 +100,6 @@ export function getAdCapabilities(): AdCapabilities {
     maxManagedPoolAds: null,
     mediation: 'unknown',
     pictureInPicture: isAndroidNextGen || isIos ? experimental : unavailable,
+    iconAd: isAndroidNextGen ? experimental : unavailable,
   };
 }

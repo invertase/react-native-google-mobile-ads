@@ -58,6 +58,35 @@ folly::dynamic RNGoogleMobileAdsBannerViewProps::getDiffProps(
   return result;
 }
 #endif
+RNGoogleMobileAdsIconAdViewProps::RNGoogleMobileAdsIconAdViewProps(
+    const PropsParserContext &context,
+    const RNGoogleMobileAdsIconAdViewProps &sourceProps,
+    const RawProps &rawProps): ViewProps(context, sourceProps, rawProps),
+
+    requestId(convertRawProp(context, rawProps, "requestId", sourceProps.requestId, {0})) {}
+    
+#ifdef RN_SERIALIZABLE_STATE
+ComponentName RNGoogleMobileAdsIconAdViewProps::getDiffPropsImplementationTarget() const {
+  return "RNGoogleMobileAdsIconAdView";
+}
+
+folly::dynamic RNGoogleMobileAdsIconAdViewProps::getDiffProps(
+    const Props* prevProps) const {
+  static const auto defaultProps = RNGoogleMobileAdsIconAdViewProps();
+  const RNGoogleMobileAdsIconAdViewProps* oldProps = prevProps == nullptr
+      ? &defaultProps
+      : static_cast<const RNGoogleMobileAdsIconAdViewProps*>(prevProps);
+  if (this == oldProps) {
+    return folly::dynamic::object();
+  }
+  folly::dynamic result = HostPlatformViewProps::getDiffProps(prevProps);
+  
+  if (requestId != oldProps->requestId) {
+    result["requestId"] = requestId;
+  }
+  return result;
+}
+#endif
 RNGoogleMobileAdsMediaViewProps::RNGoogleMobileAdsMediaViewProps(
     const PropsParserContext &context,
     const RNGoogleMobileAdsMediaViewProps &sourceProps,

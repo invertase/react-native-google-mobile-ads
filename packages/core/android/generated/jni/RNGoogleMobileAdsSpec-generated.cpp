@@ -338,6 +338,21 @@ NativeGoogleMobileAdsPoolModuleSpecJSI::NativeGoogleMobileAdsPoolModuleSpecJSI(c
   methodMap_["poolPoll"] = MethodMetadata {5, __hostFunction_NativeGoogleMobileAdsPoolModuleSpecJSI_poolPoll};
   methodMap_["poolDestroy"] = MethodMetadata {3, __hostFunction_NativeGoogleMobileAdsPoolModuleSpecJSI_poolDestroy};
 }
+static facebook::jsi::Value __hostFunction_NativeIconAdModuleSpecJSI_iconAdLoad(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "iconAdLoad", "(DLjava/lang/String;Lcom/facebook/react/bridge/ReadableMap;)V", args, count, cachedMethodId);
+}
+
+static facebook::jsi::Value __hostFunction_NativeIconAdModuleSpecJSI_iconAdDestroy(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "iconAdDestroy", "(D)V", args, count, cachedMethodId);
+}
+
+NativeIconAdModuleSpecJSI::NativeIconAdModuleSpecJSI(const JavaTurboModule::InitParams &params)
+  : JavaTurboModule(params) {
+  methodMap_["iconAdLoad"] = MethodMetadata {3, __hostFunction_NativeIconAdModuleSpecJSI_iconAdLoad};
+  methodMap_["iconAdDestroy"] = MethodMetadata {1, __hostFunction_NativeIconAdModuleSpecJSI_iconAdDestroy};
+}
 static facebook::jsi::Value __hostFunction_NativeInterstitialModuleSpecJSI_interstitialLoad(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
   static jmethodID cachedMethodId = nullptr;
   return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "interstitialLoad", "(DLjava/lang/String;Lcom/facebook/react/bridge/ReadableMap;)V", args, count, cachedMethodId);
@@ -438,6 +453,9 @@ std::shared_ptr<TurboModule> RNGoogleMobileAdsSpec_ModuleProvider(const std::str
   }
   if (moduleName == "RNGoogleMobileAdsConsentModule") {
     return std::make_shared<NativeConsentModuleSpecJSI>(params);
+  }
+  if (moduleName == "RNGoogleMobileAdsIconAdModule") {
+    return std::make_shared<NativeIconAdModuleSpecJSI>(params);
   }
   if (moduleName == "RNGoogleMobileAdsInterstitialModule") {
     return std::make_shared<NativeInterstitialModuleSpecJSI>(params);

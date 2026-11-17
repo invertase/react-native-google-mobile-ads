@@ -485,6 +485,37 @@ namespace facebook::react {
   }
 } // namespace facebook::react
 
+@implementation NativeIconAdModuleSpecBase
+
+
+- (void)setEventEmitterCallback:(EventEmitterCallbackWrapper *)eventEmitterCallbackWrapper
+{
+  _eventEmitterCallback = std::move(eventEmitterCallbackWrapper->_eventEmitterCallback);
+}
+@end
+
+
+namespace facebook::react {
+  
+    static facebook::jsi::Value __hostFunction_NativeIconAdModuleSpecJSI_iconAdLoad(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "iconAdLoad", @selector(iconAdLoad:adUnitId:requestOptions:), args, count);
+    }
+
+    static facebook::jsi::Value __hostFunction_NativeIconAdModuleSpecJSI_iconAdDestroy(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "iconAdDestroy", @selector(iconAdDestroy:), args, count);
+    }
+
+  NativeIconAdModuleSpecJSI::NativeIconAdModuleSpecJSI(const ObjCTurboModule::InitParams &params)
+    : ObjCTurboModule(params) {
+      
+        methodMap_["iconAdLoad"] = MethodMetadata {3, __hostFunction_NativeIconAdModuleSpecJSI_iconAdLoad};
+        
+        
+        methodMap_["iconAdDestroy"] = MethodMetadata {1, __hostFunction_NativeIconAdModuleSpecJSI_iconAdDestroy};
+        
+  }
+} // namespace facebook::react
+
 @implementation NativeInterstitialModuleSpecBase
 
 

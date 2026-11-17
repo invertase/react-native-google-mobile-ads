@@ -17,6 +17,8 @@ namespace facebook::react {
 
 using RNGoogleMobileAdsBannerViewState = StateData;
 
+using RNGoogleMobileAdsIconAdViewState = StateData;
+
 using RNGoogleMobileAdsMediaViewState = StateData;
 
 using RNGoogleMobileAdsMultiFormatBannerViewState = StateData;

@@ -17,6 +17,7 @@ namespace facebook::react {
 void RNGoogleMobileAdsSpec_registerComponentDescriptorsFromCodegen(
   std::shared_ptr<const ComponentDescriptorProviderRegistry> registry) {
 registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsBannerViewComponentDescriptor>());
+registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsIconAdViewComponentDescriptor>());
 registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsMediaViewComponentDescriptor>());
 registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsMultiFormatBannerViewComponentDescriptor>());
 registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsNativeViewComponentDescriptor>());

@@ -366,6 +366,96 @@ public final class ReactNativeGoogleMobileAdsCommon {
     return builder.build();
   }
 
+  /** Builds an icon ad request with the shared v17 targeting surface. */
+  public static com.google.android.libraries.ads.mobile.sdk.iconad.IconAdRequest buildIconAdRequest(
+      String adUnitId, ReadableMap adRequestOptions) {
+    com.google.android.libraries.ads.mobile.sdk.iconad.IconAdRequest.Builder builder =
+        new com.google.android.libraries.ads.mobile.sdk.iconad.IconAdRequest.Builder(adUnitId);
+    Bundle extras = new Bundle();
+
+    if (adRequestOptions.hasKey("requestNonPersonalizedAdsOnly")
+        && adRequestOptions.getBoolean("requestNonPersonalizedAdsOnly")) {
+      extras.putString("npa", "1");
+    }
+
+    if (adRequestOptions.hasKey("networkExtras")) {
+      Map<String, Object> networkExtras =
+          Objects.requireNonNull(adRequestOptions.getMap("networkExtras")).toHashMap();
+      for (Map.Entry<String, Object> entry : networkExtras.entrySet()) {
+        extras.putString(entry.getKey(), (String) entry.getValue());
+      }
+    }
+
+    if (adRequestOptions.hasKey("publisherProvidedSignals")) {
+      ReadableMap ppsMap =
+          Objects.requireNonNull(adRequestOptions.getMap("publisherProvidedSignals"));
+      ReadableMapKeySetIterator iterator = ppsMap.keySetIterator();
+      while (iterator.hasNextKey()) {
+        String key = iterator.nextKey();
+        ReadableArray values = Objects.requireNonNull(ppsMap.getArray(key));
+        ArrayList<Integer> intValues = new ArrayList<>();
+        for (int i = 0; i < values.size(); i++) {
+          intValues.add(values.getInt(i));
+        }
+        extras.putIntegerArrayList(key, intValues);
+      }
+    }
+    builder.setGoogleExtrasBundle(extras);
+
+    if (adRequestOptions.hasKey("keywords")) {
+      for (Object keyword :
+          Objects.requireNonNull(adRequestOptions.getArray("keywords")).toArrayList()) {
+        builder.addKeyword((String) keyword);
+      }
+    }
+    if (adRequestOptions.hasKey("contentUrl")) {
+      builder.setContentUrl(Objects.requireNonNull(adRequestOptions.getString("contentUrl")));
+    }
+    if (adRequestOptions.hasKey("neighboringContentUrls")) {
+      ReadableArray values =
+          Objects.requireNonNull(adRequestOptions.getArray("neighboringContentUrls"));
+      HashSet<String> urls = new HashSet<>();
+      for (int i = 0; i < values.size(); i++) {
+        urls.add(Objects.requireNonNull(values.getString(i)));
+      }
+      builder.setNeighboringContentUrls(urls);
+    }
+    if (adRequestOptions.hasKey("requestAgent")) {
+      builder.setRequestAgent(Objects.requireNonNull(adRequestOptions.getString("requestAgent")));
+    }
+    if (adRequestOptions.hasKey("customTargeting")) {
+      ReadableMap customTargeting =
+          Objects.requireNonNull(adRequestOptions.getMap("customTargeting"));
+      ReadableMapKeySetIterator iterator = customTargeting.keySetIterator();
+      while (iterator.hasNextKey()) {
+        String key = iterator.nextKey();
+        if (customTargeting.getType(key) == ReadableType.String) {
+          builder.putCustomTargeting(key, Objects.requireNonNull(customTargeting.getString(key)));
+        } else {
+          ReadableArray readableValues = Objects.requireNonNull(customTargeting.getArray(key));
+          ArrayList<String> values = new ArrayList<>();
+          for (int i = 0; i < readableValues.size(); i++) {
+            values.add(Objects.requireNonNull(readableValues.getString(i)));
+          }
+          builder.putCustomTargeting(key, values);
+        }
+      }
+    }
+    if (adRequestOptions.hasKey("categoryExclusions")) {
+      ReadableArray values =
+          Objects.requireNonNull(adRequestOptions.getArray("categoryExclusions"));
+      for (int i = 0; i < values.size(); i++) {
+        builder.addCategoryExclusion(Objects.requireNonNull(values.getString(i)));
+      }
+    }
+    if (adRequestOptions.hasKey("publisherProvidedId")) {
+      builder.setPublisherProvidedId(
+          Objects.requireNonNull(adRequestOptions.getString("publisherProvidedId")));
+    }
+
+    return builder.build();
+  }
+
   /** Builds the banner-specific request while preserving the common v17 targeting surface. */
   public static BannerAdRequest buildBannerAdRequest(
       String adUnitId,
