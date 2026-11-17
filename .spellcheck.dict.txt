@@ -133,6 +133,7 @@ HTTPS
 IAB
 iabtcf
 IDFA
+IDFV
 ILRD
 immersive
 immersiveModeEnabled
@@ -392,6 +393,7 @@ triaging
 variadic
 TypeDoc
 UI
+UUID
 UIKit
 UnableToResolveError
 uncomment
