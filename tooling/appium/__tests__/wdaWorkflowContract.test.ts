@@ -90,7 +90,7 @@ test('canonical iOS installer requires the selected simulator and exact app', ()
 
 test('iOS run-ios-app time-boxes install/launch and emits durable phase markers', () => {
   assert.equal(INSTALL_TIMEOUT_MS, 90_000);
-  assert.equal(LAUNCH_GATE_LAUNCH_TIMEOUT_MS, 60_000);
+  assert.equal(LAUNCH_GATE_LAUNCH_TIMEOUT_MS, 90_000);
   assert.equal(DIAGNOSTICS_TIMEOUT_MS, 15_000);
 
   const source = readFileSync(resolve(repositoryRoot, 'scripts/run-ios-app.js'), 'utf8');
@@ -99,6 +99,8 @@ test('iOS run-ios-app time-boxes install/launch and emits durable phase markers'
   assert.match(source, /withPhase\('install'/);
   assert.match(source, /launch-gate-launch/);
   assert.match(source, /launch-gate-terminate/);
+  assert.match(source, /launch-gate-erase/);
+  assert.match(source, /launch-services-settle/);
   assert.match(source, /RNGMA_INFRA_ABORT: sim-launch-wedged/);
   assert.match(source, /get_app_container/);
   assert.match(source, /listapps/);
