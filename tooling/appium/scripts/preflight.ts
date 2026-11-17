@@ -50,6 +50,7 @@ import {
   spawnOwned,
   stopAndDrain,
 } from '../src/ownedProcess.ts';
+import { IOS_SESSION_CREATE_RETRY_EXIT_CODE } from '../src/wdioSessionCreateRetry.ts';
 import {
   ANDROID_DEVICE_HARD_FAILURES,
   androidDeviceLogCommand,
@@ -227,72 +228,9 @@ export async function runWdioOwned(
         phase: 'serial:pre-wdio',
         simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
       });
-      // Mirror WDIO launcher sidecar path so parent + worker share one exit file.
-      clearXcodebuildExitState(xcodebuildExitStateFile);
-      // If POST /session hangs with prolonged xcrun ETIMEDOUT or Booted
-      // hang-probe streak, recover once (terminate WDA) then abort early with a
-      // clear [e2e-ios-boot] error instead of burning the full 180s ceiling.
-      sessionHangWatchdog = startIosSessionCreateHangWatchdog(exactTarget, {
-        phase: 'serial:session-create',
-        simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
-        lastXcodebuildExitRef,
-        lastXcodebuildExitStatePath: xcodebuildExitStateFile,
-        wdaLocalPort: runtime.slotResources?.automationPort ?? 8_100,
-        wdaPortProbeEnabled: true,
-        onRecover: (udid, reason) => {
-          console.log(
-            formatIosBootDiagnosticLine({
-              phase: 'serial:session-create:hang-recover-exec',
-              udid,
-              hint: reason,
-            }),
-          );
-          recoverIosSessionCreateHang(udid);
-        },
-        onAbort: error => {
-          startup.recordFailure(source, error);
-        },
-      });
     }
-    const wdio = (options.spawn ?? spawnOwned)(
-      'yarn',
-      ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`],
-      {
-        cwd: path.join(repoRoot, 'tooling/appium'),
-        env,
-        logPath: paths.child(target, 'serial'),
-      },
-    );
-    owned.push(wdio);
-    wdio.onLine(line => {
-      startup.recordLine(source, line);
-      if (target === 'android') {
-        // Structured lines land on parent stdout; child log already has raw Appium.
-        annotateAndroidSessionLogLine(line, { state: androidSessionAnnotateState });
-      }
-      if (target === 'ios') {
-        // Surface Appium `[Xcode] xcodebuild exited with code 'N'` into hang snapshots
-        // and the same per-port sidecar the WDIO launcher/worker use.
-        const code = noteXcodebuildExitFromLine(line, lastXcodebuildExitRef);
-        if (code != null) {
-          writeXcodebuildExitState(xcodebuildExitStateFile, code);
-        }
-      }
-      if (
-        sessionHangWatchdog &&
-        /(?:WebDriver|Appium) session (?:created|started)|\bsession created successfully\b|https?:\/\/\S+\/session\/[^/\s]+(?:\/|\s|$)/i.test(
-          line,
-        )
-      ) {
-        // Prefer markSessionCreated so recover/abort stay gated off after session id.
-        sessionHangWatchdog.markSessionCreated();
-        sessionHangWatchdog = undefined;
-      }
-    });
-    void wdio.completion.then(
-      code => startup.recordProcessExit(source, code),
-      () => startup.recordProcessExit(source, 1),
-    );
+    const sessionCreateAttempts = target === 'ios' ? 2 : 1;
+    let wdio: RunningCommand | undefined;
     void (async () => {
       while (monitoring && startup.phase !== 'complete') {
         if (!(await (options.listen ?? isListening)(runtime.metroPort))) {
@@ -302,10 +240,133 @@ export async function runWdioOwned(
         await new Promise(resolve => setTimeout(resolve, 250));
       }
     })();
-    try {
-      await Promise.race([startup.waitForWorkers(), startup.failure]);
-    } finally {
+    for (let sessionCreateAttempt = 1; sessionCreateAttempt <= sessionCreateAttempts; sessionCreateAttempt++) {
+      const childLogKey =
+        sessionCreateAttempt === 1 ? 'serial' : 'serial-session-retry';
+      const wdioEnv: NodeJS.ProcessEnv = {
+        ...env,
+        ...(target === 'ios'
+          ? {
+              RNGMA_IOS_SESSION_CREATE_ATTEMPT: String(sessionCreateAttempt),
+              RNGMA_IOS_SESSION_CREATE_SUPERVISOR: '1',
+            }
+          : {}),
+      };
+      if (target === 'ios') {
+        // Mirror WDIO launcher sidecar path so parent + worker share one exit file.
+        clearXcodebuildExitState(xcodebuildExitStateFile);
+        sessionHangWatchdog = startIosSessionCreateHangWatchdog(exactTarget, {
+          phase:
+            sessionCreateAttempt === 1
+              ? 'serial:session-create'
+              : 'serial:session-create-retry',
+          simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+          lastXcodebuildExitRef,
+          lastXcodebuildExitStatePath: xcodebuildExitStateFile,
+          wdaLocalPort: runtime.slotResources?.automationPort ?? 8_100,
+          wdaPortProbeEnabled: true,
+          recoverSlotConsumed: sessionCreateAttempt > 1,
+          onRecover: (udid, reason) => {
+            console.log(
+              formatIosBootDiagnosticLine({
+                phase: 'serial:session-create:hang-recover-exec',
+                udid,
+                hint: reason,
+              }),
+            );
+            recoverIosSessionCreateHang(udid);
+          },
+          onSessionCreateRestart:
+            sessionCreateAttempt === 1
+              ? () => {
+                  sessionHangWatchdog?.stop();
+                  sessionHangWatchdog = undefined;
+                  void wdio?.stop();
+                }
+              : undefined,
+          onAbort: error => {
+            startup.recordFailure(source, error);
+          },
+        });
+      }
+      wdio = (options.spawn ?? spawnOwned)(
+        'yarn',
+        ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`],
+        {
+          cwd: path.join(repoRoot, 'tooling/appium'),
+          env: wdioEnv,
+          logPath: paths.child(target, childLogKey),
+        },
+      );
+      owned.push(wdio);
+      const activeWdio = wdio;
+      wdio.onLine(line => {
+        startup.recordLine(source, line);
+        if (target === 'android') {
+          // Structured lines land on parent stdout; child log already has raw Appium.
+          annotateAndroidSessionLogLine(line, { state: androidSessionAnnotateState });
+        }
+        if (target === 'ios') {
+          // Surface Appium `[Xcode] xcodebuild exited with code 'N'` into hang snapshots
+          // and the same per-port sidecar the WDIO launcher/worker use.
+          const code = noteXcodebuildExitFromLine(line, lastXcodebuildExitRef);
+          if (code != null) {
+            writeXcodebuildExitState(xcodebuildExitStateFile, code);
+          }
+        }
+        if (
+          sessionHangWatchdog &&
+          /(?:WebDriver|Appium) session (?:created|started)|\bsession created successfully\b|https?:\/\/\S+\/session\/[^/\s]+(?:\/|\s|$)/i.test(
+            line,
+          )
+        ) {
+          // Prefer markSessionCreated so recover/abort stay gated off after session id.
+          sessionHangWatchdog.markSessionCreated();
+          sessionHangWatchdog = undefined;
+        }
+      });
+      void activeWdio.completion.then(
+        code => startup.recordProcessExit(source, code),
+        () => startup.recordProcessExit(source, 1),
+      );
+      const workerReady = startup.waitForWorkers();
+      const workerOutcome = await Promise.race([
+        workerReady.then(() => ({ kind: 'ready' as const })),
+        activeWdio.completion.then(code => ({ kind: 'exit' as const, code })),
+        startup.failure,
+      ]);
       sessionHangWatchdog?.stop();
+      sessionHangWatchdog = undefined;
+      const exitCode = await activeWdio.completion.catch(() => 1);
+      const retrySessionCreate =
+        target === 'ios' &&
+        sessionCreateAttempt < sessionCreateAttempts &&
+        (exitCode === IOS_SESSION_CREATE_RETRY_EXIT_CODE ||
+          (typeof workerOutcome === 'object' &&
+            workerOutcome.kind === 'exit' &&
+            workerOutcome.code === IOS_SESSION_CREATE_RETRY_EXIT_CODE));
+      if (retrySessionCreate) {
+        startup.rewindWorkerSessionBarrier(source);
+        const index = owned.indexOf(activeWdio);
+        if (index >= 0) {
+          owned.splice(index, 1);
+        }
+        console.log(
+          formatIosBootDiagnosticLine({
+            phase: 'serial:session-create:hang-retry-spawn',
+            udid: exactTarget,
+            hint: `session-create attempt ${sessionCreateAttempt + 1}/${sessionCreateAttempts}`,
+          }),
+        );
+        continue;
+      }
+      if (workerOutcome !== undefined && !retrySessionCreate) {
+        await workerReady.catch(() => undefined);
+      }
+      break;
+    }
+    if (!wdio) {
+      throw new Error('Serial WDIO child failed to spawn.');
     }
     console.log(
       `[e2e-startup] invocation=${paths.id} phase=worker-session-ready children=1/1 child=${paths.child(target, 'serial')}`,

@@ -852,6 +852,7 @@ export type SessionCreateAbortSummaryFields = {
   livePids: string;
   lastXcodebuildExit: string;
   recoverAttempted: boolean;
+  sessionCreateRestartIssued?: boolean;
   artifactDir: string;
   consecutivePortDownProbes?: number;
   consecutiveDeferrals?: number;
@@ -868,6 +869,9 @@ export function formatSessionCreateAbortSummary(
     `livePids=${fields.livePids}`,
     `lastXcodebuildExit=${fields.lastXcodebuildExit}`,
     `recoverAttempted=${fields.recoverAttempted}`,
+    fields.sessionCreateRestartIssued != null
+      ? `sessionCreateRestartIssued=${fields.sessionCreateRestartIssued}`
+      : undefined,
     `artifactDir=${fields.artifactDir}`,
     fields.consecutivePortDownProbes != null
       ? `consecutivePortDownProbes=${fields.consecutivePortDownProbes}`
@@ -920,6 +924,14 @@ export function startIosSessionCreateHangWatchdog(
     appiumHome?: string;
     /** Invoked once when decision is `recover` (defaults to terminate WDA + settle). */
     onRecover?: (udid: string, reason: string) => void;
+    /**
+     * After successful hang-recover, replace the hung POST /session (WDIO exit /
+     * preflight respawn). When omitted, the hung request can still abort on the
+     * next hang tick.
+     */
+    onSessionCreateRestart?: () => void;
+    /** No further WDA recover for this watchdog (second session-create attempt). */
+    recoverSlotConsumed?: boolean;
     /** Invoked when decision is `abort` (parent should recordFailure / drain). */
     onAbort?: (error: Error) => void;
     /** Override {@link IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS} (unit tests). */
@@ -948,7 +960,8 @@ export function startIosSessionCreateHangWatchdog(
   let postSessionInFlight = true;
   let consecutiveXcrunEtimedout = 0;
   let consecutiveBootedHangProbes = 0;
-  let recoveredOnce = false;
+  let recoveredOnce = options.recoverSlotConsumed === true;
+  let sessionCreateRestartIssued = false;
   let consecutiveLiveBuildDeferrals = 0;
   let consecutiveWdaPortDownProbes = 0;
   let lastWdaPortReachable: boolean | undefined;
@@ -1212,6 +1225,25 @@ export function startIosSessionCreateHangWatchdog(
           return;
         }
         recover(udid, decision.reason);
+        if (options.onSessionCreateRestart && !sessionCreateRestartIssued) {
+          sessionCreateRestartIssued = true;
+          ticks = 0;
+          consecutiveXcrunEtimedout = 0;
+          consecutiveBootedHangProbes = 0;
+          consecutiveWdaPortDownProbes = 0;
+          consecutiveLiveBuildDeferrals = 0;
+          write(
+            formatIosBootDiagnosticLine(
+              {
+                phase: `${options.phase}:hang-retry`,
+                udid,
+                hint: 'post-recover session-create restart',
+              },
+              now,
+            ),
+          );
+          options.onSessionCreateRestart();
+        }
       } catch (error) {
         write(
           formatIosBootDiagnosticLine(
@@ -1248,6 +1280,7 @@ export function startIosSessionCreateHangWatchdog(
           livePids,
           lastXcodebuildExit: lastSessionSnapshot?.lastXcodebuildExit ?? '(unknown)',
           recoverAttempted: recoveredOnce,
+          sessionCreateRestartIssued,
           artifactDir,
           consecutivePortDownProbes: consecutiveWdaPortDownProbes,
           consecutiveDeferrals: consecutiveLiveBuildDeferrals,

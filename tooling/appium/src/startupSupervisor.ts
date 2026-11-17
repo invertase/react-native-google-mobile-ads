@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createConnection } from 'node:net';
 import path from 'node:path';
 import { formatAndroidWorkerTimeoutHint } from './androidSessionDiagnostics.ts';
+import { IOS_SESSION_CREATE_RETRY_EXIT_CODE } from './wdioSessionCreateRetry.ts';
 
 export const STARTUP_READY_MARKER = '[e2e-startup-ready]';
 const METRO_READY_MARKER = 'Dev server ready';
@@ -300,9 +301,47 @@ export class StartupSupervisor {
     if (code === 0 && this.apps.has(source)) {
       return;
     }
+    // Supervised iOS session-create retry: WDIO exits so preflight can respawn once.
+    if (code === IOS_SESSION_CREATE_RETRY_EXIT_CODE) {
+      return;
+    }
     if (this.phase !== 'complete') {
       this.abort(new Error(`${source} exited during ${this.phase} startup with code ${code}.`));
     }
+  }
+
+  /**
+   * After a session-create retry exit, clear worker/session evidence and extend the
+   * worker-phase waiter so a respawned WDIO child can satisfy {@link waitForWorkers}.
+   */
+  rewindWorkerSessionBarrier(source: string): void {
+    if (this.phase !== 'worker' || this.failed || !this.expected.has(source)) {
+      return;
+    }
+    this.workers.delete(source);
+    this.sessions.delete(source);
+    const waiter = this.waiter;
+    if (!waiter || waiter.phase !== 'worker') {
+      return;
+    }
+    this.clearWaiterTimers();
+    const timeout = this.workerTimeoutFor(source);
+    const timers: unknown[] = [
+      this.clock.setTimeout(() => {
+        if (this.workers.has(source) && this.sessions.has(source)) {
+          return;
+        }
+        this.abort(
+          new Error(
+            formatAndroidWorkerTimeoutHint(
+              source,
+              `Timed out after ${timeout}ms waiting for worker startup readiness (${source}; ${this.progress('worker')}).`,
+            ),
+          ),
+        );
+      }, timeout),
+    ];
+    waiter.timers = timers;
   }
 
   recordExternalMetroHealthLoss(port: number): void {

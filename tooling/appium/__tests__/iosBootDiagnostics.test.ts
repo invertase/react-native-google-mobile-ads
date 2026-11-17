@@ -600,6 +600,63 @@ describe('iosBootDiagnostics', () => {
     );
   });
 
+  test('hang watchdog restarts session-create after recover instead of immediate abort', () => {
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const restarts: string[] = [];
+    const aborts: Error[] = [];
+    startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'serial:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      recoverAfterTicks: 2,
+      abortAfterTicks: 3,
+      prebuiltWdaArtifactPresent: false,
+      wdaPortProbeEnabled: false,
+      lastXcodebuildExitRef: { value: null },
+      write: line => lines.push(line),
+      execCapture: (bin, _args) => {
+        if (bin === 'pgrep') {
+          return { stdout: '', stderr: '', status: 1 };
+        }
+        return {
+          stdout: '',
+          stderr: '',
+          status: null,
+          timedOut: true,
+          error: 'spawnSync ETIMEDOUT',
+        };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      now: () => new Date('2026-10-14T16:00:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onRecover: () => {},
+      onSessionCreateRestart: () => {
+        restarts.push('issued');
+      },
+      onAbort: error => aborts.push(error),
+    });
+    callbacks[0]!(); // tick 1
+    callbacks[0]!(); // tick 2 — recover + restart
+    assert.equal(restarts.length, 1);
+    assert.ok(lines.some(line => /phase=serial:session-create:hang-retry\b/.test(line)));
+    callbacks[0]!(); // tick 1 of post-restart window — must not abort yet
+    callbacks[0]!(); // tick 2
+    assert.equal(aborts.length, 0);
+    callbacks[0]!(); // tick 3 — abort on second attempt
+    assert.equal(aborts.length, 1);
+    assert.ok(
+      lines.some(line => /sessionCreateRestartIssued=true/.test(line)),
+    );
+  });
+
   test('hang watchdog defers recover while host xcodebuild PIDs live and exit unknown', () => {
     const lines: string[] = [];
     const callbacks: Array<() => void> = [];

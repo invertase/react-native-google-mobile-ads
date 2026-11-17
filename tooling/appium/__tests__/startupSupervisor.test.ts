@@ -535,6 +535,20 @@ test('early process exit and external Metro health loss fail the active phase', 
   await assert.rejects(workers, /stopped responding/);
 });
 
+test('iOS session-create retry exit is ignored and rewinds the worker barrier', async () => {
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.recordProcessExit('serial-ios', 86);
+  assert.equal(supervisor.abortCount, 0);
+  supervisor.rewindWorkerSessionBarrier('serial-ios');
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.recordLine('serial-ios', 'Appium session created successfully');
+  await workers;
+  assert.equal(supervisor.phase, 'app');
+});
+
 test('diagnostic tail exit is ignored but failure to start aborts startup', async () => {
   const exited = new StartupSupervisor(['child'], new FakeClock());
   await metroReady(exited);
