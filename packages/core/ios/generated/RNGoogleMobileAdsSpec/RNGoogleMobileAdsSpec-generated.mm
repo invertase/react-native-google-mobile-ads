@@ -674,3 +674,41 @@ namespace facebook::react {
         
   }
 } // namespace facebook::react
+
+@implementation NativeSwipeableInterstitialAdModuleSpecBase
+
+
+- (void)setEventEmitterCallback:(EventEmitterCallbackWrapper *)eventEmitterCallbackWrapper
+{
+  _eventEmitterCallback = std::move(eventEmitterCallbackWrapper->_eventEmitterCallback);
+}
+@end
+
+
+namespace facebook::react {
+  
+    static facebook::jsi::Value __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialLoad(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "swipeableInterstitialLoad", @selector(swipeableInterstitialLoad:adUnitId:requestOptions:), args, count);
+    }
+
+    static facebook::jsi::Value __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialDestroy(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "swipeableInterstitialDestroy", @selector(swipeableInterstitialDestroy:), args, count);
+    }
+
+    static facebook::jsi::Value __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialRecordCustomClickGesture(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "swipeableInterstitialRecordCustomClickGesture", @selector(swipeableInterstitialRecordCustomClickGesture:), args, count);
+    }
+
+  NativeSwipeableInterstitialAdModuleSpecJSI::NativeSwipeableInterstitialAdModuleSpecJSI(const ObjCTurboModule::InitParams &params)
+    : ObjCTurboModule(params) {
+      
+        methodMap_["swipeableInterstitialLoad"] = MethodMetadata {3, __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialLoad};
+        
+        
+        methodMap_["swipeableInterstitialDestroy"] = MethodMetadata {1, __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialDestroy};
+        
+        
+        methodMap_["swipeableInterstitialRecordCustomClickGesture"] = MethodMetadata {1, __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialRecordCustomClickGesture};
+        
+  }
+} // namespace facebook::react

@@ -18,6 +18,7 @@
 import { AdEventType } from '../AdEventType';
 import { GAMAdEventType } from '../GAMAdEventType';
 import { PictureInPictureAdEventType } from '../PictureInPictureAdEventType';
+import { SwipeableInterstitialAdEventType } from '../SwipeableInterstitialAdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import type { AdErrorPayload } from './AdError';
 import { AppEvent } from './AppEvent';
@@ -31,8 +32,12 @@ import { RewardedAdReward } from './RewardedAdReward';
  * PAID payloads are impression-level revenue (`PaidEvent`).
  */
 export type AdEventPayload<
-  T extends AdEventType | RewardedAdEventType | GAMAdEventType | PictureInPictureAdEventType =
-    never,
+  T extends
+    | AdEventType
+    | RewardedAdEventType
+    | GAMAdEventType
+    | PictureInPictureAdEventType
+    | SwipeableInterstitialAdEventType = never,
 > = T extends AdEventType.ERROR
   ? Error & AdErrorPayload
   : T extends AdEventType.PAID
@@ -44,6 +49,10 @@ export type AdEventPayload<
         : undefined;
 
 export type AdEventListener<
-  T extends AdEventType | RewardedAdEventType | GAMAdEventType | PictureInPictureAdEventType =
-    never,
+  T extends
+    | AdEventType
+    | RewardedAdEventType
+    | GAMAdEventType
+    | PictureInPictureAdEventType
+    | SwipeableInterstitialAdEventType = never,
 > = (payload: AdEventPayload<T>) => void;

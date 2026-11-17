@@ -392,6 +392,8 @@ staleness
 StrictMode
 SVG
 Swipeable
+SwipeableInterstitial
+swipeableInterstitial
 TCF
 TestLab
 TFUA

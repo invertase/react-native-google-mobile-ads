@@ -176,6 +176,23 @@ jest.doMock('./packages/core/src/specs/modules/NativeIconAdModule', () => {
     },
   };
 });
+jest.doMock('./packages/core/src/specs/modules/NativeSwipeableInterstitialAdModule', () => {
+  return {
+    __esModule: true,
+    default: {
+      swipeableInterstitialLoad: jest.fn(),
+      swipeableInterstitialDestroy: jest.fn(),
+      swipeableInterstitialRecordCustomClickGesture: jest.fn(),
+    },
+  };
+});
+jest.doMock(
+  './packages/core/src/specs/components/GoogleMobileAdsSwipeableInterstitialAdViewNativeComponent',
+  () => {
+    const { View } = jest.requireActual('react-native');
+    return { __esModule: true, default: View };
+  },
+);
 jest.doMock('./packages/core/src/specs/modules/NativeRewardedInterstitialModule', () => {
   return {
     __esModule: true,

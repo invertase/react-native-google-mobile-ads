@@ -101,5 +101,6 @@ export function getAdCapabilities(): AdCapabilities {
     mediation: 'unknown',
     pictureInPicture: isAndroidNextGen || isIos ? experimental : unavailable,
     iconAd: isAndroidNextGen ? experimental : unavailable,
+    swipeableInterstitial: isAndroidNextGen || isIos ? experimental : unavailable,
   };
 }

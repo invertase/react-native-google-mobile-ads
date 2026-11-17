@@ -21,6 +21,7 @@ registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsIconAdViewCom
 registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsMediaViewComponentDescriptor>());
 registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsMultiFormatBannerViewComponentDescriptor>());
 registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsNativeViewComponentDescriptor>());
+registry->add(concreteComponentDescriptorProvider<RNGoogleMobileAdsSwipeableInterstitialAdViewComponentDescriptor>());
 }
 
 } // namespace facebook::react

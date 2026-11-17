@@ -31,6 +31,8 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_INTERSTITIAL =
 NSString *const GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE =
     @"google_mobile_ads_picture_in_picture_event";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_ICON_AD = @"google_mobile_ads_icon_ad_event";
+NSString *const GOOGLE_MOBILE_ADS_EVENT_SWIPEABLE_INTERSTITIAL =
+    @"google_mobile_ads_swipeable_interstitial_event";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_POOL = @"google_mobile_ads_pool_event";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_LOADED = @"loaded";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_ERROR = @"error";
@@ -43,6 +45,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_HIDDEN = @"hidden";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_WILL_PRESENT_SCREEN = @"will_present_screen";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_WILL_DISMISS_SCREEN = @"will_dismiss_screen";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_DID_DISMISS_SCREEN = @"did_dismiss_screen";
+NSString *const GOOGLE_MOBILE_ADS_EVENT_SCREEN_HOLD_TIMER_STARTED = @"screen_hold_timer_started";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_APP_EVENT = @"app_event";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED = @"rewarded_loaded";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_EARNED_REWARD = @"rewarded_earned_reward";

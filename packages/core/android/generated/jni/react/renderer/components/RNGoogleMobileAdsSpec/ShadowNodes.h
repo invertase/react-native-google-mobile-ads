@@ -73,4 +73,15 @@ using RNGoogleMobileAdsNativeViewShadowNode = ConcreteViewShadowNode<
     RNGoogleMobileAdsNativeViewEventEmitter,
     RNGoogleMobileAdsNativeViewState>;
 
+JSI_EXPORT extern const char RNGoogleMobileAdsSwipeableInterstitialAdViewComponentName[];
+
+/*
+ * `ShadowNode` for <RNGoogleMobileAdsSwipeableInterstitialAdView> component.
+ */
+using RNGoogleMobileAdsSwipeableInterstitialAdViewShadowNode = ConcreteViewShadowNode<
+    RNGoogleMobileAdsSwipeableInterstitialAdViewComponentName,
+    RNGoogleMobileAdsSwipeableInterstitialAdViewProps,
+    RNGoogleMobileAdsSwipeableInterstitialAdViewEventEmitter,
+    RNGoogleMobileAdsSwipeableInterstitialAdViewState>;
+
 } // namespace facebook::react

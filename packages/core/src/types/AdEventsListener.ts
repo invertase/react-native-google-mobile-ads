@@ -18,10 +18,15 @@
 import { AdEventType } from '../AdEventType';
 import { GAMAdEventType } from '../GAMAdEventType';
 import { PictureInPictureAdEventType } from '../PictureInPictureAdEventType';
+import { SwipeableInterstitialAdEventType } from '../SwipeableInterstitialAdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventPayload } from './AdEventListener';
 
 export type AdEventsListener<
-  T extends AdEventType | RewardedAdEventType | GAMAdEventType | PictureInPictureAdEventType =
-    never,
+  T extends
+    | AdEventType
+    | RewardedAdEventType
+    | GAMAdEventType
+    | PictureInPictureAdEventType
+    | SwipeableInterstitialAdEventType = never,
 > = (eventInfo: { type: T; payload: AdEventPayload<T> }) => void;

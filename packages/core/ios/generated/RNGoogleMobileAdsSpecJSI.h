@@ -1753,4 +1753,45 @@ private:
   }
 };
 
+
+template <typename T>
+class JSI_EXPORT NativeSwipeableInterstitialAdModuleCxxSpec : public TurboModule {
+public:
+  static constexpr std::string_view kModuleName = "RNGoogleMobileAdsSwipeableInterstitialAdModule";
+
+protected:
+  NativeSwipeableInterstitialAdModuleCxxSpec(std::shared_ptr<CallInvoker> jsInvoker) : TurboModule(std::string{NativeSwipeableInterstitialAdModuleCxxSpec::kModuleName}, jsInvoker) {
+    methodMap_["swipeableInterstitialLoad"] = MethodMetadata {.argCount = 3, .invoker = __swipeableInterstitialLoad};
+    methodMap_["swipeableInterstitialDestroy"] = MethodMetadata {.argCount = 1, .invoker = __swipeableInterstitialDestroy};
+    methodMap_["swipeableInterstitialRecordCustomClickGesture"] = MethodMetadata {.argCount = 1, .invoker = __swipeableInterstitialRecordCustomClickGesture};
+  }
+  
+private:
+  static jsi::Value __swipeableInterstitialLoad(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::swipeableInterstitialLoad) == 4,
+      "Expected swipeableInterstitialLoad(...) to have 4 parameters");
+    bridging::callFromJs<void>(rt, &T::swipeableInterstitialLoad,  static_cast<NativeSwipeableInterstitialAdModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber(),
+      count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asString(rt),
+      count <= 2 ? throw jsi::JSError(rt, "Expected argument in position 2 to be passed") : args[2].asObject(rt));return jsi::Value::undefined();
+  }
+
+  static jsi::Value __swipeableInterstitialDestroy(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::swipeableInterstitialDestroy) == 2,
+      "Expected swipeableInterstitialDestroy(...) to have 2 parameters");
+    bridging::callFromJs<void>(rt, &T::swipeableInterstitialDestroy,  static_cast<NativeSwipeableInterstitialAdModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber());return jsi::Value::undefined();
+  }
+
+  static jsi::Value __swipeableInterstitialRecordCustomClickGesture(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::swipeableInterstitialRecordCustomClickGesture) == 2,
+      "Expected swipeableInterstitialRecordCustomClickGesture(...) to have 2 parameters");
+    bridging::callFromJs<void>(rt, &T::swipeableInterstitialRecordCustomClickGesture,  static_cast<NativeSwipeableInterstitialAdModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber());return jsi::Value::undefined();
+  }
+};
+
 } // namespace facebook::react

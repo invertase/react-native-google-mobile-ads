@@ -156,4 +156,22 @@ class RNGoogleMobileAdsNativeViewProps final : public ViewProps {
   
 };
 
+class RNGoogleMobileAdsSwipeableInterstitialAdViewProps final : public ViewProps {
+ public:
+  RNGoogleMobileAdsSwipeableInterstitialAdViewProps() = default;
+  RNGoogleMobileAdsSwipeableInterstitialAdViewProps(const PropsParserContext& context, const RNGoogleMobileAdsSwipeableInterstitialAdViewProps &sourceProps, const RawProps &rawProps);
+
+#pragma mark - Props
+
+  int requestId{0};
+
+  #ifdef RN_SERIALIZABLE_STATE
+  ComponentName getDiffPropsImplementationTarget() const override;
+
+  folly::dynamic getDiffProps(const Props* prevProps) const override;
+  #endif
+
+  
+};
+
 } // namespace facebook::react

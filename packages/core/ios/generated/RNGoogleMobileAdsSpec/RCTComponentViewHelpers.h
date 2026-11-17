@@ -148,4 +148,8 @@ NSObject *arg1 = args[1];
 #endif
 }
 
+@protocol RCTRNGoogleMobileAdsSwipeableInterstitialAdViewViewProtocol <NSObject>
+
+@end
+
 NS_ASSUME_NONNULL_END
