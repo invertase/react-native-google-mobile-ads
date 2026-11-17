@@ -26,6 +26,7 @@ export const TestIds = {
   REWARDED_INTERSTITIAL: '',
   NATIVE: '',
   NATIVE_VIDEO: '',
+  PICTURE_IN_PICTURE: '',
   GAM_APP_OPEN: '/21775744923/example/app-open',
   GAM_BANNER: '/21775744923/example/fixed-size-banner',
   GAM_INTERSTITIAL: '/21775744923/example/interstitial',
@@ -44,6 +45,7 @@ export const TestIds = {
       REWARDED_INTERSTITIAL: 'ca-app-pub-3940256099942544/5354046379',
       NATIVE: 'ca-app-pub-3940256099942544/2247696110',
       NATIVE_VIDEO: 'ca-app-pub-3940256099942544/1044960115',
+      PICTURE_IN_PICTURE: 'ca-app-pub-3940256099942544/9657123429',
     },
     ios: {
       APP_OPEN: 'ca-app-pub-3940256099942544/5575463023',
@@ -55,6 +57,7 @@ export const TestIds = {
       REWARDED_INTERSTITIAL: 'ca-app-pub-3940256099942544/6978759866',
       NATIVE: 'ca-app-pub-3940256099942544/3986624511',
       NATIVE_VIDEO: 'ca-app-pub-3940256099942544/2521693316',
+      PICTURE_IN_PICTURE: 'ca-app-pub-3940256099942544/8810945611',
     },
   }),
 };

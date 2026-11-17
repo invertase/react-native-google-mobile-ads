@@ -48,6 +48,8 @@ class ReactNativeGoogleMobileAdsPackage : BaseReactPackage() {
       ReactNativeGoogleMobileAdsRewardedInterstitialModule.NAME -> return ReactNativeGoogleMobileAdsRewardedInterstitialModule(reactContext)
       ReactNativeGoogleMobileAdsNativeModule.NAME -> return ReactNativeGoogleMobileAdsNativeModule(reactContext)
       ReactNativeGoogleMobileAdsPoolModule.NAME -> return ReactNativeGoogleMobileAdsPoolModule(reactContext)
+      ReactNativeGoogleMobileAdsPictureInPictureModule.NAME ->
+        return ReactNativeGoogleMobileAdsPictureInPictureModule(reactContext)
     }
     return null
   }
@@ -132,6 +134,15 @@ class ReactNativeGoogleMobileAdsPackage : BaseReactPackage() {
         ReactModuleInfo(
           ReactNativeGoogleMobileAdsPoolModule.NAME,
           ReactNativeGoogleMobileAdsPoolModule::class.java.name,
+          false,
+          false,
+          false,
+          isTurboModule,
+        )
+      moduleInfos[ReactNativeGoogleMobileAdsPictureInPictureModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeGoogleMobileAdsPictureInPictureModule.NAME,
+          ReactNativeGoogleMobileAdsPictureInPictureModule.NAME,
           false,
           false,
           false,

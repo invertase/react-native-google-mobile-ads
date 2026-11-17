@@ -62,6 +62,7 @@ extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_APP_OPEN;
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_INTERSTITIAL;
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_REWARDED;
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_REWARDED_INTERSTITIAL;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE;
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_POOL;
 
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_LOADED;
@@ -70,6 +71,11 @@ extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_OPENED;
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_CLICKED;
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_CLOSED;
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_IMPRESSION;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_SHOWN;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_HIDDEN;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_WILL_PRESENT_SCREEN;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_WILL_DISMISS_SCREEN;
+extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_DID_DISMISS_SCREEN;
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_APP_EVENT;
 
 extern NSString *_Nonnull const GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED;

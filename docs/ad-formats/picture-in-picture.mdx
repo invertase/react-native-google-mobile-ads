@@ -1,0 +1,89 @@
+---
+title: Picture-in-picture ads (Preview)
+description: Floating PiP ad format — Google open beta on iOS and Android Next-Gen.
+---
+
+<Warning>
+  **Preview — Google open beta.** Picture-in-picture (`PictureInPictureAd`) APIs may change upstream.
+  Gate your UI with `getAdCapabilities().pictureInPicture` (`experimental` on iOS and Android Next-Gen;
+  `unavailable` on Android classic).
+</Warning>
+
+Picture-in-picture (PiP) ads render in a small floating window over your app content so users can keep
+browsing or playing while the ad stays visible. Load inventory like other programmatic formats, then
+`show()` with optional position and presentation scope; call `hide()` to dismiss the float without
+destroying the loaded ad.
+
+## Before you start
+
+- Complete [consent](/consent-basics) and call `mobileAds().initialize()` before `load()`.
+- Use [test ads](/first-ad) in development (`TestIds.PICTURE_IN_PICTURE`).
+
+## Create and load
+
+```js
+import {
+  PictureInPictureAd,
+  AdEventType,
+  PictureInPictureAdEventType,
+  TestIds,
+} from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__ ? TestIds.PICTURE_IN_PICTURE : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+
+const pipAd = PictureInPictureAd.createForAdRequest(adUnitId, {
+  requestNonPersonalizedAdsOnly: true,
+});
+
+pipAd.addAdEventListener(AdEventType.LOADED, () => {
+  pipAd.show({ position: 'bottomRight', presentationScope: 'screen' }).catch(console.warn);
+});
+
+pipAd.addAdEventListener(PictureInPictureAdEventType.SHOWN, () => {
+  console.log('PiP visible');
+});
+
+pipAd.load();
+```
+
+## Show, hide, and destroy
+
+```js
+await pipAd.show({
+  position: 'topLeft',
+  presentationScope: 'application',
+});
+
+pipAd.hide();
+pipAd.destroy();
+```
+
+### Show options
+
+| Option | Values | Default |
+| --- | --- | --- |
+| `position` | `default`, `topLeft`, `topRight`, `bottomLeft`, `bottomRight` | SDK default (bottom-right) |
+| `presentationScope` | `screen`, `application` | `screen` |
+
+`application` keeps the float visible when the host screen leaves memory; retain the `PictureInPictureAd`
+instance app-wide (similar to Google's sample singleton pattern).
+
+## Events
+
+Standard ad events use `AdEventType` (`LOADED`, `ERROR`, `IMPRESSION`, `CLICKED`, `PAID`, `OPENED`, `CLOSED`
+when fullscreen overlays expand). PiP visibility uses `PictureInPictureAdEventType.SHOWN` and `.HIDDEN`.
+iOS also emits `WILL_PRESENT_SCREEN`, `WILL_DISMISS_SCREEN`, and `DID_DISMISS_SCREEN` for overlay transitions.
+
+Revenue: listen for `AdEventType.PAID` or see [Impression-level ad revenue](/impression-level-ad-revenue).
+
+## Platform notes
+
+| Platform | Support |
+| --- | --- |
+| iOS (GMA ≥ 13.10) | Open beta — test unit in `TestIds.PICTURE_IN_PICTURE` |
+| Android Next-Gen (≥ 1.4.0) | Open beta |
+| Android classic | Not available — native load errors with `picture-in-picture-unavailable` |
+
+## Response info
+
+After `LOADED`, read `pipAd.responseInfo` for auction metadata (when the SDK provides it).

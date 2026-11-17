@@ -523,6 +523,51 @@ namespace facebook::react {
   }
 } // namespace facebook::react
 
+@implementation NativePictureInPictureModuleSpecBase
+
+
+- (void)setEventEmitterCallback:(EventEmitterCallbackWrapper *)eventEmitterCallbackWrapper
+{
+  _eventEmitterCallback = std::move(eventEmitterCallbackWrapper->_eventEmitterCallback);
+}
+@end
+
+
+namespace facebook::react {
+  
+    static facebook::jsi::Value __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureLoad(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "pictureInPictureLoad", @selector(pictureInPictureLoad:adUnitId:requestOptions:), args, count);
+    }
+
+    static facebook::jsi::Value __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureShow(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, PromiseKind, "pictureInPictureShow", @selector(pictureInPictureShow:adUnitId:showOptions:resolve:reject:), args, count);
+    }
+
+    static facebook::jsi::Value __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureHide(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "pictureInPictureHide", @selector(pictureInPictureHide:), args, count);
+    }
+
+    static facebook::jsi::Value __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureDestroy(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+      return static_cast<ObjCTurboModule&>(turboModule).invokeObjCMethod(rt, VoidKind, "pictureInPictureDestroy", @selector(pictureInPictureDestroy:), args, count);
+    }
+
+  NativePictureInPictureModuleSpecJSI::NativePictureInPictureModuleSpecJSI(const ObjCTurboModule::InitParams &params)
+    : ObjCTurboModule(params) {
+      
+        methodMap_["pictureInPictureLoad"] = MethodMetadata {3, __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureLoad};
+        
+        
+        methodMap_["pictureInPictureShow"] = MethodMetadata {3, __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureShow};
+        
+        
+        methodMap_["pictureInPictureHide"] = MethodMetadata {1, __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureHide};
+        
+        
+        methodMap_["pictureInPictureDestroy"] = MethodMetadata {1, __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureDestroy};
+        
+  }
+} // namespace facebook::react
+
 @implementation NativeRewardedInterstitialModuleSpecBase
 
 

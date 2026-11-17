@@ -154,6 +154,18 @@ jest.doMock('./packages/core/src/specs/modules/NativeAppOpenModule', () => {
     },
   };
 });
+jest.doMock('./packages/core/src/specs/modules/NativePictureInPictureModule', () => {
+  return {
+    __esModule: true,
+    Commands: {},
+    default: {
+      pictureInPictureLoad: jest.fn(),
+      pictureInPictureShow: jest.fn(),
+      pictureInPictureHide: jest.fn(),
+      pictureInPictureDestroy: jest.fn(),
+    },
+  };
+});
 jest.doMock('./packages/core/src/specs/modules/NativeRewardedInterstitialModule', () => {
   return {
     __esModule: true,

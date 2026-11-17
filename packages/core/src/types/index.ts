@@ -40,3 +40,6 @@ export * from './ResponseInfo';
 export * from './RewardedAdReward';
 export * from './AppEvent';
 export * from './NativeAdRequestOptions';
+export * from './PictureInPictureAdShowOptions';
+export * from './PictureInPictureAdPosition';
+export * from './PictureInPictureAdPresentationScope';

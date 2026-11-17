@@ -17,8 +17,12 @@
 
 import { AdEventType } from '../AdEventType';
 import { GAMAdEventType } from '../GAMAdEventType';
+import { PictureInPictureAdEventType } from '../PictureInPictureAdEventType';
 import { RewardedAdEventType } from '../RewardedAdEventType';
 import { AdEventPayload } from './AdEventListener';
 
-export type AdEventsListener<T extends AdEventType | RewardedAdEventType | GAMAdEventType = never> =
+export type AdEventsListener<
+  T extends AdEventType | RewardedAdEventType | GAMAdEventType | PictureInPictureAdEventType =
+    never,
+> =
   (eventInfo: { type: T; payload: AdEventPayload<T> }) => void;

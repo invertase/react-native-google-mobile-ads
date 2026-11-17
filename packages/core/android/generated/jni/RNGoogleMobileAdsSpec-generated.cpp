@@ -359,6 +359,33 @@ NativeInterstitialModuleSpecJSI::NativeInterstitialModuleSpecJSI(const JavaTurbo
   methodMap_["interstitialShow"] = MethodMetadata {3, __hostFunction_NativeInterstitialModuleSpecJSI_interstitialShow};
   methodMap_["interstitialDestroy"] = MethodMetadata {1, __hostFunction_NativeInterstitialModuleSpecJSI_interstitialDestroy};
 }
+static facebook::jsi::Value __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureLoad(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "pictureInPictureLoad", "(DLjava/lang/String;Lcom/facebook/react/bridge/ReadableMap;)V", args, count, cachedMethodId);
+}
+
+static facebook::jsi::Value __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureShow(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, PromiseKind, "pictureInPictureShow", "(DLjava/lang/String;Lcom/facebook/react/bridge/ReadableMap;Lcom/facebook/react/bridge/Promise;)V", args, count, cachedMethodId);
+}
+
+static facebook::jsi::Value __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureHide(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "pictureInPictureHide", "(D)V", args, count, cachedMethodId);
+}
+
+static facebook::jsi::Value __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureDestroy(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "pictureInPictureDestroy", "(D)V", args, count, cachedMethodId);
+}
+
+NativePictureInPictureModuleSpecJSI::NativePictureInPictureModuleSpecJSI(const JavaTurboModule::InitParams &params)
+  : JavaTurboModule(params) {
+  methodMap_["pictureInPictureLoad"] = MethodMetadata {3, __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureLoad};
+  methodMap_["pictureInPictureShow"] = MethodMetadata {3, __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureShow};
+  methodMap_["pictureInPictureHide"] = MethodMetadata {1, __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureHide};
+  methodMap_["pictureInPictureDestroy"] = MethodMetadata {1, __hostFunction_NativePictureInPictureModuleSpecJSI_pictureInPictureDestroy};
+}
 static facebook::jsi::Value __hostFunction_NativeRewardedInterstitialModuleSpecJSI_rewardedInterstitialLoad(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
   static jmethodID cachedMethodId = nullptr;
   return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "rewardedInterstitialLoad", "(DLjava/lang/String;Lcom/facebook/react/bridge/ReadableMap;)V", args, count, cachedMethodId);
@@ -420,6 +447,9 @@ std::shared_ptr<TurboModule> RNGoogleMobileAdsSpec_ModuleProvider(const std::str
   }
   if (moduleName == "RNGoogleMobileAdsNativeModule") {
     return std::make_shared<NativeGoogleMobileAdsNativeModuleSpecJSI>(params);
+  }
+  if (moduleName == "RNGoogleMobileAdsPictureInPictureModule") {
+    return std::make_shared<NativePictureInPictureModuleSpecJSI>(params);
   }
   if (moduleName == "RNGoogleMobileAdsPoolModule") {
     return std::make_shared<NativeGoogleMobileAdsPoolModuleSpecJSI>(params);
