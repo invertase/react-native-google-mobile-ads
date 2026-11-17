@@ -23,32 +23,22 @@
 
 #import <GoogleMobileAds/GAMBannerView.h>
 
-#ifdef RCT_NEW_ARCH_ENABLED
 #import <RNGoogleMobileAdsSpec/ComponentDescriptors.h>
 #import <RNGoogleMobileAdsSpec/EventEmitters.h>
 #import <RNGoogleMobileAdsSpec/Props.h>
 #import <RNGoogleMobileAdsSpec/RCTComponentViewHelpers.h>
 
 #import "RCTFabricComponentsPlugins.h"
-#endif
 
-#ifdef RCT_NEW_ARCH_ENABLED
 using namespace facebook::react;
 
 @interface RNGoogleMobileAdsMultiFormatBannerView () <
     RCTRNGoogleMobileAdsMultiFormatBannerViewViewProtocol>
 @end
-#endif
 
 @implementation RNGoogleMobileAdsMultiFormatBannerView {
-#ifndef RCT_NEW_ARCH_ENABLED
-  __weak RCTBridge *_bridge;
-#endif
   __weak GAMBannerView *_attachedBanner;
 }
-
-#ifdef RCT_NEW_ARCH_ENABLED
-#pragma mark - Fabric specific
 
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
@@ -90,18 +80,6 @@ using namespace facebook::react;
   _props = defaultProps;
   _handleId = nil;
 }
-
-#else
-#pragma mark - Paper specific
-
-- (instancetype)initWithBridge:(RCTBridge *)bridge {
-  if (self = [super init]) {
-    _bridge = bridge;
-  }
-  return self;
-}
-
-#endif  // RCT_NEW_ARCH_ENABLED
 
 #pragma mark - Common
 
@@ -148,26 +126,8 @@ using namespace facebook::react;
 
 @end
 
-#ifndef RCT_NEW_ARCH_ENABLED
-
-@implementation RNGoogleMobileAdsMultiFormatBannerViewManager
-
-RCT_EXPORT_MODULE(RNGoogleMobileAdsMultiFormatBannerView)
-
-RCT_EXPORT_VIEW_PROPERTY(handleId, NSString)
-
-- (UIView *)view {
-  return [[RNGoogleMobileAdsMultiFormatBannerView alloc] initWithBridge:self.bridge];
-}
-
-@end
-
-#endif
-
-#ifdef RCT_NEW_ARCH_ENABLED
 Class<RCTComponentViewProtocol> RNGoogleMobileAdsMultiFormatBannerViewCls(void) {
   return RNGoogleMobileAdsMultiFormatBannerView.class;
 }
-#endif
 
 #endif

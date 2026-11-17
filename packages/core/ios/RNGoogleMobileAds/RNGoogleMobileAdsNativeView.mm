@@ -21,35 +21,25 @@
 #import "RNGoogleMobileAdsNativeAdViewLayout.h"
 #import "RNGoogleMobileAdsNativeAssetInteraction.h"
 
-#ifdef RCT_NEW_ARCH_ENABLED
 #import <RNGoogleMobileAdsSpec/ComponentDescriptors.h>
 #import <RNGoogleMobileAdsSpec/EventEmitters.h>
 #import <RNGoogleMobileAdsSpec/Props.h>
 #import <RNGoogleMobileAdsSpec/RCTComponentViewHelpers.h>
 
 #import "RCTFabricComponentsPlugins.h"
-#endif
 
-#ifdef RCT_NEW_ARCH_ENABLED
 using namespace facebook::react;
 
 @interface RNGoogleMobileAdsNativeView () <RCTRNGoogleMobileAdsNativeViewViewProtocol>
 @end
-#endif
 
 @implementation RNGoogleMobileAdsNativeView {
-#ifndef RCT_NEW_ARCH_ENABLED
-  __weak RCTBridge *_bridge;
-#endif
   __weak GADNativeAd *_nativeAd;
   GADNativeAdView *_nativeAdView;
   dispatch_block_t _debouncedReload;
   // Weak: asset views may already be gone when we tear down (#896 Fabric recycle).
   NSHashTable<UIView *> *_assetViewsDisabled;
 }
-
-#ifdef RCT_NEW_ARCH_ENABLED
-#pragma mark - Fabric specific
 
 @dynamic contentView;  // provided by superclass, but we narrow the type in our declaration
 
@@ -124,39 +114,18 @@ using namespace facebook::react;
   return nil;
 }
 
-#else
-#pragma mark - Paper specific
-
-- (instancetype)initWithBridge:(RCTBridge *)bridge {
-  if (self = [super init]) {
-    _bridge = bridge;
-    _nativeAdView = self;
-  }
-  return self;
-}
-
-#endif  // RCT_NEW_ARCH_ENABLED
-
 #pragma mark - Common logics
 
 /**
  * #700: GMA's native-ad validator rejects asset views that sit on a fractional
  * outer edge (e.g. height 637.333). Expand width/height to the next whole point
  * so assets remain inside the GADNativeAdView Google checks. Fabric hosts the
- * SDK view as contentView; Paper is the GADNativeAdView itself.
+ * SDK view as contentView.
  */
 - (void)layoutSubviews {
   [super layoutSubviews];
-#ifdef RCT_NEW_ARCH_ENABLED
   _nativeAdView.frame = RNGoogleMobileAdsCeilNativeAdViewFrame(self.bounds);
-#endif
 }
-
-#ifndef RCT_NEW_ARCH_ENABLED
-- (void)setFrame:(CGRect)frame {
-  [super setFrame:RNGoogleMobileAdsCeilNativeAdViewFrame(frame)];
-}
-#endif
 
 - (void)setResponseId:(NSString *)responseId {
   _responseId = [responseId copy];
@@ -166,14 +135,10 @@ using namespace facebook::react;
 
 - (void)registerAsset:(NSString *)assetType reactTag:(NSInteger)reactTag {
   RCTExecuteOnMainQueue(^{
-#ifdef RCT_NEW_ARCH_ENABLED
     UIView *view = [self findViewByTag:reactTag inView:_nativeAdView];
     if (!view) {
       view = [self findViewByTag:reactTag inView:self];
     }
-#else
-    UIView *view = [_bridge.uiManager viewForReactTag:@(reactTag)];
-#endif
     if (!view) {
       RCTLogError(@"Cannot find NativeAssetView with tag #%zd while registering asset type %@",
                   reactTag, assetType);
@@ -181,11 +146,7 @@ using namespace facebook::react;
     }
 
     if ([assetType isEqual:@"media"] && [view isKindOfClass:RNGoogleMobileAdsMediaView.class]) {
-#ifdef RCT_NEW_ARCH_ENABLED
       GADMediaView *mediaView = ((RNGoogleMobileAdsMediaView *)view).contentView;
-#else
-      GADMediaView *mediaView = (RNGoogleMobileAdsMediaView *) view;
-#endif
       [_nativeAdView setMediaView:mediaView];
       [self reloadAd];
       return;
@@ -253,39 +214,6 @@ using namespace facebook::react;
 
 @end
 
-#ifndef RCT_NEW_ARCH_ENABLED
-
-@implementation RNGoogleMobileAdsNativeViewManager
-
-RCT_EXPORT_MODULE(RNGoogleMobileAdsNativeView)
-
-RCT_EXPORT_VIEW_PROPERTY(responseId, NSString)
-
-- (UIView *)view {
-  return [[RNGoogleMobileAdsNativeView alloc] initWithBridge:self.bridge];
-}
-
-RCT_EXPORT_METHOD(registerAsset
-                  : (nonnull NSNumber *)reactTag assetType
-                  : (nonnull NSString *)assetType assetReactTag
-                  : (nonnull NSNumber *)assetReactTag) {
-  [self.bridge.uiManager
-      addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
-        RNGoogleMobileAdsNativeView *view = viewRegistry[reactTag];
-        if (!view || ![view isKindOfClass:[RNGoogleMobileAdsNativeView class]]) {
-          RCTLogError(@"Cannot find NativeView with tag #%@", reactTag);
-          return;
-        }
-        [view registerAsset:assetType reactTag:assetReactTag.intValue];
-      }];
-}
-
-@end
-
-#endif
-
-#ifdef RCT_NEW_ARCH_ENABLED
 Class<RCTComponentViewProtocol> RNGoogleMobileAdsNativeViewCls(void) {
   return RNGoogleMobileAdsNativeView.class;
 }
-#endif

@@ -18,22 +18,12 @@
 #if !TARGET_OS_MACCATALYST
 
 #import <Foundation/Foundation.h>
+#import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
 
 @class RNGoogleMobileAdsFullScreenAd;
 
-#ifdef RCT_NEW_ARCH_ENABLED
-
-#import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
 @interface RNGoogleMobileAdsAppOpenModule : NSObject <NativeAppOpenModuleSpec>
 - (RNGoogleMobileAdsFullScreenAd *)fullscreenAdHelper;
-
-#else
-
-#import <React/RCTBridgeModule.h>
-@interface RNGoogleMobileAdsAppOpenModule : NSObject <RCTBridgeModule>
-- (RNGoogleMobileAdsFullScreenAd *)fullscreenAdHelper;
-
-#endif
 
 @end
 

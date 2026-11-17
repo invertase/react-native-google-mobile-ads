@@ -18,18 +18,9 @@
 #if !TARGET_OS_MACCATALYST
 
 #import <Foundation/Foundation.h>
-
-#ifdef RCT_NEW_ARCH_ENABLED
-
 #import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
+
 @interface RNGoogleMobileAdsConsentModule : NSObject <NativeConsentModuleSpec>
-
-#else
-
-#import <React/RCTBridgeModule.h>
-@interface RNGoogleMobileAdsConsentModule : NSObject <RCTBridgeModule>
-
-#endif
 
 @end
 

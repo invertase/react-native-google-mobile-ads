@@ -16,17 +16,8 @@
  */
 
 #import <Foundation/Foundation.h>
-
-#ifdef RCT_NEW_ARCH_ENABLED
-
 #import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
+
 @interface RNGoogleMobileAdsModule : NSObject <NativeGoogleMobileAdsModuleSpec>
-
-#else
-
-#import <React/RCTBridgeModule.h>
-@interface RNGoogleMobileAdsModule : NSObject <RCTBridgeModule>
-
-#endif
 
 @end

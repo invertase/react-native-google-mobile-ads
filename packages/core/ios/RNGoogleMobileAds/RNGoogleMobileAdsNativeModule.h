@@ -18,25 +18,17 @@
 #import <GoogleMobileAds/GADAdLoader.h>
 #import <GoogleMobileAds/GADNativeAd.h>
 #import <GoogleMobileAds/GAMBannerView.h>
-
-#ifdef RCT_NEW_ARCH_ENABLED
 #import <RNGoogleMobileAdsSpec/RNGoogleMobileAdsSpec.h>
 
 @interface RNGoogleMobileAdsNativeModule
     : NativeGoogleMobileAdsNativeModuleSpecBase <NativeGoogleMobileAdsNativeModuleSpec>
-#else
-#import <React/RCTBridgeModule.h>
-#import <React/RCTEventEmitter.h>
-
-@interface RNGoogleMobileAdsNativeModule : RCTEventEmitter <RCTBridgeModule>
-#endif
 
 - (GADNativeAd *)nativeAdForResponseId:(NSString *)responseId;
 
 /** Preloaded multi-format GAM banner keyed by handleId (attach-only views). */
 - (nullable GAMBannerView *)bannerViewForHandleId:(NSString *)handleId;
 
-/** Class lookup for Fabric/Paper attach views (same store as instance method). */
+/** Class lookup for Fabric attach views (same store as instance method). */
 + (nullable GAMBannerView *)bannerViewForHandleId:(NSString *)handleId;
 
 @end

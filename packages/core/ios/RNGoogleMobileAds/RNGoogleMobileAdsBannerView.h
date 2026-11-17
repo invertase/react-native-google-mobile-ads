@@ -1,7 +1,5 @@
 #if !TARGET_OS_MACCATALYST
 
-// This guard prevent this file to be compiled in the old architecture.
-#ifdef RCT_NEW_ARCH_ENABLED
 #import <GoogleMobileAds/GADAppEventDelegate.h>
 #import <GoogleMobileAds/GADBannerView.h>
 #import <GoogleMobileAds/GADBannerViewDelegate.h>
@@ -29,6 +27,5 @@ NS_ASSUME_NONNULL_BEGIN
 NS_ASSUME_NONNULL_END
 
 #endif /* NativeComponentExampleComponentView_h */
-#endif /* RCT_NEW_ARCH_ENABLED */
 
 #endif

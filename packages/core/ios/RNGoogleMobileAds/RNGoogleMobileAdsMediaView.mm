@@ -18,29 +18,22 @@
 #import "RNGoogleMobileAdsMediaView.h"
 #import "RNGoogleMobileAdsNativeAdRegistry.h"
 
-#ifdef RCT_NEW_ARCH_ENABLED
 #import <RNGoogleMobileAdsSpec/ComponentDescriptors.h>
 #import <RNGoogleMobileAdsSpec/EventEmitters.h>
 #import <RNGoogleMobileAdsSpec/Props.h>
 #import <RNGoogleMobileAdsSpec/RCTComponentViewHelpers.h>
 
 #import "RCTFabricComponentsPlugins.h"
-#endif
 
-#ifdef RCT_NEW_ARCH_ENABLED
 using namespace facebook::react;
 
 @interface RNGoogleMobileAdsMediaView () <RCTRNGoogleMobileAdsMediaViewViewProtocol>
 @end
-#endif
 
 @implementation RNGoogleMobileAdsMediaView {
   GADMediaView *_mediaView;
   UIViewContentMode _contentMode;
 }
-
-#ifdef RCT_NEW_ARCH_ENABLED
-#pragma mark - Fabric specific
 
 @dynamic contentView;  // provided by superclass, but we narrow the type in our declaration
 
@@ -86,19 +79,6 @@ using namespace facebook::react;
   [super updateProps:props oldProps:oldProps];
 }
 
-#else
-#pragma mark - Paper specific
-
-- (instancetype)initWithBridge:(RCTBridge *)bridge {
-  if (self = [super init]) {
-    _mediaView = self;
-    _contentMode = UIViewContentModeScaleAspectFill;
-  }
-  return self;
-}
-
-#endif  // RCT_NEW_ARCH_ENABLED
-
 #pragma mark - Common logics
 
 - (void)setResponseId:(NSString *)responseId {
@@ -125,25 +105,6 @@ using namespace facebook::react;
 
 @end
 
-#ifndef RCT_NEW_ARCH_ENABLED
-
-@implementation RNGoogleMobileAdsMediaViewManager
-
-RCT_EXPORT_MODULE(RNGoogleMobileAdsMediaView)
-
-RCT_EXPORT_VIEW_PROPERTY(responseId, NSString)
-RCT_EXPORT_VIEW_PROPERTY(resizeMode, NSString)
-
-- (UIView *)view {
-  return [[RNGoogleMobileAdsMediaView alloc] initWithBridge:self.bridge];
-}
-
-@end
-
-#endif
-
-#ifdef RCT_NEW_ARCH_ENABLED
 Class<RCTComponentViewProtocol> RNGoogleMobileAdsMediaViewCls(void) {
   return RNGoogleMobileAdsMediaView.class;
 }
-#endif
