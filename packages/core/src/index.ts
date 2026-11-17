@@ -115,7 +115,10 @@ export { IconAsset, IconAssetType } from './ads/icon-ad/IconAsset';
 export { SwipeableInterstitialAd } from './ads/SwipeableInterstitialAd';
 export { SwipeableInterstitialAdView } from './ads/swipeable-interstitial/SwipeableInterstitialAdView';
 export { SwipeableInterstitialAdEventType } from './SwipeableInterstitialAdEventType';
-export type { SwipeableInterstitialAdRequestOptions } from './types/SwipeableInterstitialAdRequestOptions';
+export type {
+  SwipeableInterstitialAdRequestOptions,
+  SwipeableInterstitialSwipeDirection,
+} from './types/SwipeableInterstitialAdRequestOptions';
 export type { IconAdChoicesInfo } from './types/IconAdChoicesInfo';
 export { BannerAd } from './ads/BannerAd';
 export type { MobileAd } from './ads/MobileAd';
