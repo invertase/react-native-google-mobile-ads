@@ -13,6 +13,8 @@ import {
   formatIosIsHeadlessCapResolveLine,
   formatSessionCreateAbortSummary,
   formatSessionCreateHangAbortError,
+  IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS,
+  IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS,
   IOS_SESSION_CREATE_HANG_WDA_PORT_DOWN_ESCALATE_TICKS,
   IOS_SESSION_CREATE_HANG_HINT,
   IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS,
@@ -1349,20 +1351,47 @@ describe('iosBootDiagnostics', () => {
     assert.equal(recoverPrebuiltNoPidsPortDown.action, 'recover');
   });
 
-  test('T29.a: live host PIDs with sustained WDA port-down escalate to recover', () => {
-    const escalated = decideSessionCreateHangAction({
+  test('T29.a: live host PIDs with WDA port-down at recover threshold escalate to recover', () => {
+    const atRecoverTick = decideSessionCreateHangAction({
       hangTick: 2,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 2,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '4242',
+      hostWdaPids: '77888',
+      lastXcodebuildExitLabel: '(none)',
+      prebuiltWdaArtifactPresent: true,
+      hostXcodebuildBuilding: false,
+      wdaPortReachable: false,
+      consecutiveWdaPortDownProbes: IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS,
+    });
+    assert.equal(atRecoverTick.action, 'recover');
+    if (atRecoverTick.action === 'recover') {
+      assert.match(atRecoverTick.reason, /WDA terminate/);
+    }
+  });
+
+  test('T29.a: port-down through abort tick recovers once before abort despite live PIDs', () => {
+    const recoverDespiteLivePids = decideSessionCreateHangAction({
+      hangTick: 3,
       consecutiveXcrunEtimedout: 0,
       consecutiveBootedHangProbes: 3,
       simState: 'Booted',
       recoveredOnce: false,
       hostXcodebuildPids: '4242',
-      hostWdaPids: '(none)',
+      hostWdaPids: '77888',
       lastXcodebuildExitLabel: '(none)',
+      prebuiltWdaArtifactPresent: true,
+      hostXcodebuildBuilding: false,
       wdaPortReachable: false,
-      consecutiveWdaPortDownProbes: IOS_SESSION_CREATE_HANG_WDA_PORT_DOWN_ESCALATE_TICKS,
+      consecutiveWdaPortDownProbes: IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS,
     });
-    assert.equal(escalated.action, 'recover');
+    assert.equal(
+      recoverDespiteLivePids.action,
+      'recover',
+      'must not abort without one recover when :8100 stayed down',
+    );
   });
 
   test('formatSessionCreateAbortSummary emits stable grep block', () => {

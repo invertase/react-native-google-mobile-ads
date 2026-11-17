@@ -116,8 +116,10 @@ export const IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS = 2;
 export const IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS = 3;
 
 /**
- * Consecutive hang ticks with `wdaPortReachable=false` before live-PID
- * deferral yields to port-down recover / abort (MIOS-001 escape hatch).
+ * Consecutive hang ticks with `wdaPortReachable=false` before abort notes
+ * port-down escalation in the abort reason (PE2E-D09). Recover bypasses live-PID
+ * defer once `consecutiveWdaPortDownProbes` reaches
+ * {@link IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS} (MIOS-001).
  */
 export const IOS_SESSION_CREATE_HANG_WDA_PORT_DOWN_ESCALATE_TICKS =
   IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS;
@@ -682,6 +684,9 @@ export function decideSessionCreateHangAction(input: {
   const portDownEscalateAfter =
     input.portDownEscalateAfterTicks ?? IOS_SESSION_CREATE_HANG_WDA_PORT_DOWN_ESCALATE_TICKS;
   const portProbedDown = input.wdaPortReachable === false;
+  /** MIOS-001: port-down streak at recover threshold — host PIDs are not serving WDA. */
+  const portDownBypassLivePidDefer =
+    portProbedDown && portDownStreak >= recoverAfter;
   const portDownEscalation = portProbedDown && portDownStreak >= portDownEscalateAfter;
   const noLiveHostPids =
     input.hostXcodebuildPids === '(none)' && input.hostWdaPids === '(none)';
@@ -690,7 +695,7 @@ export function decideSessionCreateHangAction(input: {
   // Live-PID gate BEFORE abort (ordering): never abort/recover-kill over a live build.
   if (
     (abortReady || recoverReady) &&
-    !portDownEscalation &&
+    !portDownBypassLivePidDefer &&
     input.hostXcodebuildPids != null &&
     input.hostWdaPids != null &&
     input.lastXcodebuildExitLabel != null
@@ -721,7 +726,13 @@ export function decideSessionCreateHangAction(input: {
     }
   }
 
-  if (abortReady) {
+  const recoverBeforeAbortPortDown =
+    abortReady &&
+    recoverReady &&
+    !input.recoveredOnce &&
+    portDownBypassLivePidDefer;
+
+  if (abortReady && !recoverBeforeAbortPortDown) {
     const bootMonitorNote = transitioning
       ? '; interrupting Appium boot monitor while simulator is Shutdown/Booting (often isHeadless=false relaunch)'
       : '';
