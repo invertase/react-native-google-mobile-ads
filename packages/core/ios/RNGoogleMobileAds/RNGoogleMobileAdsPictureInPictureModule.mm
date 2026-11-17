@@ -18,16 +18,15 @@
 #if !TARGET_OS_MACCATALYST
 
 #import "RNGoogleMobileAdsPictureInPictureModule.h"
+#import <GoogleMobileAds/GADPictureInPictureAdDelegate_Beta.h>
+#import <GoogleMobileAds/GADPictureInPictureAdOptions_Beta.h>
+#import <GoogleMobileAds/GADPictureInPictureAd_Beta.h>
 #import <GoogleMobileAds/GoogleMobileAds.h>
-#if __has_include(<GoogleMobileAds/GoogleMobileAds_Private.h>)
-#import <GoogleMobileAds/GoogleMobileAds_Private.h>
-#endif
 #import "RNGoogleMobileAdsCommon.h"
 #import "RNGoogleMobileAdsResponseInfo.h"
 #import "common/RNSharedUtils.h"
 
-@interface RNGoogleMobileAdsPictureInPictureDelegate
-    : NSObject <GADPictureInPictureAdDelegate>
+@interface RNGoogleMobileAdsPictureInPictureDelegate : NSObject <GADPictureInPictureAdDelegate>
 @property(nonatomic) int requestId;
 @property(nonatomic, copy) NSString *adUnitId;
 @end
@@ -53,7 +52,8 @@
 
 - (void)pictureInPictureAdDidFailToShow:(GADPictureInPictureAd *)pictureInPictureAd
                               withError:(NSError *)error {
-  NSMutableDictionary *payload = [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"show"];
+  NSMutableDictionary *payload = [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error
+                                                                              phase:@"show"];
   [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE
                              requestId:@(self.requestId)
                                   type:GOOGLE_MOBILE_ADS_EVENT_ERROR
@@ -166,70 +166,71 @@ RCT_EXPORT_METHOD(pictureInPictureLoad
 
   __weak __typeof(self) weakSelf = self;
   [GADPictureInPictureAd
-      loadWithAdUnitID:adUnitId
-               request:request
-     completionHandler:^(GADPictureInPictureAd *_Nullable ad, NSError *_Nullable error) {
-       __strong __typeof(weakSelf) strongSelf = weakSelf;
-       if (!strongSelf) {
-         return;
-       }
-       if (![strongSelf isCurrentGeneration:generation forRequestId:requestIdInt]) {
-         return;
-       }
-       if (error) {
-         NSMutableDictionary *codeAndMessage =
-             [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"load"];
-         NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
-             dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo responseInfoFromLoadError:error]
-                                compact:NO];
-         if (responseInfo != nil) {
-           codeAndMessage[@"responseInfo"] = responseInfo;
-         }
-         [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE
-                                    requestId:@(requestIdInt)
-                                         type:GOOGLE_MOBILE_ADS_EVENT_ERROR
-                                     adUnitId:adUnitId
-                                        error:codeAndMessage
-                                         data:nil];
-         return;
-       }
+       loadWithAdUnitID:adUnitId
+                request:request
+      completionHandler:^(GADPictureInPictureAd *_Nullable ad, NSError *_Nullable error) {
+        __strong __typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+          return;
+        }
+        if (![strongSelf isCurrentGeneration:generation forRequestId:requestIdInt]) {
+          return;
+        }
+        if (error) {
+          NSMutableDictionary *codeAndMessage =
+              [RNGoogleMobileAdsCommon adErrorPayloadFromAdError:error phase:@"load"];
+          NSDictionary *responseInfo = [RNGoogleMobileAdsResponseInfo
+              dictionaryFromResponseInfo:[RNGoogleMobileAdsResponseInfo
+                                             responseInfoFromLoadError:error]
+                                 compact:NO];
+          if (responseInfo != nil) {
+            codeAndMessage[@"responseInfo"] = responseInfo;
+          }
+          [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE
+                                     requestId:@(requestIdInt)
+                                          type:GOOGLE_MOBILE_ADS_EVENT_ERROR
+                                      adUnitId:adUnitId
+                                         error:codeAndMessage
+                                          data:nil];
+          return;
+        }
 
-       RNGoogleMobileAdsPictureInPictureDelegate *delegate =
-           [[RNGoogleMobileAdsPictureInPictureDelegate alloc] init];
-       delegate.requestId = requestIdInt;
-       delegate.adUnitId = adUnitId;
-       ad.delegate = delegate;
+        RNGoogleMobileAdsPictureInPictureDelegate *delegate =
+            [[RNGoogleMobileAdsPictureInPictureDelegate alloc] init];
+        delegate.requestId = requestIdInt;
+        delegate.adUnitId = adUnitId;
+        ad.delegate = delegate;
 
-       GADResponseInfo *gadResponseInfo = ad.responseInfo;
-       GADPaidEventHandler paidEventHandler = ^(GADAdValue *value) {
-         [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE
-                                    requestId:@(requestIdInt)
-                                         type:@"paid"
-                                     adUnitId:adUnitId
-                                        error:nil
-                                         data:[RNGoogleMobileAdsResponseInfo
-                                                  paidEventPayloadFromAdValue:value
-                                                                 responseInfo:gadResponseInfo]];
-       };
-       ad.paidEventHandler = paidEventHandler;
+        GADResponseInfo *gadResponseInfo = ad.responseInfo;
+        GADPaidEventHandler paidEventHandler = ^(GADAdValue *value) {
+          [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE
+                                     requestId:@(requestIdInt)
+                                          type:@"paid"
+                                      adUnitId:adUnitId
+                                         error:nil
+                                          data:[RNGoogleMobileAdsResponseInfo
+                                                   paidEventPayloadFromAdValue:value
+                                                                  responseInfo:gadResponseInfo]];
+        };
+        ad.paidEventHandler = paidEventHandler;
 
-       NSMutableDictionary *data = [NSMutableDictionary dictionary];
-       NSDictionary *responseInfo =
-           [RNGoogleMobileAdsResponseInfo dictionaryFromResponseInfo:gadResponseInfo compact:NO];
-       if (responseInfo != nil) {
-         data[@"responseInfo"] = responseInfo;
-       }
+        NSMutableDictionary *data = [NSMutableDictionary dictionary];
+        NSDictionary *responseInfo =
+            [RNGoogleMobileAdsResponseInfo dictionaryFromResponseInfo:gadResponseInfo compact:NO];
+        if (responseInfo != nil) {
+          data[@"responseInfo"] = responseInfo;
+        }
 
-       strongSelf.adMap[@(requestIdInt)] = ad;
-       strongSelf.delegateMap[@(requestIdInt)] = delegate;
+        strongSelf->_adMap[@(requestIdInt)] = ad;
+        strongSelf->_delegateMap[@(requestIdInt)] = delegate;
 
-       [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE
-                                  requestId:@(requestIdInt)
-                                       type:GOOGLE_MOBILE_ADS_EVENT_LOADED
-                                   adUnitId:adUnitId
-                                      error:nil
-                                       data:data.count > 0 ? data : nil];
-     }];
+        [RNGoogleMobileAdsCommon sendAdEvent:GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE
+                                   requestId:@(requestIdInt)
+                                        type:GOOGLE_MOBILE_ADS_EVENT_LOADED
+                                    adUnitId:adUnitId
+                                       error:nil
+                                        data:data.count > 0 ? data : nil];
+      }];
 }
 
 RCT_EXPORT_METHOD(pictureInPictureShow
@@ -254,7 +255,8 @@ RCT_EXPORT_METHOD(pictureInPictureShow
     options.position = [self positionFromString:showOptions[@"position"]];
   }
   if (showOptions[@"presentationScope"] != nil) {
-    options.presentationScope = [self presentationScopeFromString:showOptions[@"presentationScope"]];
+    options.presentationScope =
+        [self presentationScopeFromString:showOptions[@"presentationScope"]];
   }
 
   @try {
