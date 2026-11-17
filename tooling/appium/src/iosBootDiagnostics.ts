@@ -92,6 +92,15 @@ export const XCUITest_DEFAULT_SIMULATOR_STARTUP_TIMEOUT_MS = 120_000;
 /** Short probe so diagnostics never block CI the way `bootstatus -b` can. */
 export const IOS_BOOTSTATUS_PROBE_TIMEOUT_MS = 5_000;
 
+/** Slightly longer `bootstatus` ceiling for session-create hang probes only (MIOS-002). */
+export const IOS_HANG_PROBE_BOOTSTATUS_TIMEOUT_MS = 8_000;
+
+/** Base sleep before one in-process retry for read-only hang-path simctl (PE2E-D07). */
+export const IOS_HANG_SIMCTL_ETIMEDOUT_RETRY_BASE_MS = 2_000;
+
+/** Random jitter cap added to {@link IOS_HANG_SIMCTL_ETIMEDOUT_RETRY_BASE_MS}. */
+export const IOS_HANG_SIMCTL_ETIMEDOUT_RETRY_JITTER_MS = 500;
+
 /** Post-boot pause so CoreSimulator can finish Data Migration before list/confirm. */
 export const IOS_BOOT_SETTLE_MS = 3_000;
 
@@ -305,7 +314,72 @@ export type CollectIosBootDiagnosticsOptions = {
   /** Override Simulator/DeviceHub UI PIDs (defaults to a live pgrep). */
   simulatorUiPids?: readonly number[];
   now?: () => Date;
+  /**
+   * When true, read-only `simctl list` / `bootstatus` on the hang path retry once
+   * after ETIMEDOUT before the probe line is emitted (select-and-boot unchanged).
+   */
+  hangPathReadRetry?: boolean;
+  /** Injectable sleep for hang-path simctl retry (unit tests). */
+  hangPathRetrySleep?: (ms: number) => void;
+  /** Deterministic jitter for hang-path simctl retry (unit tests). */
+  hangPathRetryJitterMs?: () => number;
 };
+
+export type SimctlHangSubcommand = 'list' | 'bootstatus';
+
+export function simctlExecResultTimedOut(result: ExecCaptureResult): boolean {
+  return result.timedOut === true || isXcrunTimedOutError(result.error);
+}
+
+/** Machine-grep token for transient CoreSimulator API stalls (no loadavg blame). */
+export function formatSimctlEtimedoutDiagnosticLine(
+  subcommand: SimctlHangSubcommand,
+  timeoutMs: number,
+  now: () => Date = () => new Date(),
+): string {
+  return formatIosBootDiagnosticLine(
+    {
+      phase: 'simctl:ETIMEDOUT',
+      subcommand,
+      timeoutMs,
+    },
+    now,
+  );
+}
+
+/**
+ * One bounded retry for idempotent hang-path simctl reads (`list`, `bootstatus`).
+ */
+export function execSimctlHangPathWithOptionalRetry(
+  exec: ExecCapture,
+  args: string[],
+  timeoutMs: number,
+  subcommand: SimctlHangSubcommand,
+  options: {
+    hangPathReadRetry?: boolean;
+    sleep?: (ms: number) => void;
+    jitterMs?: () => number;
+    now?: () => Date;
+  },
+): { result: ExecCaptureResult; etimedoutLines: string[] } {
+  const etimedoutLines: string[] = [];
+  const now = options.now ?? (() => new Date());
+  let result = exec('xcrun', args, { timeoutMs });
+  if (!options.hangPathReadRetry || !simctlExecResultTimedOut(result)) {
+    return { result, etimedoutLines };
+  }
+  etimedoutLines.push(formatSimctlEtimedoutDiagnosticLine(subcommand, timeoutMs, now));
+  const jitter =
+    options.jitterMs?.() ??
+    Math.floor(Math.random() * (IOS_HANG_SIMCTL_ETIMEDOUT_RETRY_JITTER_MS + 1));
+  const sleep = options.sleep ?? sleepSync;
+  sleep(IOS_HANG_SIMCTL_ETIMEDOUT_RETRY_BASE_MS + jitter);
+  result = exec('xcrun', args, { timeoutMs });
+  if (simctlExecResultTimedOut(result)) {
+    etimedoutLines.push(formatSimctlEtimedoutDiagnosticLine(subcommand, timeoutMs, now));
+  }
+  return { result, etimedoutLines };
+}
 
 /**
  * Collect timestamped diagnostic lines for a UDID. Device commands are injected
@@ -319,10 +393,22 @@ export function collectIosBootDiagnosticLines(
   const now = options.now ?? (() => new Date());
   const bootstatusTimeoutMs =
     options.bootstatusTimeoutMs ?? IOS_BOOTSTATUS_PROBE_TIMEOUT_MS;
+  const retryOpts = {
+    hangPathReadRetry: options.hangPathReadRetry,
+    sleep: options.hangPathRetrySleep,
+    jitterMs: options.hangPathRetryJitterMs,
+    now,
+  };
 
-  const list = exec('xcrun', ['simctl', 'list', 'devices', '--json'], {
-    timeoutMs: 15_000,
-  });
+  const listProbe = execSimctlHangPathWithOptionalRetry(
+    exec,
+    ['simctl', 'list', 'devices', '--json'],
+    15_000,
+    'list',
+    retryOpts,
+  );
+  const list = listProbe.result;
+  const etimedoutLines = [...listProbe.etimedoutLines];
   let device: IosSimulatorDeviceRow | null = null;
   let listError: string | undefined;
   if (list.error && list.stdout.trim() === '') {
@@ -336,9 +422,15 @@ export function collectIosBootDiagnosticLines(
   }
 
   // Non-blocking: omit `-b` so we do not start a boot; timeout bounds the probe.
-  const bootstatus = exec('xcrun', ['simctl', 'bootstatus', udid], {
-    timeoutMs: bootstatusTimeoutMs,
-  });
+  const bootstatusProbe = execSimctlHangPathWithOptionalRetry(
+    exec,
+    ['simctl', 'bootstatus', udid],
+    bootstatusTimeoutMs,
+    'bootstatus',
+    retryOpts,
+  );
+  const bootstatus = bootstatusProbe.result;
+  etimedoutLines.push(...bootstatusProbe.etimedoutLines);
 
   const timeoutLabel =
     options.simulatorStartupTimeoutMs == null
@@ -357,6 +449,7 @@ export function collectIosBootDiagnosticLines(
   const bootstatusTail = summarizeBootstatusProbe(bootstatus);
 
   return [
+    ...etimedoutLines,
     formatIosBootDiagnosticLine(
       {
         phase: options.phase,
@@ -811,10 +904,13 @@ export function decideSessionCreateHangAction(input: {
 export function sessionCreateHangEvidenceFromProbeLine(
   line: string,
 ): SessionCreateHangProbeEvidence {
+  if (/\bphase=simctl:ETIMEDOUT\b/.test(line)) {
+    return { xcrunEtimedout: false, listMissing: false };
+  }
   const xcrunEtimedout =
-    /\bETIMEDOUT\b/i.test(line) ||
     /\btimedOut=true\b/.test(line) ||
-    /\blistError=.*ETIMEDOUT/i.test(line);
+    /\blistError=.*ETIMEDOUT/i.test(line) ||
+    /\bbootstatus=timedOut=true\b/.test(line);
   const stateMatch = /\bstate=(\S+)/.exec(line);
   const state = stateMatch?.[1];
   const listMissing = /\bfound=false\b/.test(line) || state === '(missing)';
@@ -952,7 +1048,7 @@ export function startIosSessionCreateHangWatchdog(
   const intervalMs = options.intervalMs ?? IOS_SESSION_CREATE_HANG_POLL_MS;
   const now = options.now ?? (() => new Date());
   const bootstatusTimeoutMs =
-    options.bootstatusTimeoutMs ?? IOS_BOOTSTATUS_PROBE_TIMEOUT_MS;
+    options.bootstatusTimeoutMs ?? IOS_HANG_PROBE_BOOTSTATUS_TIMEOUT_MS;
   const appiumHome = options.appiumHome ?? DEFAULT_APPIUM_HOME;
   let ticks = 0;
   let stopped = false;
@@ -1064,6 +1160,7 @@ export function startIosSessionCreateHangWatchdog(
       simulatorStartupTimeoutMs: options.simulatorStartupTimeoutMs,
       execCapture: options.execCapture,
       bootstatusTimeoutMs,
+      hangPathReadRetry: true,
       deviceHubMode: options.deviceHubMode,
       deviceHubPids: options.deviceHubPids,
       simulatorUiPids: options.simulatorUiPids,
@@ -1072,6 +1169,11 @@ export function startIosSessionCreateHangWatchdog(
     let probeSawEtimedout = false;
     for (const line of probeLines) {
       write(line);
+      // `simctl:ETIMEDOUT` token lines are diagnostic only — streak accounting
+      // uses the consolidated `:hang-probe` line after optional in-process retry.
+      if (!/\bhang-probe\b/.test(line)) {
+        continue;
+      }
       const evidence = sessionCreateHangEvidenceFromProbeLine(line);
       if (evidence.state != null) {
         lastSimState = evidence.state;

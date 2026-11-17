@@ -18,8 +18,13 @@ import {
   IOS_SESSION_CREATE_HANG_WDA_PORT_DOWN_ESCALATE_TICKS,
   IOS_SESSION_CREATE_HANG_HINT,
   IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS,
+  IOS_HANG_PROBE_BOOTSTATUS_TIMEOUT_MS,
+  IOS_HANG_SIMCTL_ETIMEDOUT_RETRY_BASE_MS,
+  execSimctlHangPathWithOptionalRetry,
+  formatSimctlEtimedoutDiagnosticLine,
   isXcrunTimedOutError,
   noteXcodebuildExitFromLine,
+  simctlExecResultTimedOut,
   recoverIosSessionCreateHang,
   resolveIosIsHeadless,
   resolveIosIsHeadlessResolution,
@@ -200,6 +205,116 @@ describe('iosBootDiagnostics', () => {
     assert.equal(isXcrunTimedOutError(Object.assign(new Error('x'), { code: 'ETIMEDOUT' })), true);
     assert.equal(isXcrunTimedOutError(new Error('spawnSync ETIMEDOUT')), true);
     assert.equal(isXcrunTimedOutError(new Error('other')), false);
+  });
+
+  test('formatSimctlEtimedoutDiagnosticLine emits stable grep token', () => {
+    const line = formatSimctlEtimedoutDiagnosticLine('list', 15_000, () =>
+      new Date('2026-11-17T12:00:00.000Z'),
+    );
+    assert.match(line, /\[e2e-ios-boot\].*phase=simctl:ETIMEDOUT/);
+    assert.match(line, /subcommand=list timeoutMs=15000/);
+    assert.doesNotMatch(line, /loadavg/);
+  });
+
+  test('hang-path simctl retry: successful retry omits ETIMEDOUT from probe evidence', () => {
+    let listCalls = 0;
+    const sleeps: number[] = [];
+    const lines = collectIosBootDiagnosticLines('target-udid', {
+      phase: 'wdio:session-create:hang-probe',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      hangPathReadRetry: true,
+      hangPathRetrySleep: ms => sleeps.push(ms),
+      hangPathRetryJitterMs: () => 0,
+      execCapture: (_bin, args) => {
+        if (args.includes('list')) {
+          listCalls += 1;
+          if (listCalls === 1) {
+            return {
+              stdout: '',
+              stderr: '',
+              status: null,
+              timedOut: true,
+              error: 'spawnSync ETIMEDOUT',
+            };
+          }
+          return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+        }
+        return { stdout: 'Booted\n', stderr: '', status: 0 };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      simulatorUiPids: [],
+    });
+    assert.equal(listCalls, 2);
+    assert.equal(sleeps[0], IOS_HANG_SIMCTL_ETIMEDOUT_RETRY_BASE_MS);
+    assert.ok(lines.some(line => /phase=simctl:ETIMEDOUT.*subcommand=list/.test(line)));
+    const probeLine = lines.find(line => /hang-probe\b/.test(line));
+    assert.ok(probeLine);
+    const evidence = sessionCreateHangEvidenceFromProbeLine(probeLine!);
+    assert.equal(evidence.xcrunEtimedout, false);
+    assert.equal(evidence.state, 'Booted');
+    assert.equal(
+      sessionCreateHangEvidenceFromProbeLine(lines.find(l => /simctl:ETIMEDOUT/.test(l))!)
+        .xcrunEtimedout,
+      false,
+    );
+  });
+
+  test('hang-path simctl retry: double ETIMEDOUT keeps probe ETIMEDOUT evidence', () => {
+    const lines = collectIosBootDiagnosticLines('target-udid', {
+      phase: 'wdio:session-create:hang-probe',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      hangPathReadRetry: true,
+      hangPathRetrySleep: () => {},
+      hangPathRetryJitterMs: () => 0,
+      bootstatusTimeoutMs: IOS_HANG_PROBE_BOOTSTATUS_TIMEOUT_MS,
+      execCapture: (_bin, args) => {
+        if (args.includes('list')) {
+          return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+        }
+        return {
+          stdout: '',
+          stderr: '',
+          status: null,
+          timedOut: true,
+          error: 'spawnSync ETIMEDOUT',
+        };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      simulatorUiPids: [],
+    });
+    assert.equal(
+      lines.filter(line => /phase=simctl:ETIMEDOUT.*subcommand=bootstatus/.test(line)).length,
+      2,
+    );
+    const probeLine = lines.find(line => /hang-probe\b/.test(line));
+    assert.ok(probeLine);
+    assert.match(probeLine!, /bootstatusProbeTimeoutMs=8000/);
+    assert.equal(sessionCreateHangEvidenceFromProbeLine(probeLine!).xcrunEtimedout, true);
+  });
+
+  test('execSimctlHangPathWithOptionalRetry skips retry when hangPathReadRetry is false', () => {
+    let calls = 0;
+    const { result, etimedoutLines } = execSimctlHangPathWithOptionalRetry(
+      () => {
+        calls += 1;
+        return {
+          stdout: '',
+          stderr: '',
+          status: null,
+          timedOut: true,
+          error: 'spawnSync ETIMEDOUT',
+        };
+      },
+      ['simctl', 'list', 'devices', '--json'],
+      15_000,
+      'list',
+      { hangPathReadRetry: false },
+    );
+    assert.equal(calls, 1);
+    assert.equal(etimedoutLines.length, 0);
+    assert.equal(simctlExecResultTimedOut(result), true);
   });
 
   test('confirmSimulatorReadyForPersist requires Booted list + non-timeout bootstatus', () => {
@@ -1029,16 +1144,16 @@ describe('iosBootDiagnostics', () => {
     // the hostWdaPids=(none) + hang-abort-at-tick-3 pattern #939 reported).
     // It must now defer like any other live host build, backstopped by the
     // pre-existing live-PID defer-cap escalation (tick 6 / 180s here).
-    let listCalls = 0;
+    let listAttempts = 0;
     const lines: string[] = [];
     const callbacks: Array<() => void> = [];
     const recovers: string[] = [];
     const aborts: Error[] = [];
     const execCapture: ExecCapture = (bin, args) => {
       if (bin === 'xcrun' && args.includes('list')) {
-        listCalls += 1;
-        // Tick 3's simctl list alone ETIMEDOUTs; every other tick succeeds.
-        if (listCalls === 3) {
+        listAttempts += 1;
+        // Tick 3's first simctl list attempt ETIMEDOUTs; hang-path retry succeeds.
+        if (listAttempts === 3) {
           return {
             stdout: '',
             stderr: '',
@@ -1058,7 +1173,7 @@ describe('iosBootDiagnostics', () => {
         // Host xcodebuild becomes visible to pgrep from tick 3 onward — the
         // already-launching prebuilt WDA, not a recover-triggered relaunch
         // (FLAKE-005c residual fix: the harness never WDA-terminates here).
-        return listCalls >= 3
+        return listAttempts >= 3
           ? { stdout: '57975 /usr/bin/xcodebuild test\n', stderr: '', status: 0 }
           : { stdout: '', stderr: '', status: 1 };
       }
@@ -1104,7 +1219,8 @@ describe('iosBootDiagnostics', () => {
     );
     assert.equal(aborts.length, 0);
     assert.ok(lines.some(line => /hang-recoverSkipped.*prebuilt WDA artifact present/.test(line)));
-    callbacks[0]!(); // tick 3 (90s) — transient simctl-list ETIMEDOUT; reappeared
+    callbacks[0]!(); // tick 3 (90s) — transient simctl-list ETIMEDOUT retried to Booted
+    assert.ok(lines.some(line => /phase=simctl:ETIMEDOUT.*subcommand=list/.test(line)));
     // xcodebuild is launch-only (test-without-building): must defer, not
     // fail-fast abort (the #939 regression this harness self-inflicted).
     assert.equal(aborts.length, 0, 'a live launch-only xcodebuild must defer, not abort, at tick 3');
