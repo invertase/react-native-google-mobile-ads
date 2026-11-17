@@ -40,8 +40,8 @@ import { nativeAdapterClassName, networkSlug } from '@react-native-google-mobile
 
 | Platform | Coordinate                                 | Version pin |
 | -------- | ------------------------------------------ | ----------- |
-| Android  | `com.google.ads.mediation:pangle`          | `8.3.0.4.0` |
-| iOS      | CocoaPods `GoogleMobileAdsMediationPangle` | `8.3.0.8.0` |
+| Android  | `com.google.ads.mediation:pangle`          | `8.4.0.5.0` |
+| iOS      | CocoaPods `GoogleMobileAdsMediationPangle` | `8.4.0.8.0` |
 
 Citations (verify at upgrade time):
 
