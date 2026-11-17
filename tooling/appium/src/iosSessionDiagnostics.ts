@@ -9,7 +9,8 @@
  * `pgrep` (hard-capped) plus `.wda-derived` filesystem reads.
  */
 
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { createConnection, type Socket } from 'node:net';
 import {
   copyFileSync,
@@ -171,6 +172,275 @@ export function probeWdaTcpPort(options?: {
     finish(false);
   }
   return { reachable };
+}
+
+/** XCTest runner bundle launched on the simulator for prebuilt WDA. */
+export const IOS_WDA_RUNNER_BUNDLE_ID = 'com.facebook.WebDriverAgentRunner.xctrunner';
+
+/** Poll interval while waiting for WDA TCP after an explicit harness prelaunch. */
+export const IOS_WDA_PRELAUNCH_POLL_MS = 2_000;
+
+/**
+ * Bounded wait for WDA to accept TCP after recover + fresh WDIO spawn (attempt 2).
+ * Fail fast with `*:wda-prelaunch-timeout` instead of burning the hang watchdog.
+ */
+export const IOS_WDA_PRELAUNCH_PORT_WAIT_MS = 90_000;
+
+export type WaitForWdaTcpPortListeningResult = {
+  reachable: boolean;
+  elapsedMs: number;
+  probes: number;
+};
+
+/**
+ * Poll {@link probeWdaTcpPort} until the local WDA port accepts TCP or timeout.
+ */
+export function waitForWdaTcpPortListening(options?: {
+  host?: string;
+  port?: number;
+  timeoutMs?: number;
+  pollIntervalMs?: number;
+  probe?: typeof probeWdaTcpPort;
+  connect?: WdaPortProbeConnect;
+  now?: () => number;
+  sleep?: (ms: number) => void;
+}): WaitForWdaTcpPortListeningResult {
+  const timeoutMs = options?.timeoutMs ?? IOS_WDA_PRELAUNCH_PORT_WAIT_MS;
+  const pollIntervalMs = options?.pollIntervalMs ?? IOS_WDA_PRELAUNCH_POLL_MS;
+  const probe = options?.probe ?? probeWdaTcpPort;
+  const now = options?.now ?? (() => Date.now());
+  const sleep =
+    options?.sleep ??
+    ((ms: number) => {
+      if (ms > 0) {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+      }
+    });
+  const host = options?.host ?? '127.0.0.1';
+  const port = options?.port ?? IOS_WDA_DEFAULT_LOCAL_PORT;
+  const start = now();
+  let probes = 0;
+  while (now() - start < timeoutMs) {
+    probes += 1;
+    const result = probe({
+      host,
+      port,
+      connect: options?.connect,
+      wait: () => undefined,
+    });
+    if (result.reachable) {
+      return { reachable: true, elapsedMs: now() - start, probes };
+    }
+    sleep(pollIntervalMs);
+  }
+  return { reachable: false, elapsedMs: now() - start, probes };
+}
+
+/**
+ * Gate harness WDA prelaunch before POST /session.
+ *
+ * - Attempt 2+: always when prebuilt mode is enabled (recover terminated WDA).
+ * - Attempt 1: only when `RNGMA_IOS_WDA_PRELAUNCH=1` (cheap opt-in; Appium owns
+ *   the default first launch).
+ */
+export function shouldPrelaunchWdaBeforeSessionCreate(input: {
+  sessionCreateAttempt: number;
+  wdaPrebuiltEnabled?: boolean;
+  eagerPrelaunch?: boolean;
+}): boolean {
+  if (input.sessionCreateAttempt > 1) {
+    return input.wdaPrebuiltEnabled !== false;
+  }
+  return input.wdaPrebuiltEnabled === true && input.eagerPrelaunch === true;
+}
+
+export type SpawnDetachedProcess = (
+  bin: string,
+  args: readonly string[],
+) => ChildProcess;
+
+export function defaultSpawnDetachedProcess(
+  bin: string,
+  args: readonly string[],
+): ChildProcess {
+  const child = spawn(bin, [...args], {
+    detached: true,
+    stdio: 'ignore',
+  });
+  child.unref();
+  return child;
+}
+
+/** Resolve Appium's pinned `WebDriverAgent.xcodeproj` (same tree as prebuild-wda). */
+export function resolveWebDriverAgentXcodeProjectPath(
+  resolveModule: (request: string) => string = createRequire(import.meta.url).resolve,
+): string {
+  const xcuitestPkg = resolveModule('appium-xcuitest-driver/package.json');
+  const xcuitestRequire = createRequire(xcuitestPkg);
+  const wdaPkg = xcuitestRequire.resolve('appium-webdriveragent/package.json');
+  return join(dirname(wdaPkg), 'WebDriverAgent.xcodeproj');
+}
+
+export type LaunchPrebuiltWdaRunnerOptions = {
+  derivedDataPath: string;
+  wdaRunnerAppPath: string;
+  execCapture?: SessionExecCapture;
+  spawnDetached?: SpawnDetachedProcess;
+  resolveXcodeProject?: typeof resolveWebDriverAgentXcodeProjectPath;
+  bundleId?: string;
+};
+
+/**
+ * Install (idempotent) and start the shared prebuilt WDA runner on a Booted sim.
+ * Prefer launch-only `xcodebuild test-without-building` (Appium parity); fall back
+ * to `simctl launch` when the Xcode project cannot be resolved (unit tests).
+ */
+export function launchPrebuiltWdaRunnerOnSimulator(
+  udid: string,
+  options: LaunchPrebuiltWdaRunnerOptions,
+): { launchMode: 'xcodebuild' | 'simctl' } {
+  const exec = options.execCapture ?? defaultSessionExecCapture;
+  const bundleId = options.bundleId ?? IOS_WDA_RUNNER_BUNDLE_ID;
+  const install = exec(
+    'xcrun',
+    ['simctl', 'install', udid, options.wdaRunnerAppPath],
+    { timeoutMs: 120_000 },
+  );
+  if (install.status !== 0) {
+    throw new Error(
+      `WDA prelaunch simctl install failed (status=${install.status ?? 'null'}): ${
+        install.stderr || install.stdout || install.error || '(no output)'
+      }`,
+    );
+  }
+  try {
+    const project = (options.resolveXcodeProject ?? resolveWebDriverAgentXcodeProjectPath)();
+    const spawnDetached = options.spawnDetached ?? defaultSpawnDetachedProcess;
+    spawnDetached('xcodebuild', [
+      '-project',
+      project,
+      '-scheme',
+      'WebDriverAgentRunner',
+      '-destination',
+      `id=${udid}`,
+      '-derivedDataPath',
+      options.derivedDataPath,
+      'test-without-building',
+    ]);
+    return { launchMode: 'xcodebuild' };
+  } catch {
+    const launch = exec('xcrun', ['simctl', 'launch', udid, bundleId], {
+      timeoutMs: 30_000,
+    });
+    if (launch.status !== 0) {
+      throw new Error(
+        `WDA prelaunch simctl launch failed (status=${launch.status ?? 'null'}): ${
+          launch.stderr || launch.stdout || launch.error || '(no output)'
+        }`,
+      );
+    }
+    return { launchMode: 'simctl' };
+  }
+}
+
+export type EnsureWdaListeningBeforeSessionCreateOptions = {
+  sessionCreateAttempt: number;
+  wdaLocalPort?: number;
+  derivedDataPath: string;
+  wdaRunnerAppPath: string;
+  wdaPrebuiltEnabled?: boolean;
+  eagerPrelaunch?: boolean;
+  phasePrefix?: string;
+  write?: (line: string) => void;
+  now?: () => Date;
+  launchRunner?: typeof launchPrebuiltWdaRunnerOnSimulator;
+  waitForPort?: typeof waitForWdaTcpPortListening;
+  probeWdaPort?: typeof probeWdaTcpPort;
+};
+
+/**
+ * When gated ({@link shouldPrelaunchWdaBeforeSessionCreate}), launch prebuilt WDA
+ * and poll until the forwarded local port is up. Throws with a stable phase token
+ * on timeout so attempt 2 does not re-enter the 90s hang watchdog with port=down.
+ */
+export function ensureWdaListeningBeforeSessionCreate(
+  udid: string,
+  options: EnsureWdaListeningBeforeSessionCreateOptions,
+): WaitForWdaTcpPortListeningResult | undefined {
+  const shouldPrelaunch = shouldPrelaunchWdaBeforeSessionCreate({
+    sessionCreateAttempt: options.sessionCreateAttempt,
+    wdaPrebuiltEnabled: options.wdaPrebuiltEnabled,
+    eagerPrelaunch: options.eagerPrelaunch,
+  });
+  const port = options.wdaLocalPort ?? IOS_WDA_DEFAULT_LOCAL_PORT;
+  const write = options.write ?? (line => console.log(line));
+  const now = options.now ?? (() => new Date());
+  const phaseBase =
+    options.phasePrefix ??
+    (options.sessionCreateAttempt > 1
+      ? 'serial:session-create-retry'
+      : 'serial:session-create');
+
+  if (!shouldPrelaunch) {
+    return undefined;
+  }
+
+  write(
+    formatIosSessionDiagnosticLine(
+      {
+        phase: `${phaseBase}:wda-prelaunch:start`,
+        udid,
+        wdaLocalPort: port,
+        sessionCreateAttempt: options.sessionCreateAttempt,
+      },
+      now,
+    ),
+  );
+
+  const launch = (options.launchRunner ?? launchPrebuiltWdaRunnerOnSimulator)(udid, {
+    derivedDataPath: options.derivedDataPath,
+    wdaRunnerAppPath: options.wdaRunnerAppPath,
+  });
+  write(
+    formatIosSessionDiagnosticLine(
+      {
+        phase: `${phaseBase}:wda-prelaunch:launch`,
+        udid,
+        launchMode: launch.launchMode,
+        derivedDataPath: options.derivedDataPath,
+      },
+      now,
+    ),
+  );
+
+  const waitForPort = options.waitForPort ?? waitForWdaTcpPortListening;
+  const wait = waitForPort({
+    port,
+    probe: options.probeWdaPort,
+  });
+
+  write(
+    formatIosSessionDiagnosticLine(
+      {
+        phase: wait.reachable
+          ? `${phaseBase}:wda-prelaunch:ready`
+          : `${phaseBase}:wda-prelaunch-timeout`,
+        udid,
+        wdaLocalPort: port,
+        wdaPortReachable: wait.reachable,
+        elapsedMs: wait.elapsedMs,
+        probes: wait.probes,
+      },
+      now,
+    ),
+  );
+
+  if (!wait.reachable) {
+    throw new Error(
+      `[e2e-ios-session] phase=${phaseBase}:wda-prelaunch-timeout udid=${udid} wdaLocalPort=${port} elapsedMs=${wait.elapsedMs} probes=${wait.probes}`,
+    );
+  }
+  return wait;
 }
 
 /** Host process name markers used when listing WDA / xcodebuild PIDs. */

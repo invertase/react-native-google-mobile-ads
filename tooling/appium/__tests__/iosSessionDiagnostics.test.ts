@@ -33,6 +33,9 @@ import {
   readXcodebuildExitState,
   resolveLastXcodebuildExit,
   shouldDeferHangRecoverForLiveHostBuild,
+  shouldPrelaunchWdaBeforeSessionCreate,
+  waitForWdaTcpPortListening,
+  ensureWdaListeningBeforeSessionCreate,
   snapshotWdaDerivedDataForHangRecover,
   stageIosSessionHangArtifacts,
   xcodebuildExitStatePath,
@@ -608,5 +611,98 @@ describe('iosSessionDiagnostics', () => {
       },
     });
     assert.equal(result.reachable, false);
+  });
+
+  test('shouldPrelaunchWdaBeforeSessionCreate gates attempt 2 prebuilt only', () => {
+    assert.equal(
+      shouldPrelaunchWdaBeforeSessionCreate({
+        sessionCreateAttempt: 1,
+        wdaPrebuiltEnabled: true,
+      }),
+      false,
+    );
+    assert.equal(
+      shouldPrelaunchWdaBeforeSessionCreate({
+        sessionCreateAttempt: 1,
+        wdaPrebuiltEnabled: true,
+        eagerPrelaunch: true,
+      }),
+      true,
+    );
+    assert.equal(
+      shouldPrelaunchWdaBeforeSessionCreate({
+        sessionCreateAttempt: 2,
+        wdaPrebuiltEnabled: true,
+      }),
+      true,
+    );
+    assert.equal(
+      shouldPrelaunchWdaBeforeSessionCreate({
+        sessionCreateAttempt: 2,
+        wdaPrebuiltEnabled: false,
+      }),
+      false,
+    );
+  });
+
+  test('waitForWdaTcpPortListening returns when probe flips reachable', () => {
+    let calls = 0;
+    const result = waitForWdaTcpPortListening({
+      port: 8_100,
+      timeoutMs: 500,
+      pollIntervalMs: 10,
+      sleep: () => undefined,
+      probe: () => {
+        calls += 1;
+        return { reachable: calls >= 2 };
+      },
+      now: (() => {
+        let t = 0;
+        return () => {
+          t += 15;
+          return t;
+        };
+      })(),
+    });
+    assert.equal(result.reachable, true);
+    assert.equal(result.probes, 2);
+  });
+
+  test('waitForWdaTcpPortListening times out when port stays down', () => {
+    const result = waitForWdaTcpPortListening({
+      port: 8_100,
+      timeoutMs: 40,
+      pollIntervalMs: 10,
+      sleep: () => undefined,
+      probe: () => ({ reachable: false }),
+      now: (() => {
+        let t = 0;
+        return () => {
+          t += 20;
+          return t;
+        };
+      })(),
+    });
+    assert.equal(result.reachable, false);
+    assert.ok(result.probes >= 1);
+  });
+
+  test('ensureWdaListeningBeforeSessionCreate fails fast with prelaunch-timeout phase', () => {
+    const lines: string[] = [];
+    assert.throws(
+      () =>
+        ensureWdaListeningBeforeSessionCreate('UDID', {
+          sessionCreateAttempt: 2,
+          derivedDataPath: '/derived',
+          wdaRunnerAppPath: '/runner.app',
+          wdaPrebuiltEnabled: true,
+          launchRunner: () => ({ launchMode: 'simctl' }),
+          waitForPort: () => ({ reachable: false, elapsedMs: 90_000, probes: 3 }),
+          write: line => lines.push(line),
+        }),
+      /phase=serial:session-create-retry:wda-prelaunch-timeout/,
+    );
+    assert.ok(lines.some(line => /wda-prelaunch:launch/.test(line)));
+    assert.ok(lines.some(line => /wda-prelaunch-timeout/.test(line)));
   });
 });

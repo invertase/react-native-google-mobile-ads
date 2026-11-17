@@ -37,6 +37,7 @@ import {
 import {
   clearXcodebuildExitState,
   DEFAULT_APPIUM_HOME,
+  ensureWdaListeningBeforeSessionCreate,
   stageIosSessionHangArtifacts,
   writeXcodebuildExitState,
   xcodebuildExitStatePath,
@@ -242,6 +243,23 @@ export async function runWdioOwned(
     })();
     const workerReady = startup.waitForWorkers();
     for (let sessionCreateAttempt = 1; sessionCreateAttempt <= sessionCreateAttempts; sessionCreateAttempt++) {
+      if (target === 'ios') {
+        try {
+          ensureWdaListeningBeforeSessionCreate(exactTarget, {
+            sessionCreateAttempt,
+            wdaLocalPort: runtime.slotResources?.automationPort ?? 8_100,
+            derivedDataPath: IOS_WDA_DERIVED_DATA_PATH,
+            wdaRunnerAppPath: IOS_WDA_RUNNER_APP_PATH,
+            wdaPrebuiltEnabled: env.RNGMA_WDA_PREBUILT === '1',
+            eagerPrelaunch: env.RNGMA_IOS_WDA_PRELAUNCH === '1',
+            write: line => console.log(line),
+          });
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          startup.recordFailure(source, err);
+          throw err;
+        }
+      }
       const childLogKey =
         sessionCreateAttempt === 1 ? 'serial' : 'serial-session-retry';
       const wdioEnv: NodeJS.ProcessEnv = {
