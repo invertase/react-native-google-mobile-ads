@@ -16,14 +16,14 @@ const {
   appPath,
   parseUdid,
   INSTALL_TIMEOUT_MS,
-  LAUNCH_TIMEOUT_MS,
+  LAUNCH_GATE_LAUNCH_TIMEOUT_MS,
   DIAGNOSTICS_TIMEOUT_MS,
   runTimed,
 } = require('../../../scripts/run-ios-app.js') as {
   appPath: string;
   parseUdid: (args: string[]) => string;
   INSTALL_TIMEOUT_MS: number;
-  LAUNCH_TIMEOUT_MS: number;
+  LAUNCH_GATE_LAUNCH_TIMEOUT_MS: number;
   DIAGNOSTICS_TIMEOUT_MS: number;
   runTimed: (
     bin: string,
@@ -90,14 +90,18 @@ test('canonical iOS installer requires the selected simulator and exact app', ()
 
 test('iOS run-ios-app time-boxes install/launch and emits durable phase markers', () => {
   assert.equal(INSTALL_TIMEOUT_MS, 90_000);
-  assert.equal(LAUNCH_TIMEOUT_MS, 90_000);
+  assert.equal(LAUNCH_GATE_LAUNCH_TIMEOUT_MS, 90_000);
   assert.equal(DIAGNOSTICS_TIMEOUT_MS, 15_000);
 
   const source = readFileSync(resolve(repositoryRoot, 'scripts/run-ios-app.js'), 'utf8');
   assert.match(source, /\[ios-run\] phase=\$\{phase\}/);
   assert.match(source, /phase=bootstatus|withPhase\('bootstatus'/);
   assert.match(source, /withPhase\('install'/);
-  assert.match(source, /withPhase\('launch'/);
+  assert.match(source, /launch-gate-launch/);
+  assert.match(source, /launch-gate-terminate/);
+  assert.match(source, /launch-gate-erase/);
+  assert.match(source, /launch-services-settle/);
+  assert.match(source, /RNGMA_INFRA_ABORT: sim-launch-wedged/);
   assert.match(source, /get_app_container/);
   assert.match(source, /listapps/);
   assert.match(source, /killSignal:\s*'SIGKILL'/);
@@ -127,9 +131,9 @@ test('iOS run-ios-app time-boxes install/launch and emits durable phase markers'
     installHeading,
     nextHeading >= 0 ? nextHeading : undefined,
   );
-  assert.match(installStep, /nick-fields\/retry@v3/);
-  assert.match(installStep, /timeout_minutes:\s*22/);
-  assert.match(installStep, /max_attempts:\s*2/);
+  assert.match(installStep, /timeout-minutes:\s*22/);
+  assert.match(installStep, /set -euo pipefail/);
+  assert.doesNotMatch(installStep, /nick-fields\/retry/);
   assert.match(installStep, /\[ios-run\] workflow step start/);
   assert.match(installStep, /\[ios-run\] workflow step end/);
 });
@@ -185,16 +189,15 @@ test('CI prebuilds WDA before the WDIO command enables the prebuilt capability',
   assert.match(workflow, /tooling\/appium\/\.appium-home\/logs/);
 });
 
-test('wdio.ios.conf hang watchdog onAbort prints session-create abort hard marker', () => {
+test('wdio.ios.conf uses observe-only hang watchdog without in-session abort', () => {
   const wdioSource = readFileSync(
     resolve(repositoryRoot, 'tooling/appium/wdio.ios.conf.ts'),
     'utf8',
   );
-  assert.match(wdioSource, /formatSessionCreateHangAbortError/);
-  assert.match(wdioSource, /onAbort:\s*abortWdioSessionCreateHang/);
-  assert.match(wdioSource, /console\.error\(marker\.message\)/);
-  // Source holds a regex literal: /\[e2e-ios-boot\] session-create abort/
-  assert.match(wdioSource, /session-create abort/);
+  assert.match(wdioSource, /startIosSessionCreateHangWatchdog/);
+  assert.doesNotMatch(wdioSource, /onAbort:\s*abortWdioSessionCreateHang/);
+  assert.doesNotMatch(wdioSource, /formatSessionCreateHangAbortError/);
+  assert.match(wdioSource, /connectionRetryCount:\s*1/);
   assert.match(wdioSource, /appium:isHeadless/);
   assert.match(wdioSource, /resolveIosIsHeadlessResolution/);
   assert.match(wdioSource, /formatIosIsHeadlessCapResolveLine/);
@@ -256,5 +259,5 @@ test('named prebuild producer and XCUITest consumer use the shared DerivedData p
 test('iOS WDA and WDIO session timeouts retain their reviewed CI budgets', () => {
   assert.equal(WDA_LAUNCH_TIMEOUT_MS, 300_000);
   assert.equal(IOS_SESSION_RETRY_TIMEOUT_MS, 330_000);
-  assert.equal(SIMULATOR_STARTUP_TIMEOUT_MS, 180_000);
+  assert.equal(SIMULATOR_STARTUP_TIMEOUT_MS, 330_000);
 });

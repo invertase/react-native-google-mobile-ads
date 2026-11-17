@@ -88,11 +88,11 @@ export const config: Options.Testrunner = {
       'appium',
       {
         command: 'appium',
+        // Cold CI Appium startup can exceed the default 30s; stay inside nested timeouts.
+        appiumStartTimeout: 120_000,
         args: {
           port: APPIUM_PORT,
           relaxedSecurity: true,
-          // Persist Appium/xcodebuild stdio under APPIUM_HOME so hang-recover /
-          // supervisor-abort staging + CI `wda_xcodebuild_logs` can upload it.
           log: appiumLogFile,
         },
         env: {

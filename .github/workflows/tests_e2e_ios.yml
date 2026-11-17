@@ -173,18 +173,14 @@ jobs:
       - name: ccache stats (before)
         run: ccache -s || true
 
-      # Cold xcodebuild ~14m; script time-boxes simctl install/launch (~90s each).
-      # One retry absorbs simctl launch ETIMEDOUT / CoreSimulator stalls on GHA.
+      # Cold xcodebuild ~14m; launch-contract gate time-boxes simctl launch/terminate.
       - name: Install example on simulator
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 22
-          retry_wait_seconds: 20
-          max_attempts: 2
-          command: |
-            echo "[ios-run] workflow step start"
-            yarn tests:ios:run --udid "$RNGMA_IOS_UDID"
-            echo "[ios-run] workflow step end"
+        timeout-minutes: 22
+        run: |
+          set -euo pipefail
+          echo "[ios-run] workflow step start image=${ImageVersion:-unknown}"
+          yarn tests:ios:run --udid "$RNGMA_IOS_UDID"
+          echo "[ios-run] workflow step end"
 
       - name: ccache stats (after)
         if: always()
@@ -197,8 +193,7 @@ jobs:
           yarn tests:appium:drivers:verify
           yarn tests:appium:ios:prebuild-wda
 
-      # In-process session-create hang recovery/abort (WDIO onAbort hard marker +
-      # serial preflight) is the retry surface — do not wrap this step in
+      # Observe-only session-create diagnostics — do not wrap this step in
       # nick-fields/retry, which would also re-run product failures.
       - name: Run Appium e2e
         # Must fit three serial shards + remount under the 90m job wall after setup.
