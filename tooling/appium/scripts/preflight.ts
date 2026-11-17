@@ -51,7 +51,10 @@ import {
   spawnOwned,
   stopAndDrain,
 } from '../src/ownedProcess.ts';
-import { isIosSessionCreateRetryProcessExitCode } from '../src/wdioSessionCreateRetry.ts';
+import {
+  APPIUM_SERVICE_START_TIMEOUT_PATTERN,
+  isIosSessionCreateRetryProcessExitCode,
+} from '../src/wdioSessionCreateRetry.ts';
 import {
   ANDROID_DEVICE_HARD_FAILURES,
   androidDeviceLogCommand,
@@ -322,6 +325,13 @@ export async function runWdioOwned(
       const activeWdio = wdio;
       wdio.onLine(line => {
         startup.recordLine(source, line);
+        if (
+          target === 'ios' &&
+          sessionCreateAttempt === 1 &&
+          APPIUM_SERVICE_START_TIMEOUT_PATTERN.test(line)
+        ) {
+          startup.expectSessionCreateRestartStop(source);
+        }
         if (target === 'android') {
           // Structured lines land on parent stdout; child log already has raw Appium.
           annotateAndroidSessionLogLine(line, { state: androidSessionAnnotateState });

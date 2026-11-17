@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import {
   IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE,
+  IOS_SESSION_CREATE_RESTART_STOP_INFRA_EXIT_CODE,
   IOS_SESSION_CREATE_RESTART_STOP_SIGTERM_EXIT_CODE,
   IOS_SESSION_CREATE_RETRY_EXIT_CODE,
   isIosSessionCreateRetryProcessExitCode,
   isIosSessionCreateSupervisedRestartStopExitCode,
+  isIosSessionCreateSupervisedRestartStopInfraExitCodeWhenArmed,
 } from '../src/wdioSessionCreateRetry.ts';
 
 describe('wdioSessionCreateRetry', () => {
@@ -21,5 +23,12 @@ describe('wdioSessionCreateRetry', () => {
     assert.ok(isIosSessionCreateRetryProcessExitCode(86));
     assert.ok(!isIosSessionCreateRetryProcessExitCode(130));
     assert.ok(!isIosSessionCreateSupervisedRestartStopExitCode(86));
+  });
+
+  test('infra exit 1 is supervised only when restart is armed', () => {
+    assert.equal(IOS_SESSION_CREATE_RESTART_STOP_INFRA_EXIT_CODE, 1);
+    assert.ok(isIosSessionCreateSupervisedRestartStopInfraExitCodeWhenArmed(1, true));
+    assert.ok(!isIosSessionCreateSupervisedRestartStopInfraExitCodeWhenArmed(1, false));
+    assert.ok(!isIosSessionCreateSupervisedRestartStopInfraExitCodeWhenArmed(86, true));
   });
 });

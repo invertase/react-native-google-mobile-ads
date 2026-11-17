@@ -16,6 +16,17 @@ export const IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE = 130;
 /** Same supervised stop path when the child receives SIGTERM (`128 + 15`). */
 export const IOS_SESSION_CREATE_RESTART_STOP_SIGTERM_EXIT_CODE = 143;
 
+/**
+ * WDIO child exit when Appium service start times out or `onComplete` throws with
+ * zero spec failures — only treated as a supervised restart when
+ * startup {@link StartupSupervisor.expectSessionCreateRestartStop} is armed (same gate as 130/143).
+ */
+export const IOS_SESSION_CREATE_RESTART_STOP_INFRA_EXIT_CODE = 1;
+
+/** @wdio/appium-service when Appium never binds its listen port in time. */
+export const APPIUM_SERVICE_START_TIMEOUT_PATTERN =
+  /Timeout:\s*Appium did not start within expected time/i;
+
 export function isIosSessionCreateRetryProcessExitCode(code: number): boolean {
   return code === IOS_SESSION_CREATE_RETRY_EXIT_CODE;
 }
@@ -25,6 +36,13 @@ export function isIosSessionCreateSupervisedRestartStopExitCode(code: number): b
     code === IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE ||
     code === IOS_SESSION_CREATE_RESTART_STOP_SIGTERM_EXIT_CODE
   );
+}
+
+export function isIosSessionCreateSupervisedRestartStopInfraExitCodeWhenArmed(
+  code: number,
+  restartStopArmed: boolean,
+): boolean {
+  return restartStopArmed && code === IOS_SESSION_CREATE_RESTART_STOP_INFRA_EXIT_CODE;
 }
 
 /**

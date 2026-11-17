@@ -616,6 +616,32 @@ test('unexpected exit 143 during worker startup still aborts', async () => {
   assert.equal(supervisor.abortCount, 1);
 });
 
+test('supervised session-create infra exit 1 is ignored when restart is armed', async () => {
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.expectSessionCreateRestartStop('serial-ios');
+  supervisor.recordProcessExit('serial-ios', 1);
+  assert.equal(supervisor.abortCount, 0);
+  assert.ok(supervisor.consumeSessionCreateRestartStop('serial-ios', 1));
+  assert.equal(supervisor.consumeSessionCreateRestartStop('serial-ios', 1), false);
+  supervisor.rewindWorkerSessionBarrier('serial-ios');
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.recordLine('serial-ios', 'Appium session created successfully');
+  await workers;
+  assert.equal(supervisor.phase, 'app');
+});
+
+test('unexpected exit 1 during worker startup still aborts', async () => {
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordProcessExit('serial-ios', 1);
+  await assert.rejects(workers, /exited during worker startup with code 1/);
+  assert.equal(supervisor.abortCount, 1);
+});
+
 test('diagnostic tail exit is ignored but failure to start aborts startup', async () => {
   const exited = new StartupSupervisor(['child'], new FakeClock());
   await metroReady(exited);

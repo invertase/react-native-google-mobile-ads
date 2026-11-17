@@ -5,6 +5,7 @@ import { formatAndroidWorkerTimeoutHint } from './androidSessionDiagnostics.ts';
 import {
   IOS_SESSION_CREATE_RETRY_EXIT_CODE,
   isIosSessionCreateSupervisedRestartStopExitCode,
+  isIosSessionCreateSupervisedRestartStopInfraExitCodeWhenArmed,
 } from './wdioSessionCreateRetry.ts';
 
 export const STARTUP_READY_MARKER = '[e2e-startup-ready]';
@@ -317,7 +318,13 @@ export class StartupSupervisor {
    * after a supervised hang-recover `wdio.stop()` (exit 130 or 143).
    */
   consumeSessionCreateRestartStop(source: string, exitCode: number): boolean {
-    if (!isIosSessionCreateSupervisedRestartStopExitCode(exitCode)) {
+    const restartStopArmed =
+      this.sessionCreateRestartStopPending.has(source) ||
+      this.sessionCreateRestartStopAcknowledged.has(source);
+    if (
+      !isIosSessionCreateSupervisedRestartStopExitCode(exitCode) &&
+      !isIosSessionCreateSupervisedRestartStopInfraExitCodeWhenArmed(exitCode, restartStopArmed)
+    ) {
       return false;
     }
     if (this.sessionCreateRestartStopAcknowledged.has(source)) {
@@ -343,10 +350,13 @@ export class StartupSupervisor {
     if (code === IOS_SESSION_CREATE_RETRY_EXIT_CODE) {
       return;
     }
+    const restartStopArmed =
+      this.sessionCreateRestartStopPending.has(source) ||
+      this.sessionCreateRestartStopAcknowledged.has(source);
     if (
-      isIosSessionCreateSupervisedRestartStopExitCode(code) &&
-      (this.sessionCreateRestartStopPending.has(source) ||
-        this.sessionCreateRestartStopAcknowledged.has(source))
+      restartStopArmed &&
+      (isIosSessionCreateSupervisedRestartStopExitCode(code) ||
+        isIosSessionCreateSupervisedRestartStopInfraExitCodeWhenArmed(code, restartStopArmed))
     ) {
       this.sessionCreateRestartStopPending.delete(source);
       this.sessionCreateRestartStopAcknowledged.add(source);
