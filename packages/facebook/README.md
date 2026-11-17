@@ -70,7 +70,7 @@ import {
 | Platform | Coordinate | Version pin |
 | -------- | ---------- | ----------- |
 | Android | `com.google.ads.mediation:facebook` | `6.22.0.1` |
-| iOS | CocoaPods `GoogleMobileAdsMediationFacebook` | `6.22.0.0` |
+| iOS | CocoaPods `GoogleMobileAdsMediationFacebook` | `6.22.1.0` |
 
 Citations (verify at upgrade time):
 
@@ -80,7 +80,7 @@ Citations (verify at upgrade time):
 
 Core continues to own `play-services-ads` / `Google-Mobile-Ads-SDK`. This package does not re-pin the GMA SDK.
 
-Platform floors align with core: iOS **15.1** and Android minSdk **24**. The Meta Audience Network mediation adapter `6.22.0.0` requires iOS 15.0, below the React Native-driven product floor.
+Platform floors align with core: iOS **15.1** and Android minSdk **24**. The Meta Audience Network mediation adapter `6.22.1.0` requires iOS 15.0, below the React Native-driven product floor.
 
 > Google’s mediation guide permits Android minSdk 23 upstream; this product advertises 24 to match core.
 
@@ -113,7 +113,7 @@ Checklist when only Meta mediation crashes at launch (AppLovin / Unity OK):
 
 1. AdMob / GAM `GADApplicationIdentifier` via the **core** Expo plugin (missing AdMob App ID is a separate start crash).
 2. `NSUserTrackingUsageDescription` when using ATT (`userTrackingUsageDescription` on the core plugin).
-3. Use this package’s pin (`6.22.0.0`) instead of an older `expo-build-properties` Facebook mediation pod.
+3. Use this package’s pin (`6.22.1.0`) instead of an older `expo-build-properties` Facebook mediation pod.
 4. Retest on a shipping iOS release (not a beta), then escalate to Meta / Google’s Meta adapter with the crash report if it still aborts.
 
 ## Out of scope

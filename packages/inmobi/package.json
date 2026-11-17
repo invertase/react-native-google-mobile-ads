@@ -68,14 +68,14 @@
   },
   "sdkVersions": {
     "ios": {
-      "googleMobileAdsMediation": "11.4.1.0"
+      "googleMobileAdsMediation": "11.5.0.0"
     },
     "android": {
       "minSdk": 24,
       "targetSdk": 36,
       "compileSdk": 36,
       "buildTools": "36.0.0",
-      "googleMobileAdsMediation": "11.4.1.2"
+      "googleMobileAdsMediation": "11.5.1.0"
     }
   },
   "react-native-builder-bob": {
