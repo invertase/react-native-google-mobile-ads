@@ -1,0 +1,1 @@
+-keep class io.invertase.googlemobileads.securesignals.liveramp.LiveRampAtsRtbAdapter { *; }

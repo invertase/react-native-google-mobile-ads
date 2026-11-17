@@ -1,0 +1,62 @@
+import groovy.json.JsonSlurper
+
+plugins {
+  id "com.android.library" version "8.8.2"
+}
+
+def packageJson = new JsonSlurper().parseText(file("${projectDir}/../package.json").text)
+def sdkVersions = packageJson.sdkVersions.android
+def secureSignals = packageJson.secureSignals
+
+android {
+  namespace "io.invertase.googlemobileads.securesignals.liveramp"
+
+  compileSdkVersion sdkVersions.compileSdk as Integer
+
+  defaultConfig {
+    minSdkVersion sdkVersions.minSdk as Integer
+    targetSdkVersion sdkVersions.targetSdk as Integer
+    buildConfigField "String", "LR_ATS_ADAPTER_CLASS", "\"${secureSignals.androidAdapterClassName}\""
+    buildConfigField "String", "LR_ATS_PACKAGE_VERSION", "\"${packageJson.version}\""
+    buildConfigField "String", "LR_ATS_ENVELOPE_API_VERSION", "\"${secureSignals.envelopeApiVersion}\""
+    consumerProguardFiles "consumer-rules.pro"
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  sourceSets {
+    main {
+      java.srcDirs = ["src/main/java"]
+    }
+    test {
+      java.srcDirs = ["src/test/java"]
+    }
+  }
+
+  testOptions {
+    unitTests.returnDefaultValues = true
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+  maven {
+    url("$projectDir/../../../RNGoogleMobileAdsExample/node_modules/react-native/android")
+  }
+}
+
+dependencies {
+  compileOnly "com.facebook.react:react-android:0.86.0"
+  // GMA SDK types (RtbAdapter, MobileAds) are provided by react-native-google-mobile-ads at app link time.
+  compileOnly "com.google.android.gms:play-services-ads:24.8.0"
+  testImplementation "junit:junit:4.13.2"
+  testImplementation "org.json:json:20240303"
+}

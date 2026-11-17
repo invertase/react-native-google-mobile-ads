@@ -1,0 +1,22 @@
+{
+  "envelopes": [
+    {
+      "type": 19,
+      "source": "envelopeLiveramp",
+      "value": "fixture_envelope_type_19_redacted",
+      "err": null
+    },
+    {
+      "type": 25,
+      "source": "pairIds",
+      "value": "fixture_envelope_type_25_redacted",
+      "err": null
+    },
+    {
+      "type": 27,
+      "source": "envelopeLiverampRTB",
+      "value": "fixture_envelope_type_27_redacted",
+      "err": null
+    }
+  ]
+}
