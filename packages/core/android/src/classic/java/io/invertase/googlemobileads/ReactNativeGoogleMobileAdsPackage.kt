@@ -142,7 +142,7 @@ class ReactNativeGoogleMobileAdsPackage : BaseReactPackage() {
       moduleInfos[ReactNativeGoogleMobileAdsPictureInPictureModule.NAME] =
         ReactModuleInfo(
           ReactNativeGoogleMobileAdsPictureInPictureModule.NAME,
-          ReactNativeGoogleMobileAdsPictureInPictureModule.NAME,
+          ReactNativeGoogleMobileAdsPictureInPictureModule::class.java.name,
           false,
           false,
           false,

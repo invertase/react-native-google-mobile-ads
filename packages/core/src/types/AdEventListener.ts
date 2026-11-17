@@ -33,16 +33,15 @@ import { RewardedAdReward } from './RewardedAdReward';
 export type AdEventPayload<
   T extends AdEventType | RewardedAdEventType | GAMAdEventType | PictureInPictureAdEventType =
     never,
-> =
-  T extends AdEventType.ERROR
-    ? Error & AdErrorPayload
-    : T extends AdEventType.PAID
-      ? PaidEvent
-      : T extends RewardedAdEventType
-        ? RewardedAdReward
-        : T extends GAMAdEventType
-          ? AppEvent
-          : undefined;
+> = T extends AdEventType.ERROR
+  ? Error & AdErrorPayload
+  : T extends AdEventType.PAID
+    ? PaidEvent
+    : T extends RewardedAdEventType
+      ? RewardedAdReward
+      : T extends GAMAdEventType
+        ? AppEvent
+        : undefined;
 
 export type AdEventListener<
   T extends AdEventType | RewardedAdEventType | GAMAdEventType | PictureInPictureAdEventType =

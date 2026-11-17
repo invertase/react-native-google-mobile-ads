@@ -1,8 +1,8 @@
 package io.invertase.googlemobileads
 
-import com.facebook.react.bridge.ReactMethod
+import com.facebook.fbreact.specs.NativePictureInPictureModuleSpec
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -24,16 +24,11 @@ class ReactNativeGoogleMobileAdsPictureInPictureModuleTest {
   }
 
   @Test
-  fun exposesPictureInPictureTurboMethods() {
-    val load =
-      ReactNativeGoogleMobileAdsPictureInPictureModule::class
-        .java
-        .getMethod(
-          "pictureInPictureLoad",
-          Int::class.java,
-          String::class.java,
-          com.facebook.react.bridge.ReadableMap::class.java,
-        ).getAnnotation(ReactMethod::class.java)
-    assertNotNull(load)
+  fun extendsNativePictureInPictureModuleSpec() {
+    assertTrue(
+      NativePictureInPictureModuleSpec::class.java.isAssignableFrom(
+        ReactNativeGoogleMobileAdsPictureInPictureModule::class.java,
+      ),
+    )
   }
 }

@@ -19,11 +19,7 @@ import { TurboModule, TurboModuleRegistry } from 'react-native';
 import { UnsafeObject } from 'react-native/Libraries/Types/CodegenTypes';
 
 export interface Spec extends TurboModule {
-  pictureInPictureLoad(
-    requestId: number,
-    adUnitId: string,
-    requestOptions: UnsafeObject,
-  ): void;
+  pictureInPictureLoad(requestId: number, adUnitId: string, requestOptions: UnsafeObject): void;
   pictureInPictureShow(
     requestId: number,
     adUnitId: string,

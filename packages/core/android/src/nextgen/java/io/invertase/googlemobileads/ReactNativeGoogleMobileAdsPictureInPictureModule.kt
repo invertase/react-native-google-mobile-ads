@@ -1,11 +1,12 @@
 package io.invertase.googlemobileads
 
+import com.facebook.fbreact.specs.NativePictureInPictureModuleSpec
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
+import com.facebook.react.module.annotations.ReactModule
 import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback
 import com.google.android.libraries.ads.mobile.sdk.common.AdValue
 import com.google.android.libraries.ads.mobile.sdk.common.FullScreenContentError
@@ -18,22 +19,25 @@ import com.google.android.libraries.ads.mobile.sdk.pip.PictureInPictureAdPositio
 import com.google.android.libraries.ads.mobile.sdk.pip.PictureInPictureAdPresentationScope
 import io.invertase.googlemobileads.common.ReactNativeModule
 
+@ReactModule(ReactNativeGoogleMobileAdsPictureInPictureModule.NAME)
 class ReactNativeGoogleMobileAdsPictureInPictureModule(
-  reactContext: ReactApplicationContext?,
-) : ReactNativeModule(reactContext, NAME) {
+  reactContext: ReactApplicationContext,
+) : NativePictureInPictureModuleSpec(reactContext) {
   private val slots = FullscreenRequestSlotTracker<PictureInPictureAd>()
 
-  @ReactMethod
-  fun pictureInPictureLoad(
-    requestId: Int,
+  override fun getName() = NAME
+
+  override fun pictureInPictureLoad(
+    requestId: Double,
     adUnitId: String,
     adRequestOptions: ReadableMap,
   ) {
+    val requestIdInt = requestId.toInt()
     val activity = reactApplicationContext.currentActivity
     if (activity == null) {
       sendAdEvent(
         ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
-        requestId,
+        requestIdInt,
         adUnitId,
         ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(
           "null-activity",
@@ -44,18 +48,18 @@ class ReactNativeGoogleMobileAdsPictureInPictureModule(
       return
     }
 
-    val generation = slots.beginLoad(requestId)
+    val generation = slots.beginLoad(requestIdInt)
     NextGenMobileAdsGate.runWhenInitialized(
       onFailure = {
         sendAdEvent(
           ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
-          requestId,
+          requestIdInt,
           adUnitId,
           ReactNativeGoogleMobileAdsCommon.buildAdErrorMap(it.code, it.message, "load"),
         )
       },
     ) {
-      if (slots.generation(requestId) != generation) return@runWhenInitialized
+      if (slots.generation(requestIdInt) != generation) return@runWhenInitialized
       val request =
         ReactNativeGoogleMobileAdsCommon.buildPictureInPictureAdRequest(adUnitId, adRequestOptions)
       activity.runOnUiThread {
@@ -63,11 +67,11 @@ class ReactNativeGoogleMobileAdsPictureInPictureModule(
           request,
           object : AdLoadCallback<PictureInPictureAd> {
             override fun onAdLoaded(ad: PictureInPictureAd) {
-              if (!slots.tryCommit(requestId, generation, ad)) {
+              if (!slots.tryCommit(requestIdInt, generation, ad)) {
                 ad.destroy()
                 return
               }
-              wireCallbacks(requestId, adUnitId, ad)
+              wireCallbacks(requestIdInt, adUnitId, ad)
               val responseInfo = ad.getResponseInfo()
               val data =
                 if (responseInfo == null) {
@@ -82,17 +86,17 @@ class ReactNativeGoogleMobileAdsPictureInPictureModule(
                 }
               sendAdEvent(
                 ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_LOADED,
-                requestId,
+                requestIdInt,
                 adUnitId,
                 data = data,
               )
             }
 
             override fun onAdFailedToLoad(adError: LoadAdError) {
-              if (slots.generation(requestId) != generation) return
+              if (slots.generation(requestIdInt) != generation) return
               sendAdEvent(
                 ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_ERROR,
-                requestId,
+                requestIdInt,
                 adUnitId,
                 ReactNativeGoogleMobileAdsCommon.loadAdErrorToMap(adError),
               )
@@ -103,16 +107,16 @@ class ReactNativeGoogleMobileAdsPictureInPictureModule(
     }
   }
 
-  @ReactMethod
-  fun pictureInPictureShow(
-    requestId: Int,
+  override fun pictureInPictureShow(
+    requestId: Double,
     adUnitId: String,
     showOptions: ReadableMap?,
     promise: Promise,
   ) {
+    val requestIdInt = requestId.toInt()
     val activity = reactApplicationContext.currentActivity
     if (activity == null) {
-      rejectPromiseWithCodeAndMessage(
+      ReactNativeModule.rejectPromiseWithCodeAndMessage(
         promise,
         "null-activity",
         "Ad attempted to show but the current Activity was null.",
@@ -121,9 +125,9 @@ class ReactNativeGoogleMobileAdsPictureInPictureModule(
     }
 
     activity.runOnUiThread {
-      val ad = slots.get(requestId)
+      val ad = slots.get(requestIdInt)
       if (ad == null) {
-        rejectPromiseWithCodeAndMessage(
+        ReactNativeModule.rejectPromiseWithCodeAndMessage(
           promise,
           "not-ready",
           "Ad attempted to show but was not ready.",
@@ -134,23 +138,27 @@ class ReactNativeGoogleMobileAdsPictureInPictureModule(
         ad.show(activity, buildShowOptions(showOptions))
         promise.resolve(null)
       } catch (e: Exception) {
-        rejectPromiseWithCodeAndMessage(promise, "show-failed", e.message ?: "show-failed")
+        ReactNativeModule.rejectPromiseWithCodeAndMessage(
+          promise,
+          "show-failed",
+          e.message ?: "show-failed",
+        )
       }
     }
   }
 
-  @ReactMethod
-  fun pictureInPictureHide(requestId: Int) {
+  override fun pictureInPictureHide(requestId: Double) {
+    val requestIdInt = requestId.toInt()
     val activity = reactApplicationContext.currentActivity ?: return
     activity.runOnUiThread {
-      slots.get(requestId)?.hide()
+      slots.get(requestIdInt)?.hide()
     }
   }
 
-  @ReactMethod
-  fun pictureInPictureDestroy(requestId: Int) {
-    val ad = slots.get(requestId)
-    slots.destroy(requestId)
+  override fun pictureInPictureDestroy(requestId: Double) {
+    val requestIdInt = requestId.toInt()
+    val ad = slots.get(requestIdInt)
+    slots.destroy(requestIdInt)
     ad?.destroy()
   }
 

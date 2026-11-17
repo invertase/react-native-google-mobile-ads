@@ -37,10 +37,11 @@ import { GAMAdEventType } from '../GAMAdEventType';
 import type { AppEvent } from '../types/AppEvent';
 import type { PaidEvent } from '../types/PaidEventListener';
 
+/** @internal */
 type PipEventType = AdEventType | PictureInPictureAdEventType | GAMAdEventType;
 
 /**
- * Picture-in-picture (PiP) ads — **Preview (Google open beta)** on iOS and Android Next-Gen.
+ * Picture-in-picture (PiP) ads - **Preview (Google open beta)** on iOS and Android Next-Gen.
  *
  * Classic Android builds report `getAdCapabilities().pictureInPicture === 'unavailable'`;
  * calls on that backend fail with a structured unavailable error from native code.
@@ -48,7 +49,8 @@ type PipEventType = AdEventType | PictureInPictureAdEventType | GAMAdEventType;
  * Load before show, listen for {@link AdEventType.LOADED}, then {@link show}. Use {@link hide}
  * to remove the floating window without destroying inventory; call {@link destroy} when finished.
  *
- * @preview Google Mobile Ads open beta — upstream APIs and allowlisting may change.
+ * @remarks
+ * Google Mobile Ads open beta - upstream APIs and allowlisting may change.
  */
 export class PictureInPictureAd {
   protected _requestId: number;
@@ -64,11 +66,7 @@ export class PictureInPictureAd {
   protected _nativeListener: EmitterSubscription;
   protected _responseInfo: ResponseInfo | null;
 
-  protected constructor(
-    requestId: number,
-    adUnitId: string,
-    requestOptions: RequestOptions,
-  ) {
+  protected constructor(requestId: number, adUnitId: string, requestOptions: RequestOptions) {
     this._requestId = requestId;
     this._adUnitId = adUnitId;
     this._requestOptions = requestOptions;
@@ -95,7 +93,7 @@ export class PictureInPictureAd {
   }
 
   /**
-   * Creates a PictureInPictureAd instance (Preview — Google open beta).
+   * Creates a PictureInPictureAd instance (Preview - Google open beta).
    */
   static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions) {
     if (!isString(adUnitId)) {
@@ -274,7 +272,9 @@ export class PictureInPictureAd {
       );
     }
     if (!isFunction(listener)) {
-      throw new Error("PictureInPictureAd.addAdEventListener(_, *) 'listener' expected a function.");
+      throw new Error(
+        "PictureInPictureAd.addAdEventListener(_, *) 'listener' expected a function.",
+      );
     }
 
     const id = this._adEventListenerId++;
