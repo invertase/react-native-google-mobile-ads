@@ -13,6 +13,7 @@ module.exports = {
     '<rootDir>/packages/mintegral/lib/',
     '<rootDir>/packages/inmobi/lib/',
     '<rootDir>/packages/yandex/lib/',
+    '<rootDir>/packages/liveramp-ats/lib/',
   ],
 
   setupFiles: ['./jest.setup.ts'],
