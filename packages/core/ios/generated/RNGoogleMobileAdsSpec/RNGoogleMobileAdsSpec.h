@@ -388,6 +388,40 @@ namespace facebook::react {
   };
 } // namespace facebook::react
 
+@protocol NativePictureInPictureModuleSpec <RCTBridgeModule, RCTTurboModule>
+
+- (void)pictureInPictureLoad:(double)requestId
+                    adUnitId:(NSString *)adUnitId
+              requestOptions:(NSDictionary *)requestOptions;
+- (void)pictureInPictureShow:(double)requestId
+                    adUnitId:(NSString *)adUnitId
+                 showOptions:(NSDictionary *)showOptions
+                     resolve:(RCTPromiseResolveBlock)resolve
+                      reject:(RCTPromiseRejectBlock)reject;
+- (void)pictureInPictureHide:(double)requestId;
+- (void)pictureInPictureDestroy:(double)requestId;
+
+@end
+
+@interface NativePictureInPictureModuleSpecBase : NSObject {
+@protected
+facebook::react::EventEmitterCallback _eventEmitterCallback;
+}
+- (void)setEventEmitterCallback:(EventEmitterCallbackWrapper *)eventEmitterCallbackWrapper;
+
+
+@end
+
+namespace facebook::react {
+  /**
+   * ObjC++ class for module 'NativePictureInPictureModule'
+   */
+  class JSI_EXPORT NativePictureInPictureModuleSpecJSI : public ObjCTurboModule {
+  public:
+    NativePictureInPictureModuleSpecJSI(const ObjCTurboModule::InitParams &params);
+  };
+} // namespace facebook::react
+
 @protocol NativeRewardedInterstitialModuleSpec <RCTBridgeModule, RCTTurboModule>
 
 - (void)rewardedInterstitialLoad:(double)requestId
@@ -486,6 +520,7 @@ inline JS::NativeGoogleMobileAdsModule::Constants::Builder::Builder(const Input 
 inline JS::NativeGoogleMobileAdsModule::Constants::Builder::Builder(Constants i) : _factory(^{
   return i.unsafeRawValue();
 }) {}
+
 
 
 

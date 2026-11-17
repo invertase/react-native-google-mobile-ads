@@ -1585,6 +1585,58 @@ private:
 
 
 template <typename T>
+class JSI_EXPORT NativePictureInPictureModuleCxxSpec : public TurboModule {
+public:
+  static constexpr std::string_view kModuleName = "RNGoogleMobileAdsPictureInPictureModule";
+
+protected:
+  NativePictureInPictureModuleCxxSpec(std::shared_ptr<CallInvoker> jsInvoker) : TurboModule(std::string{NativePictureInPictureModuleCxxSpec::kModuleName}, jsInvoker) {
+    methodMap_["pictureInPictureLoad"] = MethodMetadata {.argCount = 3, .invoker = __pictureInPictureLoad};
+    methodMap_["pictureInPictureShow"] = MethodMetadata {.argCount = 3, .invoker = __pictureInPictureShow};
+    methodMap_["pictureInPictureHide"] = MethodMetadata {.argCount = 1, .invoker = __pictureInPictureHide};
+    methodMap_["pictureInPictureDestroy"] = MethodMetadata {.argCount = 1, .invoker = __pictureInPictureDestroy};
+  }
+  
+private:
+  static jsi::Value __pictureInPictureLoad(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::pictureInPictureLoad) == 4,
+      "Expected pictureInPictureLoad(...) to have 4 parameters");
+    bridging::callFromJs<void>(rt, &T::pictureInPictureLoad,  static_cast<NativePictureInPictureModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber(),
+      count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asString(rt),
+      count <= 2 ? throw jsi::JSError(rt, "Expected argument in position 2 to be passed") : args[2].asObject(rt));return jsi::Value::undefined();
+  }
+
+  static jsi::Value __pictureInPictureShow(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::pictureInPictureShow) == 4,
+      "Expected pictureInPictureShow(...) to have 4 parameters");
+    return bridging::callFromJs<jsi::Value>(rt, &T::pictureInPictureShow,  static_cast<NativePictureInPictureModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber(),
+      count <= 1 ? throw jsi::JSError(rt, "Expected argument in position 1 to be passed") : args[1].asString(rt),
+      count <= 2 || args[2].isUndefined() ? std::nullopt : std::make_optional(args[2].asObject(rt)));
+  }
+
+  static jsi::Value __pictureInPictureHide(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::pictureInPictureHide) == 2,
+      "Expected pictureInPictureHide(...) to have 2 parameters");
+    bridging::callFromJs<void>(rt, &T::pictureInPictureHide,  static_cast<NativePictureInPictureModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber());return jsi::Value::undefined();
+  }
+
+  static jsi::Value __pictureInPictureDestroy(jsi::Runtime &rt, TurboModule &turboModule, const jsi::Value* args, size_t count) {
+    static_assert(
+      bridging::getParameterCount(&T::pictureInPictureDestroy) == 2,
+      "Expected pictureInPictureDestroy(...) to have 2 parameters");
+    bridging::callFromJs<void>(rt, &T::pictureInPictureDestroy,  static_cast<NativePictureInPictureModuleCxxSpec*>(&turboModule)->jsInvoker_, static_cast<T*>(&turboModule),
+      count <= 0 ? throw jsi::JSError(rt, "Expected argument in position 0 to be passed") : args[0].asNumber());return jsi::Value::undefined();
+  }
+};
+
+
+template <typename T>
 class JSI_EXPORT NativeRewardedInterstitialModuleCxxSpec : public TurboModule {
 public:
   static constexpr std::string_view kModuleName = "RNGoogleMobileAdsRewardedInterstitialModule";

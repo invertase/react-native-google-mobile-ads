@@ -66,4 +66,9 @@ export type AdCapabilities = {
    */
   maxManagedPoolAds: number | null;
   mediation: 'unknown' | 'known-enabled' | 'known-disabled';
+  /**
+   * Picture-in-picture ads (Google open beta). `experimental` on iOS and Android
+   * Next-Gen; `unavailable` on Android classic.
+   */
+  pictureInPicture: CapabilitySupport;
 };

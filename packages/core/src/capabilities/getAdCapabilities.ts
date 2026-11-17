@@ -99,5 +99,6 @@ export function getAdCapabilities(): AdCapabilities {
     poolResponseInfoPeek: isIos || isAndroidNextGen ? supported : unavailable,
     maxManagedPoolAds: null,
     mediation: 'unknown',
+    pictureInPicture: isAndroidNextGen || isIos ? experimental : unavailable,
   };
 }

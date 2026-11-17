@@ -73,6 +73,14 @@ public:
 };
 
 /**
+ * JNI C++ class for module 'NativePictureInPictureModule'
+ */
+class JSI_EXPORT NativePictureInPictureModuleSpecJSI : public JavaTurboModule {
+public:
+  NativePictureInPictureModuleSpecJSI(const JavaTurboModule::InitParams &params);
+};
+
+/**
  * JNI C++ class for module 'NativeRewardedInterstitialModule'
  */
 class JSI_EXPORT NativeRewardedInterstitialModuleSpecJSI : public JavaTurboModule {

@@ -28,6 +28,8 @@ public class ReactNativeGoogleMobileAdsEvent implements NativeEvent {
   public static final String GOOGLE_MOBILE_ADS_EVENT_REWARDED = "google_mobile_ads_rewarded_event";
   public static final String GOOGLE_MOBILE_ADS_EVENT_REWARDED_INTERSTITIAL =
       "google_mobile_ads_rewarded_interstitial_event";
+  public static final String GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE =
+      "google_mobile_ads_picture_in_picture_event";
 
   public static final String GOOGLE_MOBILE_ADS_EVENT_LOADED = "loaded";
   public static final String GOOGLE_MOBILE_ADS_EVENT_ERROR = "error";
@@ -36,6 +38,11 @@ public class ReactNativeGoogleMobileAdsEvent implements NativeEvent {
   public static final String GOOGLE_MOBILE_ADS_EVENT_CLICKED = "clicked";
   public static final String GOOGLE_MOBILE_ADS_EVENT_CLOSED = "closed";
   public static final String GOOGLE_MOBILE_ADS_EVENT_IMPRESSION = "impression";
+  public static final String GOOGLE_MOBILE_ADS_EVENT_SHOWN = "shown";
+  public static final String GOOGLE_MOBILE_ADS_EVENT_HIDDEN = "hidden";
+  public static final String GOOGLE_MOBILE_ADS_EVENT_WILL_PRESENT_SCREEN = "will_present_screen";
+  public static final String GOOGLE_MOBILE_ADS_EVENT_WILL_DISMISS_SCREEN = "will_dismiss_screen";
+  public static final String GOOGLE_MOBILE_ADS_EVENT_DID_DISMISS_SCREEN = "did_dismiss_screen";
   public static final String GOOGLE_MOBILE_ADS_EVENT_APP_EVENT = "app_event";
 
   public static final String GOOGLE_MOBILE_ADS_EVENT_REWARDED_LOADED = "rewarded_loaded";

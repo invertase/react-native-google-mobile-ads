@@ -107,6 +107,8 @@ export { AppOpenAd } from './ads/AppOpenAd';
 export { InterstitialAd } from './ads/InterstitialAd';
 export { RewardedAd } from './ads/RewardedAd';
 export { RewardedInterstitialAd } from './ads/RewardedInterstitialAd';
+export { PictureInPictureAd } from './ads/PictureInPictureAd';
+export { PictureInPictureAdEventType } from './PictureInPictureAdEventType';
 export { BannerAd } from './ads/BannerAd';
 export type { MobileAd } from './ads/MobileAd';
 export { NativeAd } from './ads/native-ad/NativeAd';

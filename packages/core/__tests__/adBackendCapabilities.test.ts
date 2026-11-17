@@ -29,6 +29,7 @@ describe('getAdCapabilities backend constants', () => {
     expect(caps.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]).toBe('experimental');
     expect(caps.poolResponseInfoPeek).toBe('supported');
     expect(caps.displayPreload).toBe('emulated');
+    expect(caps.pictureInPicture).toBe('experimental');
   });
 
   it('reports android-classic capability bits', () => {
@@ -38,6 +39,7 @@ describe('getAdCapabilities backend constants', () => {
     expect(caps.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]).toBe('unavailable');
     expect(caps.poolResponseInfoPeek).toBe('unavailable');
     expect(caps.displayPreload).toBe('emulated');
+    expect(caps.pictureInPicture).toBe('unavailable');
   });
 
   it('reports android-next-gen capability bits', () => {
@@ -50,5 +52,6 @@ describe('getAdCapabilities backend constants', () => {
     expect(caps.fullscreenPreloadFormats[AdFormat.REWARDED_INTERSTITIAL]).toBe('unavailable');
     expect(caps.poolResponseInfoPeek).toBe('supported');
     expect(caps.displayPreload).toBe('emulated');
+    expect(caps.pictureInPicture).toBe('experimental');
   });
 });

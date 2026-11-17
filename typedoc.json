@@ -60,6 +60,7 @@
       "NativeAssetProps",
       "NativeMediaContent",
       "NativeMediaViewProps",
+      "PipEventType",
       "PooledAdBase",
       "UseAdPoolResultBase",
       "UseFullScreenAdOutcome",
