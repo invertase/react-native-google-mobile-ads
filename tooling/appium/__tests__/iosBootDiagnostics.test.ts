@@ -532,6 +532,11 @@ describe('iosBootDiagnostics', () => {
       intervalMs: 1000,
       recoverAfterTicks: 2,
       abortAfterTicks: 3,
+      // Generic (non-prebuilt) hang-recover path — pin explicitly so this
+      // test stays hermetic regardless of whether a real `.wda-derived`
+      // artifact happens to exist on the machine running it (FLAKE-005c's
+      // prebuilt-mode recover gate only applies when this is true).
+      prebuiltWdaArtifactPresent: false,
       lastXcodebuildExitRef,
       write: line => lines.push(line),
       // Host pgrep must report clear PIDs — timedOut pgrep counts as live and
@@ -818,7 +823,11 @@ describe('iosBootDiagnostics', () => {
     assert.ok(lines.some(line => /hang-abort\b/.test(line)));
   });
 
-  test('FLAKE-005: watchdog fail-fast abort when prebuilt WDA + live xcodebuild', () => {
+  test('FLAKE-005: watchdog fail-fast abort when prebuilt WDA + genuinely rebuilding xcodebuild', () => {
+    // A genuine `build` / `build-for-testing` action while prebuilt mode is
+    // selected means Appium ignored `usePrebuiltWDA` (or the caps never
+    // applied) and is rebuilding from scratch — still a real anomaly that
+    // must fail fast rather than wait out the supervisor ceiling.
     const lines: string[] = [];
     const callbacks: Array<() => void> = [];
     const aborts: Error[] = [];
@@ -833,7 +842,11 @@ describe('iosBootDiagnostics', () => {
       write: line => lines.push(line),
       execCapture: (bin, args) => {
         if (bin === 'pgrep' && (args[1] === 'xcodebuild' || args.includes('xcodebuild'))) {
-          return { stdout: '66564 /usr/bin/xcodebuild test\n', stderr: '', status: 0 };
+          return {
+            stdout: '66564 /usr/bin/xcodebuild build-for-testing -scheme WebDriverAgentRunner\n',
+            stderr: '',
+            status: 0,
+          };
         }
         if (bin === 'pgrep') {
           return { stdout: '', stderr: '', status: 1 };
@@ -862,18 +875,98 @@ describe('iosBootDiagnostics', () => {
     assert.doesNotMatch(lines.join('\n'), /abortDeferred:.*host build still live/);
   });
 
-  test('FLAKE-005b: a single transient simctl-list ETIMEDOUT must not reset the Booted-hang streak', () => {
+  test('FLAKE-005c: prebuilt WDA launch-only xcodebuild (test-without-building) must defer, not abort/recover', () => {
+    // #939 evidence (run 43937945153): hostWdaPids=(none), POST /session
+    // hangs, hang-abort fires at tick 3 — while hostXcodebuildPids is live.
+    // `usePrebuiltWDA` only ever runs the launch-only `test` /
+    // `test-without-building` action (never `build`/`build-for-testing`,
+    // appium-webdriveragent `xcodebuild.js` `getCommand`) to start the
+    // already-built WDA, so a live xcodebuild PID here is the *expected*,
+    // still-in-progress launch — not evidence Appium ignored the prebuilt
+    // artifact. Before the fix this watchdog fail-fast-aborted every such
+    // launch that happened to still be running past the abort tick; it must
+    // now defer to the supervisor's 180s ceiling (and to the pre-existing
+    // live-PID defer-cap escalation for a genuinely stuck launch) instead.
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const recovers: string[] = [];
+    const aborts: Error[] = [];
+    startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'serial:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      recoverAfterTicks: 2,
+      abortAfterTicks: 3,
+      prebuiltWdaArtifactPresent: true,
+      lastXcodebuildExitRef: { value: null },
+      write: line => lines.push(line),
+      execCapture: (bin, args) => {
+        if (bin === 'pgrep' && (args[1] === 'xcodebuild' || args.includes('xcodebuild'))) {
+          return {
+            stdout:
+              '2362 /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild ' +
+              'test-without-building -scheme WebDriverAgentRunner\n',
+            stderr: '',
+            status: 0,
+          };
+        }
+        if (bin === 'pgrep') {
+          // hostWdaPids=(none) — WDA has not finished launching yet (#939 evidence).
+          return { stdout: '', stderr: '', status: 1 };
+        }
+        if (args.includes('list')) {
+          return { stdout: SAMPLE_LIST_JSON, stderr: '', status: 0 };
+        }
+        return { stdout: 'Monitoring boot\nBooted\n', stderr: '', status: 0 };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      now: () => new Date('2026-11-16T21:00:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onRecover: (udid, reason) => recovers.push(`${udid}:${reason}`),
+      onAbort: error => aborts.push(error),
+    });
+    callbacks[0]!(); // tick 1
+    callbacks[0]!(); // tick 2 — must defer, not WDA-terminate mid-launch
+    assert.equal(recovers.length, 0);
+    assert.equal(aborts.length, 0);
+    callbacks[0]!(); // tick 3 — must defer, not abort (the #939 regression)
+    assert.equal(recovers.length, 0);
+    assert.equal(aborts.length, 0, 'must not fail-fast abort a live prebuilt WDA launch');
+    assert.ok(lines.some(line => /abortDeferred:.*host build still live/.test(line)));
+  });
+
+  test('FLAKE-005b/c: a single transient simctl-list ETIMEDOUT must not reset the Booted-hang streak, but a live launch-only xcodebuild now defers to the live-PID cap instead of fail-fasting at tick 3', () => {
     // Reproduces PR #939 post-#940 CI run (43897188379): prebuilt WDA present,
-    // Booted throughout, recover fires once at tick 2 (consumes the recover
-    // slot) — same as #940's own livelock test. Unlike that test, tick 3 hits
-    // a single transient `xcrun simctl list` ETIMEDOUT (host contention from
-    // the just-recovered WDA relaunch) while `simctl bootstatus` still reports
-    // Booted and a fresh host xcodebuild PID has already reappeared (the
-    // recover-triggered relaunch). The simulator never left Booted — only the
-    // probe round-tripped a timeout — so this single glitch must not erase the
-    // already-accumulated Booted-hang evidence and push fail-fast abort past
-    // the 180s supervisor ceiling the way #940's abortDeferred fix did not
-    // anticipate.
+    // Booted throughout. Tick 2 sees no host PID yet for either xcodebuild or
+    // WDA (launch-only xcodebuild has startup overhead before anything execs
+    // visibly) — the harness must not WDA-terminate here (FLAKE-005c
+    // residual: run 43961818325 showed a tick-2 blind terminate racing a
+    // slow-but-healthy launch, producing hostWdaPids briefly appearing then
+    // clearing and an eventual hang-abort). The launch-only xcodebuild
+    // finally becomes visible to pgrep from tick 3 onward, independent of
+    // any harness action. Tick 3 also hits a single transient `xcrun simctl
+    // list` ETIMEDOUT while `simctl bootstatus` still reports Booted. The
+    // simulator never left Booted — only the probe round-tripped a timeout —
+    // so this single glitch must not erase the already-accumulated
+    // Booted-hang evidence (asserted via the abort eventually firing below
+    // rather than silently resetting to tick 1).
+    //
+    // FLAKE-005c correction: that xcodebuild PID is the launch-only `test`
+    // action (`usePrebuiltWDA` never runs a `build` action — see
+    // `hostXcodebuildBuilding`), i.e. the expected, still-in-progress WDA
+    // launch — not evidence Appium ignored prebuilt WDA. #940's
+    // `unexpectedPrebuiltXcodebuild` gate used to bypass the live-PID defer
+    // and fail-fast abort at tick 3 for exactly this case (self-inflicting
+    // the hostWdaPids=(none) + hang-abort-at-tick-3 pattern #939 reported).
+    // It must now defer like any other live host build, backstopped by the
+    // pre-existing live-PID defer-cap escalation (tick 6 / 180s here).
     let listCalls = 0;
     const lines: string[] = [];
     const callbacks: Array<() => void> = [];
@@ -900,8 +993,9 @@ describe('iosBootDiagnostics', () => {
         return { stdout: 'Monitoring boot\nBooted\n', stderr: '', status: 0 };
       }
       if (bin === 'pgrep' && (args[1] === 'xcodebuild' || args.includes('xcodebuild'))) {
-        // Host xcodebuild reappears from tick 3 onward — the recover-triggered
-        // WDA relaunch Appium performs after our tick-2 `simctl terminate`.
+        // Host xcodebuild becomes visible to pgrep from tick 3 onward — the
+        // already-launching prebuilt WDA, not a recover-triggered relaunch
+        // (FLAKE-005c residual fix: the harness never WDA-terminates here).
         return listCalls >= 3
           ? { stdout: '57975 /usr/bin/xcodebuild test\n', stderr: '', status: 0 }
           : { stdout: '', stderr: '', status: 1 };
@@ -937,21 +1031,32 @@ describe('iosBootDiagnostics', () => {
     callbacks[0]!(); // tick 1 (30s) — Booted, continue
     assert.equal(recovers.length, 0);
     assert.equal(aborts.length, 0);
-    callbacks[0]!(); // tick 2 (60s) — Booted streak reaches 2, recover fires
-    assert.equal(recovers.length, 1);
-    assert.equal(aborts.length, 0);
-    callbacks[0]!(); // tick 3 (90s) — transient simctl-list ETIMEDOUT only
-    // Must fail fast here (hangTick=3 === abortAfterTicks default) instead of
-    // silently continuing until the 180s/tick-6 supervisor ceiling: the
-    // simulator was Booted on both sides of this single probe glitch, and
-    // #940's own prebuilt-WDA-plus-live-xcodebuild fail-fast gate already
-    // exists to bypass the live-PID defer once abort is ready.
+    callbacks[0]!(); // tick 2 (60s) — Booted streak reaches 2, recover tick —
+    // but no host PID is visible yet for either xcodebuild or WDA, so the
+    // harness must defer rather than blind-WDA-terminate (FLAKE-005c residual).
     assert.equal(
-      aborts.length,
-      1,
-      'a lone simctl-list ETIMEDOUT must not reset the Booted-hang streak and delay fail-fast abort past tick 3',
+      recovers.length,
+      0,
+      'prebuilt WDA must never be WDA-terminated while no host PID is visible yet',
     );
+    assert.equal(aborts.length, 0);
+    assert.ok(lines.some(line => /hang-recoverSkipped.*prebuilt WDA artifact present/.test(line)));
+    callbacks[0]!(); // tick 3 (90s) — transient simctl-list ETIMEDOUT; reappeared
+    // xcodebuild is launch-only (test-without-building): must defer, not
+    // fail-fast abort (the #939 regression this harness self-inflicted).
+    assert.equal(aborts.length, 0, 'a live launch-only xcodebuild must defer, not abort, at tick 3');
+    assert.ok(lines.some(line => /abortDeferred:.*host build still live/.test(line)));
+    callbacks[0]!(); // tick 4 (120s) — simctl list recovers (Booted); still deferring
+    callbacks[0]!(); // tick 5 (150s) — still deferring
+    assert.equal(aborts.length, 0);
+    callbacks[0]!(); // tick 6 (180s) — live-PID defer-cap escalation fires
+    // The accumulated Booted-hang evidence (never reset by tick 3's transient
+    // ETIMEDOUT) still backstops a genuinely-stuck launch via the
+    // pre-existing defer-cap escalation, aligned with the 180s supervisor
+    // ceiling — not via the removed unexpectedPrebuiltXcodebuild shortcut.
+    assert.equal(aborts.length, 1, 'a genuinely stuck live xcodebuild must still abort via the defer cap');
     assert.match(aborts[0]!.message, /\[e2e-ios-boot\] session-create abort/);
+    assert.match(aborts[0]!.message, /live-PID deferral cap reached/);
     assert.ok(lines.some(line => /phase=serial:session-create:hang-abort\b/.test(line)));
   });
 
@@ -1064,6 +1169,11 @@ describe('iosBootDiagnostics', () => {
       intervalMs: 1000,
       recoverAfterTicks: 2,
       abortAfterTicks: 3,
+      // Generic (non-prebuilt) hang-recover path — pin explicitly so this
+      // test stays hermetic regardless of whether a real `.wda-derived`
+      // artifact happens to exist on the machine running it (FLAKE-005c's
+      // prebuilt-mode recover gate only applies when this is true).
+      prebuiltWdaArtifactPresent: false,
       lastXcodebuildExitRef: { value: null },
       write: line => lines.push(line),
       execCapture: (bin, args) => {
@@ -1108,7 +1218,7 @@ describe('iosBootDiagnostics', () => {
     assert.ok(lines.some(line => /hang-abort-artifacts/.test(line)));
   });
 
-  test('FLAKE-005: prebuilt WDA + live xcodebuild must not abortDeferred at fail-fast tick', () => {
+  test('FLAKE-005/c: prebuilt WDA + live xcodebuild — only a genuine build action may skip the live-PID defer', () => {
     const base = {
       hangTick: 3,
       consecutiveXcrunEtimedout: 0,
@@ -1128,16 +1238,48 @@ describe('iosBootDiagnostics', () => {
     if (deferredWithoutPrebuilt.action === 'skip-recover') {
       assert.match(deferredWithoutPrebuilt.reason, /abortDeferred:/);
     }
-    const abortWithPrebuilt = decideSessionCreateHangAction({
+    // Genuine anomaly: prebuilt mode selected but xcodebuild is actually
+    // running a `build` / `build-for-testing` action (Appium ignored
+    // `usePrebuiltWDA`, or caps never applied) — still fail fast.
+    const abortWithPrebuiltGenuineBuild = decideSessionCreateHangAction({
+      ...base,
+      prebuiltWdaArtifactPresent: true,
+      hostXcodebuildBuilding: true,
+      consecutiveLiveBuildDeferrals: 0,
+    });
+    assert.equal(abortWithPrebuiltGenuineBuild.action, 'abort');
+    if (abortWithPrebuiltGenuineBuild.action === 'abort') {
+      assert.match(abortWithPrebuiltGenuineBuild.reason, /prebuilt WDA artifact present/);
+    }
+    // FLAKE-005c: the same live PID, but it is the launch-only `test` /
+    // `test-without-building` action `usePrebuiltWDA` always runs to start
+    // the already-built WDA (appium-webdriveragent `xcodebuild.js`
+    // `getCommand`) — not a rebuild. Must defer like any other live host
+    // build, not fail-fast abort (this is exactly the #939 regression: the
+    // old gate aborted on *every* prebuilt session that was still mid-launch
+    // at the abort tick, because it never distinguished build vs. launch-only
+    // xcodebuild actions).
+    const deferredPrebuiltLaunchOnly = decideSessionCreateHangAction({
+      ...base,
+      prebuiltWdaArtifactPresent: true,
+      hostXcodebuildBuilding: false,
+      consecutiveLiveBuildDeferrals: 0,
+    });
+    assert.equal(deferredPrebuiltLaunchOnly.action, 'skip-recover');
+    if (deferredPrebuiltLaunchOnly.action === 'skip-recover') {
+      assert.match(deferredPrebuiltLaunchOnly.reason, /abortDeferred:.*host build still live/);
+    }
+    // Omitting hostXcodebuildBuilding must default to launch-only (safe —
+    // matches the overwhelmingly common real case), not to the genuine-build
+    // anomaly path.
+    const deferredPrebuiltUnspecified = decideSessionCreateHangAction({
       ...base,
       prebuiltWdaArtifactPresent: true,
       consecutiveLiveBuildDeferrals: 0,
     });
-    assert.equal(abortWithPrebuilt.action, 'abort');
-    if (abortWithPrebuilt.action === 'abort') {
-      assert.match(abortWithPrebuilt.reason, /prebuilt WDA artifact present/);
-    }
-    const recoverWithPrebuilt = decideSessionCreateHangAction({
+    assert.equal(deferredPrebuiltUnspecified.action, 'skip-recover');
+
+    const recoverTickBase = {
       hangTick: 2,
       consecutiveXcrunEtimedout: 0,
       consecutiveBootedHangProbes: 2,
@@ -1147,8 +1289,49 @@ describe('iosBootDiagnostics', () => {
       hostWdaPids: '(none)',
       lastXcodebuildExitLabel: '(none)',
       prebuiltWdaArtifactPresent: true,
+    };
+    // Same correction at the (earlier) recover tick: a launch-only xcodebuild
+    // must not be WDA-terminated mid-launch — defer instead of recover.
+    const deferredAtRecoverTick = decideSessionCreateHangAction({
+      ...recoverTickBase,
+      hostXcodebuildBuilding: false,
     });
-    assert.equal(recoverWithPrebuilt.action, 'recover');
+    assert.equal(deferredAtRecoverTick.action, 'skip-recover');
+    // A genuine build action at the recover tick still recovers (WDA
+    // terminate + settle) as before.
+    const recoverWithPrebuiltGenuineBuild = decideSessionCreateHangAction({
+      ...recoverTickBase,
+      hostXcodebuildBuilding: true,
+    });
+    assert.equal(recoverWithPrebuiltGenuineBuild.action, 'recover');
+
+    // FLAKE-005c residual (CI run 43961818325, post-launch-only-fix): at the
+    // recover tick neither `xcodebuild` nor the WDA runner is visible to
+    // pgrep yet (hostXcodebuildPids=(none), hostWdaPids=(none)) — the
+    // launch-only xcodebuild has startup overhead before anything execs
+    // visibly, especially under CI host contention. The live-PID gate above
+    // only defers when a PID is already live, so it cannot see this gap and
+    // previously fell through to a blind WDA-terminate `recover` here — which
+    // then raced the real launch once it did appear a tick later (observed in
+    // CI as hostWdaPids briefly appearing then clearing, followed by a hang-
+    // abort). Prebuilt mode must never WDA-terminate via this heuristic: skip
+    // recover instead and let the (already live-PID-aware) abort path be the
+    // sole backstop.
+    const skipRecoverPrebuiltNoPidsYet = decideSessionCreateHangAction({
+      ...recoverTickBase,
+      hostXcodebuildPids: '(none)',
+      hostWdaPids: '(none)',
+      hostXcodebuildBuilding: false,
+    });
+    assert.equal(
+      skipRecoverPrebuiltNoPidsYet.action,
+      'skip-recover',
+      'prebuilt WDA must never be WDA-terminated by the harness while no host PID is visible yet',
+    );
+    if (skipRecoverPrebuiltNoPidsYet.action === 'skip-recover') {
+      assert.match(skipRecoverPrebuiltNoPidsYet.reason, /prebuilt WDA artifact present/);
+      assert.equal(skipRecoverPrebuiltNoPidsYet.consumeRecoveryOpportunity, false);
+    }
   });
 
   test('FLAKE-005: live-PID abortDeferred livelock caps then escalates abort', () => {

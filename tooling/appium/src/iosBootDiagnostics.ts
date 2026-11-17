@@ -601,10 +601,23 @@ export function decideSessionCreateHangAction(input: {
   lastXcodebuildExitLabel?: string;
   /**
    * True when the shared prebuilt `WebDriverAgentRunner-Runner.app` exists on
-   * disk (`RNGMA_WDA_PREBUILT=1` / `usePrebuiltWDA` CI path). Live host
-   * `xcodebuild` during POST /session is stale or Appium ignored prebuilt WDA.
+   * disk (`RNGMA_WDA_PREBUILT=1` / `usePrebuiltWDA` CI path).
    */
   prebuiltWdaArtifactPresent?: boolean;
+  /**
+   * True only when a live host `xcodebuild` process is running a genuine
+   * build action (`build` / `build-for-testing`) — never true for the
+   * launch-only `test` / `test-without-building` actions `usePrebuiltWDA`
+   * always uses to start the already-built WDA (appium-webdriveragent
+   * `xcodebuild.js` `getCommand`). Only a build action while prebuilt is
+   * genuinely unexpected; a launch-only action is the normal, expected way
+   * prebuilt WDA starts and must not defeat the live-PID defer gate below —
+   * FLAKE-005c: the prior `prebuiltWdaArtifactPresent` + any live
+   * `hostXcodebuildPids` fail-fast fired on every prebuilt session (that PID
+   * is always the launch-only invocation), terminating/aborting a WDA launch
+   * that was working normally.
+   */
+  hostXcodebuildBuilding?: boolean;
   /** Incremented by the hang watchdog on each live-PID deferral tick. */
   consecutiveLiveBuildDeferrals?: number;
   livePidDeferMaxTicks?: number;
@@ -643,7 +656,8 @@ export function decideSessionCreateHangAction(input: {
   const unexpectedPrebuiltXcodebuild =
     input.prebuiltWdaArtifactPresent === true &&
     input.hostXcodebuildPids != null &&
-    hostPidsIndicateLiveBuild(input.hostXcodebuildPids);
+    hostPidsIndicateLiveBuild(input.hostXcodebuildPids) &&
+    input.hostXcodebuildBuilding === true;
   const livePidDeferMax =
     input.livePidDeferMaxTicks ?? IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS;
   const deferralStreak = input.consecutiveLiveBuildDeferrals ?? 0;
@@ -712,6 +726,30 @@ export function decideSessionCreateHangAction(input: {
           `recoverSkipped: simulator state=${input.simState} — skip WDA terminate; ` +
           `Appium boot monitor owns Shutdown/Booting (check appium:isHeadless)`,
         consumeRecoveryOpportunity: true,
+      };
+    }
+    if (input.prebuiltWdaArtifactPresent === true && input.hostXcodebuildBuilding !== true) {
+      // FLAKE-005c residual: a harness-side `xcrun simctl terminate` here races
+      // a slow-but-healthy prebuilt WDA launch. `hostXcodebuildPids`/
+      // `hostWdaPids` reading `(none)` at the recover tick does not mean
+      // nothing is happening — Appium's launch-only `xcodebuild
+      // test-without-building` has its own startup overhead before it (or the
+      // WDA runner it execs) becomes visible to `pgrep`, especially under CI
+      // host contention. The live-PID gate above only defers when a PID is
+      // already visible, so it cannot catch this gap. In prebuilt mode
+      // Appium already owns the WDA process lifecycle end-to-end; disable the
+      // harness WDA-terminate recovery entirely here rather than risk killing
+      // a launch that was about to succeed. The abort path below (and its own
+      // live-PID gate) remains the sole backstop for a genuinely stuck
+      // prebuilt launch.
+      return {
+        action: 'skip-recover',
+        reason:
+          `recoverSkipped: prebuilt WDA artifact present (hostXcodebuildPids=${input.hostXcodebuildPids ?? '(unknown)'}, ` +
+          `hostWdaPids=${input.hostWdaPids ?? '(unknown)'}) — harness WDA-terminate recovery is disabled ` +
+          `while usePrebuiltWDA; Appium owns the prebuilt WDA launch lifecycle, and PIDs reading (none) here ` +
+          `can just mean the launch has not become visible to pgrep yet, not that it is stuck`,
+        consumeRecoveryOpportunity: false,
       };
     }
     const recoverEvidence = etimedoutPath
@@ -977,6 +1015,7 @@ export function startIosSessionCreateHangWatchdog(
       postSessionInFlight,
       hostXcodebuildPids: lastSessionSnapshot?.hostXcodebuildPids,
       hostWdaPids: lastSessionSnapshot?.hostWdaPids,
+      hostXcodebuildBuilding: lastSessionSnapshot?.hostXcodebuildBuilding,
       lastXcodebuildExitLabel: lastSessionSnapshot?.lastXcodebuildExit,
       prebuiltWdaArtifactPresent:
         options.prebuiltWdaArtifactPresent ?? lastSessionSnapshot?.wdaRunnerAppPresent,

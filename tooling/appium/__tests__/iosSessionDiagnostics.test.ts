@@ -28,6 +28,7 @@ import {
   parsePgrepFlPids,
   parseXcodebuildExitCodeFromLine,
   pgrepFlLineIsXcodebuild,
+  pgrepFlLineIsXcodebuildBuildAction,
   readXcodebuildExitState,
   resolveLastXcodebuildExit,
   shouldDeferHangRecoverForLiveHostBuild,
@@ -161,6 +162,80 @@ describe('iosSessionDiagnostics', () => {
     assert.equal(fields.hostXcodebuildPids, '66564');
     assert.equal(fields.hostWdaPids, '77888');
     assert.notEqual(fields.hostXcodebuildPids, fields.hostWdaPids);
+  });
+
+  test('FLAKE-005c: pgrepFlLineIsXcodebuildBuildAction distinguishes build from launch-only actions', () => {
+    // `usePrebuiltWDA` always launches via `test` / `test-without-building`
+    // (appium-webdriveragent `xcodebuild.js` `getCommand`) — never `build` /
+    // `build-for-testing` — so only the latter two tokens indicate a genuine
+    // (unexpected, when prebuilt) rebuild.
+    assert.equal(
+      pgrepFlLineIsXcodebuildBuildAction(
+        '2362 /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild ' +
+          'test-without-building -scheme WebDriverAgentRunner -destination id=UDID',
+      ),
+      false,
+    );
+    assert.equal(
+      pgrepFlLineIsXcodebuildBuildAction('66564 /usr/bin/xcodebuild test -scheme WebDriverAgentRunner'),
+      false,
+    );
+    assert.equal(
+      pgrepFlLineIsXcodebuildBuildAction(
+        '77001 /usr/bin/xcodebuild build-for-testing -scheme WebDriverAgentRunner',
+      ),
+      true,
+    );
+    assert.equal(
+      pgrepFlLineIsXcodebuildBuildAction('77002 /usr/bin/xcodebuild build -scheme WebDriverAgentRunner'),
+      true,
+    );
+  });
+
+  test('FLAKE-005c: formatHostPidFieldsFromSnapshots exposes hostXcodebuildBuilding from the live pgrep line', () => {
+    const launchOnlySnaps = listWdaRelatedHostProcesses(
+      (_bin, args) => {
+        if (args[1] === 'xcodebuild') {
+          return {
+            stdout: '2362 /usr/bin/xcodebuild test-without-building -scheme WebDriverAgentRunner\n',
+            stderr: '',
+            status: 0,
+          };
+        }
+        return { stdout: '', stderr: '', status: 1 };
+      },
+      ['xcodebuild', 'WebDriverAgent'],
+    );
+    const launchOnlyFields = formatHostPidFieldsFromSnapshots(launchOnlySnaps);
+    assert.equal(launchOnlyFields.hostXcodebuildPids, '2362');
+    assert.equal(
+      launchOnlyFields.hostXcodebuildBuilding,
+      false,
+      'usePrebuiltWDA launch-only test-without-building must not read as a build action',
+    );
+
+    const buildingSnaps = listWdaRelatedHostProcesses(
+      (_bin, args) => {
+        if (args[1] === 'xcodebuild') {
+          return {
+            stdout: '77001 /usr/bin/xcodebuild build-for-testing -scheme WebDriverAgentRunner\n',
+            stderr: '',
+            status: 0,
+          };
+        }
+        return { stdout: '', stderr: '', status: 1 };
+      },
+      ['xcodebuild', 'WebDriverAgent'],
+    );
+    const buildingFields = formatHostPidFieldsFromSnapshots(buildingSnaps);
+    assert.equal(buildingFields.hostXcodebuildBuilding, true);
+
+    const noXcodebuildSnaps = listWdaRelatedHostProcesses(() => ({
+      stdout: '',
+      stderr: '',
+      status: 1,
+    }), ['xcodebuild', 'WebDriverAgent']);
+    assert.equal(formatHostPidFieldsFromSnapshots(noXcodebuildSnaps).hostXcodebuildBuilding, false);
   });
 
   test('listWdaRelatedHostProcesses surfaces pgrep timedOut', () => {
