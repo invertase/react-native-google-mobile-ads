@@ -18,10 +18,10 @@ Cite decisions as **`GMA-AD-<n>`**.
 
 ## Status legend
 
-| Status | Meaning |
-|--------|---------|
-| **Accepted** | Decided; follow this. |
-| **Proposed** | Planned; not yet the rule. |
+| Status       | Meaning                                                  |
+| ------------ | -------------------------------------------------------- |
+| **Accepted** | Decided; follow this.                                    |
+| **Proposed** | Planned; not yet the rule.                               |
 | **Rejected** | Considered and declined; keep so it is not re-litigated. |
 
 Add rows when a refactor choice lands (module boundaries, codegen, plugin behavior, native backend). Do not paste decisions from other repos.
@@ -161,9 +161,11 @@ Next-Gen builders as AdMob; do not add a GAM rejection path.
 Non-AdMob mediation hosts (for example MAX) cannot select Next-Gen — document
 only; do not invent a dual-host bridge.
 
-**Pinned formats.** Picture-in-Picture, dedicated `IconAd`, and swipeable
-interstitial are out of scope for the initial dual-backend ingest; follow-on
-queues own them.
+**Pinned formats.** Picture-in-Picture (`PictureInPictureAd`, **Preview**),
+dedicated `IconAd` (**Alpha**, Android Next-Gen), and swipeable interstitial
+(`SwipeableInterstitialAd`, **Private beta**) ship in core with capability gates
+via `getAdCapabilities()`; preload/signal surfaces beyond the wrapped load/show
+paths stay out of scope until a queue owns them.
 
 <a id="gma-ad-6"></a>
 

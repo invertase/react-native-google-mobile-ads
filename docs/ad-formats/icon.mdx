@@ -4,8 +4,9 @@ description: Dedicated Icon ad format - experimental wrap for Android Next-Gen o
 ---
 
 <Warning>
-  **Alpha (experimental).** Icon ads (`IconAd`) may change on the Next-Gen Android SDK. Gate your UI with
-  `getAdCapabilities().iconAd` (`experimental` on Android Next-Gen; `unavailable` on Android classic and iOS).
+  **Alpha (experimental).** Icon ads (`IconAd`) may change on the Next-Gen Android SDK. Gate your UI
+  with `getAdCapabilities().iconAd` (`experimental` on Android Next-Gen; `unavailable` on Android
+  classic and iOS).
 </Warning>
 
 Icon ads are a dedicated Next-Gen Android format (not the `icon` asset on [native ads](/ad-formats/native)).
@@ -29,9 +30,7 @@ import {
   AdEventType,
 } from 'react-native-google-mobile-ads';
 
-const adUnitId = __DEV__
-  ? TestIds.ICON
-  : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+const adUnitId = __DEV__ ? TestIds.ICON : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 const iconAd = IconAd.createForAdRequest(adUnitId, {
   requestNonPersonalizedAdsOnly: true,
@@ -47,19 +46,21 @@ iconAd.load();
 ## Render
 
 ```jsx
-{iconAd.loaded ? (
-  <IconAdView iconAd={iconAd}>
-    <IconAsset assetType={IconAssetType.ICON}>
-      <Image style={{ width: 48, height: 48 }} source={{ uri: iconAd.icon?.url ?? undefined }} />
-    </IconAsset>
-    <IconAsset assetType={IconAssetType.HEADLINE}>
-      <Text>{iconAd.headline}</Text>
-    </IconAsset>
-    <IconAsset assetType={IconAssetType.CALL_TO_ACTION}>
-      <Text>{iconAd.callToAction}</Text>
-    </IconAsset>
-  </IconAdView>
-) : null}
+{
+  iconAd.loaded ? (
+    <IconAdView iconAd={iconAd}>
+      <IconAsset assetType={IconAssetType.ICON}>
+        <Image style={{ width: 48, height: 48 }} source={{ uri: iconAd.icon?.url ?? undefined }} />
+      </IconAsset>
+      <IconAsset assetType={IconAssetType.HEADLINE}>
+        <Text>{iconAd.headline}</Text>
+      </IconAsset>
+      <IconAsset assetType={IconAssetType.CALL_TO_ACTION}>
+        <Text>{iconAd.callToAction}</Text>
+      </IconAsset>
+    </IconAdView>
+  ) : null;
+}
 ```
 
 Assign at least one asset view before the native layer calls `registerIconAd`. Standard ad events use `AdEventType`
@@ -73,11 +74,11 @@ iconAd.destroy();
 
 ## Platform notes
 
-| Backend | Status |
-| --- | --- |
+| Backend          | Status                          |
+| ---------------- | ------------------------------- |
 | Android Next-Gen | Alpha — `IconAd` + `IconAdView` |
-| Android classic | `icon-ad-unavailable` on load |
-| iOS | `icon-ad-unavailable` on load |
+| Android classic  | `icon-ad-unavailable` on load   |
+| iOS              | `icon-ad-unavailable` on load   |
 
 ## Not wrapped yet
 

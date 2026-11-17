@@ -11,6 +11,8 @@ Read https://docs.page/invertase/react-native-google-mobile-ads/prerequisites.md
 
 That block is the install step. Paste it, then let the agent run. Native Google skills, Report issues, and Maintainer knowledge bundle are the rules the block does not include.
 
+Preview, alpha, and private-beta ad formats (picture-in-picture, icon ads, swipeable interstitial) are listed on [Ad formats](/ad-formats) and in `node_modules/react-native-google-mobile-ads/AGENTS.md`. Gate them with `getAdCapabilities()` before loading.
+
 ## Native Google skills
 
 Google publishes agent skills for the native Google Mobile Ads software development kits (SDKs). This library is a React Native layer over those SDKs, so a native skill does not always match this interface. The npm `AGENTS.md` file lists those skills, how to install them, and which ones not to apply. If a native skill and this library disagree, follow these docs and the package types.

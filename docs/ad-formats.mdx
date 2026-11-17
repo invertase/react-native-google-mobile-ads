@@ -23,11 +23,12 @@ Additional guides cover cross-cutting integration patterns:
 - [Custom native (Ad Manager)](/ad-formats/custom-native) — Ad Manager custom native ad formats:
   custom assets read by exact name, and click handling with Ad Manager click reporting.
 
-## Preview and private-beta formats
+## Preview, alpha, and private-beta formats
 
-Google continues to ship formats on the Next-Gen Android SDK (and sometimes iOS) that this library
-has **not** wrapped yet. Status below is the Google SDK posture as of the pins in this package —
-do not invent app-side capability matrices.
+Some newer Google formats ship ahead of broad SDK availability. This library wraps them at
+**Preview**, **Alpha**, or **Private beta** when a JS surface exists; the table below tracks Google
+status and library support. Always gate placements with `getAdCapabilities()` at runtime — do not
+hand-roll capability matrices.
 
 | Format                                             | Google status                                                         | This library                                                                                                                    | Platform notes                                                   |
 | -------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -35,9 +36,9 @@ do not invent app-side capability matrices.
 | Icon ads (`IconAd`)                                | Generally available on Next-Gen Android (not a native-ad icon asset)  | **Alpha** — [`IconAd`](/ad-formats/icon); `getAdCapabilities().iconAd`                                                          | Classic Android and iOS: `unavailable`. Multi-load not wrapped.  |
 | Swipeable interstitial (`SwipeableInterstitialAd`) | **Private beta** — request access through your Google account manager | **Private beta** — [`SwipeableInterstitialAd`](/ad-formats/swipeable-interstitial); `getAdCapabilities().swipeableInterstitial` | Classic Android: `unavailable`. Preload/signal APIs not wrapped. |
 
-When Google opens a format and this library adds a JS surface, the new APIs will be documented on
-their own format pages and marked **Preview** or **Private beta** until Google's status changes.
-Until then, treat the rows above as unsupported.
+Each wrapped format has a dedicated guide linked from the table. Unwrapped Google SDK APIs stay out
+of app code until this library documents them; rows marked **Preview**, **Alpha**, or **Private beta**
+require the matching capability flag (or `experimental` / allowlist posture) before you load inventory.
 
 iOS Google Mobile Ads SDK pin bumps (for example the current CocoaPods pin) land independently of
 these format wrappers; pin currency alone does not imply PiP / Icon / swipe support in React Native.

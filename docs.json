@@ -143,6 +143,18 @@
           "href": "/ad-formats/native"
         },
         {
+          "title": "Picture-in-picture (Preview)",
+          "href": "/ad-formats/picture-in-picture"
+        },
+        {
+          "title": "Icon ads (Alpha)",
+          "href": "/ad-formats/icon"
+        },
+        {
+          "title": "Swipeable interstitial (Private beta)",
+          "href": "/ad-formats/swipeable-interstitial"
+        },
+        {
           "title": "React hooks",
           "href": "/ad-formats/hooks"
         },

@@ -71,20 +71,20 @@ Until you verify the integration, use test ad units. The [Test ads](https://docs
 
 Every surface below works on the New Architecture. Surfaces marked To-Do still run through React Native's interoperability layer and have not yet been ported to a native Turbo Module or Fabric component. The port does not change the JavaScript API.
 
-| Platform | Feature | Status |
-| --- | --- | --- |
-| iOS | Mobile Ads SDK Methods (Turbo Native Module) | ✅ Complete |
-| iOS | Banners (Fabric Native Component) | ✅ Complete |
-| iOS | Full Screen Ads (Turbo Native Module) | ✅ Complete |
-| iOS | Native Ads (Turbo Native Module, Fabric Native Component) | ✅ Complete |
-| iOS | User Messaging Platform (Turbo Native Module) | ✅ Complete |
-| iOS | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do |
-| Android | Mobile Ads SDK Methods (Turbo Native Module) | ⏳ To-Do |
-| Android | Banners (Fabric Native Component) | 🟡 Partial: multi-format banner ported, standard banner To-Do |
-| Android | Full Screen Ads (Turbo Native Module) | ⏳ To-Do |
-| Android | Native Ads (Turbo Native Module, Fabric Native Component) | ✅ Complete |
-| Android | User Messaging Platform (Turbo Native Module) | ✅ Complete |
-| Android | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do |
+| Platform | Feature                                                                                                                                                        | Status                                                        |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| iOS      | Mobile Ads SDK Methods (Turbo Native Module)                                                                                                                   | ✅ Complete                                                   |
+| iOS      | Banners (Fabric Native Component)                                                                                                                              | ✅ Complete                                                   |
+| iOS      | Full Screen Ads (Turbo Native Module)                                                                                                                          | ✅ Complete                                                   |
+| iOS      | Native Ads (Turbo Native Module, Fabric Native Component)                                                                                                      | ✅ Complete                                                   |
+| iOS      | User Messaging Platform (Turbo Native Module)                                                                                                                  | ✅ Complete                                                   |
+| iOS      | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do                                                      |
+| Android  | Mobile Ads SDK Methods (Turbo Native Module)                                                                                                                   | ⏳ To-Do                                                      |
+| Android  | Banners (Fabric Native Component)                                                                                                                              | 🟡 Partial: multi-format banner ported, standard banner To-Do |
+| Android  | Full Screen Ads (Turbo Native Module)                                                                                                                          | ⏳ To-Do                                                      |
+| Android  | Native Ads (Turbo Native Module, Fabric Native Component)                                                                                                      | ✅ Complete                                                   |
+| Android  | User Messaging Platform (Turbo Native Module)                                                                                                                  | ✅ Complete                                                   |
+| Android  | [EventEmitter](https://github.com/reactwg/react-native-new-architecture/blob/main/docs/turbo-modules.md#add-event-emitting-capabilities) (Turbo Native Module) | ⏳ To-Do                                                      |
 
 ## More information
 
