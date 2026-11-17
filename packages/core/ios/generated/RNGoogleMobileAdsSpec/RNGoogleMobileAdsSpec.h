@@ -132,6 +132,7 @@ namespace JS {
       std::optional<double> debugGeography() const;
       std::optional<bool> tagForUnderAgeOfConsent() const;
       std::optional<facebook::react::LazyVector<NSString *>> testDeviceIdentifiers() const;
+      NSString *consentSyncId() const;
 
       AdsConsentInfoOptions(NSDictionary *const v) : _v(v) {}
     private:
@@ -468,6 +469,11 @@ inline std::optional<facebook::react::LazyVector<NSString *>> JS::NativeConsentM
 {
   id const p = _v[@"testDeviceIdentifiers"];
   return RCTBridgingToOptionalVec(p, ^NSString *(id itemValue_0) { return RCTBridgingToString(itemValue_0); });
+}
+inline NSString *JS::NativeConsentModule::AdsConsentInfoOptions::consentSyncId() const
+{
+  id const p = _v[@"consentSyncId"];
+  return RCTBridgingToOptionalString(p);
 }
 inline JS::NativeGoogleMobileAdsModule::Constants::Builder::Builder(const Input i) : _factory(^{
   NSMutableDictionary *d = [NSMutableDictionary new];

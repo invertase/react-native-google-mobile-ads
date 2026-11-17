@@ -113,6 +113,22 @@ export interface AdsConsentInfoOptions {
    * An array of test device IDs to allow.
    */
   testDeviceIdentifiers?: string[];
+
+  /**
+   * Consent sync identifier used by Google UMP to sync a user's consent decision across your apps.
+   *
+   * **Beta (Google UMP):** Sync consent across apps is a Google UMP beta feature. Enable consent
+   * syncing for eligible apps in the AdMob / Ad Manager Privacy & messaging UI, and pass a stable
+   * cross-app identifier (for example App Set ID on Android or IDFV on iOS). Do not send raw PII —
+   * hash or encrypt first when using account ids.
+   *
+   * Format: a UUID string, or 22–150 characters matching
+   * `^[0-9a-zA-Z+.=\/_\-$,{}]{22,150}$`. Invalid values are ignored by the UMP SDK (warning logged).
+   *
+   * @see https://developers.google.com/admob/android/privacy/sync-consent
+   * @see https://developers.google.com/admob/ios/privacy/sync-consent
+   */
+  consentSyncId?: string;
 }
 
 /**

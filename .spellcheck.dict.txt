@@ -133,6 +133,7 @@ HTTPS
 IAB
 iabtcf
 IDFA
+IDFV
 ILRD
 immersive
 immersiveModeEnabled
@@ -204,6 +205,7 @@ OpenID
 P0
 PaidEvent
 PaidResponseInfo
+PII
 pangle
 Pangle
 perf
@@ -392,6 +394,7 @@ triaging
 variadic
 TypeDoc
 UI
+UUID
 UIKit
 UnableToResolveError
 uncomment

@@ -102,6 +102,9 @@ RCT_EXPORT_METHOD(requestInfoUpdate
 
   parameters.debugSettings = debugSettings;
   parameters.tagForUnderAgeOfConsent = [options[@"tagForUnderAgeOfConsent"] boolValue] ?: FALSE;
+  if (options[@"consentSyncId"] != nil) {
+    parameters.consentSyncID = [RCTConvert NSString:options[@"consentSyncId"]];
+  }
 
   [UMPConsentInformation.sharedInstance
       requestConsentInfoUpdateWithParameters:parameters
@@ -204,6 +207,10 @@ RCT_EXPORT_METHOD(getPurposeLegitimateInterests
 
   parameters.debugSettings = debugSettings;
   parameters.tagForUnderAgeOfConsent = options.tagForUnderAgeOfConsent().value_or(FALSE);
+  NSString *consentSyncId = options.consentSyncId();
+  if (consentSyncId != nil) {
+    parameters.consentSyncID = consentSyncId;
+  }
 
   [UMPConsentInformation.sharedInstance
       requestConsentInfoUpdateWithParameters:parameters
