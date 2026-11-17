@@ -355,6 +355,34 @@ namespace facebook::react {
   };
 } // namespace facebook::react
 
+@protocol NativeIconAdModuleSpec <RCTBridgeModule, RCTTurboModule>
+
+- (void)iconAdLoad:(double)requestId
+          adUnitId:(NSString *)adUnitId
+    requestOptions:(NSDictionary *)requestOptions;
+- (void)iconAdDestroy:(double)requestId;
+
+@end
+
+@interface NativeIconAdModuleSpecBase : NSObject {
+@protected
+facebook::react::EventEmitterCallback _eventEmitterCallback;
+}
+- (void)setEventEmitterCallback:(EventEmitterCallbackWrapper *)eventEmitterCallbackWrapper;
+
+
+@end
+
+namespace facebook::react {
+  /**
+   * ObjC++ class for module 'NativeIconAdModule'
+   */
+  class JSI_EXPORT NativeIconAdModuleSpecJSI : public ObjCTurboModule {
+  public:
+    NativeIconAdModuleSpecJSI(const ObjCTurboModule::InitParams &params);
+  };
+} // namespace facebook::react
+
 @protocol NativeInterstitialModuleSpec <RCTBridgeModule, RCTTurboModule>
 
 - (void)interstitialLoad:(double)requestId
@@ -520,6 +548,7 @@ inline JS::NativeGoogleMobileAdsModule::Constants::Builder::Builder(const Input 
 inline JS::NativeGoogleMobileAdsModule::Constants::Builder::Builder(Constants i) : _factory(^{
   return i.unsafeRawValue();
 }) {}
+
 
 
 

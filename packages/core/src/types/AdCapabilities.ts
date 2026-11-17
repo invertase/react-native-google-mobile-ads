@@ -71,4 +71,9 @@ export type AdCapabilities = {
    * Next-Gen; `unavailable` on Android classic.
    */
   pictureInPicture: CapabilitySupport;
+  /**
+   * Icon ads (dedicated icon format on Next-Gen Android). `experimental` on
+   * Android Next-Gen only; `unavailable` on iOS and Android classic.
+   */
+  iconAd: CapabilitySupport;
 };

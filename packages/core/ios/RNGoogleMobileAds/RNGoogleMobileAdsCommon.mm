@@ -30,6 +30,7 @@ NSString *const GOOGLE_MOBILE_ADS_EVENT_REWARDED_INTERSTITIAL =
     @"google_mobile_ads_rewarded_interstitial_event";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_PICTURE_IN_PICTURE =
     @"google_mobile_ads_picture_in_picture_event";
+NSString *const GOOGLE_MOBILE_ADS_EVENT_ICON_AD = @"google_mobile_ads_icon_ad_event";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_POOL = @"google_mobile_ads_pool_event";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_LOADED = @"loaded";
 NSString *const GOOGLE_MOBILE_ADS_EVENT_ERROR = @"error";

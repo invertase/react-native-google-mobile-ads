@@ -56,6 +56,48 @@ if ([commandName isEqualToString:@"load"]) {
 #endif
 }
 
+@protocol RCTRNGoogleMobileAdsIconAdViewViewProtocol <NSObject>
+- (void)registerAsset:(NSString *)assetType reactTag:(NSInteger)reactTag;
+@end
+
+RCT_EXTERN inline void RCTRNGoogleMobileAdsIconAdViewHandleCommand(
+  id<RCTRNGoogleMobileAdsIconAdViewViewProtocol> componentView,
+  NSString const *commandName,
+  NSArray const *args)
+{
+  if ([commandName isEqualToString:@"registerAsset"]) {
+#if RCT_DEBUG
+  if ([args count] != 2) {
+    RCTLogError(@"%@ command %@ received %d arguments, expected %d.", @"RNGoogleMobileAdsIconAdView", commandName, (int)[args count], 2);
+    return;
+  }
+#endif
+
+  NSObject *arg0 = args[0];
+#if RCT_DEBUG
+  if (!RCTValidateTypeOfViewCommandArgument(arg0, [NSString class], @"string", @"RNGoogleMobileAdsIconAdView", commandName, @"1st")) {
+    return;
+  }
+#endif
+  NSString * assetType = (NSString *)arg0;
+
+NSObject *arg1 = args[1];
+#if RCT_DEBUG
+  if (!RCTValidateTypeOfViewCommandArgument(arg1, [NSNumber class], @"number", @"RNGoogleMobileAdsIconAdView", commandName, @"2nd")) {
+    return;
+  }
+#endif
+  NSInteger reactTag = [(NSNumber *)arg1 intValue];
+
+  [componentView registerAsset:assetType reactTag:reactTag];
+  return;
+}
+
+#if RCT_DEBUG
+  RCTLogError(@"%@ received command %@, which is not a supported command.", @"RNGoogleMobileAdsIconAdView", commandName);
+#endif
+}
+
 @protocol RCTRNGoogleMobileAdsMediaViewViewProtocol <NSObject>
 
 @end

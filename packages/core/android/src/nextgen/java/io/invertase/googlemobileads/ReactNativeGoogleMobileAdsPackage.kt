@@ -32,6 +32,7 @@ class ReactNativeGoogleMobileAdsPackage : BaseReactPackage() {
       ReactNativeGoogleMobileAdsNativeAdViewManager(reactContext),
       ReactNativeGoogleMobileAdsMediaViewManager(reactContext),
       ReactNativeGoogleMobileAdsMultiFormatBannerViewManager(reactContext),
+      ReactNativeGoogleMobileAdsIconAdViewManager(reactContext),
     )
 
   override fun getModule(
@@ -50,6 +51,8 @@ class ReactNativeGoogleMobileAdsPackage : BaseReactPackage() {
       ReactNativeGoogleMobileAdsPoolModule.NAME -> return ReactNativeGoogleMobileAdsPoolModule(reactContext)
       ReactNativeGoogleMobileAdsPictureInPictureModule.NAME ->
         return ReactNativeGoogleMobileAdsPictureInPictureModule(reactContext)
+      ReactNativeGoogleMobileAdsIconAdModule.NAME ->
+        return ReactNativeGoogleMobileAdsIconAdModule(reactContext)
     }
     return null
   }
@@ -143,6 +146,15 @@ class ReactNativeGoogleMobileAdsPackage : BaseReactPackage() {
         ReactModuleInfo(
           ReactNativeGoogleMobileAdsPictureInPictureModule.NAME,
           ReactNativeGoogleMobileAdsPictureInPictureModule::class.java.name,
+          false,
+          false,
+          false,
+          isTurboModule,
+        )
+      moduleInfos[ReactNativeGoogleMobileAdsIconAdModule.NAME] =
+        ReactModuleInfo(
+          ReactNativeGoogleMobileAdsIconAdModule.NAME,
+          ReactNativeGoogleMobileAdsIconAdModule::class.java.name,
           false,
           false,
           false,

@@ -35,6 +35,13 @@ class RNGoogleMobileAdsBannerViewEventEmitter : public ViewEventEmitter {
     };
   void onNativeEvent(OnNativeEvent value) const;
 };
+class RNGoogleMobileAdsIconAdViewEventEmitter : public ViewEventEmitter {
+ public:
+  using ViewEventEmitter::ViewEventEmitter;
+
+  
+  
+};
 class RNGoogleMobileAdsMediaViewEventEmitter : public ViewEventEmitter {
  public:
   using ViewEventEmitter::ViewEventEmitter;

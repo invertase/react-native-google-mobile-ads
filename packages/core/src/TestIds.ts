@@ -27,6 +27,8 @@ export const TestIds = {
   NATIVE: '',
   NATIVE_VIDEO: '',
   PICTURE_IN_PICTURE: '',
+  /** Dedicated icon ad format (Android Next-Gen); set in platform select when Google documents a demo unit. */
+  ICON: '',
   GAM_APP_OPEN: '/21775744923/example/app-open',
   GAM_BANNER: '/21775744923/example/fixed-size-banner',
   GAM_INTERSTITIAL: '/21775744923/example/interstitial',
@@ -46,6 +48,7 @@ export const TestIds = {
       NATIVE: 'ca-app-pub-3940256099942544/2247696110',
       NATIVE_VIDEO: 'ca-app-pub-3940256099942544/1044960115',
       PICTURE_IN_PICTURE: 'ca-app-pub-3940256099942544/9657123429',
+      ICON: '',
     },
     ios: {
       APP_OPEN: 'ca-app-pub-3940256099942544/5575463023',

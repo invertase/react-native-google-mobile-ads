@@ -83,6 +83,24 @@ class RNGoogleMobileAdsBannerViewProps final : public ViewProps {
   
 };
 
+class RNGoogleMobileAdsIconAdViewProps final : public ViewProps {
+ public:
+  RNGoogleMobileAdsIconAdViewProps() = default;
+  RNGoogleMobileAdsIconAdViewProps(const PropsParserContext& context, const RNGoogleMobileAdsIconAdViewProps &sourceProps, const RawProps &rawProps);
+
+#pragma mark - Props
+
+  int requestId{0};
+
+  #ifdef RN_SERIALIZABLE_STATE
+  ComponentName getDiffPropsImplementationTarget() const override;
+
+  folly::dynamic getDiffProps(const Props* prevProps) const override;
+  #endif
+
+  
+};
+
 class RNGoogleMobileAdsMediaViewProps final : public ViewProps {
  public:
   RNGoogleMobileAdsMediaViewProps() = default;

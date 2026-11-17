@@ -13,6 +13,7 @@
 namespace facebook::react {
 
 extern const char RNGoogleMobileAdsBannerViewComponentName[] = "RNGoogleMobileAdsBannerView";
+extern const char RNGoogleMobileAdsIconAdViewComponentName[] = "RNGoogleMobileAdsIconAdView";
 extern const char RNGoogleMobileAdsMediaViewComponentName[] = "RNGoogleMobileAdsMediaView";
 extern const char RNGoogleMobileAdsMultiFormatBannerViewComponentName[] = "RNGoogleMobileAdsMultiFormatBannerView";
 extern const char RNGoogleMobileAdsNativeViewComponentName[] = "RNGoogleMobileAdsNativeView";

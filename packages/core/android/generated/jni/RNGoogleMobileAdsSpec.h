@@ -65,6 +65,14 @@ public:
 };
 
 /**
+ * JNI C++ class for module 'NativeIconAdModule'
+ */
+class JSI_EXPORT NativeIconAdModuleSpecJSI : public JavaTurboModule {
+public:
+  NativeIconAdModuleSpecJSI(const JavaTurboModule::InitParams &params);
+};
+
+/**
  * JNI C++ class for module 'NativeInterstitialModule'
  */
 class JSI_EXPORT NativeInterstitialModuleSpecJSI : public JavaTurboModule {
