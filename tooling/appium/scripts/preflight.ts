@@ -240,6 +240,7 @@ export async function runWdioOwned(
         await new Promise(resolve => setTimeout(resolve, 250));
       }
     })();
+    const workerReady = startup.waitForWorkers();
     for (let sessionCreateAttempt = 1; sessionCreateAttempt <= sessionCreateAttempts; sessionCreateAttempt++) {
       const childLogKey =
         sessionCreateAttempt === 1 ? 'serial' : 'serial-session-retry';
@@ -330,7 +331,6 @@ export async function runWdioOwned(
         code => startup.recordProcessExit(source, code),
         () => startup.recordProcessExit(source, 1),
       );
-      const workerReady = startup.waitForWorkers();
       const workerOutcome = await Promise.race([
         workerReady.then(() => ({ kind: 'ready' as const })),
         activeWdio.completion.then(code => ({ kind: 'exit' as const, code })),

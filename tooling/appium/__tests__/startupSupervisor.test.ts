@@ -549,6 +549,21 @@ test('iOS session-create retry exit is ignored and rewinds the worker barrier', 
   assert.equal(supervisor.phase, 'app');
 });
 
+test('session-create retry respawn reuses one worker wait (no overlapping barrier)', async () => {
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workersFirst = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.recordProcessExit('serial-ios', 86);
+  supervisor.rewindWorkerSessionBarrier('serial-ios');
+  const workersSecond = supervisor.waitForWorkers();
+  assert.equal(workersSecond, workersFirst);
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.recordLine('serial-ios', 'Appium session created successfully');
+  await workersSecond;
+  assert.equal(supervisor.phase, 'app');
+});
+
 test('supervised session-create wdio.stop exit 130 is ignored when expected', async () => {
   const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
   await metroReady(supervisor);

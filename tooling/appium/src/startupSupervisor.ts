@@ -198,6 +198,8 @@ export class StartupSupervisor {
    */
   private readonly abortArtifactHooks = new Set<(error: Error) => void>();
   private waiter?: Waiter;
+  /** In-flight worker barrier promise; reused across iOS session-create respawns. */
+  private workerPhaseWait?: Promise<void>;
   private failed?: Error;
   private metroTcpReady = false;
   private metroMarkerReady = false;
@@ -409,9 +411,12 @@ export class StartupSupervisor {
       return Promise.reject(new Error(`Cannot wait for workers during ${this.phase} phase.`));
     }
     if (this.failed) return Promise.reject(this.failed);
+    if (this.workerPhaseWait) {
+      return this.workerPhaseWait;
+    }
     if (this.waiter) return Promise.reject(new Error(`Already waiting for ${this.waiter.phase}.`));
     // Per-source deadlines: Android stays at 60s even when iOS peers use 180s.
-    return new Promise((resolve, reject) => {
+    this.workerPhaseWait = new Promise((resolve, reject) => {
       const timers: unknown[] = [];
       for (const source of this.expected) {
         const timeout = this.workerTimeoutFor(source);
@@ -434,6 +439,7 @@ export class StartupSupervisor {
       this.waiter = { phase: 'worker', resolve, reject, timers };
       this.maybeResolve();
     });
+    return this.workerPhaseWait;
   }
 
   waitForApps(): Promise<void> {
@@ -493,6 +499,9 @@ export class StartupSupervisor {
           : this.apps.size === this.expected.size;
     if (!ready) return;
     this.clearWaiterTimers();
+    if (waiter.phase === 'worker') {
+      this.workerPhaseWait = undefined;
+    }
     this.waiter = undefined;
     this.phase = waiter.phase === 'metro' ? 'worker' : waiter.phase === 'worker' ? 'app' : 'complete';
     waiter.resolve();
@@ -504,6 +513,9 @@ export class StartupSupervisor {
     this.aborts += 1;
     if (this.waiter) {
       this.clearWaiterTimers();
+      if (this.waiter.phase === 'worker') {
+        this.workerPhaseWait = undefined;
+      }
       this.waiter.reject(error);
       this.waiter = undefined;
     }
