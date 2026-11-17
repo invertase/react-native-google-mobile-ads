@@ -385,6 +385,7 @@ SSV
 staleness
 StrictMode
 SVG
+Swipeable
 TCF
 TestLab
 TFUA
