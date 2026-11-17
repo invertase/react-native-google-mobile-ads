@@ -3,8 +3,8 @@ import { createConnection } from 'node:net';
 import path from 'node:path';
 import { formatAndroidWorkerTimeoutHint } from './androidSessionDiagnostics.ts';
 import {
-  IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE,
   IOS_SESSION_CREATE_RETRY_EXIT_CODE,
+  isIosSessionCreateSupervisedRestartStopExitCode,
 } from './wdioSessionCreateRetry.ts';
 
 export const STARTUP_READY_MARKER = '[e2e-startup-ready]';
@@ -202,7 +202,7 @@ export class StartupSupervisor {
   private metroTcpReady = false;
   private metroMarkerReady = false;
   private aborts = 0;
-  /** Set before supervised serial `wdio.stop()` so exit 130 is not a startup abort. */
+  /** Set before supervised serial `wdio.stop()` so signal stops (130/143) are not startup aborts. */
   private readonly sessionCreateRestartStopPending = new Set<string>();
   private readonly sessionCreateRestartStopAcknowledged = new Set<string>();
   phase: StartupPhase = 'metro';
@@ -302,7 +302,7 @@ export class StartupSupervisor {
 
   /**
    * Serial preflight calls this immediately before `wdio.stop()` after hang-recover
-   * so {@link recordProcessExit} and preflight retry logic treat exit 130 as expected.
+   * so {@link recordProcessExit} and preflight retry logic treat signal stops (130/143) as expected.
    */
   expectSessionCreateRestartStop(source: string): void {
     if (this.expected.has(source)) {
@@ -312,10 +312,10 @@ export class StartupSupervisor {
 
   /**
    * Consumed by serial preflight when deciding to spawn `serial-session-retry`
-   * after a supervised hang-recover `wdio.stop()` (exit 130).
+   * after a supervised hang-recover `wdio.stop()` (exit 130 or 143).
    */
   consumeSessionCreateRestartStop(source: string, exitCode: number): boolean {
-    if (exitCode !== IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE) {
+    if (!isIosSessionCreateSupervisedRestartStopExitCode(exitCode)) {
       return false;
     }
     if (this.sessionCreateRestartStopAcknowledged.has(source)) {
@@ -342,7 +342,7 @@ export class StartupSupervisor {
       return;
     }
     if (
-      code === IOS_SESSION_CREATE_RESTART_STOP_EXIT_CODE &&
+      isIosSessionCreateSupervisedRestartStopExitCode(code) &&
       (this.sessionCreateRestartStopPending.has(source) ||
         this.sessionCreateRestartStopAcknowledged.has(source))
     ) {
