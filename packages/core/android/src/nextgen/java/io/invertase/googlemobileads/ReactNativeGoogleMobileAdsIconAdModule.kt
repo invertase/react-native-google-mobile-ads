@@ -118,7 +118,7 @@ class ReactNativeGoogleMobileAdsIconAdModule(
     adUnitId: String,
     ad: IconAd,
   ) {
-    ad.setAdEventCallback(
+    ad.adEventCallback =
       object : IconAdEventCallback {
         override fun onAdClicked() = sendSimpleEvent(requestId, adUnitId, ReactNativeGoogleMobileAdsEvent.GOOGLE_MOBILE_ADS_EVENT_CLICKED)
 
@@ -153,8 +153,7 @@ class ReactNativeGoogleMobileAdsIconAdModule(
             ReactNativeGoogleMobileAdsCommon.fullScreenContentErrorToMap(error),
           )
         }
-      },
-    )
+      }
   }
 
   private fun sendPaidEvent(
