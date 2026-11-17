@@ -31,7 +31,10 @@ class NextGenBackendSmokeTest {
       moduleInfos.getValue(ReactNativeAppModule.NAME).isTurboModule,
     )
     assertFalse(moduleInfos.getValue(ReactNativeGoogleMobileAdsModule.NAME).isTurboModule)
-    assertFalse(moduleInfos.getValue(ReactNativeGoogleMobileAdsConsentModule.NAME).isTurboModule)
+    assertEquals(
+      BuildConfig.IS_NEW_ARCHITECTURE_ENABLED,
+      moduleInfos.getValue(ReactNativeGoogleMobileAdsConsentModule.NAME).isTurboModule,
+    )
     assertFalse(moduleInfos.getValue(ReactNativeGoogleMobileAdsAppOpenModule.NAME).isTurboModule)
     assertFalse(moduleInfos.getValue(ReactNativeGoogleMobileAdsInterstitialModule.NAME).isTurboModule)
     assertFalse(moduleInfos.getValue(ReactNativeGoogleMobileAdsRewardedModule.NAME).isTurboModule)
