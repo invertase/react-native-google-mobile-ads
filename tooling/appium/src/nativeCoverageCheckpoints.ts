@@ -45,24 +45,21 @@ const REQUEST_OUTCOME_NATIVE_COVERAGE_CHECKPOINTS: readonly NativeCoverageCheckp
       android('ReactNativeGoogleMobileAdsBannerAdViewManager.java'),
       android('ReactNativeGoogleMobileAdsAdHelper.kt'),
     ],
-    iosSources: [
-      ios('RNGoogleMobileAdsBannerViewManager.mm'),
-      ios('RNGoogleMobileAdsBannerView.mm'),
-    ],
+    iosSources: [ios('RNGoogleMobileAdsBannerView.mm')],
     jacocoExpectation:
-      'Banner load/render path executes banner view manager and helper code without requiring paid-event branches.',
+      'Banner load/render path executes Fabric banner view code without requiring paid-event branches.',
   },
   {
     contractId: REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS[1].id,
     androidSources: [android('ReactNativeGoogleMobileAdsBannerAdViewManager.java')],
-    iosSources: [ios('RNGoogleMobileAdsBannerViewManager.mm')],
+    iosSources: [ios('RNGoogleMobileAdsBannerView.mm')],
     jacocoExpectation:
-      'Collapsible banner request options flow through the same banner manager path as standard banners.',
+      'Collapsible banner request options flow through the same banner Fabric path as standard banners.',
   },
   {
     contractId: REPRESENTATIVE_REQUEST_OUTCOME_CONTRACTS[2].id,
     androidSources: [android('ReactNativeGoogleMobileAdsBannerAdViewManager.java')],
-    iosSources: [ios('RNGoogleMobileAdsBannerViewManager.mm')],
+    iosSources: [ios('RNGoogleMobileAdsBannerView.mm')],
     jacocoExpectation:
       'GAM anchored adaptive sizes execute the GAM banner bridge; manual-impression canary is non-blocking and fluid-only navigation remains a separate gap.',
   },

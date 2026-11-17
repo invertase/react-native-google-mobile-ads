@@ -15,33 +15,15 @@
  *
  */
 
-#import <React/RCTBridge.h>
-#import <React/RCTUIManager.h>
-
-#ifdef RCT_NEW_ARCH_ENABLED
 #import <React/RCTViewComponentView.h>
-#else
-#import <React/RCTView.h>
-#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
-#ifdef RCT_NEW_ARCH_ENABLED
 @interface RNGoogleMobileAdsMultiFormatBannerView : RCTViewComponentView
-#else
-@interface RNGoogleMobileAdsMultiFormatBannerView : RCTView
-
-- (instancetype)initWithBridge:(RCTBridge *)bridge;
-#endif
 
 /** Multi-format banner registry id from `MultiFormatAdHandle.adId`. */
 @property(nonatomic, copy) NSString *handleId;
 
 @end
-
-#ifndef RCT_NEW_ARCH_ENABLED
-@interface RNGoogleMobileAdsMultiFormatBannerViewManager : RCTViewManager
-@end
-#endif
 
 NS_ASSUME_NONNULL_END

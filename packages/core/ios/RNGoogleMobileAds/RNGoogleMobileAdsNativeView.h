@@ -16,36 +16,17 @@
  */
 
 #import <GoogleMobileAds/GADNativeAd.h>
-#import <React/RCTBridge.h>
-#import <React/RCTUIManager.h>
-
-#ifdef RCT_NEW_ARCH_ENABLED
 #import <React/RCTViewComponentView.h>
-#else
-#import <React/RCTView.h>
-#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
-#ifdef RCT_NEW_ARCH_ENABLED
 @interface RNGoogleMobileAdsNativeView : RCTViewComponentView
 
 // provided by superclass, but we narrow the type in our declaration
 @property(nonatomic, strong, nullable) GADNativeAdView *contentView;
-#else
-@interface RNGoogleMobileAdsNativeView : GADNativeAdView
-
-- (instancetype)initWithBridge:(RCTBridge *)bridge;
-#endif
 
 @property(nonatomic, copy) NSString *responseId;
 
 @end
-
-#ifndef RCT_NEW_ARCH_ENABLED
-@interface RNGoogleMobileAdsNativeViewManager : RCTViewManager
-
-@end
-#endif
 
 NS_ASSUME_NONNULL_END
