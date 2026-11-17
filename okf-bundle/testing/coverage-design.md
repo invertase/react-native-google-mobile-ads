@@ -36,7 +36,7 @@ Consume the **published** package — do **not** copy RNFB coverage scripts into
 | Pull / report | Package CLI `rn-coverage` (bin). Run from the example workspace so config resolves. Record pass/fail receipts for the coverage flush gate. |
 
 For the Android Next-Gen backend, keep AGP app-wide `testCoverageEnabled` off on
-`:app`. Its dependency transform rewrites Mobile Ads SDK 1.5.0 bytecode and
+`:app`. Its dependency transform rewrites Mobile Ads SDK 1.6.0 bytecode and
 causes an Android 16 `VerifyError` in `ads_mobile_sdk.ho3` while parsing a valid
 test-mode Banner response. That is the only currently known unsafe Next-Gen
 JaCoCo posture — do **not** treat it as a broad `EX-NEXTGEN-JACOCO-VALIDITY`
