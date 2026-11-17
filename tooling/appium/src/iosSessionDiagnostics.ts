@@ -10,6 +10,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { createConnection, type Socket } from 'node:net';
 import {
   copyFileSync,
   cpSync,
@@ -97,6 +98,80 @@ export const E2E_IOS_SESSION_PREFIX = '[e2e-ios-session]';
 
 /** Host `pgrep` bound for hang-path snapshots (must stay << hang-probe simctl budget). */
 export const IOS_SESSION_HOST_PGREP_TIMEOUT_MS = 2_000;
+
+/** Default Appium WDA local forwarding port when capability is unset. */
+export const IOS_WDA_DEFAULT_LOCAL_PORT = 8_100;
+
+/** Bounded TCP probe for hang ticks — no simctl, no HTTP body fetch. */
+export const IOS_WDA_PORT_PROBE_TIMEOUT_MS = 1_500;
+
+export type WdaPortProbeConnect = (options: {
+  host: string;
+  port: number;
+  onConnect: () => void;
+  onError: () => void;
+  onTimeout: () => void;
+  timeoutMs: number;
+}) => { destroy: () => void };
+
+const defaultWdaPortProbeConnect: WdaPortProbeConnect = options => {
+  const socket: Socket = createConnection({ host: options.host, port: options.port });
+  socket.once('connect', options.onConnect);
+  socket.once('error', options.onError);
+  socket.setTimeout(options.timeoutMs, options.onTimeout);
+  return socket;
+};
+
+/**
+ * Synchronous bounded TCP probe to `127.0.0.1:<wdaLocalPort>`. Uses short
+ * `Atomics.wait` polling so hang ticks stay off simctl without stacking async.
+ */
+export function probeWdaTcpPort(options?: {
+  host?: string;
+  port?: number;
+  timeoutMs?: number;
+  connect?: WdaPortProbeConnect;
+  wait?: (ms: number) => void;
+}): { reachable: boolean } {
+  const host = options?.host ?? '127.0.0.1';
+  const port = options?.port ?? IOS_WDA_DEFAULT_LOCAL_PORT;
+  const timeoutMs = options?.timeoutMs ?? IOS_WDA_PORT_PROBE_TIMEOUT_MS;
+  const connect = options?.connect ?? defaultWdaPortProbeConnect;
+  const wait =
+    options?.wait ??
+    ((ms: number) => {
+      if (ms > 0) {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+      }
+    });
+  let settled = false;
+  let reachable = false;
+  let socket: { destroy: () => void } | undefined;
+  const finish = (ok: boolean) => {
+    if (settled) {
+      return;
+    }
+    settled = true;
+    reachable = ok;
+    socket?.destroy();
+  };
+  socket = connect({
+    host,
+    port,
+    timeoutMs,
+    onConnect: () => finish(true),
+    onError: () => finish(false),
+    onTimeout: () => finish(false),
+  });
+  const deadline = Date.now() + timeoutMs + 250;
+  while (!settled && Date.now() < deadline) {
+    wait(25);
+  }
+  if (!settled) {
+    finish(false);
+  }
+  return { reachable };
+}
 
 /** Host process name markers used when listing WDA / xcodebuild PIDs. */
 export const IOS_WDA_HOST_PROCESS_MARKERS = [

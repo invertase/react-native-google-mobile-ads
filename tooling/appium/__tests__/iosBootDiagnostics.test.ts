@@ -11,7 +11,11 @@ import {
   findSimulatorDeviceInListJson,
   formatIosBootDiagnosticLine,
   formatIosIsHeadlessCapResolveLine,
+  formatSessionCreateAbortSummary,
   formatSessionCreateHangAbortError,
+  IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS,
+  IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS,
+  IOS_SESSION_CREATE_HANG_WDA_PORT_DOWN_ESCALATE_TICKS,
   IOS_SESSION_CREATE_HANG_HINT,
   IOS_SESSION_CREATE_HANG_LIVE_PID_DEFER_MAX_TICKS,
   isXcrunTimedOutError,
@@ -596,6 +600,63 @@ describe('iosBootDiagnostics', () => {
     );
   });
 
+  test('hang watchdog restarts session-create after recover instead of immediate abort', () => {
+    const lines: string[] = [];
+    const callbacks: Array<() => void> = [];
+    const restarts: string[] = [];
+    const aborts: Error[] = [];
+    startIosSessionCreateHangWatchdog('target-udid', {
+      phase: 'serial:session-create',
+      simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
+      intervalMs: 1000,
+      recoverAfterTicks: 2,
+      abortAfterTicks: 3,
+      prebuiltWdaArtifactPresent: false,
+      wdaPortProbeEnabled: false,
+      lastXcodebuildExitRef: { value: null },
+      write: line => lines.push(line),
+      execCapture: (bin, _args) => {
+        if (bin === 'pgrep') {
+          return { stdout: '', stderr: '', status: 1 };
+        }
+        return {
+          stdout: '',
+          stderr: '',
+          status: null,
+          timedOut: true,
+          error: 'spawnSync ETIMEDOUT',
+        };
+      },
+      deviceHubMode: 'off',
+      deviceHubPids: [],
+      now: () => new Date('2026-10-14T16:00:00.000Z'),
+      clock: {
+        setInterval(callback) {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearInterval() {},
+      },
+      onRecover: () => {},
+      onSessionCreateRestart: () => {
+        restarts.push('issued');
+      },
+      onAbort: error => aborts.push(error),
+    });
+    callbacks[0]!(); // tick 1
+    callbacks[0]!(); // tick 2 — recover + restart
+    assert.equal(restarts.length, 1);
+    assert.ok(lines.some(line => /phase=serial:session-create:hang-retry\b/.test(line)));
+    callbacks[0]!(); // tick 1 of post-restart window — must not abort yet
+    callbacks[0]!(); // tick 2
+    assert.equal(aborts.length, 0);
+    callbacks[0]!(); // tick 3 — abort on second attempt
+    assert.equal(aborts.length, 1);
+    assert.ok(
+      lines.some(line => /sessionCreateRestartIssued=true/.test(line)),
+    );
+  });
+
   test('hang watchdog defers recover while host xcodebuild PIDs live and exit unknown', () => {
     const lines: string[] = [];
     const callbacks: Array<() => void> = [];
@@ -748,6 +809,7 @@ describe('iosBootDiagnostics', () => {
       },
       deviceHubMode: 'off',
       deviceHubPids: [],
+      wdaPortProbeEnabled: false,
       simulatorUiPids: [],
       now: () => new Date('2026-10-14T17:00:00.000Z'),
       clock: {
@@ -1016,6 +1078,7 @@ describe('iosBootDiagnostics', () => {
       execCapture,
       deviceHubMode: 'off',
       deviceHubPids: [],
+      wdaPortProbeEnabled: false,
       simulatorUiPids: [],
       now: () => new Date('2026-11-16T17:10:41.000Z'),
       clock: {
@@ -1099,6 +1162,7 @@ describe('iosBootDiagnostics', () => {
         },
         deviceHubMode: 'off',
         deviceHubPids: [],
+        wdaPortProbeEnabled: false,
         simulatorUiPids: [],
         now: () => new Date('2026-10-15T17:00:00.000Z'),
         clock: {
@@ -1188,6 +1252,7 @@ describe('iosBootDiagnostics', () => {
       },
       deviceHubMode: 'off',
       deviceHubPids: [],
+      wdaPortProbeEnabled: false,
       simulatorUiPids: [],
       now: () => new Date('2026-10-15T15:00:00.000Z'),
       clock: {
@@ -1322,16 +1387,84 @@ describe('iosBootDiagnostics', () => {
       hostXcodebuildPids: '(none)',
       hostWdaPids: '(none)',
       hostXcodebuildBuilding: false,
+      wdaPortReachable: true,
     });
     assert.equal(
       skipRecoverPrebuiltNoPidsYet.action,
       'skip-recover',
-      'prebuilt WDA must never be WDA-terminated by the harness while no host PID is visible yet',
+      'prebuilt WDA with port up and no visible PIDs still defers harness recover',
     );
     if (skipRecoverPrebuiltNoPidsYet.action === 'skip-recover') {
-      assert.match(skipRecoverPrebuiltNoPidsYet.reason, /prebuilt WDA artifact present/);
+      assert.match(skipRecoverPrebuiltNoPidsYet.reason, /prebuilt-recover-skipped-port-up/);
       assert.equal(skipRecoverPrebuiltNoPidsYet.consumeRecoveryOpportunity, false);
     }
+    const recoverPrebuiltNoPidsPortDown = decideSessionCreateHangAction({
+      ...recoverTickBase,
+      hostXcodebuildPids: '(none)',
+      hostWdaPids: '(none)',
+      hostXcodebuildBuilding: false,
+      wdaPortReachable: false,
+    });
+    assert.equal(recoverPrebuiltNoPidsPortDown.action, 'recover');
+  });
+
+  test('T29.a: live host PIDs with WDA port-down at recover threshold escalate to recover', () => {
+    const atRecoverTick = decideSessionCreateHangAction({
+      hangTick: 2,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 2,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '4242',
+      hostWdaPids: '77888',
+      lastXcodebuildExitLabel: '(none)',
+      prebuiltWdaArtifactPresent: true,
+      hostXcodebuildBuilding: false,
+      wdaPortReachable: false,
+      consecutiveWdaPortDownProbes: IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS,
+    });
+    assert.equal(atRecoverTick.action, 'recover');
+    if (atRecoverTick.action === 'recover') {
+      assert.match(atRecoverTick.reason, /WDA terminate/);
+    }
+  });
+
+  test('T29.a: port-down through abort tick recovers once before abort despite live PIDs', () => {
+    const recoverDespiteLivePids = decideSessionCreateHangAction({
+      hangTick: 3,
+      consecutiveXcrunEtimedout: 0,
+      consecutiveBootedHangProbes: 3,
+      simState: 'Booted',
+      recoveredOnce: false,
+      hostXcodebuildPids: '4242',
+      hostWdaPids: '77888',
+      lastXcodebuildExitLabel: '(none)',
+      prebuiltWdaArtifactPresent: true,
+      hostXcodebuildBuilding: false,
+      wdaPortReachable: false,
+      consecutiveWdaPortDownProbes: IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS,
+    });
+    assert.equal(
+      recoverDespiteLivePids.action,
+      'recover',
+      'must not abort without one recover when :8100 stayed down',
+    );
+  });
+
+  test('formatSessionCreateAbortSummary emits stable grep block', () => {
+    const line = formatSessionCreateAbortSummary({
+      wdaPort: 'down',
+      livePids: '4242/(none)',
+      lastXcodebuildExit: '(none)',
+      recoverAttempted: true,
+      artifactDir: '/tmp/hang-snapshots/last',
+      consecutivePortDownProbes: 3,
+      consecutiveDeferrals: 2,
+      wdaLocalPort: 8100,
+    });
+    assert.match(line, /^\[e2e-ios-boot\] session-create-abort-summary /);
+    assert.match(line, /wdaPort=down/);
+    assert.match(line, /consecutivePortDownProbes=3/);
   });
 
   test('FLAKE-005: live-PID abortDeferred livelock caps then escalates abort', () => {

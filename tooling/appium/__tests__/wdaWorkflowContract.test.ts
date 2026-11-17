@@ -210,6 +210,10 @@ test('wdio.ios.conf hang watchdog onAbort prints session-create abort hard marke
   assert.match(wdioSource, /lastXcodebuildExitStatePath/);
   assert.match(wdioSource, /async onPrepare\(/);
   assert.match(wdioSource, /async onComplete\(/);
+  assert.match(
+    readFileSync(resolve(repositoryRoot, 'tooling/appium/wdio.shared.conf.ts'), 'utf8'),
+    /RNGMA_INFRA_ABORT_PREFIX/,
+  );
 });
 test('named prebuild producer and XCUITest consumer use the shared DerivedData path', () => {
   const prebuildSource = readFileSync(

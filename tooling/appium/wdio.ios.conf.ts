@@ -23,6 +23,7 @@ import {
   xcodebuildExitStatePath,
 } from './src/iosSessionDiagnostics.ts';
 import { iosMetroProcessArguments, runtimeResources } from './src/slots.ts';
+import { markIosSessionCreateInfraAbort } from './src/wdioInfraAbort.ts';
 import { appiumHome, config as shared } from './wdio.shared.conf.ts';
 
 const iosApp = iosAppPath();
@@ -52,6 +53,7 @@ function abortWdioSessionCreateHang(error: Error): never {
       ? error
       : formatSessionCreateHangAbortError(error.message);
   console.error(marker.message);
+  markIosSessionCreateInfraAbort();
   process.exit(1);
 }
 
@@ -155,13 +157,28 @@ export const config: Options.Testrunner = {
     sessionCreateHangWatchdog?.stop();
     // Worker process: do not tap stdout here — Appium `[Xcode]` lines are emitted
     // in the launcher. Read the per-port sidecar the launcher writes.
-    sessionCreateHangWatchdog = startIosSessionCreateHangWatchdog(udid, {
-      phase: 'wdio:session-create',
-      simulatorStartupTimeoutMs: timeoutMs,
-      lastXcodebuildExitStatePath: xcodebuildExitStateFile,
-      appiumHome,
-      onAbort: abortWdioSessionCreateHang,
-    });
+    const wdaLocalPortRaw = caps?.['appium:wdaLocalPort'];
+    const sessionCreateAttempt = Number(process.env.RNGMA_IOS_SESSION_CREATE_ATTEMPT ?? '1');
+    const sessionCreateSupervised = process.env.RNGMA_IOS_SESSION_CREATE_SUPERVISOR === '1';
+    // Serial preflight owns hang-recover + wdio.stop(); a worker watchdog would race it.
+    if (!sessionCreateSupervised) {
+      sessionCreateHangWatchdog = startIosSessionCreateHangWatchdog(udid, {
+        phase:
+          sessionCreateAttempt > 1
+            ? 'wdio:session-create-retry'
+            : 'wdio:session-create',
+        simulatorStartupTimeoutMs: timeoutMs,
+        lastXcodebuildExitStatePath: xcodebuildExitStateFile,
+        appiumHome,
+        wdaLocalPort:
+          typeof wdaLocalPortRaw === 'number'
+            ? wdaLocalPortRaw
+            : (runtime.slotResources?.automationPort ?? 8_100),
+        wdaPortProbeEnabled: true,
+        recoverSlotConsumed: sessionCreateAttempt > 1,
+        onAbort: abortWdioSessionCreateHang,
+      });
+    }
   },
   async before(_capabilities, _specs, browser) {
     // Session id exists — disarm before mid-suite xcrun ETIMEDOUT can WDA-terminate.

@@ -29,6 +29,7 @@ import {
   parseXcodebuildExitCodeFromLine,
   pgrepFlLineIsXcodebuild,
   pgrepFlLineIsXcodebuildBuildAction,
+  probeWdaTcpPort,
   readXcodebuildExitState,
   resolveLastXcodebuildExit,
   shouldDeferHangRecoverForLiveHostBuild,
@@ -581,5 +582,31 @@ describe('iosSessionDiagnostics', () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+
+  test('probeWdaTcpPort uses injectable connect (reachable)', () => {
+    const result = probeWdaTcpPort({
+      port: 9_999,
+      timeoutMs: 50,
+      wait: () => undefined,
+      connect: ({ onConnect }) => {
+        onConnect();
+        return { destroy: () => undefined };
+      },
+    });
+    assert.equal(result.reachable, true);
+  });
+
+  test('probeWdaTcpPort uses injectable connect (down)', () => {
+    const result = probeWdaTcpPort({
+      port: 9_999,
+      timeoutMs: 50,
+      wait: () => undefined,
+      connect: ({ onError }) => {
+        onError();
+        return { destroy: () => undefined };
+      },
+    });
+    assert.equal(result.reachable, false);
   });
 });

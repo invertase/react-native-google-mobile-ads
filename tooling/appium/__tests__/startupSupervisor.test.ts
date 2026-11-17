@@ -535,6 +535,72 @@ test('early process exit and external Metro health loss fail the active phase', 
   await assert.rejects(workers, /stopped responding/);
 });
 
+test('iOS session-create retry exit is ignored and rewinds the worker barrier', async () => {
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.recordProcessExit('serial-ios', 86);
+  assert.equal(supervisor.abortCount, 0);
+  supervisor.rewindWorkerSessionBarrier('serial-ios');
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.recordLine('serial-ios', 'Appium session created successfully');
+  await workers;
+  assert.equal(supervisor.phase, 'app');
+});
+
+test('supervised session-create wdio.stop exit 130 is ignored when expected', async () => {
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.expectSessionCreateRestartStop('serial-ios');
+  supervisor.recordProcessExit('serial-ios', 130);
+  assert.equal(supervisor.abortCount, 0);
+  assert.ok(supervisor.consumeSessionCreateRestartStop('serial-ios', 130));
+  assert.equal(supervisor.consumeSessionCreateRestartStop('serial-ios', 130), false);
+  supervisor.rewindWorkerSessionBarrier('serial-ios');
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.recordLine('serial-ios', 'Appium session created successfully');
+  await workers;
+  assert.equal(supervisor.phase, 'app');
+});
+
+test('supervised session-create wdio.stop exit 143 is ignored when expected', async () => {
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.expectSessionCreateRestartStop('serial-ios');
+  supervisor.recordProcessExit('serial-ios', 143);
+  assert.equal(supervisor.abortCount, 0);
+  assert.ok(supervisor.consumeSessionCreateRestartStop('serial-ios', 143));
+  assert.equal(supervisor.consumeSessionCreateRestartStop('serial-ios', 143), false);
+  supervisor.rewindWorkerSessionBarrier('serial-ios');
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  supervisor.recordLine('serial-ios', 'Appium session created successfully');
+  await workers;
+  assert.equal(supervisor.phase, 'app');
+});
+
+test('unexpected exit 130 during worker startup still aborts', async () => {
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordProcessExit('serial-ios', 130);
+  await assert.rejects(workers, /exited during worker startup with code 130/);
+  assert.equal(supervisor.abortCount, 1);
+});
+
+test('unexpected exit 143 during worker startup still aborts', async () => {
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordProcessExit('serial-ios', 143);
+  await assert.rejects(workers, /exited during worker startup with code 143/);
+  assert.equal(supervisor.abortCount, 1);
+});
+
 test('diagnostic tail exit is ignored but failure to start aborts startup', async () => {
   const exited = new StartupSupervisor(['child'], new FakeClock());
   await metroReady(exited);
