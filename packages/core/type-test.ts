@@ -677,7 +677,7 @@ type AdsConsentInfoKeys = Equal<
 >;
 type AdsConsentInfoOptionsKeys = Equal<
   keyof AdsConsentInfoOptions,
-  'debugGeography' | 'tagForUnderAgeOfConsent' | 'testDeviceIdentifiers'
+  'debugGeography' | 'tagForUnderAgeOfConsent' | 'testDeviceIdentifiers' | 'consentSyncId'
 >;
 type AdsConsentUserChoicesKeys = Equal<
   keyof AdsConsentUserChoices,
