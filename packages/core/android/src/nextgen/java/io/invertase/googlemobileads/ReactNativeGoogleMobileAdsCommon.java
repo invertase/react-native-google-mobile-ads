@@ -279,8 +279,7 @@ public final class ReactNativeGoogleMobileAdsCommon {
 
   /** Builds a picture-in-picture ad request with the shared v17 targeting surface. */
   public static PictureInPictureAdRequest buildPictureInPictureAdRequest(
-      String adUnitId,
-      ReadableMap adRequestOptions) {
+      String adUnitId, ReadableMap adRequestOptions) {
     PictureInPictureAdRequest.Builder builder = new PictureInPictureAdRequest.Builder(adUnitId);
     Bundle extras = new Bundle();
 
