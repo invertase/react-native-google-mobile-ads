@@ -33,8 +33,10 @@ jobs:
     timeout-minutes: 90
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      # Prefer PATH ccache wrappers from ccache-action (create-symlink). Do not set LD/LDPLUSPLUS (Xcode 27 trap).
-      CCACHE_SLOPPINESS: clang_index_store,file_stat_matches,include_file_ctime,include_file_mtime,ivfsoverlay,pch_defines,modules,system_headers,time_macros
+      # Example Podfile sets CC/CXX to repo wrappers (ios/ccache/*). Do not set
+      # LD/LDPLUSPLUS (Xcode 27 trap). CCACHE_CONFIGPATH feeds those wrappers;
+      # create-symlink remains a backstop for unqualified clang on PATH.
+      CCACHE_CONFIGPATH: ${{ github.workspace }}/RNGoogleMobileAdsExample/ios/ccache/ccache.conf
     steps:
       # Set up tool versions
       - uses: actions/setup-node@v6
@@ -70,12 +72,14 @@ jobs:
       - uses: hendrikmuhs/ccache-action@v1
         name: Xcode Compile Cache
         with:
+          # v2: CC/CXX wrappers actually populate the blob (v1 stayed ~0 MB).
           # Sticky content-hash key. Single e2e app-id; append-timestamp: false.
-          key: ${{ runner.os }}-e2e-ios-v1-${{ hashFiles('yarn.lock', 'packages/core/ios/**', 'packages/core/*.podspec', 'RNGoogleMobileAdsExample/ios/Podfile.lock') }}
+          # Save on every ref so PR runs can warm the cache for later jobs.
+          key: ${{ runner.os }}-e2e-ios-v2-${{ hashFiles('yarn.lock', 'packages/core/ios/**', 'packages/core/*.podspec', 'RNGoogleMobileAdsExample/ios/Podfile.lock', 'RNGoogleMobileAdsExample/ios/ccache/**') }}
           append-timestamp: false
           create-symlink: true
-          max-size: 750M
-          save: ${{ github.ref == 'refs/heads/main' }}
+          max-size: 2G
+          save: true
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
