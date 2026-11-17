@@ -178,10 +178,11 @@ test('ios timeout ordering lets WDA finish before WDIO gives up', async () => {
   assert.equal(cap['appium:wdaLaunchTimeout'], WDA_LAUNCH_TIMEOUT_MS);
   assert.equal(WDA_LAUNCH_TIMEOUT_MS, 300_000);
   assert.equal(cap['appium:simulatorStartupTimeout'], SIMULATOR_STARTUP_TIMEOUT_MS);
-  assert.equal(SIMULATOR_STARTUP_TIMEOUT_MS, 180_000);
+  assert.equal(SIMULATOR_STARTUP_TIMEOUT_MS, 330_000);
   assert.equal(config.connectionRetryTimeout, IOS_SESSION_RETRY_TIMEOUT_MS);
   assert.ok(IOS_SESSION_RETRY_TIMEOUT_MS > WDA_LAUNCH_TIMEOUT_MS);
-  assert.ok(SIMULATOR_STARTUP_TIMEOUT_MS < IOS_SESSION_RETRY_TIMEOUT_MS);
+  assert.ok(SIMULATOR_STARTUP_TIMEOUT_MS <= IOS_SESSION_RETRY_TIMEOUT_MS);
+  assert.equal(config.connectionRetryCount, 1);
 });
 
 test('ios prebuilt capability consumes the shared prebuild output path', async () => {

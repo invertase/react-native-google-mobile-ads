@@ -27,13 +27,12 @@ export const WDA_LAUNCH_TIMEOUT_MS = 300_000;
 /** WDIO must outlive WDA launch or it SIGTERMs xcodebuild mid-compile. */
 export const IOS_SESSION_RETRY_TIMEOUT_MS = 330_000;
 /**
- * Appium XCUITest / appium-ios-simulator default is 120s. Serial iOS worker
- * readiness is 180s (`IOS_WORKER_STARTUP_TIMEOUT_MS`); keep the driver's
- * `appium:simulatorStartupTimeout` aligned so session-create does not abort
- * ~60s before the supervisor's worker ceiling (CI: "failed to finish booting
- * after 120s" with Original status empty while select-and-boot already saw Booted).
+ * Appium XCUITest / appium-ios-simulator default is 120s. Keep the driver's
+ * `appium:simulatorStartupTimeout` below the 360s iOS worker ceiling and
+ * above WDA launch (300s) so nested timeouts stay ordered.
  */
-export const SIMULATOR_STARTUP_TIMEOUT_MS = 180_000;
+/** Aligned below the 360s iOS worker ceiling and above WDA launch (300s). */
+export const SIMULATOR_STARTUP_TIMEOUT_MS = 330_000;
 /** Shared output root for the CI WDA prebuild and XCUITest's prebuilt lookup. */
 export const IOS_WDA_DERIVED_DATA_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),

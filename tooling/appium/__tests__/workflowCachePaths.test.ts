@@ -49,12 +49,14 @@ test('Android e2e CI pins ubuntu-24.04 and Node for WDIO stability', () => {
   assert.doesNotMatch(source, /node-version: '24\.21\.0'/);
 });
 
-test('iOS e2e CI pins Node 24.22.3 and retries simctl install/launch', () => {
+test('iOS e2e CI pins Node 24.22.3 and fails install on launch-contract gate', () => {
   const source = readFileSync(join(workflowDir, 'tests_e2e_ios.yml'), 'utf8');
   assert.match(source, /node-version: '24\.22\.3'/);
   assert.doesNotMatch(source, /^\s+node-version:\s*24\s*$/m);
   const install = source.slice(source.indexOf('name: Install example on simulator'));
-  assert.match(install, /nick-fields\/retry@v3/);
+  assert.match(install, /set -euo pipefail/);
+  assert.match(install, /launch-contract gate|ImageVersion/);
+  assert.doesNotMatch(install, /nick-fields\/retry@v3/);
   assert.match(install, /yarn tests:ios:run/);
 });
 

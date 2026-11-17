@@ -10,8 +10,12 @@ const appPath = resolve(
 
 /** simctl install wall; CI should fail here instead of the GHA step. */
 const INSTALL_TIMEOUT_MS = 90_000;
-/** simctl launch wall; hung Launch Services must not burn the step budget. */
-const LAUNCH_TIMEOUT_MS = 90_000;
+/** Launch-contract gate: bounded launch (T29 escape). */
+const LAUNCH_GATE_LAUNCH_TIMEOUT_MS = 60_000;
+/** Launch-contract gate: bounded terminate after successful launch. */
+const LAUNCH_GATE_TERMINATE_TIMEOUT_MS = 20_000;
+/** Initial gate plus one simulator reset + reinstall. */
+const LAUNCH_GATE_MAX_ATTEMPTS = 2;
 /** Best-effort diagnostics must not hang the failure path. */
 const DIAGNOSTICS_TIMEOUT_MS = 15_000;
 
@@ -35,6 +39,28 @@ function logPhase(phase, event, details = {}) {
     parts.push(`${key}=${value}`);
   }
   console.log(parts.join(' '));
+}
+
+function resolveRunnerImageVersion(env = process.env) {
+  const raw = env.ImageVersion || env.RUNNER_IMAGE_VERSION || env.GITHUB_RUNNER_IMAGE || '';
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : '(unknown)';
+}
+
+function formatSimLaunchWedgedAbort(imageVersion) {
+  const image = (imageVersion || resolveRunnerImageVersion()).trim() || '(unknown)';
+  return `RNGMA_INFRA_ABORT: sim-launch-wedged image=${image}`;
+}
+
+function isAcceptableSimctlTerminateStatus(status) {
+  return status === 0 || status === 3;
+}
+
+function shouldRetryLaunchGateAfterFailure(
+  completedAttempts,
+  maxAttempts = LAUNCH_GATE_MAX_ATTEMPTS,
+) {
+  return completedAttempts < maxAttempts;
 }
 
 /**
@@ -77,6 +103,35 @@ function runTimed(bin, args, { timeoutMs, stdio = 'inherit' } = {}) {
   }
 
   return result;
+}
+
+function runSimctlTerminate(udid, bundleIdentifier) {
+  const result = spawnSync('xcrun', ['simctl', 'terminate', udid, bundleIdentifier], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    timeout: LAUNCH_GATE_TERMINATE_TIMEOUT_MS,
+    killSignal: 'SIGKILL',
+  });
+  if (result.error) {
+    if (result.error.code === 'ETIMEDOUT') {
+      const error = new Error(
+        `Timed out after ${LAUNCH_GATE_TERMINATE_TIMEOUT_MS}ms: simctl terminate ${bundleIdentifier}`,
+      );
+      error.code = 'ETIMEDOUT';
+      error.timedOut = true;
+      throw error;
+    }
+    throw result.error;
+  }
+  if (result.signal) {
+    throw new Error(`Terminated by ${result.signal}: simctl terminate ${bundleIdentifier}`);
+  }
+  if (!isAcceptableSimctlTerminateStatus(result.status)) {
+    const stderr = typeof result.stderr === 'string' ? result.stderr.trim() : '';
+    throw new Error(
+      `Exited ${result.status}: simctl terminate ${bundleIdentifier}${stderr ? `: ${stderr}` : ''}`,
+    );
+  }
 }
 
 function captureBestEffort(bin, args, timeoutMs) {
@@ -166,7 +221,6 @@ function ensureSimulatorBooted(udid) {
   } catch (error) {
     const stderr = String(error.stderr || error.message || '');
     if (!/current state: Booted|Unable to boot device in current state: Booted/i.test(stderr)) {
-      // Already booted is fine; any other boot failure still needs bootstatus/install to surface.
       if (!/Booted/i.test(stderr)) {
         console.warn(`simctl boot ${udid}: ${stderr.trim() || 'non-zero exit'}`);
       }
@@ -175,6 +229,58 @@ function ensureSimulatorBooted(udid) {
   withPhase('bootstatus', () => {
     execFileSync('xcrun', ['simctl', 'bootstatus', udid, '-b'], { stdio: 'inherit' });
   });
+}
+
+function resetSimulatorForLaunchGate(udid) {
+  withPhase('launch-gate-shutdown', () => {
+    runTimed('xcrun', ['simctl', 'shutdown', udid], { timeoutMs: 60_000, stdio: 'inherit' });
+  });
+  ensureSimulatorBooted(udid);
+}
+
+function installAppOnSimulator(udid) {
+  withPhase('install', () => {
+    runTimed('xcrun', ['simctl', 'install', udid, appPath], {
+      timeoutMs: INSTALL_TIMEOUT_MS,
+      stdio: 'inherit',
+    });
+  });
+}
+
+function runLaunchContractGateOnce(udid, bundleIdentifier) {
+  withPhase('launch-gate-launch', () => {
+    runTimed('xcrun', ['simctl', 'launch', udid, bundleIdentifier], {
+      timeoutMs: LAUNCH_GATE_LAUNCH_TIMEOUT_MS,
+      stdio: 'inherit',
+    });
+  });
+  withPhase('launch-gate-terminate', () => {
+    runSimctlTerminate(udid, bundleIdentifier);
+  });
+}
+
+function runLaunchContractGate(udid, bundleIdentifier) {
+  let attempts = 0;
+  while (shouldRetryLaunchGateAfterFailure(attempts, LAUNCH_GATE_MAX_ATTEMPTS)) {
+    attempts += 1;
+    try {
+      runLaunchContractGateOnce(udid, bundleIdentifier);
+      logPhase('launch-gate', 'pass', { attempt: attempts });
+      return;
+    } catch (error) {
+      logInstallLaunchDiagnostics(udid, bundleIdentifier, appPath);
+      if (!shouldRetryLaunchGateAfterFailure(attempts, LAUNCH_GATE_MAX_ATTEMPTS)) {
+        const abortLine = formatSimLaunchWedgedAbort();
+        console.error(abortLine);
+        const wrapped = new Error(abortLine);
+        wrapped.infraAbort = true;
+        throw wrapped;
+      }
+      logPhase('launch-gate', 'reset', { attempt: attempts });
+      resetSimulatorForLaunchGate(udid);
+      installAppOnSimulator(udid);
+    }
+  }
 }
 
 function run(args = process.argv.slice(2)) {
@@ -191,35 +297,23 @@ function run(args = process.argv.slice(2)) {
     { encoding: 'utf8' },
   ).trim();
 
+  const imageVersion = resolveRunnerImageVersion();
   console.log(
-    `[ios-run] udid=${udid} bundleId=${bundleIdentifier} appPath=${appPath} installTimeoutMs=${INSTALL_TIMEOUT_MS} launchTimeoutMs=${LAUNCH_TIMEOUT_MS}`,
+    `[ios-run] udid=${udid} bundleId=${bundleIdentifier} appPath=${appPath} ` +
+      `installTimeoutMs=${INSTALL_TIMEOUT_MS} launchGateLaunchMs=${LAUNCH_GATE_LAUNCH_TIMEOUT_MS} ` +
+      `launchGateTerminateMs=${LAUNCH_GATE_TERMINATE_TIMEOUT_MS} runnerImage=${imageVersion}`,
   );
 
   ensureSimulatorBooted(udid);
 
   try {
-    withPhase('install', () => {
-      runTimed('xcrun', ['simctl', 'install', udid, appPath], {
-        timeoutMs: INSTALL_TIMEOUT_MS,
-        stdio: 'inherit',
-      });
-    });
+    installAppOnSimulator(udid);
   } catch (error) {
     logInstallLaunchDiagnostics(udid, bundleIdentifier, appPath);
     throw error;
   }
 
-  try {
-    withPhase('launch', () => {
-      runTimed('xcrun', ['simctl', 'launch', udid, bundleIdentifier], {
-        timeoutMs: LAUNCH_TIMEOUT_MS,
-        stdio: 'inherit',
-      });
-    });
-  } catch (error) {
-    logInstallLaunchDiagnostics(udid, bundleIdentifier, appPath);
-    throw error;
-  }
+  runLaunchContractGate(udid, bundleIdentifier);
 }
 
 module.exports = {
@@ -227,13 +321,23 @@ module.exports = {
   parseUdid,
   run,
   ensureSimulatorBooted,
+  resetSimulatorForLaunchGate,
+  runLaunchContractGate,
+  runLaunchContractGateOnce,
+  installAppOnSimulator,
   INSTALL_TIMEOUT_MS,
-  LAUNCH_TIMEOUT_MS,
+  LAUNCH_GATE_LAUNCH_TIMEOUT_MS,
+  LAUNCH_GATE_TERMINATE_TIMEOUT_MS,
+  LAUNCH_GATE_MAX_ATTEMPTS,
   DIAGNOSTICS_TIMEOUT_MS,
   runTimed,
   logPhase,
   withPhase,
   logInstallLaunchDiagnostics,
+  formatSimLaunchWedgedAbort,
+  resolveRunnerImageVersion,
+  isAcceptableSimctlTerminateStatus,
+  shouldRetryLaunchGateAfterFailure,
 };
 
 if (require.main === module) {
