@@ -5,6 +5,10 @@ import { fileURLToPath } from 'node:url';
 import { flushCoverageFromApp } from './src/flushCoverage.ts';
 import { appiumServerLogPath } from './src/iosSessionDiagnostics.ts';
 import { platformForSharedConfig, runtimeResources } from './src/slots.ts';
+import {
+  consumeIosSessionCreateInfraAbort,
+  RNGMA_INFRA_ABORT_PREFIX,
+} from './src/wdioInfraAbort.ts';
 import { selectedWdioSpecs } from './src/wdioSpecs.ts';
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -50,6 +54,11 @@ export const config: Options.Testrunner = {
   },
   onComplete(exitCode, _config, _capabilities, result) {
     const failed = result?.failed ?? 0;
+    if (consumeIosSessionCreateInfraAbort()) {
+      const line = `${RNGMA_INFRA_ABORT_PREFIX} session-create (0 spec failures)`;
+      console.error(line);
+      throw new Error(line);
+    }
     if (exitCode !== 0 || failed > 0) {
       throw new Error(
         `WebdriverIO completed with exit code ${exitCode} and ${failed} failed test(s).`,

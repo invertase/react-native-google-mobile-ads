@@ -237,6 +237,8 @@ export async function runWdioOwned(
         simulatorStartupTimeoutMs: SIMULATOR_STARTUP_TIMEOUT_MS,
         lastXcodebuildExitRef,
         lastXcodebuildExitStatePath: xcodebuildExitStateFile,
+        wdaLocalPort: runtime.slotResources?.automationPort ?? 8_100,
+        wdaPortProbeEnabled: true,
         onRecover: (udid, reason) => {
           console.log(
             formatIosBootDiagnosticLine({

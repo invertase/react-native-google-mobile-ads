@@ -23,6 +23,7 @@ import {
   xcodebuildExitStatePath,
 } from './src/iosSessionDiagnostics.ts';
 import { iosMetroProcessArguments, runtimeResources } from './src/slots.ts';
+import { markIosSessionCreateInfraAbort } from './src/wdioInfraAbort.ts';
 import { appiumHome, config as shared } from './wdio.shared.conf.ts';
 
 const iosApp = iosAppPath();
@@ -52,6 +53,7 @@ function abortWdioSessionCreateHang(error: Error): never {
       ? error
       : formatSessionCreateHangAbortError(error.message);
   console.error(marker.message);
+  markIosSessionCreateInfraAbort();
   process.exit(1);
 }
 
@@ -155,11 +157,17 @@ export const config: Options.Testrunner = {
     sessionCreateHangWatchdog?.stop();
     // Worker process: do not tap stdout here — Appium `[Xcode]` lines are emitted
     // in the launcher. Read the per-port sidecar the launcher writes.
+    const wdaLocalPortRaw = caps?.['appium:wdaLocalPort'];
     sessionCreateHangWatchdog = startIosSessionCreateHangWatchdog(udid, {
       phase: 'wdio:session-create',
       simulatorStartupTimeoutMs: timeoutMs,
       lastXcodebuildExitStatePath: xcodebuildExitStateFile,
       appiumHome,
+      wdaLocalPort:
+        typeof wdaLocalPortRaw === 'number'
+          ? wdaLocalPortRaw
+          : (runtime.slotResources?.automationPort ?? 8_100),
+      wdaPortProbeEnabled: true,
       onAbort: abortWdioSessionCreateHang,
     });
   },
