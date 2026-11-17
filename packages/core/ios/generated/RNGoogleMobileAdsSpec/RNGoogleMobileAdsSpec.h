@@ -516,6 +516,35 @@ namespace facebook::react {
   };
 } // namespace facebook::react
 
+@protocol NativeSwipeableInterstitialAdModuleSpec <RCTBridgeModule, RCTTurboModule>
+
+- (void)swipeableInterstitialLoad:(double)requestId
+                         adUnitId:(NSString *)adUnitId
+                   requestOptions:(NSDictionary *)requestOptions;
+- (void)swipeableInterstitialDestroy:(double)requestId;
+- (void)swipeableInterstitialRecordCustomClickGesture:(double)requestId;
+
+@end
+
+@interface NativeSwipeableInterstitialAdModuleSpecBase : NSObject {
+@protected
+facebook::react::EventEmitterCallback _eventEmitterCallback;
+}
+- (void)setEventEmitterCallback:(EventEmitterCallbackWrapper *)eventEmitterCallbackWrapper;
+
+
+@end
+
+namespace facebook::react {
+  /**
+   * ObjC++ class for module 'NativeSwipeableInterstitialAdModule'
+   */
+  class JSI_EXPORT NativeSwipeableInterstitialAdModuleSpecJSI : public ObjCTurboModule {
+  public:
+    NativeSwipeableInterstitialAdModuleSpecJSI(const ObjCTurboModule::InitParams &params);
+  };
+} // namespace facebook::react
+
 
 inline std::optional<double> JS::NativeConsentModule::AdsConsentInfoOptions::debugGeography() const
 {
@@ -548,6 +577,7 @@ inline JS::NativeGoogleMobileAdsModule::Constants::Builder::Builder(const Input 
 inline JS::NativeGoogleMobileAdsModule::Constants::Builder::Builder(Constants i) : _factory(^{
   return i.unsafeRawValue();
 }) {}
+
 
 
 

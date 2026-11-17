@@ -63,4 +63,11 @@ class RNGoogleMobileAdsNativeViewEventEmitter : public ViewEventEmitter {
   
   
 };
+class RNGoogleMobileAdsSwipeableInterstitialAdViewEventEmitter : public ViewEventEmitter {
+ public:
+  using ViewEventEmitter::ViewEventEmitter;
+
+  
+  
+};
 } // namespace facebook::react

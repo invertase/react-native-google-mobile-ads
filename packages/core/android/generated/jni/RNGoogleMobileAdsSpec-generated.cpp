@@ -443,6 +443,27 @@ NativeRewardedModuleSpecJSI::NativeRewardedModuleSpecJSI(const JavaTurboModule::
   methodMap_["rewardedShow"] = MethodMetadata {3, __hostFunction_NativeRewardedModuleSpecJSI_rewardedShow};
   methodMap_["rewardedDestroy"] = MethodMetadata {1, __hostFunction_NativeRewardedModuleSpecJSI_rewardedDestroy};
 }
+static facebook::jsi::Value __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialLoad(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "swipeableInterstitialLoad", "(DLjava/lang/String;Lcom/facebook/react/bridge/ReadableMap;)V", args, count, cachedMethodId);
+}
+
+static facebook::jsi::Value __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialDestroy(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "swipeableInterstitialDestroy", "(D)V", args, count, cachedMethodId);
+}
+
+static facebook::jsi::Value __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialRecordCustomClickGesture(facebook::jsi::Runtime& rt, TurboModule &turboModule, const facebook::jsi::Value* args, size_t count) {
+  static jmethodID cachedMethodId = nullptr;
+  return static_cast<JavaTurboModule &>(turboModule).invokeJavaMethod(rt, VoidKind, "swipeableInterstitialRecordCustomClickGesture", "(D)V", args, count, cachedMethodId);
+}
+
+NativeSwipeableInterstitialAdModuleSpecJSI::NativeSwipeableInterstitialAdModuleSpecJSI(const JavaTurboModule::InitParams &params)
+  : JavaTurboModule(params) {
+  methodMap_["swipeableInterstitialLoad"] = MethodMetadata {3, __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialLoad};
+  methodMap_["swipeableInterstitialDestroy"] = MethodMetadata {1, __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialDestroy};
+  methodMap_["swipeableInterstitialRecordCustomClickGesture"] = MethodMetadata {1, __hostFunction_NativeSwipeableInterstitialAdModuleSpecJSI_swipeableInterstitialRecordCustomClickGesture};
+}
 
 std::shared_ptr<TurboModule> RNGoogleMobileAdsSpec_ModuleProvider(const std::string &moduleName, const JavaTurboModule::InitParams &params) {
   if (moduleName == "RNAppModule") {
@@ -477,6 +498,9 @@ std::shared_ptr<TurboModule> RNGoogleMobileAdsSpec_ModuleProvider(const std::str
   }
   if (moduleName == "RNGoogleMobileAdsRewardedModule") {
     return std::make_shared<NativeRewardedModuleSpecJSI>(params);
+  }
+  if (moduleName == "RNGoogleMobileAdsSwipeableInterstitialAdModule") {
+    return std::make_shared<NativeSwipeableInterstitialAdModuleSpecJSI>(params);
   }
   return nullptr;
 }

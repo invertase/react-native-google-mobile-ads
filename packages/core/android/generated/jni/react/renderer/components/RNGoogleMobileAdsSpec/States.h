@@ -25,4 +25,6 @@ using RNGoogleMobileAdsMultiFormatBannerViewState = StateData;
 
 using RNGoogleMobileAdsNativeViewState = StateData;
 
+using RNGoogleMobileAdsSwipeableInterstitialAdViewState = StateData;
+
 } // namespace facebook::react

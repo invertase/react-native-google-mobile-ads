@@ -34,6 +34,16 @@ Tip pins for each scoped adapter live in that package's
 (`android.googleMobileAdsMediation` / `ios.googleMobileAdsMediation`). Prefer those pins
 (or the scoped npm package) over hard-coding older Expo `expo-build-properties` versions.
 
+### LiveRamp ATS (Secure Signals, workspace scaffold)
+
+The monorepo includes `@react-native-google-mobile-ads/liveramp-ats`, a **private** workspace
+package (not published to npm) that wires LiveRamp ATS envelope collection into Google's
+**Secure Signals** RTB adapter. Use it when Ad Manager mediation expects LiveRamp ATS signals,
+not as a classic fullscreen mediation adapter. The JS entry exports
+`nativeSecureSignalsAdapterClassName` for Ad Manager registration; see the
+[liveramp-ats package README](https://github.com/invertase/react-native-google-mobile-ads/tree/main/packages/liveramp-ats)
+for placement setup. Integrate from the repo workspace until the package publishes.
+
 Yandex (`@react-native-google-mobile-ads/yandex`) is iOS-only. Its CocoaPods pin
 (`YandexMobileAdsAdMobAdapters` in `packages/yandex/package.json` `sdkVersions`) still
 requires `Google-Mobile-Ads-SDK ~> 13.11.0`, which does **not** admit core's iOS tip pin

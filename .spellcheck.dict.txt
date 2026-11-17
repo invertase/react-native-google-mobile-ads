@@ -20,6 +20,7 @@ AdPools
 AdsConsent
 AdsConsentStatus
 adsExhausted
+allowlist
 allowlisted
 analytics
 Analytics
@@ -167,6 +168,9 @@ launchMode
 launchProperties
 learnt
 Lerna
+LiveRamp
+liveramp
+liveramp-ats
 lifecycle
 loadedAdapterResponse
 logcat
@@ -324,7 +328,9 @@ LLVM
 monorepo
 Nx
 pre-commit
+README
 READMEs
+RTB
 repo
 teardown
 toolchain
@@ -392,6 +398,9 @@ staleness
 StrictMode
 SVG
 Swipeable
+swipeable
+SwipeableInterstitial
+swipeableInterstitial
 TCF
 TestLab
 TFUA

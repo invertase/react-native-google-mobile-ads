@@ -26,6 +26,9 @@ Use `mobileAds()` (not a capital-`MobileAds()` constructor). Prefer the v17 **op
 - **One request, native _or_ banner winner:** `useMultiFormatAd` or `MultiFormatAdRequest` (+ `MultiFormatAdPresets.nativeOrBanner`). Google Ad Manager unit required (for example `TestIds.GAM_NATIVE`); AdMob units hard-error
 - **One request with custom native competing:** `MultiFormatAdRequest.create` only — set `requestOptions.customNativeFormatIds` (optional `customNativeClickHandling`). `useMultiFormatAd` rejects that opt-in
 - **One custom native ad (Ad Manager custom format):** `CustomNativeAd.createForAdRequest` — see `/ad-formats/custom-native`
+- **Picture-in-picture (Google open beta):** `PictureInPictureAd` — see `/ad-formats/picture-in-picture`; gate with `getAdCapabilities().pictureInPicture` (classic Android: `unavailable`)
+- **Icon ads (Alpha, Android Next-Gen):** `IconAd` — see `/ad-formats/icon`; gate with `getAdCapabilities().iconAd` (not a native-ad icon asset)
+- **Swipeable interstitial (Private beta):** `SwipeableInterstitialAd` + `SwipeableInterstitialAdView` — see `/ad-formats/swipeable-interstitial`; gate with `getAdCapabilities().swipeableInterstitial` (Google allowlist; classic Android: `unavailable`)
 - **Register test devices:** Emulators / simulators are automatic on every backend. Physical devices: copy the hashed id the SDK logs (logcat / Xcode console) into `testDeviceIdentifiers`. `TestDeviceIds.EMULATOR` is a classic-Android-only alias
 - **Ask what this binary supports:** `getAdCapabilities()` (prefer presets over hand-rolled matrices)
 
@@ -66,7 +69,7 @@ Base: `https://docs.page/invertase/react-native-google-mobile-ads`
 
 - **Getting Started:** `/` (sidebar title Overview). **Install** is a subgroup: `/prerequisites`, `/ai-agents`, `/installation/expo`, `/installation/react-native`
 - **Set Up Ads:** `/configuration`, `/consent-basics`, `/initialization`, `/first-ad`
-- **Ad Formats:** `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,hooks,ad-manager,custom-native}`
+- **Ad Formats:** `/ad-formats`, `/ad-formats/{app-open,banner,interstitial,rewarded,rewarded-interstitial,native,picture-in-picture,icon,swipeable-interstitial,hooks,ad-manager,custom-native}`
 - **Integrations:** `/firebase`, `/mediation`, `/webview-api-for-ads`, `/next-gen-sdk`
 - **Advanced:** `/preload-pools-and-multiformat-recipes`, `/european-user-consent`, `/impression-level-ad-revenue`, `/revenue-telemetry-and-auction-diagnostics`, `/video-ad_volume-control`, `/config-plugin`
 - **Testing & Debugging:** `/testing`, `/common-reasons-for-ads-not-showing`, `/ad-inspector`

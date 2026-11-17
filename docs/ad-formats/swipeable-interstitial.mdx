@@ -1,0 +1,96 @@
+---
+title: Swipeable interstitial ads (Private beta)
+description: View-hosted swipeable interstitial format - Google private beta on iOS and Android Next-Gen.
+---
+
+<Warning>
+  **Private beta.** Swipeable interstitial (`SwipeableInterstitialAd`) APIs require Google
+  allowlisting and may change upstream. Gate your UI with
+  `getAdCapabilities().swipeableInterstitial` (`experimental` on iOS and Android Next-Gen;
+  `unavailable` on Android classic).
+</Warning>
+
+Swipeable interstitials load like other programmatic formats, but **presentation is view-based**:
+mount `SwipeableInterstitialAdView` after `AdEventType.LOADED` so the SDK can attach its creative
+view. Enforce the creative's `minScreenHoldDuration` in your own dismissal logic before allowing
+the user to close the placement.
+
+## Before you start
+
+- Complete [consent](/consent-basics) and call `mobileAds().initialize()` before `load()`.
+- Use [test ads](/first-ad) in development (`TestIds.GAM_SWIPEABLE_INTERSTITIAL` when your account has access).
+
+## Create and load
+
+```js
+import {
+  SwipeableInterstitialAd,
+  SwipeableInterstitialAdView,
+  SwipeableInterstitialAdEventType,
+  AdEventType,
+  TestIds,
+} from 'react-native-google-mobile-ads';
+
+const adUnitId = __DEV__
+  ? TestIds.GAM_SWIPEABLE_INTERSTITIAL
+  : '/21775744923/example/swipeable-interstitial';
+
+const ad = SwipeableInterstitialAd.createForAdRequest(adUnitId, {
+  maxScreenHoldDurationSeconds: 5,
+  requestNonPersonalizedAdsOnly: true,
+});
+
+ad.addAdEventListener(AdEventType.LOADED, () => {
+  console.log('min hold (seconds)', ad.minScreenHoldDuration);
+});
+
+ad.addAdEventListener(SwipeableInterstitialAdEventType.SCREEN_HOLD_TIMER_STARTED, () => {
+  console.log('SDK screen-hold timer started');
+});
+
+ad.load();
+```
+
+## Present with a view host
+
+```jsx
+{
+  ad.loaded ? (
+    <SwipeableInterstitialAdView swipeableInterstitialAd={ad} style={{ flex: 1 }} />
+  ) : null;
+}
+```
+
+There is no `show()` on this format: the SDK view is attached when the host view mounts with a
+matching `requestId`.
+
+## Custom click gestures (Android Next-Gen)
+
+When the loaded ad reports `isCustomClickGestureEnabled`, call `recordCustomClickGesture()` after
+your app detects the configured swipe gesture:
+
+```js
+ad.recordCustomClickGesture();
+```
+
+Request-time options:
+
+| Option                         | Purpose                                                            |
+| ------------------------------ | ------------------------------------------------------------------ |
+| `maxScreenHoldDurationSeconds` | Max seconds your app commits to holding the ad                     |
+| `adSize`                       | Optional `{ width, height }`                                       |
+| `customClickSwipeGesture`      | `{ direction: 'left' \| 'right' \| 'up' \| 'down', tapsAllowed? }` |
+
+## Platform notes
+
+| Platform                                | Support                                      |
+| --------------------------------------- | -------------------------------------------- |
+| iOS (GMA >= 13.5, private beta headers) | Load + `SwipeableInterstitialAdView`         |
+| Android Next-Gen                        | Load + view host via `getView(Activity)`     |
+| Android classic                         | `swipeable-interstitial-unavailable` on load |
+
+## Not wrapped
+
+- Preload / signal-only APIs (`SwipeableInterstitialAdPreloader`, `SwipeableInterstitialSignalRequest`)
+- `loadFromAdResponse` and mediation signal surfaces
+- iOS `recordCustomClickGesture` (Android only)

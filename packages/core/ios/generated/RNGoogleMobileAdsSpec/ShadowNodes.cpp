@@ -17,5 +17,6 @@ extern const char RNGoogleMobileAdsIconAdViewComponentName[] = "RNGoogleMobileAd
 extern const char RNGoogleMobileAdsMediaViewComponentName[] = "RNGoogleMobileAdsMediaView";
 extern const char RNGoogleMobileAdsMultiFormatBannerViewComponentName[] = "RNGoogleMobileAdsMultiFormatBannerView";
 extern const char RNGoogleMobileAdsNativeViewComponentName[] = "RNGoogleMobileAdsNativeView";
+extern const char RNGoogleMobileAdsSwipeableInterstitialAdViewComponentName[] = "RNGoogleMobileAdsSwipeableInterstitialAdView";
 
 } // namespace facebook::react

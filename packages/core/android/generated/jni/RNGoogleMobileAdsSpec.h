@@ -104,6 +104,14 @@ public:
   NativeRewardedModuleSpecJSI(const JavaTurboModule::InitParams &params);
 };
 
+/**
+ * JNI C++ class for module 'NativeSwipeableInterstitialAdModule'
+ */
+class JSI_EXPORT NativeSwipeableInterstitialAdModuleSpecJSI : public JavaTurboModule {
+public:
+  NativeSwipeableInterstitialAdModuleSpecJSI(const JavaTurboModule::InitParams &params);
+};
+
 
 JSI_EXPORT
 std::shared_ptr<TurboModule> RNGoogleMobileAdsSpec_ModuleProvider(const std::string &moduleName, const JavaTurboModule::InitParams &params);

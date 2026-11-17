@@ -76,4 +76,9 @@ export type AdCapabilities = {
    * Android Next-Gen only; `unavailable` on iOS and Android classic.
    */
   iconAd: CapabilitySupport;
+  /**
+   * Swipeable interstitial ads (Google private beta). `experimental` on iOS and
+   * Android Next-Gen; `unavailable` on Android classic.
+   */
+  swipeableInterstitial: CapabilitySupport;
 };

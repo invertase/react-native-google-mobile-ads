@@ -28,6 +28,7 @@ const nativeEvents = [
   'google_mobile_ads_rewarded_interstitial_event',
   'google_mobile_ads_picture_in_picture_event',
   'google_mobile_ads_icon_ad_event',
+  'google_mobile_ads_swipeable_interstitial_event',
   'google_mobile_ads_pool_event',
 ];
 

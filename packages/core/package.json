@@ -139,7 +139,8 @@
         "RNGoogleMobileAdsNativeView": "RNGoogleMobileAdsNativeView",
         "RNGoogleMobileAdsMediaView": "RNGoogleMobileAdsMediaView",
         "RNGoogleMobileAdsMultiFormatBannerView": "RNGoogleMobileAdsMultiFormatBannerView",
-        "RNGoogleMobileAdsIconAdView": "RNGoogleMobileAdsIconAdView"
+        "RNGoogleMobileAdsIconAdView": "RNGoogleMobileAdsIconAdView",
+        "RNGoogleMobileAdsSwipeableInterstitialAdView": "RNGoogleMobileAdsSwipeableInterstitialAdView"
       }
     },
     "android": {

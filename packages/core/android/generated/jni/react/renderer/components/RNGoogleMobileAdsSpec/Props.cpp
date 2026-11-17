@@ -179,5 +179,34 @@ folly::dynamic RNGoogleMobileAdsNativeViewProps::getDiffProps(
   return result;
 }
 #endif
+RNGoogleMobileAdsSwipeableInterstitialAdViewProps::RNGoogleMobileAdsSwipeableInterstitialAdViewProps(
+    const PropsParserContext &context,
+    const RNGoogleMobileAdsSwipeableInterstitialAdViewProps &sourceProps,
+    const RawProps &rawProps): ViewProps(context, sourceProps, rawProps),
+
+    requestId(convertRawProp(context, rawProps, "requestId", sourceProps.requestId, {0})) {}
+    
+#ifdef RN_SERIALIZABLE_STATE
+ComponentName RNGoogleMobileAdsSwipeableInterstitialAdViewProps::getDiffPropsImplementationTarget() const {
+  return "RNGoogleMobileAdsSwipeableInterstitialAdView";
+}
+
+folly::dynamic RNGoogleMobileAdsSwipeableInterstitialAdViewProps::getDiffProps(
+    const Props* prevProps) const {
+  static const auto defaultProps = RNGoogleMobileAdsSwipeableInterstitialAdViewProps();
+  const RNGoogleMobileAdsSwipeableInterstitialAdViewProps* oldProps = prevProps == nullptr
+      ? &defaultProps
+      : static_cast<const RNGoogleMobileAdsSwipeableInterstitialAdViewProps*>(prevProps);
+  if (this == oldProps) {
+    return folly::dynamic::object();
+  }
+  folly::dynamic result = HostPlatformViewProps::getDiffProps(prevProps);
+  
+  if (requestId != oldProps->requestId) {
+    result["requestId"] = requestId;
+  }
+  return result;
+}
+#endif
 
 } // namespace facebook::react
