@@ -32,6 +32,10 @@ import {
 } from '../src/slots.ts';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const iosCcacheExtraParams = [
+  `CC=${path.join(repositoryRoot, 'RNGoogleMobileAdsExample/ios/ccache/ccache-clang.sh')}`,
+  `CXX=${path.join(repositoryRoot, 'RNGoogleMobileAdsExample/ios/ccache/ccache-clang++.sh')}`,
+].join(' ');
 
 describe('cross-platform e2e slots', () => {
   test('computes every slot and platform from the locked formula', () => {
@@ -139,7 +143,7 @@ describe('cross-platform e2e slots', () => {
     assert.equal(iosBuildCommand({}).env?.RCT_METRO_PORT, undefined);
     assert.deepEqual(iosBuildCommand({}).args.slice(-2), [
       '--extra-params',
-      'CC=clang CPLUSPLUS=clang++',
+      iosCcacheExtraParams,
     ]);
   });
 
@@ -346,7 +350,7 @@ describe('cross-platform e2e slots', () => {
     assert.equal(iosBuild.env?.RCT_METRO_PORT, '13107');
     assert.deepEqual(iosBuild.args.slice(-2), [
       '--extra-params',
-      'CC=clang CPLUSPLUS=clang++ RCT_METRO_PORT=13107',
+      `${iosCcacheExtraParams} RCT_METRO_PORT=13107`,
     ]);
   });
 
@@ -462,7 +466,7 @@ describe('cross-platform e2e slots', () => {
     assert.equal(iosBuild.env?.RCT_METRO_PORT, '13107');
     assert.deepEqual(iosBuild.args.slice(-2), [
       '--extra-params',
-      'CC=clang CPLUSPLUS=clang++ RCT_METRO_PORT=13107',
+      `${iosCcacheExtraParams} RCT_METRO_PORT=13107`,
     ]);
     assert.deepEqual(
       iosMetroProcessArguments(runtimeResources('ios', iosEnv)),

@@ -14,13 +14,16 @@ rn_coverage_post_install = Pod::Executable.execute_command('node', ['-p',
   'require("path").join(require.resolve("react-native-coverage/package.json", {paths:[process.argv[1]]}), "..", "cocoapods", "coverage_post_install.rb")',
   __dir__]).strip
 require rn_coverage_post_install
+require_relative 'rngma_ccache_post_install'
 
 workspace 'RNGoogleMobileAdsExample.xcworkspace'
 
 use_test_app!(
   :hermes_enabled => true,
   :fabric_enabled => true,
-  :ccache_enabled => true,
+  # RNTA does not forward :ccache_enabled to react_native_post_install; CC/CXX
+  # wrappers are applied below via RngmaCcache (avoids RN LD/LDPLUSPLUS +
+  # CCACHE_BINARY silent no-op).
   :post_install => lambda { |installer|
     ReactNativeCoverage.apply_post_install!(
       installer,
@@ -64,5 +67,7 @@ use_test_app!(
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios
       end
     end
+
+    RngmaCcache.apply_compiler_settings!(installer)
   }
 )

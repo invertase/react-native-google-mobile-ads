@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   parseAvailableIosSimulators,
   selectIosSimulator,
@@ -8,6 +10,17 @@ import {
   slotMetroPackagerEnv,
   type RuntimeResources,
 } from './slots.ts';
+
+const appiumSrcDir = path.dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = path.resolve(appiumSrcDir, '../../..');
+const iosCcacheClang = path.join(
+  monorepoRoot,
+  'RNGoogleMobileAdsExample/ios/ccache/ccache-clang.sh',
+);
+const iosCcacheClangxx = path.join(
+  monorepoRoot,
+  'RNGoogleMobileAdsExample/ios/ccache/ccache-clang++.sh',
+);
 
 export type NamedCommand = {
   bin: string;
@@ -158,11 +171,12 @@ export function iosBuildCommand(
   env: NodeJS.ProcessEnv = process.env,
 ): NamedCommand {
   const runtime = runtimeResources('ios', env);
-  // Pass CC/CPLUSPLUS as xcodebuild settings argv so PATH ccache wrappers apply
-  // (Xcode 27 ignores job env alone). Never set LD/LDPLUSPLUS.
+  // Absolute CC/CXX wrappers (repo ios/ccache/*) so Xcode does not need PATH
+  // clang symlinks. Never set LD/LDPLUSPLUS (Xcode 27 trap). Use CXX, not the
+  // non-standard CPLUSPLUS setting.
   const extraParams = [
-    'CC=clang',
-    'CPLUSPLUS=clang++',
+    `CC=${iosCcacheClang}`,
+    `CXX=${iosCcacheClangxx}`,
     ...(runtime.slot == null ? [] : [`RCT_METRO_PORT=${runtime.metroPort}`]),
   ].join(' ');
   return {
