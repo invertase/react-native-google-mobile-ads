@@ -9,7 +9,7 @@ description: Dedicated Icon ad format - experimental wrap for Android Next-Gen o
 </Warning>
 
 Icon ads are a dedicated Next-Gen Android format (not the `icon` asset on [native ads](/ad-formats/native)).
-Load inventory, wire your layout with {@link IconAsset} children inside {@link IconAdView}, and let the SDK
+Load inventory, wire your layout with `IconAsset` children inside `IconAdView`, and let the SDK
 register the loaded ad when assets are ready.
 
 ## Before you start
@@ -62,7 +62,7 @@ iconAd.load();
 ) : null}
 ```
 
-Assign at least one asset view before the native layer calls `registerIconAd`. Standard ad events use {@link AdEventType}
+Assign at least one asset view before the native layer calls `registerIconAd`. Standard ad events use `AdEventType`
 (`LOADED`, `ERROR`, `IMPRESSION`, `CLICKED`, `PAID`, `OPENED`, `CLOSED` for fullscreen overlays).
 
 ## destroy

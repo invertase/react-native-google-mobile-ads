@@ -22,6 +22,7 @@ export const TestIds = {
   ADAPTIVE_BANNER: '',
   BANNER: '',
   INTERSTITIAL: '',
+  INTERSTITIAL_VIDEO: '',
   REWARDED: '',
   REWARDED_INTERSTITIAL: '',
   NATIVE: '',

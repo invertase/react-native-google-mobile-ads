@@ -132,6 +132,12 @@ HTTP
 HTTPS
 IAB
 iabtcf
+IconAd
+IconAdLoadCallback
+IconAdPlacement
+IconAdView
+IconAsset
+IconAssetType
 IDFA
 IDFV
 ILRD
