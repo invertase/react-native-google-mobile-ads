@@ -383,13 +383,14 @@ struct NativeConsentModuleAdsConsentInfoBridging {
 
 #pragma mark - NativeConsentModuleAdsConsentInfoOptions
 
-template <typename P0, typename P1, typename P2>
+template <typename P0, typename P1, typename P2, typename P3>
 struct NativeConsentModuleAdsConsentInfoOptions {
   P0 debugGeography{};
   P1 tagForUnderAgeOfConsent{};
-  P2 testDeviceIdentifiers;
+  P2 testDeviceIdentifiers{};
+  P3 consentSyncId;
   bool operator==(const NativeConsentModuleAdsConsentInfoOptions &other) const {
-    return debugGeography == other.debugGeography && tagForUnderAgeOfConsent == other.tagForUnderAgeOfConsent && testDeviceIdentifiers == other.testDeviceIdentifiers;
+    return debugGeography == other.debugGeography && tagForUnderAgeOfConsent == other.tagForUnderAgeOfConsent && testDeviceIdentifiers == other.testDeviceIdentifiers && consentSyncId == other.consentSyncId;
   }
 };
 
@@ -404,7 +405,8 @@ struct NativeConsentModuleAdsConsentInfoOptionsBridging {
     T result{
       bridging::fromJs<decltype(types.debugGeography)>(rt, value.getProperty(rt, "debugGeography"), jsInvoker),
       bridging::fromJs<decltype(types.tagForUnderAgeOfConsent)>(rt, value.getProperty(rt, "tagForUnderAgeOfConsent"), jsInvoker),
-      bridging::fromJs<decltype(types.testDeviceIdentifiers)>(rt, value.getProperty(rt, "testDeviceIdentifiers"), jsInvoker)};
+      bridging::fromJs<decltype(types.testDeviceIdentifiers)>(rt, value.getProperty(rt, "testDeviceIdentifiers"), jsInvoker),
+      bridging::fromJs<decltype(types.consentSyncId)>(rt, value.getProperty(rt, "consentSyncId"), jsInvoker)};
     return result;
   }
 
@@ -416,6 +418,9 @@ struct NativeConsentModuleAdsConsentInfoOptionsBridging {
     return bridging::toJs(rt, value);
   }
   static jsi::Array testDeviceIdentifiersToJs(jsi::Runtime &rt, decltype(types.testDeviceIdentifiers) value) {
+    return bridging::toJs(rt, value);
+  }
+  static jsi::String consentSyncIdToJs(jsi::Runtime &rt, decltype(types.consentSyncId) value) {
     return bridging::toJs(rt, value);
   }
 #endif
@@ -433,6 +438,9 @@ struct NativeConsentModuleAdsConsentInfoOptionsBridging {
     }
     if (value.testDeviceIdentifiers) {
       result.setProperty(rt, "testDeviceIdentifiers", bridging::toJs(rt, value.testDeviceIdentifiers.value(), jsInvoker));
+    }
+    if (value.consentSyncId) {
+      result.setProperty(rt, "consentSyncId", bridging::toJs(rt, value.consentSyncId.value(), jsInvoker));
     }
     return result;
   }

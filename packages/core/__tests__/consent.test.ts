@@ -70,6 +70,33 @@ describe('Google Mobile Ads AdsConsent', function () {
         "AdsConsent.requestInfoUpdate(*) 'options.testDeviceIdentifiers' expected an array of string values.",
       );
     });
+
+    it('throws if options.consentSyncId is not a string', function () {
+      // @ts-ignore
+      expect(() => AdsConsent.requestInfoUpdate({ consentSyncId: 123 })).toThrow(
+        "AdsConsent.requestInfoUpdate(*) 'options.consentSyncId' expected a string value.",
+      );
+    });
+
+    it('throws if options.consentSyncId is too short', function () {
+      expect(() => AdsConsent.requestInfoUpdate({ consentSyncId: 'too-short' })).toThrow(
+        "AdsConsent.requestInfoUpdate(*) 'options.consentSyncId' expected a UUID or 22–150 characters matching ^[0-9a-zA-Z+.=\/_\-$,{}]{22,150}$.",
+      );
+    });
+
+    it('accepts a UUID consentSyncId without failing validation', function () {
+      expect(() => {
+        try {
+          AdsConsent.requestInfoUpdate({
+            consentSyncId: '123e4567-e89b-12d3-a456-426614174000',
+          });
+        } catch (e) {
+          if (e instanceof Error && e.message.includes('expected')) {
+            throw e;
+          }
+        }
+      }).not.toThrow();
+    });
   });
 
   describe('getGppString', function () {

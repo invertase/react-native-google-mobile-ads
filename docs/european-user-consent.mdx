@@ -184,6 +184,33 @@ the actual user consent**. It simply indicates if you now have a consent respons
 and not `REQUIRED` as some may expect). To check the actual consent status
 see [Inspecting consent choices](/european-user-consent/#inspecting-consent-choices) below.
 
+### Sync consent across apps (Beta)
+
+Google UMP can sync a user's consent decision across your apps when you pass a stable
+`consentSyncId` into `requestInfoUpdate` / `gatherConsent`. This wraps Android
+`ConsentRequestParameters.Builder.setConsentSyncId` and iOS `UMPRequestParameters.consentSyncID`.
+
+<Warning>
+  **Preview / Beta:** Consent sync across apps is a **Google UMP beta** feature. Enable consent
+  syncing for eligible apps in the AdMob / Ad Manager Privacy & messaging UI before relying on it in
+  production. See Google's guides for
+  [Android](https://developers.google.com/admob/android/privacy/sync-consent) and
+  [iOS](https://developers.google.com/admob/ios/privacy/sync-consent).
+</Warning>
+
+Provide a cross-app identifier you already use (for example App Set ID on Android, or IDFV on iOS).
+Do not send raw PII — hash or encrypt account identifiers first. The value must be a UUID or 22–150
+characters matching `^[0-9a-zA-Z+.=\/_\-$,{}]{22,150}$`.
+
+```js
+import { AdsConsent } from 'react-native-google-mobile-ads';
+
+const consentInfo = await AdsConsent.gatherConsent({
+  // Stable cross-app id you control (hashed if derived from account data).
+  consentSyncId: '123e4567-e89b-12d3-a456-426614174000',
+});
+```
+
 ### Gathering user consent
 
 You should request an update of the user's consent information at every app launch, using `requestInfoUpdate`.

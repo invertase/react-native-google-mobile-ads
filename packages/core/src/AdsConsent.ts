@@ -67,6 +67,22 @@ export const AdsConsent: AdsConsentInterface = {
       }
     }
 
+    if (isPropertySet(options, 'consentSyncId')) {
+      if (!isString(options.consentSyncId)) {
+        throw new Error(
+          "AdsConsent.requestInfoUpdate(*) 'options.consentSyncId' expected a string value.",
+        );
+      }
+
+      // Mirror Google UMP: UUID or ^[0-9a-zA-Z+.=\/_\-$,{}]{22,150}$
+      const consentSyncIdPattern = /^[0-9a-zA-Z+.=\/_\-$,{}]{22,150}$/;
+      if (!consentSyncIdPattern.test(options.consentSyncId)) {
+        throw new Error(
+          "AdsConsent.requestInfoUpdate(*) 'options.consentSyncId' expected a UUID or 22–150 characters matching ^[0-9a-zA-Z+.=\/_\-$,{}]{22,150}$.",
+        );
+      }
+    }
+
     return native.requestInfoUpdate(options);
   },
 

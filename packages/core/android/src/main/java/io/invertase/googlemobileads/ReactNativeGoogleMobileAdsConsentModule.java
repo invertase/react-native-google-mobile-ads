@@ -117,6 +117,13 @@ public class ReactNativeGoogleMobileAdsConsentModule extends NativeConsentModule
         paramsBuilder.setTagForUnderAgeOfConsent(safeOptions.getBoolean("tagForUnderAgeOfConsent"));
       }
 
+      if (safeOptions.hasKey("consentSyncId")) {
+        String consentSyncId = safeOptions.getString("consentSyncId");
+        if (consentSyncId != null) {
+          paramsBuilder.setConsentSyncId(consentSyncId);
+        }
+      }
+
       ConsentRequestParameters consentRequestParameters = paramsBuilder.build();
 
       Activity currentActivity = getReactApplicationContext().getCurrentActivity();
