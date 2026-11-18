@@ -3,10 +3,13 @@ import { describe, test } from 'node:test';
 import {
   formatSimLaunchWedgedAbort,
   isAcceptableSimctlTerminateStatus,
+  isAcceptableSimctlShutdownOutcome,
   LAUNCH_GATE_ERASE_TIMEOUT_MS,
   LAUNCH_GATE_LAUNCH_TIMEOUT_MS,
   LAUNCH_GATE_MAX_ATTEMPTS,
   LAUNCH_GATE_RESET_MODE,
+  LAUNCH_GATE_RESET_SEQUENCE,
+  LAUNCH_GATE_SHUTDOWN_TIMEOUT_MS,
   LAUNCH_GATE_TERMINATE_TIMEOUT_MS,
   LAUNCH_SERVICES_SETTLE_POLL_MS,
   LAUNCH_SERVICES_SETTLE_TIMEOUT_MS,
@@ -23,7 +26,23 @@ describe('iosLaunchContractGate', () => {
     assert.equal(LAUNCH_GATE_MAX_ATTEMPTS, 2);
     assert.equal(LAUNCH_SERVICES_SETTLE_POLL_MS, 1_000);
     assert.equal(LAUNCH_SERVICES_SETTLE_TIMEOUT_MS, 30_000);
+    assert.equal(LAUNCH_GATE_SHUTDOWN_TIMEOUT_MS, 60_000);
     assert.equal(LAUNCH_GATE_ERASE_TIMEOUT_MS, 120_000);
+  });
+
+  test('S2 reset runs shutdown before erase then boot', () => {
+    assert.deepEqual(LAUNCH_GATE_RESET_SEQUENCE, ['shutdown', 'erase', 'boot']);
+  });
+
+  test('simctl shutdown accepts exit 0 or already Shutdown', () => {
+    assert.ok(isAcceptableSimctlShutdownOutcome(0));
+    assert.ok(
+      isAcceptableSimctlShutdownOutcome(
+        149,
+        'Unable to shutdown device in current state: Shutdown',
+      ),
+    );
+    assert.ok(!isAcceptableSimctlShutdownOutcome(1, 'permission denied'));
   });
 
   test('simctl terminate status 0 and 3 are acceptable', () => {

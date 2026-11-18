@@ -20,6 +20,8 @@ const LAUNCH_GATE_MAX_ATTEMPTS = 2;
 const LAUNCH_SERVICES_SETTLE_POLL_MS = 1_000;
 /** Bounded wait after install before the first gate launch. */
 const LAUNCH_SERVICES_SETTLE_TIMEOUT_MS = 30_000;
+/** Wall clock for the gate reset `simctl shutdown` before erase. */
+const LAUNCH_GATE_SHUTDOWN_TIMEOUT_MS = 60_000;
 /** Wall clock for the single gate reset `simctl erase`. */
 const LAUNCH_GATE_ERASE_TIMEOUT_MS = 120_000;
 /** Best-effort diagnostics must not hang the failure path. */
@@ -56,6 +58,24 @@ function resolveRunnerImageVersion(env = process.env) {
 function formatSimLaunchWedgedAbort(imageVersion) {
   const image = (imageVersion || resolveRunnerImageVersion()).trim() || '(unknown)';
   return `RNGMA_INFRA_ABORT: sim-launch-wedged image=${image}`;
+}
+
+function throwSimLaunchWedgedInfraAbort() {
+  const abortLine = formatSimLaunchWedgedAbort();
+  console.error(abortLine);
+  const wrapped = new Error(abortLine);
+  wrapped.infraAbort = true;
+  throw wrapped;
+}
+
+function isAcceptableSimctlShutdownOutcome(status, stderr) {
+  if (status === 0) {
+    return true;
+  }
+  const text = String(stderr || '');
+  return /current state:\s*Shutdown|Unable to shutdown device in current state: Shutdown/i.test(
+    text,
+  );
 }
 
 function isAcceptableSimctlTerminateStatus(status) {
@@ -237,7 +257,40 @@ function ensureSimulatorBooted(udid) {
   });
 }
 
+function shutdownSimulatorForLaunchGate(udid) {
+  withPhase('launch-gate-shutdown', () => {
+    const result = spawnSync('xcrun', ['simctl', 'shutdown', udid], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: LAUNCH_GATE_SHUTDOWN_TIMEOUT_MS,
+      killSignal: 'SIGKILL',
+    });
+    if (result.error) {
+      if (result.error.code === 'ETIMEDOUT') {
+        const error = new Error(
+          `Timed out after ${LAUNCH_GATE_SHUTDOWN_TIMEOUT_MS}ms: simctl shutdown ${udid}`,
+        );
+        error.code = 'ETIMEDOUT';
+        error.timedOut = true;
+        throw error;
+      }
+      throw result.error;
+    }
+    if (result.signal) {
+      throw new Error(`Terminated by ${result.signal}: simctl shutdown ${udid}`);
+    }
+    const stderr = typeof result.stderr === 'string' ? result.stderr : '';
+    if (!isAcceptableSimctlShutdownOutcome(result.status, stderr)) {
+      const trimmed = stderr.trim();
+      throw new Error(
+        `Exited ${result.status}: simctl shutdown ${udid}${trimmed ? `: ${trimmed}` : ''}`,
+      );
+    }
+  });
+}
+
 function resetSimulatorForLaunchGate(udid) {
+  shutdownSimulatorForLaunchGate(udid);
   withPhase('launch-gate-erase', () => {
     runTimed('xcrun', ['simctl', 'erase', udid], {
       timeoutMs: LAUNCH_GATE_ERASE_TIMEOUT_MS,
@@ -317,16 +370,17 @@ function runLaunchContractGate(udid, bundleIdentifier) {
     } catch (error) {
       logInstallLaunchDiagnostics(udid, bundleIdentifier, appPath);
       if (!shouldRetryLaunchGateAfterFailure(attempts, LAUNCH_GATE_MAX_ATTEMPTS)) {
-        const abortLine = formatSimLaunchWedgedAbort();
-        console.error(abortLine);
-        const wrapped = new Error(abortLine);
-        wrapped.infraAbort = true;
-        throw wrapped;
+        throwSimLaunchWedgedInfraAbort();
       }
       logPhase('launch-gate', 'reset', { attempt: attempts, mode: 'erase' });
-      resetSimulatorForLaunchGate(udid);
-      installAppOnSimulator(udid);
-      waitForLaunchServicesSettle(udid, bundleIdentifier);
+      try {
+        resetSimulatorForLaunchGate(udid);
+        installAppOnSimulator(udid);
+        waitForLaunchServicesSettle(udid, bundleIdentifier);
+      } catch {
+        logInstallLaunchDiagnostics(udid, bundleIdentifier, appPath);
+        throwSimLaunchWedgedInfraAbort();
+      }
     }
   }
 }
@@ -372,6 +426,7 @@ module.exports = {
   run,
   ensureSimulatorBooted,
   resetSimulatorForLaunchGate,
+  shutdownSimulatorForLaunchGate,
   runLaunchContractGate,
   runLaunchContractGateOnce,
   installAppOnSimulator,
@@ -381,8 +436,11 @@ module.exports = {
   LAUNCH_GATE_MAX_ATTEMPTS,
   LAUNCH_SERVICES_SETTLE_POLL_MS,
   LAUNCH_SERVICES_SETTLE_TIMEOUT_MS,
+  LAUNCH_GATE_SHUTDOWN_TIMEOUT_MS,
   LAUNCH_GATE_ERASE_TIMEOUT_MS,
   DIAGNOSTICS_TIMEOUT_MS,
+  isAcceptableSimctlShutdownOutcome,
+  throwSimLaunchWedgedInfraAbort,
   waitForLaunchServicesSettle,
   isLaunchServicesRegistered,
   runTimed,

@@ -99,7 +99,12 @@ test('iOS run-ios-app time-boxes install/launch and emits durable phase markers'
   assert.match(source, /withPhase\('install'/);
   assert.match(source, /launch-gate-launch/);
   assert.match(source, /launch-gate-terminate/);
+  assert.match(source, /launch-gate-shutdown/);
   assert.match(source, /launch-gate-erase/);
+  assert.match(
+    source,
+    /shutdownSimulatorForLaunchGate[\s\S]*withPhase\('launch-gate-erase'/,
+  );
   assert.match(source, /launch-services-settle/);
   assert.match(source, /RNGMA_INFRA_ABORT: sim-launch-wedged/);
   assert.match(source, /get_app_container/);
