@@ -6,6 +6,7 @@ import {
   isAcceptableSimctlShutdownOutcome,
   LAUNCH_GATE_ERASE_TIMEOUT_MS,
   LAUNCH_GATE_LAUNCH_TIMEOUT_MS,
+  LAUNCH_GATE_LAUNCH_TIMEOUT_MS_CI,
   LAUNCH_GATE_MAX_ATTEMPTS,
   LAUNCH_GATE_RESET_MODE,
   LAUNCH_GATE_RESET_SEQUENCE,
@@ -13,6 +14,7 @@ import {
   LAUNCH_GATE_TERMINATE_TIMEOUT_MS,
   LAUNCH_SERVICES_SETTLE_POLL_MS,
   LAUNCH_SERVICES_SETTLE_TIMEOUT_MS,
+  resolveLaunchGateLaunchTimeoutMs,
   resolveLaunchGateResetMode,
   resolveRunnerImageVersion,
   shouldEraseSimulatorOnLaunchGateReset,
@@ -20,8 +22,9 @@ import {
 } from '../src/iosLaunchContractGate.ts';
 
 describe('iosLaunchContractGate', () => {
-  test('timeouts match T29 nested launch-contract spec', () => {
+  test('timeouts match nested launch-contract ceilings', () => {
     assert.equal(LAUNCH_GATE_LAUNCH_TIMEOUT_MS, 90_000);
+    assert.equal(LAUNCH_GATE_LAUNCH_TIMEOUT_MS_CI, 120_000);
     assert.equal(LAUNCH_GATE_TERMINATE_TIMEOUT_MS, 20_000);
     assert.equal(LAUNCH_GATE_MAX_ATTEMPTS, 2);
     assert.equal(LAUNCH_SERVICES_SETTLE_POLL_MS, 1_000);
@@ -30,7 +33,7 @@ describe('iosLaunchContractGate', () => {
     assert.equal(LAUNCH_GATE_ERASE_TIMEOUT_MS, 120_000);
   });
 
-  test('S2 reset runs shutdown before erase then boot', () => {
+  test('gate reset runs shutdown before erase then boot', () => {
     assert.deepEqual(LAUNCH_GATE_RESET_SEQUENCE, ['shutdown', 'erase', 'boot']);
   });
 
@@ -56,7 +59,7 @@ describe('iosLaunchContractGate', () => {
     assert.ok(!shouldRetryLaunchGateAfterFailure(2));
   });
 
-  test('S2 erase reset applies only when a retry remains', () => {
+  test('erase reset applies only when a retry remains', () => {
     assert.equal(LAUNCH_GATE_RESET_MODE, 'erase');
     assert.ok(shouldEraseSimulatorOnLaunchGateReset(1));
     assert.ok(!shouldEraseSimulatorOnLaunchGateReset(2));
@@ -73,6 +76,12 @@ describe('iosLaunchContractGate', () => {
       formatSimLaunchWedgedAbort(),
       /^RNGMA_INFRA_ABORT: sim-launch-wedged image=/,
     );
+  });
+
+  test('resolveLaunchGateLaunchTimeoutMs uses 120s on GitHub Actions only', () => {
+    assert.equal(resolveLaunchGateLaunchTimeoutMs({}), 90_000);
+    assert.equal(resolveLaunchGateLaunchTimeoutMs({ GITHUB_ACTIONS: 'true' }), 120_000);
+    assert.equal(resolveLaunchGateLaunchTimeoutMs({ CI: 'true' }), 90_000);
   });
 
   test('resolveRunnerImageVersion prefers ImageVersion', () => {

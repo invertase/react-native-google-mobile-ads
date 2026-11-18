@@ -117,9 +117,9 @@ export const IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS = 3;
 
 /**
  * Consecutive hang ticks with `wdaPortReachable=false` before abort notes
- * port-down escalation in the abort reason (PE2E-D09). Recover bypasses live-PID
+ * port-down escalation in the abort reason. Recover bypasses live-PID
  * defer once `consecutiveWdaPortDownProbes` reaches
- * {@link IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS} (MIOS-001).
+ * {@link IOS_SESSION_CREATE_HANG_RECOVER_AFTER_TICKS}.
  */
 export const IOS_SESSION_CREATE_HANG_WDA_PORT_DOWN_ESCALATE_TICKS =
   IOS_SESSION_CREATE_HANG_ABORT_AFTER_TICKS;
@@ -664,7 +664,7 @@ export type SessionCreateAbortSummaryFields = {
   wdaLocalPort?: number;
 };
 
-/** One consolidated footer line for CI grep / T29 triage (stdout only). */
+/** One consolidated footer line for CI grep / triage (stdout only). */
 export function formatSessionCreateAbortSummary(
   fields: SessionCreateAbortSummaryFields,
 ): string {
@@ -694,7 +694,7 @@ export function formatSessionCreateAbortSummary(
  * While WDIO's POST /session is in flight, periodically re-emit `[e2e-ios-boot]`
  * lines plus an Appium/WDA hang hint. After prolonged xcrun ETIMEDOUT **or**
  * consecutive Booted hang-probes (session still not created), optionally
- * emit diagnostics only (observe-only; T29 escape). Call `markSessionCreated`
+ * emit diagnostics only (observe-only). Call `markSessionCreated`
  * (or `stop`) as soon as a session id exists — never WDA-terminate mid-suite.
  */
 export function startIosSessionCreateHangWatchdog(

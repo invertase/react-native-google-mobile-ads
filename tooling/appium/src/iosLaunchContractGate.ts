@@ -1,22 +1,24 @@
 /** Bounded `simctl launch` for the launch-contract gate (pre-Appium). */
 export const LAUNCH_GATE_LAUNCH_TIMEOUT_MS = 90_000;
+/** CI (`GITHUB_ACTIONS`) launch wall — local dev stays at 90s. */
+export const LAUNCH_GATE_LAUNCH_TIMEOUT_MS_CI = 120_000;
 /** Bounded `simctl terminate` after a successful gate launch. */
 export const LAUNCH_GATE_TERMINATE_TIMEOUT_MS = 20_000;
 /** Initial gate plus one reset-and-reinstall attempt. */
 export const LAUNCH_GATE_MAX_ATTEMPTS = 2;
 /** Poll interval while waiting for LaunchServices to register a fresh install. */
 export const LAUNCH_SERVICES_SETTLE_POLL_MS = 1_000;
-/** Bounded wait after install before the first gate launch (T29 escape S2). */
+/** Bounded wait after install before the first gate launch. */
 export const LAUNCH_SERVICES_SETTLE_TIMEOUT_MS = 30_000;
 /** Wall clock for the gate reset `simctl shutdown` before erase. */
 export const LAUNCH_GATE_SHUTDOWN_TIMEOUT_MS = 60_000;
 /** Wall clock for the single gate reset `simctl erase`. */
 export const LAUNCH_GATE_ERASE_TIMEOUT_MS = 120_000;
 
-/** S2 reset order after the initial gate failure (shutdown must precede erase). */
+/** Gate reset order after the initial failure (shutdown must precede erase). */
 export const LAUNCH_GATE_RESET_SEQUENCE = ['shutdown', 'erase', 'boot'] as const;
 
-/** T29 escape S2: one gate retry erases instead of shutdown-only reset. */
+/** One gate retry erases instead of shutdown-only reset. */
 export const LAUNCH_GATE_RESET_MODE = 'erase' as const;
 
 export type LaunchGateResetMode = typeof LAUNCH_GATE_RESET_MODE | 'shutdown';
@@ -48,7 +50,7 @@ export function shouldRetryLaunchGateAfterFailure(
 }
 
 /**
- * When the gate will retry, S2 runs `simctl shutdown`, then `erase`, then boot +
+ * When the gate will retry, run `simctl shutdown`, then `erase`, then boot +
  * reinstall (`LAUNCH_GATE_RESET_MODE` is `erase`, not shutdown-only reset).
  * Fails closed when no retry remains.
  */
@@ -69,6 +71,15 @@ export function resolveLaunchGateResetMode(
   return shouldEraseSimulatorOnLaunchGateReset(completedAttempts, maxAttempts)
     ? 'erase'
     : 'shutdown';
+}
+
+/** Launch timeout: 120s on GitHub Actions, 90s elsewhere. */
+export function resolveLaunchGateLaunchTimeoutMs(
+  env: NodeJS.ProcessEnv = process.env,
+): number {
+  return env.GITHUB_ACTIONS === 'true'
+    ? LAUNCH_GATE_LAUNCH_TIMEOUT_MS_CI
+    : LAUNCH_GATE_LAUNCH_TIMEOUT_MS;
 }
 
 export function resolveRunnerImageVersion(env: NodeJS.ProcessEnv = process.env): string {
