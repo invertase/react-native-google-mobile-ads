@@ -295,10 +295,6 @@ jobs:
           path: ${{ steps.workflow-variables.outputs.metro-cache }}
           key: ${{ steps.metro-bundler-cache.outputs.cache-primary-key }}
 
-      - uses: codecov/codecov-action@v7
-        with:
-          verbose: true
-
       - name: Upload Emulator Log
         uses: actions/upload-artifact@v6
         if: always()

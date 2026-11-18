@@ -17,7 +17,7 @@ timestamp: 2026-09-04T00:00:00Z
 | E2e | [local e2e](running-e2e.md#local-e2e-commands) when [platform coverage](running-e2e.md#platform-coverage-gate-blocking) requires it |
 | Native e2e (Jacoco / LLVM) | Published [`react-native-coverage@0.2.2`](https://www.npmjs.com/package/react-native-coverage) in the **example harness only** (Pattern C). See [§ native agent collection](#native-agent-collection). |
 
-CI Codecov: Jest + e2e jobs. Review signal = **touched files**.
+CI Codecov: **Jest** job only until native e2e coverage is wired in CI ([§ native agent collection](#native-agent-collection)). Review signal = **touched files**.
 
 <a id="native-agent-collection"></a>
 
