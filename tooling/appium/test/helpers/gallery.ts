@@ -55,6 +55,12 @@ import {
   JS_LOAD_FAILURE_UI_SNIPPETS,
   jsLoadFailureFromText,
 } from '../../src/jsLoadFailure.ts';
+import {
+  ANDROID_SHOW_CLOSE_EMPTY_PHASE_FOREGROUND_MS,
+  androidNextgenShowCloseClosedAccepted,
+  isAndroidNextgenE2eBackend,
+  isAndroidFullscreenChromeClear,
+} from '../../src/androidShowCloseClosed.ts';
 import { AppiumTestIds } from '../../src/testIds.ts';
 
 /** Repo root from `tooling/appium/test/helpers/` — no host-absolute checkout paths. */
@@ -2567,12 +2573,7 @@ async function waitForAndroidShowActionEnabled(formatId: string, timeoutMs = 150
   const showActionId = AppiumTestIds.action.show(formatId);
   await driver.waitUntil(
     async () => {
-      const el = await $(`android=new UiSelector().resourceId("${showActionId}").enabled(true)`);
-      if (!(await el.isExisting().catch(() => false))) {
-        return false;
-      }
-      const enabled = await el.getAttribute('enabled').catch(() => 'false');
-      return enabled === 'true' || enabled === true;
+      return probeAndroidShowActionEnabled(showActionId);
     },
     {
       timeout: timeoutMs,
@@ -2580,6 +2581,23 @@ async function waitForAndroidShowActionEnabled(formatId: string, timeoutMs = 150
       timeoutMsg: `Show action ${showActionId} never became enabled`,
     },
   );
+}
+
+async function probeAndroidShowActionEnabled(showActionId: string): Promise<boolean> {
+  const el = await $(`android=new UiSelector().resourceId("${showActionId}").enabled(true)`);
+  if (!(await el.isExisting().catch(() => false))) {
+    return false;
+  }
+  const enabled = await el.getAttribute('enabled').catch(() => 'false');
+  return enabled === 'true' || enabled === true;
+}
+
+async function settleAndroidFullscreenDismissBeforeClosedPoll(): Promise<void> {
+  await sleep(1000);
+  if (await isAndroidInterstitialCloseChromeVisible()) {
+    await tapAndroidInterstitialCloseAttempt();
+    await sleep(400);
+  }
 }
 
 /** Fullscreen interstitial / GAM show-close while RN lifecycle nodes may be off-tree. */
@@ -2638,38 +2656,172 @@ async function runAndroidFullscreenShowCloseLifecycle(formatId: string): Promise
     );
   }
   const finishClosedWait = async (): Promise<void> => {
-    await driver.waitUntil(
-      async () => {
-        await dismissAndroidImmersiveModeEducationIfPresent();
-        if (await recoverAndroidForeignAppIfPresent('showClose.waitClosed')) {
+    const closedWaitIntervalMs = 400;
+    const nextgenClosedWait = isAndroidNextgenE2eBackend();
+    const closedWaitProbes: Array<{
+      phase: string;
+      adActivity: boolean;
+      testAdObstructing: boolean;
+      interstitialCloseChrome: boolean;
+      exampleAppForeground: boolean;
+      showActionEnabled: boolean;
+      consecutiveChromeClearPolls: number;
+    }> = [];
+    let consecutiveChromeClearPolls = 0;
+    let emptyPhaseChromeClearMs = 0;
+    let broughtExampleForwardForEmptyPhase = false;
+    let lastWaitClosedLogMs = 0;
+    let lastPhase = '';
+    let lastChrome = {
+      adActivity: false,
+      testAdObstructing: false,
+      interstitialCloseChrome: false,
+    };
+    const closedTimeoutMsg =
+      'Fullscreen Show never reached Show lifecycle: closed after dismiss';
+    const recordClosedProbe = async (): Promise<void> => {
+      const phase = await safeShowLifecycleText(formatId);
+      lastPhase = phase;
+      const adActivity = await isAndroidAdActivityForeground();
+      const testAdObstructing = await isAndroidFullscreenTestAdObstructing();
+      const interstitialCloseChrome = await isAndroidInterstitialCloseChromeVisible();
+      lastChrome = { adActivity, testAdObstructing, interstitialCloseChrome };
+      const showActionEnabled = await probeAndroidShowActionEnabled(showActionId);
+      const exampleAppForeground = await isAndroidExampleAppForeground();
+      const sample = {
+        phase,
+        adActivity,
+        testAdObstructing,
+        interstitialCloseChrome,
+        exampleAppForeground,
+        showActionEnabled,
+        consecutiveChromeClearPolls,
+      };
+      closedWaitProbes.push(sample);
+      if (closedWaitProbes.length > 10) {
+        closedWaitProbes.shift();
+      }
+    };
+    const maybeLogWaitClosed = (detail: Record<string, unknown>): void => {
+      const now = Date.now();
+      if (now - lastWaitClosedLogMs < 8000) {
+        return;
+      }
+      lastWaitClosedLogMs = now;
+      console.log(`[show-close-waitClosed] ${JSON.stringify({ format: formatId, ...detail })}`);
+    };
+    try {
+      await driver.waitUntil(
+        async () => {
+          await dismissAndroidImmersiveModeEducationIfPresent();
+          if (await recoverAndroidForeignAppIfPresent('showClose.waitClosed')) {
+            consecutiveChromeClearPolls = 0;
+            emptyPhaseChromeClearMs = 0;
+            await recordClosedProbe();
+            maybeLogWaitClosed({ event: 'foreignAppRecover' });
+            return false;
+          }
+          if (
+            (await isAndroidFullscreenAdShowing()) ||
+            (await isAndroidAdActivityForeground()) ||
+            (await isAndroidFullscreenTestAdObstructing()) ||
+            (await isAndroidInterstitialCloseChromeVisible())
+          ) {
+            consecutiveChromeClearPolls = 0;
+            emptyPhaseChromeClearMs = 0;
+            await tapAndroidInterstitialCloseAttempt();
+            await recordClosedProbe();
+            maybeLogWaitClosed({ event: 'dismissChrome' });
+            return false;
+          }
+          const phase = await safeShowLifecycleText(formatId);
+          lastPhase = phase;
+          const chrome = {
+            adActivity: await isAndroidAdActivityForeground(),
+            testAdObstructing: await isAndroidFullscreenTestAdObstructing(),
+            interstitialCloseChrome: await isAndroidInterstitialCloseChromeVisible(),
+          };
+          lastChrome = chrome;
+          if (isAndroidFullscreenChromeClear(chrome)) {
+            consecutiveChromeClearPolls += 1;
+            if (phase.trim() === '') {
+              emptyPhaseChromeClearMs += closedWaitIntervalMs;
+              if (
+                !broughtExampleForwardForEmptyPhase &&
+                emptyPhaseChromeClearMs >= ANDROID_SHOW_CLOSE_EMPTY_PHASE_FOREGROUND_MS
+              ) {
+                broughtExampleForwardForEmptyPhase = true;
+                await ensureExampleAppInForeground();
+              }
+            } else {
+              emptyPhaseChromeClearMs = 0;
+            }
+          } else {
+            consecutiveChromeClearPolls = 0;
+            emptyPhaseChromeClearMs = 0;
+          }
+          const showActionEnabled = await probeAndroidShowActionEnabled(showActionId);
+          const exampleAppForeground = await isAndroidExampleAppForeground();
+          const sample = {
+            phase,
+            ...chrome,
+            exampleAppForeground,
+            showActionEnabled,
+            consecutiveChromeClearPolls,
+          };
+          closedWaitProbes.push(sample);
+          if (closedWaitProbes.length > 10) {
+            closedWaitProbes.shift();
+          }
+          maybeLogWaitClosed({
+            phase,
+            adActivity: chrome.adActivity,
+            testAdObstructing: chrome.testAdObstructing,
+            interstitialCloseChrome: chrome.interstitialCloseChrome,
+            exampleAppForeground,
+            showActionEnabled,
+            consecutiveChromeClearPolls,
+          });
+          if (phase.includes(SHOW_LIFECYCLE_CLOSED)) {
+            return true;
+          }
+          if (nextgenClosedWait) {
+            return androidNextgenShowCloseClosedAccepted({
+              phase,
+              chrome,
+              exampleAppForeground,
+              showActionEnabled,
+              consecutiveChromeClearPolls,
+            });
+          }
           return false;
-        }
-        if (
-          (await isAndroidFullscreenAdShowing()) ||
-          (await isAndroidAdActivityForeground()) ||
-          (await isAndroidFullscreenTestAdObstructing()) ||
-          (await isAndroidInterstitialCloseChromeVisible())
-        ) {
-          await tapAndroidInterstitialCloseAttempt();
-          return false;
-        }
-        const phase = await safeShowLifecycleText(formatId);
-        return phase.includes(SHOW_LIFECYCLE_CLOSED);
-      },
-      {
-        timeout: isAndroidRewardedFormat(formatId) ? 120000 : 90000,
-        interval: 400,
-        timeoutMsg: 'Fullscreen Show never reached Show lifecycle: closed after dismiss',
-      },
-    );
+        },
+        {
+          timeout: isAndroidRewardedFormat(formatId) ? 120000 : 90000,
+          interval: closedWaitIntervalMs,
+          timeoutMsg: closedTimeoutMsg,
+        },
+      );
+    } catch {
+      const detail = {
+        format: formatId,
+        lastPhase,
+        lastChrome,
+        closedProbes: closedWaitProbes.slice(-10),
+        nextgenClosedWait,
+      };
+      throw new Error(`${closedTimeoutMsg}; ${JSON.stringify(detail)}`);
+    }
   };
   if (isAndroidRewardedFormat(formatId)) {
     await withAndroidRewardedDismissGuard(formatId, async () => {
       await dismissFullscreenAdWithoutCreativeTap();
+      await settleAndroidFullscreenDismissBeforeClosedPoll();
       await finishClosedWait();
     });
   } else {
     await dismissFullscreenAdWithoutCreativeTap();
+    await settleAndroidFullscreenDismissBeforeClosedPoll();
     await finishClosedWait();
   }
 }
