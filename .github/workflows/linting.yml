@@ -37,6 +37,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          # Only write to the cache for builds on main; PRs read-only to avoid cache eviction wars.
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Yarn Install
         uses: nick-fields/retry@v3
         with:
@@ -53,7 +58,13 @@ jobs:
       - name: Lint
         run: yarn lint:code
       - name: Kotlin lint
-        run: ./gradlew ktlintCheck
+        id: kotlin-lint
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          retry_wait_seconds: 45
+          max_attempts: 3
+          command: ./gradlew ktlintCheck --no-daemon
       - name: Verify committed Codegen
         run: yarn codegen:verify
       - name: Save Code Linting Report JSON
@@ -70,6 +81,7 @@ jobs:
         with:
           name: eslint-report.json
           path: eslint-report.json
+          if-no-files-found: ignore
 
   typescript:
     name: TypeScript Build Validation
