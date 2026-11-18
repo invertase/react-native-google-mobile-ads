@@ -69,13 +69,13 @@ test('WDIO shared conf enables CI-only specFileRetries', () => {
   assert.match(source, /GITHUB_ACTIONS/);
 });
 
-test('WDIO shared conf lowers log level on CI', () => {
+test('WDIO iOS conf lowers log level on CI', () => {
   const source = readFileSync(
-    join(repoRoot, 'tooling/appium/wdio.shared.conf.ts'),
+    join(repoRoot, 'tooling/appium/wdio.ios.conf.ts'),
     'utf8',
   );
-  assert.match(source, /logLevel:/);
-  assert.match(source, /GITHUB_ACTIONS.*warn/s);
+  assert.match(source, /logLevel:\s*'warn'/);
+  assert.match(source, /GITHUB_ACTIONS/);
 });
 
 test('the Pods cache stores the same ios directory its key hashes', () => {

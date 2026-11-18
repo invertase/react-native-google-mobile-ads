@@ -53,6 +53,9 @@ function disarmSessionCreateHangWatchdog(sessionId?: string): void {
  */
 export const config: Options.Testrunner = {
   ...shared,
+  ...(process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+    ? { logLevel: 'warn' as const }
+    : {}),
   connectionRetryTimeout: IOS_SESSION_RETRY_TIMEOUT_MS,
   // One connection retry after a transient WDIO transport flake; no harness respawn.
   connectionRetryCount: 1,
