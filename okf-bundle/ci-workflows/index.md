@@ -71,7 +71,7 @@ Android **Run Emulator Tests** and iOS **Install example on simulator** / **Run 
 
 ## Triage
 
-- iOS e2e failure: download `simulator_log` and `wda_xcodebuild_logs` (expect `.hang-recover-snapshots` inside the latter when hang-recover staged them), grep job logs for `[e2e-ios-session]` / `[Xcode]` xcodebuild exit lines, then inspect the local invocation logs from [running e2e](../testing/running-e2e.md#local-e2e-commands).
+- iOS e2e failure: if **Install example on simulator** exits with `RNGMA_INFRA_ABORT: sim-launch-wedged image=…` before Appium, see [running e2e § iOS launch-contract gate](../testing/running-e2e.md#ios-launch-contract-gate). Otherwise download `simulator_log` and `wda_xcodebuild_logs` (expect `.hang-recover-snapshots` inside the latter when hang-recover staged them), grep job logs for `[e2e-ios-session]` / `[Xcode]` xcodebuild exit lines, then inspect the local invocation logs from [running e2e](../testing/running-e2e.md#local-e2e-commands).
 - Android e2e failure: download `adb_logs`, then inspect the local invocation logs from [running e2e](../testing/running-e2e.md#local-e2e-commands).
 - Packager never healthy: Metro must be **this** checkout on `:8081` — [running e2e § pre-flight](../testing/running-e2e.md#pre-flight).
 - Grow platform pages here only after a failure mode is verified on **this** repo.
