@@ -24,11 +24,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  route-nested:
+    uses: ./.github/workflows/mellifera-route.yml
+    secrets: inherit
+    with:
+      class: other
+      default-runs-on: ubuntu-24.04
+      overflow-runs-on: linux-nested-virt-self-hosted
   android:
     name: Android (${{ matrix.android-backend }})
     # Pin: ubuntu-latest (26.04) + Node 24.22.x hits WDIO local-runner process.send EINVAL at worker startup.
     # On ubuntu-24.04 use Node 24.22.3 for security fixes after EINVAL on 24.22.2; CI is the final gate.
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(needs.route-nested.outputs.runs-on) }}
+    needs: route-nested
     timeout-minutes: 70
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

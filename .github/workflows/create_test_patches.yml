@@ -20,9 +20,16 @@ on:
       - '**/*.md'
 
 jobs:
+  route-linux:
+    uses: ./.github/workflows/mellifera-route.yml
+    secrets: inherit
+    with:
+      class: other
+      default-runs-on: ubuntu-latest
   main:
     name: Create patch-package Patches
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(needs.route-linux.outputs.runs-on) }}
+    needs: route-linux
     steps:
       - uses: actions/checkout@v5
 

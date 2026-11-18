@@ -13,10 +13,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  route-linting:
+    uses: ./.github/workflows/mellifera-route.yml
+    secrets: inherit
+    with:
+      class: other
+      default-runs-on: ubuntu-latest
   linting:
     name: Lint code
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(needs.route-linting.outputs.runs-on) }}
+    needs: route-linting
     steps:
       - uses: actions/checkout@v5
         with:
@@ -83,9 +90,16 @@ jobs:
           path: eslint-report.json
           if-no-files-found: ignore
 
+  route-typescript:
+    uses: ./.github/workflows/mellifera-route.yml
+    secrets: inherit
+    with:
+      class: other
+      default-runs-on: ubuntu-latest
   typescript:
     name: TypeScript Build Validation
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(needs.route-typescript.outputs.runs-on) }}
+    needs: route-typescript
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
