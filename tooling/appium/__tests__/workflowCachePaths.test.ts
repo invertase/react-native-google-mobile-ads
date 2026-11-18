@@ -69,6 +69,15 @@ test('WDIO shared conf enables CI-only specFileRetries', () => {
   assert.match(source, /GITHUB_ACTIONS/);
 });
 
+test('WDIO shared conf lowers log level on CI', () => {
+  const source = readFileSync(
+    join(repoRoot, 'tooling/appium/wdio.shared.conf.ts'),
+    'utf8',
+  );
+  assert.match(source, /logLevel:/);
+  assert.match(source, /GITHUB_ACTIONS.*warn/s);
+});
+
 test('the Pods cache stores the same ios directory its key hashes', () => {
   const source = readFileSync(join(workflowDir, 'tests_e2e_ios.yml'), 'utf8');
   const step = source.slice(source.indexOf('name: Pods Cache Restore'));
