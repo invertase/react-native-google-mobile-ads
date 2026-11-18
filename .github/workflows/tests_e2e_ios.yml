@@ -24,9 +24,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  route-macos:
+    uses: ./.github/workflows/mellifera-route.yml
+    secrets: inherit
+    with:
+      class: macos
+      default-runs-on: macos-15
   ios:
     name: iOS
-    runs-on: macos-15
+    runs-on: ${{ fromJSON(needs.route-macos.outputs.runs-on) }}
+    needs: route-macos
     # TODO matrix across APIs, at least 10 and 13 (lowest to highest)
     # 90m: setup (~25–35m) + three serial Appium shards with remount budgets;
     # 60m cancelled mid tertiary after a-primary/b-secondary (run 38780622785).
