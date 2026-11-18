@@ -107,6 +107,10 @@ test('iOS run-ios-app time-boxes install/launch and emits durable phase markers'
   );
   assert.match(source, /launch-services-settle/);
   assert.match(source, /RNGMA_INFRA_ABORT: sim-launch-wedged/);
+  assert.match(source, /\[ios-run\] simctl:ETIMEDOUT op=\$\{op\} udid=\$\{udid\} durationMs=/);
+  assert.match(source, /action: 'terminate-relaunch'/);
+  assert.match(source, /resolveLaunchGateLaunchTimeoutMs/);
+  assert.match(source, /LAUNCH_GATE_LAUNCH_TIMEOUT_MS_CI/);
   assert.match(source, /get_app_container/);
   assert.match(source, /listapps/);
   assert.match(source, /killSignal:\s*'SIGKILL'/);
