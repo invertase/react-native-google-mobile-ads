@@ -99,7 +99,12 @@ test('iOS run-ios-app time-boxes install/launch and emits durable phase markers'
   assert.match(source, /withPhase\('install'/);
   assert.match(source, /launch-gate-launch/);
   assert.match(source, /launch-gate-terminate/);
+  assert.match(source, /launch-gate-shutdown/);
   assert.match(source, /launch-gate-erase/);
+  assert.match(
+    source,
+    /shutdownSimulatorForLaunchGate[\s\S]*withPhase\('launch-gate-erase'/,
+  );
   assert.match(source, /launch-services-settle/);
   assert.match(source, /RNGMA_INFRA_ABORT: sim-launch-wedged/);
   assert.match(source, /get_app_container/);
@@ -136,6 +141,19 @@ test('iOS run-ios-app time-boxes install/launch and emits durable phase markers'
   assert.doesNotMatch(installStep, /nick-fields\/retry/);
   assert.match(installStep, /\[ios-run\] workflow step start/);
   assert.match(installStep, /\[ios-run\] workflow step end/);
+});
+
+test('iOS CI simulator log uses default log stream level', () => {
+  const workflow = readFileSync(
+    resolve(repositoryRoot, '.github/workflows/tests_e2e_ios.yml'),
+    'utf8',
+  );
+  const createLog = workflow.slice(
+    workflow.indexOf('- name: Create Simulator Log'),
+    workflow.indexOf('- name:', workflow.indexOf('- name: Create Simulator Log') + 1),
+  );
+  assert.match(createLog, /log stream --style compact/);
+  assert.doesNotMatch(createLog, /--level debug/);
 });
 
 test('CI prebuilds WDA before the WDIO command enables the prebuilt capability', () => {

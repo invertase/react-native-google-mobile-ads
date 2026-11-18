@@ -168,7 +168,7 @@ jobs:
 
       - name: Create Simulator Log
         continue-on-error: true
-        run: nohup xcrun simctl spawn "$RNGMA_IOS_UDID" log stream --level debug --style compact > simulator.log 2>&1 &
+        run: nohup xcrun simctl spawn "$RNGMA_IOS_UDID" log stream --style compact > simulator.log 2>&1 &
 
       - name: ccache stats (before)
         run: ccache -s || true
