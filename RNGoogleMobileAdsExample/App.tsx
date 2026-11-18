@@ -13,6 +13,7 @@ import {
   AppState,
   Button,
   Image,
+  LogBox,
   Platform,
   Pressable,
   ScrollView,
@@ -343,6 +344,15 @@ function invokeCoverageFlush(): void {
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
   const [poolProviderPools, setPoolProviderPools] = useState<typeof POOL_PROVIDER_POOLS>([]);
+
+  useEffect(() => {
+    if (
+      __DEV__ &&
+      (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true')
+    ) {
+      LogBox.ignoreAllLogs(true);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
