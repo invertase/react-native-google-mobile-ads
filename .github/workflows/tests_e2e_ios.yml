@@ -79,7 +79,7 @@ jobs:
           append-timestamp: false
           create-symlink: true
           max-size: 2G
-          save: true
+          save: false
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -196,11 +196,23 @@ jobs:
       # Observe-only session-create diagnostics — do not wrap this step in
       # nick-fields/retry, which would also re-run product failures.
       - name: Run Appium e2e
+        id: appium-e2e
         # Must fit three serial shards + remount under the 90m job wall after setup.
         timeout-minutes: 50
         run: |
           export RNGMA_WDA_PREBUILT=1
           yarn tests:appium:ios
+
+      # Save only after a green Appium run to avoid cache reservation races on infra aborts.
+      - uses: hendrikmuhs/ccache-action@v1
+        name: Xcode Compile Cache Save
+        if: success()
+        with:
+          key: ${{ runner.os }}-e2e-ios-v2-${{ hashFiles('yarn.lock', 'packages/core/ios/**', 'packages/core/*.podspec', 'RNGoogleMobileAdsExample/ios/Podfile.lock', 'RNGoogleMobileAdsExample/ios/ccache/**') }}
+          append-timestamp: false
+          restore: false
+          save: true
+          max-size: 2G
 
       - uses: actions/cache/save@v5
         name: Metro Bundler Cache Save
@@ -213,10 +225,11 @@ jobs:
 
       - name: Upload Simulator Log
         uses: actions/upload-artifact@v6
-        if: always()
+        if: success() || failure()
         with:
           name: simulator_log
           path: simulator.log
+          if-no-files-found: ignore
 
       # WDA DerivedData + xcodebuild logs for session-create exit-65 triage.
       # showXcodeLog streams build stderr into the job log; these files capture
@@ -225,7 +238,7 @@ jobs:
       # it, sibling `.hang-recover-snapshots` / `.wda-derived` never upload.
       - name: Upload WDA xcodebuild logs
         uses: actions/upload-artifact@v6
-        if: always()
+        if: success() || failure()
         with:
           name: wda_xcodebuild_logs
           include-hidden-files: true
@@ -238,6 +251,3 @@ jobs:
             tooling/appium/.appium-home/logs
           if-no-files-found: warn
 
-      - uses: codecov/codecov-action@v7
-        with:
-          verbose: true
