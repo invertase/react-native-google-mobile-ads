@@ -63,4 +63,3 @@ jobs:
         with:
           verbose: false
           files: coverage/lcov.info
-          disable_search: true
