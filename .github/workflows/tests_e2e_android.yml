@@ -90,7 +90,7 @@ jobs:
           echo "metro-cache=$HOME/.metro" >> $GITHUB_OUTPUT
           echo "tempdir=$TMPDIR" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -100,14 +100,14 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Yarn Install
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn
 
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v5
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -128,7 +128,7 @@ jobs:
       # Warm Gradle does not dynamically fetch them. Package list from CI logs + RN pin
       # (node_modules/react-native/gradle/libs.versions.toml ndkVersion; CMake from AGP).
       - name: Preinstall Android SDK packages (sdkmanager)
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           retry_wait_seconds: 45
@@ -212,7 +212,7 @@ jobs:
         # This makes sure we fetch gradle network resources with a retry.
         # RNGMA_ANDROID_BACKEND from the job env selects classic vs nextgen in Gradle.
         # Cleanup incomplete NDK/CMake again in case Gradle still touches the installer.
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 15
           retry_wait_seconds: 60
@@ -242,7 +242,7 @@ jobs:
 
       # Sticky content-hash Metro restore. Both backends restore the same key;
       # only classic + iteration 0 on main saves.
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         name: Metro Bundler Cache Restore
         id: metro-bundler-cache
         with:
@@ -284,7 +284,7 @@ jobs:
             yarn tests:appium:drivers:verify
             yarn tests:appium:android
 
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v5
         name: Metro Bundler Cache Save
         if: >
           github.ref == 'refs/heads/main'
@@ -295,12 +295,12 @@ jobs:
           path: ${{ steps.workflow-variables.outputs.metro-cache }}
           key: ${{ steps.metro-bundler-cache.outputs.cache-primary-key }}
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         with:
           verbose: true
 
       - name: Upload Emulator Log
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: adb_logs-${{ matrix.android-backend }}-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.iteration }}

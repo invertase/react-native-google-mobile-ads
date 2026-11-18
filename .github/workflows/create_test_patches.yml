@@ -33,7 +33,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -42,7 +42,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 10
           retry_wait_seconds: 60
@@ -81,12 +81,12 @@ jobs:
         shell: bash
 
       - name: Upload Test Patches
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: patches
           path: ~/template/patches/
 
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v5
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
