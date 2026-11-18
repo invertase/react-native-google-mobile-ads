@@ -36,7 +36,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -45,13 +45,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 5
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v5
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -59,6 +59,6 @@ jobs:
           key: ${{ steps.yarn-cache.outputs.cache-primary-key }}
       - name: Jest
         run: yarn tests:jest-coverage
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         with:
           verbose: true

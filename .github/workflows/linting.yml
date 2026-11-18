@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -43,13 +43,13 @@ jobs:
           # Only write to the cache for builds on main; PRs read-only to avoid cache eviction wars.
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Yarn Install
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 3
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v5
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -59,7 +59,7 @@ jobs:
         run: yarn lint:code
       - name: Kotlin lint
         id: kotlin-lint
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 5
           retry_wait_seconds: 45
@@ -71,13 +71,13 @@ jobs:
         run: yarn lint:report
         continue-on-error: true
       - name: Annotate Code Linting Results
-        uses: ataylorme/eslint-annotate-action@3.0.0
+        uses: ataylorme/eslint-annotate-action@4.0.0
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           report-json: 'eslint-report.json'
       - name: Upload ESLint report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: eslint-report.json
           path: eslint-report.json
@@ -94,7 +94,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -103,13 +103,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 3
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v5
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -138,14 +138,14 @@ jobs:
   #         restore-keys: |
   #           ${{ runner.os }}-yarn-
   #     - name: Yarn Install
-  #       uses: nick-fields/retry@v3
+  #       uses: nick-fields/retry@v4
   #       with:
   #         timeout_minutes: 3
   #         retry_wait_seconds: 30
   #         max_attempts: 3
   #         command: yarn
   #     - name: Yarn Install (Website)
-  #       uses: nick-fields/retry@v3
+  #       uses: nick-fields/retry@v4
   #       with:
   #         timeout_minutes: 3
   #         retry_wait_seconds: 30
