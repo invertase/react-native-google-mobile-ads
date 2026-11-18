@@ -70,7 +70,22 @@ jobs:
       - name: Save Code Linting Report JSON
         run: yarn lint:report
         continue-on-error: true
+      - name: Detect ESLint findings for PR annotation
+        id: eslint-annotate-gate
+        if: always()
+        run: |
+          if [ ! -f eslint-report.json ]; then
+            echo "annotate=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          count="$(jq '[.[].messages[]? | select(.severity >= 1)] | length' eslint-report.json)"
+          if [ "${count:-0}" -gt 0 ]; then
+            echo "annotate=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "annotate=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Annotate Code Linting Results
+        if: steps.eslint-annotate-gate.outputs.annotate == 'true'
         uses: ataylorme/eslint-annotate-action@4.0.0
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
