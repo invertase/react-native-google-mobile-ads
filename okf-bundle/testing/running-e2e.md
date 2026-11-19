@@ -424,7 +424,7 @@ A green run of **unrelated** e2e files does not close review for the touched are
 
 ## Pre-flight
 
-**Blocking host floor:** use Node 24+ before install or e2e (`node --version`; all workspace engine declarations are `>=24`). Node 22 hard-fails this stack. An old nvm host may recover with `nvm install 24` then `nvm use 24`. If Yarn 4.18.1 on Node 24.x flakes with `onCancel handler attached after promise settled`, retry the same `yarn` command; do not downgrade Node.
+**Blocking host floor:** use Node 24+ before install or e2e (`node --version`; all workspace engine declarations are `>=24`). Node 22 hard-fails this stack. An old nvm host may recover with `nvm install 24` then `nvm use 24`. Older Yarn (&lt;4.18.1, e.g. 4.10.3) on Node 24.x may flake install with `onCancel handler attached after promise settled`; this repo pins Yarn 4.18.1 (Berry patch for that crash). Retry the same `yarn` command only if you are still on older Yarn; do not downgrade Node.
 
 **Blocking preparation.** [Prepare must finish first](agent-command-policy.md#prepare-must-finish-first): `yarn` then `yarn prepare` before Metro/e2e (this pass runs Metro/native). Do not parallelize prepare with packager, Jest, Gradle, or pods. What to record stays on the [evidence prepare row](validation-checklist.md#validation-evidence-package).
 
