@@ -15,7 +15,7 @@ timestamp: 2026-09-04T00:00:00Z
 | Android JVM unit | The [canonical registry](agent-command-policy.md#canonical-registry) owns the neutral + backend-specific Robolectric layouts and the classic/Next-Gen commands. Run each command matching the touched backend; no Google auction/fill asserts. Classic `src/testClassic` and Next-Gen `src/testNextgen` OwnedCallbacks cover owned paid/click/reward-callback and GAM manual-impression wiring. Owned integration at those external boundaries remains required ([GMA-AD-6](../architecture-decisions.md#gma-ad-6)). |
 | iOS XCTest unit | `yarn tests:ios:unit` — XCTest under `packages/core/ios/Tests/` (+ `RNGoogleMobileAdsUnitTests.xcodeproj`, which also compiles lightweight Foundation extracts including `RNGoogleMobileAdsOwnedMappers` and `RNGoogleMobileAdsOwnedCallbacks` for paid/click/reward + GAM manual-impression wiring) when that tree changed. Podspec `UnitTests` test_spec mirrors `ios/Tests/**`; owned extracts ship in the main pod `source_files`. A production extract into `RNGoogleMobileAds/*` (or `Common.mm` delegate) is **not** harness-only — [platform coverage](running-e2e.md#platform-coverage-gate-blocking) plugin/native still requires iOS Appium for that Diff. |
 | E2e | [local e2e](running-e2e.md#local-e2e-commands) when [platform coverage](running-e2e.md#platform-coverage-gate-blocking) requires it |
-| Native e2e (Jacoco / LLVM) | Published [`react-native-coverage@0.2.2`](https://www.npmjs.com/package/react-native-coverage) in the **example harness only** (Pattern C). See [§ native agent collection](#native-agent-collection). |
+| Native e2e (Jacoco / LLVM) | Published [`react-native-coverage@0.2.3`](https://www.npmjs.com/package/react-native-coverage) in the **example harness only** (Pattern C). See [§ native agent collection](#native-agent-collection). |
 
 CI Codecov: **Jest** job only until native e2e coverage is wired in CI ([§ native agent collection](#native-agent-collection)). Review signal = **touched files**.
 
@@ -27,7 +27,7 @@ Consume the **published** package — do **not** copy RNFB coverage scripts into
 
 | Piece | Location / role |
 |-------|-----------------|
-| Dep | `RNGoogleMobileAdsExample` → `react-native-coverage@0.2.2` (TurboModule autolinks; New Arch only) |
+| Dep | `RNGoogleMobileAdsExample` → `react-native-coverage@0.2.3` (TurboModule autolinks; New Arch only) |
 | Probe TurboModule | Example-only `@invertase/rngma-testing` (`portal:./modules/rngma-testing`) → `NativeRNGMATesting` (Pattern C; `example-probe` / `EXAMPLE_PROBE_SURFACES`, not product). See [running-e2e § API-wide e2e coverage](running-e2e.md#api-wide-e2e-coverage) and [§ Appium](running-e2e.md#appium-scaffold). |
 | Config | `RNGoogleMobileAdsExample/react-native-coverage.config.js` (app ids, `RNGoogleMobileAds` / `react-native-google-mobile-ads` matchers; excludes Google GMA SDK) |
 | Android | Example `android/build.gradle` applies package `rn-coverage.gradle` + Jacoco report helper on RNTA `:app` |
@@ -73,7 +73,7 @@ yarn workspace RNGoogleMobileAdsExample exec rn-coverage android report
 # (<derived>/output/coverage) or stage .profraw there — directory/boot
 # residuals are operational path alignment, not a general LCOV exception:
 yarn workspace RNGoogleMobileAdsExample exec rn-coverage ios pull --device <udid> --output <derived>/output/coverage
-# 0.2.2 auto-selects llvm-cov -arch for universal simulator binaries; re-run with
+# 0.2.3 auto-selects llvm-cov -arch for universal simulator binaries; re-run with
 # explicit --arch=<slice> when proving arch selection (both must yield non-empty
 # owned packages/ LCOV entries under coverage/ios-native/lcov.info):
 yarn workspace RNGoogleMobileAdsExample exec rn-coverage ios export --derived-data <path>
