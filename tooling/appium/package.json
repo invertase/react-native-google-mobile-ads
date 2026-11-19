@@ -40,7 +40,7 @@
     "@wdio/mocha-framework": "9.31.2",
     "@wdio/spec-reporter": "9.31.2",
     "@wdio/types": "9.31.2",
-    "appium": "3.7.0",
+    "appium": "3.9.0",
     "appium-uiautomator2-driver": "8.5.0",
     "appium-xcuitest-driver": "12.8.0",
     "expect-webdriverio": "6.0.9",
