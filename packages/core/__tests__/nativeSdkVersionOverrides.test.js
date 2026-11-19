@@ -36,7 +36,7 @@ describe('native SDK version overrides', () => {
     expect(androidBuild).toContain('sdk: googleMobileAdsVersion');
     expect(androidBuild).toContain('consent: googleUmpVersion');
     expect(googleMobileAds).toBe('25.5.0');
-    expect(googleMobileAdsNextGen).toBe('1.6.0');
+    expect(googleMobileAdsNextGen).toBe('1.7.0');
     expect(googleUmp).toBe('4.0.0');
   });
 
@@ -72,7 +72,7 @@ describe('native SDK version overrides', () => {
     expect(umpEnv).toBeLessThan(umpGlobal);
     expect(umpGlobal).toBeLessThan(umpDependency);
     expect(packageJson.sdkVersions.ios).toEqual({
-      googleMobileAds: '13.12.0',
+      googleMobileAds: '13.13.0',
       googleUmp: '3.1.0',
     });
   });
