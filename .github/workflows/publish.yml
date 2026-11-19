@@ -38,7 +38,9 @@ jobs:
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3
+          # Pin patch: ruby-builder 3.4.13 darwin-arm64 ships without OpenSSL
+          # (gem install bundler → "OpenSSL is not available"). 3.4.12 was last green.
+          ruby-version: '3.4.12'
       - name: Bundle Install
         uses: nick-fields/retry@v4
         # Gemfile.lock's `BUNDLED WITH` version is the Bundler pin; frozen mode
