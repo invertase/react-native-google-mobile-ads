@@ -72,7 +72,7 @@ describe('native SDK version overrides', () => {
     expect(umpEnv).toBeLessThan(umpGlobal);
     expect(umpGlobal).toBeLessThan(umpDependency);
     expect(packageJson.sdkVersions.ios).toEqual({
-      googleMobileAds: '13.12.0',
+      googleMobileAds: '13.13.0',
       googleUmp: '3.1.0',
     });
   });
