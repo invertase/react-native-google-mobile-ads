@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 8
+  version: 10
   cacheKey: 10
 
 "@0no-co/graphql.web@npm:^1.0.13, @0no-co/graphql.web@npm:^1.0.8":
@@ -6768,12 +6768,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rnx-kit/react-native-host@npm:^0.5.21":
-  version: 0.5.21
-  resolution: "@rnx-kit/react-native-host@npm:0.5.21"
+"@rnx-kit/react-native-host@npm:^0.5.23":
+  version: 0.5.23
+  resolution: "@rnx-kit/react-native-host@npm:0.5.23"
   peerDependencies:
     react-native: ">=0.66"
-  checksum: 10/028ae8cd61bac092b0328daad147207e55513c820a10f03f2423afe16034512af35218bd19e239ee57b7b51fda9e3c12917f4be25c61c34565aad9aecbc7f1db
+  checksum: 10/0102bece814d281e06f84576602c5b7713f71e71ed93878553b78f3af5354eed408fc77c660b0b5341b4bee5a2a8964d894946dead30c3c0a642a8d57a5559a6
   languageName: node
   linkType: hard
 
@@ -6789,28 +6789,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rnx-kit/tools-node@npm:^3.0.0, @rnx-kit/tools-node@npm:^3.0.5":
+"@rnx-kit/tools-node@npm:^3.0.0, @rnx-kit/tools-node@npm:^3.0.5, @rnx-kit/tools-node@npm:^3.0.6":
   version: 3.0.6
   resolution: "@rnx-kit/tools-node@npm:3.0.6"
   dependencies:
     "@rnx-kit/types-node": "npm:^1.0.0"
   checksum: 10/56c4349be7b1a3f8ce899dafee91a418e862f51d2e531289b4ea313148689ff9547ace2ce8b625fac6f717a30b2d2dd4d2503162ee3d5863cccd41d60773d61b
-  languageName: node
-  linkType: hard
-
-"@rnx-kit/tools-node@npm:^3.0.3":
-  version: 3.0.3
-  resolution: "@rnx-kit/tools-node@npm:3.0.3"
-  checksum: 10/ea2ecb53a6bf9cffc68cd1d0172b95ed7ed739e9e81e1b7d32b1d0853ea067a232fbbfd1df4ac4194007f5320867f9f61a7c09bc6d15e98aac86ca2da30c3b96
-  languageName: node
-  linkType: hard
-
-"@rnx-kit/tools-react-native@npm:^2.1.0":
-  version: 2.3.2
-  resolution: "@rnx-kit/tools-react-native@npm:2.3.2"
-  dependencies:
-    "@rnx-kit/tools-node": "npm:^3.0.3"
-  checksum: 10/6a279daf32b535f8176a257028f0637e755ad023de1e46ae5594c524f07381a55b88fa07abe057d6de3de321666fc2b046560b1a94036d2331898f6572572034
   languageName: node
   linkType: hard
 
@@ -6827,6 +6811,22 @@ __metadata:
     "@react-native-community/cli-types":
       optional: true
   checksum: 10/175279eddf3f31d73dd3326b6e76a738efbb395e6e04429064eaf03551bcbdfeb5cab6f4cef9dc78b60251af85ff75bdeb33b789b62cda157874bc88c482a141
+  languageName: node
+  linkType: hard
+
+"@rnx-kit/tools-react-native@npm:^2.3.11":
+  version: 2.3.11
+  resolution: "@rnx-kit/tools-react-native@npm:2.3.11"
+  dependencies:
+    "@rnx-kit/tools-filesystem": "npm:^0.2.0"
+    "@rnx-kit/tools-node": "npm:^3.0.6"
+    "@rnx-kit/types-bundle-config": "npm:^1.0.1"
+  peerDependencies:
+    "@react-native-community/cli-types": "*"
+  peerDependenciesMeta:
+    "@react-native-community/cli-types":
+      optional: true
+  checksum: 10/10a25d157747d685957b256ed3f0c73a065411db7978197cbb23120ae6a281d6363e2c56f7538d80c4b56625637ed452d1258cdd920b130db2c75b9dce8cd76b
   languageName: node
   linkType: hard
 
@@ -6857,6 +6857,23 @@ __metadata:
     metro:
       optional: true
   checksum: 10/ebc943dd388452d79821a752509d68968d1297e59412fdf84bb6ccd5844ed97a2cfc3b6ffedaa6c66654b75960026208ea53110a6b76cd5f55014e10f2a7a766
+  languageName: node
+  linkType: hard
+
+"@rnx-kit/types-bundle-config@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "@rnx-kit/types-bundle-config@npm:1.0.1"
+  dependencies:
+    "@rnx-kit/types-metro-serializer-esbuild": "npm:^1.0.0"
+    "@rnx-kit/types-plugin-cyclic-dependencies": "npm:^1.0.0"
+    "@rnx-kit/types-plugin-duplicates-checker": "npm:^1.0.0"
+    "@rnx-kit/types-plugin-typescript": "npm:^1.0.0"
+  peerDependencies:
+    metro: ">=0.83.0"
+  peerDependenciesMeta:
+    metro:
+      optional: true
+  checksum: 10/3a5122286f596132915fc2c10d2aadd1254b98debac1bc3a65aaa9635a808ed321dc626bc54f2ca542fa6f6e81d6a2eaa798af292708bb08349f77c90da136f8
   languageName: node
   linkType: hard
 
@@ -7742,7 +7759,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/eslint-plugin@npm:^8.29.1, @typescript-eslint/eslint-plugin@npm:^8.46.2":
+"@typescript-eslint/eslint-plugin@npm:8.54.0, @typescript-eslint/eslint-plugin@npm:^8.29.1":
   version: 8.54.0
   resolution: "@typescript-eslint/eslint-plugin@npm:8.54.0"
   dependencies:
@@ -7782,7 +7799,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/parser@npm:^8.29.1, @typescript-eslint/parser@npm:^8.46.2":
+"@typescript-eslint/parser@npm:8.54.0, @typescript-eslint/parser@npm:^8.29.1":
   version: 8.54.0
   resolution: "@typescript-eslint/parser@npm:8.54.0"
   dependencies:
@@ -8574,10 +8591,10 @@ __metadata:
     prettier: "npm:2.8.8"
     react: "npm:19.2.3"
     react-native: "npm:0.86.0"
-    react-native-coverage: "npm:0.2.2"
+    react-native-coverage: "npm:0.2.3"
     react-native-google-mobile-ads: "workspace:*"
     react-native-safe-area-context: "npm:^5.5.2"
-    react-native-test-app: "npm:^5.4.0"
+    react-native-test-app: "npm:5.4.17"
     react-test-renderer: "npm:19.2.3"
     typescript: "npm:^5.8.3"
   languageName: unknown
@@ -23241,7 +23258,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.6.2":
+"prettier@npm:3.8.1":
   version: 3.8.1
   resolution: "prettier@npm:3.8.1"
   bin:
@@ -23746,9 +23763,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-coverage@npm:0.2.2":
-  version: 0.2.2
-  resolution: "react-native-coverage@npm:0.2.2"
+"react-native-coverage@npm:0.2.3":
+  version: 0.2.3
+  resolution: "react-native-coverage@npm:0.2.3"
   dependencies:
     commander: "npm:^13.1.0"
     nyc: "npm:^17.1.0"
@@ -23761,7 +23778,7 @@ __metadata:
       optional: true
   bin:
     rn-coverage: bin/rn-coverage.js
-  checksum: 10/601fe3ff2eb1b0da25fb8ca3aac837e38994efc9d4e88d5a836b0f11bfe36d4e83e5004ec532c457bff0191720c7064c942305df001595903a8a0ac0939dd9d3
+  checksum: 10/ee3c0d82ce1df2ba8428be6af7c81da7e6c3b97580704b6ac00a5efb96e527c99da341ffbcecb04105a6ef208f2ae7f59d52702959d0f7857d36b981e5e19770
   languageName: node
   linkType: hard
 
@@ -23786,8 +23803,8 @@ __metadata:
     "@types/jest": "npm:^30.0.0"
     "@types/node": "npm:^24.9.1"
     "@types/react": "npm:^19.2.2"
-    "@typescript-eslint/eslint-plugin": "npm:^8.46.2"
-    "@typescript-eslint/parser": "npm:^8.46.2"
+    "@typescript-eslint/eslint-plugin": "npm:8.54.0"
+    "@typescript-eslint/parser": "npm:8.54.0"
     babel-jest: "npm:^30.2.0"
     clang-format: "npm:1.7.0"
     conventional-changelog: "npm:^7.1.1"
@@ -23807,16 +23824,16 @@ __metadata:
     jest: "npm:^30.2.0"
     lerna: "npm:^9.0.7"
     nx: "npm:^22.7.6"
-    prettier: "npm:^3.6.2"
+    prettier: "npm:3.8.1"
     react: "npm:^19.2.0"
     react-native: "npm:0.86.0"
     react-native-builder-bob: "npm:^0.40.13"
-    react-native-test-app: "npm:^5.4.0"
+    react-native-test-app: "npm:5.4.17"
     react-test-renderer: "npm:^19.2.0"
     rimraf: "npm:^6.0.1"
     semantic-release: "npm:^25.0.1"
     spellchecker-cli: "npm:^7.0.0"
-    typedoc: "npm:^0.28.13"
+    typedoc: "npm:^0.28.20"
     typescript: "npm:^5.9.3"
   languageName: unknown
   linkType: soft
@@ -23861,12 +23878,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-test-app@npm:^5.4.0":
-  version: 5.4.9
-  resolution: "react-native-test-app@npm:5.4.9"
+"react-native-test-app@npm:5.4.17":
+  version: 5.4.17
+  resolution: "react-native-test-app@npm:5.4.17"
   dependencies:
-    "@rnx-kit/react-native-host": "npm:^0.5.21"
-    "@rnx-kit/tools-react-native": "npm:^2.1.0"
+    "@rnx-kit/react-native-host": "npm:^0.5.23"
+    "@rnx-kit/tools-react-native": "npm:^2.3.11"
     ajv: "npm:^8.0.0"
     fast-xml-builder: "npm:^1.2.0"
     fast-xml-parser: "npm:^5.8.0"
@@ -23875,8 +23892,8 @@ __metadata:
   peerDependencies:
     "@callstack/react-native-visionos": 0.76 - 0.79
     "@expo/config-plugins": ">=5.0"
-    react: 18.2 - 19.2
-    react-native: 0.76 - 0.87 || >=0.88.0-0 <0.88.0
+    react: 18.2 - 19.3
+    react-native: 0.76 - 0.88 || >=0.89.0-0 <0.89.0
     react-native-macos: ^0.0.0-0 || 0.76 - 0.81
     react-native-windows: ^0.0.0-0 || 0.76 - 0.83
   peerDependenciesMeta:
@@ -23893,7 +23910,7 @@ __metadata:
     init: scripts/init.mjs
     init-test-app: scripts/init.mjs
     install-windows-test-app: windows/app.mjs
-  checksum: 10/8927f8eea7f7a4a2e8ff7552e26b0b290799a4081281f694be732a85ea252075047c7b0f11a4ce2c7c3ed0e7d4bc88f6125d735d55a5ced18fcc75b43951492b
+  checksum: 10/ab6e97c629c59ff429c8a9455befb728111dc007e790223cc5807cd827462b4154384a75c76e564fc8be24c816f3f196188afefbfcec8f4003c2ac44c42e7ada
   languageName: node
   linkType: hard
 
@@ -24677,20 +24694,20 @@ __metadata:
 
 "resolve@patch:resolve@npm%3A^1.1.6#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.10.1#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.11#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.2#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.22.4#optional!builtin<compat/resolve>":
   version: 1.22.11
-  resolution: "resolve@patch:resolve@npm%3A1.22.11#optional!builtin<compat/resolve>::version=1.22.11&hash=c3c19d"
+  resolution: "resolve@patch:resolve@npm%3A1.22.11#optional!builtin<compat/resolve>::version=1.22.11&hash=9bd1a5"
   dependencies:
     is-core-module: "npm:^2.16.1"
     path-parse: "npm:^1.0.7"
     supports-preserve-symlinks-flag: "npm:^1.0.0"
   bin:
     resolve: bin/resolve
-  checksum: 10/fd342cad25e52cd6f4f3d1716e189717f2522bfd6641109fe7aa372f32b5714a296ed7c238ddbe7ebb0c1ddfe0b7f71c9984171024c97cf1b2073e3e40ff71a8
+  checksum: 10/c990146fed81dd7792c56c1d62c170a8c8330bee86ef5d2524f0b1db79cfd9a6e2b4ad3cd4742b2685e51117b67be5d6f8cfd6ffa9c57bd64a1c8c8c9ff4c965
   languageName: node
   linkType: hard
 
 "resolve@patch:resolve@npm%3A^1.10.0#optional!builtin<compat/resolve>, resolve@patch:resolve@npm%3A^1.20.0#optional!builtin<compat/resolve>":
   version: 1.22.12
-  resolution: "resolve@patch:resolve@npm%3A1.22.12#optional!builtin<compat/resolve>::version=1.22.12&hash=c3c19d"
+  resolution: "resolve@patch:resolve@npm%3A1.22.12#optional!builtin<compat/resolve>::version=1.22.12&hash=9bd1a5"
   dependencies:
     es-errors: "npm:^1.3.0"
     is-core-module: "npm:^2.16.1"
@@ -24698,20 +24715,20 @@ __metadata:
     supports-preserve-symlinks-flag: "npm:^1.0.0"
   bin:
     resolve: bin/resolve
-  checksum: 10/f80ad2c2b6820331cbe079198a184ffce322cfeca140065118066276bc08b03d5fa2c1ce652aeb584ec74050d1f656f46f034cc0dd9300452c5ab7866907f8c0
+  checksum: 10/7c0ee8a1bd6126d7adde06b8cbba7578f6b791560200cd235b696106b9803038fcf680f0273b350a4e9476de1a5194a9a77827cb08e10d80bea38f4d63b1d254
   languageName: node
   linkType: hard
 
 "resolve@patch:resolve@npm%3A^2.0.0-next.5#optional!builtin<compat/resolve>":
   version: 2.0.0-next.5
-  resolution: "resolve@patch:resolve@npm%3A2.0.0-next.5#optional!builtin<compat/resolve>::version=2.0.0-next.5&hash=c3c19d"
+  resolution: "resolve@patch:resolve@npm%3A2.0.0-next.5#optional!builtin<compat/resolve>::version=2.0.0-next.5&hash=9bd1a5"
   dependencies:
     is-core-module: "npm:^2.13.0"
     path-parse: "npm:^1.0.7"
     supports-preserve-symlinks-flag: "npm:^1.0.0"
   bin:
     resolve: bin/resolve
-  checksum: 10/05fa778de9d0347c8b889eb7a18f1f06bf0f801b0eb4610b4871a4b2f22e220900cf0ad525e94f990bb8d8921c07754ab2122c0c225ab4cdcea98f36e64fa4c2
+  checksum: 10/76c221deb1d986c0a80cd576373b0ee09f42871e0085a1f76beda84f73ce04e0d21bab28dffd326eb006a7af83bbc582404566b384aa3b0baa217f56cf7e8618
   languageName: node
   linkType: hard
 
@@ -27254,7 +27271,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typedoc@npm:^0.28.13":
+"typedoc@npm:^0.28.20":
   version: 0.28.20
   resolution: "typedoc@npm:0.28.20"
   dependencies:
