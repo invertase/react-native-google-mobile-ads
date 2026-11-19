@@ -92,7 +92,7 @@ jobs:
           report-json: 'eslint-report.json'
       - name: Upload ESLint report
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: eslint-report.json
           path: eslint-report.json

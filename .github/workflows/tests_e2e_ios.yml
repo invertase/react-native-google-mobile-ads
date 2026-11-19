@@ -224,7 +224,7 @@ jobs:
           key: ${{ steps.metro-bundler-cache.outputs.cache-primary-key }}
 
       - name: Upload Simulator Log
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: success() || failure()
         with:
           name: simulator_log
@@ -237,7 +237,7 @@ jobs:
       # include-hidden-files: upload-artifact skips dotdirs by default; without
       # it, sibling `.hang-recover-snapshots` / `.wda-derived` never upload.
       - name: Upload WDA xcodebuild logs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: success() || failure()
         with:
           name: wda_xcodebuild_logs

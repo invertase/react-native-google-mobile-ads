@@ -296,7 +296,7 @@ jobs:
           key: ${{ steps.metro-bundler-cache.outputs.cache-primary-key }}
 
       - name: Upload Emulator Log
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: adb_logs-${{ matrix.android-backend }}-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.iteration }}
