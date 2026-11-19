@@ -33,7 +33,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@v6
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -86,7 +86,7 @@ jobs:
           name: patches
           path: ~/template/patches/
 
-      - uses: actions/cache/save@v5
+      - uses: actions/cache/save@v6
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:

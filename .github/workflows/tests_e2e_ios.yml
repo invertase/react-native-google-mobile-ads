@@ -59,7 +59,7 @@ jobs:
           echo "metro-cache=$HOME/.metro" >> $GITHUB_OUTPUT
           echo "xcode-version=$(xcodebuild -version|tail -1|cut -f3 -d' ')" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@v6
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -96,7 +96,7 @@ jobs:
           max_attempts: 3
           command: BUNDLE_FROZEN=true bundle install
 
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@v6
         name: Pods Cache Restore
         id: pods-cache
         with:
@@ -112,7 +112,7 @@ jobs:
           max_attempts: 3
           command: yarn
 
-      - uses: actions/cache/save@v5
+      - uses: actions/cache/save@v6
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -127,7 +127,7 @@ jobs:
           max_attempts: 3
           command: yarn tests:ios:pod:install
 
-      - uses: actions/cache/save@v5
+      - uses: actions/cache/save@v6
         name: Pods Cache Save
         if: github.ref == 'refs/heads/main' && steps.pods-cache.outputs.cache-hit != 'true'
         with:
@@ -135,7 +135,7 @@ jobs:
           key: ${{ steps.pods-cache.outputs.cache-primary-key }}
 
       # Sticky content-hash Metro restore/save. Save only on main when miss.
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@v6
         name: Metro Bundler Cache Restore
         id: metro-bundler-cache
         with:
@@ -214,7 +214,7 @@ jobs:
           save: true
           max-size: 2G
 
-      - uses: actions/cache/save@v5
+      - uses: actions/cache/save@v6
         name: Metro Bundler Cache Save
         if: >
           github.ref == 'refs/heads/main'

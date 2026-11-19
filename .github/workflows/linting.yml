@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@v6
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -49,7 +49,7 @@ jobs:
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn
-      - uses: actions/cache/save@v5
+      - uses: actions/cache/save@v6
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -109,7 +109,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - uses: actions/cache/restore@v5
+      - uses: actions/cache/restore@v6
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -124,7 +124,7 @@ jobs:
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn
-      - uses: actions/cache/save@v5
+      - uses: actions/cache/save@v6
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
