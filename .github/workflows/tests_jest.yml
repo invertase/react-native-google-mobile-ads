@@ -35,7 +35,7 @@ jobs:
           fetch-depth: 50
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: '24.22.3'
       - uses: actions/cache/restore@v6
         name: Yarn Cache
         id: yarn-cache
