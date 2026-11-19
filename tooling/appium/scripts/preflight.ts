@@ -81,7 +81,7 @@ function checkNode(): void {
     return;
   }
   console.error(
-    `Node ${process.version} is below the v${MIN_NODE_MAJOR}+ floor. Node 22 hard-fails this stack. If nvm is available: nvm install 24 && nvm use 24 then retry the same yarn command. Yarn 4.18.1 on Node 24.x may flake install (cancel handler after settle); retry the same yarn, do not downgrade Node.`,
+    `Node ${process.version} is below the v${MIN_NODE_MAJOR}+ floor. Node 22 hard-fails this stack. If nvm is available: nvm install 24 && nvm use 24 then retry the same yarn command. Older Yarn (<4.18.1, e.g. 4.10.3) on Node 24.x may flake install (onCancel handler after promise settled); this repo pins Yarn 4.18.1 with that fix. Retry the same yarn only if still on older Yarn; do not downgrade Node.`,
   );
   process.exit(1);
 }
