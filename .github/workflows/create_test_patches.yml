@@ -24,16 +24,16 @@ jobs:
     name: Create patch-package Patches
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Future ideas:
       # - make into an action, parameterize directories to pack, and package names to install
       # - name patches w/PR as "semver prerelease" and SHA as "semver build info". Needs patch-package enhancement.
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24
-      - uses: actions/cache/restore@v5
+          node-version: '24.22.3'
+      - uses: actions/cache/restore@v6
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -81,12 +81,12 @@ jobs:
         shell: bash
 
       - name: Upload Test Patches
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: patches
           path: ~/template/patches/
 
-      - uses: actions/cache/save@v5
+      - uses: actions/cache/save@v6
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
