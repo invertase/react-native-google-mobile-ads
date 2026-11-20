@@ -33,9 +33,9 @@ import org.robolectric.annotation.Config
  * Next-Gen slice of [#893](https://github.com/invertase/react-native-google-mobile-ads/issues/893)
  * / [#726](https://github.com/invertase/react-native-google-mobile-ads/issues/726).
  *
- * Full overlay/asset click ownership is covered by classic
- * [ReactNativeGoogleMobileAdsNativeAdClickTest] and neutral
- * [ReactNativeGoogleMobileAdsNativeAdClickOverlayTest]. Constructing a real Next-Gen
+ * Overlay ordering is covered by neutral [ReactNativeGoogleMobileAdsNativeAdClickOverlayTest];
+ * asset registration and the preserved asset click state (before an ad is bound) by
+ * classic [ReactNativeGoogleMobileAdsNativeAdClickTest]. Constructing a real Next-Gen
  * [com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdView] in this suite flips
  * `MobileAds.isInitialized` and poisons [ReactNativeGoogleMobileAdsPreInitializationTest].
  */

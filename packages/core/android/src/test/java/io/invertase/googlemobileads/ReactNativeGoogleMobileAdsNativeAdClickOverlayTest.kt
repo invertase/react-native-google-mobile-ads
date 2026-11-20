@@ -19,9 +19,7 @@ package io.invertase.googlemobileads
 
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.TextView
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,7 +30,7 @@ import org.robolectric.annotation.Config
 
 /**
  * Neutral (classic+nextgen) coverage for [#893](https://github.com/invertase/react-native-google-mobile-ads/issues/893)
- * overlay / asset-click helpers.
+ * overlay helpers.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -101,17 +99,5 @@ class ReactNativeGoogleMobileAdsNativeAdClickOverlayTest {
 
     assertEquals(0, layoutRequests)
     assertSame(overlay, nativeAdView.getChildAt(nativeAdView.childCount - 1))
-  }
-
-  @Test
-  fun prepareAssetViewForSdkOwnedClicks_clearsClickConsumption() {
-    val asset = TextView(RuntimeEnvironment.getApplication())
-    asset.isClickable = true
-    asset.isFocusable = true
-
-    ReactNativeGoogleMobileAdsNativeAdClickOverlay.prepareAssetViewForSdkOwnedClicks(asset)
-
-    assertFalse(asset.isClickable)
-    assertFalse(asset.isFocusable)
   }
 }
