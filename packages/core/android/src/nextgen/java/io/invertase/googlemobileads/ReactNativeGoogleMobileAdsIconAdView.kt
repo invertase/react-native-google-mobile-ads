@@ -117,7 +117,6 @@ class ReactNativeGoogleMobileAdsIconAdView(
       }
     }
     sdkOwnedAssetViews.add(assetView)
-    ReactNativeGoogleMobileAdsNativeAdClickOverlay.prepareAssetViewForSdkOwnedClicks(assetView)
     reloadAd()
   }
 

@@ -142,8 +142,8 @@ class ReactNativeGoogleMobileAdsNativeAdView(
         return
       }
     }
+    // The asset setter attaches the SDK click listener to assetView; keep its clickable state (#960).
     sdkOwnedAssetViews.add(assetView)
-    ReactNativeGoogleMobileAdsNativeAdClickOverlay.prepareAssetViewForSdkOwnedClicks(assetView)
     reloadAd()
   }
 
@@ -156,13 +156,6 @@ class ReactNativeGoogleMobileAdsNativeAdView(
     for ((assetType, assetView) in pending) {
       applyResolvedAsset(sdkNativeAdView, assetType, assetView)
     }
-  }
-
-  private fun reapplySdkOwnedClicks(sdkNativeAdView: NativeAdView) {
-    for (assetView in sdkOwnedAssetViews) {
-      ReactNativeGoogleMobileAdsNativeAdClickOverlay.prepareAssetViewForSdkOwnedClicks(assetView)
-    }
-    ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(sdkNativeAdView, viewGroup)
   }
 
   private fun reloadAd() {
@@ -188,7 +181,8 @@ class ReactNativeGoogleMobileAdsNativeAdView(
         if (!bound) {
           return@launch
         }
-        reapplySdkOwnedClicks(liveView)
+        // Keep the SDK overlay above React content after bind (#893).
+        ReactNativeGoogleMobileAdsNativeAdClickOverlay.ensureSdkOverlayOnTop(liveView, viewGroup)
         // registerNativeAd can land after the MediaView's first 0×0 layout; refresh so video paints (#775).
         (mediaView?.parent as? ReactNativeGoogleMobileAdsMediaView)?.refreshPresentation()
         liveView.rootView.requestLayout()

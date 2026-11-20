@@ -25,7 +25,6 @@ import android.widget.TextView
 import com.facebook.react.bridge.BridgeReactContext
 import com.facebook.react.uimanager.ThemedReactContext
 import com.google.android.gms.ads.nativead.NativeAdView
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -39,7 +38,9 @@ import org.robolectric.annotation.Config
 
 /**
  * Regression for [#893](https://github.com/invertase/react-native-google-mobile-ads/issues/893)
- * (overlay / asset click ownership) and [#726](https://github.com/invertase/react-native-google-mobile-ads/issues/726)
+ * (overlay), [#960](https://github.com/invertase/react-native-google-mobile-ads/issues/960)
+ * (registered assets keep their clickable state) and
+ * [#726](https://github.com/invertase/react-native-google-mobile-ads/issues/726)
  * (Activity-backed NativeAdView so click intents do not need FLAG_ACTIVITY_NEW_TASK).
  */
 @RunWith(RobolectricTestRunner::class)
@@ -80,7 +81,7 @@ class ReactNativeGoogleMobileAdsNativeAdClickTest {
   }
 
   @Test
-  fun registerAsset_disablesAssetClickConsumption_soSdkOwnsClicks() {
+  fun registerAsset_preservesClickableAndFocusable() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val context = BridgeReactContext(activity)
     context.onHostResume(activity)
@@ -96,8 +97,8 @@ class ReactNativeGoogleMobileAdsNativeAdClickTest {
 
     host.registerResolvedAsset("callToAction", asset)
 
-    assertFalse("Asset must not consume clicks away from NativeAdView/SDK", asset.isClickable)
-    assertFalse(asset.isFocusable)
+    assertTrue("Registered asset must stay clickable for the SDK click listener", asset.isClickable)
+    assertTrue(asset.isFocusable)
     assertSame(asset, findNativeAdView(host)!!.callToActionView)
   }
 
@@ -176,7 +177,7 @@ class ReactNativeGoogleMobileAdsNativeAdClickTest {
     assertNotNull(nativeAdView)
     assertSame(cta, nativeAdView!!.callToActionView)
     assertSame(headline, nativeAdView.headlineView)
-    assertFalse(cta.isClickable)
+    assertTrue(cta.isClickable)
   }
 
   @Test
