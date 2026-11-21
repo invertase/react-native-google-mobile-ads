@@ -24,7 +24,7 @@
     "@react-native-google-mobile-ads/vungle": "workspace:*",
     "@react-native-google-mobile-ads/yandex": "workspace:*",
     "@react-native/new-app-screen": "0.86.0",
-    "react": "19.2.3",
+    "react": "19.3.1",
     "react-native": "0.86.0",
     "react-native-coverage": "0.2.3",
     "react-native-google-mobile-ads": "workspace:*",
