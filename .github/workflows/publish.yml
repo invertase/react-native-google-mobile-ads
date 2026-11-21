@@ -24,7 +24,7 @@ jobs:
     env:
       XCODE_VERSION: latest-stable
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
