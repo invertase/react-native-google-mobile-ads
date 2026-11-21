@@ -23,14 +23,18 @@ import android.widget.FrameLayout
 import kotlin.math.max
 
 /**
- * Android counterpart to iOS [RNGoogleMobileAdsNativeAssetInteraction]: keep GMA's NativeAdView
- * click/AdChoices overlay hittable under React Native Fabric nesting (#893).
+ * Keeps GMA's NativeAdView click/AdChoices overlay hittable under React Native Fabric nesting
+ * (#893).
  *
  * GMA [NativeAdView] / Next-Gen [BaseAdAssetViewContainer] insert a MATCH_PARENT overlay
  * FrameLayout and re-bring it to front on [ViewGroup.addView] / [ViewGroup.bringChildToFront].
  * React content (and elevation from shadows/zIndex) can still outrank that overlay for hit
  * testing, which matches device reports where AdChoices and all asset clicks are dead while
  * impressions still record.
+ *
+ * Unlike iOS, both Android SDKs attach their click listener to registered asset views such as
+ * the headline and call to action, and make them clickable. This object only orders the
+ * overlay; it does not change the clickable / focusable state of asset views (#960).
  */
 object ReactNativeGoogleMobileAdsNativeAdClickOverlay {
   /**
@@ -63,16 +67,6 @@ object ReactNativeGoogleMobileAdsNativeAdClickOverlay {
     val needed = max(reactContent.elevation, reactContent.translationZ) + 1f
     // Always assign: RN layout can raise content elevation after a prior ensure pass.
     overlay.elevation = needed
-  }
-
-  /**
-   * Mirrors iOS `userInteractionEnabled = NO` on registered NativeAsset views: stop the RN
-   * view from consuming the gesture so the SDK/NativeAdView owns the click.
-   */
-  @JvmStatic
-  fun prepareAssetViewForSdkOwnedClicks(assetView: View) {
-    assetView.isClickable = false
-    assetView.isFocusable = false
   }
 
   @JvmStatic
