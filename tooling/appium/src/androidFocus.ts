@@ -20,6 +20,34 @@ export const ANDROID_FOREIGN_FOCUS_MARKERS = [
 
 export type AndroidSystemDialog = 'anr' | 'app-error';
 
+/** Classic GMA + Next-Gen mobile SDK fullscreen AdActivity package markers. */
+export const ANDROID_AD_ACTIVITY_MARKERS = [
+  'com.google.android.gms.ads.AdActivity',
+  'com.google.android.libraries.ads.mobile.sdk.common.AdActivity',
+] as const;
+
+/**
+ * True when a dumpsys window display still shows a live AdActivity.
+ * A finished ActivityRecord ends with ` f}` and must not count: after dismiss
+ * that leftover line still contains the marker while focus is already the example app.
+ */
+export function androidAdActivityIsForeground(dump: string): boolean {
+  const remaining = dump
+    .split('\n')
+    .filter(line => {
+      const trimmed = line.trim();
+      return !(trimmed.includes('ActivityRecord{') && trimmed.endsWith(' f}'));
+    })
+    .join('\n');
+  if (!ANDROID_AD_ACTIVITY_MARKERS.some(marker => remaining.includes(marker))) {
+    return false;
+  }
+  return (
+    remaining.includes('mFocusedApp=ActivityRecord') ||
+    remaining.includes('mCurrentFocus=Window')
+  );
+}
+
 /** The `mCurrentFocus=` / `mFocusedApp=` lines of a window dump, newline-joined. */
 export function androidFocusLines(dump: string): string {
   return (dump.match(/^.*\b(?:mCurrentFocus|mFocusedApp)=.*$/gm) ?? [])
