@@ -203,6 +203,16 @@ test('WebDriver COMMAND findElement probe lines embedding redbox text are not ha
   }
 });
 
+test('Appium debug-file element lookups that embed redbox selector text are not hard markers', () => {
+  for (const line of [
+    '2026-11-26 21:11:00:333 [fbcb0b13][HTTP] --> POST /session/fbcb0b13-59ac-4b41-9886-14c9d501d96a/element {"using":"-android uiautomator","value":"new UiSelector().textContains(\\"Could not connect to development server\\")"}',
+    '2026-11-26 21:11:59:269 [dfc2ba64][AndroidUiautomator2Driver@c54b] Calling AppiumDriver.findElement() with args: ["-android uiautomator","new UiSelector().textContains(\\"Could not connect to development server\\")","dfc2ba64-1ca7-4de0-8320-d232f4d0cdd3"]',
+    '2026-11-26 21:11:59:269 [dfc2ba64][AndroidUiautomator2Driver@c54b] Proxying [POST /element] to [POST http://127.0.0.1:14014/session/257e603f/element] with body: {"strategy":"-android uiautomator","selector":"new UiSelector().textContains(\\"Could not connect to development server\\")","context":"","multiple":false}',
+  ]) {
+    assert.equal(hardFailureForLine(line), undefined, line);
+  }
+});
+
 test('WebDriver DATA value: selector probe lines embedding redbox text are not hard markers', () => {
   for (const line of [
     // Exact CI classic+nextgen shape after COMMAND findElement (post-4082891 abort).

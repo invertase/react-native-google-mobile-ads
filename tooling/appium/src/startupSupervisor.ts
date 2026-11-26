@@ -124,6 +124,11 @@ export function isWebDriverSelectorProbeLine(line: string): boolean {
   if (/\bCOMMAND\b/i.test(line) && /\bfindElement\b/i.test(line)) {
     return true;
   }
+  // Appium's debug file echoes the same lookup as an HTTP body, a
+  // findElement args line, and a proxy body. Those are probes, not a redbox.
+  if (/UiSelector\(\)\.(?:text|description)Contains/i.test(line)) {
+    return true;
+  }
   // WDIO DATA dumps the selector on its own line after COMMAND, e.g.
   // value: 'new UiSelector().textContains("Could not connect to development server")'
   return (

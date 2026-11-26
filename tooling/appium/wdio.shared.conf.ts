@@ -101,7 +101,12 @@ export const config: Options.Testrunner = {
           port: APPIUM_PORT,
           relaxedSecurity: true,
           log: appiumLogFile,
-          logLevel: 'error:debug',
+          // Console must stay at info: @wdio/appium-service waits for
+          // "Appium REST http interface listener started" on stdout. error:debug
+          // hides that line, the service never marks Appium up, and the 60s
+          // startup supervisor kills the process. outputDir then pipes stdout
+          // off the step; the file side stays debug.
+          logLevel: 'info:debug',
         },
         env: {
           APPIUM_HOME: appiumHome,
