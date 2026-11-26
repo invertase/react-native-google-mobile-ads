@@ -33,7 +33,9 @@ import {
   noteXcodebuildExitFromLine,
   startIosSessionCreateHangWatchdog,
 } from '../src/iosBootDiagnostics.ts';
+import { followAppendedLog } from '../src/followAppendedLog.ts';
 import {
+  appiumServerLogPath,
   clearXcodebuildExitState,
   DEFAULT_APPIUM_HOME,
   stageIosSessionHangArtifacts,
@@ -131,7 +133,12 @@ type WdioOwnedOptions = {
   spawn?: (
     bin: string,
     args: string[],
-    options: { cwd: string; env?: NodeJS.ProcessEnv; logPath: string },
+    options: {
+      cwd: string;
+      env?: NodeJS.ProcessEnv;
+      logPath: string;
+      mirrorToParent?: boolean;
+    },
   ) => RunningCommand;
   drain?: typeof stopAndDrain;
 };
@@ -190,6 +197,7 @@ export async function runWdioOwned(
     options.signalSource,
   );
   let monitoring = true;
+  let stopAppiumLogFollow = (): void => undefined;
   try {
     if (!(await (options.listen ?? isListening)(runtime.metroPort))) {
       throw new Error(
@@ -248,6 +256,30 @@ export async function runWdioOwned(
         wdaPortProbeEnabled: true,
       });
     }
+    stopAppiumLogFollow = followAppendedLog(
+      appiumServerLogPath(DEFAULT_APPIUM_HOME, runtime.appiumPort),
+      line => {
+        startup.recordLine(source, line);
+        if (target === 'android') {
+          annotateAndroidSessionLogLine(line, { state: androidSessionAnnotateState });
+        }
+        if (target === 'ios') {
+          const code = noteXcodebuildExitFromLine(line, lastXcodebuildExitRef);
+          if (code != null) {
+            writeXcodebuildExitState(xcodebuildExitStateFile, code);
+          }
+        }
+        if (
+          sessionHangWatchdog &&
+          /(?:WebDriver|Appium) session (?:created|started)|\bsession created successfully\b|https?:\/\/\S+\/session\/[^/\s]+(?:\/|\s|$)/i.test(
+            line,
+          )
+        ) {
+          sessionHangWatchdog.markSessionCreated();
+          sessionHangWatchdog = undefined;
+        }
+      },
+    );
     wdio = (options.spawn ?? spawnOwned)(
       'yarn',
       ['exec', 'wdio', 'run', `./wdio.${target}.conf.ts`],
@@ -297,6 +329,7 @@ export async function runWdioOwned(
       cwd: repoRoot,
       env,
       logPath: paths.device(target, 'serial'),
+      mirrorToParent: false,
     });
     owned.push(tail);
     console.log(
@@ -321,6 +354,7 @@ export async function runWdioOwned(
     return await wdio.completion;
   } finally {
     monitoring = false;
+    stopAppiumLogFollow();
     disarm();
     // Belt-and-suspenders: if abort raced past onAbortArtifacts, stage once more
     // before drain while child log files still exist on disk.

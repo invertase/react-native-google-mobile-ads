@@ -23,6 +23,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
+import { followAppendedLog } from './followAppendedLog.ts';
 import { fileURLToPath } from 'node:url';
 
 /** Default APPIUM_HOME (same tree as wdio.shared.conf `appiumHome`). */
@@ -919,6 +920,11 @@ export function installXcodebuildExitLogTap(
     /** Launcher→worker sidecar (typically `xcodebuildExitStatePath(appiumPort)`). */
     statePath?: string;
     writeState?: (path: string, code: number) => void;
+    /**
+     * Appium debug file. xcodebuild lines live here once stderr is no longer
+     * reprinted onto the launcher. The raw line is not echoed.
+     */
+    appiumLogPath?: string;
   },
 ): () => void {
   const note =
@@ -964,7 +970,17 @@ export function installXcodebuildExitLogTap(
     streams[i]!.write = tap(originals[i]!) as typeof streams[number]['write'];
   }
 
+  const stopFollow = options?.appiumLogPath
+    ? followAppendedLog(options.appiumLogPath, line => {
+        const code = note(line, lastXcodebuildExitRef);
+        if (code != null && options?.statePath) {
+          writeState(options.statePath, code);
+        }
+      })
+    : undefined;
+
   return () => {
+    stopFollow?.();
     for (let i = 0; i < streams.length; i += 1) {
       streams[i]!.write = originals[i]! as typeof streams[number]['write'];
     }

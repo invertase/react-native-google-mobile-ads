@@ -49,6 +49,8 @@ export type ChildCommand = {
   args?: string[];
   env: NodeJS.ProcessEnv;
   logPath?: string;
+  /** When false, the parallel runner keeps the log file and onLine, not parent stdio. */
+  mirrorToParent?: boolean;
   role: string;
   bin?: string;
 };
@@ -314,6 +316,7 @@ function deviceTailCommand(
     env: entry.env,
     role: `${platform} slot ${entry.slot} exact-device startup log`,
     logPath: paths.device(platform, `slot-${entry.slot}-${entry.label}`),
+    mirrorToParent: false,
   };
 }
 

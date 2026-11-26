@@ -194,6 +194,6 @@ test('ios prebuilt capability consumes the shared prebuild output path', async (
   assert.equal(
     cap['appium:showXcodeLog'],
     true,
-    'showXcodeLog must stay on so xcodebuild exit-65 stderr reaches CI job logs',
+    'showXcodeLog must stay on so xcodebuild text is written to appium.log and uploaded in e2e_driver_logs',
   );
 });

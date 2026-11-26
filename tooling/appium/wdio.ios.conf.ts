@@ -22,7 +22,7 @@ import {
   xcodebuildExitStatePath,
 } from './src/iosSessionDiagnostics.ts';
 import { iosMetroProcessArguments, runtimeResources } from './src/slots.ts';
-import { appiumHome, config as shared } from './wdio.shared.conf.ts';
+import { appiumHome, appiumLogFile, config as shared } from './wdio.shared.conf.ts';
 
 const iosApp = iosAppPath();
 const runtime = runtimeResources('ios');
@@ -97,6 +97,7 @@ export const config: Options.Testrunner = {
       {
         noteLine: noteXcodebuildExitFromLine,
         statePath: xcodebuildExitStateFile,
+        appiumLogPath: appiumLogFile,
       },
     );
     logIosBootDiagnostics(requireIosUdid(), {

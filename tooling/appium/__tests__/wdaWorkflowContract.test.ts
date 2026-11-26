@@ -276,6 +276,31 @@ test('named prebuild producer and XCUITest consumer use the shared DerivedData p
   // Appium --log under .appium-home so supervisor-abort staging / CI globs capture stdio.
   assert.match(sharedSource, /appiumServerLogPath/);
   assert.match(sharedSource, /\blog:\s*appiumLogFile\b/);
+  assert.match(sharedSource, /outputDir:\s*e2eLogDir/);
+  assert.match(sharedSource, /logLevel:\s*'info'/);
+  assert.match(sharedSource, /logLevel:\s*'error:debug'/);
+});
+
+test('Android and iOS workflows upload e2e driver logs', () => {
+  for (const [name, artifact] of [
+    [
+      'tests_e2e_android.yml',
+      'e2e_driver_logs-${{ matrix.android-backend }}-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.iteration }}',
+    ],
+    ['tests_e2e_ios.yml', 'e2e_driver_logs'],
+  ] as const) {
+    const workflow = readFileSync(resolve(repositoryRoot, '.github/workflows', name), 'utf8');
+    const heading = workflow.indexOf('- name: Upload e2e driver logs');
+    assert.ok(heading >= 0, `${name} must upload e2e driver logs`);
+    const next = workflow.indexOf('\n      - name:', heading + 1);
+    const step = workflow.slice(heading, next >= 0 ? next : undefined);
+    assert.match(step, /if:\s*always\(\)/);
+    assert.match(step, /include-hidden-files:\s*true/);
+    assert.match(step, new RegExp(`name:\\s*${artifact.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+    assert.match(step, /tooling\/appium\/\.e2e-logs/);
+    assert.match(step, /tooling\/appium\/\.appium-home\/logs/);
+    assert.match(step, /\/tmp\/rngma-e2e/);
+  }
 });
 
 test('iOS WDA and WDIO session timeouts retain their reviewed CI budgets', () => {

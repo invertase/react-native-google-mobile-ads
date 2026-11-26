@@ -1,5 +1,5 @@
 import type { Options } from '@wdio/types';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { flushCoverageFromApp } from './src/flushCoverage.ts';
@@ -13,6 +13,7 @@ import { selectedWdioSpecs } from './src/wdioSpecs.ts';
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 const appiumHome = path.join(packageRoot, '.appium-home');
+const e2eLogDir = path.join(packageRoot, '.e2e-logs');
 const APPIUM_PORT = runtimeResources(platformForSharedConfig()).appiumPort;
 const appiumLogFile = appiumServerLogPath(appiumHome, APPIUM_PORT);
 
@@ -29,6 +30,7 @@ export const config: Options.Testrunner = {
   // Startup ownership consumes WDIO/Appium's session-created evidence before
   // allowing the slower app/JS readiness phase to begin.
   logLevel: 'info',
+  outputDir: e2eLogDir,
   // Reliability worker sets RNGMA_WDIO_RUNNER_BAIL=0 so a failed shard process
   // never implies cross-shard runner bail; mocha bail stays on within a shard.
   bail: process.env.RNGMA_WDIO_RUNNER_BAIL === '0' ? 0 : 1,
@@ -71,6 +73,9 @@ export const config: Options.Testrunner = {
     // @wdio/appium-service spawns Appium with process.env only (ignores service `env`).
     process.env.APPIUM_HOME = appiumHome;
     mkdirSync(path.dirname(appiumLogFile), { recursive: true });
+    mkdirSync(e2eLogDir, { recursive: true });
+    // Drop a previous self-hosted job's debug log so the follower cannot replay it.
+    writeFileSync(appiumLogFile, '');
   },
   /**
    * After each top-level smoke suite, while the Appium session is still alive:
@@ -96,6 +101,7 @@ export const config: Options.Testrunner = {
           port: APPIUM_PORT,
           relaxedSecurity: true,
           log: appiumLogFile,
+          logLevel: 'error:debug',
         },
         env: {
           APPIUM_HOME: appiumHome,
@@ -105,4 +111,4 @@ export const config: Options.Testrunner = {
   ],
 };
 
-export { appiumHome, packageRoot };
+export { appiumHome, appiumLogFile, e2eLogDir, packageRoot };

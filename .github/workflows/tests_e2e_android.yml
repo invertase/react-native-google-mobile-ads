@@ -314,3 +314,15 @@ jobs:
         with:
           name: adb_logs-${{ matrix.android-backend }}-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.iteration }}
           path: adb-log.txt
+
+      - name: Upload e2e driver logs
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: e2e_driver_logs-${{ matrix.android-backend }}-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.iteration }}
+          include-hidden-files: true
+          if-no-files-found: warn
+          path: |
+            tooling/appium/.e2e-logs
+            tooling/appium/.appium-home/logs
+            /tmp/rngma-e2e
