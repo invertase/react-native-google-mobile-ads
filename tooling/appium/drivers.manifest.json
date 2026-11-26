@@ -1,20 +1,17 @@
 {
   "$schema": "./drivers.manifest.schema.json",
   "appiumHome": ".appium-home",
-  "appium": "3.7.0",
+  "appium": "4.0.0",
   "drivers": [
-    {
-      "name": "uiautomator2",
-      "package": "appium-uiautomator2-driver",
-      "version": "8.5.0"
-    },
     {
       "name": "xcuitest",
       "package": "appium-xcuitest-driver",
-      "version": "12.8.0"
+      "version": "13.1.3"
+    },
+    {
+      "name": "uiautomator2",
+      "package": "appium-uiautomator2-driver",
+      "version": "9.2.2"
     }
-  ],
-  "overrides": {
-    "bplist-parser": "0.3.2"
-  }
+  ]
 }
