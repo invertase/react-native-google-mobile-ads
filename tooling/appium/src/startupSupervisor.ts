@@ -145,8 +145,16 @@ const WDA_PROXY_REFUSED =
 const WDA_STATUS_ECHO_REFUSED =
   /WDA is not listening\b[\s\S]*\bCould not proxy command\b[\s\S]*\bOriginal error:\s*connect ECONNREFUSED\s+127\.0\.0\.1:\d+\b/i;
 
+/** Once-a-second GET /status poll while XCUITest is inside wdaLaunchTimeout. */
+const WDA_LAUNCH_WAIT_REFUSED =
+  /\[XCUITestDriver@[0-9a-f]+\](?:\x1b\[[0-9;]*m)*[ \t]*connect ECONNREFUSED[ \t]+127\.0\.0\.1:\d+\b/i;
+
 export function isWdaStatusProbeLine(line: string): boolean {
-  return WDA_PROXY_REFUSED.test(line) || WDA_STATUS_ECHO_REFUSED.test(line);
+  return (
+    WDA_PROXY_REFUSED.test(line) ||
+    WDA_STATUS_ECHO_REFUSED.test(line) ||
+    WDA_LAUNCH_WAIT_REFUSED.test(line)
+  );
 }
 
 /** @deprecated Prefer {@link isWebDriverSelectorProbeLine}. */
