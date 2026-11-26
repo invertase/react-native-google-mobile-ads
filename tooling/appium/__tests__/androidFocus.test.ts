@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import {
+  androidAdActivityIsForeground,
   androidFocusedForeignApps,
   androidFocusedSystemDialog,
   androidFocusLines,
@@ -114,5 +115,38 @@ describe('android system dialog focus', () => {
   test('app or foreign focus is not a system dialog', () => {
     assert.equal(androidFocusedSystemDialog(APP_FOCUSED_PLAY_STORE_BACKGROUND), null);
     assert.equal(androidFocusedSystemDialog(PLAY_STORE_FOCUSED), null);
+  });
+});
+
+describe('android ad activity foreground', () => {
+  test('a finished AdActivity record is not foreground once the example app is focused', () => {
+    const dump = [
+      'mCurrentFocus=Window{f6cf2a1 u0 com.microsoft.reacttestapp/com.microsoft.reacttestapp.component.ComponentActivity}',
+      'mFocusedApp=ActivityRecord{67072534 u0 com.microsoft.reacttestapp/.component.ComponentActivity t11}',
+      '* ActivityRecord{241461842 u0 com.microsoft.reacttestapp/com.google.android.gms.ads.AdActivity t11 f}',
+    ].join('\n');
+    assert.equal(androidAdActivityIsForeground(dump), false);
+  });
+
+  test('a focused AdActivity stays foreground even when the window hash contains f', () => {
+    for (const activity of [
+      'com.google.android.gms.ads.AdActivity',
+      'com.google.android.libraries.ads.mobile.sdk.common.AdActivity',
+    ]) {
+      const dump = [
+        `mCurrentFocus=Window{f6cf2a1 u0 com.microsoft.reacttestapp/${activity}}`,
+        `mFocusedApp=ActivityRecord{67072534 u0 com.microsoft.reacttestapp/${activity} t11}`,
+        `* ActivityRecord{241461842 u0 com.microsoft.reacttestapp/${activity} t11}`,
+      ].join('\n');
+      assert.equal(androidAdActivityIsForeground(dump), true);
+    }
+  });
+
+  test('a dump with no AdActivity is not foreground', () => {
+    const dump = [
+      'mCurrentFocus=Window{112233 u0 com.microsoft.reacttestapp/com.microsoft.reacttestapp.component.ComponentActivity}',
+      'mFocusedApp=ActivityRecord{d4e5f6 u0 com.microsoft.reacttestapp/.component.ComponentActivity t42}',
+    ].join('\n');
+    assert.equal(androidAdActivityIsForeground(dump), false);
   });
 });

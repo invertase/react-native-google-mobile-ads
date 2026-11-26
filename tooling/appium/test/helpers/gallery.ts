@@ -12,6 +12,8 @@ import {
 } from '../../src/formats.ts';
 import { dismissAndroidAnrDialogsViaAdb } from '../../src/androidAnrDismiss.ts';
 import {
+  ANDROID_AD_ACTIVITY_MARKERS,
+  androidAdActivityIsForeground,
   androidFocusedForeignApps,
   androidFocusedSystemDialog,
   focusIncludesAndroidForeignApp,
@@ -1641,12 +1643,6 @@ const HOOK_LIFECYCLE_CLOSED = 'status=closed';
 const UTILITY_LIFECYCLE_OPENED = 'Utility lifecycle: opened';
 const UTILITY_LIFECYCLE_CLOSED = 'Utility lifecycle: closed';
 
-/** Classic GMA + Next-Gen mobile SDK fullscreen AdActivity package markers. */
-const ANDROID_AD_ACTIVITY_MARKERS = [
-  'com.google.android.gms.ads.AdActivity',
-  'com.google.android.libraries.ads.mobile.sdk.common.AdActivity',
-] as const;
-
 function focusIncludesAndroidAdActivity(focus: string): boolean {
   return ANDROID_AD_ACTIVITY_MARKERS.some(marker => focus.includes(marker));
 }
@@ -2115,14 +2111,7 @@ async function dismissAndroidAdInspectorIfPresent(): Promise<void> {
 }
 
 async function isAndroidAdActivityForeground(): Promise<boolean> {
-  const focus = await androidWindowFocusDump();
-  if (!focusIncludesAndroidAdActivity(focus)) {
-    return false;
-  }
-  return (
-    focus.includes('mFocusedApp=ActivityRecord') ||
-    focus.includes('mCurrentFocus=Window')
-  );
+  return androidAdActivityIsForeground(await androidWindowFocusDump());
 }
 
 /** Fullscreen GMA surface in AdActivity (excludes app-open feed chrome). */
