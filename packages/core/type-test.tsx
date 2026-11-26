@@ -6,6 +6,7 @@
  * the JSX / provider / hook surface regresses.
  */
 import React from 'react';
+import { View } from 'react-native';
 
 import {
   AdPoolPresets,
@@ -14,12 +15,18 @@ import {
   BannerAdSize,
   GAMBannerAd,
   GAMBannerAdSize,
+  IconAd,
+  IconAdView,
+  IconAsset,
+  IconAssetType,
   MultiFormatAdPresets,
   MultiFormatBannerAdView,
   NativeAdView,
   NativeAsset,
   NativeAssetType,
   NativeMediaView,
+  SwipeableInterstitialAd,
+  SwipeableInterstitialAdView,
   TestIds,
   useAdPool,
   useAppOpenAdManager,
@@ -178,3 +185,34 @@ void PoolHookTreeExample;
 void DeferredHooksTypeProof;
 void NativeComponentsTypeProof;
 void GAMBannerManualImpressionTypeProof;
+void IconComponentsTypeProof;
+void SwipeableInterstitialViewTypeProof;
+
+function IconComponentsTypeProof(): React.JSX.Element {
+  type IconAdProp = Equal<React.ComponentProps<typeof IconAdView>['iconAd'], IconAd>;
+  type IconAssetTypeProp = Equal<React.ComponentProps<typeof IconAsset>['assetType'], IconAssetType>;
+  const iconAdPropLock: IconAdProp = true;
+  const iconAssetTypePropLock: IconAssetTypeProp = true;
+  console.log(iconAdPropLock, iconAssetTypePropLock);
+  return (
+    <IconAdView iconAd={IconAd.createForAdRequest('ca-app-pub-test')}>
+      <IconAsset assetType={IconAssetType.HEADLINE}>
+        <View />
+      </IconAsset>
+    </IconAdView>
+  );
+}
+
+function SwipeableInterstitialViewTypeProof(): React.JSX.Element {
+  type SwipeableAdProp = Equal<
+    React.ComponentProps<typeof SwipeableInterstitialAdView>['swipeableInterstitialAd'],
+    SwipeableInterstitialAd
+  >;
+  const swipeableAdPropLock: SwipeableAdProp = true;
+  console.log(swipeableAdPropLock);
+  return (
+    <SwipeableInterstitialAdView
+      swipeableInterstitialAd={SwipeableInterstitialAd.createForAdRequest('ca-app-pub-test')}
+    />
+  );
+}

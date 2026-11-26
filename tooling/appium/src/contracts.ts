@@ -575,6 +575,22 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     assertion:
       'getAdCapabilities publishes poolResponseInfoPeek and rewarded-interstitial preload support on the loaded marker, and the peek probe reports structured unsupported pool/peek-unsupported on Android classic rather than faking peek success.',
   }),
+  absent(
+    'IconAd',
+    'class',
+    'IconAd is an Android Next-Gen alpha format. TestIds.ICON is empty until Google documents a demo unit, classic Android and iOS report iconAd unavailable, and RNGoogleMobileAdsExample has no Icon screen. Jest iconAd.test.ts owns create, load, destroy, and loaded-asset mapping.',
+  ),
+  absent(
+    'IconAdView',
+    'component',
+    'IconAdView hosts a loaded IconAd. RNGoogleMobileAdsExample has no screen that mounts it, and TestIds.ICON has no Google demo unit, so Appium cannot claim a rendered Icon outcome.',
+  ),
+  absent(
+    'IconAsset',
+    'component',
+    'IconAsset registers one child on IconAdView by IconAssetType. The example has no Icon screen, so there is no enclosing render contract for Appium to measure.',
+  ),
+  staticToken('IconAssetType'),
   lower(
     'InitializationState',
     'const/preset',
@@ -687,6 +703,16 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'component',
     'Media-view command and prop wiring are covered below Appium; the current Native outcome does not require video inventory or assert media playback.',
   ),
+  absent(
+    'PictureInPictureAd',
+    'class',
+    'PictureInPictureAd is a preview open-beta format with show and hide. RNGoogleMobileAdsExample has no PiP screen. Classic Android reports pictureInPicture unavailable. Jest pictureInPictureAd.test.ts owns load, show-option validation, hide, and destroy. Google demo units on TestIds.PICTURE_IN_PICTURE are unused by the example.',
+  ),
+  lower(
+    'PictureInPictureAdEventType',
+    'const/preset',
+    'Jest pictureInPictureAd.test.ts maps PictureInPictureAdEventType string values and SHOWN and HIDDEN listener dispatch. The enum has no independent Appium success outcome while PictureInPictureAd stays absent from the example.',
+  ),
   lower(
     'RevenuePrecisions',
     'const/preset',
@@ -723,6 +749,21 @@ export const PUBLIC_API_CONTRACTS: readonly PublicApiContract[] = [
     'SDK_VERSION',
     'const/preset',
     'SDK_VERSION is build metadata with no device behavior; its string value is verified by package build/version tooling rather than an Appium outcome.',
+  ),
+  absent(
+    'SwipeableInterstitialAd',
+    'class',
+    'SwipeableInterstitialAd is a private-beta allowlisted format presented by SwipeableInterstitialAdView rather than show. TestIds.SWIPEABLE_INTERSTITIAL is empty, the example does not mount the GAM sample unit, and classic Android reports swipeableInterstitial unavailable. Jest owns load, destroy, loaded metadata, and recordCustomClickGesture.',
+  ),
+  lower(
+    'SwipeableInterstitialAdEventType',
+    'const/preset',
+    'Jest swipeableInterstitialAd.test.ts asserts SwipeableInterstitialAdEventType string values. Overlay screen events belong to the same enum and have no separate Appium outcome while the class stays absent from the example.',
+  ),
+  absent(
+    'SwipeableInterstitialAdView',
+    'component',
+    'SwipeableInterstitialAdView mounts the SDK view after load. RNGoogleMobileAdsExample has no swipeable interstitial screen, so Appium has no rendered outcome to claim.',
   ),
   excluded(
     'TestDeviceIds',

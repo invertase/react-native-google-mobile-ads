@@ -6,6 +6,7 @@ import {
 } from '../src';
 import NativeGoogleMobileAdsModule from '../src/specs/modules/NativeGoogleMobileAdsModule';
 import NativeSwipeableInterstitialAdModule from '../src/specs/modules/NativeSwipeableInterstitialAdModule';
+import { validateSwipeableInterstitialAdRequestOptions } from '../src/validateSwipeableInterstitialAdRequestOptions';
 
 describe('SwipeableInterstitialAd', () => {
   afterEach(() => {
@@ -97,5 +98,56 @@ describe('SwipeableInterstitialAdEventType', () => {
     expect(SwipeableInterstitialAdEventType.SCREEN_HOLD_TIMER_STARTED).toBe(
       'screen_hold_timer_started',
     );
+    expect(SwipeableInterstitialAdEventType.WILL_PRESENT_SCREEN).toBe('will_present_screen');
+    expect(SwipeableInterstitialAdEventType.WILL_DISMISS_SCREEN).toBe('will_dismiss_screen');
+    expect(SwipeableInterstitialAdEventType.DID_DISMISS_SCREEN).toBe('did_dismiss_screen');
+  });
+});
+
+describe('validateSwipeableInterstitialAdRequestOptions', () => {
+  const adSize = { width: 320, height: 480 };
+
+  it.each(['left', 'right', 'up', 'down'] as const)('accepts direction %s with a positive ad size', direction => {
+    const options = {
+      adSize,
+      customClickSwipeGesture: { direction, tapsAllowed: true },
+    };
+    expect(validateSwipeableInterstitialAdRequestOptions(options)).toEqual({
+      ...options,
+      requestAgent: expect.stringMatching(/^rn-invertase-/),
+    });
+  });
+
+  it('rejects a direction outside the swipe set', () => {
+    expect(() =>
+      validateSwipeableInterstitialAdRequestOptions({
+        customClickSwipeGesture: { direction: 'diagonal' as 'left' },
+      }),
+    ).toThrow("'options.customClickSwipeGesture.direction'");
+  });
+
+  it.each([
+    { width: 0, height: 480 },
+    { width: 320, height: -1 },
+  ])('rejects a non-positive ad size %j', adSizeCase => {
+    expect(() => validateSwipeableInterstitialAdRequestOptions({ adSize: adSizeCase })).toThrow(
+      "'options.adSize' expected positive numeric width and height.",
+    );
+  });
+
+  it('rejects a non-boolean tapsAllowed', () => {
+    expect(() =>
+      validateSwipeableInterstitialAdRequestOptions({
+        customClickSwipeGesture: { direction: 'left', tapsAllowed: 'yes' as unknown as boolean },
+      }),
+    ).toThrow("'options.customClickSwipeGesture.tapsAllowed'");
+  });
+
+  it('rejects a non-boolean requestCustomClickGesture', () => {
+    expect(() =>
+      validateSwipeableInterstitialAdRequestOptions({
+        requestCustomClickGesture: 'yes' as unknown as boolean,
+      }),
+    ).toThrow("'options.requestCustomClickGesture'");
   });
 });

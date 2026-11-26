@@ -254,6 +254,9 @@ describe('PictureInPictureAd', () => {
     it('exposes PiP visibility events', () => {
       expect(PictureInPictureAdEventType.SHOWN).toBe('shown');
       expect(PictureInPictureAdEventType.HIDDEN).toBe('hidden');
+      expect(PictureInPictureAdEventType.WILL_PRESENT_SCREEN).toBe('will_present_screen');
+      expect(PictureInPictureAdEventType.WILL_DISMISS_SCREEN).toBe('will_dismiss_screen');
+      expect(PictureInPictureAdEventType.DID_DISMISS_SCREEN).toBe('did_dismiss_screen');
     });
   });
 });
