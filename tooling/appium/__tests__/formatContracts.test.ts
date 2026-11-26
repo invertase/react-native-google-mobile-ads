@@ -1632,6 +1632,8 @@ test('retires blanket per-attempt acceptance and locks real render probes', () =
   assert.match(gallerySource, /proveSdkUtilitySurface/);
   // Post-keyBack interstitial/hook dismiss can leave NexusLauncher focused —
   // bring the example app forward before lifecycle status=closed polls.
+  assert.match(gallerySource, /recoverAndroidTestHost/);
+  assert.match(gallerySource, /androidAdActivityIsForeground\(focus\)/);
   assert.match(gallerySource, /interstitial\.dismiss\.afterSuccess/);
   assert.match(gallerySource, /hookClose\.beforeWaitClosed/);
   assert.match(gallerySource, /hookClose\.lifecycleMissing/);

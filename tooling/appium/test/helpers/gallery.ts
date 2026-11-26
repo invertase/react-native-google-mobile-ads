@@ -12,7 +12,6 @@ import {
 } from '../../src/formats.ts';
 import { dismissAndroidAnrDialogsViaAdb } from '../../src/androidAnrDismiss.ts';
 import {
-  ANDROID_AD_ACTIVITY_MARKERS,
   androidAdActivityIsForeground,
   androidFocusedForeignApps,
   androidFocusedSystemDialog,
@@ -1643,10 +1642,6 @@ const HOOK_LIFECYCLE_CLOSED = 'status=closed';
 const UTILITY_LIFECYCLE_OPENED = 'Utility lifecycle: opened';
 const UTILITY_LIFECYCLE_CLOSED = 'Utility lifecycle: closed';
 
-function focusIncludesAndroidAdActivity(focus: string): boolean {
-  return ANDROID_AD_ACTIVITY_MARKERS.some(marker => focus.includes(marker));
-}
-
 function invalidateAndroidWindowFocusDump(): void {
   cachedAndroidWindowFocusDump = { at: 0, value: '' };
 }
@@ -1884,7 +1879,7 @@ async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
       continue;
     }
     const focus = await androidWindowFocusDump();
-    if (focusIncludesAndroidAdActivity(focus)) {
+    if (androidAdActivityIsForeground(focus)) {
       return;
     }
     if (focus.includes(EXAMPLE_ANDROID_PACKAGE)) {
@@ -2592,6 +2587,7 @@ async function settleAndroidFullscreenDismissBeforeClosedPoll(): Promise<void> {
 /** Fullscreen interstitial / GAM show-close while RN lifecycle nodes may be off-tree. */
 async function runAndroidFullscreenShowCloseLifecycle(formatId: string): Promise<void> {
   await dismissAndroidImmersiveModeEducationIfPresent();
+  await ensureExampleAppInForeground();
   const showActionId = AppiumTestIds.action.show(formatId);
   const probesPerTap = 10;
   const probeIntervalMs = 400;
