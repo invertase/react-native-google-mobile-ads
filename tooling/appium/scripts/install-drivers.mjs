@@ -4,9 +4,11 @@
  * versions from drivers.manifest.json (and matching yarn.lock deps).
  *
  * Drivers are not fully guaranteed by yarn.lock alone; this script + verify
- * is the pin contract. Idempotent: matching pins are skipped (exit 0).
+ * is the pin contract. Idempotent: matching driver pins are skipped unless
+ * transitive override pins are violated (exit 0 when nothing to do).
  * Manifest `overrides` pin known-breaking transitive driver deps via npm
- * overrides in APPIUM_HOME/package.json; a home that violates them is reinstalled.
+ * overrides in APPIUM_HOME/package.json; violating copies trigger uninstall and
+ * reinstall even when driver versions already match.
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -99,20 +101,46 @@ if (staleTransitives.length > 0) {
   );
 }
 
+const mismatched = manifest.drivers.filter(
+  driver => installedVersion(installed[driver.name]) !== driver.version,
+);
+if (mismatched.length > 0) {
+  // Uninstall every stale driver before any install: Appium 4 driver peers conflict
+  // when an older major (e.g. xcuitest 12) remains in APPIUM_HOME during npm install.
+  for (const driver of manifest.drivers) {
+    const current = installedVersion(installed[driver.name]);
+    if (current && current !== driver.version) {
+      console.log(
+        `Uninstalling Appium driver ${driver.name}@${current} (pinned ${driver.version})…`,
+      );
+      runAppium(['driver', 'uninstall', driver.name], appiumHome);
+    }
+  }
+}
+
+if (staleTransitives.length > 0) {
+  for (const driver of manifest.drivers) {
+    const current = installedVersion(installed[driver.name]);
+    if (current === driver.version) {
+      console.log(
+        `Uninstalling Appium driver ${driver.name}@${current} (reinstall for transitive pins)…`,
+      );
+      runAppium(['driver', 'uninstall', driver.name], appiumHome);
+    }
+  }
+}
+
 for (const driver of manifest.drivers) {
   const installSpec = `${driver.package}@${driver.version}`;
   const current = installedVersion(installed[driver.name]);
 
-  if (current === driver.version && staleTransitives.length === 0) {
+  if (current === driver.version && staleTransitives.length === 0 && mismatched.length === 0) {
     console.log(`Skipping Appium driver ${driver.name}@${driver.version} (already installed).`);
     continue;
   }
 
-  if (current) {
-    console.log(
-      `Uninstalling Appium driver ${driver.name}@${current} (pinned ${driver.version})…`,
-    );
-    runAppium(['driver', 'uninstall', driver.name], appiumHome);
+  if (current === driver.version && staleTransitives.length === 0 && mismatched.length > 0) {
+    continue;
   }
 
   console.log(`Installing Appium driver ${driver.name} from npm (${installSpec})…`);

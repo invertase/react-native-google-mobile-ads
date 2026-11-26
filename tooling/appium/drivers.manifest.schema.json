@@ -39,7 +39,7 @@
     },
     "overrides": {
       "type": "object",
-      "description": "npm overrides written into APPIUM_HOME/package.json before driver installs; drivers:verify fails unless every installed copy matches. bplist-parser 0.5.0 breaks appium-ios-device (XCUITest) at load.",
+      "description": "Optional npm overrides written into APPIUM_HOME/package.json before driver installs; drivers:verify fails unless every installed copy matches. Appium 4 xcuitest 13+ no longer installs bplist-parser (pin omitted); retain only when a transitive must be capped.",
       "additionalProperties": {
         "type": "string",
         "description": "Exact version pin for a transitive driver dependency."

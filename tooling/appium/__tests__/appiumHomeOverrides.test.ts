@@ -35,8 +35,8 @@ afterEach(() => {
 });
 
 describe('APPIUM_HOME transitive pins', () => {
-  test('manifest pins bplist-parser to the XCUITest-compatible 0.3.2', () => {
-    assert.deepEqual(manifest.overrides, PIN);
+  test('manifest omits bplist-parser override on Appium 4 xcuitest 13+', () => {
+    assert.equal(manifest.overrides, undefined);
   });
 
   test('writes overrides into APPIUM_HOME package.json and preserves driver deps', () => {

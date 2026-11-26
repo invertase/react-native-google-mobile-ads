@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   DEFAULT_IOS_DEVICE_NAME,
   IOS_WDA_DERIVED_DATA_PATH,
@@ -12,12 +12,29 @@ import {
 } from '../src/hostPreflight.ts';
 import { runtimeResources } from '../src/slots.ts';
 
-// Resolve through the pinned XCUITest driver's declared dependencies so the
-// prebuild uses the same WDA implementation that Appium will launch.
-const rootRequire = createRequire(import.meta.url);
-const xcuitestRequire = createRequire(
-  rootRequire.resolve('appium-xcuitest-driver/package.json'),
-);
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+/** APPIUM_HOME driver tree first — matches the versions Appium 4 sessions load. */
+function xcuitestDriverPackageJson(): string {
+  const appiumHome = resolve(
+    packageRoot,
+    JSON.parse(readFileSync(resolve(packageRoot, 'drivers.manifest.json'), 'utf8'))
+      .appiumHome as string,
+  );
+  const candidates = [
+    resolve(appiumHome, 'node_modules/appium-xcuitest-driver/package.json'),
+    resolve(packageRoot, 'node_modules/appium-xcuitest-driver/package.json'),
+  ];
+  const pkgPath = candidates.find(candidate => existsSync(candidate));
+  if (!pkgPath) {
+    throw new Error(
+      'appium-xcuitest-driver is not installed; run yarn tests:appium:drivers:install.',
+    );
+  }
+  return pkgPath;
+}
+
+const xcuitestRequire = createRequire(xcuitestDriverPackageJson());
 
 async function importDriverDependency(name: string): Promise<Record<string, any>> {
   const manifestPath = xcuitestRequire.resolve(`${name}/package.json`);
@@ -29,9 +46,8 @@ async function importDriverDependency(name: string): Promise<Record<string, any>
 }
 
 async function main(): Promise<void> {
-  const { getSimulator } = await importDriverDependency('appium-ios-simulator');
+  const { getSimulator, listSimulators } = await importDriverDependency('appium-ios-simulator');
   const { WebDriverAgent } = await importDriverDependency('appium-webdriveragent');
-  const { Simctl } = await importDriverDependency('node-simctl');
 
   const runtime = runtimeResources('ios');
   const deviceName =
@@ -46,8 +62,10 @@ async function main(): Promise<void> {
   }
 
   const udid = requireIosUdid();
-  const devices = await new Simctl().getDevices(platformVersion, 'iOS');
-  const deviceInfo = devices.find(device => device.udid === udid && device.name === deviceName);
+  const deviceInfo = (await listSimulators()).find(
+    device =>
+      device.udid === udid && device.name === deviceName && device.sdk === platformVersion,
+  );
   if (!deviceInfo) {
     throw new Error(
       `RNGMA_IOS_UDID=${udid} is not an available exact ${deviceName} on iOS ${platformVersion}.`,

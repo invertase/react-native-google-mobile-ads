@@ -17,10 +17,12 @@ const APPIUM_PORT = runtimeResources(platformForSharedConfig()).appiumPort;
 const appiumLogFile = appiumServerLogPath(appiumHome, APPIUM_PORT);
 
 /**
- * Shared WebdriverIO config for Appium 3 focused smoke against RNGoogleMobileAdsExample.
+ * Shared WebdriverIO config for Appium 4 focused smoke against RNGoogleMobileAdsExample.
  */
 export const config: Options.Testrunner = {
   runner: 'local',
+  // WDIO 10 defaults strictSelectors to true; gallery accordions can surface duplicate testIDs.
+  strictSelectors: false,
   specs: selectedWdioSpecs(),
   exclude: [],
   maxInstances: 1,
