@@ -46,9 +46,12 @@ import mobileAds, {
 } from './src';
 
 import type {
+  CustomNativeAdImage,
   CustomNativeAdRequestOptions,
   CustomNativeAsset,
   CustomNativeClickEventPayload,
+  CustomNativeClickHandling,
+  IconAdChoicesInfo,
   AdapterResponseInfo,
   AdBackend,
   AdCapabilities,
@@ -78,12 +81,18 @@ import type {
   MultiFormatAdConfig,
   MultiFormatAdHandle,
   MultiFormatAdRequestOptions,
+  MultiFormatCustomNativeAdHandle,
+  MultiFormatCustomNativeAdRequestOptions,
+  MultiFormatCustomNativeFormat,
   MultiFormatBannerAdHandle,
   MultiFormatBannerAdViewProps,
   MultiFormatBannerSize,
   MultiFormatLoadResult,
   PaidEvent,
   PaidEventListener,
+  PictureInPictureAdPosition,
+  PictureInPictureAdPresentationScope,
+  PictureInPictureAdShowOptions,
   PollResult,
   PooledAd,
   ResponseInfo,
@@ -101,6 +110,8 @@ import type {
   UsePooledAdStatus,
   UseRewardedAdOptions,
   UseRewardedAdResult,
+  SwipeableInterstitialAdRequestOptions,
+  SwipeableInterstitialSwipeDirection,
 } from './src';
 
 // static exports
@@ -734,6 +745,107 @@ const paidEventListenerProof: PaidEventListener = (event: PaidEvent) => {
 const appEventSample: AppEvent = { name: 'gad', data: 'x' };
 console.log(consentAndEventTypeLocks, paidEventListenerProof, appEventSample);
 
+type CustomNativeAdImageShape = Equal<CustomNativeAdImage, { url: string; scale: number }>;
+type CustomNativeClickHandlingValues = Equal<CustomNativeClickHandling, 'app' | 'sdk'>;
+type IconAdChoicesInfoKeys = Equal<keyof IconAdChoicesInfo, 'text' | 'images'>;
+type IconAdChoicesInfoText = Equal<IconAdChoicesInfo['text'], string | null>;
+type MultiFormatCustomNativeFormatValue = Equal<MultiFormatCustomNativeFormat, 'customNative'>;
+type MultiFormatCustomNativeFormatIds = Equal<
+  MultiFormatCustomNativeAdRequestOptions['customNativeFormatIds'],
+  string[]
+>;
+type MultiFormatCustomNativeClickHandling = Equal<
+  MultiFormatCustomNativeAdRequestOptions['customNativeClickHandling'],
+  CustomNativeClickHandling | undefined
+>;
+type MultiFormatCustomNativeHandleFormat = Equal<
+  MultiFormatCustomNativeAdHandle['format'],
+  MultiFormatCustomNativeFormat
+>;
+type MultiFormatCustomNativeHandleAd = Equal<MultiFormatCustomNativeAdHandle['ad'], CustomNativeAd>;
+type PictureInPictureAdPositionValues = Equal<
+  PictureInPictureAdPosition,
+  'default' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight'
+>;
+type PictureInPictureAdPresentationScopeValues = Equal<
+  PictureInPictureAdPresentationScope,
+  'screen' | 'application'
+>;
+type PictureInPictureAdShowOptionsKeys = Equal<
+  keyof PictureInPictureAdShowOptions,
+  'position' | 'presentationScope'
+>;
+type PictureInPictureAdShowOptionsPosition = Equal<
+  PictureInPictureAdShowOptions['position'],
+  PictureInPictureAdPosition | undefined
+>;
+type PictureInPictureAdShowOptionsScope = Equal<
+  PictureInPictureAdShowOptions['presentationScope'],
+  PictureInPictureAdPresentationScope | undefined
+>;
+type SwipeableInterstitialSwipeDirectionValues = Equal<
+  SwipeableInterstitialSwipeDirection,
+  'left' | 'right' | 'up' | 'down'
+>;
+type SwipeableMaxScreenHold = Equal<
+  SwipeableInterstitialAdRequestOptions['maxScreenHoldDurationSeconds'],
+  number | undefined
+>;
+type SwipeableAdSize = Equal<
+  SwipeableInterstitialAdRequestOptions['adSize'],
+  { width: number; height: number } | undefined
+>;
+type SwipeableRequestCustomClickGesture = Equal<
+  SwipeableInterstitialAdRequestOptions['requestCustomClickGesture'],
+  boolean | undefined
+>;
+type SwipeableCustomClickDirection = Equal<
+  NonNullable<SwipeableInterstitialAdRequestOptions['customClickSwipeGesture']>['direction'],
+  SwipeableInterstitialSwipeDirection
+>;
+const iconPipAndSwipeableTypeLocks: [
+  CustomNativeAdImageShape,
+  CustomNativeClickHandlingValues,
+  IconAdChoicesInfoKeys,
+  IconAdChoicesInfoText,
+  MultiFormatCustomNativeFormatValue,
+  MultiFormatCustomNativeFormatIds,
+  MultiFormatCustomNativeClickHandling,
+  MultiFormatCustomNativeHandleFormat,
+  MultiFormatCustomNativeHandleAd,
+  PictureInPictureAdPositionValues,
+  PictureInPictureAdPresentationScopeValues,
+  PictureInPictureAdShowOptionsKeys,
+  PictureInPictureAdShowOptionsPosition,
+  PictureInPictureAdShowOptionsScope,
+  SwipeableInterstitialSwipeDirectionValues,
+  SwipeableMaxScreenHold,
+  SwipeableAdSize,
+  SwipeableRequestCustomClickGesture,
+  SwipeableCustomClickDirection,
+] = [
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+  true,
+];
+console.log(iconPipAndSwipeableTypeLocks);
+
 const pooledStatusEqualsResult: Equal<UsePooledAdStatus, UsePooledAdResult['status']> = true;
 const pooledStatusEqualsExport: Equal<UsePooledAdStatus, ExportedUsePooledAdResult['status']> =
   true;
@@ -909,6 +1021,25 @@ void CustomNativeAd.createForAdRequest(TestIds.GAM_NATIVE, customNativeOptions).
   // @ts-expect-error the library only reports clicks; navigation is the app's decision
   void ad.performClick('Calltoaction', { url: 'https://example.com' });
 });
+const iconAdChoicesFilled: IconAdChoicesInfo = {
+  text: 'AdChoices',
+  images: [{ url: 'https://example.test/adchoices.png', scale: 1 }],
+};
+const iconAdChoicesEmpty: IconAdChoicesInfo = { text: null, images: null };
+const multiFormatCustomNativeRequest: MultiFormatCustomNativeAdRequestOptions = {
+  formats: [AdFormat.BANNER],
+  adServer: 'ad-manager',
+  customNativeFormatIds: ['12345678'],
+};
+const swipeableRequestSample: SwipeableInterstitialAdRequestOptions = {
+  customClickSwipeGesture: { direction: 'left', tapsAllowed: true },
+};
+console.log(
+  iconAdChoicesFilled,
+  iconAdChoicesEmpty,
+  multiFormatCustomNativeRequest,
+  swipeableRequestSample,
+);
 const handleExpiry: AdExpiry = multiFormatHandle;
 const handleIdentity: AdIdentity = multiFormatHandle;
 const pooledExpiry: AdExpiry = pooledAd;
