@@ -219,6 +219,11 @@ test('WDA status probe ECONNREFUSED lines are not hard markers and do not abort 
     "2026-11-26 21:35:53:211 [954c2232][XCUITestDriver@2496] WDA is not listening at 'http://127.0.0.1:8100/'. Original error:: Could not proxy command to the remote server. Original error: connect ECONNREFUSED 127.0.0.1:8100",
     '2026-11-26 21:35:53:210 [954c2232][WD Proxy] connect ECONNREFUSED 127.0.0.1:13114',
     "2026-11-26 21:35:53:211 [954c2232][XCUITestDriver@2496] WDA is not listening at 'http://127.0.0.1:13114/'. Original error:: Could not proxy command to the remote server. Original error: connect ECONNREFUSED 127.0.0.1:13114",
+    '2026-11-26 22:42:04:356 [a1843ac7][XCUITestDriver@064d] connect ECONNREFUSED 127.0.0.1:8100',
+    '2026-11-26 22:42:05:398 [a1843ac7][XCUITestDriver@064d] connect ECONNREFUSED 127.0.0.1:8100',
+    '2026-11-26 22:42:11:486 [a1843ac7][XCUITestDriver@064d] connect ECONNREFUSED 127.0.0.1:8100',
+    '2026-11-26 22:42:04:356 [a1843ac7][XCUITestDriver@064d] connect ECONNREFUSED 127.0.0.1:13114',
+    '\u001b[38;5;60m[a1843ac7]\u001b[0m\u001b[38;5;109m[XCUITestDriver@064d]\u001b[0m connect ECONNREFUSED 127.0.0.1:8100',
   ];
   for (const line of lines) {
     assert.equal(hardFailureForLine(line), undefined, line);
