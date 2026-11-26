@@ -43,8 +43,8 @@ test('Android e2e CI uses a single API 36 Play Store image', () => {
 
 test('Android e2e CI pins ubuntu-24.04 and Node for WDIO stability', () => {
   const source = readFileSync(join(workflowDir, 'tests_e2e_android.yml'), 'utf8');
-  const androidJob = source.slice(source.indexOf('  android:'), source.indexOf('    steps:'));
-  assert.match(androidJob, /runs-on: ubuntu-24\.04/);
+  // Hosted default stays ubuntu-24.04. The job runs-on value is the routed choice.
+  assert.match(source, /default-runs-on: ubuntu-24\.04/);
   assert.match(source, /node-version: '24\.22\.3'/);
   assert.doesNotMatch(source, /node-version: '24\.21\.0'/);
 });

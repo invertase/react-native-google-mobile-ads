@@ -7,6 +7,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  appendFileSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -380,6 +381,35 @@ describe('iosSessionDiagnostics', () => {
       assert.equal(ref.value, 65, 'uninstall must stop updating the ref');
       assert.equal(readXcodebuildExitState(statePath), 65);
     } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test('installXcodebuildExitLogTap reads a later appium.log line without echoing it', async () => {
+    const root = mkdtempSync(pathJoin(tmpdir(), 'rngma-appium-log-follow-'));
+    const appiumLogPath = pathJoin(root, 'appium.log');
+    const statePath = pathJoin(root, 'last-xcodebuild-exit');
+    writeFileSync(appiumLogPath, '');
+    const ref = { value: null as number | null };
+    const writes: string[] = [];
+    const original = process.stdout.write;
+    process.stdout.write = ((chunk: unknown) => {
+      writes.push(String(chunk));
+      return true;
+    }) as typeof process.stdout.write;
+    const uninstall = installXcodebuildExitLogTap(ref, { statePath, appiumLogPath });
+    try {
+      appendFileSync(appiumLogPath, "[Xcode] xcodebuild exited with code '65'\n");
+      await new Promise(resolve => setTimeout(resolve, 200));
+      assert.equal(ref.value, 65);
+      assert.equal(readFileSync(statePath, 'utf8').trim(), '65');
+      assert.equal(
+        writes.some(chunk => chunk.includes('xcodebuild exited')),
+        false,
+      );
+    } finally {
+      uninstall();
+      process.stdout.write = original;
       rmSync(root, { recursive: true, force: true });
     }
   });

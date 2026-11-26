@@ -96,6 +96,7 @@ class OwnedProcess implements RunningCommand {
   constructor(
     private readonly child: ChildProcess,
     logPath: string,
+    private readonly mirrorToParent = true,
   ) {
     mkdirSync(path.dirname(logPath), { recursive: true });
     const log = createWriteStream(logPath, { flags: 'wx' });
@@ -109,7 +110,9 @@ class OwnedProcess implements RunningCommand {
       for (const line of complete) {
         for (const listener of this.listeners) listener(line);
       }
-      (stream === 'stdout' ? process.stdout : process.stderr).write(chunk);
+      if (this.mirrorToParent) {
+        (stream === 'stdout' ? process.stdout : process.stderr).write(chunk);
+      }
       log.write(chunk);
     };
     child.stdout?.on('data', chunk => consume('stdout', chunk));
@@ -142,6 +145,8 @@ export function spawnOwned(
     cwd: string;
     env?: NodeJS.ProcessEnv;
     logPath: string;
+    /** When false, still writes logPath and onLine, but not the parent stdio. Default true. */
+    mirrorToParent?: boolean;
   },
 ): OwnedProcess {
   return new OwnedProcess(
@@ -152,6 +157,7 @@ export function spawnOwned(
       stdio: ['ignore', 'pipe', 'pipe'],
     }),
     options.logPath,
+    options.mirrorToParent !== false,
   );
 }
 

@@ -71,13 +71,14 @@ class NodeRunningCommand implements RunningCommand {
         for (const listener of this.lineListeners) listener(line);
       }
     };
+    const mirror = command.mirrorToParent !== false;
     child.stdout?.on('data', chunk => {
-      process.stdout.write(chunk);
+      if (mirror) process.stdout.write(chunk);
       log?.write(chunk);
       emitLines('stdout', chunk);
     });
     child.stderr?.on('data', chunk => {
-      process.stderr.write(chunk);
+      if (mirror) process.stderr.write(chunk);
       log?.write(chunk);
       emitLines('stderr', chunk);
     });
