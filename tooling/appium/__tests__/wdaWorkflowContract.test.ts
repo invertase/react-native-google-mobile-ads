@@ -278,7 +278,7 @@ test('named prebuild producer and XCUITest consumer use the shared DerivedData p
   assert.match(sharedSource, /\blog:\s*appiumLogFile\b/);
   assert.match(sharedSource, /outputDir:\s*e2eLogDir/);
   assert.match(sharedSource, /logLevel:\s*'info'/);
-  assert.match(sharedSource, /logLevel:\s*'error:debug'/);
+  assert.match(sharedSource, /logLevel:\s*'info:debug'/);
 });
 
 test('Android and iOS workflows upload e2e driver logs', () => {
