@@ -139,11 +139,21 @@ export function isWebDriverSelectorProbeLine(line: string): boolean {
   );
 }
 
+const WDA_PROXY_REFUSED =
+  /\[WD Proxy\][^\n]*\bconnect ECONNREFUSED\s+127\.0\.0\.1:\d+\b/i;
+
+const WDA_STATUS_ECHO_REFUSED =
+  /WDA is not listening\b[\s\S]*\bCould not proxy command\b[\s\S]*\bOriginal error:\s*connect ECONNREFUSED\s+127\.0\.0\.1:\d+\b/i;
+
+export function isWdaStatusProbeLine(line: string): boolean {
+  return WDA_PROXY_REFUSED.test(line) || WDA_STATUS_ECHO_REFUSED.test(line);
+}
+
 /** @deprecated Prefer {@link isWebDriverSelectorProbeLine}. */
 export const isWebDriverCommandProbeLine = isWebDriverSelectorProbeLine;
 
 export function hardFailureForLine(line: string): HardFailureMarker | undefined {
-  if (isWebDriverSelectorProbeLine(line)) {
+  if (isWebDriverSelectorProbeLine(line) || isWdaStatusProbeLine(line)) {
     return undefined;
   }
   return HARD_FAILURE_MARKERS.find(marker => marker.pattern.test(line));

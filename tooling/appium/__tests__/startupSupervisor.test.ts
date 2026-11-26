@@ -213,6 +213,50 @@ test('Appium debug-file element lookups that embed redbox selector text are not 
   }
 });
 
+test('WDA status probe ECONNREFUSED lines are not hard markers and do not abort open worker startup', async () => {
+  const lines = [
+    '2026-11-26 21:35:53:210 [954c2232][WD Proxy] connect ECONNREFUSED 127.0.0.1:8100',
+    "2026-11-26 21:35:53:211 [954c2232][XCUITestDriver@2496] WDA is not listening at 'http://127.0.0.1:8100/'. Original error:: Could not proxy command to the remote server. Original error: connect ECONNREFUSED 127.0.0.1:8100",
+    '2026-11-26 21:35:53:210 [954c2232][WD Proxy] connect ECONNREFUSED 127.0.0.1:13114',
+    "2026-11-26 21:35:53:211 [954c2232][XCUITestDriver@2496] WDA is not listening at 'http://127.0.0.1:13114/'. Original error:: Could not proxy command to the remote server. Original error: connect ECONNREFUSED 127.0.0.1:13114",
+  ];
+  for (const line of lines) {
+    assert.equal(hardFailureForLine(line), undefined, line);
+  }
+
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  supervisor.waitForWorkers();
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  assert.equal(supervisor.phase, 'worker');
+  for (const line of lines) {
+    supervisor.recordLine('serial-ios', line);
+  }
+  assert.equal(supervisor.abortCount, 0);
+  assert.notEqual(supervisor.phase, 'complete');
+});
+
+test('loopback ECONNREFUSED outside the WDA status probe still returns connection-refused', async () => {
+  const lines = [
+    'connect ECONNREFUSED 127.0.0.1',
+    'Error: connect ECONNREFUSED 127.0.0.1:8081',
+    'Could not proxy command to the remote server. Original error: connect ECONNREFUSED 127.0.0.1:8200',
+    'ReactNativeJS: connect ECONNREFUSED 127.0.0.1:8081',
+  ];
+  for (const line of lines) {
+    assert.equal(hardFailureForLine(line)?.name, 'connection-refused', line);
+  }
+
+  const supervisor = new StartupSupervisor(['serial-ios'], new FakeClock());
+  await metroReady(supervisor);
+  const workers = supervisor.waitForWorkers();
+  supervisor.recordLine('serial-ios', 'Execution of 1 worker started');
+  assert.equal(supervisor.phase, 'worker');
+  supervisor.recordLine('metro', 'Error: connect ECONNREFUSED 127.0.0.1:8081');
+  await assert.rejects(workers, /connection-refused/);
+  assert.equal(supervisor.abortCount, 1);
+});
+
 test('WebDriver DATA value: selector probe lines embedding redbox text are not hard markers', () => {
   for (const line of [
     // Exact CI classic+nextgen shape after COMMAND findElement (post-4082891 abort).
