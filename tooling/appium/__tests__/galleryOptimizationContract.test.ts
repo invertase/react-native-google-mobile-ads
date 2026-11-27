@@ -17,6 +17,22 @@ test('gallery helper avoids UiScrollable searches', () => {
   assert.match(gallerySource, /mobile: swipeGesture/);
 });
 
+test('gallery home requires the All section chip', () => {
+  const homeStart = gallerySource.indexOf('async function isGalleryHome');
+  const homeEnd = gallerySource.indexOf('async function scrollGalleryToTop', homeStart);
+  const homeSource = gallerySource.slice(homeStart, homeEnd);
+  assert.match(homeSource, /AppiumTestIds\.section\.all/);
+  assert.doesNotMatch(homeSource, /galleryBack/);
+});
+
+test('scrollGalleryToTop caps swipe churn when section chip is missing', () => {
+  const scrollStart = gallerySource.indexOf('async function scrollGalleryToTop');
+  const scrollEnd = gallerySource.indexOf('/** Scroll the gallery list', scrollStart);
+  const scrollSource = gallerySource.slice(scrollStart, scrollEnd);
+  assert.match(scrollSource, /attempt < 2/);
+  assert.match(scrollSource, /timeout: 3000/);
+});
+
 test('already-selected gallery sections skip top scrolling and re-selection', () => {
   const selectionStart = gallerySource.indexOf('export async function selectGallerySection');
   const selectionEnd = gallerySource.indexOf(

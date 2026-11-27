@@ -180,6 +180,58 @@ function utilityLifecycleLabel(phase: UtilityLifecyclePhase): string {
   return `Utility lifecycle: ${phase}`;
 }
 
+/** Module scope: fullscreen creatives that hit the example activity, not AdActivity. */
+let fullscreenPresentationCount = 0;
+
+export function setFullscreenAdPresented(presented: boolean): void {
+  fullscreenPresentationCount += presented ? 1 : -1;
+  if (fullscreenPresentationCount < 0) {
+    fullscreenPresentationCount = 0;
+  }
+}
+
+function useFullscreenPresentationFromPhase(phase: ShowLifecyclePhase): void {
+  const presentedRef = useRef(false);
+  useEffect(() => {
+    if (phase === 'opened' && !presentedRef.current) {
+      presentedRef.current = true;
+      setFullscreenAdPresented(true);
+    } else if (phase === 'closed' && presentedRef.current) {
+      presentedRef.current = false;
+      setFullscreenAdPresented(false);
+    }
+  }, [phase]);
+  useEffect(() => {
+    return () => {
+      if (presentedRef.current) {
+        presentedRef.current = false;
+        setFullscreenAdPresented(false);
+      }
+    };
+  }, []);
+}
+
+function useFullscreenPresentationFromHookStatus(status: string): void {
+  const presentedRef = useRef(false);
+  useEffect(() => {
+    if (status === 'showing' && !presentedRef.current) {
+      presentedRef.current = true;
+      setFullscreenAdPresented(true);
+    } else if (status === 'closed' && presentedRef.current) {
+      presentedRef.current = false;
+      setFullscreenAdPresented(false);
+    }
+  }, [status]);
+  useEffect(() => {
+    return () => {
+      if (presentedRef.current) {
+        presentedRef.current = false;
+        setFullscreenAdPresented(false);
+      }
+    };
+  }, []);
+}
+
 const POOL_PROVIDER_INTERSTITIAL_ID = 'appium-gallery-pool-interstitial-provider';
 const POOL_PROVIDER_POOLS = [
   AdPoolPresets.fullscreen(AdFormat.INTERSTITIAL, TestIds.INTERSTITIAL, {
@@ -400,7 +452,13 @@ function AppContent() {
     if (selectedId == null) {
       return;
     }
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (fullscreenPresentationCount > 0) {
+        return true;
+      }
+      setSelectedId(null);
+      return true;
+    });
     return () => subscription.remove();
   }, [selectedId]);
 
@@ -518,6 +576,7 @@ function LoadableAdControls(props: {
   const [earnedReward, setEarnedReward] = useState(false);
   const [paidCount, setPaidCount] = useState(0);
   const pendingLoadRef = useRef(false);
+  useFullscreenPresentationFromPhase(showPhase);
 
   useEffect(() => {
     const adListener = ad.addAdEventsListener(({ type, payload }) => {
@@ -886,6 +945,7 @@ function InterstitialHookFormat() {
   const { show, error, status, clicked, impression, revenue } = useInterstitialAd({
     adUnitId: TestIds.INTERSTITIAL,
   });
+  useFullscreenPresentationFromHookStatus(status);
   useEffect(() => {
     if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} interstitial hook error: ${error.message}`);
@@ -927,6 +987,7 @@ function RewardedHookFormat() {
     useRewardedAd({
       adUnitId: TestIds.REWARDED,
     });
+  useFullscreenPresentationFromHookStatus(status);
   useEffect(() => {
     if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} rewarded hook error: ${error.message}`);
@@ -1001,6 +1062,7 @@ function RewardedInterstitialHookFormat() {
     useRewardedInterstitialAd({
       adUnitId: TestIds.REWARDED_INTERSTITIAL,
     });
+  useFullscreenPresentationFromHookStatus(status);
   useEffect(() => {
     if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} rewarded interstitial hook error: ${error.message}`);
@@ -1075,6 +1137,7 @@ function PooledInterstitialProviderInner() {
   const pooled = usePooledAd(POOL_PROVIDER_INTERSTITIAL_ID);
   const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
   const showListenerRef = useRef<(() => void) | null>(null);
+  useFullscreenPresentationFromPhase(showPhase);
 
   useEffect(() => {
     return () => {
@@ -1155,6 +1218,7 @@ function PooledInterstitialImperativeFormat() {
   const pooled = usePooledAd(lookupPoolId);
   const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
   const showListenerRef = useRef<(() => void) | null>(null);
+  useFullscreenPresentationFromPhase(showPhase);
 
   useEffect(() => {
     return () => {
@@ -1468,6 +1532,7 @@ function AppOpenHookFormat() {
   const { load, show, error, status, clicked, impression } = useAppOpenAd({
     adUnitId: TestIds.APP_OPEN,
   });
+  useFullscreenPresentationFromHookStatus(status);
   useEffect(() => {
     if (status === 'error' || status === 'no-fill') {
       console.log(`${Platform.OS} app open hook error: ${error.message}`);
@@ -1612,6 +1677,7 @@ function GAMInterstitialFormat() {
   });
   const [showPhase, setShowPhase] = useState<ShowLifecyclePhase>('idle');
   const pendingLoadRef = useRef(false);
+  useFullscreenPresentationFromPhase(showPhase);
 
   useEffect(() => {
     const adListener = ad.addAdEventsListener(({ type, payload }) => {

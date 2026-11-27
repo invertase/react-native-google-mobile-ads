@@ -49,6 +49,7 @@ describe('gallery Android host recover (shade)', () => {
     assert.match(waitSource, /waitForGalleryHome\.poll/);
     assert.match(waitSource, /galleryHostRecoverIntervalMs/);
     assert.match(waitSource, /recoverAndroidTestHost\('waitForGalleryHome\.poll'\)/);
+    assert.match(waitSource, /timeout: 30000/);
   });
 
   test('NotificationShade stays out of foreign force-stop markers', () => {

@@ -122,21 +122,11 @@ async function scrollGalleryIos(testId: string): Promise<void> {
 
 /**
  * True when gallery home chrome is showing.
- * Require a positive signal (section chip / root). Absence of Back alone is true
- * on the launcher and false-negatives when a Native creative overlay keeps
- * `gma.gallery.back` "displayed" after the React screen already popped (#893).
+ * Require the All section chip — root without section chrome is still a format screen.
  */
 async function isGalleryHome(): Promise<boolean> {
   const allChip = await findByTestId(AppiumTestIds.section.all);
-  if (await allChip.isDisplayed().catch(() => false)) {
-    return true;
-  }
-  const root = await findByTestId(AppiumTestIds.root);
-  if (!(await root.isDisplayed().catch(() => false))) {
-    return false;
-  }
-  const back = await findByTestId(AppiumTestIds.galleryBack);
-  return !(await back.isDisplayed().catch(() => false));
+  return allChip.isDisplayed().catch(() => false);
 }
 
 async function scrollGalleryToTop(): Promise<void> {
@@ -149,7 +139,7 @@ async function scrollGalleryToTop(): Promise<void> {
     return;
   }
   const topChip = await findByTestId(AppiumTestIds.section.all);
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     const rect = await topChip.getLocation().catch(() => null);
     const size = await topChip.getSize().catch(() => null);
     if (rect && size && rect.y >= 0 && size.height > 0) {
@@ -157,7 +147,7 @@ async function scrollGalleryToTop(): Promise<void> {
     }
     await androidSwipe('down', 0.65);
   }
-  await topChip.waitForDisplayed({ timeout: 5000 });
+  await topChip.waitForDisplayed({ timeout: 3000 });
 }
 
 /** Scroll the gallery list until the target testID is displayed. */
@@ -452,7 +442,7 @@ export async function waitForGalleryHome(): Promise<void> {
     }
   }
   // Positive confirmation only: gallery home chrome. Probe JS-load failures on
-  // every tick so a redbox fails in ~interval, not after a 90s element timeout.
+  // every tick so a redbox fails in ~interval, not after a long gallery-home timeout.
   let lastGalleryHostRecoverMs = 0;
   const galleryHostRecoverIntervalMs = 3000;
   await driver.waitUntil(
@@ -468,7 +458,7 @@ export async function waitForGalleryHome(): Promise<void> {
       return isGalleryHome();
   },
     {
-      timeout: 90000,
+      timeout: 30000,
       interval: 500,
       timeoutMsg:
         'Gallery home did not become ready (no gma.gallery root/section chrome; no JS-load failure visible either)',
@@ -1106,7 +1096,7 @@ async function readPoolLoadedMarkerText(formatId: string): Promise<string> {
 }
 
 /** AdPoolProvider registers pools asynchronously; polling while `poolStatus=absent` is a no-op. */
-async function waitForPoolRegistryReady(formatId: string, timeoutMs = 45000): Promise<void> {
+async function waitForPoolRegistryReady(formatId: string, timeoutMs = 30000): Promise<void> {
   await driver.waitUntil(
     async () => {
       const text = await readPoolLoadedMarkerText(formatId);
@@ -1136,7 +1126,7 @@ function poolPollActionId(formatId: string): string {
 async function observePoolFilledOutcome(
   formatId: string,
   attempt: number,
-  timeoutMs = 120000,
+  timeoutMs = 45000,
 ): Promise<{
   requestId: number;
   classification: RequestOutcomeClassification;
@@ -1209,7 +1199,7 @@ async function observePoolStructuredUnsupportedGate(
   formatId: string,
   gate: 'peek' | 'rwi-preload',
   attempt: number,
-  timeoutMs = 120000,
+  timeoutMs = 45000,
 ): Promise<{
   requestId: number;
   classification: RequestOutcomeClassification;
@@ -2267,7 +2257,7 @@ async function waitForAndroidRewardedDismissReady(formatId: string): Promise<voi
       }
       // Last-resort: do not hang forever when the SDK never grants. Proof will fail
       // with conclusive earned/paid/closed order logs from the gallery + App.tsx.
-      if (Date.now() - started >= 90000) {
+      if (Date.now() - started >= 75000) {
         logAndroidHostTrace('rewardedDismissReady.timeoutWithoutEarn', {
           formatId,
           ms: Date.now() - started,
@@ -2281,7 +2271,7 @@ async function waitForAndroidRewardedDismissReady(formatId: string): Promise<voi
       return false;
     },
     {
-      timeout: 120000,
+      timeout: 90000,
       interval: 750,
       timeoutMsg: 'Android rewarded dismiss never became actionable (earned=true / end card)',
     },
@@ -2515,9 +2505,9 @@ async function tapAndroidFullscreenCloseWithRetries(): Promise<void> {
       return false;
     },
     {
-      timeout: 90000,
+      timeout: 45000,
       interval: 400,
-      timeoutMsg: 'Fullscreen AdActivity did not dismiss within 90s',
+      timeoutMsg: 'Fullscreen AdActivity did not dismiss within 45s',
     },
   );
   // keyBack / close can land on the launcher with AdActivity gone — bring the
@@ -2571,7 +2561,7 @@ async function runAndroidAppOpenShowCloseLifecycle(formatId: string): Promise<vo
       return false;
     },
     {
-      timeout: 90000,
+      timeout: 45000,
       interval: 200,
       timeoutMsg:
         'App Open Show never reached opened/closed after dismissing feed chrome',
@@ -2585,7 +2575,7 @@ async function runAndroidAppOpenShowCloseLifecycle(formatId: string): Promise<vo
   await waitForTestIdTextContaining(
     AppiumTestIds.action.lifecycle(formatId),
     SHOW_LIFECYCLE_CLOSED,
-    90000,
+    45000,
   );
 }
 
@@ -2819,7 +2809,7 @@ async function runAndroidFullscreenShowCloseLifecycle(formatId: string): Promise
           return false;
         },
         {
-          timeout: isAndroidRewardedFormat(formatId) ? 120000 : 90000,
+          timeout: isAndroidRewardedFormat(formatId) ? 90000 : 45000,
           interval: closedWaitIntervalMs,
           timeoutMsg: closedTimeoutMsg,
         },
@@ -3316,7 +3306,7 @@ async function waitForIosRewardedDismissReady(formatId: string): Promise<void> {
         );
         return true;
       }
-      if (Date.now() - started >= 90000) {
+      if (Date.now() - started >= 75000) {
         console.log(
           `[ios-rewarded-dismiss] ${JSON.stringify({
             reason: 'timeoutWithoutEarn',
@@ -3332,7 +3322,7 @@ async function waitForIosRewardedDismissReady(formatId: string): Promise<void> {
       return false;
     },
     {
-      timeout: 120000,
+      timeout: 90000,
       interval: 750,
       timeoutMsg: 'iOS rewarded dismiss never became actionable (earned=true / end card)',
     },
@@ -3407,9 +3397,9 @@ async function tapIosFullscreenCloseWithRetries(): Promise<void> {
       return false;
     },
     {
-      timeout: 90000,
+      timeout: 45000,
       interval: 400,
-      timeoutMsg: 'iOS fullscreen Close Advertisement did not dismiss within 90s',
+      timeoutMsg: 'iOS fullscreen Close Advertisement did not dismiss within 45s',
     },
   );
 }
@@ -3598,7 +3588,7 @@ async function runIosFullscreenShowCloseLifecycle(formatId: string): Promise<voi
       return false;
     },
     {
-      timeout: isIosRewardedFormat(formatId) ? 120000 : 90000,
+      timeout: isIosRewardedFormat(formatId) ? 90000 : 45000,
       interval: 400,
       timeoutMsg: 'iOS fullscreen Show never reached Show lifecycle: closed after dismiss',
     },
@@ -3636,7 +3626,7 @@ async function runIosHookShowCloseLifecycle(formatId: string): Promise<void> {
       return await isIosFullscreenTestAdVisible();
     },
     {
-      timeout: isRewardedHook ? 120000 : 90000,
+      timeout: isRewardedHook ? 90000 : 45000,
       interval: 400,
       timeoutMsg: 'iOS hook Show never reached status=showing or fullscreen chrome',
     },
@@ -3716,7 +3706,7 @@ async function runIosHookShowCloseLifecycle(formatId: string): Promise<void> {
       return false;
     },
     {
-      timeout: isRewardedHook ? 120000 : 90000,
+      timeout: isRewardedHook ? 90000 : 45000,
       interval: 400,
       timeoutMsg: 'iOS hook Show never reached status=closed after dismiss',
     },
@@ -3969,7 +3959,7 @@ async function assertUtilityOpenCloseLifecycle(
         return false;
       },
       {
-        timeout: 90000,
+        timeout: 45000,
         interval: 200,
         timeoutMsg: `Utility surface never opened for ${formatId}`,
       },
@@ -3999,7 +3989,7 @@ async function assertUtilityOpenCloseLifecycle(
         return false;
       },
       {
-        timeout: 90000,
+        timeout: 45000,
         interval: 200,
         timeoutMsg: `Utility surface never opened for ${formatId}`,
       },
@@ -4036,7 +4026,7 @@ async function assertUtilityOpenCloseLifecycle(
         return (await elementText(el)).includes(UTILITY_LIFECYCLE_CLOSED);
       },
       {
-        timeout: 90000,
+        timeout: 45000,
         interval: 400,
         timeoutMsg: `Utility surface never closed for ${formatId}`,
       },
@@ -4078,7 +4068,7 @@ async function assertUtilityOpenCloseLifecycle(
         return false;
       },
       {
-        timeout: 90000,
+        timeout: 45000,
         interval: 400,
         timeoutMsg: `Utility surface never closed for ${formatId}`,
       },
@@ -4127,7 +4117,7 @@ async function runAndroidHookShowCloseLifecycle(formatId: string): Promise<void>
       return false;
     },
     {
-      timeout: 90000,
+      timeout: 45000,
       interval: 200,
       timeoutMsg: 'Hook Show never reached showing or native fullscreen chrome',
     },
@@ -4170,7 +4160,7 @@ async function runAndroidHookShowCloseLifecycle(formatId: string): Promise<void>
         return (await elementText(el)).includes(HOOK_LIFECYCLE_CLOSED);
       },
       {
-        timeout: isAndroidRewardedFormat(formatId) ? 120000 : 90000,
+        timeout: isAndroidRewardedFormat(formatId) ? 90000 : 45000,
         interval: 400,
         timeoutMsg: 'Hook Show never reached status=closed',
       },
