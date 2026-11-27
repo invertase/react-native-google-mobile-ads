@@ -65,13 +65,7 @@ export type UseAppOpenAdManagerOptions = {
  * fullscreen options-form hooks where applicable.
  */
 export type UseAppOpenAdManagerStatus =
-  | 'idle'
-  | 'loading'
-  | 'loaded'
-  | 'showing'
-  | 'closed'
-  | 'no-fill'
-  | 'error';
+  'idle' | 'loading' | 'loaded' | 'showing' | 'closed' | 'no-fill' | 'error';
 
 /**
  * Result of {@link useAppOpenAdManager}.
@@ -102,7 +96,7 @@ function requestSignatureOf(adUnitId: string | null, requestOptions: RequestOpti
     if (value === null || typeof value !== 'object' || Array.isArray(value)) {
       return value;
     }
-    return Object.keys(value as Record<string, unknown>)
+    return Object.keys(value)
       .sort()
       .reduce<Record<string, unknown>>((sorted, key) => {
         sorted[key] = (value as Record<string, unknown>)[key];

@@ -43,7 +43,7 @@ export function reasonFromNativeCode(code: string | undefined): AdErrorReason {
     return 'mediation-no-fill';
   }
   if (code.startsWith('error-code-')) {
-    return code.slice('error-code-'.length) as AdErrorReason;
+    return code.slice('error-code-'.length);
   }
   // iOS historically used application-identifier-missing / received-invalid-ad-string.
   if (code === 'application-identifier-missing') {
@@ -52,7 +52,7 @@ export function reasonFromNativeCode(code: string | undefined): AdErrorReason {
   if (code === 'received-invalid-ad-string') {
     return 'invalid-ad-string';
   }
-  return code as AdErrorReason;
+  return code;
 }
 
 export function parseResponseInfoPayload<T = ResponseInfo>(

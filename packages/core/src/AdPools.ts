@@ -107,7 +107,7 @@ const adPools: InternalAdPoolsApi = {
       throw createPoolAdError(
         'invalid-request',
         typeof error === 'object' && error && 'message' in error
-          ? String((error as { message: unknown }).message)
+          ? String(error.message)
           : 'Invalid AdPoolConfig',
       );
     }

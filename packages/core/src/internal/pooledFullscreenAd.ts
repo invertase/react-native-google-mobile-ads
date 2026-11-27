@@ -140,7 +140,7 @@ export function createPooledFullscreenAd(
     ...GAMAdEventType,
     _: AdEventType.LOADED,
   }).forEach(type => {
-    adEventListenersMap.set(type as EventType, new Map());
+    adEventListenersMap.set(type, new Map());
   });
   let adEventsListenerId = 0;
   let adEventListenerId = 0;
@@ -193,11 +193,7 @@ export function createPooledFullscreenAd(
         }
       }
       if (error) {
-        payload = adErrorFromNativeEvent(
-          error,
-          'googleMobileAds',
-          'show',
-        ) as AdEventPayload<EventType>;
+        payload = adErrorFromNativeEvent(error, 'googleMobileAds', 'show');
       } else if (data && typeof data === 'object' && 'responseInfo' in data) {
         const rest = { ...(data as Record<string, unknown>) };
         delete rest.responseInfo;
@@ -252,15 +248,13 @@ export function createPooledFullscreenAd(
       if (destroyed) {
         throw new Error('PooledAd.addAdEventListener(*) ad has been destroyed.');
       }
-      if (
-        !(
-          isOneOf(type, Object.values(AdEventType)) ||
-          isOneOf(type, Object.values(GAMAdEventType)) ||
-          (isOneOf(type, Object.values(RewardedAdEventType)) &&
-            (options.format === AdFormat.REWARDED ||
-              options.format === AdFormat.REWARDED_INTERSTITIAL))
-        )
-      ) {
+      if (!(
+        isOneOf(type, Object.values(AdEventType)) ||
+        isOneOf(type, Object.values(GAMAdEventType)) ||
+        (isOneOf(type, Object.values(RewardedAdEventType)) &&
+          (options.format === AdFormat.REWARDED ||
+            options.format === AdFormat.REWARDED_INTERSTITIAL))
+      )) {
         throw new Error("PooledAd.addAdEventListener(*) 'type' expected a valid event type value.");
       }
       if (!isFunction(listener)) {
@@ -271,7 +265,7 @@ export function createPooledFullscreenAd(
       if (!listeners) {
         throw new Error('PooledAd.addAdEventListener(*) unknown event type map');
       }
-      listeners.set(id, listener as AdEventListener<EventType>);
+      listeners.set(id, listener);
       return () => {
         listeners.delete(id);
       };
@@ -315,7 +309,7 @@ export function createPooledFullscreenAd(
     },
   };
 
-  return pooled as Extract<PooledAd, { show: (opts?: AdShowOptions) => Promise<void> }>;
+  return pooled;
 }
 
 export { allocateFullscreenRequestId };

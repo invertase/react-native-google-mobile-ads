@@ -65,6 +65,4 @@ export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
   supportedCommands: ['recordManualImpression', 'load'],
 });
 
-export default codegenNativeComponent<NativeProps>(
-  'RNGoogleMobileAdsBannerView',
-) as HostComponent<NativeProps>;
+export default codegenNativeComponent<NativeProps>('RNGoogleMobileAdsBannerView');

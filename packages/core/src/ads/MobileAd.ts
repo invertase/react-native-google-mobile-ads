@@ -101,7 +101,7 @@ export abstract class MobileAd implements MobileAdInterface {
       ...GAMAdEventType,
       _: AdEventType.LOADED, // since AdEventType.LOADED is overwritten by RewardedAdEventType.LOADED
     }).forEach(type => {
-      this._adEventListenersMap.set(type as EventType, new Map());
+      this._adEventListenersMap.set(type, new Map());
     });
     this._adEventListenerId = 0;
     this._adEventsListenerId = 0;
@@ -182,11 +182,7 @@ export abstract class MobileAd implements MobileAdInterface {
 
     let payload: AdEventPayload<EventType>;
     if (error) {
-      payload = adErrorFromNativeEvent(
-        error,
-        'googleMobileAds',
-        'load',
-      ) as AdEventPayload<EventType>;
+      payload = adErrorFromNativeEvent(error, 'googleMobileAds', 'load');
     } else if (
       (type === AdEventType.LOADED || type === RewardedAdEventType.LOADED) &&
       data &&
@@ -231,14 +227,12 @@ export abstract class MobileAd implements MobileAdInterface {
     if (this._destroyed) {
       throw new Error(`${this._className}.addAdEventListener(*) ad has been destroyed.`);
     }
-    if (
-      !(
-        isOneOf(type, Object.values(AdEventType)) ||
-        isOneOf(type, Object.values(GAMAdEventType)) ||
-        (isOneOf(type, Object.values(RewardedAdEventType)) &&
-          (this._type === 'rewarded' || this._type === 'rewarded_interstitial'))
-      )
-    ) {
+    if (!(
+      isOneOf(type, Object.values(AdEventType)) ||
+      isOneOf(type, Object.values(GAMAdEventType)) ||
+      (isOneOf(type, Object.values(RewardedAdEventType)) &&
+        (this._type === 'rewarded' || this._type === 'rewarded_interstitial'))
+    )) {
       throw new Error(
         `${this._className}.addAdEventListener(*) 'type' expected a valid event type value.`,
       );

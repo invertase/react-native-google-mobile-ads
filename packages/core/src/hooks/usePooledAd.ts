@@ -19,7 +19,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { AdEventType } from '../AdEventType';
 import { getRegisteredAdPool } from '../internal/adPoolRegistry';
-import type { AdError } from '../types/AdError';
+import { NativeError } from '../internal/NativeError';
+import type { AdError, AdErrorPayload } from '../types/AdError';
 import { AdFormat } from '../types/AdFormat';
 import type { AdShowOptions } from '../types/AdShowOptions';
 import type { PollResult, PooledAd } from '../types/AdPool';
@@ -75,6 +76,17 @@ const initialState: HookState = {
   available: false,
   observedCount: 0,
 };
+
+function adErrorFromPayload(payload: AdErrorPayload): AdError {
+  return Object.assign(
+    new NativeError(
+      { userInfo: { code: payload.reason, message: payload.message } },
+      new Error().stack ?? '',
+      'google-mobile-ads',
+    ),
+    payload,
+  );
+}
 
 function emptyPollResult(): PollResult {
   return { status: 'empty' };
@@ -454,14 +466,14 @@ export function usePooledAd(poolId: string): UsePooledAdResult {
             ...prev,
             status: 'no-fill',
             ad: null,
-            error: result.error as AdError,
+            error: adErrorFromPayload(result.error),
           }));
         } else {
           setState(prev => ({
             ...prev,
             status: 'error',
             ad: null,
-            error: result.error as AdError,
+            error: adErrorFromPayload(result.error),
           }));
         }
         void refreshAvailability(id);

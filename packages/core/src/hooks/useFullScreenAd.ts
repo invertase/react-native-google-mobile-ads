@@ -105,13 +105,7 @@ export type FullScreenAdHookOptions = {
  * `'error'` even when the reason looks like inventory.
  */
 export type UseFullScreenAdStatus =
-  | 'idle'
-  | 'loading'
-  | 'loaded'
-  | 'showing'
-  | 'closed'
-  | 'no-fill'
-  | 'error';
+  'idle' | 'loading' | 'loaded' | 'showing' | 'closed' | 'no-fill' | 'error';
 
 /**
  * Result of the options call form.
@@ -278,10 +272,24 @@ function mergeCoreState(
 ): FullScreenAdCoreState {
   for (const key of Object.keys(update) as (keyof FullScreenAdCoreState)[]) {
     if (!Object.is(prevState[key], update[key])) {
-      return { ...prevState, ...update } as FullScreenAdCoreState;
+      return { ...prevState, ...update };
     }
   }
   return prevState;
+}
+
+function subscribeFullScreenAdEvents(
+  ad: FullScreenAd,
+  listener: (event: { type: AdEventType | RewardedAdEventType; payload: unknown }) => void,
+): () => void {
+  if (ad instanceof RewardedAd || ad instanceof RewardedInterstitialAd) {
+    return ad.addAdEventsListener(event => {
+      listener({ type: event.type, payload: event.payload });
+    });
+  }
+  return ad.addAdEventsListener(event => {
+    listener({ type: event.type, payload: event.payload });
+  });
 }
 
 type FullScreenAdCore = {
@@ -393,7 +401,7 @@ function useFullScreenAdCore(
     if (!ad) {
       return;
     }
-    const unsubscribe = (ad as RewardedAd).addAdEventsListener(({ type, payload }) => {
+    const unsubscribe = subscribeFullScreenAdEvents(ad, ({ type, payload }) => {
       if (!mountedRef.current || adRef.current !== ad) {
         return;
       }

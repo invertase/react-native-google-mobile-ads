@@ -17,8 +17,4 @@
 
 /** Initial corner position when a picture-in-picture ad is shown. */
 export type PictureInPictureAdPosition =
-  | 'default'
-  | 'topLeft'
-  | 'topRight'
-  | 'bottomLeft'
-  | 'bottomRight';
+  'default' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';

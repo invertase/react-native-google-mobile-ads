@@ -56,8 +56,7 @@ export type CustomNativeAdImage = {
  * `CustomNativeAd.mediaContent` instead.
  */
 export type CustomNativeAsset =
-  | { type: 'text'; text: string }
-  | { type: 'image'; image: CustomNativeAdImage };
+  { type: 'text'; text: string } | { type: 'image'; image: CustomNativeAdImage };
 
 /**
  * Payload of `NativeAdEventType.CUSTOM_CLICK`.

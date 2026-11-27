@@ -31,6 +31,7 @@ export enum NativeAssetType {
   STAR_RATING = 'starRating',
   ICON = 'icon',
   IMAGE = 'image',
+  MEDIA = 'media',
 }
 
 export type NativeAssetProps = {

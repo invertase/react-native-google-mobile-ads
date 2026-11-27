@@ -437,7 +437,7 @@ export async function startNativePool(
       generation,
       resolved.adUnitId,
       resolved.effectiveBufferSize,
-      (resolved.requestOptions ?? {}) as Record<string, unknown>,
+      resolved.requestOptions ?? {},
     );
   } catch (error) {
     destroyNativePool(resolved.poolId, format, generation);

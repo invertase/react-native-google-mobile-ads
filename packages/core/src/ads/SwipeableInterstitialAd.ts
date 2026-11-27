@@ -37,9 +37,7 @@ import type { PaidEvent } from '../types/PaidEventListener';
 
 /** @internal */
 type SwipeableInterstitialEventType =
-  | AdEventType
-  | SwipeableInterstitialAdEventType
-  | GAMAdEventType;
+  AdEventType | SwipeableInterstitialAdEventType | GAMAdEventType;
 
 /** @internal */
 type SwipeableInterstitialLoadedPayload = {
@@ -99,7 +97,7 @@ export class SwipeableInterstitialAd {
       ...SwipeableInterstitialAdEventType,
       ...GAMAdEventType,
     }).forEach(type => {
-      this._adEventListenersMap.set(type as SwipeableInterstitialEventType, new Map());
+      this._adEventListenersMap.set(type, new Map());
     });
     this._adEventListenerId = 0;
     this._adEventsListenerId = 0;
@@ -177,7 +175,7 @@ export class SwipeableInterstitialAd {
         this._responseInfo = nestedResponseInfo;
       }
       if (data && typeof data === 'object') {
-        this._applyLoadedMetadata(data as SwipeableInterstitialLoadedPayload);
+        this._applyLoadedMetadata(data);
       }
     }
 
@@ -191,11 +189,7 @@ export class SwipeableInterstitialAd {
 
     let payload: AdEventPayload<SwipeableInterstitialEventType>;
     if (error) {
-      payload = adErrorFromNativeEvent(
-        error,
-        'googleMobileAds',
-        'load',
-      ) as AdEventPayload<SwipeableInterstitialEventType>;
+      payload = adErrorFromNativeEvent(error, 'googleMobileAds', 'load');
     } else if (
       type === AdEventType.LOADED &&
       data &&
@@ -282,13 +276,11 @@ export class SwipeableInterstitialAd {
     if (this._destroyed) {
       throw new Error('SwipeableInterstitialAd.addAdEventListener(*) ad has been destroyed.');
     }
-    if (
-      !(
-        isOneOf(type, Object.values(AdEventType)) ||
-        isOneOf(type, Object.values(SwipeableInterstitialAdEventType)) ||
-        isOneOf(type, Object.values(GAMAdEventType))
-      )
-    ) {
+    if (!(
+      isOneOf(type, Object.values(AdEventType)) ||
+      isOneOf(type, Object.values(SwipeableInterstitialAdEventType)) ||
+      isOneOf(type, Object.values(GAMAdEventType))
+    )) {
       throw new Error(
         "SwipeableInterstitialAd.addAdEventListener(*) 'type' expected a valid event type value.",
       );
@@ -300,10 +292,7 @@ export class SwipeableInterstitialAd {
     }
 
     const id = this._adEventListenerId++;
-    this._getAdEventListeners(type).set(
-      id,
-      listener as AdEventListener<SwipeableInterstitialEventType>,
-    );
+    this._getAdEventListeners(type).set(id, listener);
     return () => {
       this._getAdEventListeners(type).delete(id);
     };

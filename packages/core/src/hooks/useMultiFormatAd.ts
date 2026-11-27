@@ -189,7 +189,7 @@ function configSignature(options: UseMultiFormatAdOptions): string {
       if (value === null || typeof value !== 'object' || Array.isArray(value)) {
         return value;
       }
-      return Object.keys(value as Record<string, unknown>)
+      return Object.keys(value)
         .sort()
         .reduce<Record<string, unknown>>((sorted, key) => {
           sorted[key] = (value as Record<string, unknown>)[key];
@@ -362,14 +362,7 @@ export function useMultiFormatAd(options: UseMultiFormatAdOptions): UseMultiForm
     }));
 
     const flight = (async (): Promise<MultiFormatLoadResult> => {
-      const {
-        adUnitId,
-        requestOptions,
-        autoLoad: _ignored,
-        ...rest
-      } = optionsRef.current as UseMultiFormatAdOptions & Record<string, unknown>;
-      void _ignored;
-      void rest;
+      const { adUnitId, requestOptions } = optionsRef.current;
 
       let request: MultiFormatAdRequest;
       try {

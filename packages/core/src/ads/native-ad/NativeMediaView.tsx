@@ -18,7 +18,7 @@
 import React, { useContext } from 'react';
 import { ViewProps } from 'react-native';
 import GoogleMobileAdsMediaView from '../../specs/components/GoogleMobileAdsMediaViewNativeComponent';
-import { NativeAsset } from './NativeAsset';
+import { NativeAsset, NativeAssetType } from './NativeAsset';
 import { NativeAdContext } from './NativeAdContext';
 
 export type NativeMediaViewProps = ViewProps & {
@@ -31,8 +31,7 @@ export const NativeMediaView = (props: NativeMediaViewProps) => {
   const { responseId, mediaContent } = nativeAd;
 
   return (
-    // @ts-ignore
-    <NativeAsset assetType={'media'}>
+    <NativeAsset assetType={NativeAssetType.MEDIA}>
       <GoogleMobileAdsMediaView
         {...viewProps}
         responseId={responseId}

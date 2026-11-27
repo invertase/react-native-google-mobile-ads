@@ -102,7 +102,7 @@ export class InterstitialAd extends MobileAd {
     }
 
     const requestId = allocateFullscreenRequestId();
-    return new InterstitialAd(
+    return new this(
       'interstitial',
       requestId,
       adUnitId,

@@ -104,7 +104,7 @@ export class IconAd {
       ...AdEventType,
       ...GAMAdEventType,
     }).forEach(type => {
-      this._adEventListenersMap.set(type as IconAdEventType, new Map());
+      this._adEventListenersMap.set(type, new Map());
     });
     this._adEventListenerId = 0;
     this._adEventsListenerId = 0;
@@ -188,7 +188,7 @@ export class IconAd {
         this._responseInfo = nestedResponseInfo;
       }
       if (data && typeof data === 'object') {
-        this._applyLoadedAssets(data as LoadedAssetPayload);
+        this._applyLoadedAssets(data);
       }
     }
 
@@ -202,11 +202,7 @@ export class IconAd {
 
     let payload: AdEventPayload<IconAdEventType>;
     if (error) {
-      payload = adErrorFromNativeEvent(
-        error,
-        'googleMobileAds',
-        'load',
-      ) as AdEventPayload<IconAdEventType>;
+      payload = adErrorFromNativeEvent(error, 'googleMobileAds', 'load');
     } else if (
       type === AdEventType.LOADED &&
       data &&
@@ -263,9 +259,9 @@ export class IconAd {
     if (this._destroyed) {
       throw new Error('IconAd.addAdEventListener(*) ad has been destroyed.');
     }
-    if (
-      !(isOneOf(type, Object.values(AdEventType)) || isOneOf(type, Object.values(GAMAdEventType)))
-    ) {
+    if (!(
+      isOneOf(type, Object.values(AdEventType)) || isOneOf(type, Object.values(GAMAdEventType))
+    )) {
       throw new Error("IconAd.addAdEventListener(*) 'type' expected a valid event type value.");
     }
     if (!isFunction(listener)) {
@@ -273,7 +269,7 @@ export class IconAd {
     }
 
     const id = this._adEventListenerId++;
-    this._getAdEventListeners(type).set(id, listener as AdEventListener<IconAdEventType>);
+    this._getAdEventListeners(type).set(id, listener);
     return () => {
       this._getAdEventListeners(type).delete(id);
     };

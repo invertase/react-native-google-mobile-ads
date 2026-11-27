@@ -217,16 +217,17 @@ function validateFullscreenPoolConfig(
 }
 
 function validateDisplayPoolConfig(config: AdPoolConfig, formats: string[]): AdPoolResolvedConfig {
+  const displayFormats: Array<AdFormat.BANNER | AdFormat.NATIVE> = [];
   for (let i = 0; i < formats.length; i++) {
-    if (!isDisplayFormat(formats[i])) {
+    const format = formats[i];
+    if (!isDisplayFormat(format)) {
       throw createPoolAdError(
         'pool/format-preload-unsupported',
         `'formats[${i}]' expected '${AdFormat.BANNER}' or '${AdFormat.NATIVE}' for display pools`,
       );
     }
+    displayFormats.push(format);
   }
-
-  const displayFormats = formats as Array<AdFormat.BANNER | AdFormat.NATIVE>;
   const wantsBanner = displayFormats.includes(AdFormat.BANNER);
   const adServer = config.adServer as string | undefined;
 

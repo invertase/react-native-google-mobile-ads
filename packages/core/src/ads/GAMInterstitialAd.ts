@@ -28,8 +28,14 @@ export class GAMInterstitialAd extends InterstitialAd {
    * @param adUnitId The Ad Unit ID for the Interstitial. You can find this on your Google Mobile Ads dashboard.
    * @param requestOptions Optional RequestOptions used to load the ad.
    */
-  static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions) {
-    return super.createForAdRequest(adUnitId, requestOptions) as GAMInterstitialAd;
+  static createForAdRequest(adUnitId: string, requestOptions?: RequestOptions): GAMInterstitialAd {
+    const ad = super.createForAdRequest(adUnitId, requestOptions);
+    if (!(ad instanceof GAMInterstitialAd)) {
+      throw new Error(
+        'GAMInterstitialAd.createForAdRequest(*) expected a GAMInterstitialAd instance.',
+      );
+    }
+    return ad;
   }
 
   addAdEventsListener<T extends AdEventType | GAMAdEventType>(listener: AdEventsListener<T>) {

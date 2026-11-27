@@ -123,7 +123,7 @@ export class MultiFormatAdRequest<
     const validated = validateMultiFormatAdConfig(config);
     this.adUnitId = validated.adUnitId;
     this.options = validated.requestOptions as MultiFormatAdRequest['options'];
-    this.bridgeOptions = validated.requestOptions as unknown as Record<string, unknown>;
+    this.bridgeOptions = validated.requestOptions;
   }
 
   /**

@@ -15,7 +15,7 @@
  *
  */
 
-import type { HostComponent, ViewProps } from 'react-native';
+import type { ViewProps } from 'react-native';
 import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
 
 export interface NativeProps extends ViewProps {
@@ -23,6 +23,4 @@ export interface NativeProps extends ViewProps {
   handleId: string;
 }
 
-export default codegenNativeComponent<NativeProps>(
-  'RNGoogleMobileAdsMultiFormatBannerView',
-) as HostComponent<NativeProps>;
+export default codegenNativeComponent<NativeProps>('RNGoogleMobileAdsMultiFormatBannerView');

@@ -40,6 +40,4 @@ export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
   supportedCommands: ['registerAsset'],
 });
 
-export default codegenNativeComponent<NativeProps>(
-  'RNGoogleMobileAdsIconAdView',
-) as NativeViewComponentType;
+export default codegenNativeComponent<NativeProps>('RNGoogleMobileAdsIconAdView');

@@ -198,7 +198,8 @@ type MultiFormatLoadResultBase = {
  */
 export type MultiFormatLoadResult = MultiFormatLoadResultBase &
   /** At least one handle, no errors. */
-  (| { status: 'loaded'; ads: MultiFormatAdHandle[]; errors: never[] }
+  (
+    | { status: 'loaded'; ads: MultiFormatAdHandle[]; errors: never[] }
     /** At least one handle plus at least one error. */
     | { status: 'loaded-partial'; ads: MultiFormatAdHandle[]; errors: AdError[] }
     /**

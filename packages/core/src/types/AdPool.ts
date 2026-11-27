@@ -87,9 +87,7 @@ export type AdPoolPresetOverrides = Omit<Partial<AdPoolConfig>, 'formats' | 'adU
  * poll, which is what decides how much can honestly be said about freshness.
  */
 export type AdPoolDegradeReason =
-  | 'pool/degraded-buffer-size'
-  | 'pool/degraded-request-count'
-  | 'pool/emulated-no-sdk-preloader';
+  'pool/degraded-buffer-size' | 'pool/degraded-request-count' | 'pool/emulated-no-sdk-preloader';
 
 /**
  * Effective pool configuration after capability and app-wide accounting.

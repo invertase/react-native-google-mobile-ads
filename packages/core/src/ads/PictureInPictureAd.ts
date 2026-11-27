@@ -81,7 +81,7 @@ export class PictureInPictureAd {
       ...PictureInPictureAdEventType,
       ...GAMAdEventType,
     }).forEach(type => {
-      this._adEventListenersMap.set(type as PipEventType, new Map());
+      this._adEventListenersMap.set(type, new Map());
     });
     this._adEventListenerId = 0;
     this._adEventsListenerId = 0;
@@ -157,11 +157,7 @@ export class PictureInPictureAd {
 
     let payload: AdEventPayload<PipEventType>;
     if (error) {
-      payload = adErrorFromNativeEvent(
-        error,
-        'googleMobileAds',
-        'load',
-      ) as AdEventPayload<PipEventType>;
+      payload = adErrorFromNativeEvent(error, 'googleMobileAds', 'load');
     } else if (
       type === AdEventType.LOADED &&
       data &&
@@ -260,13 +256,11 @@ export class PictureInPictureAd {
     if (this._destroyed) {
       throw new Error('PictureInPictureAd.addAdEventListener(*) ad has been destroyed.');
     }
-    if (
-      !(
-        isOneOf(type, Object.values(AdEventType)) ||
-        isOneOf(type, Object.values(PictureInPictureAdEventType)) ||
-        isOneOf(type, Object.values(GAMAdEventType))
-      )
-    ) {
+    if (!(
+      isOneOf(type, Object.values(AdEventType)) ||
+      isOneOf(type, Object.values(PictureInPictureAdEventType)) ||
+      isOneOf(type, Object.values(GAMAdEventType))
+    )) {
       throw new Error(
         "PictureInPictureAd.addAdEventListener(*) 'type' expected a valid event type value.",
       );
@@ -278,7 +272,7 @@ export class PictureInPictureAd {
     }
 
     const id = this._adEventListenerId++;
-    this._getAdEventListeners(type).set(id, listener as AdEventListener<PipEventType>);
+    this._getAdEventListeners(type).set(id, listener);
     return () => {
       this._getAdEventListeners(type).delete(id);
     };

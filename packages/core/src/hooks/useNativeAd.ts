@@ -173,7 +173,7 @@ export function useNativeAd(options: UseNativeAdOptions): UseNativeAdResult {
     if (value === null || typeof value !== 'object' || Array.isArray(value)) {
       return value;
     }
-    return Object.keys(value as Record<string, unknown>)
+    return Object.keys(value)
       .sort()
       .reduce<Record<string, unknown>>((sorted, key) => {
         sorted[key] = (value as Record<string, unknown>)[key];

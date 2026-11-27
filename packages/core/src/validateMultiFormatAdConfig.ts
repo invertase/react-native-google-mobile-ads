@@ -31,13 +31,13 @@ import { validateCustomFormatIds } from './validateCustomNativeAdRequestOptions'
 
 const ALLOWED_FORMATS: ReadonlySet<string> = new Set([AdFormat.NATIVE, AdFormat.BANNER]);
 
-const FIXED_BANNER_SIZES: ReadonlySet<string> = new Set([
-  BannerAdSize.BANNER,
-  BannerAdSize.FULL_BANNER,
-  BannerAdSize.LARGE_BANNER,
-  BannerAdSize.LEADERBOARD,
-  BannerAdSize.MEDIUM_RECTANGLE,
-  BannerAdSize.WIDE_SKYSCRAPER,
+const FIXED_BANNER_SIZES: ReadonlyMap<string, MultiFormatBannerSize> = new Map([
+  [BannerAdSize.BANNER, BannerAdSize.BANNER],
+  [BannerAdSize.FULL_BANNER, BannerAdSize.FULL_BANNER],
+  [BannerAdSize.LARGE_BANNER, BannerAdSize.LARGE_BANNER],
+  [BannerAdSize.LEADERBOARD, BannerAdSize.LEADERBOARD],
+  [BannerAdSize.MEDIUM_RECTANGLE, BannerAdSize.MEDIUM_RECTANGLE],
+  [BannerAdSize.WIDE_SKYSCRAPER, BannerAdSize.WIDE_SKYSCRAPER],
 ]);
 
 const ILLEGAL_BANNER_SIZES: ReadonlySet<string> = new Set([
@@ -47,7 +47,7 @@ const ILLEGAL_BANNER_SIZES: ReadonlySet<string> = new Set([
   'FLUID',
 ]);
 
-function isCustomSizeString(value: string): boolean {
+function isCustomSizeString(value: string): value is `${number}x${number}` {
   return /^[0-9]+x[0-9]+$/.test(value);
 }
 
@@ -75,8 +75,12 @@ function assertBannerSize(size: unknown, index: number): MultiFormatBannerSize {
     );
   }
 
-  if (FIXED_BANNER_SIZES.has(size) || isCustomSizeString(size)) {
-    return size as MultiFormatBannerSize;
+  const fixedSize = FIXED_BANNER_SIZES.get(size);
+  if (fixedSize !== undefined) {
+    return fixedSize;
+  }
+  if (isCustomSizeString(size)) {
+    return size;
   }
 
   throw new Error(

@@ -107,9 +107,8 @@ class MobileAdsModule implements MobileAdsModuleInterface {
   }
 
   setPublisherFirstPartyIdEnabled(enabled: boolean): Promise<void> {
-    void enabled;
     // Stub resolves immediately; native wiring later (void on both platforms).
-    return Promise.resolve();
+    return enabled ? Promise.resolve() : Promise.resolve();
   }
 
   getVersion(): string {
