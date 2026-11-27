@@ -11,6 +11,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppState,
+  BackHandler,
   Button,
   Image,
   LogBox,
@@ -394,6 +395,14 @@ function AppContent() {
   const visiblePrimary =
     section === 'all' ? primaryEntries : primaryEntries.filter(e => e.section === section);
   const selected = entries.find(e => e.id === selectedId) ?? null;
+
+  useEffect(() => {
+    if (selectedId == null) {
+      return;
+    }
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => subscription.remove();
+  }, [selectedId]);
 
   return (
     <View style={styles.container} testID={AppiumTestIds.root}>
