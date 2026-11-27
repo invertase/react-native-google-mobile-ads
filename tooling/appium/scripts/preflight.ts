@@ -43,6 +43,7 @@ import {
   xcodebuildExitStatePath,
 } from '../src/iosSessionDiagnostics.ts';
 import { reconcileIosDeviceHub } from '../src/iosDeviceHub.ts';
+import { runWdioOwnedWithCiSerialDeviceLostRetry } from '../src/ciSerialAndroidRecover.ts';
 import { runtimeResources, type RuntimeResources } from '../src/slots.ts';
 import { androidSlotBootCommand } from '../src/commands.ts';
 import { isParallelParentChild } from '../src/parentContract.ts';
@@ -743,7 +744,20 @@ async function main(): Promise<void> {
     process.exitCode = child.status ?? 1;
     return;
   }
-  process.exitCode = await runWdioOwned(target, runtime, wdioEnv, exactTarget);
+  if (
+    target === 'android' &&
+    !runtime.slotResources &&
+    process.env.CI != null &&
+    process.env.CI !== '' &&
+    process.env.CI !== '0' &&
+    process.env.CI !== 'false'
+  ) {
+    process.exitCode = await runWdioOwnedWithCiSerialDeviceLostRetry(() =>
+      runWdioOwned(target, runtime, wdioEnv, exactTarget),
+    );
+  } else {
+    process.exitCode = await runWdioOwned(target, runtime, wdioEnv, exactTarget);
+  }
 }
 
 if (
