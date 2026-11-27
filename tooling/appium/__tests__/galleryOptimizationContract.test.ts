@@ -49,6 +49,45 @@ test('already-selected gallery sections skip top scrolling and re-selection', ()
   assert.ok(scrollToTop > selectedReturn, 'active-section return must precede top scrolling');
 });
 
+test('iOS backToGallery avoids driver.back and uses gallery back tap', () => {
+  const backStart = gallerySource.indexOf('export async function backToGallery');
+  const backEnd = gallerySource.indexOf('export async function resetAppState', backStart);
+  const backSource = gallerySource.slice(backStart, backEnd);
+  const iosTapStart = gallerySource.indexOf('async function tapIosGalleryBackButton');
+  const iosTapEnd = gallerySource.indexOf('function isInstrumentationCrash', iosTapStart);
+  const iosTapSource = gallerySource.slice(iosTapStart, iosTapEnd);
+  assert.match(iosTapSource, /isExisting/);
+  assert.match(backSource, /tapIosGalleryBackButton/);
+  assert.match(backSource, /resetAppState/);
+  const androidBranch = backSource.indexOf('if (isAndroid()) {');
+  const androidElse = backSource.indexOf('} else {', androidBranch);
+  const iosEntryStart = backSource.indexOf('} else {', androidElse + 1);
+  const iosEntryEnd = backSource.indexOf('try {', iosEntryStart);
+  assert.doesNotMatch(backSource.slice(iosEntryStart, iosEntryEnd), /driver\.back/);
+  const iosCatchStart = backSource.indexOf('await captureIosStallEvidence');
+  assert.match(backSource.slice(iosCatchStart), /resetAppState/);
+  assert.doesNotMatch(backSource.slice(iosCatchStart), /driver\.back/);
+});
+
+test('iOS app-open close waits for chrome gone after lifecycle closed', () => {
+  const closeStart = gallerySource.indexOf('async function runIosFullscreenShowCloseLifecycle');
+  const closeEnd = gallerySource.indexOf('async function runIosHookShowCloseLifecycle', closeStart);
+  const closeSource = gallerySource.slice(closeStart, closeEnd);
+  assert.match(
+    closeSource,
+    /SHOW_LIFECYCLE_CLOSED[\s\S]*isIosFullscreenCloseChromeVisible[\s\S]*return true/,
+  );
+});
+
+test('isIosAppOpenFeedChromeVisible prefers Continue before Test mode exclusion', () => {
+  const feedStart = gallerySource.indexOf('async function isIosAppOpenFeedChromeVisible');
+  const feedEnd = gallerySource.indexOf('async function tapIosAppOpenContinueChrome', feedStart);
+  const feedSource = gallerySource.slice(feedStart, feedEnd);
+  const continueIdx = feedSource.indexOf('IOS_APP_OPEN_CONTINUE_NAMES');
+  const testModeIdx = feedSource.indexOf("'Test mode'");
+  assert.ok(continueIdx >= 0 && testModeIdx > continueIdx);
+});
+
 test('format open requires container and diagnoses tap-miss vs navigation-stuck', () => {
   assert.match(gallerySource, /classifyFormatOpenObservation/);
   assert.match(gallerySource, /formatOpenDiagnosisMessage/);

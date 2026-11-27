@@ -346,6 +346,35 @@ async function clickElement(
   }
 }
 
+/** iOS format back — coordinate tap when scroll hides the RN Back button (#999). */
+async function tapIosGalleryBackButton(back: WebdriverIO.Element): Promise<void> {
+  if (!(await back.isExisting().catch(() => false))) {
+    return;
+  }
+  if (await back.isDisplayed().catch(() => false)) {
+    try {
+      await back.click();
+      return;
+    } catch {
+      // Fall through to center tap.
+    }
+  }
+  const tapCenter = async (): Promise<boolean> => {
+    const loc = await back.getLocation().catch(() => null);
+    const size = await back.getSize().catch(() => null);
+    if (!loc || !size || size.width <= 0 || size.height <= 0) {
+      return false;
+    }
+    await iosTapPoint(loc.x + size.width / 2, loc.y + size.height / 2);
+    return true;
+  };
+  if (await tapCenter()) {
+    return;
+  }
+  await scrollGalleryToTop();
+  await tapCenter();
+}
+
 function isInstrumentationCrash(err: unknown): boolean {
   const msg = String(err);
   return (
@@ -868,11 +897,20 @@ export async function backToGallery(): Promise<void> {
     }
   }
   const back = await findByTestId(AppiumTestIds.galleryBack);
-  if (await back.isDisplayed().catch(() => false)) {
-    await clickElement(back, 'backToGallery');
+  if (isAndroid()) {
+    if (await back.isDisplayed().catch(() => false)) {
+      await clickElement(back, 'backToGallery');
+    } else {
+      logAndroidHostTrace('gallery.back.fallback', { method: 'driver.back' });
+      await driver.back();
+    }
   } else {
-    logAndroidHostTrace('gallery.back.fallback', { method: 'driver.back' });
-    await driver.back();
+    logAndroidHostTrace('gallery.back.fallback', {
+      method: (await back.isExisting().catch(() => false))
+        ? 'ios-gallery-back-tap'
+        : 'ios-no-gallery-back',
+    });
+    await tapIosGalleryBackButton(back);
   }
   try {
     await driver.waitUntil(async () => isGalleryHome(), {
@@ -914,7 +952,25 @@ export async function backToGallery(): Promise<void> {
     if (await isGalleryHome()) {
       return;
     }
-    throw error;
+    await scrollGalleryToTop();
+    if (await isGalleryHome()) {
+      return;
+    }
+    await tapIosGalleryBackButton(await findByTestId(AppiumTestIds.galleryBack));
+    try {
+      await driver.waitUntil(async () => isGalleryHome(), {
+        timeout: 5000,
+        timeoutMsg: 'Gallery home did not restore after iOS back retry',
+      });
+      return;
+    } catch {
+      if (await isGalleryHome()) {
+        return;
+      }
+    }
+    logAndroidHostTrace('gallery.back.fallback', { method: 'resetAppState' });
+    await resetAppState();
+    return;
   } finally {
     if (isAndroid()) {
       const focus = await androidWindowFocusDump();
@@ -3415,7 +3471,19 @@ async function isIosAppOpenFeedChromeVisible(): Promise<boolean> {
   if (await isIosFullscreenCloseChromeVisible()) {
     return false;
   }
-  // Interstitial/rewarded test creatives also say "Test mode" — exclude those.
+  // App-open feed chrome can show Test mode alongside Continue — detect feed first.
+  for (const name of IOS_APP_OPEN_CONTINUE_NAMES) {
+    if (await iosElementExistsByName(name)) {
+      const el = await $(`~${name}`);
+      if (await el.isDisplayed().catch(() => false)) {
+        return true;
+      }
+    }
+  }
+  if ((await findDisplayedIosElementByNames(['Feed Test'])) != null) {
+    return true;
+  }
+  // Interstitial/rewarded test creatives also say "Test mode" — exclude when no feed.
   for (const needle of [
     'test interstitial',
     "You're displaying a test interstitial",
@@ -3427,16 +3495,7 @@ async function isIosAppOpenFeedChromeVisible(): Promise<boolean> {
       return false;
     }
   }
-  // Prefer Continue control — lean lookup (avoid 4×CONTAINS spam per poll).
-  for (const name of IOS_APP_OPEN_CONTINUE_NAMES) {
-    if (await iosElementExistsByName(name)) {
-      const el = await $(`~${name}`);
-      if (await el.isDisplayed().catch(() => false)) {
-        return true;
-      }
-    }
-  }
-  return (await findDisplayedIosElementByNames(['Feed Test'])) != null;
+  return false;
 }
 
 async function tapIosAppOpenContinueChrome(): Promise<boolean> {
@@ -3571,6 +3630,18 @@ async function runIosFullscreenShowCloseLifecycle(formatId: string): Promise<voi
       // Prefer RN closed phase first — ghost Close / gallery titles must not block it.
       const phase = await safeShowLifecycleText(formatId);
       if (phase.includes(SHOW_LIFECYCLE_CLOSED)) {
+        if (await isIosFullscreenCloseChromeVisible()) {
+          await tapIosFullscreenCloseAttempt();
+          return false;
+        }
+        if (isAppOpen && (await isIosAppOpenFeedChromeVisible())) {
+          await tapIosAppOpenContinueChrome();
+          return false;
+        }
+        if (await isIosFullscreenTestAdVisible()) {
+          await tapIosFullscreenCloseAttempt();
+          return false;
+        }
         return true;
       }
       if (await isIosFullscreenCloseChromeVisible()) {
