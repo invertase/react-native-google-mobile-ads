@@ -25,13 +25,13 @@ jobs:
     runs-on: ${{ fromJSON(needs.route-linting.outputs.runs-on) }}
     needs: route-linting
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24.22.3'
-      - uses: actions/cache/restore@v6
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -40,23 +40,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Configure JDK
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: 'temurin'
           java-version: '21'
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
           # Only write to the cache for builds on main; PRs read-only to avoid cache eviction wars.
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Yarn Install
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 3
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -66,7 +66,7 @@ jobs:
         run: yarn lint:code
       - name: Kotlin lint
         id: kotlin-lint
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 5
           retry_wait_seconds: 45
@@ -93,13 +93,13 @@ jobs:
           fi
       - name: Annotate Code Linting Results
         if: steps.eslint-annotate-gate.outputs.annotate == 'true'
-        uses: ataylorme/eslint-annotate-action@4.0.0
+        uses: ataylorme/eslint-annotate-action@5a8d8ab89a57679e90c32750e0f382e9d8570750 # 4.0.0
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           report-json: 'eslint-report.json'
       - name: Upload ESLint report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: eslint-report.json
           path: eslint-report.json
@@ -117,13 +117,13 @@ jobs:
     needs: route-typescript
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24.22.3'
-      - uses: actions/cache/restore@v6
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -132,13 +132,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - name: Yarn Install
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 3
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -155,7 +155,7 @@ jobs:
   #     - uses: actions/checkout@v4
   #       with:
   #         fetch-depth: 1
-  #     - uses: actions/setup-node@v7
+  #     - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
   #       with:
   #         node-version: 18
   #     - uses: actions/cache@v4
@@ -167,14 +167,14 @@ jobs:
   #         restore-keys: |
   #           ${{ runner.os }}-yarn-
   #     - name: Yarn Install
-  #       uses: nick-fields/retry@v4
+  #       uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
   #       with:
   #         timeout_minutes: 3
   #         retry_wait_seconds: 30
   #         max_attempts: 3
   #         command: yarn
   #     - name: Yarn Install (Website)
-  #       uses: nick-fields/retry@v4
+  #       uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
   #       with:
   #         timeout_minutes: 3
   #         retry_wait_seconds: 30

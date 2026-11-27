@@ -65,9 +65,9 @@ jobs:
       - name: Liberate disk space
         # Hosted runners only: self-hosted overflow runners have ample disk and no docker CLI.
         if: runner.environment == 'github-hosted'
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:
-          tool-cache: false
+          preinstalled-runtimes: false
           android: false
           dotnet: true
           haskell: true
@@ -81,17 +81,17 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 50
 
       # Set up tool versions
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24.22.3'
 
       - name: Configure JDK
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -103,7 +103,7 @@ jobs:
           echo "metro-cache=$HOME/.metro" >> $GITHUB_OUTPUT
           echo "tempdir=$TMPDIR" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache/restore@v6
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -113,14 +113,14 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Yarn Install
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn
 
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -128,7 +128,7 @@ jobs:
           key: ${{ steps.yarn-cache.outputs.cache-primary-key }}
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
           # Only write to the cache for builds on the 'main' branches, stops branches evicting main cache
           # Builds on other branches will only read from main branch cache writes
@@ -141,7 +141,7 @@ jobs:
       # Warm Gradle does not dynamically fetch them. Package list from CI logs + RN pin
       # (node_modules/react-native/gradle/libs.versions.toml ndkVersion; CMake from AGP).
       - name: Preinstall Android SDK packages (sdkmanager)
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 20
           retry_wait_seconds: 45
@@ -225,7 +225,7 @@ jobs:
         # This makes sure we fetch gradle network resources with a retry.
         # RNGMA_ANDROID_BACKEND from the job env selects classic vs nextgen in Gradle.
         # Cleanup incomplete NDK/CMake again in case Gradle still touches the installer.
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 15
           retry_wait_seconds: 60
@@ -255,7 +255,7 @@ jobs:
 
       # Sticky content-hash Metro restore. Both backends restore the same key;
       # only classic + iteration 0 on main saves.
-      - uses: actions/cache/restore@v6
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Metro Bundler Cache Restore
         id: metro-bundler-cache
         with:
@@ -280,7 +280,7 @@ jobs:
           echo "...javascript bundle ready."
 
       - name: Run Emulator Tests
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         timeout-minutes: 30
         with:
           api-level: ${{ matrix.api-level }}
@@ -297,7 +297,7 @@ jobs:
             yarn tests:appium:drivers:verify
             yarn tests:appium:android
 
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Metro Bundler Cache Save
         if: >
           github.ref == 'refs/heads/main'
@@ -309,14 +309,14 @@ jobs:
           key: ${{ steps.metro-bundler-cache.outputs.cache-primary-key }}
 
       - name: Upload Emulator Log
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: adb_logs-${{ matrix.android-backend }}-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.iteration }}
           path: adb-log.txt
 
       - name: Upload e2e driver logs
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: e2e_driver_logs-${{ matrix.android-backend }}-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.iteration }}
