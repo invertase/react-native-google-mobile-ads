@@ -2,9 +2,13 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import {
   androidAdActivityIsForeground,
+  androidCurrentFocusIsStatusBarShade,
+  androidCurrentFocusLine,
+  androidExampleAppHoldsWindowFocus,
   androidFocusedForeignApps,
   androidFocusedSystemDialog,
   androidFocusLines,
+  ANDROID_FOREIGN_FOCUS_MARKERS,
   focusIncludesAndroidForeignApp,
 } from '../src/androidFocus.ts';
 import { EXAMPLE_ANDROID_PACKAGE } from '../src/formats.ts';
@@ -58,6 +62,18 @@ const ANR_FOCUSED = `  * Task{a1b2c3 #42 type=standard A=10123:com.microsoft.rea
 
 const APP_ERROR_FOCUSED = `  mCurrentFocus=Window{998878 u0 Application Error: com.microsoft.reacttestapp}
   mFocusedApp=ActivityRecord{d4e5f6 u0 com.microsoft.reacttestapp/.MainActivity t42}
+`;
+
+/** Spec-file retry: shade over launcher while the example task survives in the dump. */
+const NOTIFICATION_SHADE_OVER_LAUNCHER = `WINDOW MANAGER DISPLAY CONTENTS (dumpsys window displays)
+  Display: mDisplayId=0 rootTasks=2
+        Application tokens in top down Z order:
+          * Task{8a660b6 #2 type=home I=com.google.android.apps.nexuslauncher/.NexusLauncherActivity U=0 visible=true}
+            * ActivityRecord{18103727 u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t2}
+          * Task{a1b2c3 #42 type=standard A=10123:com.microsoft.reacttestapp U=0 visible=false}
+            * ActivityRecord{d4e5f6 u0 com.microsoft.reacttestapp/.MainActivity t42}
+  mCurrentFocus=Window{fd25b7 u0 NotificationShade}
+  mFocusedApp=ActivityRecord{18103727 u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t2}
 `;
 
 describe('android focus lines', () => {
@@ -115,6 +131,39 @@ describe('android system dialog focus', () => {
   test('app or foreign focus is not a system dialog', () => {
     assert.equal(androidFocusedSystemDialog(APP_FOCUSED_PLAY_STORE_BACKGROUND), null);
     assert.equal(androidFocusedSystemDialog(PLAY_STORE_FOCUSED), null);
+  });
+});
+
+describe('android status-bar shade focus', () => {
+  test('NotificationShade on mCurrentFocus is shade, not a foreign package', () => {
+    assert.equal(androidCurrentFocusIsStatusBarShade(NOTIFICATION_SHADE_OVER_LAUNCHER), true);
+    assert.match(androidCurrentFocusLine(NOTIFICATION_SHADE_OVER_LAUNCHER), /NotificationShade/);
+    assert.equal(focusIncludesAndroidForeignApp(NOTIFICATION_SHADE_OVER_LAUNCHER), true);
+    assert.ok(!ANDROID_FOREIGN_FOCUS_MARKERS.some(marker => marker.includes('NotificationShade')));
+  });
+
+  test('shade-over-launcher dump must not count the example app as foreground', () => {
+    assert.ok(NOTIFICATION_SHADE_OVER_LAUNCHER.includes(EXAMPLE_ANDROID_PACKAGE));
+    assert.equal(
+      androidExampleAppHoldsWindowFocus(NOTIFICATION_SHADE_OVER_LAUNCHER, EXAMPLE_ANDROID_PACKAGE),
+      false,
+    );
+  });
+
+  test('app-focused dump uses focus lines only', () => {
+    assert.equal(
+      androidExampleAppHoldsWindowFocus(APP_FOCUSED_PLAY_STORE_BACKGROUND, EXAMPLE_ANDROID_PACKAGE),
+      true,
+    );
+    assert.equal(
+      androidExampleAppHoldsWindowFocus(PLAY_STORE_FOCUSED, EXAMPLE_ANDROID_PACKAGE),
+      false,
+    );
+  });
+
+  test('normal app window is not status-bar shade', () => {
+    assert.equal(androidCurrentFocusIsStatusBarShade(APP_FOCUSED_PLAY_STORE_BACKGROUND), false);
+    assert.equal(androidCurrentFocusIsStatusBarShade(NEXUS_LAUNCHER_FOCUSED), false);
   });
 });
 

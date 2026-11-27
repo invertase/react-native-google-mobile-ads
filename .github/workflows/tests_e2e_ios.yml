@@ -46,16 +46,16 @@ jobs:
       CCACHE_CONFIGPATH: ${{ github.workspace }}/RNGoogleMobileAdsExample/ios/ccache/ccache.conf
     steps:
       # Set up tool versions
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           # Match Android e2e pin (security + avoid floating latest 24.x).
           node-version: '24.22.3'
 
-      - uses: maxim-lobanov/setup-xcode@v1
+      - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: latest-stable
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 50
 
@@ -66,7 +66,7 @@ jobs:
           echo "metro-cache=$HOME/.metro" >> $GITHUB_OUTPUT
           echo "xcode-version=$(xcodebuild -version|tail -1|cut -f3 -d' ')" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache/restore@v6
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Yarn Cache
         id: yarn-cache
         with:
@@ -76,7 +76,7 @@ jobs:
             ${{ runner.os }}-yarn-
 
       # Native iOS deps compile during yarn/pod install; set up Xcode compile cache first
-      - uses: hendrikmuhs/ccache-action@v1
+      - uses: hendrikmuhs/ccache-action@e91f31892a1d1b8c44424b1a94c0b7f52d337168 # v1.2.26
         name: Xcode Compile Cache
         with:
           # v2: CC/CXX wrappers actually populate the blob (v1 stayed ~0 MB).
@@ -89,14 +89,14 @@ jobs:
           save: false
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@145243922b4465b78e04dd66294782c7de45901f # v1.345.0
         with:
           # Pin patch: ruby-builder 3.4.13 darwin-arm64 ships without OpenSSL
           # (gem install bundler → "OpenSSL is not available"). 3.4.12 was last green.
           ruby-version: '3.4.12'
 
       - name: Bundle Install
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         # Gemfile.lock's `BUNDLED WITH` version is the Bundler pin; frozen mode
         # makes the root lock authoritative without a separate gem install path.
         with:
@@ -105,7 +105,7 @@ jobs:
           max_attempts: 3
           command: BUNDLE_FROZEN=true bundle install
 
-      - uses: actions/cache/restore@v6
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Pods Cache Restore
         id: pods-cache
         with:
@@ -114,14 +114,14 @@ jobs:
           restore-keys: ${{ runner.os }}-pods-v2-
 
       - name: Yarn Install
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           retry_wait_seconds: 60
           max_attempts: 3
           command: yarn
 
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Yarn Cache Save
         if: github.ref == 'refs/heads/main' && steps.yarn-cache.outputs.cache-hit != 'true'
         with:
@@ -129,14 +129,14 @@ jobs:
           key: ${{ steps.yarn-cache.outputs.cache-primary-key }}
 
       - name: Pod Install
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           retry_wait_seconds: 30
           max_attempts: 3
           command: yarn tests:ios:pod:install
 
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Pods Cache Save
         if: github.ref == 'refs/heads/main' && steps.pods-cache.outputs.cache-hit != 'true'
         with:
@@ -144,7 +144,7 @@ jobs:
           key: ${{ steps.pods-cache.outputs.cache-primary-key }}
 
       # Sticky content-hash Metro restore/save. Save only on main when miss.
-      - uses: actions/cache/restore@v6
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Metro Bundler Cache Restore
         id: metro-bundler-cache
         with:
@@ -168,7 +168,7 @@ jobs:
           echo "...javascript bundle ready"
 
       - name: Select and boot simulator
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           retry_wait_seconds: 30
@@ -213,7 +213,7 @@ jobs:
           yarn tests:appium:ios
 
       # Save only after a green Appium run to avoid cache reservation races on infra aborts.
-      - uses: hendrikmuhs/ccache-action@v1
+      - uses: hendrikmuhs/ccache-action@e91f31892a1d1b8c44424b1a94c0b7f52d337168 # v1.2.26
         name: Xcode Compile Cache Save
         if: success()
         with:
@@ -223,7 +223,7 @@ jobs:
           save: true
           max-size: 2G
 
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         name: Metro Bundler Cache Save
         if: >
           github.ref == 'refs/heads/main'
@@ -233,7 +233,7 @@ jobs:
           key: ${{ steps.metro-bundler-cache.outputs.cache-primary-key }}
 
       - name: Upload Simulator Log
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: success() || failure()
         with:
           name: simulator_log
@@ -241,7 +241,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload e2e driver logs
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: e2e_driver_logs
@@ -258,7 +258,7 @@ jobs:
       # include-hidden-files: upload-artifact skips dotdirs by default; without
       # it, sibling `.hang-recover-snapshots` / `.wda-derived` never upload.
       - name: Upload WDA xcodebuild logs
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: success() || failure()
         with:
           name: wda_xcodebuild_logs

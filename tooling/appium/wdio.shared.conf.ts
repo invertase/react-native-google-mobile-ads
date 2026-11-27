@@ -34,9 +34,9 @@ export const config: Options.Testrunner = {
   // Reliability worker sets RNGMA_WDIO_RUNNER_BAIL=0 so a failed shard process
   // never implies cross-shard runner bail; mocha bail stays on within a shard.
   bail: process.env.RNGMA_WDIO_RUNNER_BAIL === '0' ? 0 : 1,
-  waitforTimeout: 15000,
-  connectionRetryTimeout: 120000,
-  connectionRetryCount: 2,
+  waitforTimeout: 8000,
+  connectionRetryTimeout: 30000,
+  connectionRetryCount: 0,
   hostname: '127.0.0.1',
   port: APPIUM_PORT,
   path: '/',

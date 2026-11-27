@@ -24,25 +24,25 @@ jobs:
     env:
       XCODE_VERSION: latest-stable
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
-      - uses: maxim-lobanov/setup-xcode@v1
+      - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24.22.3'
           registry-url: 'https://registry.npmjs.org'
       - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@145243922b4465b78e04dd66294782c7de45901f # v1.345.0
         with:
           # Pin patch: ruby-builder 3.4.13 darwin-arm64 ships without OpenSSL
           # (gem install bundler → "OpenSSL is not available"). 3.4.12 was last green.
           ruby-version: '3.4.12'
       - name: Bundle Install
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         # Gemfile.lock's `BUNDLED WITH` version is the Bundler pin; frozen mode
         # makes the root lock authoritative without a separate gem install path.
         with:
@@ -51,7 +51,7 @@ jobs:
           max_attempts: 3
           command: BUNDLE_FROZEN=true bundle install
       - name: Yarn Install
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 15
           retry_wait_seconds: 60

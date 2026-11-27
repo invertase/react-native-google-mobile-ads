@@ -55,6 +55,34 @@ export function androidFocusLines(dump: string): string {
     .join('\n');
 }
 
+/** `mCurrentFocus=` line only — not `mFocusedApp=`. */
+export function androidCurrentFocusLine(dump: string): string {
+  return androidFocusLines(dump)
+    .split('\n')
+    .filter(line => line.includes('mCurrentFocus='))
+    .join('\n');
+}
+
+/**
+ * Status-bar / notification shade over the app. Not a foreign package (no force-stop).
+ * KEYCODE_BACK and `activateApp` do not dismiss the shade.
+ */
+export function androidCurrentFocusIsStatusBarShade(dump: string): boolean {
+  const currentFocus = androidCurrentFocusLine(dump);
+  return /NotificationShade|ExpandedNotificationView/i.test(currentFocus);
+}
+
+/**
+ * Example app holds window focus — reads only focus lines, never background tasks.
+ * False while the notification shade still owns `mCurrentFocus`.
+ */
+export function androidExampleAppHoldsWindowFocus(dump: string, examplePackage: string): boolean {
+  if (androidCurrentFocusIsStatusBarShade(dump)) {
+    return false;
+  }
+  return androidFocusLines(dump).includes(examplePackage);
+}
+
 /** Foreign packages that currently hold focus (never background tasks). */
 export function androidFocusedForeignApps(dump: string): string[] {
   const focus = androidFocusLines(dump);
