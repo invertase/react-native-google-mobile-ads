@@ -45,7 +45,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v6
         with:
           # Only write to the cache for builds on main; PRs read-only to avoid cache eviction wars.
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
