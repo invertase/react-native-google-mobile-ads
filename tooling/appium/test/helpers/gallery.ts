@@ -13,6 +13,8 @@ import {
 import { dismissAndroidAnrDialogsViaAdb } from '../../src/androidAnrDismiss.ts';
 import {
   androidAdActivityIsForeground,
+  androidCurrentFocusIsStatusBarShade,
+  androidExampleAppHoldsWindowFocus,
   androidFocusedForeignApps,
   androidFocusedSystemDialog,
   focusIncludesAndroidForeignApp,
@@ -451,11 +453,20 @@ export async function waitForGalleryHome(): Promise<void> {
   }
   // Positive confirmation only: gallery home chrome. Probe JS-load failures on
   // every tick so a redbox fails in ~interval, not after a 90s element timeout.
+  let lastGalleryHostRecoverMs = 0;
+  const galleryHostRecoverIntervalMs = 3000;
   await driver.waitUntil(
     async () => {
+      if (isAndroid()) {
+        const now = Date.now();
+        if (now - lastGalleryHostRecoverMs >= galleryHostRecoverIntervalMs) {
+          lastGalleryHostRecoverMs = now;
+          await recoverAndroidTestHost('waitForGalleryHome.poll');
+        }
+      }
       await assertNoVisibleJsLoadFailure();
       return isGalleryHome();
-    },
+  },
     {
       timeout: 90000,
       interval: 500,
@@ -1771,7 +1782,7 @@ async function dismissAndroidImmersiveModeEducationIfPresent(): Promise<boolean>
 
 async function isAndroidExampleAppForeground(): Promise<boolean> {
   const focus = await androidWindowFocusDump();
-  return focus.includes(EXAMPLE_ANDROID_PACKAGE);
+  return androidExampleAppHoldsWindowFocus(focus, EXAMPLE_ANDROID_PACKAGE);
 }
 
 /** One-shot relaunch when utility dismiss left the launcher focused — not for tight poll loops. */
@@ -1865,6 +1876,29 @@ async function dismissAndroidSystemDialogIfPresent(reason: string): Promise<bool
   return true;
 }
 
+/** Collapse the pull-down shade when it owns `mCurrentFocus` (not a foreign package). */
+async function collapseAndroidStatusBarShadeIfPresent(reason: string): Promise<boolean> {
+  if (!isAndroid()) {
+    return false;
+  }
+  invalidateAndroidWindowFocusDump();
+  const focus = await androidWindowFocusDump();
+  if (!androidCurrentFocusIsStatusBarShade(focus)) {
+    return false;
+  }
+  logAndroidHostTrace('recover.shade', {
+    reason,
+    focus: androidFocusSnippet(focus),
+  });
+  await driver.execute('mobile: shell', {
+    command: 'cmd',
+    args: ['statusbar', 'collapse'],
+  });
+  await sleep(400);
+  invalidateAndroidWindowFocusDump();
+  return true;
+}
+
 async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
   if (!isAndroid()) {
     return;
@@ -1872,6 +1906,9 @@ async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await dismissChromeFirstRunIfPresent();
     await dismissAndroidImmersiveModeEducationIfPresent();
+    if (await collapseAndroidStatusBarShadeIfPresent(`${reason}.shade`)) {
+      continue;
+    }
     if (await recoverAndroidForeignAppIfPresent(`${reason}.foreign`)) {
       continue;
     }
@@ -1882,7 +1919,7 @@ async function recoverAndroidTestHost(reason = 'unspecified'): Promise<void> {
     if (androidAdActivityIsForeground(focus)) {
       return;
     }
-    if (focus.includes(EXAMPLE_ANDROID_PACKAGE)) {
+    if (androidExampleAppHoldsWindowFocus(focus, EXAMPLE_ANDROID_PACKAGE)) {
       return;
     }
     logAndroidHostTrace('recover.host', {
